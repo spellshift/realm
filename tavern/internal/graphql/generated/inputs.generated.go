@@ -27,10 +27,10 @@ import (
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, obj interface{}) (models.ClaimTasksInput, error) {
+func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, obj any) (models.ClaimTasksInput, error) {
 	var it models.ClaimTasksInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -42,8 +42,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 		}
 		switch k {
 		case "principal":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principal"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -51,8 +49,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			}
 			it.Principal = data
 		case "hostname":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostname"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -60,8 +56,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			}
 			it.Hostname = data
 		case "hostPlatform":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPlatform"))
 			data, err := ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, v)
 			if err != nil {
@@ -69,8 +63,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			}
 			it.HostPlatform = data
 		case "hostPrimaryIP":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostPrimaryIP"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -78,8 +70,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			}
 			it.HostPrimaryIP = data
 		case "beaconIdentifier":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("beaconIdentifier"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -87,8 +77,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			}
 			it.BeaconIdentifier = data
 		case "hostIdentifier":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostIdentifier"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -96,8 +84,6 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			}
 			it.HostIdentifier = data
 		case "agentIdentifier":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentIdentifier"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -110,10 +96,10 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Context, obj interface{}) (models.ImportRepositoryInput, error) {
+func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Context, obj any) (models.ImportRepositoryInput, error) {
 	var it models.ImportRepositoryInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -125,8 +111,6 @@ func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Cont
 		}
 		switch k {
 		case "includeDirs":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDirs"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -139,10 +123,10 @@ func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Context, obj interface{}) (models.SubmitTaskResultInput, error) {
+func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Context, obj any) (models.SubmitTaskResultInput, error) {
 	var it models.SubmitTaskResultInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -154,8 +138,6 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 		}
 		switch k {
 		case "taskID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskID"))
 			data, err := ec.unmarshalNID2int(ctx, v)
 			if err != nil {
@@ -163,8 +145,6 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 			}
 			it.TaskID = data
 		case "execStartedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("execStartedAt"))
 			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
@@ -172,8 +152,6 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 			}
 			it.ExecStartedAt = data
 		case "execFinishedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("execFinishedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -181,8 +159,6 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 			}
 			it.ExecFinishedAt = data
 		case "output":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("output"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -190,8 +166,6 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 			}
 			it.Output = data
 		case "error":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("error"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -216,7 +190,7 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalOImportRepositoryInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportRepositoryInput(ctx context.Context, v interface{}) (*models.ImportRepositoryInput, error) {
+func (ec *executionContext) unmarshalOImportRepositoryInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐImportRepositoryInput(ctx context.Context, v any) (*models.ImportRepositoryInput, error) {
 	if v == nil {
 		return nil, nil
 	}

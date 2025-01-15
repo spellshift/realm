@@ -42,15 +42,39 @@ func (ru *RepositoryUpdate) SetURL(s string) *RepositoryUpdate {
 	return ru
 }
 
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillableURL(s *string) *RepositoryUpdate {
+	if s != nil {
+		ru.SetURL(*s)
+	}
+	return ru
+}
+
 // SetPublicKey sets the "public_key" field.
 func (ru *RepositoryUpdate) SetPublicKey(s string) *RepositoryUpdate {
 	ru.mutation.SetPublicKey(s)
 	return ru
 }
 
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillablePublicKey(s *string) *RepositoryUpdate {
+	if s != nil {
+		ru.SetPublicKey(*s)
+	}
+	return ru
+}
+
 // SetPrivateKey sets the "private_key" field.
 func (ru *RepositoryUpdate) SetPrivateKey(s string) *RepositoryUpdate {
 	ru.mutation.SetPrivateKey(s)
+	return ru
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillablePrivateKey(s *string) *RepositoryUpdate {
+	if s != nil {
+		ru.SetPrivateKey(*s)
+	}
 	return ru
 }
 
@@ -338,15 +362,39 @@ func (ruo *RepositoryUpdateOne) SetURL(s string) *RepositoryUpdateOne {
 	return ruo
 }
 
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillableURL(s *string) *RepositoryUpdateOne {
+	if s != nil {
+		ruo.SetURL(*s)
+	}
+	return ruo
+}
+
 // SetPublicKey sets the "public_key" field.
 func (ruo *RepositoryUpdateOne) SetPublicKey(s string) *RepositoryUpdateOne {
 	ruo.mutation.SetPublicKey(s)
 	return ruo
 }
 
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillablePublicKey(s *string) *RepositoryUpdateOne {
+	if s != nil {
+		ruo.SetPublicKey(*s)
+	}
+	return ruo
+}
+
 // SetPrivateKey sets the "private_key" field.
 func (ruo *RepositoryUpdateOne) SetPrivateKey(s string) *RepositoryUpdateOne {
 	ruo.mutation.SetPrivateKey(s)
+	return ruo
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillablePrivateKey(s *string) *RepositoryUpdateOne {
+	if s != nil {
+		ruo.SetPrivateKey(*s)
+	}
 	return ruo
 }
 

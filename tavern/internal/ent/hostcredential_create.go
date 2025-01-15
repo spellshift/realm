@@ -88,6 +88,14 @@ func (hcc *HostCredentialCreate) SetTaskID(id int) *HostCredentialCreate {
 	return hcc
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hcc *HostCredentialCreate) SetNillableTaskID(id *int) *HostCredentialCreate {
+	if id != nil {
+		hcc = hcc.SetTaskID(*id)
+	}
+	return hcc
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hcc *HostCredentialCreate) SetTask(t *Task) *HostCredentialCreate {
 	return hcc.SetTaskID(t.ID)
@@ -170,11 +178,8 @@ func (hcc *HostCredentialCreate) check() error {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if _, ok := hcc.mutation.HostID(); !ok {
+	if len(hcc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostCredential.host"`)}
-	}
-	if _, ok := hcc.mutation.TaskID(); !ok {
-		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostCredential.task"`)}
 	}
 	return nil
 }

@@ -46,6 +46,14 @@ func (hu *HostUpdate) SetIdentifier(s string) *HostUpdate {
 	return hu
 }
 
+// SetNillableIdentifier sets the "identifier" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableIdentifier(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetIdentifier(*s)
+	}
+	return hu
+}
+
 // SetName sets the "name" field.
 func (hu *HostUpdate) SetName(s string) *HostUpdate {
 	hu.mutation.SetName(s)
@@ -89,6 +97,14 @@ func (hu *HostUpdate) ClearPrimaryIP() *HostUpdate {
 // SetPlatform sets the "platform" field.
 func (hu *HostUpdate) SetPlatform(cp c2pb.Host_Platform) *HostUpdate {
 	hu.mutation.SetPlatform(cp)
+	return hu
+}
+
+// SetNillablePlatform sets the "platform" field if the given value is not nil.
+func (hu *HostUpdate) SetNillablePlatform(cp *c2pb.Host_Platform) *HostUpdate {
+	if cp != nil {
+		hu.SetPlatform(*cp)
+	}
 	return hu
 }
 
@@ -649,6 +665,14 @@ func (huo *HostUpdateOne) SetIdentifier(s string) *HostUpdateOne {
 	return huo
 }
 
+// SetNillableIdentifier sets the "identifier" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableIdentifier(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetIdentifier(*s)
+	}
+	return huo
+}
+
 // SetName sets the "name" field.
 func (huo *HostUpdateOne) SetName(s string) *HostUpdateOne {
 	huo.mutation.SetName(s)
@@ -692,6 +716,14 @@ func (huo *HostUpdateOne) ClearPrimaryIP() *HostUpdateOne {
 // SetPlatform sets the "platform" field.
 func (huo *HostUpdateOne) SetPlatform(cp c2pb.Host_Platform) *HostUpdateOne {
 	huo.mutation.SetPlatform(cp)
+	return huo
+}
+
+// SetNillablePlatform sets the "platform" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillablePlatform(cp *c2pb.Host_Platform) *HostUpdateOne {
+	if cp != nil {
+		huo.SetPlatform(*cp)
+	}
 	return huo
 }
 

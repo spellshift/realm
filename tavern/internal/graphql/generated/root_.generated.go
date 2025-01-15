@@ -40,7 +40,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	RequireRole func(ctx context.Context, obj interface{}, next graphql.Resolver, role models.Role) (res interface{}, err error)
+	RequireRole func(ctx context.Context, obj any, next graphql.Resolver, role models.Role) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -128,6 +128,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		CreateCredential func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
 		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
@@ -311,7 +312,7 @@ func (e *executableSchema) Schema() *ast.Schema {
 	return parsedSchema
 }
 
-func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
+func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
@@ -775,6 +776,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostProcess.Task(childComplexity), true
+
+	case "Mutation.createCredential":
+		if e.complexity.Mutation.CreateCredential == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCredential_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCredential(childComplexity, args["input"].(ent.CreateHostCredentialInput)), true
 
 	case "Mutation.createQuest":
 		if e.complexity.Mutation.CreateQuest == nil {
@@ -1706,12 +1719,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 }
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
-	rc := graphql.GetOperationContext(ctx)
-	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
+	opCtx := graphql.GetOperationContext(ctx)
+	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
+		ec.unmarshalInputCreateHostCredentialInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateTagInput,
@@ -1749,7 +1763,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	)
 	first := true
 
-	switch rc.Operation.Operation {
+	switch opCtx.Operation.Operation {
 	case ast.Query:
 		return func(ctx context.Context) *graphql.Response {
 			var response graphql.Response
@@ -1757,7 +1771,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			if first {
 				first = false
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-				data = ec._Query(ctx, rc.Operation.SelectionSet)
+				data = ec._Query(ctx, opCtx.Operation.SelectionSet)
 			} else {
 				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
 					result := <-ec.deferredResults
@@ -1787,7 +1801,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 			first = false
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -1849,58 +1863,98 @@ enum Role {
     ADMIN
     USER
 }`, BuiltIn: false},
-	{Name: "../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+	{Name: "../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String, omittable: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+directive @goModel(model: String, models: [String!], forceGenerate: Boolean) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 type Beacon implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """A human readable identifier for the beacon."""
+  """
+  A human readable identifier for the beacon.
+  """
   name: String!
-  """The identity the beacon is authenticated as (e.g. 'root')"""
+  """
+  The identity the beacon is authenticated as (e.g. 'root')
+  """
   principal: String
-  """Unique identifier for the beacon. Unique to each instance of the beacon."""
+  """
+  Unique identifier for the beacon. Unique to each instance of the beacon.
+  """
   identifier: String!
-  """Identifies the agent that the beacon is running as (e.g. 'imix')."""
+  """
+  Identifies the agent that the beacon is running as (e.g. 'imix').
+  """
   agentIdentifier: String
-  """Timestamp of when a task was last claimed or updated for the beacon."""
+  """
+  Timestamp of when a task was last claimed or updated for the beacon.
+  """
   lastSeenAt: Time
-  """Duration until next callback, in seconds."""
+  """
+  Duration until next callback, in seconds.
+  """
   interval: Uint64
-  """Host this beacon is running on."""
+  """
+  Host this beacon is running on.
+  """
   host: Host!
-  """Tasks that have been assigned to the beacon."""
+  """
+  Tasks that have been assigned to the beacon.
+  """
   tasks: [Task!]
   shells(
-    """Returns the elements in the list that come after the specified cursor."""
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
     after: Cursor
 
-    """Returns the first _n_ elements from the list."""
+    """
+    Returns the first _n_ elements from the list.
+    """
     first: Int
 
-    """Returns the elements in the list that come before the specified cursor."""
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
     before: Cursor
 
-    """Returns the last _n_ elements from the list."""
+    """
+    Returns the last _n_ elements from the list.
+    """
     last: Int
 
-    """Ordering options for Shells returned from the connection."""
+    """
+    Ordering options for Shells returned from the connection.
+    """
     orderBy: [ShellOrder!]
 
-    """Filtering options for Shells returned from the connection."""
+    """
+    Filtering options for Shells returned from the connection.
+    """
     where: ShellWhereInput
   ): ShellConnection!
 }
-"""Ordering options for Beacon connections"""
+"""
+Ordering options for Beacon connections
+"""
 input BeaconOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Beacons."""
+  """
+  The field by which to order Beacons.
+  """
   field: BeaconOrderField!
 }
-"""Properties by which Beacon connections can be ordered."""
+"""
+Properties by which Beacon connections can be ordered.
+"""
 enum BeaconOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -1915,7 +1969,9 @@ input BeaconWhereInput {
   not: BeaconWhereInput
   and: [BeaconWhereInput!]
   or: [BeaconWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -1924,7 +1980,9 @@ input BeaconWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -1933,7 +1991,9 @@ input BeaconWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -1942,7 +2002,9 @@ input BeaconWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -1956,7 +2018,9 @@ input BeaconWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """principal field predicates"""
+  """
+  principal field predicates
+  """
   principal: String
   principalNEQ: String
   principalIn: [String!]
@@ -1972,7 +2036,9 @@ input BeaconWhereInput {
   principalNotNil: Boolean
   principalEqualFold: String
   principalContainsFold: String
-  """identifier field predicates"""
+  """
+  identifier field predicates
+  """
   identifier: String
   identifierNEQ: String
   identifierIn: [String!]
@@ -1986,7 +2052,9 @@ input BeaconWhereInput {
   identifierHasSuffix: String
   identifierEqualFold: String
   identifierContainsFold: String
-  """agent_identifier field predicates"""
+  """
+  agent_identifier field predicates
+  """
   agentIdentifier: String
   agentIdentifierNEQ: String
   agentIdentifierIn: [String!]
@@ -2002,7 +2070,9 @@ input BeaconWhereInput {
   agentIdentifierNotNil: Boolean
   agentIdentifierEqualFold: String
   agentIdentifierContainsFold: String
-  """last_seen_at field predicates"""
+  """
+  last_seen_at field predicates
+  """
   lastSeenAt: Time
   lastSeenAtNEQ: Time
   lastSeenAtIn: [Time!]
@@ -2013,7 +2083,9 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
-  """interval field predicates"""
+  """
+  interval field predicates
+  """
   interval: Uint64
   intervalNEQ: Uint64
   intervalIn: [Uint64!]
@@ -2024,24 +2096,54 @@ input BeaconWhereInput {
   intervalLTE: Uint64
   intervalIsNil: Boolean
   intervalNotNil: Boolean
-  """host edge predicates"""
+  """
+  host edge predicates
+  """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
-  """tasks edge predicates"""
+  """
+  tasks edge predicates
+  """
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
-  """shells edge predicates"""
+  """
+  shells edge predicates
+  """
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
+}
+"""
+CreateHostCredentialInput is used for create HostCredential object.
+Input was generated by ent.
+"""
+input CreateHostCredentialInput {
+  """
+  Identity associated with this credential (e.g. username).
+  """
+  principal: String!
+  """
+  Secret for this credential (e.g. password).
+  """
+  secret: String!
+  """
+  Kind of credential.
+  """
+  kind: HostCredentialKind!
+  hostID: ID!
+  taskID: ID
 }
 """
 CreateQuestInput is used for create Quest object.
 Input was generated by ent.
 """
 input CreateQuestInput {
-  """Name of the quest"""
+  """
+  Name of the quest
+  """
   name: String!
-  """Value of parameters that were specified for the quest (as a JSON string)."""
+  """
+  Value of parameters that were specified for the quest (as a JSON string).
+  """
   parameters: String
   tomeID: ID!
 }
@@ -2050,7 +2152,9 @@ CreateRepositoryInput is used for create Repository object.
 Input was generated by ent.
 """
 input CreateRepositoryInput {
-  """URL of the repository"""
+  """
+  URL of the repository
+  """
   url: String!
 }
 """
@@ -2058,9 +2162,13 @@ CreateTagInput is used for create Tag object.
 Input was generated by ent.
 """
 input CreateTagInput {
-  """Name of the tag"""
+  """
+  Name of the tag
+  """
   name: String!
-  """Describes the type of tag this is"""
+  """
+  Describes the type of tag this is
+  """
   kind: TagKind!
   hostIDs: [ID!]
 }
@@ -2069,19 +2177,33 @@ CreateTomeInput is used for create Tome object.
 Input was generated by ent.
 """
 input CreateTomeInput {
-  """Name of the tome"""
+  """
+  Name of the tome
+  """
   name: String!
-  """Information about the tome"""
+  """
+  Information about the tome
+  """
   description: String!
-  """Name of the author who created the tome."""
+  """
+  Name of the author who created the tome.
+  """
   author: String!
-  """Information about the tomes support model."""
+  """
+  Information about the tomes support model.
+  """
   supportModel: TomeSupportModel
-  """MITRE ATT&CK tactic provided by the tome."""
+  """
+  MITRE ATT&CK tactic provided by the tome.
+  """
   tactic: TomeTactic
-  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
+  """
+  JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
+  """
   paramDefs: String
-  """Eldritch script that will be executed when the tome is run"""
+  """
+  Eldritch script that will be executed when the tome is run
+  """
   eldritch: String!
   fileIDs: [ID!]
 }
@@ -2092,26 +2214,44 @@ https://relay.dev/graphql/connections.htm#sec-Cursor
 scalar Cursor
 type File implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """The name of the file, used to reference it for downloads"""
+  """
+  The name of the file, used to reference it for downloads
+  """
   name: String!
-  """The size of the file in bytes"""
+  """
+  The size of the file in bytes
+  """
   size: Int!
-  """A SHA3-256 digest of the content field"""
+  """
+  A SHA3-256 digest of the content field
+  """
   hash: String!
   tomes: [Tome!]
 }
-"""Ordering options for File connections"""
+"""
+Ordering options for File connections
+"""
 input FileOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Files."""
+  """
+  The field by which to order Files.
+  """
   field: FileOrderField!
 }
-"""Properties by which File connections can be ordered."""
+"""
+Properties by which File connections can be ordered.
+"""
 enum FileOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -2126,7 +2266,9 @@ input FileWhereInput {
   not: FileWhereInput
   and: [FileWhereInput!]
   or: [FileWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -2135,7 +2277,9 @@ input FileWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -2144,7 +2288,9 @@ input FileWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -2153,7 +2299,9 @@ input FileWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -2167,7 +2315,9 @@ input FileWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """size field predicates"""
+  """
+  size field predicates
+  """
   size: Int
   sizeNEQ: Int
   sizeIn: [Int!]
@@ -2176,7 +2326,9 @@ input FileWhereInput {
   sizeGTE: Int
   sizeLT: Int
   sizeLTE: Int
-  """hash field predicates"""
+  """
+  hash field predicates
+  """
   hash: String
   hashNEQ: String
   hashIn: [String!]
@@ -2190,68 +2342,118 @@ input FileWhereInput {
   hashHasSuffix: String
   hashEqualFold: String
   hashContainsFold: String
-  """tomes edge predicates"""
+  """
+  tomes edge predicates
+  """
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
 }
 type Host implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Unique identifier for the host. Unique to each host."""
+  """
+  Unique identifier for the host. Unique to each host.
+  """
   identifier: String!
-  """A human readable identifier for the host."""
+  """
+  A human readable identifier for the host.
+  """
   name: String
-  """Primary interface IP address reported by the agent."""
+  """
+  Primary interface IP address reported by the agent.
+  """
   primaryIP: String
-  """Platform the agent is operating on."""
+  """
+  Platform the agent is operating on.
+  """
   platform: HostPlatform!
-  """Timestamp of when a task was last claimed or updated for the host."""
+  """
+  Timestamp of when a task was last claimed or updated for the host.
+  """
   lastSeenAt: Time
-  """Tags used to group this host with other hosts."""
+  """
+  Tags used to group this host with other hosts.
+  """
   tags: [Tag!]
-  """Beacons that are present on this host system."""
+  """
+  Beacons that are present on this host system.
+  """
   beacons: [Beacon!]
-  """Files reported on this host system."""
+  """
+  Files reported on this host system.
+  """
   files: [HostFile!]
-  """Processes reported as running on this host system."""
+  """
+  Processes reported as running on this host system.
+  """
   processes: [HostProcess!]
-  """Credentials reported from this host system."""
+  """
+  Credentials reported from this host system.
+  """
   credentials: [HostCredential!]
 }
 type HostCredential implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Identity associated with this credential (e.g. username)."""
+  """
+  Identity associated with this credential (e.g. username).
+  """
   principal: String!
-  """Secret for this credential (e.g. password)."""
+  """
+  Secret for this credential (e.g. password).
+  """
   secret: String!
-  """Kind of credential."""
+  """
+  Kind of credential.
+  """
   kind: HostCredentialKind!
-  """Host the credential was reported on."""
+  """
+  Host the credential was reported on.
+  """
   host: Host!
-  """Task that reported this credential."""
-  task: Task!
+  """
+  Task that reported this credential.
+  """
+  task: Task
 }
-"""HostCredentialKind is enum for the field kind"""
+"""
+HostCredentialKind is enum for the field kind
+"""
 enum HostCredentialKind @goModel(model: "realm.pub/tavern/internal/c2/epb.Credential_Kind") {
   KIND_PASSWORD
   KIND_SSH_KEY
   KIND_UNSPECIFIED
 }
-"""Ordering options for HostCredential connections"""
+"""
+Ordering options for HostCredential connections
+"""
 input HostCredentialOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order HostCredentials."""
+  """
+  The field by which to order HostCredentials.
+  """
   field: HostCredentialOrderField!
 }
-"""Properties by which HostCredential connections can be ordered."""
+"""
+Properties by which HostCredential connections can be ordered.
+"""
 enum HostCredentialOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -2265,7 +2467,9 @@ input HostCredentialWhereInput {
   not: HostCredentialWhereInput
   and: [HostCredentialWhereInput!]
   or: [HostCredentialWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -2274,7 +2478,9 @@ input HostCredentialWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -2283,7 +2489,9 @@ input HostCredentialWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -2292,7 +2500,9 @@ input HostCredentialWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """principal field predicates"""
+  """
+  principal field predicates
+  """
   principal: String
   principalNEQ: String
   principalIn: [String!]
@@ -2306,7 +2516,9 @@ input HostCredentialWhereInput {
   principalHasSuffix: String
   principalEqualFold: String
   principalContainsFold: String
-  """secret field predicates"""
+  """
+  secret field predicates
+  """
   secret: String
   secretNEQ: String
   secretIn: [String!]
@@ -2320,49 +2532,83 @@ input HostCredentialWhereInput {
   secretHasSuffix: String
   secretEqualFold: String
   secretContainsFold: String
-  """kind field predicates"""
+  """
+  kind field predicates
+  """
   kind: HostCredentialKind
   kindNEQ: HostCredentialKind
   kindIn: [HostCredentialKind!]
   kindNotIn: [HostCredentialKind!]
-  """host edge predicates"""
+  """
+  host edge predicates
+  """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
-  """task edge predicates"""
+  """
+  task edge predicates
+  """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
 }
 type HostFile implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Path to the file on the host system."""
+  """
+  Path to the file on the host system.
+  """
   path: String!
-  """User who owns the file on the host system."""
+  """
+  User who owns the file on the host system.
+  """
   owner: String
-  """Group who owns the file on the host system."""
+  """
+  Group who owns the file on the host system.
+  """
   group: String
-  """Permissions for the file on the host system."""
+  """
+  Permissions for the file on the host system.
+  """
   permissions: String
-  """The size of the file in bytes"""
+  """
+  The size of the file in bytes
+  """
   size: Uint64!
-  """A SHA3-256 digest of the content field"""
+  """
+  A SHA3-256 digest of the content field
+  """
   hash: String
-  """Host the file was reported on."""
+  """
+  Host the file was reported on.
+  """
   host: Host!
-  """Task that reported this file."""
+  """
+  Task that reported this file.
+  """
   task: Task!
 }
-"""Ordering options for HostFile connections"""
+"""
+Ordering options for HostFile connections
+"""
 input HostFileOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order HostFiles."""
+  """
+  The field by which to order HostFiles.
+  """
   field: HostFileOrderField!
 }
-"""Properties by which HostFile connections can be ordered."""
+"""
+Properties by which HostFile connections can be ordered.
+"""
 enum HostFileOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -2377,7 +2623,9 @@ input HostFileWhereInput {
   not: HostFileWhereInput
   and: [HostFileWhereInput!]
   or: [HostFileWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -2386,7 +2634,9 @@ input HostFileWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -2395,7 +2645,9 @@ input HostFileWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -2404,7 +2656,9 @@ input HostFileWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """path field predicates"""
+  """
+  path field predicates
+  """
   path: String
   pathNEQ: String
   pathIn: [String!]
@@ -2418,7 +2672,9 @@ input HostFileWhereInput {
   pathHasSuffix: String
   pathEqualFold: String
   pathContainsFold: String
-  """owner field predicates"""
+  """
+  owner field predicates
+  """
   owner: String
   ownerNEQ: String
   ownerIn: [String!]
@@ -2434,7 +2690,9 @@ input HostFileWhereInput {
   ownerNotNil: Boolean
   ownerEqualFold: String
   ownerContainsFold: String
-  """group field predicates"""
+  """
+  group field predicates
+  """
   group: String
   groupNEQ: String
   groupIn: [String!]
@@ -2450,7 +2708,9 @@ input HostFileWhereInput {
   groupNotNil: Boolean
   groupEqualFold: String
   groupContainsFold: String
-  """permissions field predicates"""
+  """
+  permissions field predicates
+  """
   permissions: String
   permissionsNEQ: String
   permissionsIn: [String!]
@@ -2466,7 +2726,9 @@ input HostFileWhereInput {
   permissionsNotNil: Boolean
   permissionsEqualFold: String
   permissionsContainsFold: String
-  """size field predicates"""
+  """
+  size field predicates
+  """
   size: Uint64
   sizeNEQ: Uint64
   sizeIn: [Uint64!]
@@ -2475,7 +2737,9 @@ input HostFileWhereInput {
   sizeGTE: Uint64
   sizeLT: Uint64
   sizeLTE: Uint64
-  """hash field predicates"""
+  """
+  hash field predicates
+  """
   hash: String
   hashNEQ: String
   hashIn: [String!]
@@ -2491,27 +2755,41 @@ input HostFileWhereInput {
   hashNotNil: Boolean
   hashEqualFold: String
   hashContainsFold: String
-  """host edge predicates"""
+  """
+  host edge predicates
+  """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
-  """task edge predicates"""
+  """
+  task edge predicates
+  """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
 }
-"""Ordering options for Host connections"""
+"""
+Ordering options for Host connections
+"""
 input HostOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Hosts."""
+  """
+  The field by which to order Hosts.
+  """
   field: HostOrderField!
 }
-"""Properties by which Host connections can be ordered."""
+"""
+Properties by which Host connections can be ordered.
+"""
 enum HostOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
 }
-"""HostPlatform is enum for the field platform"""
+"""
+HostPlatform is enum for the field platform
+"""
 enum HostPlatform @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Host_Platform") {
   PLATFORM_BSD
   PLATFORM_LINUX
@@ -2521,41 +2799,75 @@ enum HostPlatform @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Host_Platfo
 }
 type HostProcess implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """ID of the process."""
+  """
+  ID of the process.
+  """
   pid: Uint64!
-  """ID of the parent process."""
+  """
+  ID of the parent process.
+  """
   ppid: Uint64!
-  """The name of the process."""
+  """
+  The name of the process.
+  """
   name: String!
-  """The user the process is running as."""
+  """
+  The user the process is running as.
+  """
   principal: String!
-  """The path to the process executable."""
+  """
+  The path to the process executable.
+  """
   path: String
-  """The command used to execute the process."""
+  """
+  The command used to execute the process.
+  """
   cmd: String
-  """The environment variables set for the process."""
+  """
+  The environment variables set for the process.
+  """
   env: String
-  """The current working directory for the process."""
+  """
+  The current working directory for the process.
+  """
   cwd: String
-  """Current process status."""
+  """
+  Current process status.
+  """
   status: HostProcessStatus!
-  """Host the process was reported on."""
+  """
+  Host the process was reported on.
+  """
   host: Host!
-  """Task that reported this process."""
+  """
+  Task that reported this process.
+  """
   task: Task!
 }
-"""Ordering options for HostProcess connections"""
+"""
+Ordering options for HostProcess connections
+"""
 input HostProcessOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order HostProcesses."""
+  """
+  The field by which to order HostProcesses.
+  """
   field: HostProcessOrderField!
 }
-"""Properties by which HostProcess connections can be ordered."""
+"""
+Properties by which HostProcess connections can be ordered.
+"""
 enum HostProcessOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -2563,7 +2875,9 @@ enum HostProcessOrderField {
   PARENT_PROCESS_ID
   NAME
 }
-"""HostProcessStatus is enum for the field status"""
+"""
+HostProcessStatus is enum for the field status
+"""
 enum HostProcessStatus @goModel(model: "realm.pub/tavern/internal/c2/epb.Process_Status") {
   STATUS_DEAD
   STATUS_IDLE
@@ -2588,7 +2902,9 @@ input HostProcessWhereInput {
   not: HostProcessWhereInput
   and: [HostProcessWhereInput!]
   or: [HostProcessWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -2597,7 +2913,9 @@ input HostProcessWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -2606,7 +2924,9 @@ input HostProcessWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -2615,7 +2935,9 @@ input HostProcessWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """pid field predicates"""
+  """
+  pid field predicates
+  """
   pid: Uint64
   pidNEQ: Uint64
   pidIn: [Uint64!]
@@ -2624,7 +2946,9 @@ input HostProcessWhereInput {
   pidGTE: Uint64
   pidLT: Uint64
   pidLTE: Uint64
-  """ppid field predicates"""
+  """
+  ppid field predicates
+  """
   ppid: Uint64
   ppidNEQ: Uint64
   ppidIn: [Uint64!]
@@ -2633,7 +2957,9 @@ input HostProcessWhereInput {
   ppidGTE: Uint64
   ppidLT: Uint64
   ppidLTE: Uint64
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -2647,7 +2973,9 @@ input HostProcessWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """principal field predicates"""
+  """
+  principal field predicates
+  """
   principal: String
   principalNEQ: String
   principalIn: [String!]
@@ -2661,7 +2989,9 @@ input HostProcessWhereInput {
   principalHasSuffix: String
   principalEqualFold: String
   principalContainsFold: String
-  """path field predicates"""
+  """
+  path field predicates
+  """
   path: String
   pathNEQ: String
   pathIn: [String!]
@@ -2677,7 +3007,9 @@ input HostProcessWhereInput {
   pathNotNil: Boolean
   pathEqualFold: String
   pathContainsFold: String
-  """cmd field predicates"""
+  """
+  cmd field predicates
+  """
   cmd: String
   cmdNEQ: String
   cmdIn: [String!]
@@ -2693,7 +3025,9 @@ input HostProcessWhereInput {
   cmdNotNil: Boolean
   cmdEqualFold: String
   cmdContainsFold: String
-  """env field predicates"""
+  """
+  env field predicates
+  """
   env: String
   envNEQ: String
   envIn: [String!]
@@ -2709,7 +3043,9 @@ input HostProcessWhereInput {
   envNotNil: Boolean
   envEqualFold: String
   envContainsFold: String
-  """cwd field predicates"""
+  """
+  cwd field predicates
+  """
   cwd: String
   cwdNEQ: String
   cwdIn: [String!]
@@ -2725,15 +3061,21 @@ input HostProcessWhereInput {
   cwdNotNil: Boolean
   cwdEqualFold: String
   cwdContainsFold: String
-  """status field predicates"""
+  """
+  status field predicates
+  """
   status: HostProcessStatus
   statusNEQ: HostProcessStatus
   statusIn: [HostProcessStatus!]
   statusNotIn: [HostProcessStatus!]
-  """host edge predicates"""
+  """
+  host edge predicates
+  """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
-  """task edge predicates"""
+  """
+  task edge predicates
+  """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
 }
@@ -2745,7 +3087,9 @@ input HostWhereInput {
   not: HostWhereInput
   and: [HostWhereInput!]
   or: [HostWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -2754,7 +3098,9 @@ input HostWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -2763,7 +3109,9 @@ input HostWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -2772,7 +3120,9 @@ input HostWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """identifier field predicates"""
+  """
+  identifier field predicates
+  """
   identifier: String
   identifierNEQ: String
   identifierIn: [String!]
@@ -2786,7 +3136,9 @@ input HostWhereInput {
   identifierHasSuffix: String
   identifierEqualFold: String
   identifierContainsFold: String
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -2802,7 +3154,9 @@ input HostWhereInput {
   nameNotNil: Boolean
   nameEqualFold: String
   nameContainsFold: String
-  """primary_ip field predicates"""
+  """
+  primary_ip field predicates
+  """
   primaryIP: String
   primaryIPNEQ: String
   primaryIPIn: [String!]
@@ -2818,12 +3172,16 @@ input HostWhereInput {
   primaryIPNotNil: Boolean
   primaryIPEqualFold: String
   primaryIPContainsFold: String
-  """platform field predicates"""
+  """
+  platform field predicates
+  """
   platform: HostPlatform
   platformNEQ: HostPlatform
   platformIn: [HostPlatform!]
   platformNotIn: [HostPlatform!]
-  """last_seen_at field predicates"""
+  """
+  last_seen_at field predicates
+  """
   lastSeenAt: Time
   lastSeenAtNEQ: Time
   lastSeenAtIn: [Time!]
@@ -2834,19 +3192,29 @@ input HostWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
-  """tags edge predicates"""
+  """
+  tags edge predicates
+  """
   hasTags: Boolean
   hasTagsWith: [TagWhereInput!]
-  """beacons edge predicates"""
+  """
+  beacons edge predicates
+  """
   hasBeacons: Boolean
   hasBeaconsWith: [BeaconWhereInput!]
-  """files edge predicates"""
+  """
+  files edge predicates
+  """
   hasFiles: Boolean
   hasFilesWith: [HostFileWhereInput!]
-  """processes edge predicates"""
+  """
+  processes edge predicates
+  """
   hasProcesses: Boolean
   hasProcessesWith: [HostProcessWhereInput!]
-  """credentials edge predicates"""
+  """
+  credentials edge predicates
+  """
   hasCredentials: Boolean
   hasCredentialsWith: [HostCredentialWhereInput!]
 }
@@ -2855,14 +3223,22 @@ An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
 interface Node @goModel(model: "realm.pub/tavern/internal/ent.Noder") {
-  """The id of the object."""
+  """
+  The id of the object.
+  """
   id: ID!
 }
-"""Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument."""
+"""
+Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
+"""
 enum OrderDirection {
-  """Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  """
+  Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument.
+  """
   ASC
-  """Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  """
+  Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument.
+  """
   DESC
 }
 """
@@ -2870,91 +3246,159 @@ Information about pagination in a connection.
 https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
 """
 type PageInfo {
-  """When paginating forwards, are there more items?"""
+  """
+  When paginating forwards, are there more items?
+  """
   hasNextPage: Boolean!
-  """When paginating backwards, are there more items?"""
+  """
+  When paginating backwards, are there more items?
+  """
   hasPreviousPage: Boolean!
-  """When paginating backwards, the cursor to continue."""
+  """
+  When paginating backwards, the cursor to continue.
+  """
   startCursor: Cursor
-  """When paginating forwards, the cursor to continue."""
+  """
+  When paginating forwards, the cursor to continue.
+  """
   endCursor: Cursor
 }
 type Query {
-  """Fetches an object given its ID."""
+  """
+  Fetches an object given its ID.
+  """
   node(
-    """ID of the object."""
+    """
+    ID of the object.
+    """
     id: ID!
   ): Node
-  """Lookup nodes by a list of IDs."""
+  """
+  Lookup nodes by a list of IDs.
+  """
   nodes(
-    """The list of node IDs."""
+    """
+    The list of node IDs.
+    """
     ids: [ID!]!
   ): [Node]!
 }
 type Quest implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Name of the quest"""
+  """
+  Name of the quest
+  """
   name: String!
-  """Value of parameters that were specified for the quest (as a JSON string)."""
+  """
+  Value of parameters that were specified for the quest (as a JSON string).
+  """
   parameters: String
-  """JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."""
+  """
+  JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter.
+  """
   paramDefsAtCreation: String
-  """Eldritch script that was evaluated at the time of this quest creation."""
+  """
+  Eldritch script that was evaluated at the time of this quest creation.
+  """
   eldritchAtCreation: String
-  """Tome that this quest will be executing"""
+  """
+  Tome that this quest will be executing
+  """
   tome: Tome!
-  """Bundle file that the executing tome depends on (if any)"""
+  """
+  Bundle file that the executing tome depends on (if any)
+  """
   bundle: File
   tasks(
-    """Returns the elements in the list that come after the specified cursor."""
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
     after: Cursor
 
-    """Returns the first _n_ elements from the list."""
+    """
+    Returns the first _n_ elements from the list.
+    """
     first: Int
 
-    """Returns the elements in the list that come before the specified cursor."""
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
     before: Cursor
 
-    """Returns the last _n_ elements from the list."""
+    """
+    Returns the last _n_ elements from the list.
+    """
     last: Int
 
-    """Ordering options for Tasks returned from the connection."""
+    """
+    Ordering options for Tasks returned from the connection.
+    """
     orderBy: [TaskOrder!]
 
-    """Filtering options for Tasks returned from the connection."""
+    """
+    Filtering options for Tasks returned from the connection.
+    """
     where: TaskWhereInput
   ): TaskConnection!
-  """User that created the quest if available."""
+  """
+  User that created the quest if available.
+  """
   creator: User
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type QuestConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [QuestEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type QuestEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Quest
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for Quest connections"""
+"""
+Ordering options for Quest connections
+"""
 input QuestOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Quests."""
+  """
+  The field by which to order Quests.
+  """
   field: QuestOrderField!
 }
-"""Properties by which Quest connections can be ordered."""
+"""
+Properties by which Quest connections can be ordered.
+"""
 enum QuestOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -2968,7 +3412,9 @@ input QuestWhereInput {
   not: QuestWhereInput
   and: [QuestWhereInput!]
   or: [QuestWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -2977,7 +3423,9 @@ input QuestWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -2986,7 +3434,9 @@ input QuestWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -2995,7 +3445,9 @@ input QuestWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -3009,7 +3461,9 @@ input QuestWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """parameters field predicates"""
+  """
+  parameters field predicates
+  """
   parameters: String
   parametersNEQ: String
   parametersIn: [String!]
@@ -3025,7 +3479,9 @@ input QuestWhereInput {
   parametersNotNil: Boolean
   parametersEqualFold: String
   parametersContainsFold: String
-  """param_defs_at_creation field predicates"""
+  """
+  param_defs_at_creation field predicates
+  """
   paramDefsAtCreation: String
   paramDefsAtCreationNEQ: String
   paramDefsAtCreationIn: [String!]
@@ -3041,7 +3497,9 @@ input QuestWhereInput {
   paramDefsAtCreationNotNil: Boolean
   paramDefsAtCreationEqualFold: String
   paramDefsAtCreationContainsFold: String
-  """eldritch_at_creation field predicates"""
+  """
+  eldritch_at_creation field predicates
+  """
   eldritchAtCreation: String
   eldritchAtCreationNEQ: String
   eldritchAtCreationIn: [String!]
@@ -3057,60 +3515,104 @@ input QuestWhereInput {
   eldritchAtCreationNotNil: Boolean
   eldritchAtCreationEqualFold: String
   eldritchAtCreationContainsFold: String
-  """tome edge predicates"""
+  """
+  tome edge predicates
+  """
   hasTome: Boolean
   hasTomeWith: [TomeWhereInput!]
-  """bundle edge predicates"""
+  """
+  bundle edge predicates
+  """
   hasBundle: Boolean
   hasBundleWith: [FileWhereInput!]
-  """tasks edge predicates"""
+  """
+  tasks edge predicates
+  """
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
-  """creator edge predicates"""
+  """
+  creator edge predicates
+  """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
 }
 type Repository implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """URL of the repository"""
+  """
+  URL of the repository
+  """
   url: String!
-  """Public key associated with this repositories private key"""
+  """
+  Public key associated with this repositories private key
+  """
   publicKey: String!
-  """Timestamp of when this repo was last imported"""
+  """
+  Timestamp of when this repo was last imported
+  """
   lastImportedAt: Time
-  """Tomes imported using this repository."""
+  """
+  Tomes imported using this repository.
+  """
   tomes: [Tome!]
-  """User that created this repository."""
+  """
+  User that created this repository.
+  """
   owner: User
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type RepositoryConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [RepositoryEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type RepositoryEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Repository
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for Repository connections"""
+"""
+Ordering options for Repository connections
+"""
 input RepositoryOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Repositories."""
+  """
+  The field by which to order Repositories.
+  """
   field: RepositoryOrderField!
 }
-"""Properties by which Repository connections can be ordered."""
+"""
+Properties by which Repository connections can be ordered.
+"""
 enum RepositoryOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -3124,7 +3626,9 @@ input RepositoryWhereInput {
   not: RepositoryWhereInput
   and: [RepositoryWhereInput!]
   or: [RepositoryWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -3133,7 +3637,9 @@ input RepositoryWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -3142,7 +3648,9 @@ input RepositoryWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -3151,7 +3659,9 @@ input RepositoryWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """url field predicates"""
+  """
+  url field predicates
+  """
   url: String
   urlNEQ: String
   urlIn: [String!]
@@ -3165,7 +3675,9 @@ input RepositoryWhereInput {
   urlHasSuffix: String
   urlEqualFold: String
   urlContainsFold: String
-  """public_key field predicates"""
+  """
+  public_key field predicates
+  """
   publicKey: String
   publicKeyNEQ: String
   publicKeyIn: [String!]
@@ -3179,7 +3691,9 @@ input RepositoryWhereInput {
   publicKeyHasSuffix: String
   publicKeyEqualFold: String
   publicKeyContainsFold: String
-  """last_imported_at field predicates"""
+  """
+  last_imported_at field predicates
+  """
   lastImportedAt: Time
   lastImportedAtNEQ: Time
   lastImportedAtIn: [Time!]
@@ -3190,54 +3704,94 @@ input RepositoryWhereInput {
   lastImportedAtLTE: Time
   lastImportedAtIsNil: Boolean
   lastImportedAtNotNil: Boolean
-  """tomes edge predicates"""
+  """
+  tomes edge predicates
+  """
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
-  """owner edge predicates"""
+  """
+  owner edge predicates
+  """
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
 }
 type Shell implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Timestamp of when this shell was closed"""
+  """
+  Timestamp of when this shell was closed
+  """
   closedAt: Time
-  """Task that created the shell"""
+  """
+  Task that created the shell
+  """
   task: Task!
-  """Beacon that created the shell"""
+  """
+  Beacon that created the shell
+  """
   beacon: Beacon!
-  """User that created the shell"""
+  """
+  User that created the shell
+  """
   owner: User!
-  """Users that are currently using the shell"""
+  """
+  Users that are currently using the shell
+  """
   activeUsers: [User!]
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type ShellConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [ShellEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type ShellEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Shell
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for Shell connections"""
+"""
+Ordering options for Shell connections
+"""
 input ShellOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Shells."""
+  """
+  The field by which to order Shells.
+  """
   field: ShellOrderField!
 }
-"""Properties by which Shell connections can be ordered."""
+"""
+Properties by which Shell connections can be ordered.
+"""
 enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -3251,7 +3805,9 @@ input ShellWhereInput {
   not: ShellWhereInput
   and: [ShellWhereInput!]
   or: [ShellWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -3260,7 +3816,9 @@ input ShellWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -3269,7 +3827,9 @@ input ShellWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -3278,7 +3838,9 @@ input ShellWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """closed_at field predicates"""
+  """
+  closed_at field predicates
+  """
   closedAt: Time
   closedAtNEQ: Time
   closedAtIn: [Time!]
@@ -3289,40 +3851,62 @@ input ShellWhereInput {
   closedAtLTE: Time
   closedAtIsNil: Boolean
   closedAtNotNil: Boolean
-  """task edge predicates"""
+  """
+  task edge predicates
+  """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
-  """beacon edge predicates"""
+  """
+  beacon edge predicates
+  """
   hasBeacon: Boolean
   hasBeaconWith: [BeaconWhereInput!]
-  """owner edge predicates"""
+  """
+  owner edge predicates
+  """
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
-  """active_users edge predicates"""
+  """
+  active_users edge predicates
+  """
   hasActiveUsers: Boolean
   hasActiveUsersWith: [UserWhereInput!]
 }
 type Tag implements Node {
   id: ID!
-  """Name of the tag"""
+  """
+  Name of the tag
+  """
   name: String!
-  """Describes the type of tag this is"""
+  """
+  Describes the type of tag this is
+  """
   kind: TagKind!
   hosts: [Host!]
 }
-"""TagKind is enum for the field kind"""
+"""
+TagKind is enum for the field kind
+"""
 enum TagKind @goModel(model: "realm.pub/tavern/internal/ent/tag.Kind") {
   group
   service
 }
-"""Ordering options for Tag connections"""
+"""
+Ordering options for Tag connections
+"""
 input TagOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Tags."""
+  """
+  The field by which to order Tags.
+  """
   field: TagOrderField!
 }
-"""Properties by which Tag connections can be ordered."""
+"""
+Properties by which Tag connections can be ordered.
+"""
 enum TagOrderField {
   NAME
 }
@@ -3334,7 +3918,9 @@ input TagWhereInput {
   not: TagWhereInput
   and: [TagWhereInput!]
   or: [TagWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -3343,7 +3929,9 @@ input TagWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -3357,68 +3945,118 @@ input TagWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """kind field predicates"""
+  """
+  kind field predicates
+  """
   kind: TagKind
   kindNEQ: TagKind
   kindIn: [TagKind!]
   kindNotIn: [TagKind!]
-  """hosts edge predicates"""
+  """
+  hosts edge predicates
+  """
   hasHosts: Boolean
   hasHostsWith: [HostWhereInput!]
 }
 type Task implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Timestamp of when the task was claimed, null if not yet claimed"""
+  """
+  Timestamp of when the task was claimed, null if not yet claimed
+  """
   claimedAt: Time
-  """Timestamp of when execution of the task started, null if not yet started"""
+  """
+  Timestamp of when execution of the task started, null if not yet started
+  """
   execStartedAt: Time
-  """Timestamp of when execution of the task finished, null if not yet finished"""
+  """
+  Timestamp of when execution of the task finished, null if not yet finished
+  """
   execFinishedAt: Time
-  """Output from executing the task"""
+  """
+  Output from executing the task
+  """
   output: String
-  """The size of the output in bytes"""
+  """
+  The size of the output in bytes
+  """
   outputSize: Int!
-  """Error, if any, produced while executing the Task"""
+  """
+  Error, if any, produced while executing the Task
+  """
   error: String
   quest: Quest!
   beacon: Beacon!
-  """Files that have been reported by this task."""
+  """
+  Files that have been reported by this task.
+  """
   reportedFiles: [HostFile!]
-  """Processes that have been reported by this task."""
+  """
+  Processes that have been reported by this task.
+  """
   reportedProcesses: [HostProcess!]
-  """Credentials that have been reported by this task."""
+  """
+  Credentials that have been reported by this task.
+  """
   reportedCredentials: [HostCredential!]
-  """Shells that were created by this task"""
+  """
+  Shells that were created by this task
+  """
   shells: [Shell!]
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type TaskConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [TaskEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type TaskEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Task
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for Task connections"""
+"""
+Ordering options for Task connections
+"""
 input TaskOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Tasks."""
+  """
+  The field by which to order Tasks.
+  """
   field: TaskOrderField!
 }
-"""Properties by which Task connections can be ordered."""
+"""
+Properties by which Task connections can be ordered.
+"""
 enum TaskOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
@@ -3435,7 +4073,9 @@ input TaskWhereInput {
   not: TaskWhereInput
   and: [TaskWhereInput!]
   or: [TaskWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -3444,7 +4084,9 @@ input TaskWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -3453,7 +4095,9 @@ input TaskWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -3462,7 +4106,9 @@ input TaskWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """claimed_at field predicates"""
+  """
+  claimed_at field predicates
+  """
   claimedAt: Time
   claimedAtNEQ: Time
   claimedAtIn: [Time!]
@@ -3473,7 +4119,9 @@ input TaskWhereInput {
   claimedAtLTE: Time
   claimedAtIsNil: Boolean
   claimedAtNotNil: Boolean
-  """exec_started_at field predicates"""
+  """
+  exec_started_at field predicates
+  """
   execStartedAt: Time
   execStartedAtNEQ: Time
   execStartedAtIn: [Time!]
@@ -3484,7 +4132,9 @@ input TaskWhereInput {
   execStartedAtLTE: Time
   execStartedAtIsNil: Boolean
   execStartedAtNotNil: Boolean
-  """exec_finished_at field predicates"""
+  """
+  exec_finished_at field predicates
+  """
   execFinishedAt: Time
   execFinishedAtNEQ: Time
   execFinishedAtIn: [Time!]
@@ -3495,7 +4145,9 @@ input TaskWhereInput {
   execFinishedAtLTE: Time
   execFinishedAtIsNil: Boolean
   execFinishedAtNotNil: Boolean
-  """output field predicates"""
+  """
+  output field predicates
+  """
   output: String
   outputNEQ: String
   outputIn: [String!]
@@ -3511,7 +4163,9 @@ input TaskWhereInput {
   outputNotNil: Boolean
   outputEqualFold: String
   outputContainsFold: String
-  """output_size field predicates"""
+  """
+  output_size field predicates
+  """
   outputSize: Int
   outputSizeNEQ: Int
   outputSizeIn: [Int!]
@@ -3520,7 +4174,9 @@ input TaskWhereInput {
   outputSizeGTE: Int
   outputSizeLT: Int
   outputSizeLTE: Int
-  """error field predicates"""
+  """
+  error field predicates
+  """
   error: String
   errorNEQ: String
   errorIn: [String!]
@@ -3536,72 +4192,120 @@ input TaskWhereInput {
   errorNotNil: Boolean
   errorEqualFold: String
   errorContainsFold: String
-  """quest edge predicates"""
+  """
+  quest edge predicates
+  """
   hasQuest: Boolean
   hasQuestWith: [QuestWhereInput!]
-  """beacon edge predicates"""
+  """
+  beacon edge predicates
+  """
   hasBeacon: Boolean
   hasBeaconWith: [BeaconWhereInput!]
-  """reported_files edge predicates"""
+  """
+  reported_files edge predicates
+  """
   hasReportedFiles: Boolean
   hasReportedFilesWith: [HostFileWhereInput!]
-  """reported_processes edge predicates"""
+  """
+  reported_processes edge predicates
+  """
   hasReportedProcesses: Boolean
   hasReportedProcessesWith: [HostProcessWhereInput!]
-  """reported_credentials edge predicates"""
+  """
+  reported_credentials edge predicates
+  """
   hasReportedCredentials: Boolean
   hasReportedCredentialsWith: [HostCredentialWhereInput!]
-  """shells edge predicates"""
+  """
+  shells edge predicates
+  """
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
 }
 type Tome implements Node {
   id: ID!
-  """Timestamp of when this ent was created"""
+  """
+  Timestamp of when this ent was created
+  """
   createdAt: Time!
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time!
-  """Name of the tome"""
+  """
+  Name of the tome
+  """
   name: String!
-  """Information about the tome"""
+  """
+  Information about the tome
+  """
   description: String!
-  """Name of the author who created the tome."""
+  """
+  Name of the author who created the tome.
+  """
   author: String!
-  """Information about the tomes support model."""
+  """
+  Information about the tomes support model.
+  """
   supportModel: TomeSupportModel!
-  """MITRE ATT&CK tactic provided by the tome."""
+  """
+  MITRE ATT&CK tactic provided by the tome.
+  """
   tactic: TomeTactic!
-  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
+  """
+  JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
+  """
   paramDefs: String
-  """Eldritch script that will be executed when the tome is run"""
+  """
+  Eldritch script that will be executed when the tome is run
+  """
   eldritch: String!
-  """Any files required for tome execution that will be bundled and provided to the agent for download"""
+  """
+  Any files required for tome execution that will be bundled and provided to the agent for download
+  """
   files: [File!]
-  """User who uploaded the tome (may be null)."""
+  """
+  User who uploaded the tome (may be null).
+  """
   uploader: User
-  """Repository from which this Tome was imported (may be null)."""
+  """
+  Repository from which this Tome was imported (may be null).
+  """
   repository: Repository
 }
-"""Ordering options for Tome connections"""
+"""
+Ordering options for Tome connections
+"""
 input TomeOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Tomes."""
+  """
+  The field by which to order Tomes.
+  """
   field: TomeOrderField!
 }
-"""Properties by which Tome connections can be ordered."""
+"""
+Properties by which Tome connections can be ordered.
+"""
 enum TomeOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   NAME
 }
-"""TomeSupportModel is enum for the field support_model"""
+"""
+TomeSupportModel is enum for the field support_model
+"""
 enum TomeSupportModel @goModel(model: "realm.pub/tavern/internal/ent/tome.SupportModel") {
   UNSPECIFIED
   FIRST_PARTY
   COMMUNITY
 }
-"""TomeTactic is enum for the field tactic"""
+"""
+TomeTactic is enum for the field tactic
+"""
 enum TomeTactic @goModel(model: "realm.pub/tavern/internal/ent/tome.Tactic") {
   UNSPECIFIED
   RECON
@@ -3627,7 +4331,9 @@ input TomeWhereInput {
   not: TomeWhereInput
   and: [TomeWhereInput!]
   or: [TomeWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -3636,7 +4342,9 @@ input TomeWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -3645,7 +4353,9 @@ input TomeWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """last_modified_at field predicates"""
+  """
+  last_modified_at field predicates
+  """
   lastModifiedAt: Time
   lastModifiedAtNEQ: Time
   lastModifiedAtIn: [Time!]
@@ -3654,7 +4364,9 @@ input TomeWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -3668,7 +4380,9 @@ input TomeWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """description field predicates"""
+  """
+  description field predicates
+  """
   description: String
   descriptionNEQ: String
   descriptionIn: [String!]
@@ -3682,7 +4396,9 @@ input TomeWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
-  """author field predicates"""
+  """
+  author field predicates
+  """
   author: String
   authorNEQ: String
   authorIn: [String!]
@@ -3696,17 +4412,23 @@ input TomeWhereInput {
   authorHasSuffix: String
   authorEqualFold: String
   authorContainsFold: String
-  """support_model field predicates"""
+  """
+  support_model field predicates
+  """
   supportModel: TomeSupportModel
   supportModelNEQ: TomeSupportModel
   supportModelIn: [TomeSupportModel!]
   supportModelNotIn: [TomeSupportModel!]
-  """tactic field predicates"""
+  """
+  tactic field predicates
+  """
   tactic: TomeTactic
   tacticNEQ: TomeTactic
   tacticIn: [TomeTactic!]
   tacticNotIn: [TomeTactic!]
-  """param_defs field predicates"""
+  """
+  param_defs field predicates
+  """
   paramDefs: String
   paramDefsNEQ: String
   paramDefsIn: [String!]
@@ -3722,7 +4444,9 @@ input TomeWhereInput {
   paramDefsNotNil: Boolean
   paramDefsEqualFold: String
   paramDefsContainsFold: String
-  """eldritch field predicates"""
+  """
+  eldritch field predicates
+  """
   eldritch: String
   eldritchNEQ: String
   eldritchIn: [String!]
@@ -3736,13 +4460,19 @@ input TomeWhereInput {
   eldritchHasSuffix: String
   eldritchEqualFold: String
   eldritchContainsFold: String
-  """files edge predicates"""
+  """
+  files edge predicates
+  """
   hasFiles: Boolean
   hasFilesWith: [FileWhereInput!]
-  """uploader edge predicates"""
+  """
+  uploader edge predicates
+  """
   hasUploader: Boolean
   hasUploaderWith: [UserWhereInput!]
-  """repository edge predicates"""
+  """
+  repository edge predicates
+  """
   hasRepository: Boolean
   hasRepositoryWith: [RepositoryWhereInput!]
 }
@@ -3751,7 +4481,9 @@ UpdateBeaconInput is used for update Beacon object.
 Input was generated by ent.
 """
 input UpdateBeaconInput {
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time
   hostID: ID
 }
@@ -3760,9 +4492,13 @@ UpdateHostInput is used for update Host object.
 Input was generated by ent.
 """
 input UpdateHostInput {
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time
-  """A human readable identifier for the host."""
+  """
+  A human readable identifier for the host.
+  """
   name: String
   clearName: Boolean
   addTagIDs: [ID!]
@@ -3786,9 +4522,13 @@ UpdateTagInput is used for update Tag object.
 Input was generated by ent.
 """
 input UpdateTagInput {
-  """Name of the tag"""
+  """
+  Name of the tag
+  """
   name: String
-  """Describes the type of tag this is"""
+  """
+  Describes the type of tag this is
+  """
   kind: TagKind
   addHostIDs: [ID!]
   removeHostIDs: [ID!]
@@ -3799,22 +4539,38 @@ UpdateTomeInput is used for update Tome object.
 Input was generated by ent.
 """
 input UpdateTomeInput {
-  """Timestamp of when this ent was last updated"""
+  """
+  Timestamp of when this ent was last updated
+  """
   lastModifiedAt: Time
-  """Name of the tome"""
+  """
+  Name of the tome
+  """
   name: String
-  """Information about the tome"""
+  """
+  Information about the tome
+  """
   description: String
-  """Name of the author who created the tome."""
+  """
+  Name of the author who created the tome.
+  """
   author: String
-  """Information about the tomes support model."""
+  """
+  Information about the tomes support model.
+  """
   supportModel: TomeSupportModel
-  """MITRE ATT&CK tactic provided by the tome."""
+  """
+  MITRE ATT&CK tactic provided by the tome.
+  """
   tactic: TomeTactic
-  """JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter."""
+  """
+  JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
+  """
   paramDefs: String
   clearParamDefs: Boolean
-  """Eldritch script that will be executed when the tome is run"""
+  """
+  Eldritch script that will be executed when the tome is run
+  """
   eldritch: String
   addFileIDs: [ID!]
   removeFileIDs: [ID!]
@@ -3825,13 +4581,21 @@ UpdateUserInput is used for update User object.
 Input was generated by ent.
 """
 input UpdateUserInput {
-  """The name displayed for the user"""
+  """
+  The name displayed for the user
+  """
   name: String
-  """URL to the user's profile photo."""
+  """
+  URL to the user's profile photo.
+  """
   photoURL: String
-  """True if the user is active and able to authenticate"""
+  """
+  True if the user is active and able to authenticate
+  """
   isActivated: Boolean
-  """True if the user is an Admin"""
+  """
+  True if the user is an Admin
+  """
   isAdmin: Boolean
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
@@ -3842,17 +4606,29 @@ input UpdateUserInput {
 }
 type User implements Node {
   id: ID!
-  """The name displayed for the user"""
+  """
+  The name displayed for the user
+  """
   name: String!
-  """URL to the user's profile photo."""
+  """
+  URL to the user's profile photo.
+  """
   photoURL: String!
-  """True if the user is active and able to authenticate"""
+  """
+  True if the user is active and able to authenticate
+  """
   isActivated: Boolean!
-  """True if the user is an Admin"""
+  """
+  True if the user is an Admin
+  """
   isAdmin: Boolean!
-  """Tomes uploaded by the user."""
+  """
+  Tomes uploaded by the user.
+  """
   tomes: [Tome!]
-  """Shells actively used by the user"""
+  """
+  Shells actively used by the user
+  """
   activeShells: [Shell!]
 }
 """
@@ -3863,7 +4639,9 @@ input UserWhereInput {
   not: UserWhereInput
   and: [UserWhereInput!]
   or: [UserWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -3872,7 +4650,9 @@ input UserWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -3886,7 +4666,9 @@ input UserWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """photo_url field predicates"""
+  """
+  photo_url field predicates
+  """
   photoURL: String
   photoURLNEQ: String
   photoURLIn: [String!]
@@ -3900,16 +4682,24 @@ input UserWhereInput {
   photoURLHasSuffix: String
   photoURLEqualFold: String
   photoURLContainsFold: String
-  """is_activated field predicates"""
+  """
+  is_activated field predicates
+  """
   isActivated: Boolean
   isActivatedNEQ: Boolean
-  """is_admin field predicates"""
+  """
+  is_admin field predicates
+  """
   isAdmin: Boolean
   isAdminNEQ: Boolean
-  """tomes edge predicates"""
+  """
+  tomes edge predicates
+  """
   hasTomes: Boolean
   hasTomesWith: [TomeWhereInput!]
-  """active_shells edge predicates"""
+  """
+  active_shells edge predicates
+  """
   hasActiveShells: Boolean
   hasActiveShellsWith: [ShellWhereInput!]
 }
@@ -4046,6 +4836,11 @@ scalar Uint64
     # User
     ###
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
+
+    ###
+    # Credential
+    ###
+    createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

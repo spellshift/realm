@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -188,7 +189,7 @@ func (hq *HostQuery) QueryCredentials() *HostCredentialQuery {
 // First returns the first Host entity from the query.
 // Returns a *NotFoundError when no Host was found.
 func (hq *HostQuery) First(ctx context.Context) (*Host, error) {
-	nodes, err := hq.Limit(1).All(setContextOp(ctx, hq.ctx, "First"))
+	nodes, err := hq.Limit(1).All(setContextOp(ctx, hq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +212,7 @@ func (hq *HostQuery) FirstX(ctx context.Context) *Host {
 // Returns a *NotFoundError when no Host ID was found.
 func (hq *HostQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hq.Limit(1).IDs(setContextOp(ctx, hq.ctx, "FirstID")); err != nil {
+	if ids, err = hq.Limit(1).IDs(setContextOp(ctx, hq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -234,7 +235,7 @@ func (hq *HostQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Host entity is found.
 // Returns a *NotFoundError when no Host entities are found.
 func (hq *HostQuery) Only(ctx context.Context) (*Host, error) {
-	nodes, err := hq.Limit(2).All(setContextOp(ctx, hq.ctx, "Only"))
+	nodes, err := hq.Limit(2).All(setContextOp(ctx, hq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +263,7 @@ func (hq *HostQuery) OnlyX(ctx context.Context) *Host {
 // Returns a *NotFoundError when no entities are found.
 func (hq *HostQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hq.Limit(2).IDs(setContextOp(ctx, hq.ctx, "OnlyID")); err != nil {
+	if ids, err = hq.Limit(2).IDs(setContextOp(ctx, hq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -287,7 +288,7 @@ func (hq *HostQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Hosts.
 func (hq *HostQuery) All(ctx context.Context) ([]*Host, error) {
-	ctx = setContextOp(ctx, hq.ctx, "All")
+	ctx = setContextOp(ctx, hq.ctx, ent.OpQueryAll)
 	if err := hq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -309,7 +310,7 @@ func (hq *HostQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if hq.ctx.Unique == nil && hq.path != nil {
 		hq.Unique(true)
 	}
-	ctx = setContextOp(ctx, hq.ctx, "IDs")
+	ctx = setContextOp(ctx, hq.ctx, ent.OpQueryIDs)
 	if err = hq.Select(host.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -327,7 +328,7 @@ func (hq *HostQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (hq *HostQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hq.ctx, "Count")
+	ctx = setContextOp(ctx, hq.ctx, ent.OpQueryCount)
 	if err := hq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -345,7 +346,7 @@ func (hq *HostQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (hq *HostQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hq.ctx, "Exist")
+	ctx = setContextOp(ctx, hq.ctx, ent.OpQueryExist)
 	switch _, err := hq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -982,7 +983,7 @@ func (hgb *HostGroupBy) Aggregate(fns ...AggregateFunc) *HostGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (hgb *HostGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, hgb.build.ctx, ent.OpQueryGroupBy)
 	if err := hgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -1030,7 +1031,7 @@ func (hs *HostSelect) Aggregate(fns ...AggregateFunc) *HostSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (hs *HostSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hs.ctx, "Select")
+	ctx = setContextOp(ctx, hs.ctx, ent.OpQuerySelect)
 	if err := hs.prepareQuery(ctx); err != nil {
 		return err
 	}
