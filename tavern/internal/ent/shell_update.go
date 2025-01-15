@@ -193,13 +193,13 @@ func (su *ShellUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (su *ShellUpdate) check() error {
-	if _, ok := su.mutation.TaskID(); su.mutation.TaskCleared() && !ok {
+	if su.mutation.TaskCleared() && len(su.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
 	}
-	if _, ok := su.mutation.BeaconID(); su.mutation.BeaconCleared() && !ok {
+	if su.mutation.BeaconCleared() && len(su.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
 	}
-	if _, ok := su.mutation.OwnerID(); su.mutation.OwnerCleared() && !ok {
+	if su.mutation.OwnerCleared() && len(su.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.owner"`)
 	}
 	return nil
@@ -556,13 +556,13 @@ func (suo *ShellUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (suo *ShellUpdateOne) check() error {
-	if _, ok := suo.mutation.TaskID(); suo.mutation.TaskCleared() && !ok {
+	if suo.mutation.TaskCleared() && len(suo.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
 	}
-	if _, ok := suo.mutation.BeaconID(); suo.mutation.BeaconCleared() && !ok {
+	if suo.mutation.BeaconCleared() && len(suo.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
 	}
-	if _, ok := suo.mutation.OwnerID(); suo.mutation.OwnerCleared() && !ok {
+	if suo.mutation.OwnerCleared() && len(suo.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.owner"`)
 	}
 	return nil
