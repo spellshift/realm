@@ -38,10 +38,9 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
     }
 
     let tmp_res = Command::new(command_string).args(command_args).output()?;
-
     Ok(CommandOutput {
-        stdout: String::from_utf8(tmp_res.stdout)?,
-        stderr: String::from_utf8(tmp_res.stderr)?,
+        stdout: String::from_utf8_lossy(&tmp_res.stdout).to_string(),
+        stderr: String::from_utf8_lossy(&tmp_res.stderr).to_string(),
         status: tmp_res
             .status
             .code()
@@ -58,15 +57,15 @@ mod tests {
         syntax::{AstModule, Dialect},
         values::Value,
     };
-
     use super::*;
+
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
-        let res = handle_shell(String::from("whoami"))?.stdout;
+        let res = handle_shell(String::from("whoami"))?.stdout.to_lowercase();
         println!("{}", res);
         assert!(
             res.contains("runner")
-                || res.contains("Administrator")
+                || res.contains("administrator")
                 || res.contains("root")
                 || res.contains("user")
         );
@@ -137,10 +136,10 @@ func_shell("whoami")
 
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
-        let res_string = res.to_string();
+        let res_string = res.to_string().to_lowercase();
         assert!(
             res_string.contains("runner")
-                || res_string.contains("Administrator")
+                || res_string.contains("administrator")
                 || res_string.contains("root")
                 || res_string.contains("user")
         );
