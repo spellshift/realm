@@ -14,6 +14,7 @@ def print_table(rows: list[list]):
             row.append(rpad(c, counts[i]+2))
         print("".join(row))
 
+
 def netstat():
     """Pretty print the netstat results"""
     # Faster to do this than to call process.info on each PID
@@ -22,7 +23,7 @@ def netstat():
         pids[p['pid']] = p['name']
 
     # Counts for dynamic column formating
-    counts = [6,6,7,6,8]
+    counts = [6, 6, 7, 6, 8]
     rows = [["PROTO", "LOCAL", "REMOTE", "STATE", "PROCESS"]]
     # Loop through each net result and format the columns
     for n in process.netstat():
@@ -44,6 +45,7 @@ def netstat():
 
         rows.append(fields)
     print_table(rows)
+
 
 time.sleep(1)
 

@@ -50,6 +50,7 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use starlark::{
         environment::{GlobalsBuilder, Module},
         eval::Evaluator,
@@ -57,7 +58,6 @@ mod tests {
         syntax::{AstModule, Dialect},
         values::Value,
     };
-    use super::*;
 
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
