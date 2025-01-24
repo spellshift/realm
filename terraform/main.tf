@@ -20,7 +20,7 @@ resource "random_password" "defaultmysql" {
 variable "tavern_container_image" {
   type = string
   description = "Docker container to deploy"
-  default = "spellshift/tavern:latest"
+  default = "ghcr.io/spellshift/realm/tavern"
 }
 
 variable "tavern_request_timeout_seconds" {
