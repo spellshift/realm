@@ -67,16 +67,17 @@ var (
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
 	// EnvGCPProjectID represents the project id tavern is deployed in for Google Cloud Platform deployments (leave empty otherwise).
+	// EnvGCPPubsubKeepAliveIntervalMs is the interval to publish no-op pubsub messages to help avoid gcppubsub coldstart latency. 0 disables this feature.
 	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
 	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
 	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
 	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
 	EnvGCPProjectID                  = EnvString{"GCP_PROJECT_ID", ""}
+	EnvGCPPubsubKeepAliveIntervalMs  = EnvInteger{"GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS", 1000}
 	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
 	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
-
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
@@ -201,6 +202,17 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
 		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopic))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
+
+		// Start a goroutine to publish noop messages on an interval.
+		// This reduces cold-start latency for GCP PubSub which can improve shell user experience.
+		if interval := EnvGCPPubsubKeepAliveIntervalMs.Int(); interval > 0 {
+			go stream.PreventPubSubColdStarts(
+				ctx,
+				time.Duration(interval)*time.Millisecond,
+				topicShellOutput,
+				topicShellInput,
+			)
+		}
 	}
 
 	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
