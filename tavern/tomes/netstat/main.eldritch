@@ -36,12 +36,18 @@ def netstat():
         remote = n.get("remote_address", "")
         if remote:
             fields[2] = remote + ":" + str(n.get("remote_port",))
+        else:
+            fields[2] = "???"
+
         # Established = ESTAB
         if fields[3] == "ESTABLISHED":
             fields[3] = fields[3][:5]
+        else:
+            fields[3] = "???"
         # Get proc info. "pids" will only ever be one
-        if n["pids"]:
-            fields += ["["+str(n["pids"][0])+"]"+pids.get(n["pids"][0])]
+        if "pid" in n:
+            if n["pid"]:
+                fields += ["["+str(n["pid"])+"]"+pids.get(n["pid"])]
 
         rows.append(fields)
     print_table(rows)
