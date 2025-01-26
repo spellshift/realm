@@ -38,8 +38,8 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         let res = Command::new(path).args(args).output()?;
 
         let res = CommandOutput {
-            stdout: String::from_utf8(res.stdout)?,
-            stderr: String::from_utf8(res.stderr)?,
+            stdout: String::from_utf8_lossy(&res.stdout).to_string(),
+            stderr: String::from_utf8_lossy(&res.stderr).to_string(),
             status: res
                 .status
                 .code()
@@ -174,9 +174,10 @@ mod tests {
                 vec![String::from("/c"), String::from("whoami")],
                 Some(false),
             )?
-            .stdout;
+            .stdout
+            .to_lowercase();
             let mut bool_res = false;
-            if res.contains("runneradmin") || res.contains("Administrator") || res.contains("user")
+            if res.contains("runneradmin") || res.contains("administrator") || res.contains("user")
             {
                 bool_res = true;
             }
