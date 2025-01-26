@@ -44,6 +44,14 @@ func (qu *QuestUpdate) SetName(s string) *QuestUpdate {
 	return qu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (qu *QuestUpdate) SetNillableName(s *string) *QuestUpdate {
+	if s != nil {
+		qu.SetName(*s)
+	}
+	return qu
+}
+
 // SetParameters sets the "parameters" field.
 func (qu *QuestUpdate) SetParameters(s string) *QuestUpdate {
 	qu.mutation.SetParameters(s)
@@ -220,7 +228,7 @@ func (qu *QuestUpdate) check() error {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if _, ok := qu.mutation.TomeID(); qu.mutation.TomeCleared() && !ok {
+	if qu.mutation.TomeCleared() && len(qu.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
 	return nil
@@ -249,6 +257,12 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if qu.mutation.ParametersCleared() {
 		_spec.ClearField(quest.FieldParameters, field.TypeString)
+	}
+	if qu.mutation.ParamDefsAtCreationCleared() {
+		_spec.ClearField(quest.FieldParamDefsAtCreation, field.TypeString)
+	}
+	if qu.mutation.EldritchAtCreationCleared() {
+		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
 	}
 	if qu.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -411,6 +425,14 @@ func (quo *QuestUpdateOne) SetLastModifiedAt(t time.Time) *QuestUpdateOne {
 // SetName sets the "name" field.
 func (quo *QuestUpdateOne) SetName(s string) *QuestUpdateOne {
 	quo.mutation.SetName(s)
+	return quo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (quo *QuestUpdateOne) SetNillableName(s *string) *QuestUpdateOne {
+	if s != nil {
+		quo.SetName(*s)
+	}
 	return quo
 }
 
@@ -603,7 +625,7 @@ func (quo *QuestUpdateOne) check() error {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if _, ok := quo.mutation.TomeID(); quo.mutation.TomeCleared() && !ok {
+	if quo.mutation.TomeCleared() && len(quo.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
 	return nil
@@ -649,6 +671,12 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 	}
 	if quo.mutation.ParametersCleared() {
 		_spec.ClearField(quest.FieldParameters, field.TypeString)
+	}
+	if quo.mutation.ParamDefsAtCreationCleared() {
+		_spec.ClearField(quest.FieldParamDefsAtCreation, field.TypeString)
+	}
+	if quo.mutation.EldritchAtCreationCleared() {
+		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
 	}
 	if quo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{

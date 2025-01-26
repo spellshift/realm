@@ -5,7 +5,6 @@ import {
 } from "@chakra-ui/react";
 import './style.css';
 
-import { QuestList } from "./pages/quest-list";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
@@ -15,6 +14,9 @@ import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
+import { Tomes } from "./pages/tomes";
+import Quests from "./pages/quest-list/Quests";
+import Shell from "./pages/shell/Shell";
 
 
 const router = createBrowserRouter([
@@ -36,7 +38,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/quests",
-    element: <QuestList />,
+    element: <Quests />,
   },
   {
     path: "/tasks/:questId",
@@ -49,6 +51,14 @@ const router = createBrowserRouter([
   {
     path: "/tasks",
     element: <Tasks />,
+  },
+  {
+    path: "/tomes",
+    element: <Tomes />,
+  },
+  {
+    path: "/shells/:shellId",
+    element: <Shell />,
   },
 ]);
 

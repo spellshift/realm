@@ -28,6 +28,8 @@ type Tx struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// Shell is the client for interacting with the Shell builders.
+	Shell *ShellClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -175,6 +177,7 @@ func (tx *Tx) init() {
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
+	tx.Shell = NewShellClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tome = NewTomeClient(tx.config)

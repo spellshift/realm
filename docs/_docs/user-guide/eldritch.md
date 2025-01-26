@@ -7,7 +7,7 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
-Eldritch is a pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust).
+Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
 By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
@@ -81,20 +81,19 @@ write_systemd_service()
 
 # Standard Library
 
-The standard library is the default functionality that eldritch provides.
-
-It currently contains seven modules:
+The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
+- `http` - Used to make http(s) requests from the agent.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
+- `random` - Used to generate cryptographically secure random values.
+- `regex` - Regular expression capabilities for operating on strings.
 - `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
-
-Functions fall into one of these seven modules. This is done to improve clarity about function use.
 
 **🚨 DANGER 🚨: Name shadowing**
 
@@ -294,6 +293,7 @@ This function also supports globbing with `*` for example:
 ```python
 file.list("/home/*/.bash_history") # List all files called .bash_history in sub dirs of `/home/`
 file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name
+file.list("\\\\127.0.0.1\\c$\\Windows\\*.yml") # List files over UNC paths
 ```
 
 Each file is represented by a Dict type.
@@ -336,15 +336,21 @@ Here is an example of the Dict layout:
 
 ### file.mkdir
 
-`file.mkdir(path: str) -> None`
+`file.mkdir(path: str, parent: Option<bool>) -> None`
 
-The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error.
+The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
 ### file.moveto
 
 `file.moveto(src: str, dst: str) -> None`
 
 The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+
+### file.parent_dir
+
+`file.parent_dir(path: str) -> str`
+
+The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
 
 ### file.read
 
@@ -356,6 +362,7 @@ This function supports globbing with `*` for example:
 ```python
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.remove
@@ -368,13 +375,19 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value.
+The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### file.replace_all
 
 `file.replace_all(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value.
+The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+
+### file.temp_file
+
+`file.temp_file(name: Option<str>) -> str`
+
+The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
 
@@ -414,21 +427,23 @@ The <b>file.find</b> method finds all files matching the used parameters. Return
 
 ## HTTP
 
+The HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`).
+
 ### http.download
 
-`http.download(uri: str, dst: str) -> None`
+`http.download(uri: str, dst: str, allow_insecure: Option<bool>) -> None`
 
 The <b>http.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
 
 ### http.get
 
-`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>) -> str`
+`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
 The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
-`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>) -> str`
+`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
 The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
@@ -522,6 +537,12 @@ Each IP in the specified CIDR will be returned regardless of if it returns any o
 Be mindful of this when scanning large CIDRs as it may create large return objects.
 
 NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
+
+### pivot.reverse_shell_pty
+
+`pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
+
+The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
 ### pivot.smb_exec
 
@@ -650,18 +671,15 @@ The <b>process.name</b> method returns the name of the process from it's given p
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
+_Currently only shows LISTENING TCP connections_
+
 ```json
 [
     {
         "socket_type": "TCP",
         "local_address": "127.0.0.1",
         "local_port": 46341,
-        "remote_address": "0.0.0.0",
-        "remote_port": 0,
-        "state": "LISTEN",
-        "pids": [
-            2359037
-        ]
+        "pid": 2359037
     },
     ...
 ]
@@ -669,36 +687,58 @@ The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix 
 
 ---
 
+## Random
+
+The random library is designed to enable generation of cryptogrphically secure random vaules. None of these functions will be blocking.
+
+### random.bool
+
+`random.bool() -> bool`
+
+The <b>random.bool</b> method returns a randomly sourced boolean value.
+
+### random.int
+
+`random.int(min: i32, max: i32) -> i32`
+
+The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum.
+
+### random.string
+
+`random.string(length: uint, charset: Optional<str>) -> str`
+The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
+---
+
 ## Regex
 
 The regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written
-in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, adding more than one will cause the tome to error.
+in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error.
 
 ### regex.match_all
 
 `regex.match_all(haystack: str, pattern: str) -> List<str>`
 
-The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given
-haystack.
+The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.match
 
 `regex.match(haystack: str, pattern: str) -> str`
 
 The <b>regex.match</b> method returns the first capture group string that matched the given pattern within the given
-haystack.
+haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace_all
 
 `regex.replace_all(haystack: str, pattern: str, value: string) -> str`
 
-The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value.
+The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace
 
 `regex.replace(haystack: str, pattern: str, value: string) -> str`
 
-The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value.
+The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ---
 
@@ -796,14 +836,14 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
     {
         "name": "eth0",
         "ips": [
-            "172.17.0.2"
+            "172.17.0.2/24"
         ],
         "mac": "02:42:ac:11:00:02"
     },
     {
         "name": "lo",
         "ips": [
-            "127.0.0.1"
+            "127.0.0.1/8"
         ],
         "mac": "00:00:00:00:00:00"
     }

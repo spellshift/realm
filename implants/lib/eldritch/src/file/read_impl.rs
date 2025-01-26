@@ -1,16 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use glob::{glob, GlobError};
 use std::{fs, path::PathBuf};
-
-/*
-               if !entry_path.exists() {
-                   return Err(anyhow::anyhow!(
-                       "file.read: pattern {} could not find path {}",
-                       path,
-                       entry_path.to_str().context("Failed to convert to str")?
-                   ));
-               }
-*/
 
 pub fn read(path: String) -> Result<String> {
     let mut res: String = String::from("");
@@ -25,12 +15,12 @@ pub fn read(path: String) -> Result<String> {
     for entry in glob_res {
         match entry {
             Ok(entry_path) => {
-                let data = fs::read_to_string(entry_path)?;
-                res.push_str(data.as_str());
+                let data = fs::read(entry_path)?;
+                res.push_str(&String::from_utf8_lossy(&data));
             }
-            Err(local_err) => {
+            Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("Failed to parse glob {}\n{}", path, local_err);
+                log::debug!("Failed to parse glob {}\n{}", path, _err);
             }
         }
     }

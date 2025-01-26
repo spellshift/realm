@@ -70,6 +70,20 @@ func (rc *RepositoryCreate) SetPrivateKey(s string) *RepositoryCreate {
 	return rc
 }
 
+// SetLastImportedAt sets the "last_imported_at" field.
+func (rc *RepositoryCreate) SetLastImportedAt(t time.Time) *RepositoryCreate {
+	rc.mutation.SetLastImportedAt(t)
+	return rc
+}
+
+// SetNillableLastImportedAt sets the "last_imported_at" field if the given value is not nil.
+func (rc *RepositoryCreate) SetNillableLastImportedAt(t *time.Time) *RepositoryCreate {
+	if t != nil {
+		rc.SetLastImportedAt(*t)
+	}
+	return rc
+}
+
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
 func (rc *RepositoryCreate) AddTomeIDs(ids ...int) *RepositoryCreate {
 	rc.mutation.AddTomeIDs(ids...)
@@ -237,6 +251,10 @@ func (rc *RepositoryCreate) createSpec() (*Repository, *sqlgraph.CreateSpec) {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
 		_node.PrivateKey = value
 	}
+	if value, ok := rc.mutation.LastImportedAt(); ok {
+		_spec.SetField(repository.FieldLastImportedAt, field.TypeTime, value)
+		_node.LastImportedAt = value
+	}
 	if nodes := rc.mutation.TomesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -370,6 +388,24 @@ func (u *RepositoryUpsert) UpdatePrivateKey() *RepositoryUpsert {
 	return u
 }
 
+// SetLastImportedAt sets the "last_imported_at" field.
+func (u *RepositoryUpsert) SetLastImportedAt(v time.Time) *RepositoryUpsert {
+	u.Set(repository.FieldLastImportedAt, v)
+	return u
+}
+
+// UpdateLastImportedAt sets the "last_imported_at" field to the value that was provided on create.
+func (u *RepositoryUpsert) UpdateLastImportedAt() *RepositoryUpsert {
+	u.SetExcluded(repository.FieldLastImportedAt)
+	return u
+}
+
+// ClearLastImportedAt clears the value of the "last_imported_at" field.
+func (u *RepositoryUpsert) ClearLastImportedAt() *RepositoryUpsert {
+	u.SetNull(repository.FieldLastImportedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -468,6 +504,27 @@ func (u *RepositoryUpsertOne) SetPrivateKey(v string) *RepositoryUpsertOne {
 func (u *RepositoryUpsertOne) UpdatePrivateKey() *RepositoryUpsertOne {
 	return u.Update(func(s *RepositoryUpsert) {
 		s.UpdatePrivateKey()
+	})
+}
+
+// SetLastImportedAt sets the "last_imported_at" field.
+func (u *RepositoryUpsertOne) SetLastImportedAt(v time.Time) *RepositoryUpsertOne {
+	return u.Update(func(s *RepositoryUpsert) {
+		s.SetLastImportedAt(v)
+	})
+}
+
+// UpdateLastImportedAt sets the "last_imported_at" field to the value that was provided on create.
+func (u *RepositoryUpsertOne) UpdateLastImportedAt() *RepositoryUpsertOne {
+	return u.Update(func(s *RepositoryUpsert) {
+		s.UpdateLastImportedAt()
+	})
+}
+
+// ClearLastImportedAt clears the value of the "last_imported_at" field.
+func (u *RepositoryUpsertOne) ClearLastImportedAt() *RepositoryUpsertOne {
+	return u.Update(func(s *RepositoryUpsert) {
+		s.ClearLastImportedAt()
 	})
 }
 
@@ -735,6 +792,27 @@ func (u *RepositoryUpsertBulk) SetPrivateKey(v string) *RepositoryUpsertBulk {
 func (u *RepositoryUpsertBulk) UpdatePrivateKey() *RepositoryUpsertBulk {
 	return u.Update(func(s *RepositoryUpsert) {
 		s.UpdatePrivateKey()
+	})
+}
+
+// SetLastImportedAt sets the "last_imported_at" field.
+func (u *RepositoryUpsertBulk) SetLastImportedAt(v time.Time) *RepositoryUpsertBulk {
+	return u.Update(func(s *RepositoryUpsert) {
+		s.SetLastImportedAt(v)
+	})
+}
+
+// UpdateLastImportedAt sets the "last_imported_at" field to the value that was provided on create.
+func (u *RepositoryUpsertBulk) UpdateLastImportedAt() *RepositoryUpsertBulk {
+	return u.Update(func(s *RepositoryUpsert) {
+		s.UpdateLastImportedAt()
+	})
+}
+
+// ClearLastImportedAt clears the value of the "last_imported_at" field.
+func (u *RepositoryUpsertBulk) ClearLastImportedAt() *RepositoryUpsertBulk {
+	return u.Update(func(s *RepositoryUpsert) {
+		s.ClearLastImportedAt()
 	})
 }
 

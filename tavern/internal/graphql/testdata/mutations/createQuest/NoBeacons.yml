@@ -1,0 +1,38 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
+    VALUES (1010,"db1","EXISTING-HOST",  "PLATFORM_UNSPECIFIED", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `tomes` (id, name, description, author, eldritch, hash, created_at, last_modified_at)
+    VALUES (2000,"Test Tome","Used in a unit test :D", "kcarretto", "print('Hello World!')", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateQuestWithNoBeacons($beaconIDs: [ID!]!, $input: CreateQuestInput!) {
+    createQuest(beaconIDs:$beaconIDs, input:$input) {
+      name
+      tome {
+        id
+        name
+      }
+      tasks {
+        edges {
+          node {
+            beacon {
+                id
+              }
+              quest {
+                name
+              }
+            }
+          }
+        }
+    }
+  }
+variables:
+  beaconIDs: []
+  input:
+    name: "WonderfulQuest"
+    tomeID: "2000"
+
+expected_error: "must provide at least one beacon id"

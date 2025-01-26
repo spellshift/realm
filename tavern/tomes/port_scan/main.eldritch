@@ -1,18 +1,26 @@
-def pad_number(num):
-    max_len = 5 # 65535
-    res = str(num)
-    for x in range(0, max_len - len(str(num))):
-        res = "0{}".format(res)
-    return res
+def lpad(s: str, n: int, c=" "):
+    return (n-len(s))*c + s
+
+def rpad(s: str, n: int, c=" "):
+    return str(s) + (n-len(s))*c
 
 def sort_by_ip_then_port(test_dict):
-    return "{}{}".format(test_dict['ip'],pad_number(test_dict['port']))
+    """Sort by ip, then by port. Update the pad counts as we go to save an iteration"""
+    # Sort IPs numerically
+    ips = []
+    for i in test_dict['ip'].split("."):
+        ips.append(lpad(i, 3, "0"))
+    return "{}{}".format(".".join(ips), lpad(str(test_dict['port']), 5, "0"))
 
 def port_scan(target_cidrs, ports, protocol, timeout):
     scan_res = pivot.port_scan(target_cidrs, ports, protocol, timeout)
-    for port_res in sorted(scan_res, key=sort_by_ip_then_port):
-        print(port_res)
-        print("\n")
+    print("IPADDR          PORT      STATUS")
+    for p in sorted(scan_res, key=sort_by_ip_then_port):
+        print("{}{}{}".format(
+            rpad(p["ip"], 16), # 16 = Max width of ip + space
+            rpad(str(p["port"])+"/"+p["protocol"], 10), # 10 = max width of port + / + proto
+            p["status"],
+        ))
 
 def str_to_str_list(list_str):
     list_str = list_str.removeprefix('[')
@@ -24,15 +32,9 @@ def str_to_int_list(list_str):
     list_str = list_str.removesuffix(']')
     return [int(x) for x in list_str.split(",")]
 
-
-tmp_input_cidrs = str_to_str_list(input_params['cidrs'])
-tmp_input_ports = str_to_int_list(input_params['ports'])
-
 port_scan(
-    tmp_input_cidrs,
-    tmp_input_ports,
+    str_to_str_list(input_params['cidrs']),
+    str_to_int_list(input_params['ports']),
     input_params['protocol'],
     int(input_params['timeout'])
 )
-print("\n")
-print("\n")

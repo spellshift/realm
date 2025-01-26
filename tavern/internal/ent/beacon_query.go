@@ -8,28 +8,32 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
 
 // BeaconQuery is the builder for querying Beacon entities.
 type BeaconQuery struct {
 	config
-	ctx            *QueryContext
-	order          []beacon.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.Beacon
-	withHost       *HostQuery
-	withTasks      *TaskQuery
-	withFKs        bool
-	modifiers      []func(*sql.Selector)
-	loadTotal      []func(context.Context, []*Beacon) error
-	withNamedTasks map[string]*TaskQuery
+	ctx             *QueryContext
+	order           []beacon.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.Beacon
+	withHost        *HostQuery
+	withTasks       *TaskQuery
+	withShells      *ShellQuery
+	withFKs         bool
+	modifiers       []func(*sql.Selector)
+	loadTotal       []func(context.Context, []*Beacon) error
+	withNamedTasks  map[string]*TaskQuery
+	withNamedShells map[string]*ShellQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -110,10 +114,32 @@ func (bq *BeaconQuery) QueryTasks() *TaskQuery {
 	return query
 }
 
+// QueryShells chains the current query on the "shells" edge.
+func (bq *BeaconQuery) QueryShells() *ShellQuery {
+	query := (&ShellClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, selector),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, beacon.ShellsTable, beacon.ShellsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Beacon entity from the query.
 // Returns a *NotFoundError when no Beacon was found.
 func (bq *BeaconQuery) First(ctx context.Context) (*Beacon, error) {
-	nodes, err := bq.Limit(1).All(setContextOp(ctx, bq.ctx, "First"))
+	nodes, err := bq.Limit(1).All(setContextOp(ctx, bq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +162,7 @@ func (bq *BeaconQuery) FirstX(ctx context.Context) *Beacon {
 // Returns a *NotFoundError when no Beacon ID was found.
 func (bq *BeaconQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = bq.Limit(1).IDs(setContextOp(ctx, bq.ctx, "FirstID")); err != nil {
+	if ids, err = bq.Limit(1).IDs(setContextOp(ctx, bq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -159,7 +185,7 @@ func (bq *BeaconQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Beacon entity is found.
 // Returns a *NotFoundError when no Beacon entities are found.
 func (bq *BeaconQuery) Only(ctx context.Context) (*Beacon, error) {
-	nodes, err := bq.Limit(2).All(setContextOp(ctx, bq.ctx, "Only"))
+	nodes, err := bq.Limit(2).All(setContextOp(ctx, bq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +213,7 @@ func (bq *BeaconQuery) OnlyX(ctx context.Context) *Beacon {
 // Returns a *NotFoundError when no entities are found.
 func (bq *BeaconQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = bq.Limit(2).IDs(setContextOp(ctx, bq.ctx, "OnlyID")); err != nil {
+	if ids, err = bq.Limit(2).IDs(setContextOp(ctx, bq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -212,7 +238,7 @@ func (bq *BeaconQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Beacons.
 func (bq *BeaconQuery) All(ctx context.Context) ([]*Beacon, error) {
-	ctx = setContextOp(ctx, bq.ctx, "All")
+	ctx = setContextOp(ctx, bq.ctx, ent.OpQueryAll)
 	if err := bq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -234,7 +260,7 @@ func (bq *BeaconQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if bq.ctx.Unique == nil && bq.path != nil {
 		bq.Unique(true)
 	}
-	ctx = setContextOp(ctx, bq.ctx, "IDs")
+	ctx = setContextOp(ctx, bq.ctx, ent.OpQueryIDs)
 	if err = bq.Select(beacon.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -252,7 +278,7 @@ func (bq *BeaconQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (bq *BeaconQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, bq.ctx, "Count")
+	ctx = setContextOp(ctx, bq.ctx, ent.OpQueryCount)
 	if err := bq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -270,7 +296,7 @@ func (bq *BeaconQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (bq *BeaconQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, bq.ctx, "Exist")
+	ctx = setContextOp(ctx, bq.ctx, ent.OpQueryExist)
 	switch _, err := bq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -304,6 +330,7 @@ func (bq *BeaconQuery) Clone() *BeaconQuery {
 		predicates: append([]predicate.Beacon{}, bq.predicates...),
 		withHost:   bq.withHost.Clone(),
 		withTasks:  bq.withTasks.Clone(),
+		withShells: bq.withShells.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
@@ -329,6 +356,17 @@ func (bq *BeaconQuery) WithTasks(opts ...func(*TaskQuery)) *BeaconQuery {
 		opt(query)
 	}
 	bq.withTasks = query
+	return bq
+}
+
+// WithShells tells the query-builder to eager-load the nodes that are connected to
+// the "shells" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BeaconQuery) WithShells(opts ...func(*ShellQuery)) *BeaconQuery {
+	query := (&ShellClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withShells = query
 	return bq
 }
 
@@ -411,9 +449,10 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 		nodes       = []*Beacon{}
 		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			bq.withHost != nil,
 			bq.withTasks != nil,
+			bq.withShells != nil,
 		}
 	)
 	if bq.withHost != nil {
@@ -456,10 +495,24 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 			return nil, err
 		}
 	}
+	if query := bq.withShells; query != nil {
+		if err := bq.loadShells(ctx, query, nodes,
+			func(n *Beacon) { n.Edges.Shells = []*Shell{} },
+			func(n *Beacon, e *Shell) { n.Edges.Shells = append(n.Edges.Shells, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range bq.withNamedTasks {
 		if err := bq.loadTasks(ctx, query, nodes,
 			func(n *Beacon) { n.appendNamedTasks(name) },
 			func(n *Beacon, e *Task) { n.appendNamedTasks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range bq.withNamedShells {
+		if err := bq.loadShells(ctx, query, nodes,
+			func(n *Beacon) { n.appendNamedShells(name) },
+			func(n *Beacon, e *Shell) { n.appendNamedShells(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -529,6 +582,37 @@ func (bq *BeaconQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "task_beacon" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (bq *BeaconQuery) loadShells(ctx context.Context, query *ShellQuery, nodes []*Beacon, init func(*Beacon), assign func(*Beacon, *Shell)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Beacon)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Shell(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(beacon.ShellsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_beacon
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_beacon" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_beacon" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -633,6 +717,20 @@ func (bq *BeaconQuery) WithNamedTasks(name string, opts ...func(*TaskQuery)) *Be
 	return bq
 }
 
+// WithNamedShells tells the query-builder to eager-load the nodes that are connected to the "shells"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (bq *BeaconQuery) WithNamedShells(name string, opts ...func(*ShellQuery)) *BeaconQuery {
+	query := (&ShellClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if bq.withNamedShells == nil {
+		bq.withNamedShells = make(map[string]*ShellQuery)
+	}
+	bq.withNamedShells[name] = query
+	return bq
+}
+
 // BeaconGroupBy is the group-by builder for Beacon entities.
 type BeaconGroupBy struct {
 	selector
@@ -647,7 +745,7 @@ func (bgb *BeaconGroupBy) Aggregate(fns ...AggregateFunc) *BeaconGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (bgb *BeaconGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, bgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, bgb.build.ctx, ent.OpQueryGroupBy)
 	if err := bgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -695,7 +793,7 @@ func (bs *BeaconSelect) Aggregate(fns ...AggregateFunc) *BeaconSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (bs *BeaconSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, bs.ctx, "Select")
+	ctx = setContextOp(ctx, bs.ctx, ent.OpQuerySelect)
 	if err := bs.prepareQuery(ctx); err != nil {
 		return err
 	}

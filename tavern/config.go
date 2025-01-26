@@ -1,26 +1,40 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	gcppubsub "cloud.google.com/go/pubsub"
+	"entgo.io/ent/dialect/sql"
+	"github.com/go-sql-driver/mysql"
+	"gocloud.dev/pubsub"
+	_ "gocloud.dev/pubsub/gcppubsub"
+	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/tomes"
-
-	"entgo.io/ent/dialect/sql"
-	"github.com/go-sql-driver/mysql"
 )
+
+// GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
+var GlobalInstanceID = fmt.Sprintf("tavern-%s", namegen.New())
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
+	// EnvDisableDefaultTomes will prevent the default tomes from being imported on startup.
+	// EnvDebugLogging will emit verbose debug logs to help troubleshoot issues.
 	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
 	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
+	EnvDisableDefaultTomes  = EnvString{"DISABLE_DEFAULT_TOMES", ""}
+	EnvDebugLogging         = EnvString{"ENABLE_DEBUG_LOGGING", ""}
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
@@ -52,6 +66,19 @@ var (
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
+	// EnvGCPProjectID represents the project id tavern is deployed in for Google Cloud Platform deployments (leave empty otherwise).
+	// EnvGCPPubsubKeepAliveIntervalMs is the interval to publish no-op pubsub messages to help avoid gcppubsub coldstart latency. 0 disables this feature.
+	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
+	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
+	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
+	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
+	EnvGCPProjectID                  = EnvString{"GCP_PROJECT_ID", ""}
+	EnvGCPPubsubKeepAliveIntervalMs  = EnvInteger{"GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS", 1000}
+	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
+	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
+	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
+	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
+
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
@@ -64,8 +91,9 @@ type Config struct {
 
 	mysqlDSN string
 
-	client *ent.Client
-	oauth  oauth2.Config
+	client       *ent.Client
+	oauth        oauth2.Config
+	userProfiles string
 }
 
 // Connect to the database using configured drivers and uri
@@ -112,10 +140,118 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
 }
 
+// NewShellMuxes configures two stream.Mux instances for shell i/o.
+// The wsMux will be used by websockets to subscribe to shell output and publish new input.
+// The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
+func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
+	var (
+		projectID        = EnvGCPProjectID.String()
+		gcpTopicPrefix   = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
+		topicShellInput  = EnvPubSubTopicShellInput.String()
+		topicShellOutput = EnvPubSubTopicShellOutput.String()
+		subShellInput    = EnvPubSubSubscriptionShellInput.String()
+		subShellOutput   = EnvPubSubSubscriptionShellOutput.String()
+	)
+
+	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
+	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
+	// appropriate input/output from shells. For more information, see the information here:
+	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
+	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
+		if projectID == "" {
+			log.Fatalf("[FATAL] must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
+		}
+
+		client, err := gcppubsub.NewClient(ctx, projectID)
+		if err != nil {
+			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
+		}
+		defer client.Close()
+
+		createGCPSubscription := func(ctx context.Context, topic *gcppubsub.Topic) string {
+			name := fmt.Sprintf("%s-sub_%s", topic.ID(), GlobalInstanceID)
+
+			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
+				Topic:            topic,
+				AckDeadline:      10 * time.Second,
+				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
+			})
+			if err != nil {
+				panic(fmt.Errorf(
+					"failed to create gcppubsub subscription (topic=%q,subscription_name=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v",
+					topic.ID(),
+					name,
+					EnvPubSubSubscriptionShellInput.Key,
+					err,
+				))
+			}
+			exists, err := sub.Exists(ctx)
+			if err != nil {
+				panic(fmt.Errorf("failed to check if gcppubsub subscription was successfully created: %w", err))
+			}
+			if !exists {
+				panic(fmt.Errorf("failed to create gcppubsub subscription, it does not exist! name=%q", name))
+			}
+			return name
+		}
+
+		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpTopicPrefix))
+		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpTopicPrefix))
+
+		// Overwrite env var specification with newly created GCP PubSub Subscriptions
+		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
+		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
+
+		// Start a goroutine to publish noop messages on an interval.
+		// This reduces cold-start latency for GCP PubSub which can improve shell user experience.
+		if interval := EnvGCPPubsubKeepAliveIntervalMs.Int(); interval > 0 {
+			go stream.PreventPubSubColdStarts(
+				ctx,
+				time.Duration(interval)*time.Millisecond,
+				topicShellOutput,
+				topicShellInput,
+			)
+		}
+	}
+
+	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
+	}
+
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
+	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
+	}
+
+	pubInput, err := pubsub.OpenTopic(ctx, topicShellInput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
+	}
+
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
+	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
+	}
+
+	wsMux = stream.NewMux(pubInput, subOutput)
+	grpcMux = stream.NewMux(pubOutput, subInput)
+	return
+}
+
 // NewGitImporter configures and returns a new RepoImporter using git.
 func (cfg *Config) NewGitImporter(client *ent.Client) *tomes.GitImporter {
 	var options []tomes.GitImportOption
 	return tomes.NewGitImporter(client, options...)
+}
+
+// IsDefaultTomeImportEnabled returns true default tomes should be imported.
+func (cfg *Config) IsDefaultTomeImportEnabled() bool {
+	return EnvDisableDefaultTomes.String() == ""
 }
 
 // IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.
@@ -182,6 +318,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
+		// Google OAuth backend
 		cfg.oauth = oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -191,6 +328,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			},
 			Endpoint: google.Endpoint,
 		}
+		cfg.userProfiles = "https://www.googleapis.com/oauth2/v3/userinfo"
 	}
 }
 

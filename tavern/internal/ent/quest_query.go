@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -161,7 +162,7 @@ func (qq *QuestQuery) QueryCreator() *UserQuery {
 // First returns the first Quest entity from the query.
 // Returns a *NotFoundError when no Quest was found.
 func (qq *QuestQuery) First(ctx context.Context) (*Quest, error) {
-	nodes, err := qq.Limit(1).All(setContextOp(ctx, qq.ctx, "First"))
+	nodes, err := qq.Limit(1).All(setContextOp(ctx, qq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +185,7 @@ func (qq *QuestQuery) FirstX(ctx context.Context) *Quest {
 // Returns a *NotFoundError when no Quest ID was found.
 func (qq *QuestQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = qq.Limit(1).IDs(setContextOp(ctx, qq.ctx, "FirstID")); err != nil {
+	if ids, err = qq.Limit(1).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -207,7 +208,7 @@ func (qq *QuestQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Quest entity is found.
 // Returns a *NotFoundError when no Quest entities are found.
 func (qq *QuestQuery) Only(ctx context.Context) (*Quest, error) {
-	nodes, err := qq.Limit(2).All(setContextOp(ctx, qq.ctx, "Only"))
+	nodes, err := qq.Limit(2).All(setContextOp(ctx, qq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +236,7 @@ func (qq *QuestQuery) OnlyX(ctx context.Context) *Quest {
 // Returns a *NotFoundError when no entities are found.
 func (qq *QuestQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = qq.Limit(2).IDs(setContextOp(ctx, qq.ctx, "OnlyID")); err != nil {
+	if ids, err = qq.Limit(2).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -260,7 +261,7 @@ func (qq *QuestQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Quests.
 func (qq *QuestQuery) All(ctx context.Context) ([]*Quest, error) {
-	ctx = setContextOp(ctx, qq.ctx, "All")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryAll)
 	if err := qq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -282,7 +283,7 @@ func (qq *QuestQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if qq.ctx.Unique == nil && qq.path != nil {
 		qq.Unique(true)
 	}
-	ctx = setContextOp(ctx, qq.ctx, "IDs")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryIDs)
 	if err = qq.Select(quest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -300,7 +301,7 @@ func (qq *QuestQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (qq *QuestQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, qq.ctx, "Count")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryCount)
 	if err := qq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -318,7 +319,7 @@ func (qq *QuestQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (qq *QuestQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, qq.ctx, "Exist")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryExist)
 	switch _, err := qq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -797,7 +798,7 @@ func (qgb *QuestGroupBy) Aggregate(fns ...AggregateFunc) *QuestGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (qgb *QuestGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, qgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, qgb.build.ctx, ent.OpQueryGroupBy)
 	if err := qgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -845,7 +846,7 @@ func (qs *QuestSelect) Aggregate(fns ...AggregateFunc) *QuestSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (qs *QuestSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, qs.ctx, "Select")
+	ctx = setContextOp(ctx, qs.ctx, ent.OpQuerySelect)
 	if err := qs.prepareQuery(ctx); err != nil {
 		return err
 	}

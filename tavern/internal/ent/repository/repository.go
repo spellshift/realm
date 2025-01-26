@@ -25,6 +25,8 @@ const (
 	FieldPublicKey = "public_key"
 	// FieldPrivateKey holds the string denoting the private_key field in the database.
 	FieldPrivateKey = "private_key"
+	// FieldLastImportedAt holds the string denoting the last_imported_at field in the database.
+	FieldLastImportedAt = "last_imported_at"
 	// EdgeTomes holds the string denoting the tomes edge name in mutations.
 	EdgeTomes = "tomes"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
@@ -55,6 +57,7 @@ var Columns = []string{
 	FieldURL,
 	FieldPublicKey,
 	FieldPrivateKey,
+	FieldLastImportedAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "repositories"
@@ -130,6 +133,11 @@ func ByPublicKey(opts ...sql.OrderTermOption) OrderOption {
 // ByPrivateKey orders the results by the private_key field.
 func ByPrivateKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrivateKey, opts...).ToFunc()
+}
+
+// ByLastImportedAt orders the results by the last_imported_at field.
+func ByLastImportedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastImportedAt, opts...).ToFunc()
 }
 
 // ByTomesCount orders the results by tomes count.

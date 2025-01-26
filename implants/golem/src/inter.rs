@@ -15,18 +15,11 @@
  * limitations under the License.
  */
 
-//
-// Plugins
-#![cfg_attr(feature = "gazebo_lint", feature(plugin))]
-#![cfg_attr(feature = "gazebo_lint", allow(deprecated))] // :(
-#![cfg_attr(feature = "gazebo_lint", plugin(gazebo_lint))]
 // Disagree these are good hints
 #![allow(clippy::type_complexity)]
 
 use std::fmt;
 use std::fmt::Display;
-
-
 
 use starlark::errors::EvalMessage;
 use starlark::errors::EvalSeverity;

@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -163,6 +164,21 @@ func (bu *BeaconUpdate) AddTasks(t ...*Task) *BeaconUpdate {
 	return bu.AddTaskIDs(ids...)
 }
 
+// AddShellIDs adds the "shells" edge to the Shell entity by IDs.
+func (bu *BeaconUpdate) AddShellIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.AddShellIDs(ids...)
+	return bu
+}
+
+// AddShells adds the "shells" edges to the Shell entity.
+func (bu *BeaconUpdate) AddShells(s ...*Shell) *BeaconUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return bu.AddShellIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (bu *BeaconUpdate) Mutation() *BeaconMutation {
 	return bu.mutation
@@ -193,6 +209,27 @@ func (bu *BeaconUpdate) RemoveTasks(t ...*Task) *BeaconUpdate {
 		ids[i] = t[i].ID
 	}
 	return bu.RemoveTaskIDs(ids...)
+}
+
+// ClearShells clears all "shells" edges to the Shell entity.
+func (bu *BeaconUpdate) ClearShells() *BeaconUpdate {
+	bu.mutation.ClearShells()
+	return bu
+}
+
+// RemoveShellIDs removes the "shells" edge to Shell entities by IDs.
+func (bu *BeaconUpdate) RemoveShellIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.RemoveShellIDs(ids...)
+	return bu
+}
+
+// RemoveShells removes "shells" edges to Shell entities.
+func (bu *BeaconUpdate) RemoveShells(s ...*Shell) *BeaconUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return bu.RemoveShellIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -248,7 +285,7 @@ func (bu *BeaconUpdate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if _, ok := bu.mutation.HostID(); bu.mutation.HostCleared() && !ok {
+	if bu.mutation.HostCleared() && len(bu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
@@ -366,6 +403,51 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if bu.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.ShellsTable,
+			Columns: []string{beacon.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.RemovedShellsIDs(); len(nodes) > 0 && !bu.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.ShellsTable,
+			Columns: []string{beacon.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.ShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.ShellsTable,
+			Columns: []string{beacon.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -526,6 +608,21 @@ func (buo *BeaconUpdateOne) AddTasks(t ...*Task) *BeaconUpdateOne {
 	return buo.AddTaskIDs(ids...)
 }
 
+// AddShellIDs adds the "shells" edge to the Shell entity by IDs.
+func (buo *BeaconUpdateOne) AddShellIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.AddShellIDs(ids...)
+	return buo
+}
+
+// AddShells adds the "shells" edges to the Shell entity.
+func (buo *BeaconUpdateOne) AddShells(s ...*Shell) *BeaconUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return buo.AddShellIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (buo *BeaconUpdateOne) Mutation() *BeaconMutation {
 	return buo.mutation
@@ -556,6 +653,27 @@ func (buo *BeaconUpdateOne) RemoveTasks(t ...*Task) *BeaconUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return buo.RemoveTaskIDs(ids...)
+}
+
+// ClearShells clears all "shells" edges to the Shell entity.
+func (buo *BeaconUpdateOne) ClearShells() *BeaconUpdateOne {
+	buo.mutation.ClearShells()
+	return buo
+}
+
+// RemoveShellIDs removes the "shells" edge to Shell entities by IDs.
+func (buo *BeaconUpdateOne) RemoveShellIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.RemoveShellIDs(ids...)
+	return buo
+}
+
+// RemoveShells removes "shells" edges to Shell entities.
+func (buo *BeaconUpdateOne) RemoveShells(s ...*Shell) *BeaconUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return buo.RemoveShellIDs(ids...)
 }
 
 // Where appends a list predicates to the BeaconUpdate builder.
@@ -624,7 +742,7 @@ func (buo *BeaconUpdateOne) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if _, ok := buo.mutation.HostID(); buo.mutation.HostCleared() && !ok {
+	if buo.mutation.HostCleared() && len(buo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
@@ -759,6 +877,51 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if buo.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.ShellsTable,
+			Columns: []string{beacon.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.RemovedShellsIDs(); len(nodes) > 0 && !buo.mutation.ShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.ShellsTable,
+			Columns: []string{beacon.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.ShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.ShellsTable,
+			Columns: []string{beacon.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

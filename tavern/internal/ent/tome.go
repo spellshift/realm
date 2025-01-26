@@ -76,12 +76,10 @@ func (e TomeEdges) FilesOrErr() ([]*File, error) {
 // UploaderOrErr returns the Uploader value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TomeEdges) UploaderOrErr() (*User, error) {
-	if e.loadedTypes[1] {
-		if e.Uploader == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
+	if e.Uploader != nil {
 		return e.Uploader, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "uploader"}
 }
@@ -89,12 +87,10 @@ func (e TomeEdges) UploaderOrErr() (*User, error) {
 // RepositoryOrErr returns the Repository value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TomeEdges) RepositoryOrErr() (*Repository, error) {
-	if e.loadedTypes[2] {
-		if e.Repository == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: repository.Label}
-		}
+	if e.Repository != nil {
 		return e.Repository, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: repository.Label}
 	}
 	return nil, &NotLoadedError{edge: "repository"}
 }

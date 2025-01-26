@@ -42,15 +42,59 @@ func (ru *RepositoryUpdate) SetURL(s string) *RepositoryUpdate {
 	return ru
 }
 
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillableURL(s *string) *RepositoryUpdate {
+	if s != nil {
+		ru.SetURL(*s)
+	}
+	return ru
+}
+
 // SetPublicKey sets the "public_key" field.
 func (ru *RepositoryUpdate) SetPublicKey(s string) *RepositoryUpdate {
 	ru.mutation.SetPublicKey(s)
 	return ru
 }
 
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillablePublicKey(s *string) *RepositoryUpdate {
+	if s != nil {
+		ru.SetPublicKey(*s)
+	}
+	return ru
+}
+
 // SetPrivateKey sets the "private_key" field.
 func (ru *RepositoryUpdate) SetPrivateKey(s string) *RepositoryUpdate {
 	ru.mutation.SetPrivateKey(s)
+	return ru
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillablePrivateKey(s *string) *RepositoryUpdate {
+	if s != nil {
+		ru.SetPrivateKey(*s)
+	}
+	return ru
+}
+
+// SetLastImportedAt sets the "last_imported_at" field.
+func (ru *RepositoryUpdate) SetLastImportedAt(t time.Time) *RepositoryUpdate {
+	ru.mutation.SetLastImportedAt(t)
+	return ru
+}
+
+// SetNillableLastImportedAt sets the "last_imported_at" field if the given value is not nil.
+func (ru *RepositoryUpdate) SetNillableLastImportedAt(t *time.Time) *RepositoryUpdate {
+	if t != nil {
+		ru.SetLastImportedAt(*t)
+	}
+	return ru
+}
+
+// ClearLastImportedAt clears the value of the "last_imported_at" field.
+func (ru *RepositoryUpdate) ClearLastImportedAt() *RepositoryUpdate {
+	ru.mutation.ClearLastImportedAt()
 	return ru
 }
 
@@ -206,6 +250,12 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ru.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
 	}
+	if value, ok := ru.mutation.LastImportedAt(); ok {
+		_spec.SetField(repository.FieldLastImportedAt, field.TypeTime, value)
+	}
+	if ru.mutation.LastImportedAtCleared() {
+		_spec.ClearField(repository.FieldLastImportedAt, field.TypeTime)
+	}
 	if ru.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -312,15 +362,59 @@ func (ruo *RepositoryUpdateOne) SetURL(s string) *RepositoryUpdateOne {
 	return ruo
 }
 
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillableURL(s *string) *RepositoryUpdateOne {
+	if s != nil {
+		ruo.SetURL(*s)
+	}
+	return ruo
+}
+
 // SetPublicKey sets the "public_key" field.
 func (ruo *RepositoryUpdateOne) SetPublicKey(s string) *RepositoryUpdateOne {
 	ruo.mutation.SetPublicKey(s)
 	return ruo
 }
 
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillablePublicKey(s *string) *RepositoryUpdateOne {
+	if s != nil {
+		ruo.SetPublicKey(*s)
+	}
+	return ruo
+}
+
 // SetPrivateKey sets the "private_key" field.
 func (ruo *RepositoryUpdateOne) SetPrivateKey(s string) *RepositoryUpdateOne {
 	ruo.mutation.SetPrivateKey(s)
+	return ruo
+}
+
+// SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillablePrivateKey(s *string) *RepositoryUpdateOne {
+	if s != nil {
+		ruo.SetPrivateKey(*s)
+	}
+	return ruo
+}
+
+// SetLastImportedAt sets the "last_imported_at" field.
+func (ruo *RepositoryUpdateOne) SetLastImportedAt(t time.Time) *RepositoryUpdateOne {
+	ruo.mutation.SetLastImportedAt(t)
+	return ruo
+}
+
+// SetNillableLastImportedAt sets the "last_imported_at" field if the given value is not nil.
+func (ruo *RepositoryUpdateOne) SetNillableLastImportedAt(t *time.Time) *RepositoryUpdateOne {
+	if t != nil {
+		ruo.SetLastImportedAt(*t)
+	}
+	return ruo
+}
+
+// ClearLastImportedAt clears the value of the "last_imported_at" field.
+func (ruo *RepositoryUpdateOne) ClearLastImportedAt() *RepositoryUpdateOne {
+	ruo.mutation.ClearLastImportedAt()
 	return ruo
 }
 
@@ -505,6 +599,12 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 	}
 	if value, ok := ruo.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
+	}
+	if value, ok := ruo.mutation.LastImportedAt(); ok {
+		_spec.SetField(repository.FieldLastImportedAt, field.TypeTime, value)
+	}
+	if ruo.mutation.LastImportedAtCleared() {
+		_spec.ClearField(repository.FieldLastImportedAt, field.TypeTime)
 	}
 	if ruo.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{

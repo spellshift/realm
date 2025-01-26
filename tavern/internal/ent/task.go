@@ -55,26 +55,27 @@ type TaskEdges struct {
 	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// Credentials that have been reported by this task.
 	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
+	// Shells that were created by this task
+	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [6]map[string]int
 
 	namedReportedFiles       map[string][]*HostFile
 	namedReportedProcesses   map[string][]*HostProcess
 	namedReportedCredentials map[string][]*HostCredential
+	namedShells              map[string][]*Shell
 }
 
 // QuestOrErr returns the Quest value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TaskEdges) QuestOrErr() (*Quest, error) {
-	if e.loadedTypes[0] {
-		if e.Quest == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: quest.Label}
-		}
+	if e.Quest != nil {
 		return e.Quest, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: quest.Label}
 	}
 	return nil, &NotLoadedError{edge: "quest"}
 }
@@ -82,12 +83,10 @@ func (e TaskEdges) QuestOrErr() (*Quest, error) {
 // BeaconOrErr returns the Beacon value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TaskEdges) BeaconOrErr() (*Beacon, error) {
-	if e.loadedTypes[1] {
-		if e.Beacon == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: beacon.Label}
-		}
+	if e.Beacon != nil {
 		return e.Beacon, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: beacon.Label}
 	}
 	return nil, &NotLoadedError{edge: "beacon"}
 }
@@ -117,6 +116,15 @@ func (e TaskEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
 		return e.ReportedCredentials, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_credentials"}
+}
+
+// ShellsOrErr returns the Shells value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ShellsOrErr() ([]*Shell, error) {
+	if e.loadedTypes[5] {
+		return e.Shells, nil
+	}
+	return nil, &NotLoadedError{edge: "shells"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -255,6 +263,11 @@ func (t *Task) QueryReportedCredentials() *HostCredentialQuery {
 	return NewTaskClient(t.config).QueryReportedCredentials(t)
 }
 
+// QueryShells queries the "shells" edge of the Task entity.
+func (t *Task) QueryShells() *ShellQuery {
+	return NewTaskClient(t.config).QueryShells(t)
+}
+
 // Update returns a builder for updating this Task.
 // Note that you need to call Task.Unwrap() before calling this method if this Task
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -374,6 +387,30 @@ func (t *Task) appendNamedReportedCredentials(name string, edges ...*HostCredent
 		t.Edges.namedReportedCredentials[name] = []*HostCredential{}
 	} else {
 		t.Edges.namedReportedCredentials[name] = append(t.Edges.namedReportedCredentials[name], edges...)
+	}
+}
+
+// NamedShells returns the Shells named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Task) NamedShells(name string) ([]*Shell, error) {
+	if t.Edges.namedShells == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedShells[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Task) appendNamedShells(name string, edges ...*Shell) {
+	if t.Edges.namedShells == nil {
+		t.Edges.namedShells = make(map[string][]*Shell)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedShells[name] = []*Shell{}
+	} else {
+		t.Edges.namedShells[name] = append(t.Edges.namedShells[name], edges...)
 	}
 }
 

@@ -1,24 +1,27 @@
-use super::super::insert_dict_kv;
-use anyhow::{anyhow, Result};
-use ipnetwork::{IpNetwork, Ipv4Network};
 #[cfg(not(target_os = "windows"))]
-use pnet::{
-    datalink::{self, channel, Channel::Ethernet, NetworkInterface},
-    packet::{
-        arp::{ArpOperations, ArpPacket, MutableArpPacket},
-        ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
-        Packet,
+use {
+    super::super::insert_dict_kv,
+    ipnetwork::{IpNetwork, Ipv4Network},
+    pnet::{
+        datalink::{self, channel, Channel::Ethernet, NetworkInterface},
+        packet::{
+            arp::{ArpOperations, ArpPacket, MutableArpPacket},
+            ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
+            Packet,
+        },
+        util::MacAddr,
     },
-    util::MacAddr,
+    starlark::collections::SmallMap,
+    starlark::const_frozen_string,
+    std::collections::HashMap,
+    std::net::{IpAddr, Ipv4Addr},
+    std::str::FromStr,
+    std::sync::{Arc, Mutex},
+    std::time::{Duration, SystemTime},
 };
-use starlark::collections::SmallMap;
-use starlark::const_frozen_string;
+
+use anyhow::{anyhow, Result};
 use starlark::values::{dict::Dict, Heap};
-use std::collections::HashMap;
-use std::net::{IpAddr, Ipv4Addr};
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
@@ -265,8 +268,8 @@ pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<D
 }
 
 #[cfg(target_os = "windows")]
-pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
-    Err(anyhow::anyhow!("ARP Scanning is not available on Windows."))
+pub fn arp_scan(_starlark_heap: &Heap, _target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
+    Err(anyhow!("ARP Scanning is not available on Windows."))
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -319,10 +322,7 @@ mod tests {
         thread::sleep(Duration::from_secs(3));
         let loopback = {
             let interfaces = interfaces();
-            interfaces
-                .iter().find(|x| x.is_loopback())
-                .unwrap()
-                .clone()
+            interfaces.iter().find(|x| x.is_loopback()).unwrap().clone()
         };
         assert!(start_listener(loopback, data).is_err());
     }

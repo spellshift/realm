@@ -5,10 +5,9 @@ tags:
 description: Imix User Guide
 permalink: user-guide/imix
 ---
-## What is Imix
+## Imix
 
-Imix is the default agent for realm.
-Imix currently only supports http(s) callbacks to Tavern's gRPC API.
+Imix is an offensive security implant designed for stealthy communication and adversary emulation. It functions as a [Beacon](/user-guide/terminology#beacon), receiving [Eldritch](/user-guide/terminology#eldritch) packages called [Tomes](/user-guide/terminology#tome) from a central server ([Tavern](/admin-guide/tavern)) and evaluating them on the host system. It currently supports [gRPC over HTTP(s)](https://grpc.io/) as it's primary communication mechanism, but can be extended to support additional transport channels (see the [developer guide](/dev-guide/tavern#agent-development) for more info).
 
 ## Configuration
 
@@ -19,10 +18,12 @@ Imix has compile-time configuration, that may be specified using environment var
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
+| IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
+| IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 
 ## Logging
 
-At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. When building a release version of imix, logging is disabled and is not included in the released binary.
+At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. **When building a release version of imix, logging is disabled** and is not included in the released binary.
 
 ## Installation
 
@@ -44,6 +45,33 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
 Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
 
+## Proxy support
+
+Imix's default `grpc` transport supports http and https proxies for outbound communication.
+By default imix will try to determine the systems proxy settings:
+
+- On Linux reading the environment variables `http_proxy` and then `https_proxy`
+- On Windows - we cannot automatically determine the default proxy
+- On MacOS - we cannot automatically determine the default proxy
+- On FreeBSD - we cannot automatically determine the default proxy
+
+## Identifying unique hosts
+
+Imix communicates which host it's on to Tavern enabling operators to reliably perform per host actions. The default way that imix does this is through a file on disk. We recognize that this may be un-ideal for many situations so we've also provided an environment override and made it easy for admins managing a realm deployment to change how the bot determines uniqueness.
+
+Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
+
+We recommend that you use the `File` for the most reliability:
+
+- Exists across reboots
+- Garunteed to be unique per host (because the bot creates it)
+- Can be used by multiple instances of the beacon on the same host.
+
+If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+
+If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
+This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.
+
 ## Static cross compilation
 
 ### Linux
@@ -53,8 +81,8 @@ rustup target add x86_64-unknown-linux-musl
 
 sudo apt update
 sudo apt install musl-tools
-
-RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target=x86_64-unknown-linux-musl
+cd realm/implants/imix/
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### MacOS
@@ -73,11 +101,6 @@ rustup target add x86_64-pc-windows-gnu
 
 sudo apt update
 sudo apt install gcc-mingw-w64
-
-# Build the reflective loader
-cd realm/bin/reflective_loader
-RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --lib --target=x86_64-pc-windows-gnu
-# You may have to adjust `LOADER_BYTES` include path in `dll_reflect_impl.rs` changing `x86_64-pc-windows-msvc` ---> `x86_64-pc-windows-gnu`
 
 # Build imix
 cd realm/implants/imix/

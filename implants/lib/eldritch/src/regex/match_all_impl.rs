@@ -1,12 +1,22 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use regex::Regex;
 
 pub fn match_all(haystack: String, pattern: String) -> Result<Vec<String>> {
     let mut matches = Vec::new();
     let re = Regex::new(pattern.as_str())?;
-    let captures = re.captures_iter(haystack.as_str());
-    for (_, [m]) in captures.map(|c| c.extract()) {
-        matches.push(String::from(m))
+    // `- 1` is due to how Rust tracks the groups (https://docs.rs/regex/latest/regex/struct.CaptureLocations.html#method.len)
+    let num_capture_groups = re.capture_locations().len() - 1;
+    if num_capture_groups != 1 {
+        return Err(anyhow!(
+            "only 1 capture group is supported but {} given",
+            num_capture_groups
+        ));
+    }
+    for captures in re.captures_iter(haystack.as_str()) {
+        // `get(1)` due to how Rust tracks the captures (https://docs.rs/regex/latest/regex/struct.Captures.html#method.get)
+        if let Some(m) = captures.get(1) {
+            matches.push(String::from(m.as_str()))
+        }
     }
     Ok(matches)
 }

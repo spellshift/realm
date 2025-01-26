@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -111,7 +112,7 @@ func (hpq *HostProcessQuery) QueryTask() *TaskQuery {
 // First returns the first HostProcess entity from the query.
 // Returns a *NotFoundError when no HostProcess was found.
 func (hpq *HostProcessQuery) First(ctx context.Context) (*HostProcess, error) {
-	nodes, err := hpq.Limit(1).All(setContextOp(ctx, hpq.ctx, "First"))
+	nodes, err := hpq.Limit(1).All(setContextOp(ctx, hpq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (hpq *HostProcessQuery) FirstX(ctx context.Context) *HostProcess {
 // Returns a *NotFoundError when no HostProcess ID was found.
 func (hpq *HostProcessQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hpq.Limit(1).IDs(setContextOp(ctx, hpq.ctx, "FirstID")); err != nil {
+	if ids, err = hpq.Limit(1).IDs(setContextOp(ctx, hpq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -157,7 +158,7 @@ func (hpq *HostProcessQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one HostProcess entity is found.
 // Returns a *NotFoundError when no HostProcess entities are found.
 func (hpq *HostProcessQuery) Only(ctx context.Context) (*HostProcess, error) {
-	nodes, err := hpq.Limit(2).All(setContextOp(ctx, hpq.ctx, "Only"))
+	nodes, err := hpq.Limit(2).All(setContextOp(ctx, hpq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +186,7 @@ func (hpq *HostProcessQuery) OnlyX(ctx context.Context) *HostProcess {
 // Returns a *NotFoundError when no entities are found.
 func (hpq *HostProcessQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hpq.Limit(2).IDs(setContextOp(ctx, hpq.ctx, "OnlyID")); err != nil {
+	if ids, err = hpq.Limit(2).IDs(setContextOp(ctx, hpq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -210,7 +211,7 @@ func (hpq *HostProcessQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of HostProcesses.
 func (hpq *HostProcessQuery) All(ctx context.Context) ([]*HostProcess, error) {
-	ctx = setContextOp(ctx, hpq.ctx, "All")
+	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryAll)
 	if err := hpq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -232,7 +233,7 @@ func (hpq *HostProcessQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if hpq.ctx.Unique == nil && hpq.path != nil {
 		hpq.Unique(true)
 	}
-	ctx = setContextOp(ctx, hpq.ctx, "IDs")
+	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryIDs)
 	if err = hpq.Select(hostprocess.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -250,7 +251,7 @@ func (hpq *HostProcessQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (hpq *HostProcessQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hpq.ctx, "Count")
+	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryCount)
 	if err := hpq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -268,7 +269,7 @@ func (hpq *HostProcessQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (hpq *HostProcessQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hpq.ctx, "Exist")
+	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryExist)
 	switch _, err := hpq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -624,7 +625,7 @@ func (hpgb *HostProcessGroupBy) Aggregate(fns ...AggregateFunc) *HostProcessGrou
 
 // Scan applies the selector query and scans the result into the given value.
 func (hpgb *HostProcessGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hpgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, hpgb.build.ctx, ent.OpQueryGroupBy)
 	if err := hpgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -672,7 +673,7 @@ func (hps *HostProcessSelect) Aggregate(fns ...AggregateFunc) *HostProcessSelect
 
 // Scan applies the selector query and scans the result into the given value.
 func (hps *HostProcessSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hps.ctx, "Select")
+	ctx = setContextOp(ctx, hps.ctx, ent.OpQuerySelect)
 	if err := hps.prepareQuery(ctx); err != nil {
 		return err
 	}

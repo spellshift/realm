@@ -1,5 +1,0 @@
-name: Ifconfig
-description: Get ip and network interface information
-author: hulto
-support_model: FIRST_PARTY
-tactic: RECON

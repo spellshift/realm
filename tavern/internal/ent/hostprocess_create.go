@@ -239,10 +239,10 @@ func (hpc *HostProcessCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
 		}
 	}
-	if _, ok := hpc.mutation.HostID(); !ok {
+	if len(hpc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostProcess.host"`)}
 	}
-	if _, ok := hpc.mutation.TaskID(); !ok {
+	if len(hpc.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostProcess.task"`)}
 	}
 	return nil

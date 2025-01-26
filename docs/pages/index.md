@@ -4,6 +4,11 @@ title: Realm Docs
 permalink: /
 ---
 
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="/assets/img/realm_250px.png" alt="realm_250px.png"/>
+</p>
+
 ## Welcome to Realm
 
 [Realm](https://github.com/spellshift/realm) is an Adversary Emulation Framework with a **focus on scalability, reliability, and automation**. It is highly performant and is designed for engagements of any size (up to many thousands of beacons). [Get started in minutes](user-guide/getting-started).

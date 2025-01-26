@@ -1,8 +1,7 @@
 use anyhow::Result;
-use whoami::hostname as whoHostname;
 
 pub fn hostname() -> Result<String> {
-    Ok(whoHostname())
+    Ok(whoami::fallible::hostname()?)
 }
 
 #[cfg(test)]

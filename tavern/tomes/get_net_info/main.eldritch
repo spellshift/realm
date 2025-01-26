@@ -1,15 +1,28 @@
-def get_net_info():
-    print("Interfaces:\n\n")
-    for interface in sys.get_ip():
-        for key, value in interface.items():
-            if key == "ips":
-                for ip in value:
-                    print("ip: {}\n".format(ip))
-            else:
-                print("{}: {}\n".format(key, value))
-        print("\n")
-    print("Hostname: " + sys.hostname())
+def print_table(rows: list[list]):
+    """Pretty print a table, auto adjusting width based on the row data"""
+    def rpad(s: str, n: int, c=" "):
+        return s + (n-len(s))*c
+    # count columns
+    counts = [0]*len(rows[0])
+    for r in rows:
+        for i, f in enumerate(r):
+            counts[i] = max(len(f), counts[i])
+    # Print the columns
+    for r in rows:
+        row = []
+        for i, c in enumerate(r):
+            row.append(rpad(c, counts[i]+2))
+        print("".join(row))
 
-get_net_info()
-print("\n")
-print("\n")
+def ifconfig():
+    print("HOSTNAME "+ sys.hostname())
+    rows = [["IFACE", "IP", "MAC"]]
+    ip_res = sys.get_ip()
+    for interface in ip_res:
+        for ip in interface['ips']:
+            rows.append([interface['name'], ip, interface['mac']])
+    print_table(rows)
+
+time.sleep(1)
+
+ifconfig()

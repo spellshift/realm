@@ -15,13 +15,11 @@ anyhow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 structopt = { workspace = true }
-gazebo = { workspace = true }
 itertools = { workspace = true }
 thiserror = { workspace = true }
 lsp-types = { workspace = true }
-rust-embed = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
-predicates = { workspace = true}
+predicates = { workspace = true }
 tempfile = { workspace = true }

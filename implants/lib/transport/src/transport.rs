@@ -5,7 +5,7 @@ use std::sync::mpsc::{Receiver, Sender};
 #[trait_variant::make(Transport: Send)]
 pub trait UnsafeTransport: Clone + Send {
     // New will initialize a new instance of the transport using the provided URI.
-    fn new(uri: String) -> Result<Self>;
+    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
 
     ///
     /// Contact the server for new tasks to execute.
@@ -58,4 +58,12 @@ pub trait UnsafeTransport: Clone + Send {
         &mut self,
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse>;
+
+    ///
+    /// Open a shell via the transport.
+    async fn reverse_shell(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+    ) -> Result<()>;
 }

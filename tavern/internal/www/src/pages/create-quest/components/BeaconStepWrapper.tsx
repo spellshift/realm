@@ -4,6 +4,7 @@ import { TagContext } from "../../../context/TagContext";
 import { SelectedBeacons } from "../../../utils/consts";
 import { getOnlineBeacons, isBeaconSelected } from "../../../utils/utils";
 import BeaconStep from "./BeaconStep";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
@@ -44,13 +45,13 @@ export const BeaconStepWrapper = (props: Props) => {
                     <BeaconStep beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} hosts={data?.hosts || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
                 )}
             <div className="flex flex-row gap-2">
-                <button
-                    className="btn-primary"
+                <Button
+                    buttonStyle={{ color: "purple", size: "md" }}
                     onClick={() => handleClickContinue(selectedBeacons)}
                     disabled={!hasBeaconSelected}
                 >
                     Continue
-                </button>
+                </Button>
             </div>
         </div>
     );

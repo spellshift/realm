@@ -6,111 +6,25 @@ name = {
     "Link": "Link"
 }
 
-SEP = "/"
-if sys.get_os().get("platform", "") == "PLATFORM_WINDOWS":
-    SEP = "\\"
-
-def can_read(f):
-    """Return true if the user can read this dir/file
-    """
-
-    # Until we get permissions on windows, just go ahead and try to read
-    if SEP == "\\":
-        return True
-    PERM_READ = 4
-    f_user = int(f["permissions"][-3]) # User byte
-    f_group = int(f["permissions"][-2]) # Group byte
-    
-    # Check world byte first so it hopefully is fast
-    if int(f["permissions"][-1]) & PERM_READ:
-        return True
-    
-    # Are we root?
-    root = usernfo["euid"]["uid"] == 0
-    
-    # If the user isnt root and the user doesnt own the file, clear the user byte   
-    if not root and f["owner"] not in (usernfo["euid"]["name"], usernfo["uid"]["name"]):
-        f_user = 0
-    
-    # TODO: https://github.com/spellshift/realm/issues/570
-    # Will NOT match any group other than primary until #570 is fixed
-
-    # If the user isnt root and the group doesnt own the file, clear the group byte    
-    if not root and f["group"] not in (str(usernfo["egid"]), str(usernfo["gid"])):
-        f_group = 0
-
-    if (f_group & PERM_READ) | (f_user & PERM_READ):
-        return True
-    return False
-
-def glob(s, pattern):
-    """Basic glob functionality"""
-    p = pattern.split("*")
-    # Check the first chunk
-    chunk = p.pop(0)
-    if not s.startswith(chunk):
-        return False
-    s = s[len(chunk):]
-    # Check the last chunk
-    if p:
-        chunk = p.pop()
-        if chunk:
-            if not s.endswith(chunk):
-                return False
-            s = s[:-len(chunk)]
-    
-    # Check all the middle chunks
-    for part in p:
-        if part not in s:
-            return False
-        s = s[s.index(part)+1:]
-    return True
-
-def print_file(path, f):
+def print_file(f):
     """Pretty Print a file"""
-    full = path.rstrip("/") + "/" + f["file_name"]
-    if f["type"] == "Directory":
-        full += "/"
-    print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+name.get(f['type'], f['type'])+"\t"+full+"\n")
+    perms = f['permissions']
+    owner = f['owner']
+    group = f['group']
+    size = str(f['size'])
+    modified = f['modified']
+    ftype = name.get(f['type'], f['type'])
+    absolute_path = f['absolute_path']
+
+    print(f"{perms}\t{owner}\t{group}\t{size}\t{modified}\t{ftype}\t{absolute_path}")
 
 def file_list(path):
-    """List all files in the given path"""
-    parts = path.strip(SEP).split(SEP)
-    base = [] # The base of the path that doesnt have a glob
-    pattern = ""
-    for p in parts:
-        if '*' in p:
-            pattern = p
-            break
-        base.append(p)
-    
-    base = SEP.join(base)
-    if SEP == "/":
-        base = "/" + base
-    
-    # Safety checking
-    if not file.exists(base):
-        print("Error Path '"+path+"' does not exist\n")
-        return
-    elif file.is_file(base):
-        print("Error Path '"+path+"' is a file\n")
-        return
-    
-    # TODO: No way to check if we can read base
-    for f in file.list(base):
-        if pattern == "*":
-            # List each file/dir in this folder
-            if f["type"] == "Directory" and can_read(f):
-                d = base+SEP+f["file_name"]
-                for f in file.list(d):
-                    print_file(d, f)
-        elif not pattern:
-            # Just list each file/folder
-            print_file(base, f)
-        elif glob(f["file_name"], pattern):
-            # Only print files/folders that match the glob
-            print_file(base, f)
+    res = file.list(path)
+    if len(res) > 0:
+        for f in res:
+            print_file(f)
+    else:
+        eprint(f"No files found at '{path}'")
 
+time.sleep(1)
 file_list(input_params['path'])
-print("\n")
-print("\n")

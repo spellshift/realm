@@ -34,6 +34,8 @@ const (
 	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
+	// EdgeShells holds the string denoting the shells edge name in mutations.
+	EdgeShells = "shells"
 	// Table holds the table name of the beacon in the database.
 	Table = "beacons"
 	// HostTable is the table that holds the host relation/edge.
@@ -50,6 +52,13 @@ const (
 	TasksInverseTable = "tasks"
 	// TasksColumn is the table column denoting the tasks relation/edge.
 	TasksColumn = "task_beacon"
+	// ShellsTable is the table that holds the shells relation/edge.
+	ShellsTable = "shells"
+	// ShellsInverseTable is the table name for the Shell entity.
+	// It exists in this package in order to avoid circular dependency with the "shell" package.
+	ShellsInverseTable = "shells"
+	// ShellsColumn is the table column denoting the shells relation/edge.
+	ShellsColumn = "shell_beacon"
 )
 
 // Columns holds all SQL columns for beacon fields.
@@ -175,6 +184,20 @@ func ByTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByShellsCount orders the results by shells count.
+func ByShellsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newShellsStep(), opts...)
+	}
+}
+
+// ByShells orders the results by shells terms.
+func ByShells(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newShellsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newHostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -187,5 +210,12 @@ func newTasksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TasksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, TasksTable, TasksColumn),
+	)
+}
+func newShellsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ShellsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
 	)
 }

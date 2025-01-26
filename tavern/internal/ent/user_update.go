@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -34,9 +35,25 @@ func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	return uu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableName(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetName(*s)
+	}
+	return uu
+}
+
 // SetPhotoURL sets the "photo_url" field.
 func (uu *UserUpdate) SetPhotoURL(s string) *UserUpdate {
 	uu.mutation.SetPhotoURL(s)
+	return uu
+}
+
+// SetNillablePhotoURL sets the "photo_url" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePhotoURL(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPhotoURL(*s)
+	}
 	return uu
 }
 
@@ -111,6 +128,21 @@ func (uu *UserUpdate) AddTomes(t ...*Tome) *UserUpdate {
 	return uu.AddTomeIDs(ids...)
 }
 
+// AddActiveShellIDs adds the "active_shells" edge to the Shell entity by IDs.
+func (uu *UserUpdate) AddActiveShellIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddActiveShellIDs(ids...)
+	return uu
+}
+
+// AddActiveShells adds the "active_shells" edges to the Shell entity.
+func (uu *UserUpdate) AddActiveShells(s ...*Shell) *UserUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.AddActiveShellIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -135,6 +167,27 @@ func (uu *UserUpdate) RemoveTomes(t ...*Tome) *UserUpdate {
 		ids[i] = t[i].ID
 	}
 	return uu.RemoveTomeIDs(ids...)
+}
+
+// ClearActiveShells clears all "active_shells" edges to the Shell entity.
+func (uu *UserUpdate) ClearActiveShells() *UserUpdate {
+	uu.mutation.ClearActiveShells()
+	return uu
+}
+
+// RemoveActiveShellIDs removes the "active_shells" edge to Shell entities by IDs.
+func (uu *UserUpdate) RemoveActiveShellIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveActiveShellIDs(ids...)
+	return uu
+}
+
+// RemoveActiveShells removes "active_shells" edges to Shell entities.
+func (uu *UserUpdate) RemoveActiveShells(s ...*Shell) *UserUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.RemoveActiveShellIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -259,6 +312,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.ActiveShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedActiveShellsIDs(); len(nodes) > 0 && !uu.mutation.ActiveShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ActiveShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -285,9 +383,25 @@ func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	return uuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableName(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetName(*s)
+	}
+	return uuo
+}
+
 // SetPhotoURL sets the "photo_url" field.
 func (uuo *UserUpdateOne) SetPhotoURL(s string) *UserUpdateOne {
 	uuo.mutation.SetPhotoURL(s)
+	return uuo
+}
+
+// SetNillablePhotoURL sets the "photo_url" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePhotoURL(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPhotoURL(*s)
+	}
 	return uuo
 }
 
@@ -362,6 +476,21 @@ func (uuo *UserUpdateOne) AddTomes(t ...*Tome) *UserUpdateOne {
 	return uuo.AddTomeIDs(ids...)
 }
 
+// AddActiveShellIDs adds the "active_shells" edge to the Shell entity by IDs.
+func (uuo *UserUpdateOne) AddActiveShellIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddActiveShellIDs(ids...)
+	return uuo
+}
+
+// AddActiveShells adds the "active_shells" edges to the Shell entity.
+func (uuo *UserUpdateOne) AddActiveShells(s ...*Shell) *UserUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.AddActiveShellIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -386,6 +515,27 @@ func (uuo *UserUpdateOne) RemoveTomes(t ...*Tome) *UserUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return uuo.RemoveTomeIDs(ids...)
+}
+
+// ClearActiveShells clears all "active_shells" edges to the Shell entity.
+func (uuo *UserUpdateOne) ClearActiveShells() *UserUpdateOne {
+	uuo.mutation.ClearActiveShells()
+	return uuo
+}
+
+// RemoveActiveShellIDs removes the "active_shells" edge to Shell entities by IDs.
+func (uuo *UserUpdateOne) RemoveActiveShellIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveActiveShellIDs(ids...)
+	return uuo
+}
+
+// RemoveActiveShells removes "active_shells" edges to Shell entities.
+func (uuo *UserUpdateOne) RemoveActiveShells(s ...*Shell) *UserUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.RemoveActiveShellIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -533,6 +683,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ActiveShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedActiveShellsIDs(); len(nodes) > 0 && !uuo.mutation.ActiveShellsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ActiveShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.ActiveShellsTable,
+			Columns: user.ActiveShellsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

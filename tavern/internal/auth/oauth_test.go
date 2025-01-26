@@ -152,7 +152,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	req = getOAuthAuthorizationRequest(t, privKey, expectedCode)
 	handler.ServeHTTP(resp, req)
 	result = resp.Result()
-	require.Equal(t, http.StatusOK, result.StatusCode)
+	require.Equal(t, http.StatusFound, result.StatusCode)
 
 	// User assertions
 	assert.Equal(t, 1, graph.User.Query().CountX(context.Background()))

@@ -3,6 +3,9 @@ name = "imix"
 version = "0.0.5"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib"]
+
 [features]
 # Check if compiled by imix
 win_service = []
@@ -10,27 +13,18 @@ default = []
 
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
-pb = {workspace = true }
+pb = { workspace = true }
 transport = { workspace = true }
+host_unique = { workspace = true }
 
 anyhow = { workspace = true }
 env_logger = "0.11.2"
-chrono = { workspace = true , features = ["serde"] }
 clap = { workspace = true }
 default-net = { workspace = true }
-hyper = { workspace = true }
-log = {workspace = true}
-openssl = { workspace = true, features = ["vendored"] }
-pretty_env_logger = {workspace = true}
-prost-types = { workspace = true }
-rand = {workspace = true}
-reqwest = { workspace = true, features = ["blocking", "stream", "json"] }
-serde = { workspace = true, features = ["derive"] }
-serde_json = {workspace = true}
-sys-info = { workspace = true }
-tonic = { workspace = true }
+log = { workspace = true }
+pretty_env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-uuid = { workspace = true, features = ["v4","fast-rng"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]

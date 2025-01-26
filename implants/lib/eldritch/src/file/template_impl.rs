@@ -21,8 +21,10 @@ pub fn template(
     autoescape: bool,
 ) -> Result<()> {
     let context = build_context(args)?;
-    let template_content = fs::read_to_string(template_path)?;
-    let res_content = Tera::one_off(template_content.as_str(), &context, autoescape)?;
+    let data = fs::read(template_path.clone())?;
+    let template_content = String::from_utf8_lossy(&data);
+
+    let res_content = Tera::one_off(template_content.to_string().as_str(), &context, autoescape)?;
     fs::write(dst_path, res_content)?;
     Ok(())
 }

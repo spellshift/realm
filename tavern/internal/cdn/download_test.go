@@ -16,7 +16,7 @@ import (
 	"realm.pub/tavern/internal/errors"
 )
 
-// TestUpload asserts that the download handler exhibits expected behavior.
+// TestDownload asserts that the download handler exhibits expected behavior.
 func TestDownload(t *testing.T) {
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
@@ -26,7 +26,7 @@ func TestDownload(t *testing.T) {
 
 	t.Run("File", newDownloadTest(
 		graph,
-		newDownloadRequest(t, existingFile.Name),
+		newDownloadRequest(existingFile.Name),
 		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			assert.Nil(t, err)
 			assert.Equal(t, string(expectedContent), string(fileContent))
@@ -34,7 +34,7 @@ func TestDownload(t *testing.T) {
 	))
 	t.Run("CachedFile", newDownloadTest(
 		graph,
-		newDownloadRequest(t, existingFile.Name, withIfNoneMatchHeader(existingFile.Hash)),
+		newDownloadRequest(existingFile.Name, withIfNoneMatchHeader(existingFile.Hash)),
 		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			require.NotNil(t, err)
 			assert.Equal(t, http.StatusNotModified, err.StatusCode)
@@ -44,7 +44,7 @@ func TestDownload(t *testing.T) {
 	))
 	t.Run("NonExistentFile", newDownloadTest(
 		graph,
-		newDownloadRequest(t, "ThisFileDoesNotExist"),
+		newDownloadRequest("ThisFileDoesNotExist"),
 		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			require.NotNil(t, err)
 			assert.Equal(t, http.StatusNotFound, err.StatusCode)
@@ -58,7 +58,7 @@ func TestDownload(t *testing.T) {
 func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(t *testing.T, fileContent []byte, err *errors.HTTP)) func(*testing.T) {
 	return func(t *testing.T) {
 		// Initialize Download Handler
-		handler := cdn.NewDownloadHandler(graph)
+		handler := cdn.NewDownloadHandler(graph, "/download/")
 
 		// Send request and record response
 		w := httptest.NewRecorder()
@@ -92,7 +92,7 @@ func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(t *tes
 }
 
 // newDownloadRequest is a helper to create an http.Request for a file download
-func newDownloadRequest(t *testing.T, fileName string, options ...func(*http.Request)) *http.Request {
+func newDownloadRequest(fileName string, options ...func(*http.Request)) *http.Request {
 	req := httptest.NewRequest(http.MethodGet, "/download/"+fileName, nil)
 	for _, opt := range options {
 		opt(req)
