@@ -1,4 +1,8 @@
-use std::{io::{BufReader, Read, Write}, net::{Ipv4Addr, SocketAddr, TcpStream, UdpSocket}, time::Duration};
+use std::{
+    io::{BufReader, Read, Write},
+    net::{Ipv4Addr, SocketAddr, TcpStream, UdpSocket},
+    time::Duration,
+};
 
 use anyhow::Result;
 
@@ -44,8 +48,7 @@ async fn handle_ncat_timeout(
         sock.set_write_timeout(Some(duration))?;
 
         // Send bytes to remote host
-        let _bytes_sent = sock
-            .send_to(data.as_bytes(), address_and_port)?;
+        let _bytes_sent = sock.send_to(data.as_bytes(), address_and_port)?;
 
         // Recieve any response from remote host
         let mut response_buffer = [0; 1024];
@@ -268,12 +271,12 @@ mod tests {
         .await?;
 
         assert!(send_task.is_err());
-        let err_string = send_task
-            .unwrap_err()
-            .to_string();
+        let err_string = send_task.unwrap_err().to_string();
         println!("{}", err_string);
-        assert!(err_string.contains("deadline has elapsed") || 
-            err_string.contains("not properly respond after a period of time"));
+        assert!(
+            err_string.contains("deadline has elapsed")
+                || err_string.contains("not properly respond after a period of time")
+        );
 
         Ok(())
     }
