@@ -10,8 +10,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/spellshift/realm)](https://goreportcard.com/report/github.com/spellshift/realm)
 [![Rust Report Card](https://rust-reportcard.xuri.me/badge/github.com/spellshift/realm)](https://rust-reportcard.xuri.me/report/github.com/spellshift/realm)
 [![Docs](https://img.shields.io/badge/read%20our-docs-informational)](https://docs.realm.pub/)
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/W4cfwWRNZK?style=flat)](https://discord.gg/W4cfwWRNZK)
+
 
 [Realm](https://github.com/spellshift/realm) is an Adversary Emulation Framework with a **focus on scalability, reliability, and automation**. It is highly performant and is designed for engagements of any size (up to many thousands of beacons). [Get started in minutes](https://docs.realm.pub/user-guide/getting-started).
+
+Want to get involved? [Join our Discord!](https://discord.gg/W4cfwWRNZK)
 
 <https://github.com/spellshift/realm/assets/16250309/7b5834d9-a864-490a-96e5-8d83b276af11>
 
