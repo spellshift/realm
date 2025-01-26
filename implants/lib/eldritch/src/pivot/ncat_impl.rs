@@ -1,31 +1,30 @@
-use std::net::Ipv4Addr;
+use std::{io::{BufReader, Read, Write}, net::{Ipv4Addr, SocketAddr, TcpStream, UdpSocket}, time::Duration};
 
 use anyhow::Result;
-use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpStream, UdpSocket};
 
 async fn handle_ncat_timeout(
     address: String,
     port: i32,
     data: String,
     protocol: String,
+    duration: Duration,
 ) -> Result<String> {
     // If the response is longer than 4096 bytes it will be  truncated.
     let mut response_buffer: Vec<u8> = Vec::new();
     let result_string: String;
 
-    let address_and_port = format!("{}:{}", address, port);
+    let address_and_port = format!("{}:{}", address, port).parse::<SocketAddr>()?;
 
     if protocol == "tcp" {
         // Connect to remote host
-        let mut connection = TcpStream::connect(&address_and_port).await?;
+        let mut connection = TcpStream::connect_timeout(&address_and_port, duration)?;
 
         // Write our meessage
-        connection.write_all(data.as_bytes()).await?;
+        connection.write_all(data.as_bytes())?;
 
         // Read server response
         let mut read_stream = BufReader::new(connection);
-        read_stream.read_buf(&mut response_buffer).await?;
+        read_stream.read_to_end(&mut response_buffer)?;
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
@@ -40,16 +39,17 @@ async fn handle_ncat_timeout(
 
         // Setting the bind address to unspecified should leave it up to the OS to decide.
         // https://stackoverflow.com/a/67084977
-        let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
+        let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0))?;
+        sock.set_read_timeout(Some(duration))?;
+        sock.set_write_timeout(Some(duration))?;
 
         // Send bytes to remote host
         let _bytes_sent = sock
-            .send_to(data.as_bytes(), address_and_port.clone())
-            .await?;
+            .send_to(data.as_bytes(), address_and_port)?;
 
         // Recieve any response from remote host
         let mut response_buffer = [0; 1024];
-        let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
+        let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer)?;
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
@@ -71,9 +71,10 @@ async fn handle_ncat(
     protocol: String,
     timeout: u32,
 ) -> Result<String> {
+    let duration = std::time::Duration::from_secs(timeout as u64);
     let res = match tokio::time::timeout(
-        std::time::Duration::from_secs(timeout as u64),
-        handle_ncat_timeout(address, port, data, protocol),
+        duration,
+        handle_ncat_timeout(address, port, data, protocol, duration),
     )
     .await?
     {
@@ -118,6 +119,7 @@ pub fn ncat(
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use anyhow::Context;
     use tokio::io::copy;
@@ -266,10 +268,12 @@ mod tests {
         .await?;
 
         assert!(send_task.is_err());
-        assert!(send_task
+        let err_string = send_task
             .unwrap_err()
-            .to_string()
-            .contains("deadline has elapsed"));
+            .to_string();
+        println!("{}", err_string);
+        assert!(err_string.contains("deadline has elapsed") || 
+            err_string.contains("not properly respond after a period of time"));
 
         Ok(())
     }
