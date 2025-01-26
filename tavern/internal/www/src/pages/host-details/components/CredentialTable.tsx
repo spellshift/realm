@@ -1,7 +1,11 @@
 import { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/tavern-base-ui/Table";
-import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { formatDistance } from "date-fns";
+import Button from "../../../components/tavern-base-ui/button/Button";
+import {
+    EyeIcon,
+    EyeSlashIcon
+} from '@heroicons/react/24/outline'
 
 const CredentialTable = ({ data }: any) => {
     const currentDate = new Date();
@@ -38,7 +42,7 @@ const CredentialTable = ({ data }: any) => {
                 const kind = cellData.getValue();
                 return (
                     <div className="flex flex-row flex-wrap gap-1">
-                        <Badge badgeStyle={{ color: 'gray' }}>{kind}</Badge>
+                        {kind}
                     </div>
                 );
             }
@@ -50,6 +54,15 @@ const CredentialTable = ({ data }: any) => {
             footer: props => props.column.id,
             maxSize: 100,
             enableSorting: false,
+            cell: (cellData: any) => {
+                const secret = cellData.getValue();
+                let hidden = false;
+                return (
+                    <div className="flex flex-row flex-wrap gap-1">
+                        {hidden ? '*'.repeat(secret.length) : secret} <Button onClick={() => hidden = !hidden}>{hidden ? <EyeIcon/> : <EyeSlashIcon/>}</Button>
+                    </div>
+                );
+            }
         },
     ];
 
