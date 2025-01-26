@@ -243,10 +243,10 @@ func (hfc *HostFileCreate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
-	if _, ok := hfc.mutation.HostID(); !ok {
+	if len(hfc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostFile.host"`)}
 	}
-	if _, ok := hfc.mutation.TaskID(); !ok {
+	if len(hfc.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostFile.task"`)}
 	}
 	return nil

@@ -285,7 +285,7 @@ func (bu *BeaconUpdate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if _, ok := bu.mutation.HostID(); bu.mutation.HostCleared() && !ok {
+	if bu.mutation.HostCleared() && len(bu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
@@ -742,7 +742,7 @@ func (buo *BeaconUpdateOne) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if _, ok := buo.mutation.HostID(); buo.mutation.HostCleared() && !ok {
+	if buo.mutation.HostCleared() && len(buo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil

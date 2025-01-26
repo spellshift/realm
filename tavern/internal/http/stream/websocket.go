@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"sync"
@@ -65,7 +66,10 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			hasClosed, ok := message.Metadata[MetadataStreamClose]
 			if ok && hasClosed != "" {
 				// The producer ended the stream.
-				log.Printf("[WS] Closing websocket, stream has ended (stream_id=%s)", c.Stream.id)
+				slog.DebugContext(ctx, "websocket closed due to producer ending stream",
+					"stream_id", c.Stream.id,
+					"stream_order_key", c.Stream.orderKey,
+				)
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -74,13 +78,25 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			if err != nil {
 				return
 			}
-			w.Write(message.Body)
+			if _, err := w.Write(message.Body); err != nil {
+				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
+					"stream_id", c.Stream.id,
+					"stream_order_key", c.Stream.orderKey,
+					"error", err,
+				)
+			}
 
-			// Add queued messages to the current websocket message.
+			// Flush queued messages to the current websocket message.
 			n := len(c.Messages())
 			for i := 0; i < n; i++ {
 				additionalMsg := <-c.Messages()
-				w.Write(additionalMsg.Body)
+				if _, err := w.Write(additionalMsg.Body); err != nil {
+					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
+						"stream_id", c.Stream.id,
+						"stream_order_key", c.Stream.orderKey,
+						"error", err,
+					)
+				}
 			}
 
 			if err := w.Close(); err != nil {
@@ -115,17 +131,27 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			_, message, err := c.ws.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Printf("[WS][ERROR] websocket closed unexpectedly: %v", err)
+					slog.ErrorContext(ctx, "websocket closed unexpectedly",
+						"stream_id", c.Stream.id,
+						"stream_order_key", c.Stream.orderKey,
+						"error", err,
+					)
 				}
 				return
 			}
+			msgLen := len(message)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
 					metadataID: c.id,
 				},
 			}, c.mux); err != nil {
-				log.Printf("[WS][ERROR] failed to publish message: %v", err)
+				slog.ErrorContext(ctx, "websocket failed to publish message",
+					"stream_id", c.Stream.id,
+					"stream_order_key", c.Stream.orderKey,
+					"msg_len", msgLen,
+					"error", err,
+				)
 				return
 			}
 		}

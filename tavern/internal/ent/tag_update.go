@@ -34,9 +34,25 @@ func (tu *TagUpdate) SetName(s string) *TagUpdate {
 	return tu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tu *TagUpdate) SetNillableName(s *string) *TagUpdate {
+	if s != nil {
+		tu.SetName(*s)
+	}
+	return tu
+}
+
 // SetKind sets the "kind" field.
 func (tu *TagUpdate) SetKind(t tag.Kind) *TagUpdate {
 	tu.mutation.SetKind(t)
+	return tu
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (tu *TagUpdate) SetNillableKind(t *tag.Kind) *TagUpdate {
+	if t != nil {
+		tu.SetKind(*t)
+	}
 	return tu
 }
 
@@ -212,9 +228,25 @@ func (tuo *TagUpdateOne) SetName(s string) *TagUpdateOne {
 	return tuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tuo *TagUpdateOne) SetNillableName(s *string) *TagUpdateOne {
+	if s != nil {
+		tuo.SetName(*s)
+	}
+	return tuo
+}
+
 // SetKind sets the "kind" field.
 func (tuo *TagUpdateOne) SetKind(t tag.Kind) *TagUpdateOne {
 	tuo.mutation.SetKind(t)
+	return tuo
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (tuo *TagUpdateOne) SetNillableKind(t *tag.Kind) *TagUpdateOne {
+	if t != nil {
+		tuo.SetKind(*t)
+	}
 	return tuo
 }
 

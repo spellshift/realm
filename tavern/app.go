@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -33,6 +34,10 @@ import (
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
+
+func init() {
+	configureLogging()
+}
 
 func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app = cli.NewApp()
@@ -184,7 +189,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 				cfg.oauth,
 				pubKey,
 				client,
-				"https://www.googleapis.com/oauth2/v3/userinfo",
+				cfg.userProfiles,
 			),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
@@ -218,7 +223,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/playground": tavernhttp.Endpoint{
-			Handler:          playground.Handler("Tavern", "/graphql"),
+			Handler:          playground.Handler("Realm - Red Team Engagement Platform", "/graphql"),
 			LoginRedirectURI: "/oauth/login",
 		},
 	}
@@ -349,4 +354,30 @@ func registerProfiler(router tavernhttp.RouteMap) {
 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+}
+
+func configureLogging() {
+	// Use instance ID as prefix (helps in deployments with multiple tavern instances)
+	var (
+		logger *slog.Logger
+	)
+
+	// Setup Default Logger
+	if EnvDebugLogging.String() == "" {
+		// Production Logging
+		logger = slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		})).
+			With("tavern_id", GlobalInstanceID)
+	} else {
+		// Debug Logging
+		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level:     slog.LevelDebug,
+			AddSource: true,
+		})).
+			With("tavern_id", GlobalInstanceID)
+	}
+
+	slog.SetDefault(logger)
+	slog.Debug("Debug logging enabled 🕵️ ")
 }
