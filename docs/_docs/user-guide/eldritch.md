@@ -89,6 +89,7 @@ The standard library is the default functionality that eldritch provides. It con
 - `http` - Used to make http(s) requests from the agent.
 - `pivot` - Used to identify and move between systems.
 - `process` - Used to interact with processes on the system.
+- `random` - Used to generate cryptographically secure random values.
 - `regex` - Regular expression capabilities for operating on strings.
 - `report` - Structured data reporting capabilities.
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
@@ -292,6 +293,7 @@ This function also supports globbing with `*` for example:
 ```python
 file.list("/home/*/.bash_history") # List all files called .bash_history in sub dirs of `/home/`
 file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name
+file.list("\\\\127.0.0.1\\c$\\Windows\\*.yml") # List files over UNC paths
 ```
 
 Each file is represented by a Dict type.
@@ -360,6 +362,7 @@ This function supports globbing with `*` for example:
 ```python
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.remove
@@ -379,6 +382,12 @@ The <b>file.replace</b> method finds the first string matching a regex pattern i
 `file.replace_all(path: str, pattern: str, value: str) -> None`
 
 The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+
+### file.temp_file
+
+`file.temp_file(name: Option<str>) -> str`
+
+The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
 
@@ -664,22 +673,42 @@ The <b>process.name</b> method returns the name of the process from it's given p
 
 The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
+_Currently only shows LISTENING TCP connections_
+
 ```json
 [
     {
         "socket_type": "TCP",
         "local_address": "127.0.0.1",
         "local_port": 46341,
-        "remote_address": "0.0.0.0",
-        "remote_port": 0,
-        "state": "LISTEN",
-        "pids": [
-            2359037
-        ]
+        "pid": 2359037
     },
     ...
 ]
 ```
+
+---
+
+## Random
+
+The random library is designed to enable generation of cryptogrphically secure random vaules. None of these functions will be blocking.
+
+### random.bool
+
+`random.bool() -> bool`
+
+The <b>random.bool</b> method returns a randomly sourced boolean value.
+
+### random.int
+
+`random.int(min: i32, max: i32) -> i32`
+
+The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum.
+
+### random.string
+
+`random.string(length: uint, charset: Optional<str>) -> str`
+The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
 
 ---
 

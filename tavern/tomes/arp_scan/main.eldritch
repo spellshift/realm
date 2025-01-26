@@ -6,4 +6,5 @@ def arp_scan():
     res = pivot.arp_scan(all_ips)
     print(res)
 
+time.sleep(1)
 arp_scan()

@@ -1,0 +1,10 @@
+name: Report file
+description: Report a file on a target host back to the c2 server.
+author: hulto
+support_model: FIRST_PARTY
+tactic: EXFILTRATION
+paramdefs:
+- label: File path
+  name: path
+  placeholder: /etc/passwd
+  type: string

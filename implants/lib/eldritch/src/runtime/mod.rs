@@ -89,7 +89,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+            want_text: format!("{}\n", r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write"]"#),
             want_error: None,
         },
         process_bindings: TestCase {
@@ -150,6 +150,16 @@ mod tests {
                 file_names: Vec::new(),
             },
             want_text: format!("{}\n", r#"["format_to_epoch", "format_to_readable", "now", "sleep"]"#),
+            want_error: None,
+        },
+        random_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(random))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n", r#"["bool", "int", "string"]"#),
             want_error: None,
         },
         report_bindings: TestCase {

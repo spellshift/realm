@@ -2,6 +2,7 @@ use super::Dispatcher;
 use anyhow::Result;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+#[cfg(not(target_os = "windows"))]
 use std::path::Path;
 use tokio::sync::mpsc::error::TryRecvError;
 use transport::Transport;

@@ -31,21 +31,23 @@ const Badge: FC<BadgeProps> = (
     }
 
     return (
-        <div
-            className={renderBadgeVariant()}
-            {...rest}
-        >
-            {/** render icon before */}
-            {icon && iconPlacement === "left" ? (
-                <span className={`inline-flex shrink-0 self-center ${children}`}>{icon}</span>
-            ) : null}
+        <div className="flex flex-row">
+            <div
+                className={renderBadgeVariant()}
+                {...rest}
+            >
+                {/** render icon before */}
+                {icon && iconPlacement === "left" ? (
+                    <span className={`inline-flex shrink-0 self-center ${children}`}>{icon}</span>
+                ) : null}
 
-            {children}
+                {children}
 
-            {/** render icon after */}
-            {icon && iconPlacement === "right" ? (
-                <span className={`inline-flex shrink-0 self-center  ${children}`}>{icon}</span>
-            ) : null}
+                {/** render icon after */}
+                {icon && iconPlacement === "right" ? (
+                    <span className={`inline-flex shrink-0 self-center  ${children}`}>{icon}</span>
+                ) : null}
+            </div>
         </div>
     );
 };
@@ -54,6 +56,9 @@ const Badge: FC<BadgeProps> = (
 Badge.defaultProps = {
     leftIcon: undefined,
     rightIcon: undefined,
+    badgeStyle: {
+        color: "gray"
+    }
 };
 
 export default Badge;

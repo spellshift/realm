@@ -29,8 +29,11 @@ async fn handle_ncat_timeout(
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
-        result_string =
-            String::from(String::from_utf8(response_buffer.to_vec())?.trim_matches(char::from(0)));
+        result_string = String::from(
+            String::from_utf8_lossy(&response_buffer)
+                .to_string()
+                .trim_matches(char::from(0)),
+        );
         Ok(result_string)
     } else if protocol == "udp" {
         // Connect to remote host

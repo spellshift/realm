@@ -1,9 +1,12 @@
+#![deny(warnings)]
+
 pub mod assets;
 pub mod crypto;
 pub mod file;
 pub mod http;
 pub mod pivot;
 pub mod process;
+pub mod random;
 pub mod regex;
 mod report;
 pub mod runtime;

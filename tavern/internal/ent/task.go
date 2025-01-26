@@ -72,12 +72,10 @@ type TaskEdges struct {
 // QuestOrErr returns the Quest value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TaskEdges) QuestOrErr() (*Quest, error) {
-	if e.loadedTypes[0] {
-		if e.Quest == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: quest.Label}
-		}
+	if e.Quest != nil {
 		return e.Quest, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: quest.Label}
 	}
 	return nil, &NotLoadedError{edge: "quest"}
 }
@@ -85,12 +83,10 @@ func (e TaskEdges) QuestOrErr() (*Quest, error) {
 // BeaconOrErr returns the Beacon value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e TaskEdges) BeaconOrErr() (*Beacon, error) {
-	if e.loadedTypes[1] {
-		if e.Beacon == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: beacon.Label}
-		}
+	if e.Beacon != nil {
 		return e.Beacon, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: beacon.Label}
 	}
 	return nil, &NotLoadedError{edge: "beacon"}
 }

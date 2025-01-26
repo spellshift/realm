@@ -1,0 +1,10 @@
+name: HTTP GET file and execute
+description: Copy a file from a remote HTTP server to the target host and execute it. If possible background and disown the process.
+author: hulto
+support_model: FIRST_PARTY
+tactic: EXECUTION
+paramdefs:
+- name: url
+  type: string
+  label: Executable file's URL
+  placeholder: "https://example.com/executable_file"

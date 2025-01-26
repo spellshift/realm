@@ -35,6 +35,8 @@ openssl = { workspace = true, features = ["vendored"] }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["blocking", "stream"] }
 russh = { workspace = true }
@@ -77,7 +79,7 @@ pnet = { workspace = true }
 
 # NOT FREEBSD
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
-netstat2 = { workspace = true }
+listeners = { workspace = true }
 
 # DEV
 [dev-dependencies]
