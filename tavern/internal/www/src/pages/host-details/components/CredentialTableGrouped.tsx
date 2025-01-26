@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/tavern-base-ui/Table";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { formatDistance } from "date-fns";
+import Credential from "./Credential";
 
 const CredentialTableGrouped = ({ data }: any) => {
     const currentDate = new Date();
@@ -63,8 +64,16 @@ const CredentialTableGrouped = ({ data }: any) => {
             header: 'Secret',
             accessorFn: row => row.secret,
             footer: props => props.column.id,
-            maxSize: 100,
+            maxSize: 250,
             enableSorting: false,
+            cell: (cellData: any) => {
+                const secret = cellData.getValue();
+                return (
+                    <div className="flex justify-between">
+                        <Credential secret={secret} />
+                    </div>
+                );
+            }
         },
     ];
 

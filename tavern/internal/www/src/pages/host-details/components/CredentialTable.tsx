@@ -1,11 +1,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/tavern-base-ui/Table";
 import { formatDistance } from "date-fns";
-import Button from "../../../components/tavern-base-ui/button/Button";
-import {
-    EyeIcon,
-    EyeSlashIcon
-} from '@heroicons/react/24/outline'
+import Credential from "./Credential";
+
 
 const CredentialTable = ({ data }: any) => {
     const currentDate = new Date();
@@ -52,14 +49,13 @@ const CredentialTable = ({ data }: any) => {
             header: 'Secret',
             accessorFn: row => row.secret,
             footer: props => props.column.id,
-            maxSize: 100,
+            maxSize: 250,
             enableSorting: false,
             cell: (cellData: any) => {
                 const secret = cellData.getValue();
-                let hidden = false;
                 return (
-                    <div className="flex flex-row flex-wrap gap-1">
-                        {hidden ? '*'.repeat(secret.length) : secret} <Button onClick={() => hidden = !hidden}>{hidden ? <EyeIcon/> : <EyeSlashIcon/>}</Button>
+                    <div className="flex justify-between">
+                        <Credential secret={secret} />
                     </div>
                 );
             }
