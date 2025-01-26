@@ -22,6 +22,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -33,38 +35,70 @@ type Noder interface {
 	IsNode()
 }
 
-// IsNode implements the Node interface check for GQLGen.
-func (n *Beacon) IsNode() {}
+var beaconImplementors = []string{"Beacon", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *File) IsNode() {}
+func (*Beacon) IsNode() {}
+
+var fileImplementors = []string{"File", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Host) IsNode() {}
+func (*File) IsNode() {}
+
+var hostImplementors = []string{"Host", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *HostCredential) IsNode() {}
+func (*Host) IsNode() {}
+
+var hostcredentialImplementors = []string{"HostCredential", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *HostFile) IsNode() {}
+func (*HostCredential) IsNode() {}
+
+var hostfileImplementors = []string{"HostFile", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *HostProcess) IsNode() {}
+func (*HostFile) IsNode() {}
+
+var hostprocessImplementors = []string{"HostProcess", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Quest) IsNode() {}
+func (*HostProcess) IsNode() {}
+
+var questImplementors = []string{"Quest", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Tag) IsNode() {}
+func (*Quest) IsNode() {}
+
+var repositoryImplementors = []string{"Repository", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Task) IsNode() {}
+func (*Repository) IsNode() {}
+
+var shellImplementors = []string{"Shell", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Tome) IsNode() {}
+func (*Shell) IsNode() {}
+
+var tagImplementors = []string{"Tag", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *User) IsNode() {}
+func (*Tag) IsNode() {}
+
+var taskImplementors = []string{"Task", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Task) IsNode() {}
+
+var tomeImplementors = []string{"Tome", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Tome) IsNode() {}
+
+var userImplementors = []string{"User", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*User) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -127,135 +161,120 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 	case beacon.Table:
 		query := c.Beacon.Query().
 			Where(beacon.ID(id))
-		query, err := query.CollectFields(ctx, "Beacon")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, beaconImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case file.Table:
 		query := c.File.Query().
 			Where(file.ID(id))
-		query, err := query.CollectFields(ctx, "File")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, fileImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case host.Table:
 		query := c.Host.Query().
 			Where(host.ID(id))
-		query, err := query.CollectFields(ctx, "Host")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case hostcredential.Table:
 		query := c.HostCredential.Query().
 			Where(hostcredential.ID(id))
-		query, err := query.CollectFields(ctx, "HostCredential")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostcredentialImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case hostfile.Table:
 		query := c.HostFile.Query().
 			Where(hostfile.ID(id))
-		query, err := query.CollectFields(ctx, "HostFile")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostfileImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case hostprocess.Table:
 		query := c.HostProcess.Query().
 			Where(hostprocess.ID(id))
-		query, err := query.CollectFields(ctx, "HostProcess")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostprocessImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case quest.Table:
 		query := c.Quest.Query().
 			Where(quest.ID(id))
-		query, err := query.CollectFields(ctx, "Quest")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, questImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
+		return query.Only(ctx)
+	case repository.Table:
+		query := c.Repository.Query().
+			Where(repository.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, repositoryImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		return n, nil
+		return query.Only(ctx)
+	case shell.Table:
+		query := c.Shell.Query().
+			Where(shell.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shellImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
 	case tag.Table:
 		query := c.Tag.Query().
 			Where(tag.ID(id))
-		query, err := query.CollectFields(ctx, "Tag")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, tagImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case task.Table:
 		query := c.Task.Query().
 			Where(task.ID(id))
-		query, err := query.CollectFields(ctx, "Task")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, taskImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case tome.Table:
 		query := c.Tome.Query().
 			Where(tome.ID(id))
-		query, err := query.CollectFields(ctx, "Tome")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, tomeImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case user.Table:
 		query := c.User.Query().
 			Where(user.ID(id))
-		query, err := query.CollectFields(ctx, "User")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, userImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	default:
 		return nil, fmt.Errorf("cannot resolve noder from table %q: %w", table, errNodeInvalidID)
 	}
@@ -332,7 +351,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case beacon.Table:
 		query := c.Beacon.Query().
 			Where(beacon.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Beacon")
+		query, err := query.CollectFields(ctx, beaconImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +367,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case file.Table:
 		query := c.File.Query().
 			Where(file.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "File")
+		query, err := query.CollectFields(ctx, fileImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +383,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case host.Table:
 		query := c.Host.Query().
 			Where(host.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Host")
+		query, err := query.CollectFields(ctx, hostImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +399,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case hostcredential.Table:
 		query := c.HostCredential.Query().
 			Where(hostcredential.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "HostCredential")
+		query, err := query.CollectFields(ctx, hostcredentialImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -396,7 +415,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case hostfile.Table:
 		query := c.HostFile.Query().
 			Where(hostfile.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "HostFile")
+		query, err := query.CollectFields(ctx, hostfileImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -412,7 +431,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case hostprocess.Table:
 		query := c.HostProcess.Query().
 			Where(hostprocess.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "HostProcess")
+		query, err := query.CollectFields(ctx, hostprocessImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +447,39 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case quest.Table:
 		query := c.Quest.Query().
 			Where(quest.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Quest")
+		query, err := query.CollectFields(ctx, questImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case repository.Table:
+		query := c.Repository.Query().
+			Where(repository.IDIn(ids...))
+		query, err := query.CollectFields(ctx, repositoryImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case shell.Table:
+		query := c.Shell.Query().
+			Where(shell.IDIn(ids...))
+		query, err := query.CollectFields(ctx, shellImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -444,7 +495,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case tag.Table:
 		query := c.Tag.Query().
 			Where(tag.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Tag")
+		query, err := query.CollectFields(ctx, tagImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +511,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case task.Table:
 		query := c.Task.Query().
 			Where(task.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Task")
+		query, err := query.CollectFields(ctx, taskImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -476,7 +527,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case tome.Table:
 		query := c.Tome.Query().
 			Where(tome.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Tome")
+		query, err := query.CollectFields(ctx, tomeImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -492,7 +543,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 	case user.Table:
 		query := c.User.Query().
 			Where(user.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "User")
+		query, err := query.CollectFields(ctx, userImplementors...)
 		if err != nil {
 			return nil, err
 		}

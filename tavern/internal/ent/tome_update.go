@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -42,15 +43,39 @@ func (tu *TomeUpdate) SetName(s string) *TomeUpdate {
 	return tu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableName(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetName(*s)
+	}
+	return tu
+}
+
 // SetDescription sets the "description" field.
 func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
 	tu.mutation.SetDescription(s)
 	return tu
 }
 
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableDescription(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetDescription(*s)
+	}
+	return tu
+}
+
 // SetAuthor sets the "author" field.
 func (tu *TomeUpdate) SetAuthor(s string) *TomeUpdate {
 	tu.mutation.SetAuthor(s)
+	return tu
+}
+
+// SetNillableAuthor sets the "author" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableAuthor(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetAuthor(*s)
+	}
 	return tu
 }
 
@@ -108,9 +133,25 @@ func (tu *TomeUpdate) SetHash(s string) *TomeUpdate {
 	return tu
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableHash(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetHash(*s)
+	}
+	return tu
+}
+
 // SetEldritch sets the "eldritch" field.
 func (tu *TomeUpdate) SetEldritch(s string) *TomeUpdate {
 	tu.mutation.SetEldritch(s)
+	return tu
+}
+
+// SetNillableEldritch sets the "eldritch" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableEldritch(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetEldritch(*s)
+	}
 	return tu
 }
 
@@ -148,6 +189,25 @@ func (tu *TomeUpdate) SetUploader(u *User) *TomeUpdate {
 	return tu.SetUploaderID(u.ID)
 }
 
+// SetRepositoryID sets the "repository" edge to the Repository entity by ID.
+func (tu *TomeUpdate) SetRepositoryID(id int) *TomeUpdate {
+	tu.mutation.SetRepositoryID(id)
+	return tu
+}
+
+// SetNillableRepositoryID sets the "repository" edge to the Repository entity by ID if the given value is not nil.
+func (tu *TomeUpdate) SetNillableRepositoryID(id *int) *TomeUpdate {
+	if id != nil {
+		tu = tu.SetRepositoryID(*id)
+	}
+	return tu
+}
+
+// SetRepository sets the "repository" edge to the Repository entity.
+func (tu *TomeUpdate) SetRepository(r *Repository) *TomeUpdate {
+	return tu.SetRepositoryID(r.ID)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
@@ -177,6 +237,12 @@ func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
 // ClearUploader clears the "uploader" edge to the User entity.
 func (tu *TomeUpdate) ClearUploader() *TomeUpdate {
 	tu.mutation.ClearUploader()
+	return tu
+}
+
+// ClearRepository clears the "repository" edge to the Repository entity.
+func (tu *TomeUpdate) ClearRepository() *TomeUpdate {
+	tu.mutation.ClearRepository()
 	return tu
 }
 
@@ -368,6 +434,35 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.RepositoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.RepositoryTable,
+			Columns: []string{tome.RepositoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RepositoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.RepositoryTable,
+			Columns: []string{tome.RepositoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tome.Label}
@@ -400,15 +495,39 @@ func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
 	return tuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableName(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetName(*s)
+	}
+	return tuo
+}
+
 // SetDescription sets the "description" field.
 func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
 	tuo.mutation.SetDescription(s)
 	return tuo
 }
 
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableDescription(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetDescription(*s)
+	}
+	return tuo
+}
+
 // SetAuthor sets the "author" field.
 func (tuo *TomeUpdateOne) SetAuthor(s string) *TomeUpdateOne {
 	tuo.mutation.SetAuthor(s)
+	return tuo
+}
+
+// SetNillableAuthor sets the "author" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableAuthor(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetAuthor(*s)
+	}
 	return tuo
 }
 
@@ -466,9 +585,25 @@ func (tuo *TomeUpdateOne) SetHash(s string) *TomeUpdateOne {
 	return tuo
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableHash(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetHash(*s)
+	}
+	return tuo
+}
+
 // SetEldritch sets the "eldritch" field.
 func (tuo *TomeUpdateOne) SetEldritch(s string) *TomeUpdateOne {
 	tuo.mutation.SetEldritch(s)
+	return tuo
+}
+
+// SetNillableEldritch sets the "eldritch" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableEldritch(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetEldritch(*s)
+	}
 	return tuo
 }
 
@@ -506,6 +641,25 @@ func (tuo *TomeUpdateOne) SetUploader(u *User) *TomeUpdateOne {
 	return tuo.SetUploaderID(u.ID)
 }
 
+// SetRepositoryID sets the "repository" edge to the Repository entity by ID.
+func (tuo *TomeUpdateOne) SetRepositoryID(id int) *TomeUpdateOne {
+	tuo.mutation.SetRepositoryID(id)
+	return tuo
+}
+
+// SetNillableRepositoryID sets the "repository" edge to the Repository entity by ID if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableRepositoryID(id *int) *TomeUpdateOne {
+	if id != nil {
+		tuo = tuo.SetRepositoryID(*id)
+	}
+	return tuo
+}
+
+// SetRepository sets the "repository" edge to the Repository entity.
+func (tuo *TomeUpdateOne) SetRepository(r *Repository) *TomeUpdateOne {
+	return tuo.SetRepositoryID(r.ID)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
@@ -535,6 +689,12 @@ func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
 // ClearUploader clears the "uploader" edge to the User entity.
 func (tuo *TomeUpdateOne) ClearUploader() *TomeUpdateOne {
 	tuo.mutation.ClearUploader()
+	return tuo
+}
+
+// ClearRepository clears the "repository" edge to the Repository entity.
+func (tuo *TomeUpdateOne) ClearRepository() *TomeUpdateOne {
+	tuo.mutation.ClearRepository()
 	return tuo
 }
 
@@ -749,6 +909,35 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.RepositoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.RepositoryTable,
+			Columns: []string{tome.RepositoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RepositoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tome.RepositoryTable,
+			Columns: []string{tome.RepositoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -40,8 +40,10 @@ def file_list(path,tree, depth=-1):
     tree="|\t"+tree
     if depth == 0:
         return
+
     files = file.list(path)
     for f in files:
+        file_name = f['file_name']
         if path+f['file_name'] in block_list:
             print("Skipping: "+path+f['file_name'])
             continue
@@ -58,13 +60,17 @@ def main(path, depth=-1):
     tree=""
     depth=int(depth)
     if file.is_dir(path):
-        print(path+"\n")
+        print(path+"")
         if path == "/":
             print("It looks like you're trying to list every file on the system.")
             print("This generates a lot of data so I'm going to exclude less helpful directories")
             print("If you really really want everything including /proc and /sys specify \"//\"")
-        file_list(path,tree, depth=depth)
+        file_list(path,tree)
     elif file.is_file(path):
-        print("Error: Invalid Path ("+path+")")
+        eprint(f"Error: Invalid Path ({path})")
 
-main(input_params['path'], input_params["depth"])
+time.sleep(1)
+
+input_params['path']="/"
+main(input_params['path'])
+print("")

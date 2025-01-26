@@ -28,6 +28,12 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+type ImportRepositoryInput struct {
+	// Optionally, specify directories to include.
+	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
+	IncludeDirs []string `json:"includeDirs,omitempty"`
+}
+
 type SubmitTaskResultInput struct {
 	// ID of the task to submit results for.
 	TaskID int `json:"taskID"`
@@ -66,7 +72,7 @@ func (e Role) String() string {
 	return string(e)
 }
 
-func (e *Role) UnmarshalGQL(v interface{}) error {
+func (e *Role) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate eldritch;
 extern crate golem;
 
@@ -33,20 +35,21 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
     }
 
     let mut result = Vec::new();
+    let mut errors = Vec::new();
     for runtime in &mut runtimes {
         runtime.finish().await;
 
         for msg in runtime.messages() {
             match msg {
                 Message::ReportText(m) => result.push(m.text()),
-                Message::ReportError(m) => {
-                    return Err(anyhow!("{}", m.error));
-                }
+                Message::ReportError(m) => errors.push(m.error),
                 _ => {}
             }
         }
     }
-
+    if !errors.is_empty() {
+        return Err(anyhow!("{:?}", errors));
+    }
     Ok(result)
 }
 
@@ -156,7 +159,7 @@ mod tests {
         }]);
 
         let out = run_tomes(parsed_tomes).await?;
-        assert_eq!("hello world".to_string(), out.join(""));
+        assert_eq!("hello world\n".to_string(), out.join(""));
         Ok(())
     }
 }

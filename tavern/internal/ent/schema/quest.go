@@ -31,6 +31,27 @@ func (Quest) Fields() []ent.Field {
 			}).
 			Optional().
 			Comment("Value of parameters that were specified for the quest (as a JSON string)."),
+		field.String("param_defs_at_creation").
+			Immutable().
+			Validate(validators.NewTomeParameterDefinitions()).
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter."),
+		field.String("eldritch_at_creation").
+			Immutable().
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Eldritch script that was evaluated at the time of this quest creation."),
 	}
 }
 
@@ -50,6 +71,7 @@ func (Quest) Edges() []ent.Edge {
 		edge.To("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput),
+				entgql.RelayConnection(),
 			).
 			Comment("Tasks tracking the status and output of individual tome execution on targets"),
 		edge.To("creator", User.Type).
@@ -64,6 +86,8 @@ func (Quest) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Quest) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),

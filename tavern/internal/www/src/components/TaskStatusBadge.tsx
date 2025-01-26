@@ -1,48 +1,16 @@
-import { RepeatClockIcon, TimeIcon } from "@chakra-ui/icons";
-import { Badge } from "@chakra-ui/react";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import React from "react";
+
+import Badge from "./tavern-base-ui/badge/Badge";
 
 type Props = {
     task: any;
 }
 const TaskStatusBadge = (props: Props) => {
-    const {task} = props;
+    const { task } = props;
 
-    if(task.execFinishedAt){
-        return (
-            <div>
-                <Badge fontSize='0.8em' size="large" colorScheme="green" variant="solid">
-                    <div className="flex flex-row gap-1 justify-center items-center p-1" >
-                        <CheckCircleIcon className="w-5" color="white"/>
-                        <div>Finished</div>
-                    </div>
-                </Badge>
-            </div>
-        );
-    }
-
-    if(task.execStartedAt){
-       return (
-        <div>
-            <Badge fontSize='0.8em' size="large" colorScheme="gray" variant="outline">
-                <div className="flex flex-row gap-1 justify-center items-center p-1" >
-                    <RepeatClockIcon w={4} h={4} color="gray"/> 
-                    <div>In-Progress</div>
-                </div>
-            </Badge>
-        </div>
-       ); 
-    }
-
-    return (
-        <div>
-            <Badge fontSize='0.8em' size="large" colorScheme="gray" variant="outline">
-                <div className="flex flex-row gap-1 justify-center items-center p-1" >
-                    <TimeIcon w={4} h={4} color="gray" />
-                    <div>Queued</div>
-                </div>
-            </Badge>
-        </div>
-    );
+    if (task.error.length > 0) return <Badge badgeStyle={{ color: 'red' }} >Error</Badge>;
+    else if (task.execFinishedAt) return <Badge badgeStyle={{ color: 'green' }} >Finished</Badge>;
+    else if (task.execStartedAt) return <Badge badgeStyle={{ color: 'gray' }} >In progress</Badge>;
+    else return <Badge badgeStyle={{ color: 'gray' }} >Queued</Badge>;
 }
 export default TaskStatusBadge;

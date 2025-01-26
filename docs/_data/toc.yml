@@ -1,31 +1,39 @@
 - title: User Guide
-  url: user-guide
+  url: user-guide/getting-started
   links:
     - title: "Getting Started"
       url: "user-guide/getting-started"
-    - title: "Tavern"
-      url: "user-guide/tavern"
-    - title: "UI"
-      url: "user-guide/ui"
-    - title: "Imix"
-      url: "user-guide/imix"
-    - title: "Golem"
-      url: "user-guide/golem"
     - title: "Eldritch"
       url: "user-guide/eldritch"
+    - title: "Tomes"
+      url: "user-guide/tomes"
+    - title: "Golem"
+      url: "user-guide/golem"
+    - title: "Imix"
+      url: "user-guide/imix"
+    - title: "Terminology"
+      url: "user-guide/terminology"
+
+- title: Admin Guide
+  url: admin-guide/tavern
+  links:
+    - title: "Tavern"
+      url: "admin-guide/tavern"
       children:
-        - title: Standard Library
-          url: "user-guide/eldritch#standard-library"
+        - title: "Deployment"
+          url: "admin-guide/tavern#deployment"
+        - title: "Configuration"
+          url: "admin-guide/tavern#configuration"
+        - title: "GraphQL API"
+          url: "admin-guide/tavern#graphql-api"
 - title: Developer Guide
-  url: dev-guide
+  url: dev-guide/introduction
   links:
     - title: "Introduction"
       url: "dev-guide/introduction"
       children:
         - title: "Contribution Guidelines"
           url: "dev-guide/introduction#contribution-guidelines"
-        - title: "Terminology"
-          url: "dev-guide/introduction#terminology"
         - title: "Project Structure"
           url: "dev-guide/introduction#project-structure"
         - title: "Where to Start?"
@@ -33,28 +41,28 @@
     - title: "Tavern"
       url: "dev-guide/tavern"
       children:
-        - title: "Configuration"
-          url: "dev-guide/tavern#configuration"
-        - title: "User Interface"
-          url: "dev-guide/tavern#user-interface"
-        - title: "CDN API"
-          url: "dev-guide/tavern#cdn-api"
-        - title: "GraphQL API"
-          url: "dev-guide/tavern#graphql-api"
         - title: "Agent Development"
-          url: "dev-guide/tavern#agent-development"
+          url: "admin-guide/tavern#agent-development"
     - title: "Eldritch"
       url: "dev-guide/eldritch"
       children:
         - title: "Overview"
-          url: "dev-guide/eldritch#Overview"
-        - title: "Creating a function"
-          url: "dev-guide/eldritch#creating-a-function"
+          url: "dev-guide/eldritch#overview"
+        - title: "Create an Eldritch Function"
+          url: "dev-guide/eldritch#create-an-eldritch-function"
         - title: "OS Specific functions"
           url: "dev-guide/eldritch#os-specific-functions"
-        - title: "Notes about using dictionary type Dict"
-          url: "dev-guide/eldritch#notes-about-using-dictionary-type-dict"
-        - title: "Notes about asynchronous Eldritch code"
-          url: "dev-guide/eldritch#notes-about-asynchronous-eldritch-code"
+        - title: "Using Dict"
+          url: "dev-guide/eldritch#using-dict"
+        - title: "Using Async"
+          url: "dev-guide/eldritch#using-async"
+    - title: "Imix"
+      url: "dev-guide/imix"
+      children:
+        - title: "Overview"
+          url: "dev-guide/imix#overview"
+        - title: "Develop a host uniqueness selector"
+          url: "dev-guide/imix#develop-a-host-uniqueness-selector"
+
 - title: "About"
-  url: "about"
+  url: "" # Index

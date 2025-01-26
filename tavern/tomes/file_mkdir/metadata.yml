@@ -1,0 +1,14 @@
+name: Make Directory
+description: Will make a directory.
+author: nickobrien
+support_model: FIRST_PARTY
+tactic: EXECUTION
+paramdefs:
+- name: path
+  type: string
+  label: File path
+  placeholder: "/dir/to/use/later"
+- name: parent
+  type: bool
+  label: If the parent directories should be made all the way to the chosen directory
+  placeholder: "True"

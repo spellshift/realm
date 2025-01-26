@@ -9,12 +9,14 @@ export enum TaskStatus {
     queued = "QUEUED",
 }
 export enum PageNavItem {
-    quests='Quest history',
+    dashboard="Dashboard",
+    quests='Quests',
     documentation='Documentation',
     playground='API Playground',
-    results='Quest outputs',
+    tasks='Tasks',
     createQuest= 'Create new quest',
-    hosts="Hosts"
+    hosts="Hosts",
+    tomes="Tomes"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",
@@ -24,10 +26,23 @@ export enum SupportedPlatforms {
     Unknown='PLATFORM_UNSPECIFIED'
 }
 export enum TableRowLimit {
+    QuestRowLimit=8,
     TaskRowLimit=8
 }
 export enum PrincipalAdminTypes {
     root='root',
     Administrator='Administrator',
     SYSTEM="SYSTEM"
+}
+
+export enum TaskChartKeys {
+    taskError="Tasks with errors",
+    taskNoError ="Tasks without errors",
+    taskCreated= "Tasks created"
+}
+
+export enum DEFAULT_QUERY_TYPE{
+    hostIDQuery="HOST_ID_QUERY",
+    questIdQuery= "QUEST_ID_QUERY",
+    questDetailsQuery= "QUEST_DETAILS_QUERY",
 }

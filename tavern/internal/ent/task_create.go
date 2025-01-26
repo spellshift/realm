@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -206,6 +207,21 @@ func (tc *TaskCreate) AddReportedCredentials(h ...*HostCredential) *TaskCreate {
 	return tc.AddReportedCredentialIDs(ids...)
 }
 
+// AddShellIDs adds the "shells" edge to the Shell entity by IDs.
+func (tc *TaskCreate) AddShellIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddShellIDs(ids...)
+	return tc
+}
+
+// AddShells adds the "shells" edges to the Shell entity.
+func (tc *TaskCreate) AddShells(s ...*Shell) *TaskCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tc.AddShellIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tc *TaskCreate) Mutation() *TaskMutation {
 	return tc.mutation
@@ -280,10 +296,10 @@ func (tc *TaskCreate) check() error {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "Task.output_size": %w`, err)}
 		}
 	}
-	if _, ok := tc.mutation.QuestID(); !ok {
+	if len(tc.mutation.QuestIDs()) == 0 {
 		return &ValidationError{Name: "quest", err: errors.New(`ent: missing required edge "Task.quest"`)}
 	}
-	if _, ok := tc.mutation.BeaconID(); !ok {
+	if len(tc.mutation.BeaconIDs()) == 0 {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Task.beacon"`)}
 	}
 	return nil
@@ -420,6 +436,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ShellsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   task.ShellsTable,
+			Columns: []string{task.ShellsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

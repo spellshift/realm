@@ -1,7 +1,6 @@
 mod append_impl;
 mod compress_impl;
 mod copy_impl;
-mod download_impl;
 mod exists_impl;
 mod find_impl;
 mod follow_impl;
@@ -10,10 +9,12 @@ mod is_file_impl;
 mod list_impl;
 mod mkdir_impl;
 mod moveto_impl;
+mod parent_dir_impl;
 mod read_impl;
 mod remove_impl;
 mod replace_all_impl;
 mod replace_impl;
+mod temp_file_impl;
 mod template_impl;
 mod timestomp_impl;
 mod write_impl;
@@ -37,8 +38,9 @@ enum FileType {
 
 #[derive(Debug, Display)]
 #[display(
-    fmt = "{} {} {} {} {} {} {}",
+    fmt = "{} {} {} {} {} {} {} {}",
     name,
+    absolute_path,
     file_type,
     size,
     owner,
@@ -48,6 +50,7 @@ enum FileType {
 )]
 struct File {
     name: String,
+    absolute_path: String,
     file_type: FileType,
     size: u64,
     owner: String,
@@ -88,12 +91,6 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn download(this: &FileLibrary, uri: String, dst: String) -> anyhow::Result<NoneType> {
-        download_impl::download(uri, dst)?;
-        Ok(NoneType{})
-    }
-
-    #[allow(unused_variables)]
     fn exists(this: &FileLibrary, path: String) -> anyhow::Result<bool> {
         exists_impl::exists(path)
     }
@@ -114,8 +111,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn mkdir(this: &FileLibrary, path: String) -> anyhow::Result<NoneType> {
-        mkdir_impl::mkdir(path)?;
+    fn mkdir(this: &FileLibrary, path: String, parent: Option<bool>) -> anyhow::Result<NoneType> {
+        mkdir_impl::mkdir(path, parent)?;
         Ok(NoneType{})
     }
 
@@ -134,6 +131,10 @@ fn methods(builder: &mut MethodsBuilder) {
     fn moveto(this: &FileLibrary, old: String, new: String) -> anyhow::Result<NoneType> {
         moveto_impl::moveto(old, new)?;
         Ok(NoneType{})
+    }
+    #[allow(unused_variables)]
+    fn parent_dir(this: &FileLibrary, path: String) -> anyhow::Result<String> {
+        parent_dir_impl::parent_dir(path)
     }
 
     #[allow(unused_variables)]
@@ -176,4 +177,10 @@ fn methods(builder: &mut MethodsBuilder) {
         follow_impl::follow(path, f, eval)?;
         Ok(NoneType{})
     }
+
+    #[allow(unused_variables)]
+    fn temp_file(this: &FileLibrary, name: Option<String>) -> anyhow::Result<String> {
+        temp_file_impl::temp_file(name)
+    }
+
 }

@@ -8,6 +8,7 @@ mod report_finish;
 mod report_process_list;
 mod report_start;
 mod report_text;
+mod reverse_shell_pty;
 
 pub use fetch_asset::FetchAssetMessage;
 pub(super) use reduce::reduce;
@@ -18,15 +19,13 @@ pub use report_finish::ReportFinishMessage;
 pub use report_process_list::ReportProcessListMessage;
 pub use report_start::ReportStartMessage;
 pub use report_text::ReportTextMessage;
+pub use reverse_shell_pty::ReverseShellPTYMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
-use derive_more::From;
+use derive_more::{Display, From};
 use report_agg_output::ReportAggOutputMessage;
 use std::future::Future;
-
-#[cfg(debug_assertions)]
-use derive_more::Display;
 
 // Dispatcher defines the shared "dispatch" method used by all `Message` variants to send their data using a transport.
 pub trait Dispatcher {
@@ -38,35 +37,38 @@ pub trait Dispatcher {
  * This enables eldritch library functions to communicate with the caller API, enabling structured data reporting
  * as well as resource requests (e.g. fetching assets).
  */
-#[cfg_attr(debug_assertions, derive(Debug, Display, PartialEq))]
-#[derive(From, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Display, From, Clone)]
 pub enum Message {
-    #[cfg_attr(debug_assertions, display(fmt = "FetchAsset"))]
+    #[display(fmt = "FetchAsset")]
     FetchAsset(FetchAssetMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportCredential"))]
+    #[display(fmt = "ReportCredential")]
     ReportCredential(ReportCredentialMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportError"))]
+    #[display(fmt = "ReportError")]
     ReportError(ReportErrorMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportFile"))]
+    #[display(fmt = "ReportFile")]
     ReportFile(ReportFileMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportProcessList"))]
+    #[display(fmt = "ReportProcessList")]
     ReportProcessList(ReportProcessListMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportText"))]
+    #[display(fmt = "ReportText")]
     ReportText(ReportTextMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportStart"))]
+    #[display(fmt = "ReportStart")]
     ReportStart(ReportStartMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportFinish"))]
+    #[display(fmt = "ReportFinish")]
     ReportFinish(ReportFinishMessage),
 
-    #[cfg_attr(debug_assertions, display(fmt = "ReportAggOutput"))]
+    #[display(fmt = "ReportAggOutput")]
     ReportAggOutput(ReportAggOutputMessage),
+
+    #[display(fmt = "ReverseShellPTY")]
+    ReverseShellPTY(ReverseShellPTYMessage),
 }
 
 // The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
@@ -84,6 +86,7 @@ impl Dispatcher for Message {
             Self::ReportProcessList(msg) => msg.dispatch(transport).await,
             Self::ReportText(msg) => msg.dispatch(transport).await,
             Self::ReportAggOutput(msg) => msg.dispatch(transport).await,
+            Self::ReverseShellPTY(msg) => msg.dispatch(transport).await,
 
             Self::ReportStart(msg) => msg.dispatch(transport).await,
             Self::ReportFinish(msg) => msg.dispatch(transport).await,

@@ -1,9 +1,16 @@
-mod agent;
+#![deny(warnings)]
+
+pub mod agent;
 mod config;
 mod install;
+mod run;
 mod task;
 mod version;
 
-pub use agent::Agent;
-pub use config::Config;
-pub use install::install;
+#[tokio::main(flavor = "multi_thread", worker_threads = 128)]
+pub async fn lib_entry() {
+    #[cfg(debug_assertions)]
+    run::init_logging();
+
+    run::handle_main().await
+}

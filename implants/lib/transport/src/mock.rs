@@ -10,7 +10,7 @@ mock! {
         fn clone(&self) -> Self;
     }
     impl super::Transport for Transport {
-    fn new(uri: String) -> Result<Self>;
+    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 
@@ -39,5 +39,11 @@ mock! {
         &mut self,
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse>;
+
+    async fn reverse_shell(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+    ) -> Result<()>;
     }
 }

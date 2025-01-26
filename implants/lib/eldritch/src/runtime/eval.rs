@@ -3,10 +3,14 @@ use crate::{
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
     file::FileLibrary,
+    http::HTTPLibrary,
     pivot::PivotLibrary,
     process::ProcessLibrary,
+    random::RandomLibrary,
+    regex::RegexLibrary,
     report::ReportLibrary,
     runtime::{
+        eprint_impl,
         messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
         Environment,
     },
@@ -23,8 +27,7 @@ use starlark::{
     eval::Evaluator,
     starlark_module,
     syntax::{AstModule, Dialect},
-    values::dict::Dict,
-    values::AllocValue,
+    values::{dict::Dict, none::NoneType, AllocValue},
 };
 use std::sync::mpsc::{channel, Receiver};
 use tokio::task::JoinHandle;
@@ -141,6 +144,16 @@ pub struct Runtime {
     rx: Receiver<Message>,
 }
 
+#[starlark_module]
+fn error_handler(builder: &mut GlobalsBuilder) {
+    #[allow(unused_variables)]
+    fn eprint(starlark_eval: &mut Evaluator<'_, '_>, message: String) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        eprint_impl::eprint(env, message)?;
+        Ok(NoneType {})
+    }
+}
+
 impl Runtime {
     /*
      * Globals available to eldritch code.
@@ -156,7 +169,10 @@ impl Runtime {
             const assets: AssetsLibrary = AssetsLibrary;
             const crypto: CryptoLibrary = CryptoLibrary;
             const time: TimeLibrary = TimeLibrary;
+            const random: RandomLibrary = RandomLibrary;
             const report: ReportLibrary = ReportLibrary;
+            const regex: RegexLibrary = RegexLibrary;
+            const http: HTTPLibrary = HTTPLibrary;
         }
 
         GlobalsBuilder::extended_by(&[
@@ -175,6 +191,7 @@ impl Runtime {
             LibraryExtension::Typing,
         ])
         .with(eldritch)
+        .with(error_handler)
         .build()
     }
 
@@ -182,7 +199,14 @@ impl Runtime {
      * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module.
      */
     fn parse(tome: &Tome) -> anyhow::Result<AstModule> {
-        match AstModule::parse("main", tome.eldritch.to_string(), &Dialect::Extended) {
+        match AstModule::parse(
+            "main",
+            tome.eldritch.to_string(),
+            &Dialect {
+                enable_f_strings: true,
+                ..Dialect::Extended
+            },
+        ) {
             Ok(v) => Ok(v),
             Err(err) => Err(err.into_anyhow()),
         }

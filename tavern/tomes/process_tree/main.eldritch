@@ -16,11 +16,22 @@ def depth_first_search(visited, process_tree, current_proc_pid, padding, process
         if padding > 0:
             padding_string = (padding - 1) * "  " + " \_ "
 
-        if current_proc_pid != "0":
-            print(pad_pid(current_proc_pid))
-            print(pad_pid(process_list_dictionary[current_proc_pid]["ppid"]))
-            print(pad_username(process_list_dictionary[current_proc_pid]["username"]))
-            print(padding_string + process_list_dictionary[current_proc_pid]["command"].replace("\n","\\n")+"\n")
+        if current_proc_pid != "0" and current_proc_pid in process_list_dictionary:
+            print(
+                pad_pid(current_proc_pid) +\
+                pad_pid(process_list_dictionary[current_proc_pid]["ppid"]) +\
+                pad_username(process_list_dictionary[current_proc_pid]["username"]) +\
+                padding_string + process_list_dictionary[current_proc_pid]["command"].replace("\n","\\n")
+            )
+        else:
+            print(
+                pad_pid(current_proc_pid) +\
+                pad_pid("???") +\
+                pad_username("???") +\
+                padding_string + "???".replace("\n","\\n")
+            )
+
+
 
         padding = padding + 1
 
@@ -36,10 +47,7 @@ def process_tree(cmd_substring):
 
     procs = process.list()
 
-    print(pad_pid("PID"))
-    print(pad_pid("PPID")) 
-    print(pad_username("username"))
-    print("command\n")
+    print(pad_pid("PID") + pad_pid("PPID") + pad_username("USER") + "COMMAND")
 
     process_list_dictionary = {}
 
@@ -69,12 +77,12 @@ def process_tree(cmd_substring):
                 process_tree[current_proc_ppid].append(current_proc_pid)
             else:
                 process_tree[current_proc_ppid] = []
-            
     visited = []
-
     for pid in process_tree:
         depth_first_search(visited, process_tree, pid, 0, process_list_dictionary)
 
+time.sleep(1)
+
 process_tree(input_params['cmd_substring'])
-print("\n")
-print("\n")
+print("")
+

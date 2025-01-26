@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -26,6 +28,7 @@ type TomeQuery struct {
 	predicates     []predicate.Tome
 	withFiles      *FileQuery
 	withUploader   *UserQuery
+	withRepository *RepositoryQuery
 	withFKs        bool
 	modifiers      []func(*sql.Selector)
 	loadTotal      []func(context.Context, []*Tome) error
@@ -110,10 +113,32 @@ func (tq *TomeQuery) QueryUploader() *UserQuery {
 	return query
 }
 
+// QueryRepository chains the current query on the "repository" edge.
+func (tq *TomeQuery) QueryRepository() *RepositoryQuery {
+	query := (&RepositoryClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, selector),
+			sqlgraph.To(repository.Table, repository.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, tome.RepositoryTable, tome.RepositoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Tome entity from the query.
 // Returns a *NotFoundError when no Tome was found.
 func (tq *TomeQuery) First(ctx context.Context) (*Tome, error) {
-	nodes, err := tq.Limit(1).All(setContextOp(ctx, tq.ctx, "First"))
+	nodes, err := tq.Limit(1).All(setContextOp(ctx, tq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +161,7 @@ func (tq *TomeQuery) FirstX(ctx context.Context) *Tome {
 // Returns a *NotFoundError when no Tome ID was found.
 func (tq *TomeQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = tq.Limit(1).IDs(setContextOp(ctx, tq.ctx, "FirstID")); err != nil {
+	if ids, err = tq.Limit(1).IDs(setContextOp(ctx, tq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -159,7 +184,7 @@ func (tq *TomeQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Tome entity is found.
 // Returns a *NotFoundError when no Tome entities are found.
 func (tq *TomeQuery) Only(ctx context.Context) (*Tome, error) {
-	nodes, err := tq.Limit(2).All(setContextOp(ctx, tq.ctx, "Only"))
+	nodes, err := tq.Limit(2).All(setContextOp(ctx, tq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +212,7 @@ func (tq *TomeQuery) OnlyX(ctx context.Context) *Tome {
 // Returns a *NotFoundError when no entities are found.
 func (tq *TomeQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = tq.Limit(2).IDs(setContextOp(ctx, tq.ctx, "OnlyID")); err != nil {
+	if ids, err = tq.Limit(2).IDs(setContextOp(ctx, tq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -212,7 +237,7 @@ func (tq *TomeQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Tomes.
 func (tq *TomeQuery) All(ctx context.Context) ([]*Tome, error) {
-	ctx = setContextOp(ctx, tq.ctx, "All")
+	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryAll)
 	if err := tq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -234,7 +259,7 @@ func (tq *TomeQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if tq.ctx.Unique == nil && tq.path != nil {
 		tq.Unique(true)
 	}
-	ctx = setContextOp(ctx, tq.ctx, "IDs")
+	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryIDs)
 	if err = tq.Select(tome.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -252,7 +277,7 @@ func (tq *TomeQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (tq *TomeQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, tq.ctx, "Count")
+	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryCount)
 	if err := tq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -270,7 +295,7 @@ func (tq *TomeQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (tq *TomeQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, tq.ctx, "Exist")
+	ctx = setContextOp(ctx, tq.ctx, ent.OpQueryExist)
 	switch _, err := tq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -297,13 +322,14 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 		return nil
 	}
 	return &TomeQuery{
-		config:       tq.config,
-		ctx:          tq.ctx.Clone(),
-		order:        append([]tome.OrderOption{}, tq.order...),
-		inters:       append([]Interceptor{}, tq.inters...),
-		predicates:   append([]predicate.Tome{}, tq.predicates...),
-		withFiles:    tq.withFiles.Clone(),
-		withUploader: tq.withUploader.Clone(),
+		config:         tq.config,
+		ctx:            tq.ctx.Clone(),
+		order:          append([]tome.OrderOption{}, tq.order...),
+		inters:         append([]Interceptor{}, tq.inters...),
+		predicates:     append([]predicate.Tome{}, tq.predicates...),
+		withFiles:      tq.withFiles.Clone(),
+		withUploader:   tq.withUploader.Clone(),
+		withRepository: tq.withRepository.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -329,6 +355,17 @@ func (tq *TomeQuery) WithUploader(opts ...func(*UserQuery)) *TomeQuery {
 		opt(query)
 	}
 	tq.withUploader = query
+	return tq
+}
+
+// WithRepository tells the query-builder to eager-load the nodes that are connected to
+// the "repository" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithRepository(opts ...func(*RepositoryQuery)) *TomeQuery {
+	query := (&RepositoryClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withRepository = query
 	return tq
 }
 
@@ -411,12 +448,13 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 		nodes       = []*Tome{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tq.withFiles != nil,
 			tq.withUploader != nil,
+			tq.withRepository != nil,
 		}
 	)
-	if tq.withUploader != nil {
+	if tq.withUploader != nil || tq.withRepository != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -453,6 +491,12 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 	if query := tq.withUploader; query != nil {
 		if err := tq.loadUploader(ctx, query, nodes, nil,
 			func(n *Tome, e *User) { n.Edges.Uploader = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withRepository; query != nil {
+		if err := tq.loadRepository(ctx, query, nodes, nil,
+			func(n *Tome, e *Repository) { n.Edges.Repository = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -557,6 +601,38 @@ func (tq *TomeQuery) loadUploader(ctx context.Context, query *UserQuery, nodes [
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "tome_uploader" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (tq *TomeQuery) loadRepository(ctx context.Context, query *RepositoryQuery, nodes []*Tome, init func(*Tome), assign func(*Tome, *Repository)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Tome)
+	for i := range nodes {
+		if nodes[i].tome_repository == nil {
+			continue
+		}
+		fk := *nodes[i].tome_repository
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(repository.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tome_repository" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -677,7 +753,7 @@ func (tgb *TomeGroupBy) Aggregate(fns ...AggregateFunc) *TomeGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (tgb *TomeGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, tgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, tgb.build.ctx, ent.OpQueryGroupBy)
 	if err := tgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -725,7 +801,7 @@ func (ts *TomeSelect) Aggregate(fns ...AggregateFunc) *TomeSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (ts *TomeSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ts.ctx, "Select")
+	ctx = setContextOp(ctx, ts.ctx, ent.OpQuerySelect)
 	if err := ts.prepareQuery(ctx); err != nil {
 		return err
 	}

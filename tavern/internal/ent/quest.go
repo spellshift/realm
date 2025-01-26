@@ -28,6 +28,10 @@ type Quest struct {
 	Name string `json:"name,omitempty"`
 	// Value of parameters that were specified for the quest (as a JSON string).
 	Parameters string `json:"parameters,omitempty"`
+	// JSON string describing what parameters are used with the tome at the time of this quest creation. Requires a list of JSON objects, one for each parameter.
+	ParamDefsAtCreation string `json:"param_defs_at_creation,omitempty"`
+	// Eldritch script that was evaluated at the time of this quest creation.
+	EldritchAtCreation string `json:"eldritch_at_creation,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
 	Edges         QuestEdges `json:"edges"`
@@ -59,12 +63,10 @@ type QuestEdges struct {
 // TomeOrErr returns the Tome value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e QuestEdges) TomeOrErr() (*Tome, error) {
-	if e.loadedTypes[0] {
-		if e.Tome == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: tome.Label}
-		}
+	if e.Tome != nil {
 		return e.Tome, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tome.Label}
 	}
 	return nil, &NotLoadedError{edge: "tome"}
 }
@@ -72,12 +74,10 @@ func (e QuestEdges) TomeOrErr() (*Tome, error) {
 // BundleOrErr returns the Bundle value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e QuestEdges) BundleOrErr() (*File, error) {
-	if e.loadedTypes[1] {
-		if e.Bundle == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: file.Label}
-		}
+	if e.Bundle != nil {
 		return e.Bundle, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: file.Label}
 	}
 	return nil, &NotLoadedError{edge: "bundle"}
 }
@@ -94,12 +94,10 @@ func (e QuestEdges) TasksOrErr() ([]*Task, error) {
 // CreatorOrErr returns the Creator value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e QuestEdges) CreatorOrErr() (*User, error) {
-	if e.loadedTypes[3] {
-		if e.Creator == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
+	if e.Creator != nil {
 		return e.Creator, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "creator"}
 }
@@ -111,7 +109,7 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case quest.FieldID:
 			values[i] = new(sql.NullInt64)
-		case quest.FieldName, quest.FieldParameters:
+		case quest.FieldName, quest.FieldParameters, quest.FieldParamDefsAtCreation, quest.FieldEldritchAtCreation:
 			values[i] = new(sql.NullString)
 		case quest.FieldCreatedAt, quest.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -165,6 +163,18 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field parameters", values[i])
 			} else if value.Valid {
 				q.Parameters = value.String
+			}
+		case quest.FieldParamDefsAtCreation:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field param_defs_at_creation", values[i])
+			} else if value.Valid {
+				q.ParamDefsAtCreation = value.String
+			}
+		case quest.FieldEldritchAtCreation:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field eldritch_at_creation", values[i])
+			} else if value.Valid {
+				q.EldritchAtCreation = value.String
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -254,6 +264,12 @@ func (q *Quest) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("parameters=")
 	builder.WriteString(q.Parameters)
+	builder.WriteString(", ")
+	builder.WriteString("param_defs_at_creation=")
+	builder.WriteString(q.ParamDefsAtCreation)
+	builder.WriteString(", ")
+	builder.WriteString("eldritch_at_creation=")
+	builder.WriteString(q.EldritchAtCreation)
 	builder.WriteByte(')')
 	return builder.String()
 }

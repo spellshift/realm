@@ -1,0 +1,19 @@
+
+def main():
+    new_dir = input_params['path']
+    if file.exists(new_dir):
+        eprint("File/Directory already exists.")
+        return
+    parent = True
+    parent_str = input_params['parent'].lower()
+    if parent_str == "true":
+        parent = True
+    elif parent_str == "false":
+        parent = False
+    else:
+        eprint("Parent parameter not 'True' or 'False'.")
+        return
+    file.mkdir(new_dir, parent)
+
+time.sleep(1)
+main()

@@ -1,20 +1,18 @@
 use super::super::insert_dict_kv;
 use super::CommandOutput;
 use anyhow::{Context, Result};
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-use nix::{
-    sys::wait::waitpid,
-    unistd::{fork, ForkResult},
-};
 use starlark::{
     collections::SmallMap,
     const_frozen_string,
     values::{dict::Dict, Heap},
 };
-#[cfg(any(target_os = "linux", target_os = "macos"))]
-use std::process::exit;
 use std::process::Command;
-// https://stackoverflow.com/questions/62978157/rust-how-to-spawn-child-process-that-continues-to-live-after-parent-receives-si#:~:text=You%20need%20to%20double%2Dfork,is%20not%20related%20to%20rust.&text=You%20must%20not%20forget%20to,will%20become%20a%20zombie%20process.
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
+use {
+    nix::sys::wait::wait,
+    nix::unistd::{fork, setsid, ForkResult},
+    std::process::{exit, Stdio},
+};
 
 pub fn exec(
     starlark_heap: &Heap,
@@ -28,7 +26,7 @@ pub fn exec(
     let mut dict_res = Dict::new(res);
     insert_dict_kv!(dict_res, starlark_heap, "stdout", cmd_res.stdout, String);
     insert_dict_kv!(dict_res, starlark_heap, "stderr", cmd_res.stderr, String);
-    insert_dict_kv!(dict_res, starlark_heap, "stauts", cmd_res.status, i32);
+    insert_dict_kv!(dict_res, starlark_heap, "status", cmd_res.status, i32);
 
     Ok(dict_res)
 }
@@ -40,8 +38,8 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         let res = Command::new(path).args(args).output()?;
 
         let res = CommandOutput {
-            stdout: String::from_utf8(res.stdout)?,
-            stderr: String::from_utf8(res.stderr)?,
+            stdout: String::from_utf8_lossy(&res.stdout).to_string(),
+            stderr: String::from_utf8_lossy(&res.stderr).to_string(),
             status: res
                 .status
                 .code()
@@ -54,40 +52,92 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
             "Windows is not supported for disowned processes."
         ));
 
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
         match unsafe { fork()? } {
             ForkResult::Parent { child } => {
-                // Wait for intermediate process to exit.
-                waitpid(Some(child), None)?;
+                if child.as_raw() < 0 {
+                    return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+                }
+
+                let _ = wait();
+
                 Ok(CommandOutput {
                     stdout: "".to_string(),
                     stderr: "".to_string(),
                     status: 0,
                 })
             }
-
-            ForkResult::Child => match unsafe { fork()? } {
-                ForkResult::Parent { child } => {
-                    if child.as_raw() < 0 {
-                        return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+            ForkResult::Child => {
+                setsid()?;
+                match unsafe { fork()? } {
+                    ForkResult::Parent { child } => {
+                        if child.as_raw() < 0 {
+                            return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
+                        }
+                        exit(0);
                     }
-                    exit(0)
+                    ForkResult::Child => {
+                        let _res = Command::new(path)
+                            .args(args)
+                            .stdin(Stdio::null())
+                            .stdout(Stdio::null())
+                            .stderr(Stdio::null())
+                            .spawn()?;
+                        exit(0);
+                    }
                 }
-
-                ForkResult::Child => {
-                    let _res = Command::new(path).args(args).output()?;
-                    exit(0)
-                }
-            },
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::Path, thread, time};
+    use std::{fs, path::Path, process, thread, time};
 
+    use sysinfo::{PidExt, ProcessExt, System, SystemExt};
     use tempfile::NamedTempFile;
+
+    fn init_logging() {
+        let _ = pretty_env_logger::formatted_timed_builder()
+            .filter_level(log::LevelFilter::Info)
+            .parse_env("IMIX_LOG")
+            .try_init();
+    }
+
+    fn get_zombie_child_processes(cur_pid: u32) -> Result<Vec<String>> {
+        log::debug!("{:?}", cur_pid);
+        if !System::IS_SUPPORTED {
+            return Err(anyhow::anyhow!(
+                "This OS isn't supported for process functions.
+             Pleases see sysinfo docs for a full list of supported systems.
+             https://docs.rs/sysinfo/0.23.5/sysinfo/index.html#supported-oses\n\n"
+            ));
+        }
+
+        let mut final_res: Vec<String> = Vec::new();
+        let mut sys = System::new();
+        sys.refresh_processes();
+        sys.refresh_users_list();
+
+        for (pid, process) in sys.processes() {
+            let mut tmp_ppid = 0;
+            if process.parent().is_some() {
+                tmp_ppid = process
+                    .parent()
+                    .context(format!("Failed to get parent process for {}", pid))?
+                    .as_u32();
+            }
+            if tmp_ppid == cur_pid
+                && process.status() == sysinfo::ProcessStatus::Zombie
+                && process.exe().to_str() == Some("")
+            {
+                log::debug!("{:?}", process);
+                final_res.push(process.name().to_string());
+            }
+        }
+        Ok(final_res)
+    }
 
     use super::*;
     #[test]
@@ -124,9 +174,10 @@ mod tests {
                 vec![String::from("/c"), String::from("whoami")],
                 Some(false),
             )?
-            .stdout;
+            .stdout
+            .to_lowercase();
             let mut bool_res = false;
-            if res.contains("runneradmin") || res.contains("Administrator") || res.contains("user")
+            if res.contains("runneradmin") || res.contains("administrator") || res.contains("user")
             {
                 bool_res = true;
             }
@@ -150,11 +201,6 @@ mod tests {
         Ok(())
     }
 
-    // This is a manual test:
-    // Example results:
-    // 42284 pts/0    S      0:00 /workspaces/realm/implants/target/debug/deps/eldritch-a23fc08ee1443dc3 test_sys_exec_disown_linux --nocapture
-    // 42285 pts/0    S      0:00  \_ /bin/sh -c sleep 600
-    // 42286 pts/0    S      0:00      \_ sleep 600
     #[test]
     fn test_sys_exec_disown_linux() -> anyhow::Result<()> {
         if cfg!(target_os = "linux")
@@ -171,10 +217,7 @@ mod tests {
 
             let _res = handle_exec(
                 String::from("/bin/sh"),
-                vec![
-                    String::from("-c"),
-                    format!("touch {}", path.clone()),
-                ],
+                vec![String::from("-c"), format!("touch {}", path.clone())],
                 Some(true),
             )?;
             thread::sleep(time::Duration::from_secs(2));
@@ -186,6 +229,31 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
+        init_logging();
+
+        if cfg!(target_os = "linux")
+            || cfg!(target_os = "ios")
+            || cfg!(target_os = "macos")
+            || cfg!(target_os = "android")
+            || cfg!(target_os = "freebsd")
+            || cfg!(target_os = "openbsd")
+            || cfg!(target_os = "netbsd")
+        {
+            let _res = handle_exec(
+                String::from("/bin/sleep"),
+                vec!["1".to_string()],
+                Some(true),
+            )?;
+            // Make sure our test process has no zombies
+            let res = get_zombie_child_processes(process::id())?;
+            assert_eq!(res.len(), 0);
+        }
+        Ok(())
+    }
+
     #[test]
     fn test_sys_exec_complex_windows() -> anyhow::Result<()> {
         if cfg!(target_os = "windows") {

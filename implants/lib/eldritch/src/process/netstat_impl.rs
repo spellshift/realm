@@ -1,87 +1,43 @@
-use super::super::insert_dict_kv;
 use anyhow::Result;
-use netstat2::*;
-use starlark::{
-    collections::SmallMap,
-    const_frozen_string,
-    values::{dict::Dict, Heap, Value},
-};
+use starlark::values::{dict::Dict, Heap};
 
+#[cfg(target_os = "freebsd")]
+pub fn netstat(_: &Heap) -> Result<Vec<Dict>> {
+    Err(anyhow::anyhow!("Not implemented for FreeBSD"))
+}
+
+#[cfg(not(target_os = "freebsd"))]
 pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
-    let mut out: Vec<Dict> = Vec::new();
-    let af_flags = AddressFamilyFlags::IPV4 | AddressFamilyFlags::IPV6;
-    let proto_flags = ProtocolFlags::TCP | ProtocolFlags::UDP;
-    let sockets_info = get_sockets_info(af_flags, proto_flags)?;
+    use super::super::insert_dict_kv;
+    use starlark::{collections::SmallMap, const_frozen_string, values::Value};
 
-    for si in sockets_info {
-        match si.protocol_socket_info {
-            ProtocolSocketInfo::Tcp(tcp_si) => {
-                let map: SmallMap<Value, Value> = SmallMap::new();
-                // Create Dict type.
-                let mut dict = Dict::new(map);
-                insert_dict_kv!(dict, starlark_heap, "socket_type", "TCP", String);
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_address",
-                    tcp_si.local_addr.to_string(),
-                    String
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_port",
-                    tcp_si.local_port as u32,
-                    u32
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "remote_address",
-                    tcp_si.remote_addr.to_string(),
-                    String
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "remote_port",
-                    tcp_si.remote_port as u32,
-                    u32
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "state",
-                    tcp_si.state.to_string(),
-                    String
-                );
-                insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
-                out.push(dict);
-            }
-            ProtocolSocketInfo::Udp(udp_si) => {
-                let map: SmallMap<Value, Value> = SmallMap::new();
-                // Create Dict type.
-                let mut dict = Dict::new(map);
-                insert_dict_kv!(dict, starlark_heap, "socket_type", "UDP", String);
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_address",
-                    udp_si.local_addr.to_string(),
-                    String
-                );
-                insert_dict_kv!(
-                    dict,
-                    starlark_heap,
-                    "local_port",
-                    udp_si.local_port as u32,
-                    u32
-                );
-                insert_dict_kv!(dict, starlark_heap, "pids", si.associated_pids, Vec<_>);
-                out.push(dict);
-            }
+    let mut out: Vec<Dict> = Vec::new();
+
+    if let Ok(listeners) = listeners::get_all() {
+        for l in listeners {
+            let map: SmallMap<Value, Value> = SmallMap::new();
+            // Create Dict type.
+            let mut dict = Dict::new(map);
+            insert_dict_kv!(dict, starlark_heap, "socket_type", "TCP", String);
+            insert_dict_kv!(
+                dict,
+                starlark_heap,
+                "local_address",
+                l.socket.ip().to_string(),
+                String
+            );
+            insert_dict_kv!(
+                dict,
+                starlark_heap,
+                "local_port",
+                l.socket.port() as u32,
+                u32
+            );
+            insert_dict_kv!(dict, starlark_heap, "pid", l.process.pid, u32);
+            out.push(dict);
         }
     }
+
     Ok(out)
 }
 
@@ -89,8 +45,8 @@ pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict>> {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use starlark::values::list::UnpackList;
-    use starlark::values::{Heap, UnpackValue};
+    use starlark::const_frozen_string;
+    use starlark::values::Heap;
     use std::process::id;
     use tokio::io::copy;
     use tokio::net::TcpListener;
@@ -123,7 +79,7 @@ mod tests {
         let test_port: i32 = listener.local_addr()?.port().into();
         let _listen_task = task::spawn(local_accept_tcp(listener));
         let res = netstat(&heap)?;
-        let pid = id() as i32;
+        let real_pid = id() as i32;
         for socket in res {
             if Some(Some("TCP"))
                 != socket
@@ -149,20 +105,12 @@ mod tests {
             {
                 continue;
             }
-            if Some(Some("LISTEN"))
-                != socket
-                    .get(const_frozen_string!("state").to_value())
-                    .unwrap()
-                    .map(|val| val.unpack_str())
-            {
-                continue;
-            }
-            if let Some(Some(pids)) = socket
-                .get(const_frozen_string!("pids").to_value())
+            if let Some(Some(pid)) = socket
+                .get(const_frozen_string!("pid").to_value())
                 .unwrap()
-                .map(UnpackList::<i32>::unpack_value)
+                .map(|val| val.unpack_i32())
             {
-                if pids.items.contains(&pid) {
+                if pid == real_pid {
                     return Ok(());
                 }
             }

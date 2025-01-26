@@ -42,6 +42,8 @@ const (
 	EdgeFiles = "files"
 	// EdgeUploader holds the string denoting the uploader edge name in mutations.
 	EdgeUploader = "uploader"
+	// EdgeRepository holds the string denoting the repository edge name in mutations.
+	EdgeRepository = "repository"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
 	// FilesTable is the table that holds the files relation/edge. The primary key declared below.
@@ -56,6 +58,13 @@ const (
 	UploaderInverseTable = "users"
 	// UploaderColumn is the table column denoting the uploader relation/edge.
 	UploaderColumn = "tome_uploader"
+	// RepositoryTable is the table that holds the repository relation/edge.
+	RepositoryTable = "tomes"
+	// RepositoryInverseTable is the table name for the Repository entity.
+	// It exists in this package in order to avoid circular dependency with the "repository" package.
+	RepositoryInverseTable = "repositories"
+	// RepositoryColumn is the table column denoting the repository relation/edge.
+	RepositoryColumn = "tome_repository"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -77,6 +86,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"tome_uploader",
+	"tome_repository",
 }
 
 var (
@@ -265,6 +275,13 @@ func ByUploaderField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newUploaderStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByRepositoryField orders the results by repository field.
+func ByRepositoryField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRepositoryStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newFilesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -277,6 +294,13 @@ func newUploaderStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UploaderInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, UploaderTable, UploaderColumn),
+	)
+}
+func newRepositoryStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RepositoryInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, RepositoryTable, RepositoryColumn),
 	)
 }
 

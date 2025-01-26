@@ -44,6 +44,14 @@ func (hpu *HostProcessUpdate) SetPid(u uint64) *HostProcessUpdate {
 	return hpu
 }
 
+// SetNillablePid sets the "pid" field if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillablePid(u *uint64) *HostProcessUpdate {
+	if u != nil {
+		hpu.SetPid(*u)
+	}
+	return hpu
+}
+
 // AddPid adds u to the "pid" field.
 func (hpu *HostProcessUpdate) AddPid(u int64) *HostProcessUpdate {
 	hpu.mutation.AddPid(u)
@@ -54,6 +62,14 @@ func (hpu *HostProcessUpdate) AddPid(u int64) *HostProcessUpdate {
 func (hpu *HostProcessUpdate) SetPpid(u uint64) *HostProcessUpdate {
 	hpu.mutation.ResetPpid()
 	hpu.mutation.SetPpid(u)
+	return hpu
+}
+
+// SetNillablePpid sets the "ppid" field if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillablePpid(u *uint64) *HostProcessUpdate {
+	if u != nil {
+		hpu.SetPpid(*u)
+	}
 	return hpu
 }
 
@@ -69,9 +85,25 @@ func (hpu *HostProcessUpdate) SetName(s string) *HostProcessUpdate {
 	return hpu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillableName(s *string) *HostProcessUpdate {
+	if s != nil {
+		hpu.SetName(*s)
+	}
+	return hpu
+}
+
 // SetPrincipal sets the "principal" field.
 func (hpu *HostProcessUpdate) SetPrincipal(s string) *HostProcessUpdate {
 	hpu.mutation.SetPrincipal(s)
+	return hpu
+}
+
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillablePrincipal(s *string) *HostProcessUpdate {
+	if s != nil {
+		hpu.SetPrincipal(*s)
+	}
 	return hpu
 }
 
@@ -158,6 +190,14 @@ func (hpu *HostProcessUpdate) ClearCwd() *HostProcessUpdate {
 // SetStatus sets the "status" field.
 func (hpu *HostProcessUpdate) SetStatus(es epb.Process_Status) *HostProcessUpdate {
 	hpu.mutation.SetStatus(es)
+	return hpu
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillableStatus(es *epb.Process_Status) *HostProcessUpdate {
+	if es != nil {
+		hpu.SetStatus(*es)
+	}
 	return hpu
 }
 
@@ -248,10 +288,10 @@ func (hpu *HostProcessUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
 		}
 	}
-	if _, ok := hpu.mutation.HostID(); hpu.mutation.HostCleared() && !ok {
+	if hpu.mutation.HostCleared() && len(hpu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.host"`)
 	}
-	if _, ok := hpu.mutation.TaskID(); hpu.mutation.TaskCleared() && !ok {
+	if hpu.mutation.TaskCleared() && len(hpu.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.task"`)
 	}
 	return nil
@@ -408,6 +448,14 @@ func (hpuo *HostProcessUpdateOne) SetPid(u uint64) *HostProcessUpdateOne {
 	return hpuo
 }
 
+// SetNillablePid sets the "pid" field if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillablePid(u *uint64) *HostProcessUpdateOne {
+	if u != nil {
+		hpuo.SetPid(*u)
+	}
+	return hpuo
+}
+
 // AddPid adds u to the "pid" field.
 func (hpuo *HostProcessUpdateOne) AddPid(u int64) *HostProcessUpdateOne {
 	hpuo.mutation.AddPid(u)
@@ -418,6 +466,14 @@ func (hpuo *HostProcessUpdateOne) AddPid(u int64) *HostProcessUpdateOne {
 func (hpuo *HostProcessUpdateOne) SetPpid(u uint64) *HostProcessUpdateOne {
 	hpuo.mutation.ResetPpid()
 	hpuo.mutation.SetPpid(u)
+	return hpuo
+}
+
+// SetNillablePpid sets the "ppid" field if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillablePpid(u *uint64) *HostProcessUpdateOne {
+	if u != nil {
+		hpuo.SetPpid(*u)
+	}
 	return hpuo
 }
 
@@ -433,9 +489,25 @@ func (hpuo *HostProcessUpdateOne) SetName(s string) *HostProcessUpdateOne {
 	return hpuo
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillableName(s *string) *HostProcessUpdateOne {
+	if s != nil {
+		hpuo.SetName(*s)
+	}
+	return hpuo
+}
+
 // SetPrincipal sets the "principal" field.
 func (hpuo *HostProcessUpdateOne) SetPrincipal(s string) *HostProcessUpdateOne {
 	hpuo.mutation.SetPrincipal(s)
+	return hpuo
+}
+
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillablePrincipal(s *string) *HostProcessUpdateOne {
+	if s != nil {
+		hpuo.SetPrincipal(*s)
+	}
 	return hpuo
 }
 
@@ -522,6 +594,14 @@ func (hpuo *HostProcessUpdateOne) ClearCwd() *HostProcessUpdateOne {
 // SetStatus sets the "status" field.
 func (hpuo *HostProcessUpdateOne) SetStatus(es epb.Process_Status) *HostProcessUpdateOne {
 	hpuo.mutation.SetStatus(es)
+	return hpuo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillableStatus(es *epb.Process_Status) *HostProcessUpdateOne {
+	if es != nil {
+		hpuo.SetStatus(*es)
+	}
 	return hpuo
 }
 
@@ -625,10 +705,10 @@ func (hpuo *HostProcessUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
 		}
 	}
-	if _, ok := hpuo.mutation.HostID(); hpuo.mutation.HostCleared() && !ok {
+	if hpuo.mutation.HostCleared() && len(hpuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.host"`)
 	}
-	if _, ok := hpuo.mutation.TaskID(); hpuo.mutation.TaskCleared() && !ok {
+	if hpuo.mutation.TaskCleared() && len(hpuo.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.task"`)
 	}
 	return nil
