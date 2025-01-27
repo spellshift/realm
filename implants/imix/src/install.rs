@@ -64,7 +64,7 @@ pub async fn install() {
 
 fn load_embedded_eldritch(path: String) -> Result<String> {
     match eldritch::assets::Asset::get(path.as_ref()) {
-        Some(f) => Ok(String::from_utf8(f.data.to_vec())?),
+        Some(f) => Ok(String::from_utf8_lossy(&f.data).to_string()),
 
         // {
         //     Ok(data) => data,
