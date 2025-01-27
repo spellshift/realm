@@ -1,6 +1,6 @@
 import chromadb
-from google import genai
-from google.genai import types
+from google import generativeai as genai
+from google.generativeai import types
 import vertexai
 from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 import chromadb.utils.embedding_functions as embedding_functions
@@ -14,78 +14,40 @@ import os
 import glob
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(
+    api_key=gemini_api_key
+)
 
-model = "gemini-2.0-flash-exp"
+model = genai.GenerativeModel("tunedModels/increment-3mjwqfhey1l4")
 
 chroma_client = chromadb.PersistentClient(path="/workspaces/chromadb")
 collection = chroma_client.get_or_create_collection(name="my_collection")
 
-client = genai.Client(
-    vertexai=True,
-    project="ccdc-red-team-infra",
-    location="us-central1"
-)
 
 vertexaiobj = vertexai.init(
     project="ccdc-red-team-infra",
 )
 
-generate_content_config = types.GenerateContentConfig(
+generate_content_config = types.GenerationConfig(
     temperature=1,
     top_p=0.95,
     max_output_tokens=8192,
-    response_modalities=["TEXT"],
-    safety_settings=[types.SafetySetting(
-        category="HARM_CATEGORY_HATE_SPEECH",
-        threshold="OFF"
-    ), types.SafetySetting(
-        category="HARM_CATEGORY_DANGEROUS_CONTENT",
-        threshold="OFF"
-    ), types.SafetySetting(
-        category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-        threshold="OFF"
-    ), types.SafetySetting(
-        category="HARM_CATEGORY_HARASSMENT",
-        threshold="OFF"
-    )],
+    response_mime_type="text/plain",
 )
 
 
 def generate(input: str):
-    contents = [
-        types.Content(
-            role="user",
-            parts=[types.Part.from_text(input)]
-        )
-    ]
+    contents = input
 
-    res = ""
-    for chunk in client.models.generate_content_stream(
-        model=model,
+    res = model.generate_content(
         contents=contents,
-        config=generate_content_config,
-    ):
-        res += chunk.text
+        generation_config=generate_content_config
+    )
 
-    return res
+    return " ".join(x.text for x in res.candidates[0].content.parts)
 
 
 def build_prompt(query: str, context: List[str]) -> str:
-    """
-    Builds a prompt for the LLM. #
-
-    This function builds a prompt for the LLM. It takes the original query,
-    and the returned context, and asks the model to answer the question based only
-    on what's in the context, not what's in its weights.
-
-    Args:
-    query (str): The original query.
-    context (List[str]): The context of the query, returned by embedding search.
-
-    Returns:
-    A prompt for the LLM (str).
-    """
-
     # Role
     #
     base_prompt = {

@@ -1,6 +1,6 @@
 import chromadb
-from google import genai
-from google.genai import types
+from google import generativeai as genai
+from google.generativeai import types
 import vertexai
 from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 import chromadb.utils.embedding_functions as embedding_functions
