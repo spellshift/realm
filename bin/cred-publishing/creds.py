@@ -32,7 +32,7 @@ class CredPost:
             print(f"Error {response.status_code}: {response.text}")
             return None
 
-    def get_hosts(self, ip: str):
+    def get_host_ids_by_ip(self, ip: str):
         graphql_query = """
 query getHosts($where:HostWhereInput){
     hosts(where:$where) {
@@ -51,7 +51,29 @@ query getHosts($where:HostWhereInput){
         else:
             return res
 
+    def get_host_ids_by_group(self, group: str):
+        graphql_query = """
+query getHosts($where:HostWhereInput){
+    hosts(where:$where) {
+        id
+    }
+}    """
+
+        graphql_variables = {
+            "where": {
+                "hasTagsWith": {
+                    "name": group
+                }
+            }
+        }
+        res = self.make_graphql_request(graphql_query, graphql_variables)
+        if 'errors' in res:
+            return -1
+        else:
+            return res
+
     def create_cred(self, principal: str, secret: str, kind: str, host_id: int):
+        print(host_id)
         graphql_query = """
 mutation CreateCreds($input:CreateHostCredentialInput!) {
   createCredential(input:$input) {
@@ -102,25 +124,30 @@ mutation updateTag($input:UpdateTagInput!, $tagid:ID!){
         else:
             return res['data']['updateTag']['id']
 
-    def get_host_ids(self, ip: str) -> int:
-        if ip in self.known_hosts:
-            return self.known_hosts[ip]
+    def get_host_ids(self, team: str, selector: str) -> int:
+        if selector in self.known_hosts:
+            print("Cached")
+            return self.known_hosts[selector]
 
-        res = self.get_hosts(ip)
+        res = {}
+        if not team:
+            res = self.get_host_ids_by_ip(selector)
+        else:
+            res = self.get_host_ids_by_group(selector)
 
-        self.known_hosts[ip] = [host['id'] for host in res['data']['hosts']]
-        print(self.known_hosts[ip])
-        return self.known_hosts[ip]
+        self.known_hosts[selector] = [host['id']
+                                      for host in res['data']['hosts']]
+        return self.known_hosts[selector]
 
-    def run(self, log_file):
+    def run(self, team: bool, log_file: str):
         with open(log_file) as file:
             for line in file:
                 line_arr = line.strip().split(":")
                 print(line_arr)
-                ip = line_arr[0]
+                unique = line_arr[0]
                 user = line_arr[1]
                 password = line_arr[2]
-                for host_id in self.get_host_ids(ip):
+                for host_id in self.get_host_ids(team, unique):
                     self.create_cred(
                         user,
                         password,
@@ -137,6 +164,9 @@ if __name__ == "__main__":
 
     parser.add_argument("tavern_url")
     parser.add_argument("log_file")
+    parser.add_argument("--team",
+                        action=argparse.BooleanOptionalAction,
+                        help="Switch to use team number instead of IP address `team01:username:password`")
 
     args = parser.parse_args()
 
@@ -150,4 +180,4 @@ if __name__ == "__main__":
 
     graphql_url = f"{args.tavern_url}/graphql"
     poster = CredPost(graphql_url, auth_session, {})
-    poster.run(args.log_file)
+    poster.run(args.team, args.log_file)
