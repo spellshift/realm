@@ -24,29 +24,27 @@ class CredPost:
             "auth-session": self.auth_session,
         }
 
-        response = requests.post(self.graphql_url, json=data, headers=headers, cookies=cookies)
+        response = requests.post(
+            self.graphql_url, json=data, headers=headers, cookies=cookies)
         if response.status_code == 200:
             return response.json()
         else:
             print(f"Error {response.status_code}: {response.text}")
             return None
 
-
     def get_hosts(self, ip: str):
         graphql_query = """
 query getHosts($where:HostWhereInput){
     hosts(where:$where) {
         id
-        primaryIP
-        name
     }
 }    """
 
         graphql_variables = {
-  "where": {
-    "primaryIP": ip
-  }
-}
+            "where": {
+                "primaryIP": ip
+            }
+        }
         res = self.make_graphql_request(graphql_query, graphql_variables)
         if 'errors' in res:
             return -1
@@ -70,19 +68,23 @@ mutation CreateCreds($input:CreateHostCredentialInput!) {
 }
 """
         graphql_variables = {
-  "input": {
-    "principal": principal,
-    "secret": secret,
-    "kind": kind,
-    "hostID": host_id
-  }
-}
+            "input": {
+                "principal": principal,
+                "secret": secret,
+                "kind": kind,
+                "hostID": host_id
+            }
+        }
         res = self.make_graphql_request(graphql_query, graphql_variables)
+        if res is None:
+            print("Error res is none")
+            return -1
         if 'errors' in res:
             pprint(res)
             return -1
         else:
-            return res['data']['createTag']['id']
+            pprint(res)
+            return res['data']['createCredential']['host']['id']
 
     def add_hosts(self, tag_id: str, hosts: list):
         graphql_query = """
@@ -92,7 +94,7 @@ mutation updateTag($input:UpdateTagInput!, $tagid:ID!){
     }
 }    """
         print(hosts)
-        graphql_variables = {"input":{"addHostIDs":hosts},"tagid":tag_id}
+        graphql_variables = {"input": {"addHostIDs": hosts}, "tagid": tag_id}
         res = self.make_graphql_request(graphql_query, graphql_variables)
         if 'errors' in res:
             pprint(res)
@@ -100,27 +102,31 @@ mutation updateTag($input:UpdateTagInput!, $tagid:ID!){
         else:
             return res['data']['updateTag']['id']
 
-    def get_host_id(self, ip: str) -> int:
+    def get_host_ids(self, ip: str) -> int:
         if ip in self.known_hosts:
             return self.known_hosts[ip]
 
-        self.known_hosts[ip] = self.get_hosts(ip)
+        res = self.get_hosts(ip)
+
+        self.known_hosts[ip] = [host['id'] for host in res['data']['hosts']]
+        print(self.known_hosts[ip])
         return self.known_hosts[ip]
 
     def run(self, log_file):
         with open(log_file) as file:
             for line in file:
                 line_arr = line.strip().split(":")
+                print(line_arr)
                 ip = line_arr[0]
                 user = line_arr[1]
                 password = line_arr[2]
-                host_id = self.get_host_id(ip)
-                self.create_cred(
-                    user,
-                    password,
-                    "KIND_PASSWORD",
-                    host_id
-                )
+                for host_id in self.get_host_ids(ip):
+                    self.create_cred(
+                        user,
+                        password,
+                        "KIND_PASSWORD",
+                        host_id
+                    )
 
 
 if __name__ == "__main__":
@@ -142,6 +148,6 @@ if __name__ == "__main__":
         )
         exit(1)
 
-    graphql_url = f"{args.tavern_url}/graphql".replace("//","/")
-    poster = CredPost(graphql_url, auth_session)
+    graphql_url = f"{args.tavern_url}/graphql"
+    poster = CredPost(graphql_url, auth_session, {})
     poster.run(args.log_file)
