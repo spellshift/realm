@@ -65,10 +65,11 @@ impl HostIDSelector for File {
 
         // Generate New
         let host_id = Uuid::new_v4();
+        let uuid_str: String = format!("{}", host_id);
 
         // Save to file
         match std::fs::File::create(path) {
-            Ok(mut f) => match f.write_all(host_id.as_bytes()) {
+            Ok(mut f) => match f.write(uuid_str.as_bytes()) {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]
