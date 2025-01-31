@@ -43,6 +43,7 @@ export type HostType = {
     platform?: SupportedPlatforms;
     tags?: Array<TomeTag>;
     beacons?: Array<BeaconType>;
+    credentials?: Array<CredentialType>;
 }
 export type BeaconType = {
     id: string;
@@ -160,4 +161,12 @@ export type PaginationPageInfo = {
     hasPreviousPage: boolean;
     startCursor: string;
     endCursor: string;
+}
+
+export type CredentialType = {
+    principal: string;
+    kind: string;
+    secret: string;
+    createdAt: string;
+    lastModifiedAt: string;
 }

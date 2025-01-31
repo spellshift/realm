@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/namegen"
@@ -51,6 +52,14 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
+
+			client.HostCredential.Create().
+				SetHost(testHost).
+				SetPrincipal("root").
+				SetKind(epb.Credential_KIND_PASSWORD).
+				SetSecret(newRandomCredential()).
+				SaveX(ctx)
+			
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
@@ -224,6 +233,15 @@ func newRandomIP() string {
 	ip := mrand.Uint32()
 	binary.LittleEndian.PutUint32(buf, ip)
 	return net.IP(buf).String()
+}
+
+func newRandomCredential() string {
+	buf := make([]byte, 16)
+	_, err := io.ReadFull(rand.Reader, buf)
+	if err != nil {
+		panic(fmt.Errorf("failed to generate random credential: %w", err))
+	}
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 // timeAgo returns the current time minus the provided duration (e.g. 5 seconds ago)

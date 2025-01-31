@@ -57,7 +57,6 @@ impl HostIDSelector for File {
                     Err(_err) => {
                         #[cfg(debug_assertions)]
                         log::debug!("Failed to deploy {:?}", _err);
-                        return None;
                     }
                 };
             }
@@ -65,19 +64,20 @@ impl HostIDSelector for File {
 
         // Generate New
         let host_id = Uuid::new_v4();
+        let uuid_str: String = format!("{}", host_id);
 
         // Save to file
         match std::fs::File::create(path) {
-            Ok(mut f) => match f.write_all(host_id.as_bytes()) {
+            Ok(mut f) => match f.write(uuid_str.as_bytes()) {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write host id file: {_err}");
+                    log::debug!("failed to write host id file: {_err}");
                 }
             },
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::error!("failed to create host id file: {_err}");
+                log::debug!("failed to create host id file: {_err}");
             }
         };
 
@@ -102,6 +102,9 @@ mod tests {
         let id_one = selector.get_host_id();
         let id_two = selector.get_host_id();
 
+        assert!(id_one.is_some());
+        assert!(id_two.is_some());
         assert_eq!(id_one, id_two);
+        assert!(id_two.unwrap().to_string().contains("-4"));
     }
 }
