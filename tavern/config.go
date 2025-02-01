@@ -31,10 +31,16 @@ var (
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
 	// EnvDisableDefaultTomes will prevent the default tomes from being imported on startup.
 	// EnvDebugLogging will emit verbose debug logs to help troubleshoot issues.
-	EnvEnableTestData       = EnvString{"ENABLE_TEST_DATA", ""}
-	EnvEnableTestRunAndExit = EnvString{"ENABLE_TEST_RUN_AND_EXIT", ""}
-	EnvDisableDefaultTomes  = EnvString{"DISABLE_DEFAULT_TOMES", ""}
-	EnvDebugLogging         = EnvString{"ENABLE_DEBUG_LOGGING", ""}
+	// EnvJSONLogging will emit logs in JSON format for easier parsing by log aggregators.
+	// EnvLogInstanceID will include the tavern instance id in log messages.
+	// EnvLogGraphQLRawQuery will include the raw GraphQL query in graphql log messages.
+	EnvEnableTestData       = EnvBool{"ENABLE_TEST_DATA"}
+	EnvEnableTestRunAndExit = EnvBool{"ENABLE_TEST_RUN_AND_EXIT"}
+	EnvDisableDefaultTomes  = EnvBool{"DISABLE_DEFAULT_TOMES"}
+	EnvDebugLogging         = EnvBool{"ENABLE_DEBUG_LOGGING"}
+	EnvJSONLogging          = EnvBool{"ENABLE_JSON_LOGGING"}
+	EnvLogInstanceID        = EnvBool{"ENABLE_INSTANCE_ID_LOGGING"}
+	EnvLogGraphQLRawQuery   = EnvBool{"ENABLE_GRAPHQL_RAW_QUERY_LOGGING"}
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
@@ -81,8 +87,8 @@ var (
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
-	EnvEnablePProf   = EnvString{"ENABLE_PPROF", ""}
-	EnvEnableMetrics = EnvString{"ENABLE_METRICS", ""}
+	EnvEnablePProf   = EnvBool{"ENABLE_PPROF"}
+	EnvEnableMetrics = EnvBool{"ENABLE_METRICS"}
 )
 
 // Config holds information that controls the behaviour of Tavern
@@ -251,27 +257,27 @@ func (cfg *Config) NewGitImporter(client *ent.Client) *tomes.GitImporter {
 
 // IsDefaultTomeImportEnabled returns true default tomes should be imported.
 func (cfg *Config) IsDefaultTomeImportEnabled() bool {
-	return EnvDisableDefaultTomes.String() == ""
+	return EnvDisableDefaultTomes.IsUnset()
 }
 
 // IsMetricsEnabled returns true if the /metrics http endpoint has been enabled.
 func (cfg *Config) IsMetricsEnabled() bool {
-	return EnvEnableMetrics.String() != ""
+	return EnvEnableMetrics.IsSet()
 }
 
 // IsPProfEnabled returns true if performance profiling has been enabled.
 func (cfg *Config) IsPProfEnabled() bool {
-	return EnvEnablePProf.String() != ""
+	return EnvEnablePProf.IsSet()
 }
 
 // IsTestDataEnabled returns true if a value for the "ENABLE_TEST_DATA" environment variable is set.
 func (cfg *Config) IsTestDataEnabled() bool {
-	return EnvEnableTestData.String() != ""
+	return EnvEnableTestData.IsSet()
 }
 
 // IsTestRunAndExitEnabled returns true if a value for the "ENABLE_TEST_RUN_AND_EXIT" environment variable is set.
 func (cfg *Config) IsTestRunAndExitEnabled() bool {
-	return EnvEnableTestRunAndExit.String() != ""
+	return EnvEnableTestRunAndExit.IsSet()
 }
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be

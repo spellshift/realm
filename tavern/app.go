@@ -284,6 +284,9 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
+	// Configure Raw Query Logging
+	logRawQuery := EnvLogGraphQLRawQuery.IsSet()
+
 	// GraphQL Logging
 	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
 		// Authentication Information
@@ -310,10 +313,8 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 		// Operation Context
 		oc := gqlgraphql.GetOperationContext(ctx)
 
-		// Log Request
-		slog.InfoContext(
-			ctx,
-			"tavern graphql request",
+		// Determine if Raw Query should be logged
+		args := []any{
 			"auth_generic_id", authID,
 			"auth_user_name", authUserName,
 			"auth_user_id", authUserID,
@@ -322,8 +323,13 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 			"is_authenticated", isAuthenticated,
 			"operation", oc.OperationName,
 			"variables", oc.Variables,
-			"raw_query", oc.RawQuery,
-		)
+		}
+		if logRawQuery {
+			args = append(args, "raw_query", oc.RawQuery)
+		}
+
+		// Log Request
+		slog.InfoContext(ctx, "tavern graphql request", args...)
 		return next(ctx)
 	})
 
@@ -376,30 +382,4 @@ func registerProfiler(router tavernhttp.RouteMap) {
 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
-}
-
-func configureLogging() {
-	// Use instance ID as prefix (helps in deployments with multiple tavern instances)
-	var (
-		logger *slog.Logger
-	)
-
-	// Setup Default Logger
-	if EnvDebugLogging.String() == "" {
-		// Production Logging
-		logger = slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		})).
-			With("tavern_id", GlobalInstanceID)
-	} else {
-		// Debug Logging
-		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-			Level:     slog.LevelDebug,
-			AddSource: true,
-		})).
-			With("tavern_id", GlobalInstanceID)
-	}
-
-	slog.SetDefault(logger)
-	slog.Debug("Debug logging enabled 🕵️ ")
 }
