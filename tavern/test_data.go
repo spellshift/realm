@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	mrand "math/rand"
 	"net"
 	"time"
@@ -21,7 +21,7 @@ import (
 
 // createTestData populates the DB with some test data :)
 func createTestData(ctx context.Context, client *ent.Client) {
-	log.Printf("[WARN] Test data is enabled")
+	slog.WarnContext(ctx, "test data is enabled")
 	svcTags := make([]*ent.Tag, 0, 20)
 	for i := 0; i < 20; i++ {
 		svcTags = append(
@@ -59,7 +59,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetKind(epb.Credential_KIND_PASSWORD).
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
-			
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
