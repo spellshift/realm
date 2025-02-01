@@ -169,6 +169,12 @@ export type PaginationPageInfo = {
     endCursor: string;
 }
 
+export type UpdateUserProps = {
+    id: number,
+    activated: boolean,
+    admin: boolean,
+};
+
 export type CredentialType = {
     principal: string;
     kind: string;
@@ -184,3 +190,4 @@ export type NavigationItemType = {
     target?: string;
     internal?: boolean;
 }
+

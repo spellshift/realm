@@ -70,6 +70,7 @@ export const solidButton = tv({
       purple:
         'btn-primary',
       gray: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+      red: 'bg-red-700 text-white hover:bg-red-800',
     },
   },
 });
@@ -82,6 +83,7 @@ export const outlineButton = tv({
     color: {
       purple: 'text-purple-800 ring-purple-800',
       gray: 'text-gray-900 ring-gray-500',
+      red: 'text-red-700 ring-red-700',
     },
   },
 });
@@ -93,6 +95,7 @@ export const ghostButton = tv({
     color: {
       purple: 'text-purple-800 hover:bg-purple-100',
       gray: 'text-gray-900  hover:bg-gray-100',
+      red: 'text-red-700 hover:bg-red-100',
     },
   },
 });

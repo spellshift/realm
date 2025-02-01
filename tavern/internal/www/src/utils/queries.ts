@@ -371,6 +371,18 @@ export const GET_SEARCH_FILTERS = gql`
     }
 `;
 
+export const GET_USER_QUERY = gql`
+    query GetUserQuery($where: UserWhereInput){
+        users(where: $where) {
+            id
+            name
+            photoURL
+            isActivated
+            isAdmin
+        }
+    }
+`;
+
 export const GET_HOST_CREDENTIALS = gql`
     query GetHostCredentials($where: HostWhereInput){
         hosts(where: $where) {

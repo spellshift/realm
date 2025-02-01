@@ -17,6 +17,7 @@ import { Dashboard } from "./pages/dashboard";
 import { Tomes } from "./pages/tomes";
 import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
+import { AdminPortal } from "./pages/admin";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 
 
@@ -60,6 +61,10 @@ const router = createBrowserRouter([
   {
     path: "/shells/:shellId",
     element: <Shell />,
+  },
+  {
+    path: "/admin",
+    element: <AdminPortal />,
   },
 ]);
 
