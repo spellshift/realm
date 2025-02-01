@@ -176,3 +176,11 @@ export type CredentialType = {
     createdAt: string;
     lastModifiedAt: string;
 }
+
+export type NavigationItemType = {
+    name: string;
+    href: string;
+    icon?: any;
+    target?: string;
+    internal?: boolean;
+}
