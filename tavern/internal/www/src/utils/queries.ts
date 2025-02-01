@@ -265,6 +265,17 @@ export const GET_TASK_QUERY = gql`
                         claimedAt
                         error
                         output
+                        shells {
+                                id
+                                closedAt
+                                activeUsers{
+                                    id
+                                    name
+                                    photoURL
+                                    isActivated
+                                    isAdmin
+                                }
+                        }
                         quest{
                             id
                             name
