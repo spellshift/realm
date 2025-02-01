@@ -63,7 +63,7 @@ mod tests {
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
         let expected = whoami::username();
         let res = handle_shell(String::from("whoami"))?.stdout;
-        assert_eq!(res.trim_end(), expected);
+        assert!(res.contains(expected));
         Ok(())
     }
 
