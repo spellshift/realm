@@ -92,7 +92,7 @@ jobs:
           default: true
           profile: minimal
       - name: 🔨 Build Imix
-        run: cargo build --bin=imix --release --target=x86_64-apple-darwin
+        run: cargo build --bin=imix --release --target=aarch64-apple-darwin
         working-directory: ./implants/imix
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
@@ -103,8 +103,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_name: imix-x86_64-apple-darwin
-          asset_path: ${{ runner.temp }}/realm_build/x86_64-apple-darwin/release/imix
+          asset_name: imix-aarch64-apple-darwin
+          asset_path: ${{ runner.temp }}/realm_build/aarch64-apple-darwin/release/imix
           asset_content_type: application/octet-stream
 ###
 # WINDOWS
@@ -222,7 +222,7 @@ jobs:
           default: true
           profile: minimal
       - name: 🔨 Build Golem
-        run: cargo build --bin=golem --release --target=x86_64-apple-darwin
+        run: cargo build --bin=golem --release --target=aarch64-apple-darwin
         working-directory: ./implants/golem
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/realm_build
@@ -233,8 +233,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_name: golem-x86_64-apple-darwin
-          asset_path: ${{ runner.temp }}/realm_build/x86_64-apple-darwin/release/golem
+          asset_name: golem-aarch64-apple-darwin
+          asset_path: ${{ runner.temp }}/realm_build/aarch64-apple-darwin/release/golem
           asset_content_type: application/octet-stream
 ###
 # WINDOWS
