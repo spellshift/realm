@@ -1,7 +1,7 @@
 package http
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 
 	"realm.pub/tavern/internal/auth"
@@ -33,14 +33,14 @@ func (endpoint Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Require Authentication
 	if !endpoint.AllowUnauthenticated && !auth.IsAuthenticatedContext(ctx) {
-		log.Printf("[HTTP] Unauthenticated Request Forbidden: %s %q", r.Method, r.URL.String())
+		slog.WarnContext(r.Context(), "http unauthenticated request forbidden", "http_method", r.Method, "http_url", r.URL.String())
 		http.Error(w, "must authenticate", http.StatusUnauthorized)
 		return
 	}
 
 	// Require Activation
 	if !endpoint.AllowUnactivated && !auth.IsActivatedContext(ctx) {
-		log.Printf("[HTTP] Unactivated User Request Forbidden: %s %q", r.Method, r.URL.String())
+		slog.WarnContext(ctx, "http unactivated user request forbidden", "http_method", r.Method, "http_url", r.URL.String())
 		http.Error(w, "must be activated", http.StatusForbidden)
 		return
 	}

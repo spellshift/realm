@@ -67,18 +67,19 @@ func run(ctx context.Context, options ...func(*Config)) error {
 				srv.MetricsHTTP.Addr,
 			)
 		}
-		go func() {
-			log.Printf("Metrics HTTP Server started on %s", srv.MetricsHTTP.Addr)
+		go func(ctx context.Context) {
+			slog.InfoContext(ctx, "metrics http server started", "metrics_addr", srv.MetricsHTTP.Addr)
 			if err := srv.MetricsHTTP.ListenAndServe(); err != nil {
-				log.Printf("[WARN] stopped metrics http server: %v", err)
+				slog.WarnContext(ctx, "metrics http server stopped", "err", err)
 			}
-		}()
+		}(ctx)
 	}
 
 	// Listen & Serve HTTP Traffic
-	log.Printf("Starting HTTP server on %s", srv.HTTP.Addr)
+	slog.InfoContext(ctx, "http server started", "http_addr", srv.HTTP.Addr)
 	if err := srv.HTTP.ListenAndServe(); err != nil {
-		return fmt.Errorf("stopped http server: %w", err)
+		slog.ErrorContext(ctx, "http server stopped", "err", err)
+		return fmt.Errorf("http server stopped: %w", err)
 	}
 
 	return nil
@@ -132,7 +133,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Load Default Tomes
 	if cfg.IsDefaultTomeImportEnabled() {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
-			log.Printf("[ERROR] failed to upload default tomes: %v", err)
+			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
 		}
 	}
 
@@ -159,12 +160,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
 	go func() {
 		if err := wsShellMux.Start(ctx); err != nil {
-			log.Printf("[ERROR] Webshell Mux Stopped! %v", err)
+			slog.ErrorContext(ctx, "websocket shell mux stopped", "err", err)
 		}
 	}()
 	go func() {
 		if err := grpcShellMux.Start(ctx); err != nil {
-			log.Printf("[ERROR] GRPC Mux Stopped! %v", err)
+			slog.ErrorContext(ctx, "grpc shell mux stopped", "err", err)
 		}
 	}()
 
@@ -230,7 +231,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Setup Profiling
 	if cfg.IsPProfEnabled() {
-		log.Printf("[WARN] Performance profiling is enabled, do not use in production as this may leak sensitive information")
+		slog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
 		registerProfiler(routes)
 	}
 
@@ -267,7 +268,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Setup Metrics
 	if cfg.IsMetricsEnabled() {
-		log.Printf("[WARN] Metrics reporting is enabled, unauthenticated /metrics endpoint will be available at %q", EnvHTTPMetricsListenAddr.String())
+		slog.WarnContext(ctx, "metrics reporting is enabled, unauthenticated /metrics endpoint will be available", "metrics_addr", EnvHTTPMetricsListenAddr.String())
 		tSrv.MetricsHTTP = newMetricsServer()
 	}
 

@@ -299,22 +299,22 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 
 		// If none are set, default to auth disabled
 		if clientID == "" && clientSecret == "" && domain == "" {
-			log.Printf("[WARN] OAuth is not configured, authentication disabled")
+			slog.Warn("oauth is not configured, authentication disabled")
 			return
 		}
 
 		// If partially set, panic to indicate OAuth is improperly configured
 		if clientID == "" {
-			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_CLIENT_ID'")
+			log.Fatalf("[FATAL] failed to configure oauth, must provide value for environment var 'OAUTH_CLIENT_ID'")
 		}
 		if clientSecret == "" {
-			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_CLIENT_SECRET'")
+			log.Fatalf("[FATAL] failed to configure oauth, must provide value for environment var 'OAUTH_CLIENT_SECRET'")
 		}
 		if domain == "" {
-			log.Fatalf("[FATAL] To configure OAuth, must provide value for environment var 'OAUTH_DOMAIN'")
+			log.Fatalf("[FATAL] failed to configure oauth, must provide value for environment var 'OAUTH_DOMAIN'")
 		}
 		if !strings.HasPrefix(domain, "http") {
-			log.Printf("[WARN] Domain (%q) not prefixed with scheme (http:// or https://), defaulting to https://", domain)
+			slog.Warn("domain not prefixed with scheme (http:// or https://), defaulting to https://", "oauth_domain", domain)
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
@@ -339,7 +339,7 @@ func ConfigureMySQLFromEnv() func(*Config) {
 
 		mysqlConfig.Addr = EnvMySQLAddr.String()
 		if mysqlConfig.Addr == "" {
-			log.Printf("[WARN] MySQL is not configured, using SQLite")
+			slog.Warn("mysql is not configured, using sqlite")
 			return
 		}
 
