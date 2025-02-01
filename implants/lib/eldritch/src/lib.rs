@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![allow(clippy::needless_lifetimes) /*Appears necessary for starlark macros*/]
 
 pub mod assets;
 pub mod crypto;

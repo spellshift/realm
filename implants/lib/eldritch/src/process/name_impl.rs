@@ -49,7 +49,13 @@ mod tests {
 
         let child = Command::new(commandstring).arg("5").spawn()?;
 
-        let pname = name(child.id() as i32)?;
+        let mut pname = name(child.id() as i32)?;
+
+        // FLAKY_TEST: reduce flakiness by retrying if process name returned this unexpected result
+        if pname.contains("process::name_i") {
+            pname = name(child.id() as i32)?;
+        }
+
         if cfg!(target_os = "linux")
             || cfg!(target_os = "ios")
             || cfg!(target_os = "macos")

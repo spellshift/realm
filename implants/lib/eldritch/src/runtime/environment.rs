@@ -7,6 +7,7 @@ use starlark::{
 };
 use std::sync::mpsc::Sender;
 
+#[allow(clippy::needless_lifetimes)]
 #[derive(ProvidesStaticType)]
 pub struct Environment {
     pub(super) id: i64,

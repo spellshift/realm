@@ -61,14 +61,9 @@ mod tests {
 
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
-        let res = handle_shell(String::from("whoami"))?.stdout.to_lowercase();
-        println!("{}", res);
-        assert!(
-            res.contains("runner")
-                || res.contains("administrator")
-                || res.contains("root")
-                || res.contains("user")
-        );
+        let expected = whoami::username();
+        let res = handle_shell(String::from("whoami"))?.stdout;
+        assert_eq!(res.trim_end(), expected);
         Ok(())
     }
 
@@ -136,13 +131,9 @@ func_shell("whoami")
 
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
-        let res_string = res.to_string().to_lowercase();
-        assert!(
-            res_string.contains("runner")
-                || res_string.contains("administrator")
-                || res_string.contains("root")
-                || res_string.contains("user")
-        );
+        let res_string = res.to_str();
+        let expected = whoami::username();
+        assert!(res_string.contains(&expected));
         Ok(())
     }
 }
