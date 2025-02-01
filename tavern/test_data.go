@@ -21,7 +21,7 @@ import (
 
 // createTestData populates the DB with some test data :)
 func createTestData(ctx context.Context, client *ent.Client) {
-	slog.Warn("test data is enabled")
+	slog.WarnContext(ctx, "test data is enabled")
 	svcTags := make([]*ent.Tag, 0, 20)
 	for i := 0; i < 20; i++ {
 		svcTags = append(
