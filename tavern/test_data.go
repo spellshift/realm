@@ -22,6 +22,29 @@ import (
 // createTestData populates the DB with some test data :)
 func createTestData(ctx context.Context, client *ent.Client) {
 	slog.WarnContext(ctx, "test data is enabled")
+
+	client.User.Create().
+		SetName("Admin").
+		SetOauthID("AdminOAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+	client.User.Create().
+		SetName("Admin2").
+		SetOauthID("Admin2OAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+	client.User.Create().
+		SetName("User").
+		SetOauthID("UserOAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(false).
+		SaveX(ctx)
+
 	svcTags := make([]*ent.Tag, 0, 20)
 	for i := 0; i < 20; i++ {
 		svcTags = append(

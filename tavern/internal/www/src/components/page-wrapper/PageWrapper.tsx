@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { FunctionComponent, useContext, useState } from 'react'
 import {
   DocumentDuplicateIcon,
   CommandLineIcon,
@@ -11,6 +11,8 @@ import {
 
 import { PageNavItem } from '../../utils/enums';
 import { AccessGate } from '../access-gate';
+import { AuthorizationContext } from '../../context/AuthorizationContext';
+import { EmptyState, EmptyStateType } from '../tavern-base-ui/EmptyState';
 import FullSidebarNav from './FullSidebarNav';
 import MobileNav from './MobileNav';
 import MinimizedSidebarNav from './MinimizedSidebarNav';
@@ -33,14 +35,32 @@ function classNames(...classes: string[]) {
 type Props = {
   children: any;
   currNavItem?: PageNavItem;
+  adminOnly?: boolean;
 }
-export const PageWrapper = (props: Props) => {
-  const { children, currNavItem } = props;
+
+export const PageWrapper: FunctionComponent<Props> = ({ children, currNavItem, adminOnly=false }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const {data: authData, isLoading, error} = useContext(AuthorizationContext);
   const { sidebarMinimized, setSidebarMinimized } = useContext(UserPreferencesContext);
 
+  if(isLoading){
+    return (
+        <div className="flex flex-row w-sceen h-screen justify-center items-center">
+            <EmptyState label="Loading authroization state" type={EmptyStateType.loading}/>
+        </div>
+    );
+  }
+
+  if(error){
+      return (
+          <div className="flex flex-row w-sceen h-screen justify-center items-center">
+              <EmptyState label="Error fetching authroization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue."/>
+          </div>
+      );
+  }
+
   return (
-    <AccessGate>
+    <AccessGate authData={authData!} adminOnly={adminOnly}>
       <div>
         {sidebarMinimized ?
           <MinimizedSidebarNav currNavItem={currNavItem} navigation={navigation} handleSidebarMinimized={setSidebarMinimized} />

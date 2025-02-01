@@ -1,37 +1,32 @@
-import React, { useContext } from "react";
-import { AuthorizationContext } from "../../context/AuthorizationContext";
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
+import { UserType } from "../../utils/consts";
+import { AuthorizationContextType } from "../../context/AuthorizationContext";
 
 type Props = {
     children: any;
+    authData: AuthorizationContextType;
+    adminOnly: boolean;
 }
 export const AccessGate = (props: Props) => {
-     const {children} = props;
-     const {data, isLoading, error} = useContext(AuthorizationContext);
+    const {children, authData, adminOnly} = props;
 
-    if(isLoading){
+    let userData: UserType = authData.me;
+
+    if (!userData.isActivated) {
+    	return (
+        	<div className="flex flex-row w-sceen h-screen justify-center items-center">
+            	<EmptyState label="Account not approved" details={`Gain approval by providing your id (${userData.id}) to an admin.`} type={EmptyStateType.noData}/>
+        	</div>
+    	);
+    }
+
+    if (adminOnly && !userData.isAdmin) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Loading authroization state" type={EmptyStateType.loading}/>
+                <EmptyState label="Not Authorized" type={EmptyStateType.error} details="You are not authorized to view this page. Please contact your admin if you believe this is a mistake."/>
             </div>
         );
     }
 
-    if(error){
-        return (
-            <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Error fetching authroization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue."/>
-            </div>
-        );
-    }
-
-    if(data?.me?.isActivated){
-        return children;
-    }
-
-    return (
-        <div className="flex flex-row w-sceen h-screen justify-center items-center">
-            <EmptyState label="Account not approved" details={`Gain approval by providing your id (${data?.me?.id}) to an admin.`} type={EmptyStateType.noData}/>
-        </div>
-    );
- }
+    return children;
+}
