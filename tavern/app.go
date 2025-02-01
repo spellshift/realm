@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -239,7 +238,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	srv := tavernhttp.NewServer(
 		routes,
 		withAuthentication,
-		tavernhttp.WithRequestLogging(httpLogger),
 	)
 
 	// Configure HTTP/2 (support for without TLS)
@@ -287,22 +285,45 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// GraphQL Logging
-	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
 	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
-		oc := gqlgraphql.GetOperationContext(ctx)
-		reqVars, err := json.Marshal(oc.Variables)
-		if err != nil {
-			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
-			return next(ctx)
-		}
-
-		authName := "unknown"
+		// Authentication Information
+		var (
+			authID          = "unknown"
+			isActivated     = false
+			isAdmin         = false
+			isAuthenticated = false
+			authUserID      = 0
+			authUserName    = ""
+		)
 		id := auth.IdentityFromContext(ctx)
 		if id != nil {
-			authName = id.String()
+			authID = id.String()
+			isActivated = id.IsActivated()
+			isAdmin = id.IsAdmin()
+			isAuthenticated = id.IsAuthenticated()
+		}
+		if authUser := auth.UserFromContext(ctx); authUser != nil {
+			authUserID = authUser.ID
+			authUserName = authUser.Name
 		}
 
-		gqlLogger.Printf("%s (%s): %s", oc.OperationName, authName, string(reqVars))
+		// Operation Context
+		oc := gqlgraphql.GetOperationContext(ctx)
+
+		// Log Request
+		slog.InfoContext(
+			ctx,
+			"tavern graphql request",
+			"auth_generic_id", authID,
+			"auth_user_name", authUserName,
+			"auth_user_id", authUserID,
+			"is_admin", isAdmin,
+			"is_activated", isActivated,
+			"is_authenticated", isAuthenticated,
+			"operation", oc.OperationName,
+			"variables", oc.Variables,
+			"raw_query", oc.RawQuery,
+		)
 		return next(ctx)
 	})
 
