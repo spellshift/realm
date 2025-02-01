@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -67,18 +66,19 @@ func run(ctx context.Context, options ...func(*Config)) error {
 				srv.MetricsHTTP.Addr,
 			)
 		}
-		go func() {
-			log.Printf("Metrics HTTP Server started on %s", srv.MetricsHTTP.Addr)
+		go func(ctx context.Context) {
+			slog.InfoContext(ctx, "metrics http server started", "metrics_addr", srv.MetricsHTTP.Addr)
 			if err := srv.MetricsHTTP.ListenAndServe(); err != nil {
-				log.Printf("[WARN] stopped metrics http server: %v", err)
+				slog.WarnContext(ctx, "metrics http server stopped", "err", err)
 			}
-		}()
+		}(ctx)
 	}
 
 	// Listen & Serve HTTP Traffic
-	log.Printf("Starting HTTP server on %s", srv.HTTP.Addr)
+	slog.InfoContext(ctx, "http server started", "http_addr", srv.HTTP.Addr)
 	if err := srv.HTTP.ListenAndServe(); err != nil {
-		return fmt.Errorf("stopped http server: %w", err)
+		slog.ErrorContext(ctx, "http server stopped", "err", err)
+		return fmt.Errorf("http server stopped: %w", err)
 	}
 
 	return nil
@@ -132,7 +132,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Load Default Tomes
 	if cfg.IsDefaultTomeImportEnabled() {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
-			log.Printf("[ERROR] failed to upload default tomes: %v", err)
+			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
 		}
 	}
 
@@ -159,12 +159,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
 	go func() {
 		if err := wsShellMux.Start(ctx); err != nil {
-			log.Printf("[ERROR] Webshell Mux Stopped! %v", err)
+			slog.ErrorContext(ctx, "websocket shell mux stopped", "err", err)
 		}
 	}()
 	go func() {
 		if err := grpcShellMux.Start(ctx); err != nil {
-			log.Printf("[ERROR] GRPC Mux Stopped! %v", err)
+			slog.ErrorContext(ctx, "grpc shell mux stopped", "err", err)
 		}
 	}()
 
@@ -230,7 +230,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Setup Profiling
 	if cfg.IsPProfEnabled() {
-		log.Printf("[WARN] Performance profiling is enabled, do not use in production as this may leak sensitive information")
+		slog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
 		registerProfiler(routes)
 	}
 
@@ -238,7 +238,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	srv := tavernhttp.NewServer(
 		routes,
 		withAuthentication,
-		tavernhttp.WithRequestLogging(httpLogger),
 	)
 
 	// Configure HTTP/2 (support for without TLS)
@@ -267,7 +266,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Setup Metrics
 	if cfg.IsMetricsEnabled() {
-		log.Printf("[WARN] Metrics reporting is enabled, unauthenticated /metrics endpoint will be available at %q", EnvHTTPMetricsListenAddr.String())
+		slog.WarnContext(ctx, "metrics reporting is enabled, unauthenticated /metrics endpoint will be available", "metrics_addr", EnvHTTPMetricsListenAddr.String())
 		tSrv.MetricsHTTP = newMetricsServer()
 	}
 
@@ -286,22 +285,45 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// GraphQL Logging
-	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
 	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
-		oc := gqlgraphql.GetOperationContext(ctx)
-		reqVars, err := json.Marshal(oc.Variables)
-		if err != nil {
-			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v", err)
-			return next(ctx)
-		}
-
-		authName := "unknown"
+		// Authentication Information
+		var (
+			authID          = "unknown"
+			isActivated     = false
+			isAdmin         = false
+			isAuthenticated = false
+			authUserID      = 0
+			authUserName    = ""
+		)
 		id := auth.IdentityFromContext(ctx)
 		if id != nil {
-			authName = id.String()
+			authID = id.String()
+			isActivated = id.IsActivated()
+			isAdmin = id.IsAdmin()
+			isAuthenticated = id.IsAuthenticated()
+		}
+		if authUser := auth.UserFromContext(ctx); authUser != nil {
+			authUserID = authUser.ID
+			authUserName = authUser.Name
 		}
 
-		gqlLogger.Printf("%s (%s): %s", oc.OperationName, authName, string(reqVars))
+		// Operation Context
+		oc := gqlgraphql.GetOperationContext(ctx)
+
+		// Log Request
+		slog.InfoContext(
+			ctx,
+			"tavern graphql request",
+			"auth_generic_id", authID,
+			"auth_user_name", authUserName,
+			"auth_user_id", authUserID,
+			"is_admin", isAdmin,
+			"is_activated", isActivated,
+			"is_authenticated", isAuthenticated,
+			"operation", oc.OperationName,
+			"variables", oc.Variables,
+			"raw_query", oc.RawQuery,
+		)
 		return next(ctx)
 	})
 

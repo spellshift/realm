@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strconv"
 )
@@ -18,7 +20,7 @@ func (env EnvString) String() string {
 		return val
 	}
 	if env.Default != "" {
-		log.Printf("[WARN] No value for '%s' provided, defaulting to %s", env.Key, env.Default)
+		slog.Warn(fmt.Sprintf("no value for '%s' provided, defaulting to %s", env.Key, env.Default))
 	}
 	return env.Default
 }
@@ -33,12 +35,12 @@ type EnvInteger struct {
 func (env EnvInteger) Int() int {
 	envVar := os.Getenv(env.Key)
 	if envVar == "" {
-		log.Printf("[WARN] No value for '%s' provided, defaulting to %d", env.Key, env.Default)
+		slog.Warn(fmt.Sprintf("no value for '%s' provided, defaulting to %d", env.Key, env.Default))
 		return env.Default
 	}
 	val, err := strconv.Atoi(envVar)
 	if err != nil {
-		log.Fatalf("[FATAL] Invalid integer value (%q) provided for %s: %v", envVar, env.Key, err)
+		log.Fatalf("[FATAL] invalid integer value (%q) provided for %s: %v", envVar, env.Key, err)
 	}
 	return val
 }

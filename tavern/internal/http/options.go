@@ -1,7 +1,6 @@
 package http
 
 import (
-	"log"
 	"net/http"
 
 	"realm.pub/tavern/internal/ent"
@@ -19,7 +18,10 @@ func NewServer(routes RouteMap, options ...Option) *Server {
 	}
 
 	// Apply Options
-	server := &Server{Handler: router}
+	server := &Server{
+		Handler: router,
+		Logger:  defaultRequestLogger{},
+	}
 	for _, opt := range options {
 		opt(server)
 	}
@@ -41,9 +43,9 @@ func WithAuthenticationBypass(graph *ent.Client) Option {
 	})
 }
 
-// WithRequestLogging configures HTTP request logging for the server.
-func WithRequestLogging(logger *log.Logger) Option {
+// WithRequestLogging configures specialized HTTP request logging for the server, overriding the default logger.
+func WithRequestLogging(logger Logger) Option {
 	return Option(func(server *Server) {
-		server.Logger = defaultRequestLogger{logger}
+		server.Logger = logger
 	})
 }

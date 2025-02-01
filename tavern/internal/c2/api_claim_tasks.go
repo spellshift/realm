@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -89,7 +89,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			Select(tag.FieldName, tag.FieldKind).
 			Scan(ctx, &tagNames)
 		if err != nil {
-			log.Printf("[ERROR] metrics: failed to query host tags: %v", err)
+			slog.ErrorContext(ctx, "metrics failed to query host tags", "err", err, "host_id", hostID)
 		}
 		for _, t := range tagNames {
 			if t.Kind == string(tag.KindGroup) {

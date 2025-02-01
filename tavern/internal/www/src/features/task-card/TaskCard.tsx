@@ -6,6 +6,7 @@ import TaskParameters from "./components/TaskParameters";
 import TaskResults from "./components/TaskResults";
 import UserImageAndName from "../../components/UserImageAndName";
 import TaskStatusBadge from "../../components/TaskStatusBadge";
+import TaskShells from "./components/TaskShells";
 
 interface TaskCardType {
     task: Task
@@ -29,9 +30,11 @@ const TaskCard: FC<TaskCardType> = (
                 <TaskTimeStamp {...task} />
                 <TaskParameters quest={task?.quest} />
                 <UserImageAndName userData={task?.quest?.creator} />
+
             </div>
-            <div className="flex flex-col gap-2 col-span-1">
+            <div className="flex flex-col gap-6 col-span-1">
                 <TaskResults output={task?.output} error={task?.error} quest={task?.quest} />
+                <TaskShells shells={task?.shells} />
             </div>
         </div>
     );
