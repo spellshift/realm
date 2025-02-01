@@ -17,6 +17,7 @@ import { Dashboard } from "./pages/dashboard";
 import { Tomes } from "./pages/tomes";
 import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
+import { UserPreferencesContextProvider } from "./context/UserPreferences";
 
 
 const router = createBrowserRouter([
@@ -68,7 +69,9 @@ export const App = () => {
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
         <TagContextProvider>
-          <RouterProvider router={router} />
+          <UserPreferencesContextProvider>
+            <RouterProvider router={router} />
+          </UserPreferencesContextProvider>
         </TagContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
