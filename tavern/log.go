@@ -6,7 +6,6 @@ import (
 )
 
 func configureLogging() {
-	// Use instance ID as prefix (helps in deployments with multiple tavern instances)
 	var (
 		logger         *slog.Logger
 		logHandler     slog.Handler
