@@ -90,22 +90,6 @@ mutation createTag($input:CreateTagInput!){
         else:
             return res['data']['createTag']['id']
 
-    def add_hosts(self, tag_id: str, hosts: list):
-        graphql_query = """
-mutation updateTag($input:UpdateTagInput!, $tagid:ID!){
-    updateTag(input:$input, tagID:$tagid) {
-        id
-    }
-}    """
-        print(hosts)
-        graphql_variables = {"input":{"addHostIDs":hosts},"tagid":tag_id}
-        res = self.make_graphql_request(graphql_query, graphql_variables)
-        if 'errors' in res:
-            pprint(res)
-            return -1
-        else:
-            return res['data']['updateTag']['id']
-
     def run(self):
         service_map = { }
         data = self.get_hosts()
@@ -153,5 +137,5 @@ if __name__ == "__main__":
         exit(1)
 
     graphql_url = f"{args.tavern_url}/graphql"
-    tagger = TagBuilder(graphql_url, auth_session)
-    tagger.run()
+    poster = TagBuilder(graphql_url, auth_session)
+    poster.run()
