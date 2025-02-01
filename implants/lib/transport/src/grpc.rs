@@ -44,6 +44,7 @@ impl Transport for GRPC {
                     .rate_limit(1, Duration::from_millis(25))
                     .connect_with_connector_lazy(proxy_connector)
             }
+            #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
                 .rate_limit(1, Duration::from_millis(25))
                 .connect_lazy(),
@@ -73,6 +74,7 @@ impl Transport for GRPC {
                 let msg = match stream.message().await {
                     Ok(maybe_msg) => match maybe_msg {
                         Some(msg) => msg,
+                        #[allow(non_snake_case) /* None is a reserved keyword */]
                         None => {
                             break;
                         }
@@ -255,6 +257,7 @@ impl GRPC {
     /// Providing content of the file is optional. If content is provided:
     ///   - Hash will automatically be calculated and the provided hash will be ignored.
     ///   - Size will automatically be calculated and the provided size will be ignored.
+    ///
     /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
     /// Any existing files at the provided path for the host are replaced.
     pub async fn report_file_impl(
