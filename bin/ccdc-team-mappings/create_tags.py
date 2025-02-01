@@ -14,7 +14,6 @@ class TagBuilder:
     auth_session: str
     auth_session: str
 
-
     def make_graphql_request(self, query, variables):
         headers = {
             "Content-Type": "application/json",
@@ -26,7 +25,8 @@ class TagBuilder:
             "auth-session": self.auth_session,
         }
 
-        response = requests.post(self.graphql_url, json=data, headers=headers, cookies=cookies)
+        response = requests.post(
+            self.graphql_url, json=data, headers=headers, cookies=cookies)
         if response.status_code == 200:
             return response.json()
         else:
@@ -43,7 +43,7 @@ query getHosts($where:HostWhereInput){
     }
 }    """
 
-        graphql_variables = {"where":{}}
+        graphql_variables = {"where": {}}
         res = self.make_graphql_request(graphql_query, graphql_variables)
         if 'errors' in res:
             return -1
@@ -58,7 +58,7 @@ query getTag($input:TagWhereInput){
     }
 }    """
 
-        graphql_variables = {"input":{"name":tag_name}}
+        graphql_variables = {"input": {"name": tag_name}}
         res = self.make_graphql_request(graphql_query, graphql_variables)
         if 'errors' in res:
             return -1
@@ -82,7 +82,7 @@ mutation createTag($input:CreateTagInput!){
 }
         """
 
-        graphql_variables = {"input":{"name":tag_name, "kind":tag_kind}}
+        graphql_variables = {"input": {"name": tag_name, "kind": tag_kind}}
         res = self.make_graphql_request(graphql_query, graphql_variables)
         if 'errors' in res:
             pprint(res)
@@ -90,8 +90,24 @@ mutation createTag($input:CreateTagInput!){
         else:
             return res['data']['createTag']['id']
 
+    def add_hosts(self, tag_id: str, hosts: list):
+        graphql_query = """
+mutation updateTag($input:UpdateTagInput!, $tagid:ID!){
+    updateTag(input:$input, tagID:$tagid) {
+        id
+    }
+}    """
+        print(hosts)
+        graphql_variables = {"input": {"addHostIDs": hosts}, "tagid": tag_id}
+        res = self.make_graphql_request(graphql_query, graphql_variables)
+        if 'errors' in res:
+            pprint(res)
+            return -1
+        else:
+            return res['data']['updateTag']['id']
+
     def run(self):
-        service_map = { }
+        service_map = {}
         data = self.get_hosts()
 
         for tag_profile in tag_profiles:
@@ -100,7 +116,7 @@ mutation createTag($input:CreateTagInput!){
                 tag_profile['kind']
             )
             service_map[tag_profile['name']] = {
-                "hosts":[],
+                "hosts": [],
                 "id": tag_id,
             }
 
@@ -108,15 +124,18 @@ mutation createTag($input:CreateTagInput!){
             for tag_profile in tag_profiles:
                 re_match = None
                 if 'ip_regex' in tag_profile:
-                    re_match = re.search(tag_profile["ip_regex"], row["primaryIP"])
+                    re_match = re.search(
+                        tag_profile["ip_regex"], row["primaryIP"])
                 if 'hostname_regex' in tag_profile:
-                    re_match = re.search(tag_profile["hostname_regex"], row["name"])
+                    re_match = re.search(
+                        tag_profile["hostname_regex"], row["name"])
                 if re_match is not None:
                     self.add_hosts(
                         service_map[tag_profile['name']]['id'],
                         [row["id"]]
                     )
                     service_map[tag_profile['name']]['hosts'].append(row["id"])
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -137,5 +156,5 @@ if __name__ == "__main__":
         exit(1)
 
     graphql_url = f"{args.tavern_url}/graphql"
-    poster = TagBuilder(graphql_url, auth_session)
-    poster.run()
+    builder = TagBuilder(graphql_url, auth_session)
+    builder.run()
