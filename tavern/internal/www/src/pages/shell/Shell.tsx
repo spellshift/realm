@@ -1,4 +1,4 @@
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';

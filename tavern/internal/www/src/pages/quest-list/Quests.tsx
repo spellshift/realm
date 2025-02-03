@@ -1,7 +1,7 @@
 import React from "react";
 import EmptyStateNoQuests from "../../components/empty-states/EmptyStateNoQuests";
 import FilterBar from "../../components/FilterBar";
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";

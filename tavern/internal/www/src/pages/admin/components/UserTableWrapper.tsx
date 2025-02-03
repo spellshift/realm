@@ -7,15 +7,15 @@ import { UserType } from "../../../utils/consts";
 
 export const UserTableWrapper = () => {
     const { loading: tableLoading, users, error: tableError } = useUserTable();
-    const { isLoading: userLoading, data: authData, error: userError} = useContext(AuthorizationContext);
+    const { data: authData } = useContext(AuthorizationContext);
 
     const currentUser: UserType = authData!.me!;
 
     return (
         <div className="flex flex-col justify-center items-center gap-6">
-            {(tableLoading || userLoading) ? (
+            {(tableLoading) ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading users..." />
-            ) : (tableError || userError) ? (
+            ) : (tableError) ? (
                 <EmptyState type={EmptyStateType.error} label="Error users..." />
             ) : (users.length > 0) ? (
                 <UserTable currentUser={currentUser} data={users} />

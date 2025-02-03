@@ -2,7 +2,7 @@ import { useQuery } from "@apollo/client";
 import React, { useEffect } from "react";
 
 import EmptyStateNoQuests from "../../components/empty-states/EmptyStateNoQuests";
-import { PageWrapper } from "../../components/page-wrapper"
+import { PageWrapper } from "../../features/page-wrapper"
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem } from "../../utils/enums";
 import { GET_HOST_QUERY, GET_TASK_QUERY } from "../../utils/queries";

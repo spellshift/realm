@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import { TagContext } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
