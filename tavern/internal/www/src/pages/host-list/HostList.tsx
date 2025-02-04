@@ -1,5 +1,5 @@
 import React from "react";
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem } from "../../utils/enums";
 import HostFilter from "./components/HostFilter";

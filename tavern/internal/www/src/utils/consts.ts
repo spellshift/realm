@@ -189,5 +189,5 @@ export type NavigationItemType = {
     icon?: any;
     target?: string;
     internal?: boolean;
+    adminOnly?: boolean;
 }
-

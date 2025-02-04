@@ -12,9 +12,9 @@ type Props = {
     currentUser: UserType;
 }
 const UserTable = (props: Props) => {
-    const {data, currentUser} = props;
-    const {submitUpdateUser} = useUpdateUser();
-    
+    const { data, currentUser } = props;
+    const { submitUpdateUser } = useUpdateUser();
+
     const columns: ColumnDef<any>[] = [
         {
             id: "name",
@@ -26,7 +26,7 @@ const UserTable = (props: Props) => {
             cell: (cellData: any) => {
                 const rowData = cellData.getValue();
                 return (
-                    <UserImageAndName userData={rowData}/>
+                    <UserImageAndName userData={rowData} />
                 );
             }
         },
@@ -65,19 +65,19 @@ const UserTable = (props: Props) => {
                 const rowData = cellData.getValue();
                 const isDisabled = rowData.id === currentUser.id;
                 return (
-                    <div className="flex flex-row flex-wrap gap-1">
-                      {!rowData?.isActivated && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "gray", size: "md" }} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": false})}>
-                        Activate
-                      </Button>}
-                      {rowData?.isActivated && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "red", size: "md" }} onClick={() => submitUpdateUser({"id": rowData.id, "activated": false, "admin": false})}>
-                        Deactivate
-                      </Button>}
-                      {rowData?.isActivated && !rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "gray", size: "md" }} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": true})}>
-                        Promote
-                      </Button>}
-                      {rowData?.isActivated && rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "red", size: "md" }} onClick={() => submitUpdateUser({"id": rowData.id, "activated": true, "admin": false})}>
-                        Demote
-                      </Button>}
+                    <div className="flex flex-row flex-wrap gap-2">
+                        {!rowData?.isActivated && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "gray", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": true, "admin": false })}>
+                            Activate
+                        </Button>}
+                        {rowData?.isActivated && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "red", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": false, "admin": false })}>
+                            Deactivate
+                        </Button>}
+                        {rowData?.isActivated && !rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "gray", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": true, "admin": true })}>
+                            Promote
+                        </Button>}
+                        {rowData?.isActivated && rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "red", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": true, "admin": false })}>
+                            Demote
+                        </Button>}
                     </div>
                 );
             }

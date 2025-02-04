@@ -1,32 +1,38 @@
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
-import { UserType } from "../../utils/consts";
-import { AuthorizationContextType } from "../../context/AuthorizationContext";
+import { AuthorizationContext } from "../../context/AuthorizationContext";
+import { ReactNode, useContext } from "react";
 
 type Props = {
-    children: any;
-    authData: AuthorizationContextType;
-    adminOnly: boolean;
+    children: ReactNode;
 }
-export const AccessGate = (props: Props) => {
-    const {children, authData, adminOnly} = props;
+export const AccessGate = ({ children }: Props) => {
+    const { data, isLoading, error } = useContext(AuthorizationContext);
+    const userData = data?.me || null;
 
-    let userData: UserType = authData.me;
 
-    if (!userData.isActivated) {
-    	return (
-        	<div className="flex flex-row w-sceen h-screen justify-center items-center">
-            	<EmptyState label="Account not approved" details={`Gain approval by providing your id (${userData.id}) to an admin.`} type={EmptyStateType.noData}/>
-        	</div>
-    	);
-    }
-
-    if (adminOnly && !userData.isAdmin) {
+    if (isLoading) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Not Authorized" type={EmptyStateType.error} details="You are not authorized to view this page. Please contact your admin if you believe this is a mistake."/>
+                <EmptyState label="Loading authroization state" type={EmptyStateType.loading} />
             </div>
         );
     }
 
-    return children;
+    if (error) {
+        return (
+            <div className="flex flex-row w-sceen h-screen justify-center items-center">
+                <EmptyState label="Error fetching authroization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue." />
+            </div>
+        );
+    }
+
+    if (!userData?.isActivated) {
+        return (
+            <div className="flex flex-row w-sceen h-screen justify-center items-center">
+                <EmptyState label="Account not approved" details={`Gain approval by providing your id (${userData?.id}) to an admin.`} type={EmptyStateType.noData} />
+            </div>
+        );
+    }
+
+    return <>{children}</>
 }

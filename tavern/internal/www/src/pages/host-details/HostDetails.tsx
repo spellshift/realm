@@ -1,4 +1,4 @@
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import HostTasks from "./components/HostTasks";
 import { Tab } from '@headlessui/react'

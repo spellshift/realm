@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
