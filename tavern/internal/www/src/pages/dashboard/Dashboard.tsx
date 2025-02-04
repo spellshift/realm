@@ -10,6 +10,8 @@ import { GET_HOST_QUERY, GET_TASK_QUERY } from "../../utils/queries";
 import { useOverviewData } from "./hook/useOverviewData";
 import QuestCard from "./components/QuestCard";
 import AccessCard from "./components/AccessCard";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import PageHeader from "../../components/tavern-base-ui/PageHeader";
 
 
 export const Dashboard = () => {
@@ -55,9 +57,11 @@ export const Dashboard = () => {
 
     return (
         <PageWrapper currNavItem={PageNavItem.dashboard}>
-            <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Dashboard</h3>
-            </div>
+            <Breadcrumbs pages={[{
+                label: "Dashboard",
+                link: "/dashboard"
+            }]} />
+            <PageHeader title="Dashboard" />
             {getOverviewWrapper()}
         </PageWrapper>
     );
