@@ -1,27 +1,34 @@
-use std::net::Ipv4Addr;
+use std::{
+    io::{BufReader, Read, Write},
+    net::{Ipv4Addr, SocketAddr, TcpStream, UdpSocket},
+    time::Duration,
+};
 
 use anyhow::Result;
-use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpStream, UdpSocket};
 
-// Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
-async fn handle_ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
+async fn handle_ncat_timeout(
+    address: String,
+    port: i32,
+    data: String,
+    protocol: String,
+    duration: Duration,
+) -> Result<String> {
     // If the response is longer than 4096 bytes it will be  truncated.
     let mut response_buffer: Vec<u8> = Vec::new();
     let result_string: String;
 
-    let address_and_port = format!("{}:{}", address, port);
+    let address_and_port = format!("{}:{}", address, port).parse::<SocketAddr>()?;
 
     if protocol == "tcp" {
         // Connect to remote host
-        let mut connection = TcpStream::connect(&address_and_port).await?;
+        let mut connection = TcpStream::connect_timeout(&address_and_port, duration)?;
 
         // Write our meessage
-        connection.write_all(data.as_bytes()).await?;
+        connection.write_all(data.as_bytes())?;
 
         // Read server response
         let mut read_stream = BufReader::new(connection);
-        read_stream.read_buf(&mut response_buffer).await?;
+        read_stream.read_to_end(&mut response_buffer)?;
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
@@ -36,16 +43,16 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
 
         // Setting the bind address to unspecified should leave it up to the OS to decide.
         // https://stackoverflow.com/a/67084977
-        let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
+        let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0))?;
+        sock.set_read_timeout(Some(duration))?;
+        sock.set_write_timeout(Some(duration))?;
 
         // Send bytes to remote host
-        let _bytes_sent = sock
-            .send_to(data.as_bytes(), address_and_port.clone())
-            .await?;
+        let _bytes_sent = sock.send_to(data.as_bytes(), address_and_port)?;
 
         // Recieve any response from remote host
         let mut response_buffer = [0; 1024];
-        let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
+        let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer)?;
 
         // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
         // To remove the null bytes we're using trim_matches.
@@ -59,14 +66,53 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
     }
 }
 
+// Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
+async fn handle_ncat(
+    address: String,
+    port: i32,
+    data: String,
+    protocol: String,
+    timeout: u32,
+) -> Result<String> {
+    let duration = std::time::Duration::from_secs(timeout as u64);
+    let res = match tokio::time::timeout(
+        duration,
+        handle_ncat_timeout(address, port, data, protocol, duration),
+    )
+    .await?
+    {
+        Ok(local_res) => local_res,
+        Err(local_err) => {
+            return Err(anyhow::anyhow!(
+                "Failed to run handle_ncat_timeout: {}",
+                local_err.to_string()
+            ))
+        }
+    };
+
+    Ok(res)
+}
+
 // We do not want to make this async since it would require we make all of the starlark bindings async.
 // Instead we have a handle_ncat function that we call with block_on
-pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
+pub fn ncat(
+    address: String,
+    port: i32,
+    data: String,
+    protocol: String,
+    timeout: Option<u32>,
+) -> Result<String> {
+    let default_timeout = 2;
+    let timeout_u32 = match timeout {
+        Some(res) => res,
+        None => default_timeout,
+    };
+
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
 
-    let response = runtime.block_on(handle_ncat(address, port, data, protocol));
+    let response = runtime.block_on(handle_ncat(address, port, data, protocol, timeout_u32));
 
     match response {
         Ok(_) => Ok(response.unwrap()),
@@ -76,6 +122,7 @@ pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Resul
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use anyhow::Context;
     use tokio::io::copy;
@@ -166,6 +213,7 @@ mod tests {
             test_port,
             expected_response.clone(),
             String::from("tcp"),
+            5,
         ));
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -194,6 +242,7 @@ mod tests {
             test_port,
             expected_response.clone(),
             String::from("udp"),
+            5,
         ));
 
         // Will this create a race condition where the sender sends before the listener starts?
@@ -202,6 +251,33 @@ mod tests {
 
         // Verify our data
         assert_eq!(expected_response, actual_response.unwrap().unwrap());
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_ncat_timeout_exceeded() -> anyhow::Result<()> {
+        let test_port = allocate_localhost_unused_ports(1, "udp".to_string()).await?[0];
+
+        // Setup a test echo server
+        let expected_response = String::from("Hello world!");
+
+        // Setup a sender
+        let send_task = task::spawn(handle_ncat(
+            String::from("127.0.0.1"),
+            test_port,
+            expected_response.clone(),
+            String::from("udp"),
+            2,
+        ))
+        .await?;
+
+        assert!(send_task.is_err());
+        let err_string = send_task.unwrap_err().to_string();
+        println!("{}", err_string);
+        assert!(
+            err_string.contains("deadline has elapsed")
+                || err_string.contains("not properly respond after a period of time")
+        );
+
         Ok(())
     }
     // #[test]
