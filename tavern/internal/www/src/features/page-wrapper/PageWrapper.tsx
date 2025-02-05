@@ -26,8 +26,8 @@ export const PageWrapper: FunctionComponent<Props> = ({ children, currNavItem })
         }
         <MobileNav currNavItem={currNavItem} sidebarOpen={sidebarOpen} handleSidebarOpen={setSidebarOpen} />
 
-        <main className={classNames("py-10", sidebarMinimized ? "lg:ml-24" : "lg:ml-72")}>
-          <div className="px-4 sm:px-6 xl:px-8">{children}</div>
+        <main className={classNames("py-4", sidebarMinimized ? "lg:ml-24" : "lg:ml-72")}>
+          <div className="px-4 sm:px-6 xl:px-8 flex flex-col gap-4">{children}</div>
         </main>
       </div>
     </AccessGate>

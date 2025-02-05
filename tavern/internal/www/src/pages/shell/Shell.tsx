@@ -8,6 +8,7 @@ import '@xterm/xterm/css/xterm.css';
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import Button from "../../components/tavern-base-ui/button/Button";
 import Badge from "../../components/tavern-base-ui/badge/Badge";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 const Shell = () => {
     const { shellId } = useParams();
@@ -69,6 +70,10 @@ const Shell = () => {
     //TODO: Expand to fetch active users for this page
     return (
         <PageWrapper>
+            <Breadcrumbs pages={[{
+                label: "Shell",
+                link: "/shell"
+            }]} />
             <div className="border-b-2 border-gray-200 pb-6 sm:flex flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-row gap-4 items-center">
