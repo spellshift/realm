@@ -57,16 +57,17 @@ For example:
 
 ```python
 def read_passwd():
-    if is_linux():
-        if is_file("/etc/passwd"):
+    if sys.is_linux():
+        if file.is_file("/etc/passwd"):
             file.read("/etc/passwd")
+
 read_passwd()
 ```
 
 ```python
 def write_systemd_service():
-    if is_linux():
-        if is_dir("/lib/systemd/system/"):
+    if sys.is_linux():
+        if file.is_dir("/lib/systemd/system/"):
             service_args = {
                 "name":"my-service",
                 "desc":"A test",

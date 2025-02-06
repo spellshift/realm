@@ -151,14 +151,62 @@ The Eldritch interpreter can embed files at compile time. To interact with these
 ## Golem as a stage 0
 
 Golem can also be used as a stage 0 to load imix or other c2 agents.
-This can help in a few ways such as:
+At compile time you can embed tomes in golem using the `realm/implants/golem/embed_files_golem_prod`
+
+Any tome in this directory will get execuetd in parallel without `input_params` when the compiled golem binary is executed.
+
+For example if the `embed_files_golem_prod` folder look like this.
+```
+tree realm/implants/golem/embed_files_golem_prod
+├── deploy_capped
+│   ├── assets
+│   │   ├── capped
+│   │   └── src
+│   │       └── capped.c
+│   ├── main.eldritch
+│   └── metadata.yml
+└── deploy_imix
+    ├── assets
+    │   ├── build.txt
+    │   └── imix
+    ├── main.eldritch
+    └── metadata.yml
+```
+
+You can compile golem with the following:
+```bash
+# Linux
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --bin golem --target=x86_64-unknown-linux-musl
+
+# Windows
+RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --bin golem --target=x86_64-pc-windows-gnu
+```
+
+And then run:
+```bash
+./golem
+```
+
+both `delpoy_imix/main.eldritch` and `deploy_capped/main.eldritch` will run in parallel.
+
+To check what tomes are embedded in a golem binary you can run:
+``bash
+# Start the interactive shell
+./golem -i
+
+# List embedded files
+$> assest.list()
+```
+
+
+### Stage 0 examples
 
 - Keying payloads to specific hosts
 
 ```python
 def main():
-    if is_linux():
-        if is_dir("/home/hulto/"):
+    if sys.is_linux():
+        if file.is_dir("/home/hulto/"):
             run_payload()
 main()
 ```
@@ -173,7 +221,7 @@ def decrypt(payload_bytes):
     return res
 
 def main():
-    if is_windows():
+    if sys.is_windows():
         for proc in process.list():
             if "svchost.exe" in proc['name']:
                 let enc_bytes = assets.read_bytes("imix.dll")
