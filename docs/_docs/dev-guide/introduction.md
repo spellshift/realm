@@ -5,6 +5,32 @@ tags:
 description: Read this before contributing to Realm!
 permalink: dev-guide/introduction
 ---
+
+# Development Environment
+
+We strongly encourage developers to use the provided devcontainers.
+Most documentation is written from the perspective of a devcontainer user.
+Dev containers provide a unified build environment to help with troubleshooting, and avoid common issues.
+
+These can be run locally or using Github Codespaces.
+
+To open in Github Codespaces:
+1. Navigate to https://github.com/spellshift/realm
+2. Select the 3 dots
+![configuring codespaces](/assets/img/dev-guide/golem/codespaces.png)
+3. Click New with options
+4. Modify the `Machine Type` to 4-core 16 GB RAM - 32 GB
+5. Click `Create Codespace`
+
+To open locally
+1. Make sure docker is installed and running `docker ps`
+2. Make sure VSCode is installed https://code.visualstudio.com/
+3. Clone the realm repository `git clone git@github.com:spellshift/realm.git`
+4. Open the `realm` folder in VSCode
+5. Press `Command+Shift+P` or `Ctrl+Shift+P` to open the command palette
+6. Search for `dev containers: reopen in container` and hit enter
+7. The devcontainer will the build and open the project but make take up to 10 minutes.
+
 # Overview
 
 This section of the documentation is meant for new Realm-contributors, and should be read in it's entirety before submitting your first PR. Below you can learn more about our testing & documentation requirements, project layout, and some of the internals of our codebase.
@@ -53,6 +79,7 @@ At the time of writing, the Tavern UI is still in an early stage, and therefore 
 ### Linear History
 
 In an attempt to reduce the complexity of merges, we enforce a linear history for Realm. This means that when your PR is merged, a "squash & merge" will be enforced so that only one commit is added onto the main branch. This means you can feel free to commit and push as often as you'd like, since all of your commits will be combined before merging your final changes.
+
 
 # Project Structure
 
