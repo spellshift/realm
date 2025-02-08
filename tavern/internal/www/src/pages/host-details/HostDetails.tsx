@@ -11,6 +11,7 @@ import BeaconTab from "./components/BeaconTab";
 import CredentialTab from "./components/CredentialTab";
 import HostTaskTab from "./components/HostTaskTab";
 import HostBreadcrumbs from "./components/HostBreadcrumbs";
+import { AdminAccessGate } from "../../components/admin-access-gate";
 
 const HostDetails = () => {
     return (

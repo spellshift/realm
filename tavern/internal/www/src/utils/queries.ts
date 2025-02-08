@@ -1,5 +1,42 @@
 import { gql } from "@apollo/client";
 
+export const GET_TAG_FILTERS = gql`
+    query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
+        groupTags:tags(where: $groupTag) {
+            id
+            name
+            kind
+        },
+        serviceTags:tags(where: $serviceTag) {
+            id
+            name
+            kind
+        },
+        beacons {
+            id
+            name
+            principal
+            lastSeenAt
+            interval
+            host{
+                id
+                name
+                primaryIP
+                platform
+                tags {
+                    id
+                    kind
+                    name
+                }
+            }
+        },
+        hosts{
+            id
+            name
+        }
+    }
+`;
+
 export const GET_HOST_QUERY = gql`
     query GetHosts($where: HostWhereInput) {
         hosts(where: $where){
