@@ -10,5 +10,8 @@ RUN bash /tmp/library-scripts/jekyll-debian.sh
 RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
     && echo $SNIPPET >> "/root/.bashrc"
 
-# Install additional rust dependencies for static cross compile builds
-RUN apt update && apt install -y musl-tools gcc-mingw-w64
+# Install additional dependencies
+#   - Git: git-lfs
+#   - Rust Cross-compilation: musl-tools gcc-mingw-w64
+#   - Protobuf: protobuf-compiler protoc-gen-go protoc-gen
+RUN apt update && apt install -y git-lfs musl-tools gcc-mingw-w64 protobuf-compiler protoc-gen-go protoc-gen-go-grpc
