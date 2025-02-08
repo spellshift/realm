@@ -1,10 +1,12 @@
-import React, { useContext } from "react";
-import { ComputerDesktopIcon, MapPinIcon, TagIcon } from "@heroicons/react/20/solid";
+import React, { useContext, useState } from "react";
+import { ComputerDesktopIcon, MapPinIcon, TagIcon, PencilSquareIcon } from "@heroicons/react/20/solid";
 import { HostContext } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
+import Button from "../../../components/tavern-base-ui/button/Button";
+import TagModal from "./TagModal";
 
 const HostDetailsSection = () => {
-    // const [isOpen, setOpen] = useState<boolean>(false);
+    const [isOpen, setOpen] = useState(false);
     const { data: host, loading, error } = useContext(HostContext);
 
     const serviceTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "service")];
@@ -15,7 +17,7 @@ const HostDetailsSection = () => {
             <PageHeader title={(host && host?.name) ? host?.name : '-'} />
             <div className="">
                 <div className="grid grid-cols-4 gap-2">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <MapPinIcon className="w-4 text-gray-700" />
                             <h4 className="text-gray-700">
@@ -26,7 +28,7 @@ const HostDetailsSection = () => {
                             {(host && host?.primaryIP) ? host?.primaryIP : '-'}
                         </div>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <ComputerDesktopIcon className="w-4 text-gray-700" />
                             <h4 className="text-gray-700">
@@ -37,7 +39,7 @@ const HostDetailsSection = () => {
                             {(host && host?.platform ? host?.platform : '-')}
                         </div>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <TagIcon className="w-4 text-gray-700" />
                             <h4 className="text-gray-700">
@@ -46,17 +48,17 @@ const HostDetailsSection = () => {
                         </div>
                         <div className="text-gray-600 text-sm ml-6 flex flex-row gap-1 items-center">
                             {serviceTag?.name}
-                            {/* <Button
+                            <Button
                                 buttonVariant="ghost"
                                 className="p-0"
                                 leftIcon={<PencilSquareIcon className="w-4" />}
                                 buttonStyle={{ color: "gray", size: "md" }}
-                                aria-label="Edit service tag"
+                                aria-label="Edit group tag"
                                 onClick={() => setOpen(true)}
-                            /> */}
+                            />
                         </div>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <TagIcon className="w-4 text-gray-700" />
                             <h4 className="text-gray-700">
@@ -65,18 +67,19 @@ const HostDetailsSection = () => {
                         </div>
                         <div className="text-gray-600 text-sm ml-6 flex flex-row gap-2 items-center">
                             {groupTag?.name}
-                            {/* <Button
+                            <Button
                                 buttonVariant="ghost"
                                 className="p-0"
                                 leftIcon={<PencilSquareIcon className="w-4" />}
                                 buttonStyle={{ color: "gray", size: "md" }}
                                 aria-label="Edit group tag"
-                            /> */}
+                                onClick={() => setOpen(true)}
+                            />
                         </div>
                     </div>
                 </div>
             </div>
-            {/* {isOpen && <ModifyHostTagModal isOpen={isOpen} setOpen={setOpen} />} */}
+            {isOpen && <TagModal isOpen={isOpen} setOpen={setOpen} />}
         </div>
     );
 }
