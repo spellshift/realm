@@ -16,6 +16,8 @@ const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
     return (
         <div className="flex flex-col gap-4">
             {shells.map((shell) => {
+                const closeAtTime = new Date(shell.closedAt || "");
+
                 return (
                     <div className="flex flex-row gap-4">
                         <CommandLineIcon className="h-5 w-5 mt-1" />
@@ -25,7 +27,7 @@ const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
                                     Shell Id: {shell?.id}
                                 </div>
                             </div>
-                            {shell.closedAt ? <div className="text-sm text-gray-500">Shell closed at {shell.closedAt}</div>
+                            {shell.closedAt ? <div className="text-sm text-gray-500">{`Shell closed at: $${closeAtTime.toLocaleTimeString()} on ${closeAtTime.toDateString()}`}</div>
                                 : (
                                     <>
                                         <div className="flex flex-row gap-4 text-sm text-gray-500">

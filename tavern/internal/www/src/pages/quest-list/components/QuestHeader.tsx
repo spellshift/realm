@@ -8,7 +8,7 @@ const QuestHeader = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 justify-between">
             <div className="flex flex-row justify-between w-full items-center">
                 <Breadcrumbs pages={[{
                     label: "Quests",
