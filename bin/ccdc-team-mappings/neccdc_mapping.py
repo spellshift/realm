@@ -1,7 +1,7 @@
 """
 Profiles can match on IP or hostname.
 It's not recommended to use both in the same profile but it will do an
-inclusive or if the host matches either. 
+inclusive or if the host matches either.
 """
 
 tag_profiles = [
@@ -48,7 +48,7 @@ tag_profiles = [
     {
         "name": "win_01",
         "kind": "service",
-        "host_regex": "^win-01$",
+        "hostname_regex": "^win-01$",
     },
     {
         "name": "win_02",
