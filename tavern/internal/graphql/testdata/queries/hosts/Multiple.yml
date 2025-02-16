@@ -10,10 +10,17 @@ requestor:
 query: |
   query Hosts {
     hosts {
-      id
+      edges {
+        node {
+          id
+        }
+      }
     }
   }
 expected:
   hosts:
-    - id: "1010"
-    - id: "1011"
+    edges:
+      - node:
+          id: "1010"
+      - node:
+          id: "1011"
