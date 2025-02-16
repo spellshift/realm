@@ -25,7 +25,7 @@ const defaultOptions = [
     createOption('Three'),
 ];
 
-export default function CreatableTagDropdown({ defaultValue, defaultOptions, handleCreateOption, handleSelectOption }: CreatableDropdownType) {
+export default function CreatableTagDropdown() {
     const [isLoading, setIsLoading] = useState(false);
     const [options, setOptions] = useState(defaultOptions);
     const [value, setValue] = useState<CreatableDropdownOption | null>(null);

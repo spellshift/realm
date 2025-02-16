@@ -4,6 +4,8 @@ import { HostContext } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import TagModal from "./TagModal";
+import CreatableTagDropdown from "./CreatableTagDropdown";
+import EditableTag from "./EditableTag";
 
 const HostDetailsSection = () => {
     const [isOpen, setOpen] = useState(false);
@@ -16,7 +18,7 @@ const HostDetailsSection = () => {
         <div className="flex flex-col gap-4">
             <PageHeader title={(host && host?.name) ? host?.name : '-'} />
             <div className="">
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-2 ">
                     <div className="flex flex-col justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <MapPinIcon className="w-4 text-gray-700" />
@@ -24,8 +26,10 @@ const HostDetailsSection = () => {
                                 IP Address
                             </h4>
                         </div>
-                        <div className="text-gray-600 text-sm ml-6">
-                            {(host && host?.primaryIP) ? host?.primaryIP : '-'}
+                        <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center">
+                            <div>
+                                {(host && host?.primaryIP) ? host?.primaryIP : '-'}
+                            </div>
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">
@@ -35,8 +39,10 @@ const HostDetailsSection = () => {
                                 Platform
                             </h4>
                         </div>
-                        <div className="text-gray-600 text-sm ml-6">
-                            {(host && host?.platform ? host?.platform : '-')}
+                        <div className="text-gray-600 text-sm ml-6  min-h-[38px] flex flex-col justify-center">
+                            <div>
+                                {(host && host?.platform ? host?.platform : '-')}
+                            </div>
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">
@@ -46,17 +52,20 @@ const HostDetailsSection = () => {
                                 Service
                             </h4>
                         </div>
-                        <div className="text-gray-600 text-sm ml-6 flex flex-row gap-1 items-center">
-                            {serviceTag?.name}
-                            <Button
-                                buttonVariant="ghost"
-                                className="p-0"
-                                leftIcon={<PencilSquareIcon className="w-4" />}
-                                buttonStyle={{ color: "gray", size: "md" }}
-                                aria-label="Edit group tag"
-                                onClick={() => setOpen(true)}
-                            />
+                        <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center">
+                            <div className="flex flex-row gap-2">
+                                {serviceTag?.name}
+                                <Button
+                                    buttonVariant="ghost"
+                                    className="p-0"
+                                    leftIcon={<PencilSquareIcon className="w-4" />}
+                                    buttonStyle={{ color: "gray", size: "md" }}
+                                    aria-label="Edit group tag"
+                                    onClick={() => setOpen(true)}
+                                />
+                            </div>
                         </div>
+                        {/*<CreatableTagDropdown />*/}
                     </div>
                     <div className="flex flex-col justify-between">
                         <div className="flex flex-row gap-2 items-center">
@@ -65,17 +74,7 @@ const HostDetailsSection = () => {
                                 Group
                             </h4>
                         </div>
-                        <div className="text-gray-600 text-sm ml-6 flex flex-row gap-2 items-center">
-                            {groupTag?.name}
-                            <Button
-                                buttonVariant="ghost"
-                                className="p-0"
-                                leftIcon={<PencilSquareIcon className="w-4" />}
-                                buttonStyle={{ color: "gray", size: "md" }}
-                                aria-label="Edit group tag"
-                                onClick={() => setOpen(true)}
-                            />
-                        </div>
+                        <EditableTag tag={groupTag} />
                     </div>
                 </div>
             </div>
