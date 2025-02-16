@@ -21,7 +21,7 @@ const TaskParameters: FC<TaskParametersType> = ({
                 {params.map((paramDef: TomeParams) => {
                     if (paramDef.value) {
                         return (
-                            <div className="flex flex-row gap-1 text-xs" key={paramDef.name}>
+                            <div className="flex flex-row gap-1 text-sm text-gray-600" key={paramDef.name}>
                                 <div className="font-semibold">
                                     {paramDef.name}:
                                 </div>
@@ -32,7 +32,7 @@ const TaskParameters: FC<TaskParametersType> = ({
                         )
                     }
                     else {
-                        return null;
+                        return <div className="text-sm text-gray-600">Not available</div>;
                     }
                 })}
             </div>
