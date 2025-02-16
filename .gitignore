@@ -39,3 +39,5 @@ implants/golem/embed_files_golem_prod/*
 
 # Profiling
 .pprof/
+
+**/.venv/**
