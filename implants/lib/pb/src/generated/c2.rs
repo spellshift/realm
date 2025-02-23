@@ -37,7 +37,17 @@ pub struct Host {
 }
 /// Nested message and enum types in `Host`.
 pub mod host {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
     #[repr(i32)]
     pub enum Platform {
         Unspecified = 0,
@@ -208,7 +218,9 @@ impl ReverseShellMessageKind {
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            ReverseShellMessageKind::Unspecified => "REVERSE_SHELL_MESSAGE_KIND_UNSPECIFIED",
+            ReverseShellMessageKind::Unspecified => {
+                "REVERSE_SHELL_MESSAGE_KIND_UNSPECIFIED"
+            }
             ReverseShellMessageKind::Data => "REVERSE_SHELL_MESSAGE_KIND_DATA",
             ReverseShellMessageKind::Ping => "REVERSE_SHELL_MESSAGE_KIND_PING",
         }
@@ -226,8 +238,8 @@ impl ReverseShellMessageKind {
 /// Generated client implementations.
 pub mod c2_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct C2Client<T> {
         inner: tonic::client::Grpc<T>,
@@ -258,7 +270,10 @@ pub mod c2_client {
             let inner = tonic::client::Grpc::with_origin(inner, origin);
             Self { inner }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> C2Client<InterceptedService<T, F>>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> C2Client<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -268,8 +283,9 @@ pub mod c2_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
         {
             C2Client::new(InterceptedService::new(inner, interceptor))
         }
@@ -309,19 +325,23 @@ pub mod c2_client {
         pub async fn claim_tasks(
             &mut self,
             request: impl tonic::IntoRequest<super::ClaimTasksRequest>,
-        ) -> std::result::Result<tonic::Response<super::ClaimTasksResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::ClaimTasksResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ClaimTasks");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ClaimTasks"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ClaimTasks"));
             self.inner.unary(req, path, codec).await
         }
         ///
@@ -339,17 +359,19 @@ pub mod c2_client {
             tonic::Response<tonic::codec::Streaming<super::FetchAssetResponse>>,
             tonic::Status,
         > {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/FetchAsset");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "FetchAsset"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "FetchAsset"));
             self.inner.server_streaming(req, path, codec).await
         }
         ///
@@ -357,19 +379,23 @@ pub mod c2_client {
         pub async fn report_credential(
             &mut self,
             request: impl tonic::IntoRequest<super::ReportCredentialRequest>,
-        ) -> std::result::Result<tonic::Response<super::ReportCredentialResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::ReportCredentialResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportCredential");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReportCredential"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportCredential"));
             self.inner.unary(req, path, codec).await
         }
         ///
@@ -377,25 +403,28 @@ pub mod c2_client {
         /// Providing content of the file is optional. If content is provided:
         ///   - Hash will automatically be calculated and the provided hash will be ignored.
         ///   - Size will automatically be calculated and the provided size will be ignored.
-        ///
         /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
         /// Any existing files at the provided path for the host are replaced.
         pub async fn report_file(
             &mut self,
             request: impl tonic::IntoStreamingRequest<Message = super::ReportFileRequest>,
-        ) -> std::result::Result<tonic::Response<super::ReportFileResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::ReportFileResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportFile");
             let mut req = request.into_streaming_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReportFile"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportFile"));
             self.inner.client_streaming(req, path, codec).await
         }
         ///
@@ -404,19 +433,23 @@ pub mod c2_client {
         pub async fn report_process_list(
             &mut self,
             request: impl tonic::IntoRequest<super::ReportProcessListRequest>,
-        ) -> std::result::Result<tonic::Response<super::ReportProcessListResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::ReportProcessListResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportProcessList");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
             self.inner.unary(req, path, codec).await
         }
         ///
@@ -424,41 +457,49 @@ pub mod c2_client {
         pub async fn report_task_output(
             &mut self,
             request: impl tonic::IntoRequest<super::ReportTaskOutputRequest>,
-        ) -> std::result::Result<tonic::Response<super::ReportTaskOutputResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::ReportTaskOutputResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
             self.inner.unary(req, path, codec).await
         }
         ///
         /// Open a reverse shell bi-directional stream.
         pub async fn reverse_shell(
             &mut self,
-            request: impl tonic::IntoStreamingRequest<Message = super::ReverseShellRequest>,
+            request: impl tonic::IntoStreamingRequest<
+                Message = super::ReverseShellRequest,
+            >,
         ) -> std::result::Result<
             tonic::Response<tonic::codec::Streaming<super::ReverseShellResponse>>,
             tonic::Status,
         > {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReverseShell");
             let mut req = request.into_streaming_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReverseShell"));
             self.inner.streaming(req, path, codec).await
         }
     }
