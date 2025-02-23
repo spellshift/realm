@@ -74,6 +74,62 @@ export const GET_REPOSITORY_QUERY = gql`
         }
 }`;
 
+export const GET_ALL_TOMES_QUERY = gql`
+query GetAllTomes {
+  repositories(orderBy: [{ direction: DESC, field: LAST_MODIFIED_AT }]) {
+    edges {
+      node {
+        id
+        lastModifiedAt
+        url
+        publicKey
+        tomes {
+          id
+          name
+          paramDefs
+          tactic
+          eldritch
+          supportModel
+        }
+        owner {
+          id
+          name
+          photoURL
+        }
+      }
+    }
+  }
+  first_party: tomes(where: { supportModel: FIRST_PARTY }) {
+    id
+    name
+    paramDefs
+    tactic
+    eldritch
+    supportModel
+    description
+    uploader {
+      id
+      name
+      photoURL
+    }
+  }
+  no_repo: tomes(where: { supportModelNEQ: FIRST_PARTY, hasRepository: false }) {
+    id
+    name
+    paramDefs
+    tactic
+    eldritch
+    supportModel
+    description
+    uploader {
+      id
+      name
+      photoURL
+    }
+  }
+}
+`
+
 export const GET_HOST_TASK_SUMMARY = gql`
     query GetTasks($where: TaskWhereInput) {
             tasks(where: $where){
