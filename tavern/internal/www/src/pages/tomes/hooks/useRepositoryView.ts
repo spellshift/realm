@@ -29,7 +29,7 @@ export const useRepositoryView = () => {
             const noRepoData =
             {node:{
                 url: "No Repository",
-                repoType: "",
+                repoType: "NO_REPO",
                 tomes: data.no_repo
             }}
             setNoRepo(

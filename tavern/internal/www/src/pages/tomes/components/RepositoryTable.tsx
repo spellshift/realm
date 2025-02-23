@@ -101,7 +101,7 @@ const RepositoryTable = ({ repositories }: {
             enableSorting: false,
             maxSize: 40,
             cell: ({ row }) => {
-                if (row?.original?.node?.repoType === "FIRST_PARTY") {
+                if (row?.original?.node?.repoType === "FIRST_PARTY" || row?.original?.node?.repoType === "NO_REPO") {
                     return <div></div>
                 }
                 return (
