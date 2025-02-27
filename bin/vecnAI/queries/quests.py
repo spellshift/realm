@@ -1,7 +1,7 @@
 from queries.common import make_graphql_request, handle_error
 
 
-def get_quests() -> str:
+def get_quests(platform: str) -> str:
     """Returns a list of all quest and task that's been run. Quests are the main actions run against hosts / beacons.
     These tasks will give users information about the environment and allow users to perform actions.
     If data about a host is asked for the

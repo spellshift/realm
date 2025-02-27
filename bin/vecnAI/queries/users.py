@@ -26,7 +26,6 @@ def get_users(user_type: str) -> str:
 
     Args:
         type: required, The user's type "admin", "active", or "any"
-        unit: celsius or fahrenheit
 
     """
     graphql_query = """

@@ -4,14 +4,19 @@ from google import genai
 from queries.host import get_hosts
 from queries.users import get_users
 from queries.quests import get_quests
+from queries.beacons import get_beacons
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-user_query = "Did the process recon quest have any interesting processes"
+"""
+Flows:
+- Summarize activity for today
+- Create quests
+- Create tomes
+"""
 
-response = client.models.generate_content(
+chat = client.chats.create(
     model='gemini-2.0-flash-exp',
-    contents=f'''{user_query}?''',
     config=types.GenerateContentConfig(
         system_instruction="""
 Role: You are an expert on computer systems.
@@ -26,15 +31,24 @@ and tasks containe output that is the main data stored in the application.
 Constraints: You should use the tool best suited to the task. You should review the tool output to infer which might have the data
 you need. If you're unsure of which tool you should use then select the tool that will provide the most context. You should always use a tool even if it's random.
 You must use one tool even if it's non-sensical. The APIs cannot be used for summarization or other soft skills instead you should preform these tasks
-youself based on the data provided by the tool. If the API doesn't support functionality call it anyways.
+youself based on the data provided by the tool. If the API doesn't support functionality call it anyways. You can query by multiple parameters at the same time.
 
 Output format: Only respond in JSON. `{"response":"your response"}`.
 """,
-        tools=[get_hosts, get_users, get_quests],
+        tools=[get_hosts, get_users, get_quests, get_beacons],
+        tool_config=types.ToolConfig(
+            function_calling_config=types.FunctionCallingConfig(mode='ANY')
+        ),
         top_k=2,
         top_p=0.5,
         temperature=1.0,
     ),
 )
 
-print(response.text)
+while True:
+    user_query = input("vecnai> ")
+    if user_query:
+        res = chat.send_message(user_query)
+        if res.text:
+            print(res.text)
+        print(res.candidates[0].content)
