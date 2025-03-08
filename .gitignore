@@ -41,6 +41,5 @@ implants/golem/embed_files_golem_prod/*
 .pprof/
 
 **/.venv/**
-
 **/__pycache__/**
 *.pyc
