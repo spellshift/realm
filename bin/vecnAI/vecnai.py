@@ -36,9 +36,6 @@ youself based on the data provided by the tool. If the API doesn't support funct
 Output format: Only respond in JSON. `{"response":"your response"}`.
 """,
         tools=[get_hosts, get_users, get_quests, get_beacons],
-        tool_config=types.ToolConfig(
-            function_calling_config=types.FunctionCallingConfig(mode='ANY')
-        ),
         top_k=2,
         top_p=0.5,
         temperature=1.0,
@@ -51,4 +48,5 @@ while True:
         res = chat.send_message(user_query)
         if res.text:
             print(res.text)
-        print(res.candidates[0].content)
+        else:
+            print(res)
