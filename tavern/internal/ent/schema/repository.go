@@ -165,7 +165,7 @@ func HookDeriveRepoOnCreate() ent.Hook {
 	}
 }
 
-var scpRegex = regexp.MustCompile(`^(ssh:\/\/)?([a-zA-Z0-9_]+)@([a-zA-Z._-]+)(\:[0-9]+)?([a-zA-Z0-9.\/._-]+)(?:\?||$)(.*)$`)
+var scpRegex = regexp.MustCompile(`^(ssh://)?([a-zA-Z0-9_]+)@([a-zA-Z0-9._-]+)(:\d+)?[:/]([a-zA-Z0-9./._-]+)(?:\?||$)(.*)$`)
 
 func FormatGitURL(rawurl string) (*url.URL, error) {
 	rawurl = strings.TrimSpace(rawurl)
