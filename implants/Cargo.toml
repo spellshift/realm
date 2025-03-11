@@ -59,7 +59,7 @@ rand_chacha = "0.3.1"
 regex = "1.5.5"
 reqwest = "0.11.18"
 russh = "0.37.1"
-russh-sftp = "2.0.0-beta.2"
+russh-sftp = ">=2.0.8" # `thiserror` dependcy in older versions causes downstream issues in other libraries.
 russh-keys = "0.37.1"
 rust-embed = "8.5.0"
 serde = "1.0"
