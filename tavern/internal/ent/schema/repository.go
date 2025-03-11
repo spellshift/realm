@@ -165,7 +165,7 @@ func HookDeriveRepoOnCreate() ent.Hook {
 	}
 }
 
-var scpRegex = regexp.MustCompile(`^(ssh://)?([a-zA-Z0-9_]+)@([a-zA-Z0-9._-]+):([a-zA-Z0-9./._-]+)(?:\?||$)(.*)$`)
+var scpRegex = regexp.MustCompile(`^(ssh:\/\/)?([a-zA-Z0-9_]+)@([a-zA-Z._-]+)(\:[0-9]+)?([a-zA-Z0-9.\/._-]+)(?:\?||$)(.*)$`)
 
 func FormatGitURL(rawurl string) (*url.URL, error) {
 	rawurl = strings.TrimSpace(rawurl)
@@ -190,15 +190,16 @@ func FormatGitURL(rawurl string) (*url.URL, error) {
 		if scpParts[2] != "" {
 			user = scpParts[2]
 		}
-		if len(scpParts) > 4 {
-			rawquery = scpParts[5]
+		if len(scpParts) > 5 {
+			rawquery = scpParts[6]
 		}
 
+		host := fmt.Sprintf("%s%s", scpParts[3], scpParts[4])
 		return &url.URL{
 			Scheme:   scheme,
 			User:     url.User(user),
-			Host:     scpParts[3],
-			Path:     scpParts[4],
+			Host:     host,
+			Path:     scpParts[5],
 			RawQuery: rawquery,
 		}, nil
 
