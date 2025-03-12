@@ -74,7 +74,7 @@ pub fn ssh_exec(
         timeout,
     )) {
         Ok(local_res) => (local_res.stdout, local_res.status, String::from("")),
-        Err(local_err) => (String::from(""), -1, local_err.to_string())
+        Err(local_err) => (String::from(""), -1, local_err.to_string()),
     };
 
     let res = SmallMap::new();
