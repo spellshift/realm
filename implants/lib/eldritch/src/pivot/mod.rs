@@ -7,7 +7,6 @@ mod reverse_shell_pty_impl;
 mod smb_exec_impl;
 mod ssh_copy_impl;
 mod ssh_exec_impl;
-mod ssh_password_spray_impl;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -50,11 +49,6 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn ssh_copy<'v>(this: &PivotLibrary, target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<String> {
         ssh_copy_impl::ssh_copy(target, port, src, dst, username, password, key, key_password, timeout)
-    }
-
-    #[allow(unused_variables)]
-    fn ssh_password_spray(this: &PivotLibrary, targets: UnpackList<String>, port: i32, credentials: UnpackList<String>, keys: UnpackList<String>, command: String, shell_path: String) ->  anyhow::Result<String> {
-        ssh_password_spray_impl::ssh_password_spray(targets.items, port, credentials.items, keys.items, command, shell_path)
     }
 
     #[allow(unused_variables)]
