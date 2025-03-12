@@ -552,14 +552,14 @@ The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move 
 
 ### pivot.ssh_copy
 
-`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> None`
+`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
 
-The <b>pivot.ssh_copy</b> method copies a local file to a remote system. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
+The <b>pivot.ssh_copy</b> method copies a local file to a remote system.
+ssh_copy will return `"Sucess"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
 If the connection is successful but the copy writes a file error will be returned.
-
-ssh_copy will first delete the remote file and then write to its location.
+ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
+
 
 ### pivot.ssh_exec
 

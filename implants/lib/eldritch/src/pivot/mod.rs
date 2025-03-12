@@ -48,9 +48,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn ssh_copy<'v>(this: &PivotLibrary, target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<NoneType> {
-        ssh_copy_impl::ssh_copy(target, port, src, dst, username, password, key, key_password, timeout)?;
-        Ok(NoneType{})
+    fn ssh_copy<'v>(this: &PivotLibrary, target: String, port: i32, src: String, dst: String, username: String, password: Option<String>, key: Option<String>, key_password: Option<String>, timeout: Option<u32>) ->  anyhow::Result<String> {
+        ssh_copy_impl::ssh_copy(target, port, src, dst, username, password, key, key_password, timeout)
     }
 
     #[allow(unused_variables)]
