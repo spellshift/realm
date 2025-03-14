@@ -18,6 +18,8 @@ jobs:
         os:
           - ubuntu-latest
     steps:
+    - name: test
+      run: hostname
     - uses: actions/checkout@v3
     - name: ⚡ Setup Golang
       uses: actions/setup-go@v3
