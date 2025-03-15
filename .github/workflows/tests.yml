@@ -40,7 +40,7 @@ jobs:
         os:
           - os-ubuntu-latest
           - macOS-latest
-          - windows-latest
+          - os-windows-latest
     steps:
     - uses: actions/checkout@v3
     - if: matrix.os == 'windows-latest'
