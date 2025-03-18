@@ -5,16 +5,30 @@ use starlark::const_frozen_string;
 use starlark::values::dict::Dict;
 use starlark::values::Heap;
 use std::process::Command;
-
 #[cfg(target_os = "windows")]
 use {
+    std::{slice, str},
+    std::iter::once,
+    std::path::Path,
     std::ffi::{OsStr, OsString},
     std::os::windows::ffi::{OsStrExt, OsStringExt},
-    std::str,
-    windows_sys::Win32::UI::Shell::CommandLineToArgvW,
+    windows_sys::Win32::System::Memory::LocalFree,
+    windows_sys::Win32::UI::Shell::CommandLineToArgvW
 };
 
 use super::CommandOutput;
+
+pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
+    let cmd_res = handle_shell(cmd)?;
+
+    let res = SmallMap::new();
+    let mut dict_res = Dict::new(res);
+    insert_dict_kv!(dict_res, starlark_heap, "stdout", cmd_res.stdout, String);
+    insert_dict_kv!(dict_res, starlark_heap, "stderr", cmd_res.stderr, String);
+    insert_dict_kv!(dict_res, starlark_heap, "status", cmd_res.status, i32);
+
+    Ok(dict_res)
+}
 
 #[cfg(target_os = "windows")]
 pub fn to_wstring(str: impl AsRef<Path>) -> Vec<u16> {
@@ -47,22 +61,11 @@ pub fn to_argv(command_line: &str) -> Vec<OsString> {
             argv.push(os_string_from_wide_ptr(*args.offset(i as isize)));
         }
 
-        // LocalFree(args as HLOCAL);
+        LocalFree(args as isize);
     }
     argv
 }
 
-pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
-    let cmd_res = handle_shell(cmd)?;
-
-    let res = SmallMap::new();
-    let mut dict_res = Dict::new(res);
-    insert_dict_kv!(dict_res, starlark_heap, "stdout", cmd_res.stdout, String);
-    insert_dict_kv!(dict_res, starlark_heap, "stderr", cmd_res.stderr, String);
-    insert_dict_kv!(dict_res, starlark_heap, "status", cmd_res.status, i32);
-
-    Ok(dict_res)
-}
 
 fn handle_shell(cmd: String) -> Result<CommandOutput> {
     #[cfg(not(target_os = "windows"))]
@@ -140,13 +143,15 @@ mod tests {
     fn test_sys_shell_complex_windows() -> anyhow::Result<()> {
         let res =
             handle_shell(String::from("wmic useraccount get name | findstr /i admin"))?.stdout;
-        assert!(res.contains("runner") || res.contains("Administrator") || res.contains("user"));
+        assert!(
+            res.contains("runner") || res.contains("Administrator") || res.contains("user")
+        );
         Ok(())
     }
 
     #[cfg(target_os = "windows")]
     #[test]
-    fn test_argv_parse() -> anyhow::Result<()> {
+    fn test_sys_shell_argv_parse() -> anyhow::Result<()> {
         let cmd = r#"cmd.exe /c cmd.exe /c cmd.exe /c dir "C:\Program Files\Windows Defender""#;
         let res = to_argv(cmd);
         assert_eq!(res.len(), 8);
@@ -156,29 +161,23 @@ mod tests {
         let res = to_argv(cmd);
         assert_eq!(res.len(), 7);
         assert_eq!(res[0], OsString::from("cmd.exe"));
-        assert_eq!(
-            res[4],
-            OsString::from(r"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon")
-        );
+        assert_eq!(res[4], OsString::from(r"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"));
         let cmd = r#"/c reg query "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v LegalNoticeCaption"#;
         let res = to_argv(cmd);
         assert_eq!(res.len(), 6);
         assert_eq!(res[0], OsString::from("/c"));
-        assert_eq!(
-            res[3],
-            OsString::from(r"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon")
-        );
+        assert_eq!(res[3], OsString::from(r"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"));
         Ok(())
     }
 
     #[test]
     fn test_sys_shell_spaces_windows() -> anyhow::Result<()> {
         if cfg!(target_os = "windows") {
-            let res = handle_shell(String::from(
-                r#"cmd.exe /c dir "C:\Program Files\Windows Defender""#,
-            ))?
-            .stdout;
-            assert!(res.contains("MsMpEng.exe"));
+            let res =
+                handle_shell(String::from(r#"cmd.exe /c dir "C:\Program Files\Windows Defender""#))?;
+            assert!(
+                res.stdout.contains("MsMpEng.exe")
+            );
         }
         Ok(())
     }
