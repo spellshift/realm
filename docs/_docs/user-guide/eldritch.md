@@ -552,36 +552,31 @@ The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move 
 
 ### pivot.ssh_copy
 
-`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> None`
+`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
 
-The <b>pivot.ssh_copy</b> method copies a local file to a remote system. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
+The <b>pivot.ssh_copy</b> method copies a local file to a remote system.
+ssh_copy will return `"Sucess"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
 If the connection is successful but the copy writes a file error will be returned.
-
-ssh_copy will first delete the remote file and then write to its location.
+ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
+
 
 ### pivot.ssh_exec
 
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
-The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
-If the connection is successful but the command fails no output will be returned but the status code will be set.
-Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture.
+The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
+Stdout returns the string result from the command output.
+Stderr will return any errors from the SSH connection but not the command being executed.
+Status will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.
 
 ```json
 {
     "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
+    "stderr":"",
     "status": 0
 }
 ```
-
-### pivot.ssh_password_spray
-
-`pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
-
-The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more flexibility but may be adding complexity.
 
 ---
 
