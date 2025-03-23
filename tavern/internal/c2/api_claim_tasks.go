@@ -43,8 +43,6 @@ func getRemoteIP(ctx context.Context) string {
 		return "unknown"
 	}
 
-	fmt.Println("Peer:", p)
-
 	host, _, err := net.SplitHostPort(p.Addr.String())
 	if err != nil {
 		return "unknown"
