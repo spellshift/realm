@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -39,14 +40,23 @@ func (Shell) Fields() []ent.Field {
 func (Shell) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("task", Task.Type).
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Unique().
 			Required().
 			Comment("Task that created the shell"),
 		edge.To("beacon", Beacon.Type).
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Unique().
 			Required().
 			Comment("Beacon that created the shell"),
 		edge.To("owner", User.Type).
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Unique().
 			Required().
 			Comment("User that created the shell"),

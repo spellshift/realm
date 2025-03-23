@@ -271,19 +271,19 @@ var (
 				Symbol:     "shells_tasks_task",
 				Columns:    []*schema.Column{ShellsColumns[5]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "shells_beacons_beacon",
 				Columns:    []*schema.Column{ShellsColumns[6]},
 				RefColumns: []*schema.Column{BeaconsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "shells_users_owner",
 				Columns:    []*schema.Column{ShellsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
