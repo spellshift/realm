@@ -246,7 +246,7 @@ resource "google_cloud_run_service" "tavern" {
         }
         env {
           name = "OAUTH_DOMAIN"
-          value = format("https://%s", var.oauth_domain)
+          value = length(var.oauth_domain) > 0 ? format("https://%s", var.oauth_domain) : ""
         }
         env {
           name = "GCP_PROJECT_ID"
