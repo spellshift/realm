@@ -48,10 +48,19 @@ fn handle_exec(path: String, args: Vec<String>, disown: Option<bool>) -> Result<
         Ok(res)
     } else {
         #[cfg(target_os = "windows")]
-        return Err(anyhow::anyhow!(
-            "Windows is not supported for disowned processes."
-        ));
+        {
+            let _ = Command::new(path)
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .args(args)
+                .spawn();
 
+            Ok(CommandOutput {
+                stdout: "".to_string(),
+                stderr: "".to_string(),
+                status: 0,
+            })
+        }
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
         match unsafe { fork()? } {
             ForkResult::Parent { child } => {
