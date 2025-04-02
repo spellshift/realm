@@ -146,12 +146,14 @@ If you test off target you can leverage native functions like [`sys.get_os`](/us
 
 ### Example
 
-Copy and run an asset
+Copy and run an asset in a safe and idempotant way
 
 ```python
 IMPLANT_ASSET_PATH = "tome_name/assets/implant"
+ASSET_SHA1SUM = "44e1bf82832580c11de07f57254bd4af837b658e"
+DEST_FILE_PATH = "/usr/bin/imix"
 
-def main(dest_bin_path)
+def pre_flight(dest_bin_path):
     ## Testing
 
     # Note that we're using multiple returns instead of
@@ -159,52 +161,100 @@ def main(dest_bin_path)
     # line of sight readability when reviewing code.
     if not sys.is_linux():
       print("[error] tome only supports linux")
-      return
+      return False
     
     cur_user = sys.get_user()
     if cur_user['euid']['uid'] != 0:
       print(f"[error] tome must be run as root / uid 0 not {cur_user}")
-      return
+      return False
 
     # Validate the destination directory exists
     if not file.is_dir(file.parent_dir(dest_bin_path)):
       print(f"[error] path {dest_bin_path} parent isn't a directory")
-      return
+      return False
 
     if file.is_file(dest_bin_path):
       print(f"[error] path {dest_bin_path} already exists")
-      return
+      return False
 
     does_chmod_exist = sys.shell(f"command -v chmod")
     if does_chmod_exist['status'] != 0:
         print(f"[error] tome requires `chmod` be available in PATH")
-        return
+        return False
 
-    ## Deploy
+    return True
 
-    assets.copy(IMPLANT_ASSET_PATH, dest_bin_path)
 
-    set_perms = sys.shell(f"chmod +x {dest_bin_path}")
-    if setting_chmod['status'] != 0:
-      print(f"[error] chmod failed to set perms {set_perms} cleaning up")
-      file.remove(dest_bin_path)
-      return
+def deploy_asset(asset_path, dest, asset_hash):
+  if file.is_file(asset_path):
+    if crypto.hash_file(asset_path, "SHA1") != asset_hash:
+      print(f"{dest} file already exists and is good")
+      return True
+  
+  pdir = file.parent_dir(dest)
+  if not file.is_dir(pdir):
+      print(f"{pdir} isn't a dir aborting")
+      return False
+  
+  asset.copy(asset_path, dest)
+  return True
 
-    # Launch bin disowned and backgrounded
-    res = sys.exec(dest_bin_path, [], True)
-    if res['status'] != 0:
-      print(f"[error] exec {dest_bin_path} failed {res} cleaning up")
-      file.remove(dest_bin_path)
-      return
+def set_perms(dest, perms):
+  cur_perms = sys.shell(f"stat -f %A {dest}")
+  if cur_perms['status'] == 0:
+    if cur_perms['stdout'].strip() == perms:
+      print(f"dest perms already set")
+      return True
 
-    ## Cleanup
-    file.remove(dest_bin_path)
+  res = sys.shell(f"chmod {perms} {dest}")
+  print(f"modified perms of {dest}")
+  pprint(res)
+  if res['status'] == 0
+    return True
+  
+  print(f"failed to set perms {perms} on {dest}")
+  return False
 
-    print(f"[success] process launched")
+def execute_once(dest):
+  for p in process.list():
+    if p['path'] == dest
+      print(f"process {dest} is already running")
+      pprint(p)
+      return True
 
+  res = sys.exec(dest, [], True)
+
+  for p in process.list():
+    if p['path'] == dest
+      print(f"process {dest} is now running")
+      pprint(p)
+      return True
+
+  return False
+
+def cleanup(dest):
+  if file.is_file(dest):
+    print(f"cleaning up {dest}")
+    file.remove(dest)
+  
+
+def main():
+  if not pre_flight():
+    cleanup(DEST_FILE_PATH)
+    return
+  if not deploy_asset(ASSET_PATH, DEST_FILE_PATH, ASSET_SHA1SUM):
+    cleanup(DEST_FILE_PATH)
+    return
+  if not set_perms(DEST_FILE_PATH, "755"):
+    cleanup(DEST_FILE_PATH)
+    return
+  execute_once(DEST_FILE_PATH)
 
 main()
 ```
+
+### Passing input
+`input_params`
 
 ### Fail early
 Before modifying anything on Target or loading assets validate that the tome you're building will run as expected.
@@ -245,3 +295,17 @@ sys.shell(f"echo -e '{password}\n{password}\n' | su {user} -c 'su {user} -c id'"
 # Bind shell - check against localhost
 res = sys.shell(f"{shell_client} 127.0.0.1 id")
 ```
+
+
+### Idempotence
+In many situations especially when deploying persistance you'll want to ensure that running a tome twice won't cause issues.
+The best way to handle this is to when possible check the current state of the resource you're about to modify.
+
+This often takes the shape of running validation before and after taking an action.
+In the same way during manual operation you might check if a file is on disk and the right size you can automate that with eldritch.
+
+Things to keep in mind:
+- Does the file hash match?
+- Do the permissions match?
+- Is the process already running?
+- Is the configuration already set?
