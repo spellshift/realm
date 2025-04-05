@@ -34,6 +34,12 @@ func (Host) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Primary interface IP address reported by the agent."),
+		field.String("external_ip").
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Incoming IP from Proxy. Will return first proxy IP if multiple."),
 		field.Enum("platform").
 			GoType(c2pb.Host_Platform(0)).
 			Annotations(
