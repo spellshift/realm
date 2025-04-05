@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
+import { Dialog, Transition } from '@headlessui/react'
 import {
     Bars3Icon,
     XMarkIcon,
@@ -27,37 +27,37 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                 <div className="flex-1 text-sm font-semibold leading-6 text-white">Realm</div>
                 <div className='text-sm font-semibold leading-6 text-white'>Logout</div>
             </div>
-            <Transition show={sidebarOpen} as={Fragment}>
+            <Transition.Root show={sidebarOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50 lg:hidden" onClose={handleSidebarOpen}>
-                    <TransitionChild
+                    <Transition.Child
                         as={Fragment}
-                        enter="transition-opacity ease-linear duration-400"
+                        enter="transition-opacity ease-linear duration-300"
                         enterFrom="opacity-0"
                         enterTo="opacity-100"
-                        leave="transition-opacity ease-linear duration-400"
+                        leave="transition-opacity ease-linear duration-300"
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
                         <div className="fixed inset-0 bg-gray-900/80" />
-                    </TransitionChild>
+                    </Transition.Child>
 
                     <div className="fixed inset-0 flex">
-                        <TransitionChild
+                        <Transition.Child
                             as={Fragment}
-                            enter="transition ease-in-out duration-400 transform"
+                            enter="transition ease-in-out duration-300 transform"
                             enterFrom="-translate-x-full"
                             enterTo="translate-x-0"
-                            leave="transition ease-in-out duration-400 transform"
+                            leave="transition ease-in-out duration-300 transform"
                             leaveFrom="translate-x-0"
                             leaveTo="-translate-x-full"
                         >
-                            <DialogPanel className="relative mr-16 flex w-full max-w-xs flex-1">
-                                <TransitionChild
+                            <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
+                                <Transition.Child
                                     as={Fragment}
-                                    enter="ease-in-out duration-400"
+                                    enter="ease-in-out duration-300"
                                     enterFrom="opacity-0"
                                     enterTo="opacity-100"
-                                    leave="ease-in-out duration-400"
+                                    leave="ease-in-out duration-300"
                                     leaveFrom="opacity-100"
                                     leaveTo="opacity-0"
                                 >
@@ -67,10 +67,11 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                                             <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
                                         </button>
                                     </div>
-                                </TransitionChild>
+                                </Transition.Child>
                                 {/* Sidebar component*/}
                                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10">
-                                    <div className="flex h-16 shrink-0 items-center"></div>
+                                    <div className="flex h-16 shrink-0 items-center">
+                                    </div>
                                     <nav className="flex flex-1 flex-col">
                                         <ul className="flex flex-1 flex-col gap-y-7">
                                             <li>
@@ -112,11 +113,11 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                                         </ul>
                                     </nav>
                                 </div>
-                            </DialogPanel>
-                        </TransitionChild>
+                            </Dialog.Panel>
+                        </Transition.Child>
                     </div>
                 </Dialog>
-            </Transition>
+            </Transition.Root>
         </>
     );
 }

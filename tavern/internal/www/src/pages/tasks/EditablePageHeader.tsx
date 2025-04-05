@@ -26,7 +26,7 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data 
     ]
 
     return (
-        <div className="flex flex-col gap-4 w-full">
+        <div className="flex flex-col gap-4">
             <div className="flex flex-row justify-between w-full items-center">
                 <Breadcrumbs pages={BreadcrumbsList} />
                 {(questId && data?.quests?.edges && data.quests?.edges.length > 0) &&

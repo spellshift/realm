@@ -41,7 +41,7 @@ const ImportRepositoryModal: FC<ImportRepositoryModalProps> = ({ isOpen, setOpen
     }
 
     return (
-        <Modal setOpen={setOpen} isOpen={isOpen} size="lg">
+        <Modal setOpen={setOpen} isOpen={isOpen}>
             <div className="flex flex-col gap-12">
                 <div>
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">Import tome repository</h3>

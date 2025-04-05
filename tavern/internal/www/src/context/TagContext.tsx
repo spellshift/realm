@@ -1,7 +1,6 @@
 import React, { createContext, useEffect } from "react";
-import { ApolloError, useQuery } from "@apollo/client";
+import { ApolloError, gql, useQuery } from "@apollo/client";
 import { TagContextType } from "../utils/consts";
-import { GET_TAG_FILTERS } from "../utils/queries";
 
 const defaultValue = { data: undefined, isLoading: false, error: undefined } as { data: undefined | TagContextType, isLoading: boolean, error: ApolloError | undefined };
 
@@ -9,6 +8,42 @@ export const TagContext = createContext(defaultValue);
 
 export const TagContextProvider = ({ children }: { children: React.ReactNode }) => {
 
+    const GET_TAG_FILTERS = gql`
+        query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
+            groupTags:tags(where: $groupTag) {
+                id
+                name
+                kind
+            },
+            serviceTags:tags(where: $serviceTag) {
+                id
+                name
+                kind
+            },
+            beacons {
+                id
+                name
+                principal
+                lastSeenAt
+                interval
+                host{
+                    id
+                    name
+                    primaryIP
+                    platform
+                    tags {
+                        id
+                        kind
+                        name
+                    }
+                }
+            },
+            hosts{
+                id
+                name
+            }
+        }
+    `;
     const PARAMS = {
         variables: {
             groupTag: { kind: "group" },

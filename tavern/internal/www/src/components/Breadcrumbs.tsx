@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 export default function Breadcrumbs({ pages }: { pages: Array<{ label: string | undefined, link: string | undefined }> }) {
     return (
         <nav aria-label="Breadcrumb" className="flex">
-            <ol className="flex space-x-4 py-4">
+            <ol role="list" className="flex space-x-4 py-4">
                 <li className="flex">
                     <div className="flex items-center">
                         <Link to="/" className="text-gray-400 hover:text-gray-500">
@@ -14,7 +14,7 @@ export default function Breadcrumbs({ pages }: { pages: Array<{ label: string | 
                     </div>
                 </li>
                 {pages.map((page, index) => (
-                    <li key={`${page.label}-${index}`} className="flex">
+                    <li key={page.label} className="flex">
                         <div className="flex items-center">
                             <svg
                                 fill="currentColor"

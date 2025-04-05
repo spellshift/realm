@@ -29,13 +29,6 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
-export type TagOptionType = {
-    value: string,
-    label: string,
-} & TomeTag;
-
-export type KindOfTag = 'service' | 'group';
-
 export type FilterBarOption = {
     label?: string;
     id: string;

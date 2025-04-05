@@ -1,5 +1,5 @@
 import { add } from "date-fns";
-import { BeaconType, QuestParam, TomeParams, TomeTag } from "./consts";
+import { BeaconType, QuestParam, TomeParams } from "./consts";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
