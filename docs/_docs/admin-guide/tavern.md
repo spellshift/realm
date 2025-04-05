@@ -393,8 +393,10 @@ The upload API for the Tavern CDN use forms and the POST method. The parameters 
 
 ### Playground - GET /cdn/{fileName} - UNAUTHENTICATED
 
-The download API is a simple GET request where the `fileName` provided as part of the upload request(or any File Ent) is appended to the path. Additionally the endpoint is unauthenticated so no cookie is required (and easy to use from Imix!). An example of accessing the API via eldritch is below:
+The download API is a simple GET request where the `fileName` provided as part of the upload request(or any `File` Ent) is appended to the path. Additionally the endpoint is unauthenticated so no cookie is required (and easy to use from Imix!). An example of accessing the API via eldritch is below:
 
 ```python
 f = http.get(f"https://example.com/cdn/{fileName}", allow_insecure=True)
 ```
+
+As these files are stored in the `File` Ent, they can also be accessed via the `asset` eldritch library functions.
