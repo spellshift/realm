@@ -379,3 +379,24 @@ query PeristenceTomes {
   }
 }
 ```
+
+## CDN HTTP API
+
+### Upload - POST /cdn/upload - AUTHENTICATED
+
+The upload API for the Tavern CDN use forms and the POST method. The parameters are `fileName` and `fileContent`. and the API will return an Ent ID for the file created. A curl example is shown below:
+
+```bash
+[$ /tmp] curl --cookie "auth-session=REDACTED" -F "fileName=test_file" -F "fileContent=@/path/to/file" https://example.com/cdn/upload
+{"data":{"file":{"id":4294967755}}}%
+```
+
+### Playground - GET /cdn/{fileName} - UNAUTHENTICATED
+
+The download API is a simple GET request where the `fileName` provided as part of the upload request(or any `File` Ent) is appended to the path. Additionally the endpoint is unauthenticated so no cookie is required (and easy to use from Imix!). An example of accessing the API via eldritch is below:
+
+```python
+f = http.get(f"https://example.com/cdn/{fileName}", allow_insecure=True)
+```
+
+As these files are stored in the `File` Ent, they can also be accessed via the `asset` eldritch library functions.
