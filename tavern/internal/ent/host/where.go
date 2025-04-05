@@ -81,6 +81,11 @@ func PrimaryIP(v string) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldPrimaryIP, v))
 }
 
+// ExternalIP applies equality check predicate on the "external_ip" field. It's identical to ExternalIPEQ.
+func ExternalIP(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldExternalIP, v))
+}
+
 // LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldLastSeenAt, v))
@@ -379,6 +384,81 @@ func PrimaryIPEqualFold(v string) predicate.Host {
 // PrimaryIPContainsFold applies the ContainsFold predicate on the "primary_ip" field.
 func PrimaryIPContainsFold(v string) predicate.Host {
 	return predicate.Host(sql.FieldContainsFold(FieldPrimaryIP, v))
+}
+
+// ExternalIPEQ applies the EQ predicate on the "external_ip" field.
+func ExternalIPEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldExternalIP, v))
+}
+
+// ExternalIPNEQ applies the NEQ predicate on the "external_ip" field.
+func ExternalIPNEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldNEQ(FieldExternalIP, v))
+}
+
+// ExternalIPIn applies the In predicate on the "external_ip" field.
+func ExternalIPIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldIn(FieldExternalIP, vs...))
+}
+
+// ExternalIPNotIn applies the NotIn predicate on the "external_ip" field.
+func ExternalIPNotIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldNotIn(FieldExternalIP, vs...))
+}
+
+// ExternalIPGT applies the GT predicate on the "external_ip" field.
+func ExternalIPGT(v string) predicate.Host {
+	return predicate.Host(sql.FieldGT(FieldExternalIP, v))
+}
+
+// ExternalIPGTE applies the GTE predicate on the "external_ip" field.
+func ExternalIPGTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldGTE(FieldExternalIP, v))
+}
+
+// ExternalIPLT applies the LT predicate on the "external_ip" field.
+func ExternalIPLT(v string) predicate.Host {
+	return predicate.Host(sql.FieldLT(FieldExternalIP, v))
+}
+
+// ExternalIPLTE applies the LTE predicate on the "external_ip" field.
+func ExternalIPLTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldLTE(FieldExternalIP, v))
+}
+
+// ExternalIPContains applies the Contains predicate on the "external_ip" field.
+func ExternalIPContains(v string) predicate.Host {
+	return predicate.Host(sql.FieldContains(FieldExternalIP, v))
+}
+
+// ExternalIPHasPrefix applies the HasPrefix predicate on the "external_ip" field.
+func ExternalIPHasPrefix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasPrefix(FieldExternalIP, v))
+}
+
+// ExternalIPHasSuffix applies the HasSuffix predicate on the "external_ip" field.
+func ExternalIPHasSuffix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasSuffix(FieldExternalIP, v))
+}
+
+// ExternalIPIsNil applies the IsNil predicate on the "external_ip" field.
+func ExternalIPIsNil() predicate.Host {
+	return predicate.Host(sql.FieldIsNull(FieldExternalIP))
+}
+
+// ExternalIPNotNil applies the NotNil predicate on the "external_ip" field.
+func ExternalIPNotNil() predicate.Host {
+	return predicate.Host(sql.FieldNotNull(FieldExternalIP))
+}
+
+// ExternalIPEqualFold applies the EqualFold predicate on the "external_ip" field.
+func ExternalIPEqualFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldEqualFold(FieldExternalIP, v))
+}
+
+// ExternalIPContainsFold applies the ContainsFold predicate on the "external_ip" field.
+func ExternalIPContainsFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldContainsFold(FieldExternalIP, v))
 }
 
 // PlatformEQ applies the EQ predicate on the "platform" field.
