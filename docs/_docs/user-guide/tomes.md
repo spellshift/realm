@@ -151,7 +151,6 @@ Copy and run an asset in a safe and idempotant way
 ```python
 IMPLANT_ASSET_PATH = "tome_name/assets/implant"
 ASSET_SHA1SUM = "44e1bf82832580c11de07f57254bd4af837b658e"
-DEST_FILE_PATH = "/usr/bin/imix"
 
 def pre_flight(dest_bin_path):
     ## Testing
@@ -238,23 +237,34 @@ def cleanup(dest):
     file.remove(dest)
   
 
-def main():
+def main(dest_file_path):
   if not pre_flight():
-    cleanup(DEST_FILE_PATH)
+    cleanup(dest_file_path)
     return
-  if not deploy_asset(ASSET_PATH, DEST_FILE_PATH, ASSET_SHA1SUM):
-    cleanup(DEST_FILE_PATH)
+  if not deploy_asset(ASSET_PATH, dest_file_path, ASSET_SHA1SUM):
+    cleanup(dest_file_path)
     return
-  if not set_perms(DEST_FILE_PATH, "755"):
-    cleanup(DEST_FILE_PATH)
+  if not set_perms(dest_file_path, "755"):
+    cleanup(dest_file_path)
     return
-  execute_once(DEST_FILE_PATH)
+  execute_once(dest_file_path)
 
-main()
+
+main(input_params['DEST_FILE_PATH'])
 ```
 
 ### Passing input
-`input_params`
+Tomes have an inherent global variable `input_params` that defines variables passed from the UI.
+These are defined in your `metadata.yml` file.
+Best practice is to pass these into your `main` function and sub functions to keep them reusable.
+There is currently no way to define `input_params` during golem run time so if you're using golem to test tomes you may need to manually define them. Eg.
+
+```python
+input_params = {}
+input_params['DEST_FILE_PATH'] = "/bin/imix"
+
+main(input_params['DEST_FILE_PATH'])
+```
 
 ### Fail early
 Before modifying anything on Target or loading assets validate that the tome you're building will run as expected.
