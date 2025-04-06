@@ -4,7 +4,11 @@ use std::sync::mpsc::{Receiver, Sender};
 
 #[trait_variant::make(Transport: Send)]
 pub trait UnsafeTransport: Clone + Send {
-    // New will initialize a new instance of the transport using the provided URI.
+    // Init will initialize a new instance of the transport with no active connections.
+    #[allow(dead_code)]
+    fn init() -> Result<Self>;
+
+    // New will create a new instance of the transport using the provided URI.
     #[allow(dead_code)]
     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
 
