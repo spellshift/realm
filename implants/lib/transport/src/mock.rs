@@ -10,7 +10,7 @@ mock! {
         fn clone(&self) -> Self;
     }
     impl super::Transport for Transport {
-        fn init() -> Result<Self>;
+        fn init() -> Self;
 
         fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
 

@@ -24,8 +24,8 @@ pub struct GRPC {
 }
 
 impl Transport for GRPC {
-    fn init() -> Result<Self> {
-        Ok(GRPC { grpc: None })
+    fn init() -> Self {
+        GRPC { grpc: None }
     }
 
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {

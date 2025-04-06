@@ -36,7 +36,7 @@ pub async fn handle_main() {
 }
 
 async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg, GRPC::init()?)?;
+    let mut agent = Agent::new(cfg, GRPC::init())?;
     agent.callback_loop().await?;
     Ok(())
 }

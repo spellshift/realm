@@ -6,7 +6,7 @@ use std::sync::mpsc::{Receiver, Sender};
 pub trait UnsafeTransport: Clone + Send {
     // Init will initialize a new instance of the transport with no active connections.
     #[allow(dead_code)]
-    fn init() -> Result<Self>;
+    fn init() -> Self;
 
     // New will create a new instance of the transport using the provided URI.
     #[allow(dead_code)]

@@ -84,7 +84,7 @@ impl<T: Transport + 'static> Agent<T> {
         self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
-        self.t = T::init()?; // re-init to make sure no active connections during sleep
+        self.t = T::init(); // re-init to make sure no active connections during sleep
 
         Ok(())
     }
