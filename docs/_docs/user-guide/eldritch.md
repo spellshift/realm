@@ -409,7 +409,8 @@ Unimplemented.
 `file.write(path: str, content: str) -> None`
 
 The <b>file.write</b> method writes to a given file path with the given content.
-If a file or directory already exists at this path, the method will fail.
+If a file already exists at this path, the method will overwite it. If a directory
+already exists at the path the method will error.
 
 ### file.find
 
@@ -559,7 +560,6 @@ ssh_copy will return `"Sucess"` if successful and `"Failed to run handle_ssh_cop
 If the connection is successful but the copy writes a file error will be returned.
 ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
-
 
 ### pivot.ssh_exec
 
