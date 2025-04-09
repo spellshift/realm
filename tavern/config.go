@@ -114,7 +114,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	)
 	if cfg != nil && cfg.mysqlDSN != "" {
 		mysqlDSN = cfg.mysqlDSN
-		driver = "mysql"
+		driver = "mysql?collation_connection=utf8_unicode_520_ci"
 	}
 
 	drv, err := sql.Open(driver, mysqlDSN)
