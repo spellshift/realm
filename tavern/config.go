@@ -59,11 +59,12 @@ var (
 	// EnvMySQLUser defines the MySQL user to authenticate as.
 	// EnvMySQLPasswd defines the password for the MySQL user to authenticate with.
 	// EnvMySQLDB defines the name of the MySQL database to use.
-	EnvMySQLAddr   = EnvString{"MYSQL_ADDR", ""}
-	EnvMySQLNet    = EnvString{"MYSQL_NET", "tcp"}
-	EnvMySQLUser   = EnvString{"MYSQL_USER", "root"}
-	EnvMySQLPasswd = EnvString{"MYSQL_PASSWD", ""}
-	EnvMySQLDB     = EnvString{"MYSQL_DB", "tavern"}
+	EnvMySQLAddr      = EnvString{"MYSQL_ADDR", ""}
+	EnvMySQLNet       = EnvString{"MYSQL_NET", "tcp"}
+	EnvMySQLUser      = EnvString{"MYSQL_USER", "root"}
+	EnvMySQLPasswd    = EnvString{"MYSQL_PASSWD", ""}
+	EnvMySQLCollation = EnvString{"MYSQL_DB_COLLATION", "utf8mb4_unicode_ci"}
+	EnvMySQLDB        = EnvString{"MYSQL_DB", "tavern"}
 
 	// EnvDBMaxIdleConns defines the maximum number of idle db connections to allow.
 	// EnvDBMaxOpenConns defines the maximum number of open db connections to allow.
@@ -114,7 +115,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	)
 	if cfg != nil && cfg.mysqlDSN != "" {
 		mysqlDSN = cfg.mysqlDSN
-		driver = "mysql?collation_connection=utf8_unicode_520_ci"
+		driver = "mysql"
 	}
 
 	drv, err := sql.Open(driver, mysqlDSN)
@@ -353,6 +354,7 @@ func ConfigureMySQLFromEnv() func(*Config) {
 		mysqlConfig.Net = EnvMySQLNet.String()
 		mysqlConfig.User = EnvMySQLUser.String()
 		mysqlConfig.Passwd = EnvMySQLPasswd.String()
+		mysqlConfig.Collation = EnvMySQLCollation.String()
 		mysqlConfig.DBName = EnvMySQLDB.String()
 
 		cfg.mysqlDSN = mysqlConfig.FormatDSN()
