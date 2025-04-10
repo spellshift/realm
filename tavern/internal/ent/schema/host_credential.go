@@ -61,6 +61,9 @@ func (HostCredential) Edges() []ent.Edge {
 func (HostCredential) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.Mutations(entgql.MutationCreate()),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 

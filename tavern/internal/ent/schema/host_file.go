@@ -82,7 +82,11 @@ func (HostFile) Edges() []ent.Edge {
 
 // Annotations describes additional information for the ent.
 func (HostFile) Annotations() []schema.Annotation {
-	return []schema.Annotation{}
+	return []schema.Annotation{
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
+	}
 }
 
 // Mixin defines common shared properties for the ent.

@@ -87,6 +87,9 @@ func (Repository) Annotations() []schema.Annotation {
 		entgql.RelayConnection(),
 		entgql.MultiOrder(),
 		entsql.Annotation{Table: "repositories"},
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 
