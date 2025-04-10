@@ -505,6 +505,9 @@ func init() {
 	ShellsTable.ForeignKeys[2].RefTable = UsersTable
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
+	TasksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
 	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
