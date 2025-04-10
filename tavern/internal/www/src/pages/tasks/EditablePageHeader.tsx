@@ -21,7 +21,7 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data 
         },
         {
             label: questsName,
-            link: `/hosts/${questId}`
+            link: `/tasks/${questId}`
         }
     ]
 
