@@ -41,9 +41,7 @@ const Tasks = () => {
 
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
-            <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                <EditablePageHeader questId={questId} data={questData} loading={questLoading} error={questError} />
-            </div>
+            <EditablePageHeader questId={questId} data={questData} loading={questLoading} error={questError} />
             <div className="bg-white rounded-lg mt-2">
                 <FilterBar setSearch={setSearch} filtersSelected={filtersSelected} setFiltersSelected={handleFilterSelected} />
             </div>
@@ -55,7 +53,7 @@ const Tasks = () => {
                 <div>
                     {data?.tasks?.edges.length > 0 ? (
                         <div>
-                            <div className=" w-full flex flex-col gap-2 my-4">
+                            <div className=" w-full flex flex-col gap-4 my-4">
                                 {data.tasks.edges.map((task: { node: Task }) => {
                                     return (
                                         <TaskCard key={task.node.id} task={task.node} />
