@@ -14,7 +14,7 @@ const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
     }
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 max-h-80 overflow-y-scroll overflow-x-scroll">
             {shells.map((shell) => {
                 const closeAtTime = new Date(shell.closedAt || "");
 

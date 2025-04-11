@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { QuestProps, TomeParams } from "../../../utils/consts";
 import { constructTomeParams } from "../../../utils/utils";
-import { WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon } from "@heroicons/react/24/outline";
 
 interface TaskParametersType {
     quest?: QuestProps
@@ -13,10 +13,10 @@ const TaskParameters: FC<TaskParametersType> = ({
 
     return (
         <div className="flex flex-row gap-4">
-            <WrenchScrewdriverIcon className="h-5 w-5 mt-1" />
+            <BookOpenIcon className="h-5 w-5 mt-1" />
             <div className="flex flex-col gap-1 ">
                 <div className="text-gray-600">
-                    Tome parameters
+                    {quest?.tome?.name}
                 </div>
                 {params.map((paramDef: TomeParams) => {
                     if (paramDef.value) {
@@ -25,7 +25,7 @@ const TaskParameters: FC<TaskParametersType> = ({
                                 <div className="font-semibold">
                                     {paramDef.name}:
                                 </div>
-                                <div>
+                                <div className="break-all">
                                     {paramDef.value}
                                 </div>
                             </div>
