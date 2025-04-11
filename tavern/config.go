@@ -63,7 +63,6 @@ var (
 	EnvMySQLNet       = EnvString{"MYSQL_NET", "tcp"}
 	EnvMySQLUser      = EnvString{"MYSQL_USER", "root"}
 	EnvMySQLPasswd    = EnvString{"MYSQL_PASSWD", ""}
-	EnvMySQLCollation = EnvString{"MYSQL_DB_COLLATION", "utf8mb4_unicode_ci"}
 	EnvMySQLDB        = EnvString{"MYSQL_DB", "tavern"}
 
 	// EnvDBMaxIdleConns defines the maximum number of idle db connections to allow.
@@ -354,7 +353,6 @@ func ConfigureMySQLFromEnv() func(*Config) {
 		mysqlConfig.Net = EnvMySQLNet.String()
 		mysqlConfig.User = EnvMySQLUser.String()
 		mysqlConfig.Passwd = EnvMySQLPasswd.String()
-		mysqlConfig.Collation = EnvMySQLCollation.String()
 		mysqlConfig.DBName = EnvMySQLDB.String()
 
 		cfg.mysqlDSN = mysqlConfig.FormatDSN()
