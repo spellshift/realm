@@ -59,11 +59,11 @@ var (
 	// EnvMySQLUser defines the MySQL user to authenticate as.
 	// EnvMySQLPasswd defines the password for the MySQL user to authenticate with.
 	// EnvMySQLDB defines the name of the MySQL database to use.
-	EnvMySQLAddr   = EnvString{"MYSQL_ADDR", ""}
-	EnvMySQLNet    = EnvString{"MYSQL_NET", "tcp"}
-	EnvMySQLUser   = EnvString{"MYSQL_USER", "root"}
-	EnvMySQLPasswd = EnvString{"MYSQL_PASSWD", ""}
-	EnvMySQLDB     = EnvString{"MYSQL_DB", "tavern"}
+	EnvMySQLAddr      = EnvString{"MYSQL_ADDR", ""}
+	EnvMySQLNet       = EnvString{"MYSQL_NET", "tcp"}
+	EnvMySQLUser      = EnvString{"MYSQL_USER", "root"}
+	EnvMySQLPasswd    = EnvString{"MYSQL_PASSWD", ""}
+	EnvMySQLDB        = EnvString{"MYSQL_DB", "tavern"}
 
 	// EnvDBMaxIdleConns defines the maximum number of idle db connections to allow.
 	// EnvDBMaxOpenConns defines the maximum number of open db connections to allow.
