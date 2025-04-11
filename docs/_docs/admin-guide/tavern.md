@@ -104,6 +104,10 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 ## Configuration
 
+### Webserver
+
+By default, Tavern will listen on `0.0.0.0:80`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
+
 ### Metrics
 
 By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
