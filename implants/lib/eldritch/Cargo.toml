@@ -28,9 +28,7 @@ hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
 log = { workspace = true }
 md5 = { workspace = true }
-nix = { workspace = true }
 notify = { workspace = true }
-object = { workspace = true }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
@@ -55,6 +53,16 @@ tera = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tokio-util = { workspace = true }
+whoami = { workspace = true }
+network-interface = { workspace = true }
+
+# LINUX
+[target.'cfg(target_os = "linux")'.dependencies]
+nix = { workspace = true }
+
+# WINDOWS
+[target.'cfg(windows)'.dependencies]
+winreg = { workspace = true }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -66,12 +74,6 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemServices",
     "Win32_UI_Shell"
 ] }
-whoami = { workspace = true }
-network-interface = { workspace = true }
-
-# WINDOWS
-[target.'cfg(windows)'.dependencies]
-winreg = { workspace = true }
 
 # NOT WINDOWS
 [target.'cfg(not(windows))'.dependencies]
