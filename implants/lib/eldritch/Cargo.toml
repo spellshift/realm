@@ -31,14 +31,13 @@ md5 = { workspace = true }
 nix = { workspace = true }
 notify = { workspace = true }
 object = { workspace = true }
-openssl = { workspace = true, features = ["vendored"] }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 regex = { workspace = true }
-reqwest = { workspace = true, features = ["blocking", "stream"] }
+reqwest = { workspace = true, default-features = false, features = ["blocking", "json", "rustls-tls", "stream", "http2"] }
 russh = { workspace = true }
 russh-sftp = { workspace = true }
 russh-keys = { workspace = true }
