@@ -5,7 +5,7 @@ import PageHeader from "../../../components/tavern-base-ui/PageHeader";
 
 const HostDetailsSection = () => {
     // const [isOpen, setOpen] = useState<boolean>(false);
-    const { data: host, loading, error } = useContext(HostContext);
+    const { data: host } = useContext(HostContext);
 
     const serviceTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "service")];
     const groupTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "group")];

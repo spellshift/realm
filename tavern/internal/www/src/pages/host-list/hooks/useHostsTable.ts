@@ -28,16 +28,16 @@ export const useHostTable = () => {
     const getformattedHosts = useCallback((data: any)=> {
         const currentDate = new Date();
 
-        if(!data || !data.hosts){
+        if(!data || data.hosts.edges?.length === 0){
             return;
         }
 
-        const hosts = data?.hosts?.map((host: any)=>{
+        const hosts = data?.hosts?.edges?.map((edge: any)=> {
             return {
-                ...host,
-                beaconPrincipals: formatPrincipalData(host),
-                beaconStatus: getOfflineOnlineStatus(host.beacons),
-                formattedLastSeenAt: formatDistance(new Date(host.lastSeenAt), currentDate)
+                ...edge.node,
+                beaconPrincipals: formatPrincipalData(edge.node),
+                beaconStatus: getOfflineOnlineStatus(edge.node.beacons),
+                formattedLastSeenAt: formatDistance(new Date(edge.node.lastSeenAt), currentDate)
             }
         })
         setHosts(hosts);

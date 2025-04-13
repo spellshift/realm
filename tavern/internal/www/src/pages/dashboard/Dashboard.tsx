@@ -12,6 +12,7 @@ import QuestCard from "./components/QuestCard";
 import AccessCard from "./components/AccessCard";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
+import { HostType } from "../../utils/consts";
 
 
 export const Dashboard = () => {
@@ -25,7 +26,9 @@ export const Dashboard = () => {
         notifyOnNetworkStatusChange: true
     });
 
-    const { loading: hostLoading, data: hosts, error: hostError } = useQuery(GET_HOST_QUERY);
+    const { loading: hostLoading, data: unFormattedHosts, error: hostError } = useQuery(GET_HOST_QUERY);
+    const hosts = unFormattedHosts?.hosts?.edges?.map((edge: { node: HostType }) => edge?.node);
+    console.log(unFormattedHosts);
 
     const { loading: formatLoading, formattedData } = useOverviewData(data);
 
@@ -49,8 +52,8 @@ export const Dashboard = () => {
 
         return (
             <div className="my-4 flex flex-col gap-4">
-                <QuestCard formattedData={formattedData} hosts={hosts?.hosts || []} loading={loading} />
-                <AccessCard hosts={hosts?.hosts || []} />
+                <QuestCard formattedData={formattedData} hosts={hosts || []} loading={loading} />
+                <AccessCard hosts={hosts || []} />
             </div>
         )
     }

@@ -3,29 +3,38 @@ import { gql } from "@apollo/client";
 export const GET_HOST_QUERY = gql`
     query GetHosts($where: HostWhereInput) {
         hosts(where: $where){
-            id
-            name
-            primaryIP
-            platform
-            lastSeenAt
-            tags{
-                name
-                id
-                kind
+            pageInfo{
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
             }
-            beacons{
-                id
-                name
-                principal
-                interval
-                lastSeenAt
+            totalCount
+            edges{
+                node{
+                    id
+                    name
+                    primaryIP
+                    platform
+                    lastSeenAt
+                    tags{
+                        name
+                        id
+                        kind
+                    }
+                    beacons{
+                        id
+                        name
+                        principal
+                        interval
+                        lastSeenAt
+                    }
+                    credentials{
+                        id
+                    }
+                }
             }
-            credentials {
-                createdAt
-                principal
-                kind
-                secret
-            }
+
         }
 }`;
 
@@ -386,12 +395,16 @@ export const GET_USER_QUERY = gql`
 export const GET_HOST_CREDENTIALS = gql`
     query GetHostCredentials($where: HostWhereInput){
         hosts(where: $where) {
-            credentials {
-                createdAt
-                lastModifiedAt
-                principal
-                kind
-                secret
+            edges{
+                node{
+                    credentials {
+                        createdAt
+                        lastModifiedAt
+                        principal
+                        kind
+                        secret
+                    }
+                }
             }
         }
     }
