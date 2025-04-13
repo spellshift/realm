@@ -1,2 +1,2 @@
-[target.x86_64-pc-windows-msvc]
+[target.release]
 rustflags = [ "-Clink-arg=/DEBUG:NONE" ]
