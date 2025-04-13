@@ -18,13 +18,13 @@ export const useCredsTable = (hostId: number) => {
         });
 
     const getCreds = useCallback((data: any, search: string, groupByPrincipal: boolean)=> {
-        if(!data || !data.hosts) {
+        if(!data || data?.hosts?.edges?.length === 0) {
             return;
         }
 
-        const hosts: HostType[] = data?.hosts
+        const host: HostType = data.hosts?.edges[0]?.node;
 
-        let creds: CredentialType[] = hosts[0].credentials!.map(((cred) => {
+        let creds: CredentialType[] = host.credentials!.map(((cred) => {
             return {
                 ...cred,
                 kind: cred.kind.replace(/^KIND_/, "")
@@ -54,7 +54,7 @@ export const useCredsTable = (hostId: number) => {
                     }
                 );
         }
-    
+
         setCreds(creds);
     }, []) as any;
 
