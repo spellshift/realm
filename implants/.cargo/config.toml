@@ -1,0 +1,5 @@
+[target.release]
+rustflags = [
+    "-Clink-arg=/DEBUG:NONE",
+    "-C", "target-feature=+crt-static",
+]
