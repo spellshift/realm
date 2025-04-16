@@ -1,8 +1,6 @@
 use super::super::insert_dict_kv;
 use super::CommandOutput;
 use anyhow::{Context, Result};
-#[cfg(target_os = "linux")]
-use nix::sys::wait::wait;
 use starlark::{
     collections::SmallMap,
     const_frozen_string,
@@ -12,6 +10,7 @@ use std::process::Command;
 
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
+    nix::sys::wait::wait,
     nix::unistd::{fork, setsid, ForkResult},
     std::process::{exit, Stdio},
 };

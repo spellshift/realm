@@ -55,9 +55,6 @@ tokio-stream = { workspace = true }
 tokio-util = { workspace = true }
 whoami = { workspace = true }
 network-interface = { workspace = true }
-
-# LINUX
-[target.'cfg(target_os = "linux")'.dependencies]
 nix = { workspace = true }
 
 # WINDOWS
