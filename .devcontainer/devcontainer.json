@@ -30,7 +30,8 @@
 		},
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
-		}
+		},
+		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
 	},
 	"customizations": {
 		"vscode": {

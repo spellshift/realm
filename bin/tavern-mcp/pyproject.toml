@@ -1,0 +1,15 @@
+[project]
+name = "tavern-mcp"
+version = "0.1.0"
+description = "MCP server for Tavern c2 server API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp-cli",
+    "mcp[cli]>=1.6.0",
+    "requests>=2.32.3",
+]
+
+[tool.uv.sources]
+mcp-cli = { git = "https://github.com/hulto/mcp-cli" }
