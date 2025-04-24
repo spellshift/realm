@@ -35,11 +35,17 @@ prost-types = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 regex = { workspace = true }
-reqwest = { workspace = true, default-features = false, features = ["blocking", "json", "rustls-tls", "stream", "http2"] }
+reqwest = { workspace = true, default-features = false, features = [
+    "blocking",
+    "json",
+    "rustls-tls",
+    "stream",
+    "http2",
+] }
 russh = { workspace = true }
 russh-sftp = { workspace = true }
 russh-keys = { workspace = true }
-rust-embed = { workspace = true }
+rust-embed = { workspace = true, features = ["compression"] }
 serde_json = { workspace = true }
 sha1 = { workspace = true }
 sha2 = { workspace = true }
@@ -70,7 +76,7 @@ windows-sys = { workspace = true, features = [
     "Win32_Security",
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
-    "Win32_UI_Shell"
+    "Win32_UI_Shell",
 ] }
 
 # NOT WINDOWS
