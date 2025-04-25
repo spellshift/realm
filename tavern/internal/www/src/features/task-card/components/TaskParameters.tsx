@@ -15,7 +15,7 @@ const TaskParameters: FC<TaskParametersType> = ({
         <div className="flex flex-row gap-4">
             <BookOpenIcon className="h-5 w-5 mt-1" />
             <div className="flex flex-col gap-1 ">
-                <div className="text-gray-600">
+                <div className="text-gray-600 break-all">
                     {quest?.tome?.name}
                 </div>
                 {params.map((paramDef: TomeParams) => {
