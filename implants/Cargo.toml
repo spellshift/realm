@@ -47,6 +47,7 @@ network-interface = "1.0.1"
 nix = "0.26.1"
 notify = "6.1.1"
 object = "0.31.1"
+ping-rs = "0.1.2"
 pnet = "0.34.0"
 portable-pty = "0.8.1"
 predicates = { version = "2.1", default-features = false }

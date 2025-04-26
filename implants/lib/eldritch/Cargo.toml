@@ -29,6 +29,7 @@ ipnetwork = { workspace = true }
 log = { workspace = true }
 md5 = { workspace = true }
 notify = { workspace = true }
+ping-rs = { workspace = true }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }

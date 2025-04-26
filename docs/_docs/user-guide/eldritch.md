@@ -496,6 +496,10 @@ The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP t
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
+### pivot.ping
+
+`pivot.ping(target: str)`
+
 ### pivot.port_forward
 
 `pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
