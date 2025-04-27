@@ -107,4 +107,15 @@ mod tests {
         assert!(duration == "0ms", "addr check: {} == {}", addr, "0ms");
         Ok(())
     }
+
+    #[test]
+    fn test_ping_fail() -> Result<()> {
+        let test_heap = Heap::new();
+        let target = String::from("169.254.0.1");
+        assert!(
+            ping(&test_heap, target.clone()).is_err(),
+            "ping for fake APIPA did not fail!"
+        );
+        Ok(())
+    }
 }
