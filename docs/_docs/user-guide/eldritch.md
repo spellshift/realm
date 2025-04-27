@@ -498,7 +498,9 @@ The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP t
 
 ### pivot.ping
 
-`pivot.ping(target: str)`
+`pivot.ping(target: str) -> Dict`
+
+The <b>pivot.ping</b> method can be used to send a single ICMP packet to a target IP. In response there is a 
 
 ### pivot.port_forward
 

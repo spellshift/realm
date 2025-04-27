@@ -29,7 +29,6 @@ ipnetwork = { workspace = true }
 log = { workspace = true }
 md5 = { workspace = true }
 notify = { workspace = true }
-ping-rs = { workspace = true }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
@@ -53,6 +52,7 @@ sha2 = { workspace = true }
 sha256 = { workspace = true }
 starlark = { workspace = true }
 starlark_derive = { workspace = true }
+surge-ping = { workspace = true }
 sysinfo = { workspace = true }
 tar = { workspace = true }
 tempfile = { workspace = true }
