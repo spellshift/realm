@@ -33,6 +33,11 @@ impl Environment {
         self.tx.send(msg.into())?;
         Ok(())
     }
+
+    #[cfg(test)]
+    pub fn mock(id: i64, tx: Sender<Message>) -> Self {
+        Self { id, tx }
+    }
 }
 
 /*
