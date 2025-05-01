@@ -192,6 +192,16 @@ mod tests {
             want_text: format!("{}\n", r#"["download", "get", "post"]"#),
             want_error: None,
         },
+        agent_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(agent))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n", r#"["eval"]"#),
+            want_error: None,
+        },
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 128)]
