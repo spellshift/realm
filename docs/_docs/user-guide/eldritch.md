@@ -125,7 +125,7 @@ for user_home_dir in file.list("/home/"):
 `agent.eval(script: str) -> None`
 
 The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
-executes it in the runtime envirment of the executing tome. This means that
+executes it in the runtime environment of the executing tome. This means that
 any `print`s or `eprint`s or output from the script will be merged with that
 of the broader tome.
 

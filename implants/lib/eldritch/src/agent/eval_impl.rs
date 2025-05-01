@@ -15,7 +15,7 @@ pub fn eval(env: &Environment, script: String) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::mpsc::channel;
+    use std::{sync::mpsc::channel, time::Duration};
 
     use crate::runtime::Message;
 
@@ -24,9 +24,24 @@ mod tests {
 
     #[test]
     fn test_eval() -> Result<()> {
-        let (tx, _rx) = channel::<Message>();
+        let (tx, rx) = channel::<Message>();
         let test_env = Environment::mock(1, tx);
-        eval(&test_env, String::from("print(\"hi\")"))
+        eval(&test_env, String::from("print(\"hi\")"))?;
+        let m = rx.recv_timeout(Duration::from_secs(3))?;
+        match m {
+            Message::ReportText(r) => {
+                let expected_output = String::from("hi\n");
+                assert!(
+                    r.text == expected_output,
+                    "'{}' did not equal '{}'",
+                    r.text,
+                    expected_output
+                );
+                Ok(())
+            }
+            _ => Err(anyhow::anyhow!("recieved nontext ouput from print")),
+        }?;
+        Ok(())
     }
 
     #[test]
