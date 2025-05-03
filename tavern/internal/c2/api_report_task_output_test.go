@@ -39,6 +39,7 @@ func TestReportTaskOutput(t *testing.T) {
 		wantResp           *c2pb.ReportTaskOutputResponse
 		wantCode           codes.Code
 		wantOutput         string
+		wantError          string
 		wantExecStartedAt  *timestamppb.Timestamp
 		wantExecFinishedAt *timestamppb.Timestamp
 	}{
@@ -57,16 +58,38 @@ func TestReportTaskOutput(t *testing.T) {
 			wantExecStartedAt: now,
 		},
 		{
+			name: "First_error",
+			req: &c2pb.ReportTaskOutputRequest{
+				Output: &c2pb.TaskOutput{
+					Id:     int64(existingTasks[0].ID),
+					Output: "",
+					Error: &c2pb.TaskError{
+						Msg: "hello error!",
+					},
+					ExecStartedAt: now,
+				},
+			},
+			wantResp:          &c2pb.ReportTaskOutputResponse{},
+			wantCode:          codes.OK,
+			wantOutput:        "TestOutput",
+			wantError:         "hello error!",
+			wantExecStartedAt: now,
+		},
+		{
 			name: "Append_Output",
 			req: &c2pb.ReportTaskOutputRequest{
 				Output: &c2pb.TaskOutput{
 					Id:     int64(existingTasks[0].ID),
 					Output: "_AppendedOutput",
+					Error: &c2pb.TaskError{
+						Msg: "_AppendEror",
+					},
 				},
 			},
 			wantResp:          &c2pb.ReportTaskOutputResponse{},
 			wantCode:          codes.OK,
 			wantOutput:        "TestOutput_AppendedOutput",
+			wantError:         "hello error!_AppendEror",
 			wantExecStartedAt: now,
 		},
 		{
@@ -80,6 +103,7 @@ func TestReportTaskOutput(t *testing.T) {
 			wantResp:           &c2pb.ReportTaskOutputResponse{},
 			wantCode:           codes.OK,
 			wantOutput:         "TestOutput_AppendedOutput",
+			wantError:          "hello error!_AppendEror",
 			wantExecStartedAt:  now,
 			wantExecFinishedAt: finishedAt,
 		},
@@ -128,6 +152,7 @@ func TestReportTaskOutput(t *testing.T) {
 
 			// Task Assertions
 			assert.Equal(t, tc.wantOutput, testTask.Output)
+			assert.Equal(t, tc.wantError, testTask.Error)
 		})
 	}
 
