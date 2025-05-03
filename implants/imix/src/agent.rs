@@ -49,9 +49,6 @@ impl<T: Transport + 'static> Agent<T> {
             };
 
             let runtime = eldritch::start(task.id, tome).await;
-            // let mut tmp = TaskHandle::new(task.id, runtime);
-            // tmp.report(&mut tavern).await?;
-            // self.handles.push(tmp);
             self.handles.push(TaskHandle::new(task.id, runtime));
 
             #[cfg(debug_assertions)]
