@@ -102,6 +102,9 @@ func (Beacon) Annotations() []schema.Annotation {
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 

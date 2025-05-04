@@ -27,6 +27,8 @@ const (
 	FieldName = "name"
 	// FieldPrimaryIP holds the string denoting the primary_ip field in the database.
 	FieldPrimaryIP = "primary_ip"
+	// FieldExternalIP holds the string denoting the external_ip field in the database.
+	FieldExternalIP = "external_ip"
 	// FieldPlatform holds the string denoting the platform field in the database.
 	FieldPlatform = "platform"
 	// FieldVersion holds the string denoting the version field in the database.
@@ -88,6 +90,7 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldName,
 	FieldPrimaryIP,
+	FieldExternalIP,
 	FieldPlatform,
 	FieldVersion,
 	FieldLastSeenAt,
@@ -165,6 +168,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByPrimaryIP orders the results by the primary_ip field.
 func ByPrimaryIP(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrimaryIP, opts...).ToFunc()
+}
+
+// ByExternalIP orders the results by the external_ip field.
+func ByExternalIP(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalIP, opts...).ToFunc()
 }
 
 // ByPlatform orders the results by the platform field.

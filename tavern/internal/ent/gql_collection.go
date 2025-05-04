@@ -495,6 +495,11 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				selectedFields = append(selectedFields, host.FieldPrimaryIP)
 				fieldSeen[host.FieldPrimaryIP] = struct{}{}
 			}
+		case "externalIP":
+			if _, ok := fieldSeen[host.FieldExternalIP]; !ok {
+				selectedFields = append(selectedFields, host.FieldExternalIP)
+				fieldSeen[host.FieldExternalIP] = struct{}{}
+			}
 		case "platform":
 			if _, ok := fieldSeen[host.FieldPlatform]; !ok {
 				selectedFields = append(selectedFields, host.FieldPlatform)

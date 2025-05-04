@@ -36,7 +36,7 @@ pub fn encrypt_file(src: String, dst: String, key: String) -> Result<()> {
             block = GenericArray::from_iter(short_buffer);
         }
         cipher.encrypt_block(&mut block);
-        match out_file.write(&block) {
+        match out_file.write_all(&block) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]

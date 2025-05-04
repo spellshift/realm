@@ -212,9 +212,9 @@ fn get_host_platform() -> Platform {
  * Returns the empty string otherwise.
  */
 fn get_primary_ip() -> String {
-    match default_net::get_default_interface() {
+    match netdev::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
-            Some(ip) => ip.addr.to_string(),
+            Some(ip) => ip.addr().to_string(),
             None => String::from(""),
         },
         Err(_err) => {

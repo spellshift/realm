@@ -3,13 +3,21 @@ import React, { FC, Fragment } from "react";
 import { Dialog, Transition } from '@headlessui/react';
 import Button from "./button/Button";
 
+const ModalWidth = {
+    sm: "lg:max-w-xl",
+    md: "lg:max-w-2xl",
+    lg: "lg:max-w-4xl"
+}
 type ModalProps = {
     isOpen: boolean,
     setOpen: (arg: any) => any,
     children: React.ReactElement
+    size?: "sm" | "md" | "lg"
 }
 
-const Modal: FC<ModalProps> = ({ isOpen, setOpen, children }) => {
+const Modal: FC<ModalProps> = ({ isOpen, setOpen, size = "md", children }) => {
+    const modalSize = ModalWidth[size];
+
     return (
         <Transition.Root show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-10" onClose={setOpen}>
@@ -26,7 +34,7 @@ const Modal: FC<ModalProps> = ({ isOpen, setOpen, children }) => {
                                 leaveFrom="translate-x-0"
                                 leaveTo="translate-x-full"
                             >
-                                <Dialog.Panel className="pointer-events-auto w-screen max-w-xs md:max-w-md lg:max-w-4xl">
+                                <Dialog.Panel className={`pointer-events-auto w-screen max-w-xs md:max-w-md ${modalSize}`}>
                                     <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
                                         <div className="px-4 sm:px-6">
                                             <div className="flex w-full justify-end">

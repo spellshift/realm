@@ -1041,6 +1041,23 @@ type HostWhereInput struct {
 	PrimaryIPEqualFold    *string  `json:"primaryIPEqualFold,omitempty"`
 	PrimaryIPContainsFold *string  `json:"primaryIPContainsFold,omitempty"`
 
+	// "external_ip" field predicates.
+	ExternalIP             *string  `json:"externalIP,omitempty"`
+	ExternalIPNEQ          *string  `json:"externalIPNEQ,omitempty"`
+	ExternalIPIn           []string `json:"externalIPIn,omitempty"`
+	ExternalIPNotIn        []string `json:"externalIPNotIn,omitempty"`
+	ExternalIPGT           *string  `json:"externalIPGT,omitempty"`
+	ExternalIPGTE          *string  `json:"externalIPGTE,omitempty"`
+	ExternalIPLT           *string  `json:"externalIPLT,omitempty"`
+	ExternalIPLTE          *string  `json:"externalIPLTE,omitempty"`
+	ExternalIPContains     *string  `json:"externalIPContains,omitempty"`
+	ExternalIPHasPrefix    *string  `json:"externalIPHasPrefix,omitempty"`
+	ExternalIPHasSuffix    *string  `json:"externalIPHasSuffix,omitempty"`
+	ExternalIPIsNil        bool     `json:"externalIPIsNil,omitempty"`
+	ExternalIPNotNil       bool     `json:"externalIPNotNil,omitempty"`
+	ExternalIPEqualFold    *string  `json:"externalIPEqualFold,omitempty"`
+	ExternalIPContainsFold *string  `json:"externalIPContainsFold,omitempty"`
+
 	// "platform" field predicates.
 	Platform      *c2pb.Host_Platform  `json:"platform,omitempty"`
 	PlatformNEQ   *c2pb.Host_Platform  `json:"platformNEQ,omitempty"`
@@ -1368,6 +1385,51 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	}
 	if i.PrimaryIPContainsFold != nil {
 		predicates = append(predicates, host.PrimaryIPContainsFold(*i.PrimaryIPContainsFold))
+	}
+	if i.ExternalIP != nil {
+		predicates = append(predicates, host.ExternalIPEQ(*i.ExternalIP))
+	}
+	if i.ExternalIPNEQ != nil {
+		predicates = append(predicates, host.ExternalIPNEQ(*i.ExternalIPNEQ))
+	}
+	if len(i.ExternalIPIn) > 0 {
+		predicates = append(predicates, host.ExternalIPIn(i.ExternalIPIn...))
+	}
+	if len(i.ExternalIPNotIn) > 0 {
+		predicates = append(predicates, host.ExternalIPNotIn(i.ExternalIPNotIn...))
+	}
+	if i.ExternalIPGT != nil {
+		predicates = append(predicates, host.ExternalIPGT(*i.ExternalIPGT))
+	}
+	if i.ExternalIPGTE != nil {
+		predicates = append(predicates, host.ExternalIPGTE(*i.ExternalIPGTE))
+	}
+	if i.ExternalIPLT != nil {
+		predicates = append(predicates, host.ExternalIPLT(*i.ExternalIPLT))
+	}
+	if i.ExternalIPLTE != nil {
+		predicates = append(predicates, host.ExternalIPLTE(*i.ExternalIPLTE))
+	}
+	if i.ExternalIPContains != nil {
+		predicates = append(predicates, host.ExternalIPContains(*i.ExternalIPContains))
+	}
+	if i.ExternalIPHasPrefix != nil {
+		predicates = append(predicates, host.ExternalIPHasPrefix(*i.ExternalIPHasPrefix))
+	}
+	if i.ExternalIPHasSuffix != nil {
+		predicates = append(predicates, host.ExternalIPHasSuffix(*i.ExternalIPHasSuffix))
+	}
+	if i.ExternalIPIsNil {
+		predicates = append(predicates, host.ExternalIPIsNil())
+	}
+	if i.ExternalIPNotNil {
+		predicates = append(predicates, host.ExternalIPNotNil())
+	}
+	if i.ExternalIPEqualFold != nil {
+		predicates = append(predicates, host.ExternalIPEqualFold(*i.ExternalIPEqualFold))
+	}
+	if i.ExternalIPContainsFold != nil {
+		predicates = append(predicates, host.ExternalIPContainsFold(*i.ExternalIPContainsFold))
 	}
 	if i.Platform != nil {
 		predicates = append(predicates, host.PlatformEQ(*i.Platform))

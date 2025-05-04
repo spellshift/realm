@@ -3,7 +3,7 @@ package namegen
 import (
 	"crypto/rand"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/big"
 	"time"
 
@@ -822,7 +822,7 @@ func getRandomAdjAdjNoun() (string, string, string) {
 func newRandInt(max int64) int64 {
 	nBig, err := rand.Int(rand.Reader, big.NewInt(max))
 	if err != nil {
-		log.Printf("failed to generate random number: %v", err)
+		slog.Error("failed to generate random number", "err", err, "default_value", 1337%max)
 		return 1337 % max
 	}
 	return nBig.Int64()

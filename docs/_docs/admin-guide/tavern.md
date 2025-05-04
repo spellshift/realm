@@ -104,6 +104,10 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 ## Configuration
 
+### Webserver
+
+By default, Tavern will listen on `0.0.0.0:80`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
+
 ### Metrics
 
 By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
@@ -379,3 +383,24 @@ query PeristenceTomes {
   }
 }
 ```
+
+## CDN HTTP API
+
+### Upload - POST /cdn/upload - AUTHENTICATED
+
+The upload API for the Tavern CDN use forms and the POST method. The parameters are `fileName` and `fileContent`. and the API will return an Ent ID for the file created. A curl example is shown below:
+
+```bash
+[$ /tmp] curl --cookie "auth-session=REDACTED" -F "fileName=test_file" -F "fileContent=@/path/to/file" https://example.com/cdn/upload
+{"data":{"file":{"id":4294967755}}}%
+```
+
+### Playground - GET /cdn/{fileName} - UNAUTHENTICATED
+
+The download API is a simple GET request where the `fileName` provided as part of the upload request(or any `File` Ent) is appended to the path. Additionally the endpoint is unauthenticated so no cookie is required (and easy to use from Imix!). An example of accessing the API via eldritch is below:
+
+```python
+f = http.get(f"https://example.com/cdn/{fileName}", allow_insecure=True)
+```
+
+As these files are stored in the `File` Ent, they can also be accessed via the `asset` eldritch library functions.

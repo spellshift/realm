@@ -1,6 +1,6 @@
 [package]
 name = "imix"
-version = "0.0.5"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -14,19 +14,19 @@ default = []
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
 pb = { workspace = true }
-transport = { workspace = true }
+transport = { workspace = true, features = ["grpc"] }
 host_unique = { workspace = true }
-
 anyhow = { workspace = true }
-env_logger = "0.11.2"
 clap = { workspace = true }
-default-net = { workspace = true }
+netdev = { workspace = true }
 log = { workspace = true }
 os_info = { workspace = true }
 pretty_env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
+pretty_env_logger = { workspace = true }
+
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = "0.6.0"
@@ -34,3 +34,4 @@ windows-service = "0.6.0"
 [dev-dependencies]
 httptest = { workspace = true }
 tempfile = { workspace = true }
+env_logger = "0.11.2"

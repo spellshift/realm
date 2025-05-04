@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -34,6 +35,12 @@ func (Host) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Primary interface IP address reported by the agent."),
+		field.String("external_ip").
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Incoming IP from Proxy. Will return first proxy IP if multiple."),
 		field.Enum("platform").
 			GoType(c2pb.Host_Platform(0)).
 			Annotations(
@@ -81,6 +88,9 @@ func (Host) Annotations() []schema.Annotation {
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 

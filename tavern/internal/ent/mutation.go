@@ -1844,6 +1844,7 @@ type HostMutation struct {
 	identifier         *string
 	name               *string
 	primary_ip         *string
+	external_ip        *string
 	platform           *c2pb.Host_Platform
 	version            *string
 	last_seen_at       *time.Time
@@ -2170,6 +2171,55 @@ func (m *HostMutation) PrimaryIPCleared() bool {
 func (m *HostMutation) ResetPrimaryIP() {
 	m.primary_ip = nil
 	delete(m.clearedFields, host.FieldPrimaryIP)
+}
+
+// SetExternalIP sets the "external_ip" field.
+func (m *HostMutation) SetExternalIP(s string) {
+	m.external_ip = &s
+}
+
+// ExternalIP returns the value of the "external_ip" field in the mutation.
+func (m *HostMutation) ExternalIP() (r string, exists bool) {
+	v := m.external_ip
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExternalIP returns the old "external_ip" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldExternalIP(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExternalIP is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExternalIP requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExternalIP: %w", err)
+	}
+	return oldValue.ExternalIP, nil
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (m *HostMutation) ClearExternalIP() {
+	m.external_ip = nil
+	m.clearedFields[host.FieldExternalIP] = struct{}{}
+}
+
+// ExternalIPCleared returns if the "external_ip" field was cleared in this mutation.
+func (m *HostMutation) ExternalIPCleared() bool {
+	_, ok := m.clearedFields[host.FieldExternalIP]
+	return ok
+}
+
+// ResetExternalIP resets all changes to the "external_ip" field.
+func (m *HostMutation) ResetExternalIP() {
+	m.external_ip = nil
+	delete(m.clearedFields, host.FieldExternalIP)
 }
 
 // SetPlatform sets the "platform" field.
@@ -2610,7 +2660,7 @@ func (m *HostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HostMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, host.FieldCreatedAt)
 	}
@@ -2625,6 +2675,9 @@ func (m *HostMutation) Fields() []string {
 	}
 	if m.primary_ip != nil {
 		fields = append(fields, host.FieldPrimaryIP)
+	}
+	if m.external_ip != nil {
+		fields = append(fields, host.FieldExternalIP)
 	}
 	if m.platform != nil {
 		fields = append(fields, host.FieldPlatform)
@@ -2653,6 +2706,8 @@ func (m *HostMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case host.FieldPrimaryIP:
 		return m.PrimaryIP()
+	case host.FieldExternalIP:
+		return m.ExternalIP()
 	case host.FieldPlatform:
 		return m.Platform()
 	case host.FieldVersion:
@@ -2678,6 +2733,8 @@ func (m *HostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case host.FieldPrimaryIP:
 		return m.OldPrimaryIP(ctx)
+	case host.FieldExternalIP:
+		return m.OldExternalIP(ctx)
 	case host.FieldPlatform:
 		return m.OldPlatform(ctx)
 	case host.FieldVersion:
@@ -2727,6 +2784,13 @@ func (m *HostMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPrimaryIP(v)
+		return nil
+	case host.FieldExternalIP:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExternalIP(v)
 		return nil
 	case host.FieldPlatform:
 		v, ok := value.(c2pb.Host_Platform)
@@ -2785,6 +2849,9 @@ func (m *HostMutation) ClearedFields() []string {
 	if m.FieldCleared(host.FieldPrimaryIP) {
 		fields = append(fields, host.FieldPrimaryIP)
 	}
+	if m.FieldCleared(host.FieldExternalIP) {
+		fields = append(fields, host.FieldExternalIP)
+	}
 	if m.FieldCleared(host.FieldVersion) {
 		fields = append(fields, host.FieldVersion)
 	}
@@ -2810,6 +2877,9 @@ func (m *HostMutation) ClearField(name string) error {
 		return nil
 	case host.FieldPrimaryIP:
 		m.ClearPrimaryIP()
+		return nil
+	case host.FieldExternalIP:
+		m.ClearExternalIP()
 		return nil
 	case host.FieldVersion:
 		m.ClearVersion()
@@ -2839,6 +2909,9 @@ func (m *HostMutation) ResetField(name string) error {
 		return nil
 	case host.FieldPrimaryIP:
 		m.ResetPrimaryIP()
+		return nil
+	case host.FieldExternalIP:
+		m.ResetExternalIP()
 		return nil
 	case host.FieldPlatform:
 		m.ResetPlatform()

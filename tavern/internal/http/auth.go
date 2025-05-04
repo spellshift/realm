@@ -3,7 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -63,7 +63,7 @@ func (authenticator *requestAuthenticator) Authenticate(r *http.Request) (contex
 	if accessToken != "" {
 		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, accessToken)
 		if err != nil {
-			log.Printf("[ERROR] failed to authenticate access token from header: %v", err)
+			slog.ErrorContext(r.Context(), "failed to authenticate access token from header", "err", err)
 			return nil, ErrInvalidAccessToken
 		}
 		return authCtx, nil
@@ -72,7 +72,7 @@ func (authenticator *requestAuthenticator) Authenticate(r *http.Request) (contex
 	// Read SessionToken from auth cookie
 	authCookie, err := r.Cookie(auth.SessionCookieName)
 	if err != nil && err != http.ErrNoCookie {
-		log.Printf("[ERROR] failed to read auth cookie: %v", err)
+		slog.ErrorContext(r.Context(), "failed to read auth cookie", "err", err)
 		return nil, ErrReadingAuthCookie
 	}
 
@@ -84,7 +84,7 @@ func (authenticator *requestAuthenticator) Authenticate(r *http.Request) (contex
 	// Create an authenticated context (if provided cookie is valid)
 	authCtx, err := auth.ContextFromSessionToken(r.Context(), authenticator.graph, authCookie.Value)
 	if err != nil {
-		log.Printf("failed to create session from auth cookie: %v", err)
+		slog.ErrorContext(r.Context(), "failed to create session from auth cookie", "err", err)
 		return nil, ErrInvalidAuthCookie
 	}
 

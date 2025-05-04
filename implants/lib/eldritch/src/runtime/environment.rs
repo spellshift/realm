@@ -7,6 +7,7 @@ use starlark::{
 };
 use std::sync::mpsc::Sender;
 
+#[allow(clippy::needless_lifetimes)]
 #[derive(ProvidesStaticType)]
 pub struct Environment {
     pub(super) id: i64,
@@ -31,6 +32,11 @@ impl Environment {
     pub fn send(&self, msg: impl Into<Message>) -> Result<()> {
         self.tx.send(msg.into())?;
         Ok(())
+    }
+
+    #[cfg(test)]
+    pub fn mock(id: i64, tx: Sender<Message>) -> Self {
+        Self { id, tx }
     }
 }
 

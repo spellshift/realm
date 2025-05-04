@@ -1,5 +1,6 @@
 use super::drain::drain;
 use crate::{
+    agent::AgentLibrary,
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
     file::FileLibrary,
@@ -62,7 +63,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
         log::info!("evaluating tome (task_id={})", id);
 
         // Run Tome
-        match run_impl(&env, &tome) {
+        match Runtime::run(&env, &tome) {
             Ok(_) => {
                 #[cfg(debug_assertions)]
                 log::info!("tome evaluation successful (task_id={})", id);
@@ -118,20 +119,6 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
     }
 }
 
-fn run_impl(env: &Environment, tome: &Tome) -> Result<()> {
-    let ast = Runtime::parse(tome).context("failed to parse tome")?;
-    let module = Runtime::alloc_module(tome).context("failed to allocate module")?;
-    let globals = Runtime::globals();
-    let mut eval: Evaluator = Evaluator::new(&module);
-    eval.extra = Some(env);
-    eval.set_print_handler(env);
-
-    match eval.eval_module(ast, &globals) {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.into_anyhow().context("failed to evaluate tome")),
-    }
-}
-
 /*
  * Eldritch Runtime
  *
@@ -173,6 +160,7 @@ impl Runtime {
             const report: ReportLibrary = ReportLibrary;
             const regex: RegexLibrary = RegexLibrary;
             const http: HTTPLibrary = HTTPLibrary;
+            const agent: AgentLibrary = AgentLibrary;
         }
 
         GlobalsBuilder::extended_by(&[
@@ -193,6 +181,27 @@ impl Runtime {
         .with(eldritch)
         .with(error_handler)
         .build()
+    }
+
+    /*
+     * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module,
+     * then allocate a module for the tome, and finally use the passed Environment
+     * to evaluate the module+AST.
+     */
+    pub fn run(env: &Environment, tome: &Tome) -> Result<()> {
+        let ast = Runtime::parse(tome).context("failed to parse tome")?;
+        let module = Runtime::alloc_module(tome).context("failed to allocate module")?;
+        let globals = Runtime::globals();
+        let mut eval: Evaluator = Evaluator::new(&module);
+        eval.extra = Some(env);
+        eval.set_print_handler(env);
+
+        match eval.eval_module(ast, &globals) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err
+                .into_anyhow()
+                .context("failed to evaluate eldritch script")),
+        }
     }
 
     /*

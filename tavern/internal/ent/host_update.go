@@ -94,6 +94,26 @@ func (hu *HostUpdate) ClearPrimaryIP() *HostUpdate {
 	return hu
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (hu *HostUpdate) SetExternalIP(s string) *HostUpdate {
+	hu.mutation.SetExternalIP(s)
+	return hu
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableExternalIP(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetExternalIP(*s)
+	}
+	return hu
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (hu *HostUpdate) ClearExternalIP() *HostUpdate {
+	hu.mutation.ClearExternalIP()
+	return hu
+}
+
 // SetPlatform sets the "platform" field.
 func (hu *HostUpdate) SetPlatform(cp c2pb.Host_Platform) *HostUpdate {
 	hu.mutation.SetPlatform(cp)
@@ -424,6 +444,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if hu.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
 	}
+	if value, ok := hu.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+	}
+	if hu.mutation.ExternalIPCleared() {
+		_spec.ClearField(host.FieldExternalIP, field.TypeString)
+	}
 	if value, ok := hu.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 	}
@@ -741,6 +767,26 @@ func (huo *HostUpdateOne) SetNillablePrimaryIP(s *string) *HostUpdateOne {
 // ClearPrimaryIP clears the value of the "primary_ip" field.
 func (huo *HostUpdateOne) ClearPrimaryIP() *HostUpdateOne {
 	huo.mutation.ClearPrimaryIP()
+	return huo
+}
+
+// SetExternalIP sets the "external_ip" field.
+func (huo *HostUpdateOne) SetExternalIP(s string) *HostUpdateOne {
+	huo.mutation.SetExternalIP(s)
+	return huo
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableExternalIP(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetExternalIP(*s)
+	}
+	return huo
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (huo *HostUpdateOne) ClearExternalIP() *HostUpdateOne {
+	huo.mutation.ClearExternalIP()
 	return huo
 }
 
@@ -1103,6 +1149,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	}
 	if huo.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
+	}
+	if value, ok := huo.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+	}
+	if huo.mutation.ExternalIPCleared() {
+		_spec.ClearField(host.FieldExternalIP, field.TypeString)
 	}
 	if value, ok := huo.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)

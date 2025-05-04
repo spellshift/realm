@@ -60,6 +60,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "primary_ip", Type: field.TypeString, Nullable: true},
+		{Name: "external_ip", Type: field.TypeString, Nullable: true},
 		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "version", Type: field.TypeString, Nullable: true},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
@@ -112,7 +113,7 @@ var (
 		{Name: "permissions", Type: field.TypeString, Nullable: true},
 		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
-		{Name: "content", Type: field.TypeBytes, Nullable: true},
+		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 		{Name: "host_files", Type: field.TypeInt, Nullable: true},
 		{Name: "host_file_host", Type: field.TypeInt},
 		{Name: "task_reported_files", Type: field.TypeInt},
@@ -485,28 +486,65 @@ var (
 
 func init() {
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
+	BeaconsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	FilesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	HostsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	HostCredentialsTable.ForeignKeys[0].RefTable = HostsTable
 	HostCredentialsTable.ForeignKeys[1].RefTable = TasksTable
+	HostCredentialsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	HostFilesTable.ForeignKeys[0].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[1].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[2].RefTable = TasksTable
+	HostFilesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	HostProcessesTable.ForeignKeys[0].RefTable = HostsTable
 	HostProcessesTable.ForeignKeys[1].RefTable = HostsTable
 	HostProcessesTable.ForeignKeys[2].RefTable = TasksTable
+	HostProcessesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
+	QuestsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	RepositoriesTable.ForeignKeys[0].RefTable = UsersTable
 	RepositoriesTable.Annotation = &entsql.Annotation{
-		Table: "repositories",
+		Table:     "repositories",
+		Collation: "utf8mb4_general_ci",
 	}
 	ShellsTable.ForeignKeys[0].RefTable = TasksTable
 	ShellsTable.ForeignKeys[1].RefTable = BeaconsTable
 	ShellsTable.ForeignKeys[2].RefTable = UsersTable
+	ShellsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	TagsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable
 	TasksTable.ForeignKeys[1].RefTable = BeaconsTable
+	TasksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	TomesTable.ForeignKeys[0].RefTable = UsersTable
 	TomesTable.ForeignKeys[1].RefTable = RepositoriesTable
+	TomesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	UsersTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
