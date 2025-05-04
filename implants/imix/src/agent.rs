@@ -62,6 +62,13 @@ impl<T: Transport + 'static> Agent<T> {
         // Report output from each handle
         let mut idx = 0;
         while idx < self.handles.len() {
+            // Report task output
+            // Moving this before the if even though it double reports.
+            // Seems to resolve an issue with IO blocked and fast tasks
+            // running at the same time.
+            // https://github.com/spellshift/realm/issues/754
+            self.handles[idx].report(&mut tavern).await?;
+
             // Drop any handles that have completed
             if self.handles[idx].is_finished() {
                 let mut handle = self.handles.remove(idx);
@@ -69,8 +76,6 @@ impl<T: Transport + 'static> Agent<T> {
                 continue;
             }
 
-            // Otherwise report and increment
-            self.handles[idx].report(&mut tavern).await?;
             idx += 1;
         }
 

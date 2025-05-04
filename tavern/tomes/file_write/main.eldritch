@@ -6,13 +6,15 @@ def main():
 
     # if file parent directory does not exist, error and exit.
     if not file.exists(new_file_parent_dir):
-        eprint(f"[ERROR] Parent Directory for File does not exist at path: '{new_file_path}'.")
+        eprint(
+            f"[ERROR] Parent Directory for File does not exist at path: '{new_file_path}'.")
         eprint(f"[ERROR] Exiting...")
         return
 
     # if file exists, remove it.
     if file.exists(new_file_path):
-        print("[INFO] File was detected at the path before write. Trying to remove the file...")
+        print(
+            "[INFO] File was detected at the path before write. Trying to remove the file...")
         file.remove(new_file_path)
         print("[INFO] File was successfully removed!")
 
@@ -22,6 +24,5 @@ def main():
     # Print a Success!
     print(f"[INFO] The file '{new_file_path}' was successfully written!")
 
-time.sleep(1)
 
 main()
