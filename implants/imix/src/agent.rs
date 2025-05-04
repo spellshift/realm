@@ -111,7 +111,10 @@ impl<T: Transport + 'static> Agent<T> {
                 }
             };
 
-            let interval = self.cfg.info.clone().unwrap().interval;
+            let interval = match self.cfg.info.clone() {
+                Some(b) => Ok(b.interval),
+                None => Err(anyhow::anyhow!("beacon info is missing from agent")),
+            }?;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),

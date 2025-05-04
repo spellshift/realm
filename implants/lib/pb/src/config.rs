@@ -122,13 +122,19 @@ impl Config {
             .clone()
             .is_some_and(|b| b.host.as_ref().is_some_and(|h| h.primary_ip != fresh_ip))
         {
-            match self.info.clone().unwrap().host.as_mut() {
-                Some(h) => {
-                    h.primary_ip = fresh_ip;
-                }
+            match self.info.clone() {
+                Some(mut b) => match b.host.as_mut() {
+                    Some(h) => {
+                        h.primary_ip = fresh_ip;
+                    }
+                    None => {
+                        #[cfg(debug_assertions)]
+                        log::error!("host struct was never initialized, failed to set primary ip");
+                    }
+                },
                 None => {
                     #[cfg(debug_assertions)]
-                    log::error!("host struct was never initialized, failed to set primary ip");
+                    log::error!("beacon struct was never initialized, failed to set primary ip");
                 }
             }
         }
