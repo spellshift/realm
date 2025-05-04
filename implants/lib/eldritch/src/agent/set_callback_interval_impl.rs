@@ -1,17 +1,17 @@
-use crate::runtime::{
-    messages::{AsyncMessage, ReportFileMessage},
-    Environment,
-};
+use crate::runtime::{messages::SetCallbackIntervalMessage, messages::SyncMessage, Environment};
 use anyhow::Result;
 
-pub fn file(env: &Environment, path: String) -> Result<()> {
-    env.send(AsyncMessage::from(ReportFileMessage { id: env.id(), path }))?;
+pub fn set_callback_interval(env: &Environment, new_interval: u64) -> Result<()> {
+    env.send(SyncMessage::from(SetCallbackIntervalMessage {
+        id: env.id(),
+        new_interval,
+    }))?;
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::{messages::AsyncMessage, Message};
+    use crate::runtime::{messages::SyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
 
@@ -29,9 +29,8 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::Async(AsyncMessage::ReportFile(m)) = msg {
-                        assert_eq!(tc.id, m.id);
-                        assert_eq!(tc.want_path, m.path);
+                    if let Message::Sync(SyncMessage::SetCallbackInterval(m)) = msg {
+                        assert_eq!(tc.new_interval, m.new_interval);
                         found = true;
                     }
                 }
@@ -44,18 +43,18 @@ mod test {
     struct TestCase {
         pub id: i64,
         pub tome: Tome,
-        pub want_path: String,
+        pub new_interval: u64,
     }
 
     test_cases! {
-            one_file: TestCase{
+            change_interval: TestCase{
                 id: 123,
                 tome: Tome{
-                    eldritch: String::from(r#"report.file(path="/etc/passwd")"#),
+                    eldritch: String::from(r#"agent.set_callback_interval(10)"#),
                     parameters: HashMap::new(),
                     file_names: Vec::new(),
                 },
-                want_path: String::from("/etc/passwd"),
+                new_interval: 10,
             },
     }
 }
