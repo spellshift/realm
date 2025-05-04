@@ -21,10 +21,12 @@ impl Registry {
         self
     }
 
+    #[cfg(target_os = "windows")]
     fn key_path(&self) -> &str {
         self.subkey.as_deref().unwrap_or("SOFTWARE\\Imix")
     }
 
+    #[cfg(target_os = "windows")]
     fn val_name(&self) -> &str {
         self.value_name.as_deref().unwrap_or("system-id")
     }
