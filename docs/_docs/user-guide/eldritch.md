@@ -83,6 +83,7 @@ write_systemd_service()
 
 The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
+- `agent` - Used for meta-style interactions with the agent itself.
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
