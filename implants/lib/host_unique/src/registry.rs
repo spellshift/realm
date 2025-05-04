@@ -95,11 +95,13 @@ impl HostIDSelector for Registry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use winreg::enums::HKEY_LOCAL_MACHINE;
-    use winreg::RegKey;
 
+    #[cfg(target_os = "windows")]
     #[test]
     fn test_registry() {
+        use winreg::enums::HKEY_LOCAL_MACHINE;
+        use winreg::RegKey;
+
         let selector = Registry::default();
         let id_one = selector.get_host_id();
         let id_two = selector.get_host_id();
@@ -110,5 +112,13 @@ mod tests {
 
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let _ = hklm.delete_subkey_all(selector.key_path());
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn test_registry_non_windows() {
+        let selector = Registry::default();
+        // on non‑Windows we expect registry lookup to be None
+        assert!(selector.get_host_id().is_none());
     }
 }
