@@ -5,6 +5,5 @@ def get_env():
 
     return
 
-time.sleep(1)
 
 get_env()

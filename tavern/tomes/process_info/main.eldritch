@@ -6,12 +6,12 @@ def process_info(pid):
             for nested_value in value.split(" "):
                 print("\t- {}".format(nested_value))
         elif key == "environ":
-             print("env_variables=")
-             for nested_value in value.split(","):
+            print("env_variables=")
+            for nested_value in value.split(","):
                 print("\t- {}".format(nested_value))
         else:
             print("{}={}".format(key, value))
 
-time.sleep(1)
+
 process_info(int(input_params['pid']))
 print("")
