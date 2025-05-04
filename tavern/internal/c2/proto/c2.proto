@@ -41,6 +41,7 @@ message Host {
 
     Platform platform = 3;
     string primary_ip = 4;
+    string version = 5;
 }
 
 

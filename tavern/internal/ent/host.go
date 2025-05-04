@@ -32,6 +32,8 @@ type Host struct {
 	ExternalIP string `json:"external_ip,omitempty"`
 	// Platform the agent is operating on.
 	Platform c2pb.Host_Platform `json:"platform,omitempty"`
+	// Operating System Version/Distribution the agent is operating on.
+	Version string `json:"version,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the host.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -119,7 +121,7 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case host.FieldID:
 			values[i] = new(sql.NullInt64)
-		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldExternalIP:
+		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldExternalIP, host.FieldVersion:
 			values[i] = new(sql.NullString)
 		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -185,6 +187,12 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field platform", values[i])
 			} else if value != nil {
 				h.Platform = *value
+			}
+		case host.FieldVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				h.Version = value.String
 			}
 		case host.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -273,6 +281,9 @@ func (h *Host) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("platform=")
 	builder.WriteString(fmt.Sprintf("%v", h.Platform))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(h.Version)
 	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
 	builder.WriteString(h.LastSeenAt.Format(time.ANSIC))

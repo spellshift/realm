@@ -34,6 +34,8 @@ pub struct Host {
     pub platform: i32,
     #[prost(string, tag = "4")]
     pub primary_ip: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub version: ::prost::alloc::string::String,
 }
 /// Nested message and enum types in `Host`.
 pub mod host {

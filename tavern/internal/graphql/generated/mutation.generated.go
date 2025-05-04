@@ -906,6 +906,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
 				return ec.fieldContext_Host_platform(ctx, field)
+			case "version":
+				return ec.fieldContext_Host_version(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Host_lastSeenAt(ctx, field)
 			case "tags":
