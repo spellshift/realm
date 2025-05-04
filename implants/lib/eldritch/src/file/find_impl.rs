@@ -168,9 +168,9 @@ pub fn find(
 #[cfg(test)]
 mod tests {
 
+    use std::collections::HashMap;
     #[cfg(unix)]
-    use std::os::unix::fs::PermissionsExt;
-    use std::{collections::HashMap, fs::Permissions};
+    use std::{fs::Permissions, os::unix::fs::PermissionsExt};
 
     use crate::runtime::Message;
     use pb::eldritch::Tome;
