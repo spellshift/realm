@@ -29,6 +29,8 @@ const (
 	FieldPrimaryIP = "primary_ip"
 	// FieldPlatform holds the string denoting the platform field in the database.
 	FieldPlatform = "platform"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
@@ -87,6 +89,7 @@ var Columns = []string{
 	FieldName,
 	FieldPrimaryIP,
 	FieldPlatform,
+	FieldVersion,
 	FieldLastSeenAt,
 }
 
@@ -117,6 +120,8 @@ var (
 	IdentifierValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	VersionValidator func(string) error
 )
 
 // PlatformValidator is a validator for the "platform" field enum values. It is called by the builders before save.
@@ -165,6 +170,11 @@ func ByPrimaryIP(opts ...sql.OrderTermOption) OrderOption {
 // ByPlatform orders the results by the platform field.
 func ByPlatform(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlatform, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByLastSeenAt orders the results by the last_seen_at field.

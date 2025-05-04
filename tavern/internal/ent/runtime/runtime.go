@@ -114,6 +114,10 @@ func init() {
 	hostDescName := hostFields[1].Descriptor()
 	// host.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	host.NameValidator = hostDescName.Validators[0].(func(string) error)
+	// hostDescVersion is the schema descriptor for version field.
+	hostDescVersion := hostFields[4].Descriptor()
+	// host.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	host.VersionValidator = hostDescVersion.Validators[0].(func(string) error)
 	hostcredentialMixin := schema.HostCredential{}.Mixin()
 	hostcredentialMixinFields0 := hostcredentialMixin[0].Fields()
 	_ = hostcredentialMixinFields0

@@ -515,6 +515,10 @@ type Host implements Node {
   """
   platform: HostPlatform!
   """
+  Operating System Version/Distribution the agent is operating on.
+  """
+  version: String
+  """
   Timestamp of when a task was last claimed or updated for the host.
   """
   lastSeenAt: Time
@@ -1319,6 +1323,24 @@ input HostWhereInput {
   platformNEQ: HostPlatform
   platformIn: [HostPlatform!]
   platformNotIn: [HostPlatform!]
+  """
+  version field predicates
+  """
+  version: String
+  versionNEQ: String
+  versionIn: [String!]
+  versionNotIn: [String!]
+  versionGT: String
+  versionGTE: String
+  versionLT: String
+  versionLTE: String
+  versionContains: String
+  versionHasPrefix: String
+  versionHasSuffix: String
+  versionIsNil: Boolean
+  versionNotNil: Boolean
+  versionEqualFold: String
+  versionContainsFold: String
   """
   last_seen_at field predicates
   """

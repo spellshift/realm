@@ -1047,6 +1047,23 @@ type HostWhereInput struct {
 	PlatformIn    []c2pb.Host_Platform `json:"platformIn,omitempty"`
 	PlatformNotIn []c2pb.Host_Platform `json:"platformNotIn,omitempty"`
 
+	// "version" field predicates.
+	Version             *string  `json:"version,omitempty"`
+	VersionNEQ          *string  `json:"versionNEQ,omitempty"`
+	VersionIn           []string `json:"versionIn,omitempty"`
+	VersionNotIn        []string `json:"versionNotIn,omitempty"`
+	VersionGT           *string  `json:"versionGT,omitempty"`
+	VersionGTE          *string  `json:"versionGTE,omitempty"`
+	VersionLT           *string  `json:"versionLT,omitempty"`
+	VersionLTE          *string  `json:"versionLTE,omitempty"`
+	VersionContains     *string  `json:"versionContains,omitempty"`
+	VersionHasPrefix    *string  `json:"versionHasPrefix,omitempty"`
+	VersionHasSuffix    *string  `json:"versionHasSuffix,omitempty"`
+	VersionIsNil        bool     `json:"versionIsNil,omitempty"`
+	VersionNotNil       bool     `json:"versionNotNil,omitempty"`
+	VersionEqualFold    *string  `json:"versionEqualFold,omitempty"`
+	VersionContainsFold *string  `json:"versionContainsFold,omitempty"`
+
 	// "last_seen_at" field predicates.
 	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`
 	LastSeenAtNEQ    *time.Time  `json:"lastSeenAtNEQ,omitempty"`
@@ -1363,6 +1380,51 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	}
 	if len(i.PlatformNotIn) > 0 {
 		predicates = append(predicates, host.PlatformNotIn(i.PlatformNotIn...))
+	}
+	if i.Version != nil {
+		predicates = append(predicates, host.VersionEQ(*i.Version))
+	}
+	if i.VersionNEQ != nil {
+		predicates = append(predicates, host.VersionNEQ(*i.VersionNEQ))
+	}
+	if len(i.VersionIn) > 0 {
+		predicates = append(predicates, host.VersionIn(i.VersionIn...))
+	}
+	if len(i.VersionNotIn) > 0 {
+		predicates = append(predicates, host.VersionNotIn(i.VersionNotIn...))
+	}
+	if i.VersionGT != nil {
+		predicates = append(predicates, host.VersionGT(*i.VersionGT))
+	}
+	if i.VersionGTE != nil {
+		predicates = append(predicates, host.VersionGTE(*i.VersionGTE))
+	}
+	if i.VersionLT != nil {
+		predicates = append(predicates, host.VersionLT(*i.VersionLT))
+	}
+	if i.VersionLTE != nil {
+		predicates = append(predicates, host.VersionLTE(*i.VersionLTE))
+	}
+	if i.VersionContains != nil {
+		predicates = append(predicates, host.VersionContains(*i.VersionContains))
+	}
+	if i.VersionHasPrefix != nil {
+		predicates = append(predicates, host.VersionHasPrefix(*i.VersionHasPrefix))
+	}
+	if i.VersionHasSuffix != nil {
+		predicates = append(predicates, host.VersionHasSuffix(*i.VersionHasSuffix))
+	}
+	if i.VersionIsNil {
+		predicates = append(predicates, host.VersionIsNil())
+	}
+	if i.VersionNotNil {
+		predicates = append(predicates, host.VersionNotNil())
+	}
+	if i.VersionEqualFold != nil {
+		predicates = append(predicates, host.VersionEqualFold(*i.VersionEqualFold))
+	}
+	if i.VersionContainsFold != nil {
+		predicates = append(predicates, host.VersionContainsFold(*i.VersionContainsFold))
 	}
 	if i.LastSeenAt != nil {
 		predicates = append(predicates, host.LastSeenAtEQ(*i.LastSeenAt))

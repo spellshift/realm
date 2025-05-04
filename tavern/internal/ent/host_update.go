@@ -108,6 +108,26 @@ func (hu *HostUpdate) SetNillablePlatform(cp *c2pb.Host_Platform) *HostUpdate {
 	return hu
 }
 
+// SetVersion sets the "version" field.
+func (hu *HostUpdate) SetVersion(s string) *HostUpdate {
+	hu.mutation.SetVersion(s)
+	return hu
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableVersion(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetVersion(*s)
+	}
+	return hu
+}
+
+// ClearVersion clears the value of the "version" field.
+func (hu *HostUpdate) ClearVersion() *HostUpdate {
+	hu.mutation.ClearVersion()
+	return hu
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (hu *HostUpdate) SetLastSeenAt(t time.Time) *HostUpdate {
 	hu.mutation.SetLastSeenAt(t)
@@ -366,6 +386,11 @@ func (hu *HostUpdate) check() error {
 			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "Host.platform": %w`, err)}
 		}
 	}
+	if v, ok := hu.mutation.Version(); ok {
+		if err := host.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Host.version": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -401,6 +426,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := hu.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
+	}
+	if value, ok := hu.mutation.Version(); ok {
+		_spec.SetField(host.FieldVersion, field.TypeString, value)
+	}
+	if hu.mutation.VersionCleared() {
+		_spec.ClearField(host.FieldVersion, field.TypeString)
 	}
 	if value, ok := hu.mutation.LastSeenAt(); ok {
 		_spec.SetField(host.FieldLastSeenAt, field.TypeTime, value)
@@ -727,6 +758,26 @@ func (huo *HostUpdateOne) SetNillablePlatform(cp *c2pb.Host_Platform) *HostUpdat
 	return huo
 }
 
+// SetVersion sets the "version" field.
+func (huo *HostUpdateOne) SetVersion(s string) *HostUpdateOne {
+	huo.mutation.SetVersion(s)
+	return huo
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableVersion(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetVersion(*s)
+	}
+	return huo
+}
+
+// ClearVersion clears the value of the "version" field.
+func (huo *HostUpdateOne) ClearVersion() *HostUpdateOne {
+	huo.mutation.ClearVersion()
+	return huo
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (huo *HostUpdateOne) SetLastSeenAt(t time.Time) *HostUpdateOne {
 	huo.mutation.SetLastSeenAt(t)
@@ -998,6 +1049,11 @@ func (huo *HostUpdateOne) check() error {
 			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "Host.platform": %w`, err)}
 		}
 	}
+	if v, ok := huo.mutation.Version(); ok {
+		if err := host.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Host.version": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1050,6 +1106,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	}
 	if value, ok := huo.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
+	}
+	if value, ok := huo.mutation.Version(); ok {
+		_spec.SetField(host.FieldVersion, field.TypeString, value)
+	}
+	if huo.mutation.VersionCleared() {
+		_spec.ClearField(host.FieldVersion, field.TypeString)
 	}
 	if value, ok := huo.mutation.LastSeenAt(); ok {
 		_spec.SetField(host.FieldLastSeenAt, field.TypeTime, value)

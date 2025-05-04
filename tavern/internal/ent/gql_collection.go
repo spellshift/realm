@@ -500,6 +500,11 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				selectedFields = append(selectedFields, host.FieldPlatform)
 				fieldSeen[host.FieldPlatform] = struct{}{}
 			}
+		case "version":
+			if _, ok := fieldSeen[host.FieldVersion]; !ok {
+				selectedFields = append(selectedFields, host.FieldVersion)
+				fieldSeen[host.FieldVersion] = struct{}{}
+			}
 		case "lastSeenAt":
 			if _, ok := fieldSeen[host.FieldLastSeenAt]; !ok {
 				selectedFields = append(selectedFields, host.FieldLastSeenAt)

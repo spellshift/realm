@@ -83,6 +83,7 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int) int
 		Tags           func(childComplexity int) int
+		Version        func(childComplexity int) int
 	}
 
 	HostCredential struct {
@@ -545,6 +546,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Tags(childComplexity), true
+
+	case "Host.version":
+		if e.complexity.Host.Version == nil {
+			break
+		}
+
+		return e.complexity.Host.Version(childComplexity), true
 
 	case "HostCredential.createdAt":
 		if e.complexity.HostCredential.CreatedAt == nil {
@@ -2375,6 +2383,10 @@ type Host implements Node {
   """
   platform: HostPlatform!
   """
+  Operating System Version/Distribution the agent is operating on.
+  """
+  version: String
+  """
   Timestamp of when a task was last claimed or updated for the host.
   """
   lastSeenAt: Time
@@ -3179,6 +3191,24 @@ input HostWhereInput {
   platformNEQ: HostPlatform
   platformIn: [HostPlatform!]
   platformNotIn: [HostPlatform!]
+  """
+  version field predicates
+  """
+  version: String
+  versionNEQ: String
+  versionIn: [String!]
+  versionNotIn: [String!]
+  versionGT: String
+  versionGTE: String
+  versionLT: String
+  versionLTE: String
+  versionContains: String
+  versionHasPrefix: String
+  versionHasSuffix: String
+  versionIsNil: Boolean
+  versionNotNil: Boolean
+  versionEqualFold: String
+  versionContainsFold: String
   """
   last_seen_at field predicates
   """

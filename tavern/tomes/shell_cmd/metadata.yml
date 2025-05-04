@@ -1,5 +1,5 @@
 name: Shell command
-description: Execute a shell command in the systems default shell.
+description: Execute a shell command in the systems default shell. Uses bash on Linux/Mac, sh on other Unix, and cmd.exe on Windows.
 author: hulto
 support_model: FIRST_PARTY
 tactic: EXECUTION

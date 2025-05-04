@@ -40,6 +40,13 @@ func (Host) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Platform the agent is operating on."),
+		field.String("version").
+			Optional().
+			NotEmpty().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Operating System Version/Distribution the agent is operating on."),
 		field.Time("last_seen_at").
 			Optional().
 			Annotations(

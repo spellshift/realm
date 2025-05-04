@@ -96,6 +96,20 @@ func (hc *HostCreate) SetPlatform(cp c2pb.Host_Platform) *HostCreate {
 	return hc
 }
 
+// SetVersion sets the "version" field.
+func (hc *HostCreate) SetVersion(s string) *HostCreate {
+	hc.mutation.SetVersion(s)
+	return hc
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (hc *HostCreate) SetNillableVersion(s *string) *HostCreate {
+	if s != nil {
+		hc.SetVersion(*s)
+	}
+	return hc
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (hc *HostCreate) SetLastSeenAt(t time.Time) *HostCreate {
 	hc.mutation.SetLastSeenAt(t)
@@ -259,6 +273,11 @@ func (hc *HostCreate) check() error {
 			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "Host.platform": %w`, err)}
 		}
 	}
+	if v, ok := hc.mutation.Version(); ok {
+		if err := host.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Host.version": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -309,6 +328,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 	if value, ok := hc.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 		_node.Platform = value
+	}
+	if value, ok := hc.mutation.Version(); ok {
+		_spec.SetField(host.FieldVersion, field.TypeString, value)
+		_node.Version = value
 	}
 	if value, ok := hc.mutation.LastSeenAt(); ok {
 		_spec.SetField(host.FieldLastSeenAt, field.TypeTime, value)
@@ -518,6 +541,24 @@ func (u *HostUpsert) UpdatePlatform() *HostUpsert {
 	return u
 }
 
+// SetVersion sets the "version" field.
+func (u *HostUpsert) SetVersion(v string) *HostUpsert {
+	u.Set(host.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *HostUpsert) UpdateVersion() *HostUpsert {
+	u.SetExcluded(host.FieldVersion)
+	return u
+}
+
+// ClearVersion clears the value of the "version" field.
+func (u *HostUpsert) ClearVersion() *HostUpsert {
+	u.SetNull(host.FieldVersion)
+	return u
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (u *HostUpsert) SetLastSeenAt(v time.Time) *HostUpsert {
 	u.Set(host.FieldLastSeenAt, v)
@@ -662,6 +703,27 @@ func (u *HostUpsertOne) SetPlatform(v c2pb.Host_Platform) *HostUpsertOne {
 func (u *HostUpsertOne) UpdatePlatform() *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.UpdatePlatform()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *HostUpsertOne) SetVersion(v string) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateVersion() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateVersion()
+	})
+}
+
+// ClearVersion clears the value of the "version" field.
+func (u *HostUpsertOne) ClearVersion() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearVersion()
 	})
 }
 
@@ -978,6 +1040,27 @@ func (u *HostUpsertBulk) SetPlatform(v c2pb.Host_Platform) *HostUpsertBulk {
 func (u *HostUpsertBulk) UpdatePlatform() *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.UpdatePlatform()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *HostUpsertBulk) SetVersion(v string) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateVersion() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateVersion()
+	})
+}
+
+// ClearVersion clears the value of the "version" field.
+func (u *HostUpsertBulk) ClearVersion() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearVersion()
 	})
 }
 

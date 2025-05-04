@@ -81,6 +81,11 @@ func PrimaryIP(v string) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldPrimaryIP, v))
 }
 
+// Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
+func Version(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldVersion, v))
+}
+
 // LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldLastSeenAt, v))
@@ -399,6 +404,81 @@ func PlatformIn(vs ...c2pb.Host_Platform) predicate.Host {
 // PlatformNotIn applies the NotIn predicate on the "platform" field.
 func PlatformNotIn(vs ...c2pb.Host_Platform) predicate.Host {
 	return predicate.Host(sql.FieldNotIn(FieldPlatform, vs...))
+}
+
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldNotIn(FieldVersion, vs...))
+}
+
+// VersionGT applies the GT predicate on the "version" field.
+func VersionGT(v string) predicate.Host {
+	return predicate.Host(sql.FieldGT(FieldVersion, v))
+}
+
+// VersionGTE applies the GTE predicate on the "version" field.
+func VersionGTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldGTE(FieldVersion, v))
+}
+
+// VersionLT applies the LT predicate on the "version" field.
+func VersionLT(v string) predicate.Host {
+	return predicate.Host(sql.FieldLT(FieldVersion, v))
+}
+
+// VersionLTE applies the LTE predicate on the "version" field.
+func VersionLTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldLTE(FieldVersion, v))
+}
+
+// VersionContains applies the Contains predicate on the "version" field.
+func VersionContains(v string) predicate.Host {
+	return predicate.Host(sql.FieldContains(FieldVersion, v))
+}
+
+// VersionHasPrefix applies the HasPrefix predicate on the "version" field.
+func VersionHasPrefix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasPrefix(FieldVersion, v))
+}
+
+// VersionHasSuffix applies the HasSuffix predicate on the "version" field.
+func VersionHasSuffix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasSuffix(FieldVersion, v))
+}
+
+// VersionIsNil applies the IsNil predicate on the "version" field.
+func VersionIsNil() predicate.Host {
+	return predicate.Host(sql.FieldIsNull(FieldVersion))
+}
+
+// VersionNotNil applies the NotNil predicate on the "version" field.
+func VersionNotNil() predicate.Host {
+	return predicate.Host(sql.FieldNotNull(FieldVersion))
+}
+
+// VersionEqualFold applies the EqualFold predicate on the "version" field.
+func VersionEqualFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldEqualFold(FieldVersion, v))
+}
+
+// VersionContainsFold applies the ContainsFold predicate on the "version" field.
+func VersionContainsFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldContainsFold(FieldVersion, v))
 }
 
 // LastSeenAtEQ applies the EQ predicate on the "last_seen_at" field.

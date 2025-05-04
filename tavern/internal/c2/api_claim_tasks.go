@@ -65,6 +65,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetIdentifier(req.Beacon.Host.Identifier).
 		SetName(req.Beacon.Host.Name).
 		SetPlatform(req.Beacon.Host.Platform).
+		SetVersion(req.Beacon.Host.Version).
 		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetLastSeenAt(now).
 		OnConflict().

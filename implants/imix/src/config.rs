@@ -1,6 +1,7 @@
 use crate::version::VERSION;
 use pb::c2::host::Platform;
 use uuid::Uuid;
+use os_info::{self, Version};
 
 macro_rules! callback_uri {
     () => {
@@ -79,6 +80,7 @@ impl Default for Config {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
             identifier: host_unique::get_id_with_selectors(selectors).to_string(),
             platform: get_host_platform() as i32,
+            version: get_system_version(),
             primary_ip: get_primary_ip(),
         };
 
@@ -221,5 +223,23 @@ fn get_primary_ip() -> String {
 
             String::from("")
         }
+    }
+}
+
+fn get_system_version() -> String {
+    let info = os_info::get();
+    let version = match info.version() {
+        Version::Unknown => "Unknown".to_string(),
+        Version::Semantic(a, b, c) => format!("{}.{}.{}", a, b, c),
+        Version::Rolling(Some(val)) => val.to_string(),
+        Version::Rolling(None) => "Unknown".to_string(),
+        Version::Custom(val) => val.to_string()
+    };
+    match get_host_platform() {
+        Platform::Linux => format!("{} {}", info.os_type(), version),
+        Platform::Macos => version,
+        Platform::Bsd => format!("{} {}", info.os_type(), version),
+        Platform::Windows => version,
+        Platform::Unspecified => format!("{} {}", info.os_type(), version),
     }
 }

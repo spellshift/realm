@@ -1845,6 +1845,7 @@ type HostMutation struct {
 	name               *string
 	primary_ip         *string
 	platform           *c2pb.Host_Platform
+	version            *string
 	last_seen_at       *time.Time
 	clearedFields      map[string]struct{}
 	tags               map[int]struct{}
@@ -2207,6 +2208,55 @@ func (m *HostMutation) ResetPlatform() {
 	m.platform = nil
 }
 
+// SetVersion sets the "version" field.
+func (m *HostMutation) SetVersion(s string) {
+	m.version = &s
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *HostMutation) Version() (r string, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldVersion(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ClearVersion clears the value of the "version" field.
+func (m *HostMutation) ClearVersion() {
+	m.version = nil
+	m.clearedFields[host.FieldVersion] = struct{}{}
+}
+
+// VersionCleared returns if the "version" field was cleared in this mutation.
+func (m *HostMutation) VersionCleared() bool {
+	_, ok := m.clearedFields[host.FieldVersion]
+	return ok
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *HostMutation) ResetVersion() {
+	m.version = nil
+	delete(m.clearedFields, host.FieldVersion)
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (m *HostMutation) SetLastSeenAt(t time.Time) {
 	m.last_seen_at = &t
@@ -2560,7 +2610,7 @@ func (m *HostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HostMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, host.FieldCreatedAt)
 	}
@@ -2578,6 +2628,9 @@ func (m *HostMutation) Fields() []string {
 	}
 	if m.platform != nil {
 		fields = append(fields, host.FieldPlatform)
+	}
+	if m.version != nil {
+		fields = append(fields, host.FieldVersion)
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, host.FieldLastSeenAt)
@@ -2602,6 +2655,8 @@ func (m *HostMutation) Field(name string) (ent.Value, bool) {
 		return m.PrimaryIP()
 	case host.FieldPlatform:
 		return m.Platform()
+	case host.FieldVersion:
+		return m.Version()
 	case host.FieldLastSeenAt:
 		return m.LastSeenAt()
 	}
@@ -2625,6 +2680,8 @@ func (m *HostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPrimaryIP(ctx)
 	case host.FieldPlatform:
 		return m.OldPlatform(ctx)
+	case host.FieldVersion:
+		return m.OldVersion(ctx)
 	case host.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
 	}
@@ -2678,6 +2735,13 @@ func (m *HostMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPlatform(v)
 		return nil
+	case host.FieldVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	case host.FieldLastSeenAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -2721,6 +2785,9 @@ func (m *HostMutation) ClearedFields() []string {
 	if m.FieldCleared(host.FieldPrimaryIP) {
 		fields = append(fields, host.FieldPrimaryIP)
 	}
+	if m.FieldCleared(host.FieldVersion) {
+		fields = append(fields, host.FieldVersion)
+	}
 	if m.FieldCleared(host.FieldLastSeenAt) {
 		fields = append(fields, host.FieldLastSeenAt)
 	}
@@ -2743,6 +2810,9 @@ func (m *HostMutation) ClearField(name string) error {
 		return nil
 	case host.FieldPrimaryIP:
 		m.ClearPrimaryIP()
+		return nil
+	case host.FieldVersion:
+		m.ClearVersion()
 		return nil
 	case host.FieldLastSeenAt:
 		m.ClearLastSeenAt()
@@ -2772,6 +2842,9 @@ func (m *HostMutation) ResetField(name string) error {
 		return nil
 	case host.FieldPlatform:
 		m.ResetPlatform()
+		return nil
+	case host.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case host.FieldLastSeenAt:
 		m.ResetLastSeenAt()
