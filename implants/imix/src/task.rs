@@ -1,5 +1,5 @@
 use anyhow::Result;
-use eldritch::runtime::messages::Dispatcher;
+use eldritch::runtime::{messages::Dispatcher, Message};
 use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
 
@@ -41,8 +41,9 @@ impl TaskHandle {
         &mut self,
         tavern: &mut (impl Transport + 'static),
         cfg: Config,
-    ) -> Result<()> {
+    ) -> Result<Config> {
         let messages = self.runtime.collect();
+        let mut ret_cfg = cfg.clone();
         for msg in messages {
             // Copy values for logging
             let id = self.id;
@@ -51,6 +52,12 @@ impl TaskHandle {
             // Each message is dispatched in it's own tokio task, managed by this task handle's pool.
             let mut t = tavern.clone();
             let c = cfg.clone();
+
+            // Handle agent messages separately from async pool
+            if let Message::SetCallbackInterval(m) = msg.clone() {
+                ret_cfg = m.refresh_config(ret_cfg)?
+            }
+
             self.pool.spawn(async move {
                 match msg.dispatch(&mut t, c).await {
                     Ok(_) => {
@@ -93,6 +100,6 @@ impl TaskHandle {
                 }
             });
         }
-        Ok(())
+        Ok(ret_cfg)
     }
 }

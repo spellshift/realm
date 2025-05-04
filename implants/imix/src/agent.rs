@@ -65,12 +65,12 @@ impl<T: Transport + 'static> Agent<T> {
             // Drop any handles that have completed
             if self.handles[idx].is_finished() {
                 let mut handle = self.handles.remove(idx);
-                handle.report(&mut tavern, self.cfg.clone()).await?;
+                self.cfg = handle.report(&mut tavern, self.cfg.clone()).await?;
                 continue;
             }
 
             // Otherwise report and increment
-            self.handles[idx]
+            self.cfg = self.handles[idx]
                 .report(&mut tavern, self.cfg.clone())
                 .await?;
             idx += 1;

@@ -9,6 +9,7 @@ mod report_process_list;
 mod report_start;
 mod report_text;
 mod reverse_shell_pty;
+mod set_callback_interval;
 
 pub use fetch_asset::FetchAssetMessage;
 pub use pb::config::Config;
@@ -21,6 +22,7 @@ pub use report_process_list::ReportProcessListMessage;
 pub use report_start::ReportStartMessage;
 pub use report_text::ReportTextMessage;
 pub use reverse_shell_pty::ReverseShellPTYMessage;
+pub use set_callback_interval::SetCallbackIntervalMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
@@ -74,6 +76,9 @@ pub enum Message {
 
     #[display(fmt = "ReverseShellPTY")]
     ReverseShellPTY(ReverseShellPTYMessage),
+
+    #[display(fmt = "SetCallbackInterval")]
+    SetCallbackInterval(SetCallbackIntervalMessage),
 }
 
 // The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
@@ -95,6 +100,8 @@ impl Dispatcher for Message {
 
             Self::ReportStart(msg) => msg.dispatch(transport, cfg).await,
             Self::ReportFinish(msg) => msg.dispatch(transport, cfg).await,
+
+            Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg).await,
         }
     }
 }
