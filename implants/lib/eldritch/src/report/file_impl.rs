@@ -30,9 +30,9 @@ mod test {
                 let mut found = false;
                 for msg in runtime.messages() {
                     if let Message::Async(AsyncMessage::ReportFile(m)) = msg {
-                            assert_eq!(tc.id, m.id);
-                            assert_eq!(tc.want_path, m.path);
-                            found = true;
+                        assert_eq!(tc.id, m.id);
+                        assert_eq!(tc.want_path, m.path);
+                        found = true;
                     }
                 }
                 assert!(found);
