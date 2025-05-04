@@ -1,7 +1,8 @@
+use crate::runtime::eprint_impl::eprint;
+use crate::runtime::Environment;
 use anyhow::{anyhow, Result};
 use starlark::eval::Evaluator;
 use std::fs::{canonicalize, DirEntry};
-use crate::runtime::{messages::ReportErrorMessage, Environment};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::{path::Path, time::UNIX_EPOCH};
@@ -37,7 +38,7 @@ fn check_path(
         let metadata = path.metadata()?.permissions();
         #[cfg(unix)]
         {
-            if metadata.mode() & 0o777 != (permissions as u32) {
+            if metadata.mode() & 0o7777 != (permissions as u32) {
                 return Ok(false);
             }
         }
@@ -76,8 +77,8 @@ fn check_path(
     Ok(true)
 }
 
-fn search_dir<'v>(
-    starlark_eval: &mut Evaluator<'v, '_>,
+fn search_dir(
+    starlark_eval: &mut Evaluator<'_, '_>,
     path: &str,
     name: Option<String>,
     file_type: Option<String>,
@@ -94,9 +95,9 @@ fn search_dir<'v>(
     let entries = match res.read_dir() {
         Ok(res) => res,
         Err(err) => {
-            env.send(ReportErrorMessage { id: env.id(), error: format!("Failed to read directory {}: {}\n", path, err) })?;
+            eprint(env, format!("Failed to read directory {}: {}\n", path, err))?;
             return Ok(out);
-        },
+        }
     };
     for entry in entries {
         let entry: DirEntry = entry?;
@@ -125,20 +126,20 @@ fn search_dir<'v>(
                 .to_str()
                 .ok_or(anyhow!("Failed to convert path to str"))?
                 .to_owned();
-            out.push(
-                if cfg!(windows) {
-                    out_str.trim_start_matches(['\\', '?']).replace("\\\\", "\\")
-                } else {
-                    out_str
-                }
-            );
+            out.push(if cfg!(windows) {
+                out_str
+                    .trim_start_matches(['\\', '?'])
+                    .replace("\\\\", "\\")
+            } else {
+                out_str
+            });
         }
     }
     Ok(out)
 }
 
-pub fn find<'v>(
-    starlark_eval: &mut Evaluator<'v, '_>,
+pub fn find(
+    starlark_eval: &mut Evaluator<'_, '_>,
     path: String,
     name: Option<String>,
     file_type: Option<String>,
@@ -167,13 +168,13 @@ pub fn find<'v>(
 #[cfg(test)]
 mod tests {
 
-    use std::{collections::HashMap, fs::Permissions};
     #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
+    use std::{collections::HashMap, fs::Permissions};
 
-    use tempfile::TempDir;
-    use pb::eldritch::Tome;
     use crate::runtime::Message;
+    use pb::eldritch::Tome;
+    use tempfile::TempDir;
 
     #[tokio::test]
     #[cfg(unix)]
@@ -181,7 +182,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let file = dir.path().join("test.txt");
         std::fs::write(&file, "test").unwrap();
-        let runtime = crate::start(
+        let mut runtime = crate::start(
             123,
             Tome {
                 eldritch: r#"print(len(file.find(input_params['dir_path'], name="test.txt", file_type="file")))"#
@@ -189,14 +190,14 @@ mod tests {
                 parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
                 file_names: Vec::new(),
             },
-        )
-        .await;
+        ).await;
+        runtime.finish().await;
 
-        //println!("{:?}", runtime.collect().into_iter().collect::<Vec<Message>>());
-
-        let messages: Vec<Message> = runtime.collect().into_iter()
-            .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
-        println!("{:?}", messages);
+        let messages: Vec<Message> = runtime
+            .collect()
+            .into_iter()
+            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .collect();
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
@@ -211,8 +212,8 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let inner_dir = dir.path().join("testdir");
         std::fs::create_dir(&inner_dir).unwrap();
-        let runtime = crate::start(
-            123,
+        let mut runtime = crate::start(
+            1234,
             Tome {
                 eldritch: r#"print(len(file.find(input_params['dir_path'], name="testdir", file_type="dir")))"#
                     .to_owned(),
@@ -221,11 +222,13 @@ mod tests {
             },
         )
         .await;
+        runtime.finish().await;
 
-        //println!("{:?}", runtime.collect().into_iter().collect::<Vec<Message>>());
-
-        let messages: Vec<Message> = runtime.collect().into_iter()
-            .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        let messages: Vec<Message> = runtime
+            .collect()
+            .into_iter()
+            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .collect();
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
@@ -245,22 +248,37 @@ mod tests {
         std::fs::set_permissions(&inner_dir, Permissions::from_mode(0o000)).unwrap();
         std::fs::create_dir(&inner_dir2).unwrap();
         std::fs::set_permissions(&inner_dir2, Permissions::from_mode(0o000)).unwrap();
-        let runtime = crate::start(
-            123,
+        let mut runtime = crate::start(
+            12345,
             Tome {
                 eldritch: r#"print(file.find(input_params['dir_path'], name="randomname"))"#
                     .to_owned(),
-                parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
+                parameters: HashMap::from([(
+                    "dir_path".to_string(),
+                    dir.path().to_str().unwrap().to_string(),
+                )]),
                 file_names: Vec::new(),
             },
         )
         .await;
-        let messages: Vec<Message> = runtime.collect().into_iter()
-        .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        runtime.finish().await;
+        let messages: Vec<Message> = runtime
+            .collect()
+            .into_iter()
+            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .collect();
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
             assert!(output.error.is_some());
+            assert_eq!(
+                output.error.as_ref().unwrap().msg,
+                format!(
+                    "Failed to read directory {}: Permission denied (os error 13)\n\nFailed to read directory {}: Permission denied (os error 13)\n\n",
+                    inner_dir.to_str().unwrap(), inner_dir2.to_str().unwrap()
+                )
+            );
+            println!("Error: {:?}", output.error);
         } else {
             panic!("Expected ReportAggOutputMessage");
         }
@@ -271,8 +289,8 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let file = dir.path().join("test.txt");
         std::fs::write(&file, "test").unwrap();
-        let runtime = crate::start(
-            123,
+        let mut runtime = crate::start(
+            123456,
             Tome {
                 eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file")"#
                     .to_owned(),
@@ -281,8 +299,12 @@ mod tests {
             },
         )
         .await;
-        let messages: Vec<Message> = runtime.collect().into_iter()
-        .filter(|x| matches!(x, Message::ReportAggOutput(_))).collect();
+        runtime.finish().await;
+        let messages: Vec<Message> = runtime
+            .collect()
+            .into_iter()
+            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .collect();
         let message = messages.first().unwrap();
 
         if let Message::ReportAggOutput(output) = message {
