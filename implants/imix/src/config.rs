@@ -1,7 +1,7 @@
 use crate::version::VERSION;
+use os_info::{self, Version};
 use pb::c2::host::Platform;
 use uuid::Uuid;
-use os_info::{self, Version};
 
 macro_rules! callback_uri {
     () => {
@@ -233,7 +233,7 @@ fn get_system_version() -> String {
         Version::Semantic(a, b, c) => format!("{}.{}.{}", a, b, c),
         Version::Rolling(Some(val)) => val.to_string(),
         Version::Rolling(None) => "Unknown".to_string(),
-        Version::Custom(val) => val.to_string()
+        Version::Custom(val) => val.to_string(),
     };
     match get_host_platform() {
         Platform::Linux => format!("{} {}", info.os_type(), version),
