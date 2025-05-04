@@ -30,13 +30,18 @@ use derive_more::{Display, From};
 use report_agg_output::ReportAggOutputMessage;
 use std::future::Future;
 
-// Dispatcher defines the shared "dispatch" method used by all `Message` variants to send their data using a transport.
-pub trait Dispatcher {
+// AsyncDispatcher defines the shared "dispatch" method used by all `AsyncMessage` variants to send their data using a transport.
+pub trait AsyncDispatcher {
     fn dispatch(
         self,
         transport: &mut impl Transport,
         cfg: Config,
     ) -> impl Future<Output = Result<()>> + Send;
+}
+
+// SyncDispatcher defines the shared "dispatch" method used by all `SyncMessage` variants to facilitate state changes with the Agent.
+pub trait SyncDispatcher {
+    fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<Config>;
 }
 
 /*
@@ -47,6 +52,16 @@ pub trait Dispatcher {
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[derive(Display, From, Clone)]
 pub enum Message {
+    #[display(fmt = "Async")]
+    Async(AsyncMessage),
+
+    #[display(fmt = "Sync")]
+    Sync(SyncMessage),
+}
+
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Display, From, Clone)]
+pub enum AsyncMessage {
     #[display(fmt = "FetchAsset")]
     FetchAsset(FetchAssetMessage),
 
@@ -76,16 +91,13 @@ pub enum Message {
 
     #[display(fmt = "ReverseShellPTY")]
     ReverseShellPTY(ReverseShellPTYMessage),
-
-    #[display(fmt = "SetCallbackInterval")]
-    SetCallbackInterval(SetCallbackIntervalMessage),
 }
 
-// The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
-impl Dispatcher for Message {
+// The AsyncDispatcher implementation for `AsyncMessage` simply calls the `dispatch()` implementation on the underlying variant.
+impl AsyncDispatcher for AsyncMessage {
     async fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<()> {
         #[cfg(debug_assertions)]
-        log::debug!("dispatching message {:?}", self);
+        log::debug!("dispatching async message {:?}", self);
 
         match self {
             Self::FetchAsset(msg) => msg.dispatch(transport, cfg).await,
@@ -100,8 +112,24 @@ impl Dispatcher for Message {
 
             Self::ReportStart(msg) => msg.dispatch(transport, cfg).await,
             Self::ReportFinish(msg) => msg.dispatch(transport, cfg).await,
+        }
+    }
+}
 
-            Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg).await,
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Display, From, Clone)]
+pub enum SyncMessage {
+    #[display(fmt = "SetCallbackInterval")]
+    SetCallbackInterval(SetCallbackIntervalMessage),
+}
+
+impl SyncDispatcher for SyncMessage {
+    fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<Config> {
+        #[cfg(debug_assertions)]
+        log::debug!("dispatching sync message {:?}", self);
+
+        match self {
+            Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg),
         }
     }
 }

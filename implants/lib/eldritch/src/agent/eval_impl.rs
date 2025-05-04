@@ -17,7 +17,7 @@ pub fn eval(env: &Environment, script: String) -> Result<()> {
 mod tests {
     use std::{sync::mpsc::channel, time::Duration};
 
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
 
     use super::*;
     use anyhow::Result;
@@ -29,7 +29,7 @@ mod tests {
         eval(&test_env, String::from("print(\"hi\")"))?;
         let m = rx.recv_timeout(Duration::from_secs(3))?;
         match m {
-            Message::ReportText(r) => {
+            Message::Async(AsyncMessage::ReportText(r)) => {
                 let expected_output = String::from("hi\n");
                 assert!(
                     r.text == expected_output,
@@ -39,7 +39,7 @@ mod tests {
                 );
                 Ok(())
             }
-            _ => Err(anyhow::anyhow!("recieved nontext ouput from print")),
+            _ => Err(anyhow::anyhow!("recieved nontext output from print")),
         }?;
         Ok(())
     }

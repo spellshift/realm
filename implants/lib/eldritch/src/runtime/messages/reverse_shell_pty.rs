@@ -1,4 +1,4 @@
-use super::Dispatcher;
+use super::AsyncDispatcher;
 use anyhow::Result;
 use pb::{
     c2::{ReverseShellMessageKind, ReverseShellRequest},
@@ -20,7 +20,7 @@ pub struct ReverseShellPTYMessage {
     pub(crate) cmd: Option<String>,
 }
 
-impl Dispatcher for ReverseShellPTYMessage {
+impl AsyncDispatcher for ReverseShellPTYMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         let task_id = self.id;
 

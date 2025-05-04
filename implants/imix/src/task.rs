@@ -1,5 +1,8 @@
 use anyhow::Result;
-use eldritch::runtime::{messages::Dispatcher, Message};
+use eldritch::runtime::{
+    messages::{AsyncDispatcher, AsyncMessage, ReportErrorMessage, SyncDispatcher},
+    Message,
+};
 use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
 
@@ -42,9 +45,11 @@ impl TaskHandle {
         tavern: &mut (impl Transport + 'static),
         cfg: Config,
     ) -> Result<Config> {
-        let messages = self.runtime.collect();
+        let mut messages = self.runtime.collect();
         let mut ret_cfg = cfg.clone();
-        for msg in messages {
+        let mut idx = 0;
+        while idx < messages.len() {
+            let msg = messages[idx].clone();
             // Copy values for logging
             let id = self.id;
             let msg_str = msg.to_string();
@@ -53,52 +58,103 @@ impl TaskHandle {
             let mut t = tavern.clone();
             let c = cfg.clone();
 
-            // Handle agent messages separately from async pool
-            if let Message::SetCallbackInterval(m) = msg.clone() {
-                ret_cfg = m.refresh_config(ret_cfg)?
-            }
+            // Handle SyncMessages and AsyncMessages differently.
+            match msg {
+                Message::Sync(sm) => {
+                    let sm_str = sm.to_string();
+                    ret_cfg = match sm.dispatch(&mut t, c) {
+                        Ok(r) => {
+                            #[cfg(debug_assertions)]
+                            log::info!(
+                                "message success (task_id={},msg={}-{})",
+                                id,
+                                msg_str,
+                                sm_str
+                            );
 
-            self.pool.spawn(async move {
-                match msg.dispatch(&mut t, c).await {
-                    Ok(_) => {
-                        #[cfg(debug_assertions)]
-                        log::info!("message success (task_id={},msg={})", id, msg_str);
-                    }
-                    Err(err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!(
-                            "message failed (task_id={},msg={}): {}",
-                            id,
-                            msg_str.clone(),
-                            err
-                        );
+                            r
+                        }
+                        Err(err) => {
+                            #[cfg(debug_assertions)]
+                            log::error!(
+                                "message failed (task_id={},msg={}-{}): {}",
+                                id,
+                                msg_str.clone(),
+                                sm_str.clone(),
+                                err
+                            );
 
-                        // Attempt to report this dispatch error to the server
-                        // This will help in cases where one transport method is failing but we can
-                        // still report errors.
-                        match t
-                            .report_task_output(ReportTaskOutputRequest {
-                                output: Some(TaskOutput {
+                            // if an individual sync message errors then just add an
+                            // ReportErrorMessage to the queue and continue on.
+                            messages.push(
+                                AsyncMessage::from(ReportErrorMessage {
                                     id,
-                                    output: String::new(),
-                                    error: Some(TaskError {
-                                        msg: format!("dispatch error ({}): {:#?}", msg_str, err),
-                                    }),
-                                    exec_started_at: None,
-                                    exec_finished_at: None,
-                                }),
-                            })
-                            .await
-                        {
-                            Ok(_) => {}
-                            Err(_err) => {
-                                #[cfg(debug_assertions)]
-                                log::error!("failed to report dispatch error: {}", _err);
-                            }
-                        };
-                    }
+                                    error: format!(
+                                        "dispatch error ({}-{}): {:#?}",
+                                        msg_str, sm_str, err
+                                    ),
+                                })
+                                .into(),
+                            );
+                            ret_cfg
+                        }
+                    };
                 }
-            });
+                Message::Async(am) => {
+                    let am_str = am.to_string();
+                    self.pool.spawn(async move {
+                        match am.dispatch(&mut t, c).await {
+                            Ok(_) => {
+                                #[cfg(debug_assertions)]
+                                log::info!(
+                                    "message success (task_id={},msg={}-{})",
+                                    id,
+                                    msg_str,
+                                    am_str
+                                );
+                            }
+                            Err(err) => {
+                                #[cfg(debug_assertions)]
+                                log::error!(
+                                    "message failed (task_id={},msg={}-{}): {}",
+                                    id,
+                                    msg_str.clone(),
+                                    am_str.clone(),
+                                    err
+                                );
+
+                                // Attempt to report this dispatch error to the server
+                                // This will help in cases where one transport method is failing but we can
+                                // still report errors.
+                                match t
+                                    .report_task_output(ReportTaskOutputRequest {
+                                        output: Some(TaskOutput {
+                                            id,
+                                            output: String::new(),
+                                            error: Some(TaskError {
+                                                msg: format!(
+                                                    "dispatch error ({}-{}): {:#?}",
+                                                    msg_str, am_str, err
+                                                ),
+                                            }),
+                                            exec_started_at: None,
+                                            exec_finished_at: None,
+                                        }),
+                                    })
+                                    .await
+                                {
+                                    Ok(_) => {}
+                                    Err(_err) => {
+                                        #[cfg(debug_assertions)]
+                                        log::error!("failed to report dispatch error: {}", _err);
+                                    }
+                                };
+                            }
+                        }
+                    });
+                }
+            };
+            idx += 1;
         }
         Ok(ret_cfg)
     }

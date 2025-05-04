@@ -1,4 +1,4 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{
     c2::{ReportTaskOutputRequest, TaskOutput},
@@ -21,7 +21,7 @@ impl ReportTextMessage {
     }
 }
 
-impl Dispatcher for ReportTextMessage {
+impl AsyncDispatcher for ReportTextMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {

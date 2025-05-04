@@ -1,1 +1,1 @@
-print(input_params['msg'])
+agent.set_callback_interval(int(input_params['msg']))

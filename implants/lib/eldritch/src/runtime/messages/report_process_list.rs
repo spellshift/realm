@@ -1,4 +1,4 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{c2::ReportProcessListRequest, config::Config, eldritch::ProcessList};
 
@@ -13,7 +13,7 @@ pub struct ReportProcessListMessage {
     pub(crate) list: ProcessList,
 }
 
-impl Dispatcher for ReportProcessListMessage {
+impl AsyncDispatcher for ReportProcessListMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_process_list(ReportProcessListRequest {

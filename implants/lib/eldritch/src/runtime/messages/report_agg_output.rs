@@ -1,4 +1,4 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{
     c2::{ReportTaskOutputRequest, TaskError, TaskOutput},
@@ -28,7 +28,7 @@ impl ReportAggOutputMessage {
     }
 }
 
-impl Dispatcher for ReportAggOutputMessage {
+impl AsyncDispatcher for ReportAggOutputMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {

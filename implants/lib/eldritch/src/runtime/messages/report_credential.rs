@@ -1,4 +1,4 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{c2::ReportCredentialRequest, config::Config, eldritch::Credential};
 
@@ -12,7 +12,7 @@ pub struct ReportCredentialMessage {
     pub(crate) credential: Credential,
 }
 
-impl Dispatcher for ReportCredentialMessage {
+impl AsyncDispatcher for ReportCredentialMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_credential(ReportCredentialRequest {

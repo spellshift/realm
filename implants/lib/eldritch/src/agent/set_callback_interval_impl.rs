@@ -1,17 +1,17 @@
-use crate::runtime::{messages::SetCallbackIntervalMessage, Environment};
+use crate::runtime::{messages::SetCallbackIntervalMessage, messages::SyncMessage, Environment};
 use anyhow::Result;
 
 pub fn set_callback_interval(env: &Environment, new_interval: u64) -> Result<()> {
-    env.send(SetCallbackIntervalMessage {
+    env.send(SyncMessage::from(SetCallbackIntervalMessage {
         id: env.id(),
         new_interval,
-    })?;
+    }))?;
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::SyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
 
@@ -29,7 +29,7 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::SetCallbackInterval(m) = msg {
+                    if let Message::Sync(SyncMessage::SetCallbackInterval(m)) = msg {
                         assert_eq!(tc.new_interval, m.new_interval);
                         found = true;
                     }

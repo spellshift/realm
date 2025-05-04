@@ -1,4 +1,4 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{
     c2::{ReportTaskOutputRequest, TaskError, TaskOutput},
@@ -11,11 +11,11 @@ use pb::{
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportErrorMessage {
-    pub(crate) id: i64,
+    pub id: i64,
     pub error: String,
 }
 
-impl Dispatcher for ReportErrorMessage {
+impl AsyncDispatcher for ReportErrorMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {

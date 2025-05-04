@@ -1,11 +1,11 @@
-use crate::runtime::{messages::ReportErrorMessage, Environment};
+use crate::runtime::{messages::AsyncMessage, messages::ReportErrorMessage, Environment};
 use anyhow::Result;
 
 pub fn eprint(env: &Environment, message: String) -> Result<()> {
-    env.send(ReportErrorMessage {
+    env.send(AsyncMessage::from(ReportErrorMessage {
         id: env.id(),
         error: format!("{}\n", message),
-    })?;
+    }))?;
 
     #[cfg(feature = "print_stdout")]
     eprintln!("{}", message);
@@ -15,7 +15,7 @@ pub fn eprint(env: &Environment, message: String) -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
 
@@ -33,7 +33,7 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::ReportError(m) = msg {
+                    if let Message::Async(AsyncMessage::ReportError(m)) = msg {
                         assert_eq!(tc.id, m.id);
                         assert_eq!(tc.want_error, m.error);
                         found = true;

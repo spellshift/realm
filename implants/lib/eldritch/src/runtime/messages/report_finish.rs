@@ -1,4 +1,4 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{
     c2::{ReportTaskOutputRequest, TaskOutput},
@@ -16,7 +16,7 @@ pub struct ReportFinishMessage {
     pub(crate) exec_finished_at: Timestamp,
 }
 
-impl Dispatcher for ReportFinishMessage {
+impl AsyncDispatcher for ReportFinishMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {

@@ -1,4 +1,4 @@
-use super::Dispatcher;
+use super::AsyncDispatcher;
 use anyhow::Result;
 use pb::c2::{FetchAssetRequest, FetchAssetResponse};
 pub use pb::config::Config;
@@ -16,7 +16,7 @@ pub struct FetchAssetMessage {
     pub(crate) tx: Sender<FetchAssetResponse>,
 }
 
-impl Dispatcher for FetchAssetMessage {
+impl AsyncDispatcher for FetchAssetMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .fetch_asset(FetchAssetRequest { name: self.name }, self.tx)
