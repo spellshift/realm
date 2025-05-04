@@ -22,9 +22,7 @@ impl Registry {
     }
 
     fn key_path(&self) -> &str {
-        self.subkey
-            .as_deref()
-            .unwrap_or("SOFTWARE\\Imix")
+        self.subkey.as_deref().unwrap_or("SOFTWARE\\Imix")
     }
 
     fn val_name(&self) -> &str {
