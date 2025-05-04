@@ -149,7 +149,7 @@ impl Session {
         channel.request_subsystem(true, "sftp").await.unwrap();
         let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
 
-        sftp.remove_file(dst).await?;
+        let _ = sftp.remove_file(dst).await;
         let mut dst_file = sftp.create(dst).await?;
         let mut src_file = tokio::io::BufReader::new(tokio::fs::File::open(src).await?);
         let _bytes_copied = tokio::io::copy_buf(&mut src_file, &mut dst_file).await?;
