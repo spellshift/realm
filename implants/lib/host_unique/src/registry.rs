@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use crate::HostIDSelector;
+use uuid::Uuid;
 
 #[derive(Default)]
 pub struct Registry {
@@ -28,9 +28,7 @@ impl Registry {
     }
 
     fn val_name(&self) -> &str {
-        self.value_name
-            .as_deref()
-            .unwrap_or("system-id")
+        self.value_name.as_deref().unwrap_or("system-id")
     }
 }
 
@@ -48,8 +46,8 @@ impl HostIDSelector for Registry {
 
         #[cfg(target_os = "windows")]
         {
-            use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
             use std::io::ErrorKind;
+            use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 
             let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
 
@@ -99,8 +97,8 @@ impl HostIDSelector for Registry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use winreg::RegKey;
     use winreg::enums::HKEY_LOCAL_MACHINE;
+    use winreg::RegKey;
 
     #[test]
     fn test_registry() {
