@@ -49,14 +49,27 @@ impl HostIDSelector for Registry {
         #[cfg(target_os = "windows")]
         {
             use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
+            use std::io::ErrorKind;
 
-            // Open or create our key under HKLM
             let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-            let (key, _) = match hklm.create_subkey(self.key_path()) {
-                Ok(pair) => pair,
+
+            // Try to open the key for reading
+            let key = match hklm.open_subkey(self.key_path()) {
+                Ok(k) => k,
+                Err(_err) if _err.kind() == ErrorKind::NotFound => {
+                    // If it doesn't exist, create it
+                    match hklm.create_subkey(self.key_path()) {
+                        Ok((k, _disp)) => k,
+                        Err(_err) => {
+                            #[cfg(debug_assertions)]
+                            log::debug!("failed to create registry key: {:?}", _err);
+                            return None;
+                        }
+                    }
+                }
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::debug!("could not open/create registry key: {:?}", _err);
+                    log::debug!("failed to open registry key: {:?}", _err);
                     return None;
                 }
             };
