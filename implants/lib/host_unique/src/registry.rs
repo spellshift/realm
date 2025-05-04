@@ -30,7 +30,7 @@ impl Registry {
     fn val_name(&self) -> &str {
         self.value_name
             .as_deref()
-            .unwrap_or("HostId")
+            .unwrap_or("system-id")
     }
 }
 
@@ -54,9 +54,9 @@ impl HostIDSelector for Registry {
             let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
             let (key, _) = match hklm.create_subkey(self.key_path()) {
                 Ok(pair) => pair,
-                Err(err) => {
+                Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::debug!("could not open/create registry key: {:?}", err);
+                    log::debug!("could not open/create registry key: {:?}", _err);
                     return None;
                 }
             };
@@ -74,9 +74,9 @@ impl HostIDSelector for Registry {
             // Otherwise generate a new one and persist it
             let new_uuid = Uuid::new_v4();
             let s = new_uuid.to_string();
-            if let Err(err) = key.set_value(self.val_name(), &s) {
+            if let Err(_err) = key.set_value(self.val_name(), &s) {
                 #[cfg(debug_assertions)]
-                log::debug!("failed to write registry value: {:?}", err);
+                log::debug!("failed to write registry value: {:?}", _err);
             }
             Some(new_uuid)
         }
