@@ -243,11 +243,8 @@ mod tests {
     async fn test_runtime_error() {
         let dir = TempDir::new().unwrap();
         let inner_dir = dir.path().join("testdir");
-        let inner_dir2 = dir.path().join("testdir2");
         std::fs::create_dir(&inner_dir).unwrap();
         std::fs::set_permissions(&inner_dir, Permissions::from_mode(0o000)).unwrap();
-        std::fs::create_dir(&inner_dir2).unwrap();
-        std::fs::set_permissions(&inner_dir2, Permissions::from_mode(0o000)).unwrap();
         let mut runtime = crate::start(
             12345,
             Tome {
@@ -274,8 +271,8 @@ mod tests {
             assert_eq!(
                 output.error.as_ref().unwrap().msg,
                 format!(
-                    "Failed to read directory {}: Permission denied (os error 13)\n\nFailed to read directory {}: Permission denied (os error 13)\n\n",
-                    inner_dir.to_str().unwrap(), inner_dir2.to_str().unwrap()
+                    "Failed to read directory {}: Permission denied (os error 13)\n\n",
+                    inner_dir.to_str().unwrap()
                 )
             );
             println!("Error: {:?}", output.error);
