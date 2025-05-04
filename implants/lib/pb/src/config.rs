@@ -1,6 +1,17 @@
-use crate::version::VERSION;
-use pb::c2::host::Platform;
 use uuid::Uuid;
+/// Config holds values necessary to configure an Agent.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Config {
+    #[prost(message, optional, tag = "1")]
+    pub info: ::core::option::Option<crate::c2::Beacon>,
+    #[prost(string, tag = "2")]
+    pub callback_uri: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(uint64, tag = "4")]
+    pub retry_interval: u64,
+}
 
 macro_rules! callback_uri {
     () => {
@@ -54,35 +65,24 @@ macro_rules! retry_interval {
 pub const RETRY_INTERVAL: &str = retry_interval!();
 
 /*
- * Config holds values necessary to configure an Agent.
+ * Config methods.
  */
-#[derive(Debug, Clone)]
-pub struct Config {
-    pub info: pb::c2::Beacon,
-    pub callback_uri: String,
-    pub proxy_uri: Option<String>,
-    pub retry_interval: u64,
-}
-
-/*
- * A default configuration for the agent.
- */
-impl Default for Config {
-    fn default() -> Self {
-        let agent = pb::c2::Agent {
-            identifier: format!("imix-v{}", VERSION),
+impl Config {
+    pub fn default_with_imix_verison(imix_version: &str) -> Self {
+        let agent = crate::c2::Agent {
+            identifier: format!("imix-v{}", imix_version),
         };
 
         let selectors = host_unique::defaults();
 
-        let host = pb::c2::Host {
+        let host = crate::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
             identifier: host_unique::get_id_with_selectors(selectors).to_string(),
             platform: get_host_platform() as i32,
             primary_ip: get_primary_ip(),
         };
 
-        let info = pb::c2::Beacon {
+        let info = crate::c2::Beacon {
             identifier: String::from(Uuid::new_v4()),
             principal: whoami::username(),
             interval: match CALLBACK_INTERVAL.parse::<u64>() {
@@ -99,7 +99,7 @@ impl Default for Config {
         };
 
         Config {
-            info,
+            info: Some(info),
             callback_uri: String::from(CALLBACK_URI),
             proxy_uri: get_system_proxy(),
             retry_interval: match RETRY_INTERVAL.parse::<u64>() {
@@ -113,6 +113,24 @@ impl Default for Config {
                     5
                 }
             },
+        }
+    }
+    pub fn refresh_primary_ip(&mut self) {
+        let fresh_ip = get_primary_ip();
+        if self
+            .info
+            .clone()
+            .is_some_and(|b| b.host.as_ref().is_some_and(|h| h.primary_ip != fresh_ip))
+        {
+            match self.info.clone().unwrap().host.as_mut() {
+                Some(h) => {
+                    h.primary_ip = fresh_ip;
+                }
+                None => {
+                    #[cfg(debug_assertions)]
+                    log::error!("host struct was never initialized, failed to set primary ip");
+                }
+            }
         }
     }
 }
@@ -156,43 +174,21 @@ fn get_system_proxy() -> Option<String> {
     }
 }
 
-impl Config {
-    pub fn refresh_primary_ip(&mut self) {
-        let fresh_ip = get_primary_ip();
-        if self
-            .info
-            .host
-            .as_ref()
-            .is_some_and(|h| h.primary_ip != fresh_ip)
-        {
-            match self.info.host.as_mut() {
-                Some(h) => {
-                    h.primary_ip = fresh_ip;
-                }
-                None => {
-                    #[cfg(debug_assertions)]
-                    log::error!("host struct was never initialized, failed to set primary ip");
-                }
-            }
-        }
-    }
-}
-
 /*
  * Returns which Platform imix has been compiled for.
  */
-fn get_host_platform() -> Platform {
+fn get_host_platform() -> crate::c2::host::Platform {
     #[cfg(target_os = "linux")]
-    return Platform::Linux;
+    return crate::c2::host::Platform::Linux;
 
     #[cfg(target_os = "macos")]
-    return Platform::Macos;
+    return crate::c2::host::Platform::Macos;
 
     #[cfg(target_os = "windows")]
-    return Platform::Windows;
+    return crate::c2::host::Platform::Windows;
 
     #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    return Platform::Bsd;
+    return crate::c2::host::Platform::Bsd;
 
     #[cfg(all(
         not(target_os = "linux"),
@@ -202,7 +198,7 @@ fn get_host_platform() -> Platform {
         not(target_os = "netbsd"),
         not(target_os = "openbsd"),
     ))]
-    return Platform::Unspecified;
+    return crate::c2::host::Platform::Unspecified;
 }
 
 /*

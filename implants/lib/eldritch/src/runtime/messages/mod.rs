@@ -11,6 +11,7 @@ mod report_text;
 mod reverse_shell_pty;
 
 pub use fetch_asset::FetchAssetMessage;
+pub use pb::config::Config;
 pub(super) use reduce::reduce;
 pub use report_credential::ReportCredentialMessage;
 pub use report_error::ReportErrorMessage;
@@ -29,7 +30,11 @@ use std::future::Future;
 
 // Dispatcher defines the shared "dispatch" method used by all `Message` variants to send their data using a transport.
 pub trait Dispatcher {
-    fn dispatch(self, transport: &mut impl Transport) -> impl Future<Output = Result<()>> + Send;
+    fn dispatch(
+        self,
+        transport: &mut impl Transport,
+        cfg: Config,
+    ) -> impl Future<Output = Result<()>> + Send;
 }
 
 /*
@@ -73,23 +78,23 @@ pub enum Message {
 
 // The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
 impl Dispatcher for Message {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+    async fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<()> {
         #[cfg(debug_assertions)]
         log::debug!("dispatching message {:?}", self);
 
         match self {
-            Self::FetchAsset(msg) => msg.dispatch(transport).await,
+            Self::FetchAsset(msg) => msg.dispatch(transport, cfg).await,
 
-            Self::ReportCredential(msg) => msg.dispatch(transport).await,
-            Self::ReportError(msg) => msg.dispatch(transport).await,
-            Self::ReportFile(msg) => msg.dispatch(transport).await,
-            Self::ReportProcessList(msg) => msg.dispatch(transport).await,
-            Self::ReportText(msg) => msg.dispatch(transport).await,
-            Self::ReportAggOutput(msg) => msg.dispatch(transport).await,
-            Self::ReverseShellPTY(msg) => msg.dispatch(transport).await,
+            Self::ReportCredential(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportError(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportFile(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportProcessList(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportText(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportAggOutput(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReverseShellPTY(msg) => msg.dispatch(transport, cfg).await,
 
-            Self::ReportStart(msg) => msg.dispatch(transport).await,
-            Self::ReportFinish(msg) => msg.dispatch(transport).await,
+            Self::ReportStart(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportFinish(msg) => msg.dispatch(transport, cfg).await,
         }
     }
 }

@@ -1,6 +1,6 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use pb::{c2::ReportProcessListRequest, eldritch::ProcessList};
+use pb::{c2::ReportProcessListRequest, config::Config, eldritch::ProcessList};
 
 /*
  * ReportProcessListMessage reports a process list snapshot captured by this tome's evaluation.
@@ -14,7 +14,7 @@ pub struct ReportProcessListMessage {
 }
 
 impl Dispatcher for ReportProcessListMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_process_list(ReportProcessListRequest {
                 task_id: self.id,

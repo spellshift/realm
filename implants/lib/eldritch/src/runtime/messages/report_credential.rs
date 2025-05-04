@@ -1,6 +1,6 @@
 use super::{Dispatcher, Transport};
 use anyhow::Result;
-use pb::{c2::ReportCredentialRequest, eldritch::Credential};
+use pb::{c2::ReportCredentialRequest, config::Config, eldritch::Credential};
 
 /*
  * ReportCredentialMessage reports a credential captured by this tome's evaluation.
@@ -13,7 +13,7 @@ pub struct ReportCredentialMessage {
 }
 
 impl Dispatcher for ReportCredentialMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_credential(ReportCredentialRequest {
                 task_id: self.id,

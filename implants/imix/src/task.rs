@@ -3,6 +3,8 @@ use eldritch::runtime::messages::Dispatcher;
 use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
 
+use crate::run::Config;
+
 /*
  * Task handle is responsible for tracking a running task and reporting it's output.
  */
@@ -35,7 +37,11 @@ impl TaskHandle {
 
     // Report any available task output.
     // Also responsible for downloading any files requested by the eldritch runtime.
-    pub async fn report(&mut self, tavern: &mut (impl Transport + 'static)) -> Result<()> {
+    pub async fn report(
+        &mut self,
+        tavern: &mut (impl Transport + 'static),
+        cfg: Config,
+    ) -> Result<()> {
         let messages = self.runtime.collect();
         for msg in messages {
             // Copy values for logging
@@ -44,8 +50,9 @@ impl TaskHandle {
 
             // Each message is dispatched in it's own tokio task, managed by this task handle's pool.
             let mut t = tavern.clone();
+            let c = cfg.clone();
             self.pool.spawn(async move {
-                match msg.dispatch(&mut t).await {
+                match msg.dispatch(&mut t, c).await {
                     Ok(_) => {
                         #[cfg(debug_assertions)]
                         log::info!("message success (task_id={},msg={})", id, msg_str);

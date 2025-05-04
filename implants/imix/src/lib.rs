@@ -1,7 +1,6 @@
 #![deny(warnings)]
 
 pub mod agent;
-mod config;
 mod install;
 mod run;
 mod task;

@@ -1,6 +1,6 @@
-use crate::{config::Config, task::TaskHandle};
+use crate::task::TaskHandle;
 use anyhow::Result;
-use pb::c2::ClaimTasksRequest;
+use pb::{c2::ClaimTasksRequest, config::Config};
 use std::time::{Duration, Instant};
 use transport::Transport;
 
@@ -30,7 +30,7 @@ impl<T: Transport + 'static> Agent<T> {
     async fn claim_tasks(&mut self, mut tavern: T) -> Result<()> {
         let tasks = tavern
             .claim_tasks(ClaimTasksRequest {
-                beacon: Some(self.cfg.info.clone()),
+                beacon: self.cfg.info.clone(),
             })
             .await?
             .tasks;
@@ -65,12 +65,14 @@ impl<T: Transport + 'static> Agent<T> {
             // Drop any handles that have completed
             if self.handles[idx].is_finished() {
                 let mut handle = self.handles.remove(idx);
-                handle.report(&mut tavern).await?;
+                handle.report(&mut tavern, self.cfg.clone()).await?;
                 continue;
             }
 
             // Otherwise report and increment
-            self.handles[idx].report(&mut tavern).await?;
+            self.handles[idx]
+                .report(&mut tavern, self.cfg.clone())
+                .await?;
             idx += 1;
         }
 
@@ -109,7 +111,7 @@ impl<T: Transport + 'static> Agent<T> {
                 }
             };
 
-            let interval = self.cfg.info.interval;
+            let interval = self.cfg.info.clone().unwrap().interval;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),
