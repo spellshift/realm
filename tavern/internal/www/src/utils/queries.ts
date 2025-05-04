@@ -1,5 +1,42 @@
 import { gql } from "@apollo/client";
 
+export const GET_TAG_FILTERS = gql`
+    query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
+        groupTags:tags(where: $groupTag) {
+            id
+            name
+            kind
+        },
+        serviceTags:tags(where: $serviceTag) {
+            id
+            name
+            kind
+        },
+        beacons {
+            id
+            name
+            principal
+            lastSeenAt
+            interval
+            host{
+                id
+                name
+                primaryIP
+                platform
+                tags {
+                    id
+                    kind
+                    name
+                }
+            }
+        },
+        hosts{
+            id
+            name
+        }
+    }
+`;
+
 export const GET_HOST_QUERY = gql`
     query GetHosts($where: HostWhereInput) {
         hosts(where: $where){
@@ -265,6 +302,17 @@ export const GET_TASK_QUERY = gql`
                         claimedAt
                         error
                         output
+                        shells {
+                                id
+                                closedAt
+                                activeUsers{
+                                    id
+                                    name
+                                    photoURL
+                                    isActivated
+                                    isAdmin
+                                }
+                        }
                         quest{
                             id
                             name
@@ -356,6 +404,18 @@ export const GET_SEARCH_FILTERS = gql`
         hosts{
             label:name
             value:id
+        }
+    }
+`;
+
+export const GET_USER_QUERY = gql`
+    query GetUserQuery($where: UserWhereInput){
+        users(where: $where) {
+            id
+            name
+            photoURL
+            isActivated
+            isAdmin
         }
     }
 `;

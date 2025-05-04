@@ -157,6 +157,9 @@ async fn tcp_connect_scan_socket(
                 "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
                     Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
+                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => {
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
+                },
                 _ => {
                     Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err))
                 },
@@ -198,6 +201,9 @@ async fn udp_scan_socket(
                     Ok((target_host, target_port, UDP.to_string(), CLOSED.to_string()))
                 },
                 "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
+                },
+                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => {
                     Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 _ => {

@@ -29,6 +29,13 @@ export type TomeTag = {
     name: string;
     kind: string;
 }
+export type TagOptionType = {
+    value: string,
+    label: string,
+} & TomeTag;
+
+export type KindOfTag = 'service' | 'group';
+
 export type FilterBarOption = {
     label?: string;
     id: string;
@@ -75,7 +82,11 @@ export type CreateQuestProps = {
     params: Array<QuestParam>,
     beacons: Array<string>,
 };
-
+export type Shell = {
+    id: string,
+    closedAt: string,
+    activeUsers: Array<UserType>
+}
 export type Task = {
     id: string,
     lastModifiedAt: string,
@@ -86,7 +97,8 @@ export type Task = {
     beacon: BeaconType,
     createdAt: string,
     error: string,
-    quest?: QuestProps
+    quest?: QuestProps,
+    shells: Array<Shell>
 };
 export type UserType = {
     id: string;
@@ -112,19 +124,20 @@ export type OutputTableProps = {
     group: string | null,
     output: string,
     taskDetails?: Task
+
 }
 
-export type RepositoryRow ={
+export type RepositoryRow = {
     node: RepositoryType
 }
-export type RepositoryType ={
-        id?: string;
-        url: string;
-        tomes: Array<Tome>;
-        owner?: UserType;
-        repoType?: string;
-        lastModifiedA?: string;
-        publicKey?: string;
+export type RepositoryType = {
+    id?: string;
+    url: string;
+    tomes: Array<Tome>;
+    owner?: UserType;
+    repoType?: string;
+    lastModifiedA?: string;
+    publicKey?: string;
 }
 
 export type QuestTableRowType = {
@@ -149,7 +162,7 @@ export type QuestTableRowType = {
         tasksOutput: {
             totalCount: number
         };
-        tasksError:{
+        tasksError: {
             totalCount: number
         };
         lastModifiedAt: null | string,
@@ -163,10 +176,25 @@ export type PaginationPageInfo = {
     endCursor: string;
 }
 
+export type UpdateUserProps = {
+    id: number,
+    activated: boolean,
+    admin: boolean,
+};
+
 export type CredentialType = {
     principal: string;
     kind: string;
     secret: string;
     createdAt: string;
     lastModifiedAt: string;
+}
+
+export type NavigationItemType = {
+    name: string;
+    href: string;
+    icon?: any;
+    target?: string;
+    internal?: boolean;
+    adminOnly?: boolean;
 }

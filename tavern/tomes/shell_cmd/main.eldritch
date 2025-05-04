@@ -4,6 +4,6 @@ def shell_cmd(cmd):
     print("stderr:", res['stderr'])
     print("status:", res['status'])
 
-time.sleep(1)
+
 shell_cmd(input_params['cmd'])
 print("")

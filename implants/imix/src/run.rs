@@ -5,6 +5,8 @@ pub use crate::agent::Agent;
 pub use crate::config::Config;
 pub use crate::install::install;
 
+use transport::{Transport, GRPC};
+
 pub async fn handle_main() {
     if let Some(("install", _)) = Command::new("imix")
         .subcommand(Command::new("install").about("Install imix"))
@@ -34,7 +36,7 @@ pub async fn handle_main() {
 }
 
 async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg)?;
+    let mut agent = Agent::new(cfg, GRPC::init())?;
     agent.callback_loop().await?;
     Ok(())
 }

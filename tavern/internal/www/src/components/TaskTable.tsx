@@ -32,7 +32,7 @@ const TaskTable = (props: Props) => {
                 return (
                     <div className="flex flex-col">
                         <div>{questData.name}</div>
-                        <div className="text-sm flex flex-row gap-1 items-center text-gray-500">
+                        <div className="text-sm flex flex-row gap-1 items-center text-gray-500 break-all">
                             {questData?.tome?.name}
                         </div>
                     </div>

@@ -1,19 +1,23 @@
 import React, { useContext } from "react";
-import { PageWrapper } from "../../components/page-wrapper";
+import { PageWrapper } from "../../features/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import { TagContext } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import QuestForm from "./components/QuestForm";
 import EmptyStateNoBeacon from "../../components/empty-states/EmptyStateNoBeacon";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import PageHeader from "../../components/tavern-base-ui/PageHeader";
 
 export const CreateQuest = () => {
     const { data, isLoading, error } = useContext(TagContext);
 
     return (
         <PageWrapper currNavItem={PageNavItem.createQuest}>
-            <div className="border-b border-gray-200 pb-6 sm:flex sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Create new quest</h3>
-            </div>
+            <Breadcrumbs pages={[{
+                label: "Create new quest",
+                link: "/createQuest"
+            }]} />
+            <PageHeader title="Create new quest" />
             {isLoading ? (
                 <EmptyState type={EmptyStateType.loading} label="loading beacon info..." />
             ) : error ? (

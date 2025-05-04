@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -77,7 +77,7 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 
 	// Log TLS Warning
 	if accessTokenRedirURL.Scheme == "http" {
-		log.Printf("[WARN] Using insecure access token URL (http), this may leak sensitive information")
+		slog.WarnContext(ctx, "using insecure access token url (http), this may leak sensitive information")
 	}
 
 	// Create Channels

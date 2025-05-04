@@ -31,9 +31,6 @@ func (srv *Server) ReportTaskOutput(ctx context.Context, req *c2pb.ReportTaskOut
 		timestamp := req.Output.ExecFinishedAt.AsTime()
 		execFinishedAt = &timestamp
 	}
-	if req.Output.Error != nil {
-		taskErr = &req.Output.Error.Msg
-	}
 
 	// Load Task
 	t, err := srv.graph.Task.Get(ctx, int(req.Output.Id))
@@ -42,6 +39,11 @@ func (srv *Server) ReportTaskOutput(ctx context.Context, req *c2pb.ReportTaskOut
 	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to submit task result (id=%d): %v", req.Output.Id, err)
+	}
+
+	if req.Output.Error != nil {
+		e := fmt.Sprintf("%s%s", t.Error, req.Output.Error.Msg)
+		taskErr = &e
 	}
 
 	// Update Task

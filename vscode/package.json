@@ -21,7 +21,6 @@
         "vscode": "^1.43.0"
     },
     "activationEvents": [
-        "onLanguage:eldritch",
         "workspaceContains:*.tome",
         "workspaceContains:*/*.tome",
         "workspaceContains:*/*/*.tome"

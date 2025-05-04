@@ -119,7 +119,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "reverse_shell_pty", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
+            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "reverse_shell_pty", "smb_exec", "ssh_copy", "ssh_exec"]"#),
             want_error: None,
         },
         assets_bindings: TestCase {
@@ -190,6 +190,16 @@ mod tests {
                 file_names: Vec::new(),
             },
             want_text: format!("{}\n", r#"["download", "get", "post"]"#),
+            want_error: None,
+        },
+        agent_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(agent))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n", r#"["eval"]"#),
             want_error: None,
         },
     }

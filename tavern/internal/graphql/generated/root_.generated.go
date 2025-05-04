@@ -73,6 +73,7 @@ type ComplexityRoot struct {
 		Beacons        func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Credentials    func(childComplexity int) int
+		ExternalIP     func(childComplexity int) int
 		Files          func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
@@ -475,6 +476,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Credentials(childComplexity), true
+
+	case "Host.externalIP":
+		if e.complexity.Host.ExternalIP == nil {
+			break
+		}
+
+		return e.complexity.Host.ExternalIP(childComplexity), true
 
 	case "Host.files":
 		if e.complexity.Host.Files == nil {
@@ -2371,6 +2379,10 @@ type Host implements Node {
   """
   primaryIP: String
   """
+  Incoming IP from Proxy. Will return first proxy IP if multiple.
+  """
+  externalIP: String
+  """
   Platform the agent is operating on.
   """
   platform: HostPlatform!
@@ -3172,6 +3184,24 @@ input HostWhereInput {
   primaryIPNotNil: Boolean
   primaryIPEqualFold: String
   primaryIPContainsFold: String
+  """
+  external_ip field predicates
+  """
+  externalIP: String
+  externalIPNEQ: String
+  externalIPIn: [String!]
+  externalIPNotIn: [String!]
+  externalIPGT: String
+  externalIPGTE: String
+  externalIPLT: String
+  externalIPLTE: String
+  externalIPContains: String
+  externalIPHasPrefix: String
+  externalIPHasSuffix: String
+  externalIPIsNil: Boolean
+  externalIPNotNil: Boolean
+  externalIPEqualFold: String
+  externalIPContainsFold: String
   """
   platform field predicates
   """

@@ -248,6 +248,10 @@ resource "google_cloud_run_service" "tavern" {
           name = "OAUTH_DOMAIN"
           value = format("https://%s", var.oauth_domain)
         }
+        env {
+          name = "GCP_PROJECT_ID"
+          value = var.gcp_project
+        }
 
         // Only configure GCP pubsub if it is not disabled
         dynamic "env" {
@@ -273,6 +277,27 @@ resource "google_cloud_run_service" "tavern" {
             name = env.value.name
             value = env.value.value
           }
+        }
+
+        env {
+          name = "DISABLE_DEFAULT_TOMES"
+          value = ""
+        }
+        env {
+          name = "ENABLE_DEBUG_LOGGING"
+          value = ""
+        }
+        env {
+          name = "ENABLE_JSON_LOGGING"
+          value = "1"
+        }
+        env {
+          name = "ENABLE_INSTANCE_ID_LOGGING"
+          value = "1"
+        }
+        env {
+          name = "ENABLE_GRAPHQL_RAW_QUERY_LOGGING"
+          value = "1"
         }
 
         env {
