@@ -199,7 +199,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["eval"]"#),
+            want_text: format!("{}\n", r#"["eval", "set_callback_interval"]"#),
             want_error: None,
         },
     }

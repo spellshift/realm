@@ -129,6 +129,14 @@ executes it in the runtime environment of the executing tome. This means that
 any `print`s or `eprint`s or output from the script will be merged with that
 of the broader tome.
 
+### agent.set_callback_interval
+
+`agent.set_callback_interval(new_interval: int) -> None`
+
+The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
+running agent's callback interval to the passed value. This configuration change will
+not persist across agent reboots.
+
 ---
 
 ## Assets
