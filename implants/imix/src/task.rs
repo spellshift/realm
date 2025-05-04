@@ -33,6 +33,13 @@ impl TaskHandle {
         self.runtime.is_finished()
     }
 
+    // Join all the JoinSets within the pool on the TaskHandle.
+    // WARNING: this will await until the entire pool is complete
+    // it is advised to check `is_finished` before calling this method.
+    pub async fn join(&mut self) {
+        while self.pool.join_next().await.is_some() {}
+    }
+
     // Report any available task output.
     // Also responsible for downloading any files requested by the eldritch runtime.
     pub async fn report(&mut self, tavern: &mut (impl Transport + 'static)) -> Result<()> {

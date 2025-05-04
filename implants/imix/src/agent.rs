@@ -66,6 +66,7 @@ impl<T: Transport + 'static> Agent<T> {
             if self.handles[idx].is_finished() {
                 let mut handle = self.handles.remove(idx);
                 handle.report(&mut tavern).await?;
+                handle.join().await;
                 continue;
             }
 
