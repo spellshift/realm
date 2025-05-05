@@ -140,9 +140,9 @@ not persist across agent reboots.
 
 ### agent.set_callback_uri
 
-`agent.set_callback_interval(new_uri: str) -> None`
+`agent.set_callback_uri(new_uri: str) -> None`
 
-The <b>agent.set_callback_interval</b> method takes an string and changes the
+The <b>agent.set_callback_uri</b> method takes an string and changes the
 running agent's callback uri to the passed value. This configuration change will
 not persist across agent reboots. NOTE: please ensure the passed URI path is correct
 for the underlying `Transport` being used, as a URI can take many forms and we make no

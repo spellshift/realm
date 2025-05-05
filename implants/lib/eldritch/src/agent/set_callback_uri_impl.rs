@@ -1,7 +1,7 @@
 use crate::runtime::{messages::SetCallbackUriMessage, messages::SyncMessage, Environment};
 use anyhow::Result;
 
-pub fn set_callback_interval(env: &Environment, new_uri: String) -> Result<()> {
+pub fn set_callback_uri(env: &Environment, new_uri: String) -> Result<()> {
     env.send(SyncMessage::from(SetCallbackUriMessage {
         id: env.id(),
         new_uri,

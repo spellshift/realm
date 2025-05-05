@@ -37,7 +37,7 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn set_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, new_uri: String) -> anyhow::Result<NoneType> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
-        set_callback_uri_impl::set_callback_interval(env, new_uri)?;
+        set_callback_uri_impl::set_callback_uri(env, new_uri)?;
         Ok(NoneType{})
     }
 }

@@ -124,7 +124,7 @@ pub enum SyncMessage {
     #[display(fmt = "SetCallbackInterval")]
     SetCallbackInterval(SetCallbackIntervalMessage),
 
-    #[display(fmt = "SetCallbackInterval")]
+    #[display(fmt = "SetCallbackUri")]
     SetCallbackUri(SetCallbackUriMessage),
 }
 
