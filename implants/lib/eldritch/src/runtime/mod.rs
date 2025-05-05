@@ -10,7 +10,7 @@ pub use messages::Message;
 
 #[cfg(test)]
 mod tests {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
     use tempfile::NamedTempFile;
@@ -28,8 +28,13 @@ mod tests {
                 let mut text = Vec::new();
                 for msg in runtime.messages() {
                     match msg {
-                        Message::ReportText(m) => text.push(m.text),
-                        Message::ReportError(m) => assert_eq!(tc.want_error, Some(m.error)),
+                        Message::Async(am) => {
+                            match am {
+                                AsyncMessage::ReportText(m) => text.push(m.text),
+                                AsyncMessage::ReportError(m) => assert_eq!(tc.want_error, Some(m.error)),
+                                _ => {},
+                            }
+                        },
                         _ => {},
                     };
                 }
@@ -199,7 +204,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["eval"]"#),
+            want_text: format!("{}\n", r#"["eval", "set_callback_interval", "set_callback_uri"]"#),
             want_error: None,
         },
     }

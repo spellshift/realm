@@ -8,7 +8,6 @@ extern crate windows_service;
 mod win_service;
 
 mod agent;
-mod config;
 mod install;
 mod run;
 mod task;

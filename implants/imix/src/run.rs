@@ -2,8 +2,9 @@ use clap::Command;
 use std::time::Duration;
 
 pub use crate::agent::Agent;
-pub use crate::config::Config;
 pub use crate::install::install;
+use crate::version::VERSION;
+pub use pb::config::Config;
 
 use transport::{Transport, GRPC};
 
@@ -18,7 +19,7 @@ pub async fn handle_main() {
     }
 
     loop {
-        let cfg = Config::default();
+        let cfg = Config::default_with_imix_verison(VERSION);
         let retry_interval = cfg.retry_interval;
         #[cfg(debug_assertions)]
         log::info!("agent config initialized {:#?}", cfg.clone());

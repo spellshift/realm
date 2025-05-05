@@ -212,7 +212,7 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
 
     use super::*;
     use pb::eldritch::Tome;
@@ -248,7 +248,7 @@ mod tests {
         // Read Messages
         let mut found = false;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 assert_eq!(123, m.id);
                 assert!(m.text.contains(&expected_file_name));
                 log::debug!("text: {:?}", m.text);
@@ -300,7 +300,7 @@ for f in file.list(input_params['path']):
 
         let mut counter = 0;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 counter += 1;
                 log::debug!("text: {:?}", m.text);
             }
@@ -356,7 +356,7 @@ for f in file.list(input_params['path']):
 
         let mut found = false;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 assert_eq!(123, m.id);
                 assert!(m.text.contains(file));
                 log::debug!("text: {:?}", m.text);
