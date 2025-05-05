@@ -33,8 +33,5 @@ pub fn get_id_with_selectors(selectors: Vec<Box<dyn HostIDSelector>>) -> Uuid {
 // List is evaluated in order and will take the first successful
 // result.
 pub fn defaults() -> Vec<Box<dyn HostIDSelector>> {
-    vec![
-        Box::<Env>::default(),
-        Box::<File>::default(),
-    ]
+    vec![Box::<Env>::default(), Box::<File>::default()]
 }
