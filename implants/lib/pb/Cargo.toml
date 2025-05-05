@@ -4,12 +4,16 @@ version = "0.0.5"
 edition = "2021"
 
 [dependencies]
+host_unique = { workspace = true }
 log = { workspace = true }
+netdev = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-roots"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
+whoami = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }

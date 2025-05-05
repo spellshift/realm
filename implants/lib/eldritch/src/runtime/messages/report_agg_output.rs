@@ -1,6 +1,9 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
-use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
+use pb::{
+    c2::{ReportTaskOutputRequest, TaskError, TaskOutput},
+    config::Config,
+};
 use prost_types::Timestamp;
 
 /*
@@ -25,8 +28,8 @@ impl ReportAggOutputMessage {
     }
 }
 
-impl Dispatcher for ReportAggOutputMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+impl AsyncDispatcher for ReportAggOutputMessage {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {

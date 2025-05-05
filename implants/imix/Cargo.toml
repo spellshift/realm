@@ -15,14 +15,10 @@ default = []
 eldritch = { workspace = true, features = ["imix"] }
 pb = { workspace = true }
 transport = { workspace = true, features = ["grpc"] }
-host_unique = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
-netdev = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-uuid = { workspace = true, features = ["v4", "fast-rng"] }
-whoami = { workspace = true }
 pretty_env_logger = { workspace = true }
 
 

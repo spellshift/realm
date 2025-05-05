@@ -1,4 +1,5 @@
 mod eval_impl;
+mod set_callback_interval_impl;
 
 use starlark::{
     environment::MethodsBuilder,
@@ -24,6 +25,12 @@ fn methods(builder: &mut MethodsBuilder) {
     fn eval(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, script: String) -> anyhow::Result<NoneType> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
         eval_impl::eval(env, script)?;
+        Ok(NoneType{})
+    }
+    #[allow(unused_variables)]
+    fn set_callback_interval(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, new_interval: u64) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        set_callback_interval_impl::set_callback_interval(env, new_interval)?;
         Ok(NoneType{})
     }
 }
