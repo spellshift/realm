@@ -15,7 +15,7 @@ const BeaconTab = () => {
     }
     else {
         return (
-            <div>
+            <div className="py-4">
                 {host?.beacons && host?.beacons?.length > 0 ? (
                     <BeaconTable beacons={host.beacons} />
                 )

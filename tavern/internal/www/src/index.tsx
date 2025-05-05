@@ -19,7 +19,8 @@ const cache = new InMemoryCache({
     Query: {
       fields: {
         tasks: relayStylePagination(["where"]),
-        quests: relayStylePagination(["where"])
+        quests: relayStylePagination(["where"]),
+        hosts: relayStylePagination(["where"])
       },
     },
   },
