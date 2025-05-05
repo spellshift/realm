@@ -63,12 +63,10 @@ type QuestEdges struct {
 // TomeOrErr returns the Tome value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e QuestEdges) TomeOrErr() (*Tome, error) {
-	if e.loadedTypes[0] {
-		if e.Tome == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: tome.Label}
-		}
+	if e.Tome != nil {
 		return e.Tome, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tome.Label}
 	}
 	return nil, &NotLoadedError{edge: "tome"}
 }
@@ -76,12 +74,10 @@ func (e QuestEdges) TomeOrErr() (*Tome, error) {
 // BundleOrErr returns the Bundle value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e QuestEdges) BundleOrErr() (*File, error) {
-	if e.loadedTypes[1] {
-		if e.Bundle == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: file.Label}
-		}
+	if e.Bundle != nil {
 		return e.Bundle, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: file.Label}
 	}
 	return nil, &NotLoadedError{edge: "bundle"}
 }
@@ -98,12 +94,10 @@ func (e QuestEdges) TasksOrErr() ([]*Task, error) {
 // CreatorOrErr returns the Creator value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e QuestEdges) CreatorOrErr() (*User, error) {
-	if e.loadedTypes[3] {
-		if e.Creator == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
+	if e.Creator != nil {
 		return e.Creator, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "creator"}
 }

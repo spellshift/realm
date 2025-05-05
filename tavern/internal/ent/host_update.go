@@ -46,6 +46,14 @@ func (hu *HostUpdate) SetIdentifier(s string) *HostUpdate {
 	return hu
 }
 
+// SetNillableIdentifier sets the "identifier" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableIdentifier(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetIdentifier(*s)
+	}
+	return hu
+}
+
 // SetName sets the "name" field.
 func (hu *HostUpdate) SetName(s string) *HostUpdate {
 	hu.mutation.SetName(s)
@@ -86,9 +94,37 @@ func (hu *HostUpdate) ClearPrimaryIP() *HostUpdate {
 	return hu
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (hu *HostUpdate) SetExternalIP(s string) *HostUpdate {
+	hu.mutation.SetExternalIP(s)
+	return hu
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableExternalIP(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetExternalIP(*s)
+	}
+	return hu
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (hu *HostUpdate) ClearExternalIP() *HostUpdate {
+	hu.mutation.ClearExternalIP()
+	return hu
+}
+
 // SetPlatform sets the "platform" field.
 func (hu *HostUpdate) SetPlatform(cp c2pb.Host_Platform) *HostUpdate {
 	hu.mutation.SetPlatform(cp)
+	return hu
+}
+
+// SetNillablePlatform sets the "platform" field if the given value is not nil.
+func (hu *HostUpdate) SetNillablePlatform(cp *c2pb.Host_Platform) *HostUpdate {
+	if cp != nil {
+		hu.SetPlatform(*cp)
+	}
 	return hu
 }
 
@@ -383,6 +419,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if hu.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
 	}
+	if value, ok := hu.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+	}
+	if hu.mutation.ExternalIPCleared() {
+		_spec.ClearField(host.FieldExternalIP, field.TypeString)
+	}
 	if value, ok := hu.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 	}
@@ -649,6 +691,14 @@ func (huo *HostUpdateOne) SetIdentifier(s string) *HostUpdateOne {
 	return huo
 }
 
+// SetNillableIdentifier sets the "identifier" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableIdentifier(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetIdentifier(*s)
+	}
+	return huo
+}
+
 // SetName sets the "name" field.
 func (huo *HostUpdateOne) SetName(s string) *HostUpdateOne {
 	huo.mutation.SetName(s)
@@ -689,9 +739,37 @@ func (huo *HostUpdateOne) ClearPrimaryIP() *HostUpdateOne {
 	return huo
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (huo *HostUpdateOne) SetExternalIP(s string) *HostUpdateOne {
+	huo.mutation.SetExternalIP(s)
+	return huo
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableExternalIP(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetExternalIP(*s)
+	}
+	return huo
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (huo *HostUpdateOne) ClearExternalIP() *HostUpdateOne {
+	huo.mutation.ClearExternalIP()
+	return huo
+}
+
 // SetPlatform sets the "platform" field.
 func (huo *HostUpdateOne) SetPlatform(cp c2pb.Host_Platform) *HostUpdateOne {
 	huo.mutation.SetPlatform(cp)
+	return huo
+}
+
+// SetNillablePlatform sets the "platform" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillablePlatform(cp *c2pb.Host_Platform) *HostUpdateOne {
+	if cp != nil {
+		huo.SetPlatform(*cp)
+	}
 	return huo
 }
 
@@ -1015,6 +1093,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	}
 	if huo.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
+	}
+	if value, ok := huo.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+	}
+	if huo.mutation.ExternalIPCleared() {
+		_spec.ClearField(host.FieldExternalIP, field.TypeString)
 	}
 	if value, ok := huo.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)

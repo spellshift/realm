@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use eldritch::runtime::{messages::AsyncMessage, Message};
 use pb::eldritch::Tome;
 use std::collections::HashMap;
 #[cfg(debug_assertions)]
@@ -49,7 +50,7 @@ pub async fn install() {
 
             #[cfg(debug_assertions)]
             for msg in runtime.collect() {
-                if let eldritch::runtime::Message::ReportText(m) = msg {
+                if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                     if let Err(err) = output.write_str(m.text().as_str()) {
                         #[cfg(debug_assertions)]
                         log::error!("failed to write text: {}", err);
@@ -64,7 +65,7 @@ pub async fn install() {
 
 fn load_embedded_eldritch(path: String) -> Result<String> {
     match eldritch::assets::Asset::get(path.as_ref()) {
-        Some(f) => Ok(String::from_utf8(f.data.to_vec())?),
+        Some(f) => Ok(String::from_utf8_lossy(&f.data).to_string()),
 
         // {
         //     Ok(data) => data,

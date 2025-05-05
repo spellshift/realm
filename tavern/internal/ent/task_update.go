@@ -393,10 +393,10 @@ func (tu *TaskUpdate) check() error {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "Task.output_size": %w`, err)}
 		}
 	}
-	if _, ok := tu.mutation.QuestID(); tu.mutation.QuestCleared() && !ok {
+	if tu.mutation.QuestCleared() && len(tu.mutation.QuestIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Task.quest"`)
 	}
-	if _, ok := tu.mutation.BeaconID(); tu.mutation.BeaconCleared() && !ok {
+	if tu.mutation.BeaconCleared() && len(tu.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Task.beacon"`)
 	}
 	return nil
@@ -1083,10 +1083,10 @@ func (tuo *TaskUpdateOne) check() error {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "Task.output_size": %w`, err)}
 		}
 	}
-	if _, ok := tuo.mutation.QuestID(); tuo.mutation.QuestCleared() && !ok {
+	if tuo.mutation.QuestCleared() && len(tuo.mutation.QuestIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Task.quest"`)
 	}
-	if _, ok := tuo.mutation.BeaconID(); tuo.mutation.BeaconCleared() && !ok {
+	if tuo.mutation.BeaconCleared() && len(tuo.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Task.beacon"`)
 	}
 	return nil

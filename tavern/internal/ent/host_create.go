@@ -90,6 +90,20 @@ func (hc *HostCreate) SetNillablePrimaryIP(s *string) *HostCreate {
 	return hc
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (hc *HostCreate) SetExternalIP(s string) *HostCreate {
+	hc.mutation.SetExternalIP(s)
+	return hc
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (hc *HostCreate) SetNillableExternalIP(s *string) *HostCreate {
+	if s != nil {
+		hc.SetExternalIP(*s)
+	}
+	return hc
+}
+
 // SetPlatform sets the "platform" field.
 func (hc *HostCreate) SetPlatform(cp c2pb.Host_Platform) *HostCreate {
 	hc.mutation.SetPlatform(cp)
@@ -306,6 +320,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		_spec.SetField(host.FieldPrimaryIP, field.TypeString, value)
 		_node.PrimaryIP = value
 	}
+	if value, ok := hc.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+		_node.ExternalIP = value
+	}
 	if value, ok := hc.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 		_node.Platform = value
@@ -506,6 +524,24 @@ func (u *HostUpsert) ClearPrimaryIP() *HostUpsert {
 	return u
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (u *HostUpsert) SetExternalIP(v string) *HostUpsert {
+	u.Set(host.FieldExternalIP, v)
+	return u
+}
+
+// UpdateExternalIP sets the "external_ip" field to the value that was provided on create.
+func (u *HostUpsert) UpdateExternalIP() *HostUpsert {
+	u.SetExcluded(host.FieldExternalIP)
+	return u
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (u *HostUpsert) ClearExternalIP() *HostUpsert {
+	u.SetNull(host.FieldExternalIP)
+	return u
+}
+
 // SetPlatform sets the "platform" field.
 func (u *HostUpsert) SetPlatform(v c2pb.Host_Platform) *HostUpsert {
 	u.Set(host.FieldPlatform, v)
@@ -648,6 +684,27 @@ func (u *HostUpsertOne) UpdatePrimaryIP() *HostUpsertOne {
 func (u *HostUpsertOne) ClearPrimaryIP() *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearPrimaryIP()
+	})
+}
+
+// SetExternalIP sets the "external_ip" field.
+func (u *HostUpsertOne) SetExternalIP(v string) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetExternalIP(v)
+	})
+}
+
+// UpdateExternalIP sets the "external_ip" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateExternalIP() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateExternalIP()
+	})
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (u *HostUpsertOne) ClearExternalIP() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearExternalIP()
 	})
 }
 
@@ -964,6 +1021,27 @@ func (u *HostUpsertBulk) UpdatePrimaryIP() *HostUpsertBulk {
 func (u *HostUpsertBulk) ClearPrimaryIP() *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearPrimaryIP()
+	})
+}
+
+// SetExternalIP sets the "external_ip" field.
+func (u *HostUpsertBulk) SetExternalIP(v string) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetExternalIP(v)
+	})
+}
+
+// UpdateExternalIP sets the "external_ip" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateExternalIP() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateExternalIP()
+	})
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (u *HostUpsertBulk) ClearExternalIP() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearExternalIP()
 	})
 }
 

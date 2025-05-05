@@ -1,11 +1,55 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestEnvBool(t *testing.T) {
+	tests := []struct {
+		name      string
+		env       EnvBool
+		osValue   string
+		wantValue bool
+	}{
+		{
+			name:      "Set",
+			env:       EnvBool{"TEST_ENV_STRING"},
+			osValue:   "VALUE_SET",
+			wantValue: true,
+		},
+		{
+			name:      "Unset",
+			env:       EnvBool{"TEST_ENV_STRING"},
+			osValue:   "",
+			wantValue: false,
+		},
+		{
+			name:      "Default",
+			env:       EnvBool{"TEST_ENV_STRING"},
+			osValue:   "",
+			wantValue: false,
+		},
+	}
+
+	// Run Tests
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.osValue != "" {
+				os.Setenv(tc.env.Key, tc.osValue)
+				defer os.Unsetenv(tc.env.Key)
+			}
+
+			assert.Equal(t, tc.wantValue, tc.env.Bool())
+			assert.Equal(t, tc.wantValue, tc.env.IsSet())
+			assert.Equal(t, !tc.wantValue, tc.env.IsUnset())
+			assert.Equal(t, fmt.Sprintf("%t", tc.wantValue), tc.env.String())
+		})
+	}
+}
 
 func TestEnvString(t *testing.T) {
 	// Test Cases

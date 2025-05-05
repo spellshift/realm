@@ -18,9 +18,9 @@ const TaskTimeStamp: FC<TaskTimeStampType> = ({
             <ClockIcon className="h-5 w-5 mt-1" />
             <div className="flex flex-col gap-1 ">
                 <div className="text-gray-600">Status</div>
-                {createdAt && <span className="text-xs">{`Created at ${createdTime.toLocaleTimeString()} on ${createdTime.toDateString()}`}</span>}
-                {execStartedAt && <span className="text-xs">{`Started at ${startTime.toLocaleTimeString()} on ${startTime.toDateString()}`}</span>}
-                {execFinishedAt && <span className="text-xs">{`Finished at ${finishTime.toLocaleTimeString()} on ${finishTime.toDateString()}`}</span>}
+                {createdAt && <span className=" text-sm">{`Created at ${createdTime.toLocaleTimeString()} on ${createdTime.toDateString()}`}</span>}
+                {execStartedAt && <span className="text-sm">{`Started at ${startTime.toLocaleTimeString()} on ${startTime.toDateString()}`}</span>}
+                {execFinishedAt && <span className="text-sm">{`Finished at ${finishTime.toLocaleTimeString()} on ${finishTime.toDateString()}`}</span>}
             </div>
         </div>
     );

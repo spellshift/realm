@@ -237,7 +237,7 @@ func (qc *QuestCreate) check() error {
 			return &ValidationError{Name: "param_defs_at_creation", err: fmt.Errorf(`ent: validator failed for field "Quest.param_defs_at_creation": %w`, err)}
 		}
 	}
-	if _, ok := qc.mutation.TomeID(); !ok {
+	if len(qc.mutation.TomeIDs()) == 0 {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Quest.tome"`)}
 	}
 	return nil

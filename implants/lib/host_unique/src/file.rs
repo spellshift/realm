@@ -1,12 +1,14 @@
 use std::{
-    fs::{self},
-    io::Write,
+    io::{Read, Write},
     path::Path,
+    str,
 };
 
 use uuid::Uuid;
 
 use crate::HostIDSelector;
+
+const UUID_SIZE: usize = 36;
 
 #[derive(Default)]
 pub struct File {
@@ -51,33 +53,43 @@ impl HostIDSelector for File {
         let file_path = self.get_host_id_path();
         let path = Path::new(file_path.as_str());
         if path.exists() {
-            if let Ok(host_id) = fs::read_to_string(path) {
-                match Uuid::parse_str(host_id.as_str()) {
-                    Ok(res) => return Some(res),
+            if let Ok(mut f) = std::fs::File::open(path) {
+                let mut host_id: [u8; UUID_SIZE] = [0; UUID_SIZE];
+                match f.read_exact(&mut host_id) {
+                    Ok(_) => {}
                     Err(_err) => {
                         #[cfg(debug_assertions)]
-                        log::debug!("Failed to deploy {:?}", _err);
-                        return None;
+                        log::debug!("Failed to read host_id {:?}", _err);
                     }
-                };
+                }
+                if let Ok(uuid_str) = str::from_utf8(&host_id) {
+                    match Uuid::parse_str(uuid_str) {
+                        Ok(res) => return Some(res),
+                        Err(_err) => {
+                            #[cfg(debug_assertions)]
+                            log::debug!("Failed to deploy {:?}", _err);
+                        }
+                    };
+                }
             }
         }
 
         // Generate New
         let host_id = Uuid::new_v4();
+        let uuid_str: String = format!("{}", host_id);
 
         // Save to file
         match std::fs::File::create(path) {
-            Ok(mut f) => match f.write_all(host_id.as_bytes()) {
+            Ok(mut f) => match f.write(uuid_str.as_bytes()) {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write host id file: {_err}");
+                    log::debug!("failed to write host id file: {_err}");
                 }
             },
             Err(_err) => {
                 #[cfg(debug_assertions)]
-                log::error!("failed to create host id file: {_err}");
+                log::debug!("failed to create host id file: {_err}");
             }
         };
 
@@ -102,6 +114,12 @@ mod tests {
         let id_one = selector.get_host_id();
         let id_two = selector.get_host_id();
 
+        let id_one_val = id_one.unwrap();
+        println!("failed to create host id file: {id_one_val}");
+
+        assert!(id_one.is_some());
+        assert!(id_two.is_some());
         assert_eq!(id_one, id_two);
+        assert!(id_two.unwrap().to_string().contains("-4"));
     }
 }

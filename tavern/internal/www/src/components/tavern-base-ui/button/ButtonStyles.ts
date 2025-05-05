@@ -5,6 +5,7 @@ export const baseButton = tv({
   variants: {
     size: {
       xs: 'text-xs py-1 px-2',
+      sm: 'text-sm py-1 px-2',
       md: 'text-sm py-2 px-4',
       lg: 'text-base py-3 px-6',
       xl: 'text-lg py-4 px-8',
@@ -70,6 +71,7 @@ export const solidButton = tv({
       purple:
         'btn-primary',
       gray: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+      red: 'bg-red-700 text-white hover:bg-red-800',
     },
   },
 });
@@ -80,8 +82,9 @@ export const outlineButton = tv({
   base: 'ring-1',
   variants: {
     color: {
-      purple: 'text-purple-800 ring-purple-800',
-      gray: 'text-gray-900 ring-gray-500',
+      purple: 'text-purple-800 ring-purple-800 hover:bg-purple-100',
+      gray: 'text-gray-900 ring-gray-500  hover:bg-gray-100',
+      red: 'text-red-700 ring-red-700 hover:bg-red-100',
     },
   },
 });
@@ -93,6 +96,7 @@ export const ghostButton = tv({
     color: {
       purple: 'text-purple-800 hover:bg-purple-100',
       gray: 'text-gray-900  hover:bg-gray-100',
+      red: 'text-red-700 hover:bg-red-100',
     },
   },
 });

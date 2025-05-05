@@ -63,7 +63,7 @@ pub fn ssh_exec(
     let key_password_ref = key_password.as_deref();
     let local_port: u16 = port.try_into()?;
 
-    let cmd_res = match runtime.block_on(handle_ssh_exec(
+    let (out, status, err) = match runtime.block_on(handle_ssh_exec(
         target,
         local_port,
         command,
@@ -73,19 +73,15 @@ pub fn ssh_exec(
         key_password_ref,
         timeout,
     )) {
-        Ok(local_res) => local_res,
-        Err(local_err) => {
-            return Err(anyhow::anyhow!(
-                "Failed to run handle_ssh_exec: {}",
-                local_err.to_string()
-            ))
-        }
+        Ok(local_res) => (local_res.stdout, local_res.status, String::from("")),
+        Err(local_err) => (String::from(""), -1, local_err.to_string()),
     };
 
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
-    insert_dict_kv!(dict_res, starlark_heap, "stdout", &cmd_res.stdout, String);
-    insert_dict_kv!(dict_res, starlark_heap, "status", cmd_res.status, i32);
+    insert_dict_kv!(dict_res, starlark_heap, "stdout", &out, String);
+    insert_dict_kv!(dict_res, starlark_heap, "stderr", &err, String);
+    insert_dict_kv!(dict_res, starlark_heap, "status", status, i32);
 
     Ok(dict_res)
 }

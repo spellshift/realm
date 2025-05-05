@@ -48,7 +48,6 @@ func (HostCredential) Edges() []ent.Edge {
 			).
 			Comment("Host the credential was reported on."),
 		edge.From("task", Task.Type).
-			Required().
 			Unique().
 			Ref("reported_credentials").
 			Annotations(
@@ -60,7 +59,12 @@ func (HostCredential) Edges() []ent.Edge {
 
 // Annotations describes additional information for the ent.
 func (HostCredential) Annotations() []schema.Annotation {
-	return []schema.Annotation{}
+	return []schema.Annotation{
+		entgql.Mutations(entgql.MutationCreate()),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
+	}
 }
 
 // Mixin defines common shared properties for the ent.

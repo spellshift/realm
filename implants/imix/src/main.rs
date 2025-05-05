@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(feature = "win_service"), windows_subsystem = "windows")]
 #![deny(warnings)]
 
 #[cfg(all(feature = "win_service", windows))]
@@ -8,7 +8,6 @@ extern crate windows_service;
 mod win_service;
 
 mod agent;
-mod config;
 mod install;
 mod run;
 mod task;

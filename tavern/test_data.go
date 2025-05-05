@@ -7,12 +7,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	mrand "math/rand"
 	"net"
 	"time"
 
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/namegen"
@@ -20,7 +21,30 @@ import (
 
 // createTestData populates the DB with some test data :)
 func createTestData(ctx context.Context, client *ent.Client) {
-	log.Printf("[WARN] Test data is enabled")
+	slog.WarnContext(ctx, "test data is enabled")
+
+	client.User.Create().
+		SetName("Admin").
+		SetOauthID("AdminOAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+	client.User.Create().
+		SetName("Admin2").
+		SetOauthID("Admin2OAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+	client.User.Create().
+		SetName("User").
+		SetOauthID("UserOAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(false).
+		SaveX(ctx)
+
 	svcTags := make([]*ent.Tag, 0, 20)
 	for i := 0; i < 20; i++ {
 		svcTags = append(
@@ -50,6 +74,13 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetPrimaryIP(hostIP).
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
+				SaveX(ctx)
+
+			client.HostCredential.Create().
+				SetHost(testHost).
+				SetPrincipal("root").
+				SetKind(epb.Credential_KIND_PASSWORD).
+				SetSecret(newRandomCredential()).
 				SaveX(ctx)
 
 			testBeacons = append(testBeacons,
@@ -224,6 +255,15 @@ func newRandomIP() string {
 	ip := mrand.Uint32()
 	binary.LittleEndian.PutUint32(buf, ip)
 	return net.IP(buf).String()
+}
+
+func newRandomCredential() string {
+	buf := make([]byte, 16)
+	_, err := io.ReadFull(rand.Reader, buf)
+	if err != nil {
+		panic(fmt.Errorf("failed to generate random credential: %w", err))
+	}
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 // timeAgo returns the current time minus the provided duration (e.g. 5 seconds ago)

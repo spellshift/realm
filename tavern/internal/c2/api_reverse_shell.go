@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -36,20 +36,25 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	task, err := srv.graph.Task.Get(ctx, int(registerMsg.TaskId))
 	if err != nil {
 		if ent.IsNotFound(err) {
+			slog.ErrorContext(ctx, "reverse shell failed: associated task does not exist", "task_id", registerMsg.TaskId, "error", err)
 			return status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", registerMsg.TaskId)
 		}
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated task", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 	beacon, err := task.Beacon(ctx)
 	if err != nil {
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated beacon", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load beacon ent (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 	quest, err := task.Quest(ctx)
 	if err != nil {
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated quest", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load quest ent (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 	creator, err := quest.Creator(ctx)
 	if err != nil {
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated quest creator", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load quest creator (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 
@@ -61,13 +66,27 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		SetData([]byte{}).
 		Save(ctx)
 	if err != nil {
+		slog.ErrorContext(ctx, "reverse shell failed: could not create shell entity", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to create shell: %v", err)
 	}
 	shellID := shell.ID
 
 	// Log Shell Session
-	log.Printf("[gRPC] Reverse Shell Started (shell_id=%d)", shellID)
-	defer log.Printf("[gRPC] Reverse Shell Closed (shell_id=%d)", shellID)
+	slog.InfoContext(ctx, "started gRPC reverse shell",
+		"shell_id", shellID,
+		"task_id", registerMsg.TaskId,
+		"creator_id", creator.ID,
+	)
+	defer func(start time.Time) {
+		slog.InfoContext(ctx, "closed gRPC reverse shell",
+			"started_at", start.String(),
+			"ended_at", time.Now().String(),
+			"duration", time.Since(start).String(),
+			"shell_id", shellID,
+			"task_id", registerMsg.TaskId,
+			"creator_id", creator.ID,
+		)
+	}(time.Now())
 
 	// Create new Stream
 	pubsubStream := stream.New(fmt.Sprintf("%d", shellID))
@@ -81,25 +100,34 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		defer cancel()
 
 		// Notify Subscribers that the stream is closed
-		log.Printf("[gRPC][ReverseShell] Sending stream close message")
+		slog.DebugContext(ctx, "reverse shell closed, sending stream close message", "shell_id", shell.ID)
 		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
 			Metadata: map[string]string{
 				stream.MetadataStreamClose: fmt.Sprintf("%d", shellID),
 			},
 		}, srv.mux); err != nil {
-			log.Printf("[gRPC][ReverseShell][ERROR] Failed to notify subscribers that shell was closed: %v", err)
+			slog.ErrorContext(ctx, "reverse shell closed and failed to notify subscribers",
+				"shell_id", shell.ID,
+				"error", err,
+			)
 		}
 
 		// Update Ent
 		shell, err := srv.graph.Shell.Get(ctx, shellID)
 		if err != nil {
-			log.Printf("[gRPC][ReverseShell][ERROR] Failed to retrieve shell ent to update it as closed: %v", err)
+			slog.ErrorContext(ctx, "reverse shell closed and failed to load ent for updates",
+				"error", err,
+				"shell_id", shell.ID,
+			)
 			return
 		}
 		if _, err := shell.Update().
 			SetClosedAt(closedAt).
 			Save(ctx); err != nil {
-			log.Printf("[gRPC][ReverseShell][ERROR] Failed to update shell ent as closed: %v", err)
+			slog.ErrorContext(ctx, "reverse shell closed and failed to update ent",
+				"error", err,
+				"shell_id", shell.ID,
+			)
 		}
 	}()
 
@@ -121,35 +149,44 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		sendShellInput(ctx, gstream, pubsubStream)
+		sendShellInput(ctx, shellID, gstream, pubsubStream)
 	}()
 
 	// Send Output (to pubsub)
-	err = sendShellOutput(ctx, gstream, pubsubStream, srv.mux)
+	err = sendShellOutput(ctx, shellID, gstream, pubsubStream, srv.mux)
 
 	wg.Wait()
 
 	return err
 }
 
-func sendShellInput(ctx context.Context, gstream c2pb.C2_ReverseShellServer, pubsubStream *stream.Stream) {
+func sendShellInput(ctx context.Context, shellID int, gstream c2pb.C2_ReverseShellServer, pubsubStream *stream.Stream) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case msg := <-pubsubStream.Messages():
+			msgLen := len(msg.Body)
 			if err := gstream.Send(&c2pb.ReverseShellResponse{
 				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_DATA,
 				Data: msg.Body,
 			}); err != nil {
-				log.Printf("[ERROR] Failed to send gRPC input: %v", err)
+				slog.ErrorContext(ctx, "failed to send shell input to reverse shell",
+					"shell_id", shellID,
+					"msg_len", msgLen,
+					"error", err,
+				)
 				return
 			}
+			slog.DebugContext(ctx, "reverse shell sent input to agent via gRPC",
+				"shell_id", shellID,
+				"msg_len", msgLen,
+			)
 		}
 	}
 }
 
-func sendShellOutput(ctx context.Context, gstream c2pb.C2_ReverseShellServer, pubsubStream *stream.Stream, mux *stream.Mux) error {
+func sendShellOutput(ctx context.Context, shellID int, gstream c2pb.C2_ReverseShellServer, pubsubStream *stream.Stream, mux *stream.Mux) error {
 	for {
 		req, err := gstream.Recv()
 		if err == io.EOF {
@@ -165,11 +202,21 @@ func sendShellOutput(ctx context.Context, gstream c2pb.C2_ReverseShellServer, pu
 		}
 
 		// Send Pubsub Message
+		msgLen := len(req.Data)
 		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
 			Body: req.Data,
 		}, mux); err != nil {
+			slog.ErrorContext(ctx, "reverse shell failed to publish shell output",
+				"shell_id", shellID,
+				"msg_len", msgLen,
+				"error", err,
+			)
 			return status.Errorf(codes.Internal, "failed to publish message: %v", err)
 		}
+		slog.DebugContext(ctx, "reverse shell published shell output",
+			"shell_id", shellID,
+			"msg_len", msgLen,
+		)
 	}
 }
 
@@ -185,7 +232,7 @@ func sendKeepAlives(ctx context.Context, gstream c2pb.C2_ReverseShellServer) {
 			if err := gstream.Send(&c2pb.ReverseShellResponse{
 				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING,
 			}); err != nil {
-				log.Printf("[ERROR] Failed to send gRPC ping: %v", err)
+				slog.ErrorContext(ctx, "reverse shell failed to send gRPC keep alive ping", "error", err)
 			}
 		}
 	}

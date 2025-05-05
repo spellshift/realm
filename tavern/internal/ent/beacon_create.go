@@ -265,7 +265,7 @@ func (bc *BeaconCreate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if _, ok := bc.mutation.HostID(); !ok {
+	if len(bc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Beacon.host"`)}
 	}
 	return nil

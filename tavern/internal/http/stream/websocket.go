@@ -2,7 +2,7 @@ package stream
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"sync"
@@ -65,7 +65,10 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			hasClosed, ok := message.Metadata[MetadataStreamClose]
 			if ok && hasClosed != "" {
 				// The producer ended the stream.
-				log.Printf("[WS] Closing websocket, stream has ended (stream_id=%s)", c.Stream.id)
+				slog.DebugContext(ctx, "websocket closed due to producer ending stream",
+					"stream_id", c.Stream.id,
+					"stream_order_key", c.Stream.orderKey,
+				)
 				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -74,13 +77,25 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			if err != nil {
 				return
 			}
-			w.Write(message.Body)
+			if _, err := w.Write(message.Body); err != nil {
+				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
+					"stream_id", c.Stream.id,
+					"stream_order_key", c.Stream.orderKey,
+					"error", err,
+				)
+			}
 
-			// Add queued messages to the current websocket message.
+			// Flush queued messages to the current websocket message.
 			n := len(c.Messages())
 			for i := 0; i < n; i++ {
 				additionalMsg := <-c.Messages()
-				w.Write(additionalMsg.Body)
+				if _, err := w.Write(additionalMsg.Body); err != nil {
+					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
+						"stream_id", c.Stream.id,
+						"stream_order_key", c.Stream.orderKey,
+						"error", err,
+					)
+				}
 			}
 
 			if err := w.Close(); err != nil {
@@ -115,17 +130,27 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			_, message, err := c.ws.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Printf("[WS][ERROR] websocket closed unexpectedly: %v", err)
+					slog.ErrorContext(ctx, "websocket closed unexpectedly",
+						"stream_id", c.Stream.id,
+						"stream_order_key", c.Stream.orderKey,
+						"error", err,
+					)
 				}
 				return
 			}
+			msgLen := len(message)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
 					metadataID: c.id,
 				},
 			}, c.mux); err != nil {
-				log.Printf("[WS][ERROR] failed to publish message: %v", err)
+				slog.ErrorContext(ctx, "websocket failed to publish message",
+					"stream_id", c.Stream.id,
+					"stream_order_key", c.Stream.orderKey,
+					"msg_len", msgLen,
+					"error", err,
+				)
 				return
 			}
 		}
@@ -134,7 +159,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 
 func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Client, shellID int, userID int) {
 	defer func() {
-		log.Printf("[WS] checking user already active before removal (user_id=%d,shell_id=%d): ", userID, shellID)
+		slog.DebugContext(ctx, "websocket checking user activity for shell before removal", "user_id", userID, "shell_id", shellID)
 
 		wasAdded, err := graph.Shell.Query().
 			Where(shell.ID(shellID)).
@@ -142,7 +167,7 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 			Where(user.ID(userID)).
 			Exist(ctx)
 		if err != nil {
-			log.Printf("[WS][ERROR] Failed to check if user active on shell (user_id=%d,shell_id=%d): %v", userID, shellID, err)
+			slog.ErrorContext(ctx, "websocket failed to check user activity for shell", "err", err, "user_id", userID, "shell_id", shellID)
 			return
 		}
 		if !wasAdded {
@@ -152,7 +177,7 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 		if _, err := graph.Shell.UpdateOneID(shellID).
 			RemoveActiveUserIDs(userID).
 			Save(ctx); err != nil {
-			log.Printf("[WS][ERROR] Failed to remove active user from shell (user_id=%d): %v", userID, err)
+			slog.ErrorContext(ctx, "websocket failed to remove inactive user from shell", "err", err, "user_id", userID, "shell_id", shellID)
 			return
 		}
 	}()
@@ -173,7 +198,7 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 				Where(user.ID(userID)).
 				Exist(ctx)
 			if err != nil {
-				log.Printf("[WS][ERROR] Failed to check if user active on shell (user_id=%d,shell_id=%d): ", userID, shellID)
+				slog.ErrorContext(ctx, "websocket failed to check user activity for shell", "err", err, "user_id", userID, "shell_id", shellID)
 				continue
 			}
 			if alreadyAdded {
@@ -183,7 +208,7 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 			if _, err := graph.Shell.UpdateOneID(shellID).
 				AddActiveUserIDs(userID).
 				Save(ctx); err != nil {
-				log.Printf("[WS][ERROR] Failed to add active user to shell (user_id=%d): %v", userID, err)
+				slog.ErrorContext(ctx, "websocket failed to add active user to shell", "err", err, "user_id", userID, "shell_id", shellID)
 			}
 		}
 	}
@@ -196,6 +221,17 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		// Load Authenticated User
+		authUser := auth.UserFromContext(ctx)
+		var (
+			authUserName = "unknown"
+			authUserID   = 0
+		)
+		if authUser != nil {
+			authUserID = authUser.ID
+			authUserName = authUser.Name
+		}
 
 		// Parse Shell ID
 		shellIDStr := r.URL.Query().Get("shell_id")
@@ -218,7 +254,7 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			if ent.IsNotFound(err) {
 				http.Error(w, "shell not found", http.StatusNotFound)
 			} else {
-				log.Printf("[WS][ERROR] Failed to load shell: %v", err)
+				slog.ErrorContext(ctx, "websocket failed to load shell", "err", err, "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
 				http.Error(w, "failed to load shell", http.StatusInternalServerError)
 			}
 			return
@@ -227,7 +263,7 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		// Track Active User
 		var activeUserWG sync.WaitGroup
 		activeUserDoneCh := make(chan struct{})
-		if authUser := auth.UserFromContext(ctx); authUser != nil {
+		if authUser != nil {
 			activeUserWG.Add(1)
 			go func(ctx context.Context, shellID, userID int) {
 				defer activeUserWG.Done()
@@ -242,13 +278,13 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		}
 
 		// Start Websocket
-		log.Printf("[WS] New Shell Websocket Connection (shell_id=%d)", shellID)
+		slog.InfoContext(ctx, "new shell websocket connection", "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Printf("[WS][ERROR] Failed to upgrade connection to websocket: %v", err)
+			slog.ErrorContext(ctx, "websocket failed to upgrade connection", "err", err, "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
 			return
 		}
-		defer log.Printf("[WS] Shell Websocket Connection Closed (shell_id=%d)", shellID)
+		defer slog.InfoContext(ctx, "websocket shell connection closed", "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
 
 		// Initialize Stream
 		stream := New(shellIDStr)

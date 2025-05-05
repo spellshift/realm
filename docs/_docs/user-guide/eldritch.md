@@ -83,6 +83,7 @@ write_systemd_service()
 
 The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
+- `agent` - Used for meta-style interactions with the agent itself.
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
@@ -115,6 +116,27 @@ Instead we recommend using more descriptive names like:
 for user_home_dir in file.list("/home/"):
     print(user_home_dir["file_name"])
 ```
+
+---
+
+## Agent
+
+### agent.eval
+
+`agent.eval(script: str) -> None`
+
+The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
+executes it in the runtime environment of the executing tome. This means that
+any `print`s or `eprint`s or output from the script will be merged with that
+of the broader tome.
+
+### agent.set_callback_interval
+
+`agent.set_callback_interval(new_interval: int) -> None`
+
+The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
+running agent's callback interval to the passed value. This configuration change will
+not persist across agent reboots.
 
 ---
 
@@ -293,6 +315,7 @@ This function also supports globbing with `*` for example:
 ```python
 file.list("/home/*/.bash_history") # List all files called .bash_history in sub dirs of `/home/`
 file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name
+file.list("\\\\127.0.0.1\\c$\\Windows\\*.yml") # List files over UNC paths
 ```
 
 Each file is represented by a Dict type.
@@ -361,6 +384,7 @@ This function supports globbing with `*` for example:
 ```python
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.remove
@@ -381,9 +405,9 @@ The <b>file.replace</b> method finds the first string matching a regex pattern i
 
 The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
-### file.tmp_file
+### file.temp_file
 
-`file.tmp_file(name: Option<str>) -> str`
+`file.temp_file(name: Option<str>) -> str`
 
 The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
@@ -407,7 +431,8 @@ Unimplemented.
 `file.write(path: str, content: str) -> None`
 
 The <b>file.write</b> method writes to a given file path with the given content.
-If a file or directory already exists at this path, the method will fail.
+If a file already exists at this path, the method will overwite it. If a directory
+already exists at the path the method will error.
 
 ### file.find
 
@@ -550,36 +575,30 @@ The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move 
 
 ### pivot.ssh_copy
 
-`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> None`
+`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
 
-The <b>pivot.ssh_copy</b> method copies a local file to a remote system. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
+The <b>pivot.ssh_copy</b> method copies a local file to a remote system.
+ssh_copy will return `"Sucess"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
 If the connection is successful but the copy writes a file error will be returned.
-
-ssh_copy will first delete the remote file and then write to its location.
+ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
 
 ### pivot.ssh_exec
 
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
-The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
-If the connection is successful but the command fails no output will be returned but the status code will be set.
-Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture.
+The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
+Stdout returns the string result from the command output.
+Stderr will return any errors from the SSH connection but not the command being executed.
+Status will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.
 
 ```json
 {
     "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
+    "stderr":"",
     "status": 0
 }
 ```
-
-### pivot.ssh_password_spray
-
-`pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
-
-The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more flexibility but may be adding complexity.
 
 ---
 
@@ -789,10 +808,12 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
-Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
+On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
+On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
+The `env_vars` will be a map of environment variables to be added to the process of the execution.
 
 ```python
 sys.exec("/bin/bash",["-c", "whoami"])
