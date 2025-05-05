@@ -30,11 +30,15 @@ export const useHosts = (pagination: boolean, id?: string) => {
     );
 
     const updateHosts = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
-        setPage(1);
         const defaultQuery = constructDefaultQuery(afterCursor, beforeCursor);
         const queryWithFilter =  constructFilterBasedQuery(defaultQuery, filtersSelected);
         refetch(queryWithFilter);
       },[constructDefaultQuery, constructFilterBasedQuery, refetch, filtersSelected]);
+
+    const handleFilterChange = (filters: Array<any>)=> {
+        setPage(1);
+        setFiltersSelected(filters);
+    }
 
     useEffect(()=>{
         updateHosts();
@@ -63,7 +67,7 @@ export const useHosts = (pagination: boolean, id?: string) => {
         setPage,
         updateHosts,
         filtersSelected,
-        setFiltersSelected
+        setFiltersSelected: handleFilterChange
     }
 };
 
