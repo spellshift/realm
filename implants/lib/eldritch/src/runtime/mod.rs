@@ -1,6 +1,6 @@
 mod drain;
 mod environment;
-mod eprint_impl;
+pub mod eprint_impl;
 mod eval;
 pub mod messages;
 
