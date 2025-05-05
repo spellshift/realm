@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -290,15 +289,6 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
-	// GraphQL Logging
-	gqlLogger := log.New(os.Stderr, "[GraphQL] ", log.Flags())
-	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
-		oc := gqlgraphql.GetOperationContext(ctx)
-		reqVars, err := json.Marshal(oc.Variables)
-		if err != nil {
-			gqlLogger.Printf("[ERROR] failed to marshal variables to JSON: %v\n", err)
-			return next(ctx)
-		}
 	// Configure Raw Query Logging
 	logRawQuery := EnvLogGraphQLRawQuery.IsSet()
 
@@ -384,6 +374,7 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	}
 	if err != nil {
 		log.Printf("[ERROR] Unable to setup secrets manager\n")
+		log.Printf("[ERROR] If you're running locally try setting `export SECRETS_FILE_PATH='/tmp/secrets'` \n")
 	}
 
 	// Check if we already have a key
