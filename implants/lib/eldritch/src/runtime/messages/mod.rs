@@ -10,6 +10,7 @@ mod report_start;
 mod report_text;
 mod reverse_shell_pty;
 mod set_callback_interval;
+mod set_callback_uri;
 
 pub use fetch_asset::FetchAssetMessage;
 pub use pb::config::Config;
@@ -23,6 +24,7 @@ pub use report_start::ReportStartMessage;
 pub use report_text::ReportTextMessage;
 pub use reverse_shell_pty::ReverseShellPTYMessage;
 pub use set_callback_interval::SetCallbackIntervalMessage;
+pub use set_callback_uri::SetCallbackUriMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
@@ -121,6 +123,9 @@ impl AsyncDispatcher for AsyncMessage {
 pub enum SyncMessage {
     #[display(fmt = "SetCallbackInterval")]
     SetCallbackInterval(SetCallbackIntervalMessage),
+
+    #[display(fmt = "SetCallbackInterval")]
+    SetCallbackUri(SetCallbackUriMessage),
 }
 
 impl SyncDispatcher for SyncMessage {
@@ -130,6 +135,7 @@ impl SyncDispatcher for SyncMessage {
 
         match self {
             Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg),
+            Self::SetCallbackUri(msg) => msg.dispatch(transport, cfg),
         }
     }
 }
