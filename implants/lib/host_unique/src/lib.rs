@@ -4,6 +4,8 @@ mod env;
 pub use env::Env;
 mod file;
 pub use file::File;
+mod registry;
+pub use registry::Registry;
 
 pub trait HostIDSelector {
     fn get_name(&self) -> String;

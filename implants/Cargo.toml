@@ -83,6 +83,7 @@ tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
 tonic-build = { git = "https://github.com/hyperium/tonic.git", rev = "c783652" } # Needed git for `.codec_path` in build.rs - previous version of codec setting is really gross. https://github.com/hyperium/tonic/blob/ea8cd3f384e953e177f20a62aa156a75676853f4/examples/build.rs#L44
 trait-variant = "0.1.1"
 uuid = "1.5.0"
+static_vcruntime = "2.0"
 which = "4.4.2"
 whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"

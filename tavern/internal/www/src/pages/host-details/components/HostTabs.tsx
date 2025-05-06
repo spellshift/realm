@@ -38,7 +38,7 @@ const HostTabs = () => {
                     Credentials
                 </div>
                 <div>
-                    {host?.credentials!.length && `(${host?.credentials!.length || 0})`}
+                    {host?.credentials?.length && `(${host?.credentials?.length || 0})`}
                 </div>
             </Tab>
         </Tab.List>

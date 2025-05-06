@@ -94,7 +94,7 @@ func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput
 }
 
 // Hosts is the resolver for the hosts field.
-func (r *queryResolver) Hosts(ctx context.Context, where *ent.HostWhereInput) ([]*ent.Host, error) {
+func (r *queryResolver) Hosts(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) (*ent.HostConnection, error) {
 	query, err := r.client.Host.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -104,9 +104,9 @@ func (r *queryResolver) Hosts(ctx context.Context, where *ent.HostWhereInput) ([
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithHostOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithHostOrder(orderBy))
 }
 
 // Tags is the resolver for the tags field.

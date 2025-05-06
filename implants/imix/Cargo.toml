@@ -25,6 +25,10 @@ pretty_env_logger = { workspace = true }
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = "0.6.0"
 
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+static_vcruntime = { workspace = true }
+
 [dev-dependencies]
 httptest = { workspace = true }
 tempfile = { workspace = true }

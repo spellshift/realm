@@ -64,10 +64,12 @@ Imix uses the `host_unique` library under `implants/lib/host_unique` to determin
 We recommend that you use the `File` for the most reliability:
 
 - Exists across reboots
-- Garunteed to be unique per host (because the bot creates it)
+- Guaranteed to be unique per host (because the bot creates it)
 - Can be used by multiple instances of the beacon on the same host.
 
 If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+
+For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
 
 If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
 This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.

@@ -138,6 +138,16 @@ The <b>agent.set_callback_interval</b> method takes an unsigned int and changes 
 running agent's callback interval to the passed value. This configuration change will
 not persist across agent reboots.
 
+### agent.set_callback_uri
+
+`agent.set_callback_uri(new_uri: str) -> None`
+
+The <b>agent.set_callback_uri</b> method takes an string and changes the
+running agent's callback uri to the passed value. This configuration change will
+not persist across agent reboots. NOTE: please ensure the passed URI path is correct
+for the underlying `Transport` being used, as a URI can take many forms and we make no
+assumptions on `Transport` requirements no gut checks are applied to the passed string.
+
 ---
 
 ## Assets
@@ -385,6 +395,19 @@ This function supports globbing with `*` for example:
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
 file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
+```
+
+### file.read_binary
+
+`file.read(path: str) -> List<int>`
+
+The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+This function supports globbing with `*` for example:
+
+```python
+file.read_binary("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
+file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.remove
