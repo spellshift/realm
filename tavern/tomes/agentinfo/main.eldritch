@@ -1,4 +1,4 @@
 def main():
-    print(process.info())
+    pprint(process.info())
 
 main()
