@@ -397,6 +397,19 @@ file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the 
 file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
+### file.read_binary
+
+`file.read(path: str) -> List<int>`
+
+The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+This function supports globbing with `*` for example:
+
+```python
+file.read_binary("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
+file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
+```
+
 ### file.remove
 
 `file.remove(path: str) -> None`
