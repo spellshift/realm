@@ -25,6 +25,8 @@ Out of the box realm comes with two options `File` and `Env` to determine what h
 
 `Env` will read from the agent environment variables looking for `IMIX_HOST_ID` if it's set it will use the UUID4 string set there.
 
+There is a third option available on Windows systems to store the UUID value inside a registry key. Follow the steps below to update `lib.rs` to include `Registry` as a default before `File` to enable it. On hosts that are not Windows, imix will simply skip `Registry`.
+
 If no selectors succeed a random UUID4 ID will be generated and used for the bot. This should be avoided.
 
 ## Develop A Host Uniqueness Selector
