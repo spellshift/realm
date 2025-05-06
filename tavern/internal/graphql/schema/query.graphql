@@ -58,7 +58,25 @@ extend type Query {
     where: RepositoryWhereInput
   ): RepositoryConnection! @requireRole(role: USER)
   beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
-  hosts(where: HostWhereInput): [Host!]! @requireRole(role: USER)
+  hosts(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Hosts returned from the connection."""
+    orderBy: [HostOrder!]
+
+    """Filtering options for Hosts returned from the connection."""
+    where: HostWhereInput
+  ): HostConnection! @requireRole(role: USER)
   tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
   tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
   users(where: UserWhereInput): [User!]! @requireRole(role: USER)

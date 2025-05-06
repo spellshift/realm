@@ -12,7 +12,7 @@ pub fn parent_dir(path: String) -> Result<String> {
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
 
@@ -30,7 +30,7 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::ReportText(m) = msg {
+                    if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                         assert_eq!(tc.id, m.id);
                         assert_eq!(tc.want_text, m.text);
                         found = true;

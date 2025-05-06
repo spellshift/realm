@@ -538,6 +538,23 @@ type Host implements Node {
   """
   credentials: [HostCredential!]
 }
+"""
+A connection to a list of items.
+"""
+type HostConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
 type HostCredential implements Node {
   id: ID!
   """
@@ -688,6 +705,19 @@ input HostCredentialWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+}
+"""
+An edge in a connection.
+"""
+type HostEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Host
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 type HostFile implements Node {
   id: ID!

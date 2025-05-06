@@ -1,4 +1,7 @@
-use crate::runtime::{messages::ReportProcessListMessage, Environment};
+use crate::runtime::{
+    messages::{AsyncMessage, ReportProcessListMessage},
+    Environment,
+};
 use anyhow::Result;
 use pb::eldritch::{process::Status, Process, ProcessList};
 use starlark::collections::SmallMap;
@@ -20,10 +23,10 @@ pub fn process_list(env: &Environment, process_list: Vec<SmallMap<String, Value>
         })
     }
 
-    env.send(ReportProcessListMessage {
+    env.send(AsyncMessage::from(ReportProcessListMessage {
         id: env.id(),
         list: pb_process_list,
-    })?;
+    }))?;
     Ok(())
 }
 
@@ -52,7 +55,7 @@ fn unpack_status(proc: &SmallMap<String, Value>) -> Status {
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::process::Status;
     use pb::eldritch::*;
     use std::collections::HashMap;
@@ -71,7 +74,7 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::ReportProcessList(m) = msg {
+                    if let Message::Async(AsyncMessage::ReportProcessList(m)) = msg {
                         assert_eq!(tc.want_proc_list, m.list);
                         found = true;
                     }

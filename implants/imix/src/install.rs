@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use eldritch::runtime::{messages::AsyncMessage, Message};
 use pb::eldritch::Tome;
 use std::collections::HashMap;
 #[cfg(debug_assertions)]
@@ -49,7 +50,7 @@ pub async fn install() {
 
             #[cfg(debug_assertions)]
             for msg in runtime.collect() {
-                if let eldritch::runtime::Message::ReportText(m) = msg {
+                if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                     if let Err(err) = output.write_str(m.text().as_str()) {
                         #[cfg(debug_assertions)]
                         log::error!("failed to write text: {}", err);

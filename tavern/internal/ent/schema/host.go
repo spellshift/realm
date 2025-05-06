@@ -78,6 +78,8 @@ func (Host) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Host) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),
