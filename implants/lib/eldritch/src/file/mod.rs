@@ -10,6 +10,7 @@ mod list_impl;
 mod mkdir_impl;
 mod moveto_impl;
 mod parent_dir_impl;
+mod read_binary_impl;
 mod read_impl;
 mod remove_impl;
 mod replace_all_impl;
@@ -119,6 +120,11 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn read(this: &FileLibrary, path: String) -> anyhow::Result<String> {
         read_impl::read(path)
+    }
+
+    #[allow(unused_variables)]
+    fn read_binary(this: &FileLibrary, path: String) -> anyhow::Result<Vec<u32>> {
+        read_binary_impl::read_binary(path)
     }
 
     #[allow(unused_variables)]

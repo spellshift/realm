@@ -94,7 +94,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write"]"#),
+            want_text: format!("{}\n", r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "read_binary", "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write"]"#),
             want_error: None,
         },
         process_bindings: TestCase {

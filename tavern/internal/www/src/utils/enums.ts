@@ -28,7 +28,8 @@ export enum SupportedPlatforms {
 }
 export enum TableRowLimit {
     QuestRowLimit=8,
-    TaskRowLimit=8
+    TaskRowLimit=8,
+    HostRowLimit=8
 }
 export enum PrincipalAdminTypes {
     root='root',
