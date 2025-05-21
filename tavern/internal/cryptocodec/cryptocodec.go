@@ -13,6 +13,7 @@ import (
 	"github.com/cloudflare/circl/dh/x25519"
 	"golang.org/x/crypto/chacha20poly1305"
 	"google.golang.org/grpc/encoding"
+	"google.golang.org/grpc/mem"
 )
 
 // TODO: Switch to a gomap and mutex.
@@ -49,9 +50,19 @@ func (s *SyncMap) Delete(key int) {
 // TODO: Should we make this a random long byte array in case it gets used anywhere to avoid encrypting data with a weak key? - Sliver handles errors in this way.
 var FAILURE_BYTES = []byte{}
 
+func castBytesToBufSlice(buf []byte) (mem.BufferSlice, error) {
+	r := bytes.NewBuffer(buf)
+	res, e := mem.ReadAll(r, mem.DefaultBufferPool())
+	if e != nil {
+		log.Println("[ERROR] Failed to read failure_bytes ", e)
+		return res, e
+	}
+	return res, nil
+}
+
 func init() {
 	log.Println("[INFO] Loading xchacha20-poly1305")
-	encoding.RegisterCodec(StreamDecryptCodec{})
+	encoding.RegisterCodecV2(StreamDecryptCodec{})
 }
 
 type StreamDecryptCodec struct {
@@ -62,30 +73,45 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 	return StreamDecryptCodec{}
 }
 
-func (s StreamDecryptCodec) Marshal(v any) ([]byte, error) {
+func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 	id, err := goid()
 	if err != nil {
 		log.Println("[ERROR] Unable to find GOID ", id)
-		return FAILURE_BYTES, err
+		return castBytesToBufSlice(FAILURE_BYTES)
 	}
-	proto := encoding.GetCodec("proto")
+	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
-	enc_res := s.Csvc.Encrypt(res)
-	return enc_res, err
+	if err != nil {
+		log.Println("[ERROR] Unable to marshall data")
+		return res, err
+	}
+	enc_res := s.Csvc.Encrypt(res.Materialize())
+	byte_enc_res, err := castBytesToBufSlice(enc_res)
+
+	return byte_enc_res, err
 }
 
-func (s StreamDecryptCodec) Unmarshal(buf []byte, v any) error {
+func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
 	id, err := goid()
 	if err != nil {
 		log.Println("[ERROR] Unable to find GOID ", id)
 		return err
 	}
-	dec_buf, pub_key := s.Csvc.Decrypt(buf)
+	dec_buf, pub_key := s.Csvc.Decrypt(buf.Materialize())
 
 	session_pub_keys.Store(id, pub_key)
 
-	proto := encoding.GetCodec("proto")
-	return proto.Unmarshal(dec_buf, v)
+	proto := encoding.GetCodecV2("proto")
+	if proto == nil {
+		log.Println("[ERROR] 'proto' codec is not registered")
+		return errors.New("'proto' codec is not registered")
+	}
+	dec_mem_slice, err := castBytesToBufSlice(dec_buf)
+	if err != nil {
+		log.Println("[ERROR] Unable to cast decrypted bytes to mem.BufferSlice")
+		return err
+	}
+	return proto.Unmarshal(dec_mem_slice, v)
 }
 
 func (s StreamDecryptCodec) Name() string {

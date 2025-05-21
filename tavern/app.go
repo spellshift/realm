@@ -425,7 +425,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
 	grpcSrv := grpc.NewServer(
-		grpc.ForceServerCodec(xchacha),
+		grpc.ForceServerCodecV2(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
