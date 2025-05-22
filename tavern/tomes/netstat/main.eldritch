@@ -47,7 +47,7 @@ def netstat():
         # Get proc info. "pids" will only ever be one
         if "pid" in n:
             if n["pid"]:
-                fields += ["["+str(n["pid"])+"]"+pids.get(n["pid"])]
+                fields += ["["+str(n["pid"])+"]"+pids.get(n["pid"], "")]
 
         rows.append(fields)
     print_table(rows)
