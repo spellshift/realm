@@ -1,8 +1,12 @@
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
-use std::io::prelude::*;
+use std::io::prelude::*; // Make sure Write is in scope
 use std::process::{Command, Stdio}; // Run programs
 use std::str;
+use std::fs; // For test_run_plaintext_tome_from_file if needed directly
+use tempfile::NamedTempFile; // For creating temporary files
+use std::io::Write; // For writing to temporary files
+
 
 const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test/";
 
@@ -108,8 +112,61 @@ fn test_golem_main_embedded_files() -> anyhow::Result<()> {
     let mut cmd = Command::cargo_bin("golem")?;
 
     cmd.assert()
-        .success()
-        .stdout(predicate::str::contains(r#"This script just prints"#));
+        .failure() // Should fail because password is required
+        .stderr(predicate::str::contains("Password required"));
 
+
+    Ok(())
+}
+
+
+// Test cases for encrypted tome functionality
+
+#[test]
+fn test_run_embedded_tome_correct_password() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("golem")?;
+    cmd.arg("--password")
+       .arg("what is that sound I here?"); // Default key used in build.rs
+    cmd.assert()
+       .success()
+       .stdout(predicate::str::contains("Hello Encrypted World!\n"));
+    Ok(())
+}
+
+#[test]
+fn test_run_embedded_tome_incorrect_password() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("golem")?;
+    cmd.arg("--password")
+       .arg("wrongpassword");
+    cmd.assert()
+       .failure()
+       .stderr(predicate::str::contains("Invalid password."));
+    Ok(())
+}
+
+#[test]
+fn test_run_embedded_tome_no_password() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("golem")?;
+    // No arguments, Golem should attempt to run embedded tomes and fail due to missing password.
+    cmd.assert()
+       .failure()
+       .stderr(predicate::str::contains("Password required for encrypted embedded tomes. Use --password <PASSWORD> or -p <PASSWORD>"));
+    Ok(())
+}
+
+#[test]
+fn test_run_plaintext_tome_from_file() -> Result<(), Box<dyn std::error::Error>> {
+    let mut file = NamedTempFile::new()?;
+    // Note: The eldritch print function adds a newline.
+    // If the test tome content is `print("Hello Plaintext File!")`
+    // the expected output will be "Hello Plaintext File!\n"
+    writeln!(file, r#"print("Hello Plaintext File!")"#)?; 
+    let path = file.path().to_str().unwrap();
+
+    let mut cmd = Command::cargo_bin("golem")?;
+    cmd.arg(path); // Pass tome file as INPUT argument
+    cmd.assert()
+       .success()
+       .stdout(predicate::str::contains("Hello Plaintext File!\n"));
     Ok(())
 }
