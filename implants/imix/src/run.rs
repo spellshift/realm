@@ -24,6 +24,8 @@ pub async fn handle_main() {
         #[cfg(debug_assertions)]
         log::info!("agent config initialized {:#?}", cfg.clone());
 
+        let run_once = cfg.run_once;
+
         match run(cfg).await {
             Ok(_) => {}
             Err(_err) => {
@@ -32,6 +34,10 @@ pub async fn handle_main() {
 
                 tokio::time::sleep(Duration::from_secs(retry_interval)).await;
             }
+        }
+
+        if run_once {
+            break;
         }
     }
 }
