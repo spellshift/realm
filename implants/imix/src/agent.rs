@@ -116,6 +116,10 @@ impl<T: Transport + 'static> Agent<T> {
                 }
             };
 
+            if self.cfg.run_once {
+                return Ok(());
+            }
+
             let interval = match self.cfg.info.clone() {
                 Some(b) => Ok(b.interval),
                 None => Err(anyhow::anyhow!("beacon info is missing from agent")),
