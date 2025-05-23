@@ -231,7 +231,21 @@ impl Runtime {
         let module: Module = Module::new();
         let mut input_params: Dict = Dict::new(SmallMap::new());
 
+        let mut files_type = "remote_assets";
         for (key, value) in &tome.parameters {
+            // The file_names var points to this type, instead of remote assets
+            // Currently the only other asset type is "local_assets", but more could be implemented
+            if key == "__file_names_type" && !value.is_empty() {
+                files_type = value;
+                continue;
+            } else if key.starts_with("__") {
+                // Add hidden keys to the globals so they are assessible from starlark functions
+                module.set(
+                    key.strip_prefix("__").unwrap(),
+                    module.heap().alloc_str(value.as_str()).to_value(),
+                );
+                continue; // Ignore hidden params
+            }
             let new_key = module.heap().alloc_str(key);
             let new_value = module.heap().alloc_str(value.as_str()).to_value();
             let hashed_key = match new_key.to_value().get_hashed() {
@@ -248,7 +262,7 @@ impl Runtime {
         }
         module.set("input_params", input_params.alloc_value(module.heap()));
         module.set(
-            "remote_assets",
+            files_type, // Either remote_assets, or local_assets
             tome.file_names.clone().alloc_value(module.heap()),
         );
 
