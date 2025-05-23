@@ -21,7 +21,25 @@ pub fn list(starlark_eval: &Evaluator<'_, '_>) -> Result<Vec<String>> {
             return Ok(res);
         }
     }
-
+    /*
+    let local_assets = starlark_eval.module().get("remote_assets");
+    if let Some(assets) = remote_assets {
+        let tmp_list = ListRef::from_value(assets).context("`remote_assets` is not type list")?;
+        for asset_path in tmp_list.iter() {
+            let mut asset_path_string = asset_path.to_str();
+            if let Some(local_asset_path_string) = asset_path_string.strip_prefix('"') {
+                asset_path_string = local_asset_path_string.to_string();
+            }
+            if let Some(local_asset_path_string) = asset_path_string.strip_suffix('"') {
+                asset_path_string = local_asset_path_string.to_string();
+            }
+            res.push(asset_path_string)
+        }
+        if !res.is_empty() {
+            return Ok(res);
+        }
+    }
+     */
     for asset_path in super::Asset::iter() {
         res.push(asset_path.to_string());
     }
