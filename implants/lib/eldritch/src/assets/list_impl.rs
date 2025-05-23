@@ -21,29 +21,21 @@ pub fn list(starlark_eval: &Evaluator<'_, '_>) -> Result<Vec<String>> {
             return Ok(res);
         }
     }
-    /*
-    let local_assets = starlark_eval.module().get("remote_assets");
-    if let Some(assets) = remote_assets {
-        let tmp_list = ListRef::from_value(assets).context("`remote_assets` is not type list")?;
+
+    // Check local assets
+    let local_assets = starlark_eval.module().get("local_assets");
+    if let Some(assets) = local_assets {
+        let tmp_list = ListRef::from_value(assets).context("`local_assets` is not type list")?;
         for asset_path in tmp_list.iter() {
-            let mut asset_path_string = asset_path.to_str();
-            if let Some(local_asset_path_string) = asset_path_string.strip_prefix('"') {
-                asset_path_string = local_asset_path_string.to_string();
-            }
-            if let Some(local_asset_path_string) = asset_path_string.strip_suffix('"') {
-                asset_path_string = local_asset_path_string.to_string();
-            }
-            res.push(asset_path_string)
+            res.push(asset_path.to_str());
         }
-        if !res.is_empty() {
-            return Ok(res);
-        }
+        // No matter what we return here, even if local assets is empty.
+        return Ok(res);
     }
-     */
+
     for asset_path in super::Asset::iter() {
         res.push(asset_path.to_string());
     }
-
     Ok(res)
 }
 
@@ -87,7 +79,7 @@ mod tests {
     }
 
     test_cases! {
-            test_asset_list_remote: TestCase{
+            test_asset_list_embedded: TestCase{
                 id: 123,
                 tome: Tome{
                     eldritch: String::from(r#"print(assets.list())"#),
@@ -96,7 +88,7 @@ mod tests {
                 },
                 want_text: String::from("[\"exec_script/hello_world.bat\", \"exec_script/hello_world.sh\", \"exec_script/main.eldritch\", \"exec_script/metadata.yml\", \"print/main.eldritch\", \"print/metadata.yml\"]\n"),
             },
-            test_asset_list_local: TestCase{
+            test_asset_list_remote: TestCase{
                 id: 123,
                 tome: Tome{
                     eldritch: String::from(r#"print(assets.list())"#),
@@ -104,6 +96,18 @@ mod tests {
                     file_names: Vec::from(["remote_asset/just_a_remote_asset.txt".to_string()]),
                 },
                 want_text: String::from("[\"remote_asset/just_a_remote_asset.txt\"]\n"),
+            },
+            test_asset_list_local: TestCase{
+                id: 123,
+                tome: Tome {
+                    eldritch: String::from(r#"print(assets.list())"#),
+                    parameters: HashMap::from([
+                        // Set the file backend to be local_assets
+                        ("__file_names_type".to_string(), "local_assets".to_string()),
+                    ]),
+                    file_names: Vec::from(["local_asset/just_a_local_asset.txt".to_string()]),
+                },
+                want_text: String::from("[\"local_asset/just_a_local_asset.txt\"]\n"),
             },
     }
 }

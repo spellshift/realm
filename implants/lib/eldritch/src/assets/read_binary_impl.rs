@@ -1,10 +1,18 @@
-use std::sync::mpsc::{channel, Receiver};
-
 use anyhow::{Context, Result};
 use pb::c2::FetchAssetResponse;
 use starlark::{eval::Evaluator, values::list::ListRef};
+use std::fs;
+use std::path::Path;
+use std::sync::mpsc::{channel, Receiver};
 
 use crate::runtime::{messages::AsyncMessage, messages::FetchAssetMessage, Environment};
+
+fn read_binary_local(src: String) -> Result<Vec<u32>> {
+    let bytes =
+        fs::read(&src).map_err(|e| anyhow::anyhow!("Failed to read file {}: {}", src, e))?;
+    let result = bytes.iter().map(|x| *x as u32).collect::<Vec<u32>>();
+    Ok(result)
+}
 
 fn read_binary_remote(rx: Receiver<FetchAssetResponse>) -> Result<Vec<u32>> {
     let mut res: Vec<u32> = vec![];
@@ -45,6 +53,24 @@ pub fn read_binary(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<Vec
             return read_binary_remote(rx);
         }
     }
+    let local_assets = starlark_eval.module().get("local_assets");
+    if let Some(assets) = local_assets {
+        let tmp_list = ListRef::from_value(assets).context("`local_assets` is not type list")?;
+        let src_value = starlark_eval.module().heap().alloc_str(&src);
+
+        if let Some(assets_dir_value) = starlark_eval.module().get("local_assets_directory") {
+            // Attempt to convert the Starlark Value to a Rust string
+            let local_assets_dir = assets_dir_value
+                .unpack_str()
+                .context("`local_assets_directory` is not a string")?;
+            if tmp_list.contains(&src_value.to_value()) {
+                let full_file_name = Path::new(local_assets_dir).join(&src);
+                if let Some(fname) = full_file_name.to_str() {
+                    return read_binary_local(fname.to_string());
+                }
+            }
+        }
+    }
     read_binary_embedded(src)
 }
 
@@ -57,6 +83,29 @@ mod tests {
     use pb::{c2::FetchAssetResponse, eldritch::Tome};
 
     use super::*;
+
+    #[test]
+    fn test_assets_read_binary_local() -> anyhow::Result<()> {
+        let res =
+            read_binary_local("../../../bin/embedded_files_test/print/main.eldritch".to_string())?;
+        #[cfg(not(windows))]
+        assert_eq!(
+            res,
+            [
+                112, 114, 105, 110, 116, 40, 34, 84, 104, 105, 115, 32, 115, 99, 114, 105, 112,
+                116, 32, 106, 117, 115, 116, 32, 112, 114, 105, 110, 116, 115, 34, 41, 10
+            ]
+        );
+        #[cfg(windows)]
+        assert_eq!(
+            res,
+            [
+                112, 114, 105, 110, 116, 40, 34, 84, 104, 105, 115, 32, 115, 99, 114, 105, 112,
+                116, 32, 106, 117, 115, 116, 32, 112, 114, 105, 110, 116, 115, 34, 41, 13, 10
+            ]
+        );
+        Ok(())
+    }
 
     #[test]
     fn test_assets_read_binary() -> anyhow::Result<()> {

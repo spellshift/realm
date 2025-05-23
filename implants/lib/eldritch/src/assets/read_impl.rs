@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::Path;
 use std::sync::mpsc::{channel, Receiver};
 
 use anyhow::{Context, Result};
@@ -10,6 +12,13 @@ use crate::runtime::{
 };
 
 fn read_local(src: String) -> Result<String> {
+    match fs::read_to_string(&src) {
+        Ok(s) => Ok(s),
+        Err(e) => Err(anyhow::anyhow!(e)),
+    }
+}
+
+fn read_embedded(src: String) -> Result<String> {
     let src_file_bytes = match super::Asset::get(src.as_str()) {
         Some(local_src_file) => local_src_file.data,
         None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),
@@ -52,7 +61,25 @@ pub fn read(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<String> {
             return read_remote(rx);
         }
     }
-    read_local(src)
+    let local_assets = starlark_eval.module().get("local_assets");
+    if let Some(assets) = local_assets {
+        let tmp_list = ListRef::from_value(assets).context("`local_assets` is not type list")?;
+        let src_value = starlark_eval.module().heap().alloc_str(&src);
+
+        if let Some(assets_dir_value) = starlark_eval.module().get("local_assets_directory") {
+            // Attempt to convert the Starlark Value to a Rust string
+            let local_assets_dir = assets_dir_value
+                .unpack_str()
+                .context("`local_assets_directory` is not a string")?;
+            if tmp_list.contains(&src_value.to_value()) {
+                let full_file_name = Path::new(local_assets_dir).join(&src);
+                if let Some(fname) = full_file_name.to_str() {
+                    return read_local(fname.to_string());
+                }
+            }
+        }
+    }
+    read_embedded(src)
 }
 
 #[cfg(test)]
@@ -97,12 +124,29 @@ mod tests {
     }
 
     test_cases! {
-        test_asset_read_local: TestCase{
+        test_asset_read_embedded: TestCase{
             id: 123,
             tome: Tome{
                 eldritch: String::from(r#"print(assets.read("print/main.eldritch").strip())"#),
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
+            },
+            want_text: String::from("print(\"This script just prints\")\n"),
+        },
+        test_asset_read_local: TestCase{
+            id: 123,
+            tome: Tome {
+                eldritch: String::from(r#"print(assets.read("print/main.eldritch").strip())"#),
+                parameters: HashMap::from([
+                    // Set the local dir
+                    (
+                        "__local_assets_directory".to_string(),
+                        "../../../bin/embedded_files_test/".to_string(),
+                    ),
+                    // Set the file backend to be local_assets
+                    ("__file_names_type".to_string(), "local_assets".to_string()),
+                ]),
+                file_names: Vec::from(["print/main.eldritch".to_string()]),
             },
             want_text: String::from("print(\"This script just prints\")\n"),
         },

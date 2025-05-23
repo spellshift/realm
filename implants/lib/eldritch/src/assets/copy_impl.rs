@@ -11,6 +11,14 @@ use std::{
 };
 
 fn copy_local(src: String, dst: String) -> Result<()> {
+    // Attempt to copy the file
+    match fs::copy(src, dst) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(anyhow::anyhow!(e)),
+    }
+}
+
+fn copy_embedded(src: String, dst: String) -> Result<()> {
     let src_file = match super::Asset::get(src.as_str()) {
         Some(local_src_file) => local_src_file.data,
         None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),
@@ -71,7 +79,26 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
             return copy_remote(rx, dst);
         }
     }
-    copy_local(src, dst)
+
+    let local_assets = starlark_eval.module().get("local_assets");
+    if let Some(assets) = local_assets {
+        let tmp_list = ListRef::from_value(assets).context("`local_assets` is not type list")?;
+        let src_value = starlark_eval.module().heap().alloc_str(&src);
+
+        if let Some(assets_dir_value) = starlark_eval.module().get("local_assets_directory") {
+            // Attempt to convert the Starlark Value to a Rust string
+            let local_assets_dir = assets_dir_value
+                .unpack_str()
+                .context("`local_assets_directory` is not a string")?;
+            if tmp_list.contains(&src_value.to_value()) {
+                let full_file_name = Path::new(local_assets_dir).join(&src);
+                if let Some(fname) = full_file_name.to_str() {
+                    return copy_local(fname.to_string(), dst);
+                }
+            }
+        }
+    }
+    copy_embedded(src, dst)
 }
 
 #[cfg(test)]
@@ -183,6 +210,55 @@ mod tests {
         // Lastly, assert the file was written correctly
         let contents = fs::read_to_string(check_dst)?;
         assert_eq!("chunk1\nchunk2\n", contents.as_str());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_local_copy() -> anyhow::Result<()> {
+        // Create files
+        let mut tmp_file_dst = NamedTempFile::new()?;
+        let path_dst = String::from(tmp_file_dst.path().to_str().unwrap());
+
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        let path_src = "exec_script/hello_world.sh".to_string();
+        #[cfg(target_os = "windows")]
+        let path_src = "exec_script/hello_world.bat".to_string();
+
+        let runtime = crate::start(
+            123,
+            Tome {
+                eldritch: r#"assets.copy(input_params['src_file'], input_params['test_output'])"#
+                    .to_owned(),
+                parameters: HashMap::from([
+                    // Set the local dir
+                    (
+                        "__local_assets_directory".to_string(),
+                        "../../../bin/embedded_files_test/".to_string(),
+                    ),
+                    // Set the file backend to be local_assets
+                    ("__file_names_type".to_string(), "local_assets".to_string()),
+                    ("src_file".to_string(), path_src.clone()),
+                    ("test_output".to_string(), path_dst),
+                ]),
+                file_names: Vec::from([path_src]),
+            },
+        )
+        .await;
+
+        let messages = runtime.collect();
+        let errors = messages
+            .iter()
+            .filter_map(|m| match m {
+                Message::Async(AsyncMessage::ReportError(rem)) => Some(rem),
+                _ => None,
+            })
+            .collect::<Vec<&ReportErrorMessage>>();
+        assert!(errors.is_empty());
+
+        let mut contents: String = String::new();
+        tmp_file_dst.read_to_string(&mut contents)?;
+        assert!(contents.contains("hello from an embedded shell script"));
 
         Ok(())
     }
