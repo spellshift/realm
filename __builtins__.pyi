@@ -20,8 +20,6 @@
 
 from typing import List, Dict, Any, Optional, Callable, Iterable, TypedDict
 
-# --- Eldritch Modules and Functions ---
-
 
 class Agent:
     """
@@ -30,8 +28,10 @@ class Agent:
 
     def eval(self, script: str) -> None:
         """
-        The agent.eval method takes an arbitrary eldritch payload string and
-        executes it in the runtime environment of the executing tome.
+        The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
+        executes it in the runtime environment of the executing tome. This means that
+        any `print`s or `eprint`s or output from the script will be merged with that
+        of the broader tome.
         """
         ...
 
@@ -62,7 +62,18 @@ class Assets:
 
     def copy(self, src: str, dst: str) -> None:
         """
-        The assets.copy method copies an embedded file from the agent to disk.
+        The <b>assets.copy</b> method copies an embedded file from the agent to disk.
+        The `src` variable will be the path from the `embed_files_golem_prod` as the root dir.
+        For example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.
+        If `dst` exists it will be overwritten. If it doesn't exist the function will fail.
+
+        ```python
+        def deploy_agent():
+            if file.is_dir("/usr/bin"):
+                assets.copy("sliver/agent-x64","/usr/bin/notsu")
+                sys.exec("/usr/bin/notsu",[],true)
+        deploy_agent()
+        ```
         """
         ...
 
@@ -152,13 +163,21 @@ class FileStat(TypedDict):
     Represents file status information as returned by file.list.
     """
     file_name: str
+    """The name of the file or directory."""
     absolute_path: str
+    """The absolute path to the file or directory."""
     size: int
+    """The size of the file in bytes."""
     owner: str
+    """The owner of the file or directory."""
     group: str
+    """The group owner of the file or directory."""
     permissions: str
-    modified: str  # Documented as "2023-07-09 01:35:40 UTC", so string
-    type: str  # "Directory" or "File"
+    """The file permissions in a string format (e.g., 'rwxr-xr-x')."""
+    modified: str
+    """The last modification timestamp of the file or directory, in 'YYYY-MM-DD HH:MM:SS UTC' format."""
+    type: str
+    """The type of the file system entry ('Directory' or 'File')."""
 
 
 class File:
@@ -318,12 +337,38 @@ class Http:
 http: Http = ...  # Global instance of the Http module
 
 
+class ARPTableEntry(TypedDict):
+    """
+    An entry in the ARP table, mapping an IP address to a MAC address.
+    """
+    ip: str
+    """The IP address."""
+    mac: str
+    """The MAC address."""
+    interface: str
+    """The network interface associated with this entry."""
+
+
+class PortScanResult(TypedDict):
+    """
+    The result of a port scan for a single port.
+    """
+    ip: str
+    """The IP address that was scanned."""
+    port: int
+    """The port number that was scanned."""
+    protocol: str
+    """The protocol used for the scan (e.g., 'tcp', 'udp')."""
+    status: str
+    """The status of the port (e.g., 'open', 'closed', 'timeout')."""
+
+
 class Pivot:
     """
     Used to identify and move between systems.
     """
 
-    def arp_scan(self, target_cidrs: List[str]) -> List[str]:
+    def arp_scan(self, target_cidrs: List[str]) -> List[ARPTableEntry]:
         """
         Performs an ARP scan on target CIDRs.
         """
@@ -347,7 +392,7 @@ class Pivot:
         """
         ...
 
-    def port_scan(self, target_cidrs: List[str], ports: List[int], protocol: str, timeout: int) -> List[str]:
+    def port_scan(self, target_cidrs: List[str], ports: List[int], protocol: str, timeout: int) -> List[PortScanResult]:
         """
         Performs a port scan on target CIDRs and ports.
         """
@@ -371,7 +416,7 @@ class Pivot:
         """
         ...
 
-    def ssh_exec(self, target: str, port: int, command: str, username: str, password: Optional[str] = None, key: Optional[str] = None, key_password: Optional[str] = None, timeout: Optional[int] = None) -> List[Dict[str, Any]]:
+    def ssh_exec(self, target: str, port: int, command: str, username: str, password: Optional[str] = None, key: Optional[str] = None, key_password: Optional[str] = None, timeout: Optional[int] = None) -> ShellResult:
         """
         Executes a command over SSH.
         """
@@ -381,12 +426,92 @@ class Pivot:
 pivot: Pivot = ...  # Global instance of the Pivot module
 
 
+class ProcessInfo(TypedDict):
+    """
+    Detailed information about a process.
+    """
+    pid: int
+    """The process ID."""
+    name: str
+    """The name of the process."""
+    cmd: List[str]
+    """The command and arguments used to start the process."""
+    exe: str
+    """The path to the process executable."""
+    environ: List[str]
+    """A list of environment variables for the process."""
+    cwd: str
+    """The current working directory of the process."""
+    root: str
+    """The root directory of the process."""
+    memory_usage: int
+    """The resident set size (RSS) memory usage of the process in bytes."""
+    virtual_memory_usage: int
+    """The virtual memory size (VMS) usage of the process in bytes."""
+    ppid: int
+    """The parent process ID."""
+    status: str
+    """The current status of the process (e.g., 'Running', 'Sleeping', 'Stopped')."""
+    start_time: int
+    """The process start time as a Unix timestamp."""
+    run_time: int
+    """The total CPU time the process has consumed in seconds."""
+    uid: int
+    """The real user ID of the process."""
+    euid: int
+    """The effective user ID of the process."""
+    gid: int
+    """The real group ID of the process."""
+    egid: int
+    """The effective group ID of the process."""
+    sid: int
+    """The session ID of the process."""
+
+
+class ProcessInfoSimple(TypedDict):
+    """
+    A simplified view of process information.
+    """
+    pid: str
+    """The process ID as a string."""
+    ppid: str
+    """The parent process ID as a string."""
+    status: str
+    """The current status of the process (e.g., 'Sleeping', 'Running')."""
+    name: str
+    """The name of the process."""
+    path: str
+    """The path to the process executable."""
+    username: str
+    """The username of the process owner."""
+    command: str
+    """The full command line used to start the process."""
+    cwd: str
+    """The current working directory of the process."""
+    environ: str
+    """A string containing the environment variables of the process."""
+
+
+class SocketInfo(TypedDict):
+    """
+    Information about an open socket.
+    """
+    socket_type: str
+    """The type of socket (e.g., 'TCP', 'UDP')."""
+    local_address: str
+    """The local IP address the socket is bound to."""
+    local_port: int
+    """The local port number the socket is using."""
+    pid: int
+    """The process ID that owns the socket."""
+
+
 class Process:
     """
     Used to interact with processes on the system.
     """
 
-    def info(self, pid: Optional[int] = None) -> Dict[str, Any]:
+    def info(self, pid: Optional[int] = None) -> ProcessInfo:
         """
         Returns information about a process or the current process.
         """
@@ -398,7 +523,7 @@ class Process:
         """
         ...
 
-    def list(self) -> List[Dict[str, Any]]:
+    def list(self) -> List[ProcessInfoSimple]:
         """
         Lists running processes.
         """
@@ -410,7 +535,7 @@ class Process:
         """
         ...
 
-    def netstat(self) -> List[Dict[str, Any]]:
+    def netstat(self) -> List[SocketInfo]:
         """
         Returns network connection statistics for processes.
         """
@@ -514,6 +639,72 @@ class Report:
 report: Report = ...  # Global instance of the Report module
 
 
+class OSInfo(TypedDict):
+    """
+    Detailed information about the operating system.
+    """
+    arch: str
+    """The architecture of the operating system (e.g., 'x86_64')."""
+    desktop_env: str
+    """The desktop environment in use (e.g., 'GNOME', 'KDE', or 'Unknown')."""
+    distro: str
+    """The distribution of the operating system (e.g., 'Debian GNU/Linux 10 (buster)')."""
+    platform: str
+    """The general platform of the operating system (e.g., 'PLATFORM_LINUX', 'PLATFORM_WINDOWS')."""
+
+
+class UserDetail(TypedDict):
+    """
+    Detailed information about a user.
+    """
+    uid: int
+    """The user ID."""
+    name: str
+    """The username."""
+    gid: int
+    """The primary group ID of the user."""
+    groups: List[str]
+    """A list of groups the user belongs to."""
+
+
+class UserInfo(TypedDict):
+    """
+    Information about the current process's running user.
+    """
+    uid: UserDetail
+    """Details for the real user ID."""
+    euid: UserDetail
+    """Details for the effective user ID."""
+    gid: int
+    """The real group ID of the process."""
+    egid: int
+    """The effective group ID of the process."""
+
+
+class ShellResult(TypedDict):
+    """
+    The result of a shell command execution.
+    """
+    stdout: str
+    """The standard output from the command."""
+    stderr: str
+    """The standard error from the command."""
+    status: int
+    """The exit status code of the command."""
+
+
+class NetworkInterface(TypedDict):
+    """
+    Information about a single network interface.
+    """
+    name: str
+    """The name of the network interface (e.g., 'eth0', 'lo')."""
+    ips: List[str]
+    """A list of IP addresses (with CIDR notation) assigned to the interface."""
+    mac: str
+    """The MAC address of the network interface."""
+
+
 class Sys:
     """
     General system capabilities can include loading libraries, or information about the current context.
@@ -531,7 +722,7 @@ class Sys:
         """
         ...
 
-    def exec(self, path: str, args: List[str], disown: Optional[bool] = None, env_vars: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def exec(self, path: str, args: List[str], disown: Optional[bool] = None, env_vars: Optional[Dict[str, str]] = None) -> ShellResult:
         """
         Executes an external command.
         Returns a dictionary with 'stdout', 'stderr', and 'status'.
@@ -544,13 +735,13 @@ class Sys:
         """
         ...
 
-    def get_ip(self) -> List[Dict[str, Any]]:
+    def get_ip(self) -> List[NetworkInterface]:
         """
         Returns a list of IP addresses.
         """
         ...
 
-    def get_os(self) -> Dict[str, Any]:
+    def get_os(self) -> OSInfo:
         """
         Returns operating system information.
         """
@@ -568,7 +759,7 @@ class Sys:
         """
         ...
 
-    def get_user(self) -> Dict[str, Any]:
+    def get_user(self) -> UserInfo:
         """
         Returns current user information.
         """
@@ -604,7 +795,7 @@ class Sys:
         """
         ...
 
-    def shell(self, cmd: str) -> Dict[str, Any]:
+    def shell(self, cmd: str) -> ShellResult:
         """
         Executes a command in the system shell.
         Returns a dictionary with 'stdout', 'stderr', and 'status'.
