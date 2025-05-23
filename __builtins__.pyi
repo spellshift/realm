@@ -410,7 +410,7 @@ class File:
     @staticmethod
     def temp_file(name: Optional[str] = None) -> str:
         """
-        The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+        The **file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
         """
         ...
 
@@ -863,7 +863,7 @@ class Process:
         """
         The **process.netstat** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
-        _Currently only shows LISTENING TCP connections_
+        > Currently only shows LISTENING TCP connections
 
         ```json
         [
