@@ -25,8 +25,8 @@ class Agent:
     """
     Used for meta-style interactions with the agent itself.
     """
-
-    def eval(self, script: str) -> None:
+    @staticmethod
+    def eval(script: str) -> None:
         """
         The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
         executes it in the runtime environment of the executing tome. This means that
@@ -35,19 +35,23 @@ class Agent:
         """
         ...
 
-    def set_callback_interval(self, new_interval: int) -> None:
+    @staticmethod
+    def set_callback_interval(new_interval: int) -> None:
         """
-        The agent.set_callback_interval method takes an unsigned int and changes the
-        running agent’s callback interval to the passed value.
-        This configuration change will not persist across agent reboots.
+        The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
+        running agent's callback interval to the passed value. This configuration change will
+        not persist across agent reboots.
         """
         ...
 
-    def set_callback_uri(self, new_uri: str) -> None:
+    @staticmethod
+    def set_callback_uri(new_uri: str) -> None:
         """
-        The agent.set_callback_uri method takes a string and changes the
-        running agent’s callback uri to the passed value.
-        This configuration change will not persist across agent reboots.
+        The <b>agent.set_callback_uri</b> method takes an string and changes the
+        running agent's callback uri to the passed value. This configuration change will
+        not persist across agent reboots. NOTE: please ensure the passed URI path is correct
+        for the underlying `Transport` being used, as a URI can take many forms and we make no
+        assumptions on `Transport` requirements no gut checks are applied to the passed string.
         """
         ...
 
