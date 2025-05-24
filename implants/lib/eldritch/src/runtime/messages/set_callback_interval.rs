@@ -5,6 +5,7 @@ use pb::{c2::Beacon, config::Config};
 /*
  * SetCallbackIntervalMessage sets the callback interval in the dispatched config.
  */
+#[allow(dead_code)]
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct SetCallbackIntervalMessage {
