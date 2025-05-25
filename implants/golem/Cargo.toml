@@ -18,6 +18,13 @@ structopt = { workspace = true }
 itertools = { workspace = true }
 thiserror = { workspace = true }
 lsp-types = { workspace = true }
+aes-gcm = { version = "0.10.3", features = ["aes"] }
+pbkdf2 = "0.11"
+sha2 = "0.10"
+rand = "0.8"
+hex = "0.4"
+walkdir = "2"
+include_dir = { version = "0.7", features = ["glob"] }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
