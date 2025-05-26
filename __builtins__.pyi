@@ -167,6 +167,18 @@ class Crypto:
         ...
 
     @staticmethod
+    def is_json(content: str) -> Any:
+        """
+        The **crypto.is_json** method checks if the given input is valid JSON.
+
+        ```python
+        crypto.from_json("{\"foo\":\"bar\"}")
+        True
+        ```
+        """
+        ...
+
+    @staticmethod
     def from_json(content: str) -> Any:
         """
         The **crypto.from_json** method converts JSON text to an object of correct type.
