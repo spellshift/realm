@@ -242,16 +242,23 @@ crypto.from_json("{\"foo\":\"bar\"}")
 }
 ```
 
-### crypto.hash_file
+### crypto.is_json
 
-`crypto.hash_file(file: str, algo: str) -> str`
+`crypto.is_json(content: str) -> Value`
 
-The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+The <b>crypto.is_json</b> method converts JSON text to an object of correct type. Unlike `crypto.from_json`, this function will return an empty object if invalid data is passed.
 
-- MD5
-- SHA1
-- SHA256
-- SHA512
+```python
+crypto.is_json("{\"foo\":\"bar\"}")
+{
+    "foo": "bar"
+}
+```
+
+```python
+crypto.is_json("{")
+{}
+```
 
 ### crypto.to_json
 
@@ -263,6 +270,17 @@ The <b>crypto.to_json</b> method converts given type to JSON text.
 crypto.to_json({"foo": "bar"})
 "{\"foo\":\"bar\"}"
 ```
+
+### crypto.hash_file
+
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512
 
 ---
 
