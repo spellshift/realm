@@ -244,20 +244,18 @@ crypto.from_json("{\"foo\":\"bar\"}")
 
 ### crypto.is_json
 
-`crypto.is_json(content: str) -> Value`
+`crypto.is_json(content: str) -> bool`
 
-The <b>crypto.is_json</b> method converts JSON text to an object of correct type. Unlike `crypto.from_json`, this function will return an empty object if invalid data is passed.
+The <b>crypto.is_json</b> tests if JSON is valid.
 
 ```python
 crypto.is_json("{\"foo\":\"bar\"}")
-{
-    "foo": "bar"
-}
+True
 ```
 
 ```python
-crypto.is_json("{")
-{}
+crypto.is_json("foobar")
+False
 ```
 
 ### crypto.to_json

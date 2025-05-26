@@ -54,8 +54,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn is_json<'v>(this: &CryptoLibrary, starlark_heap: &'v Heap, content: String) -> anyhow::Result<Value<'v>> {
-        is_json_impl::is_json(starlark_heap, content)
+    fn is_json<'v>(this: &CryptoLibrary, starlark_heap: &'v Heap, content: String) -> anyhow::Result<bool> {
+        is_json_impl::is_json(content)
     }
 
 
