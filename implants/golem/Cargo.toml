@@ -18,7 +18,7 @@ structopt = { workspace = true }
 itertools = { workspace = true }
 thiserror = { workspace = true }
 lsp-types = { workspace = true }
-walkdir = "2.5.0"
+walkdir = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

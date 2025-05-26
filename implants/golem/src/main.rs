@@ -18,7 +18,6 @@ async fn run_tomes(tomes: Vec<Tome>) -> Result<Vec<String>> {
     let mut runtimes = Vec::new();
     let mut idx = 1;
     for tome in tomes {
-        // Check if we have local files, if so, we set the file_names type to "local_files"
         let runtime = eldritch::start(idx, tome).await;
         runtimes.push(runtime);
         idx += 1;
@@ -68,7 +67,7 @@ fn main() -> anyhow::Result<()> {
         )
         .get_matches();
 
-    // Handle taking assets and tomes from the local file system instead of from the builtin
+    // Handle taking assets and tomes from the local file system instead of from the embeds
     let mut assets: Vec<String> = Vec::new();
     let mut parsed_tomes: Vec<Tome> = Vec::new();
 
@@ -148,9 +147,7 @@ fn main() -> anyhow::Result<()> {
     } else if matches.contains_id("interactive") {
         inter::interactive_main()?;
     } else {
-        // If we dont have any tomes (e.g. the user did not supply a local assets dir, then read the embedded)
-        // TODO: Should this be local assets AND embedded assets. An OR is consistent with REMOTE_ASSETS behavior
-        // I dont think so, if I give it a dir, i dont want anything else to run....
+        // If we dont have any tomes (e.g. the user did not supply a local assets dir), then read the embedded tomes
         if parsed_tomes.is_empty() {
             for embedded_file_path in eldritch::assets::Asset::iter() {
                 let filename = embedded_file_path.split('/').last().unwrap_or("");
