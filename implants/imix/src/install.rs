@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+#[allow(unused_imports)]
 use eldritch::runtime::{messages::AsyncMessage, Message};
 use pb::eldritch::Tome;
 use std::collections::HashMap;
