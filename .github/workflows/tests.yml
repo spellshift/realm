@@ -46,14 +46,14 @@ jobs:
       name: 👾 Disable defender
       shell: powershell
     - name: Setup Rust
-      uses: dtolnay/rust-toolchain@1.84.1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: '1.84.1'
         default: true
         profile: minimal
         components: rustfmt, clippy
     - name: Setup Rust (Loader)
-      uses: dtolnay/rust-toolchain@nightly-2025-01-31
+      uses: dtolnay/rust-toolchain@master
       if: matrix.os == 'windows-latest'
       with:
         toolchain: 'nightly-2025-01-31'
