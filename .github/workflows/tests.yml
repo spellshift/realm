@@ -49,6 +49,8 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: 'stable'
+        default: false
+        profile: minimal
         components: rustfmt, clippy
     - name: Setup Rust (Loader)
       uses: dtolnay/rust-toolchain@master
