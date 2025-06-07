@@ -73,7 +73,7 @@ jobs:
     - name: 🔎 Run tests
       run: |
         cd ./implants/ &&
-        cargo fmt --check &&
-        cargo llvm-cov nextest --lcov --output-path lcov.info
+        cargo +stable fmt --check &&
+        cargo +stable llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v3
