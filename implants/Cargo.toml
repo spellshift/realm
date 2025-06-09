@@ -88,7 +88,7 @@ whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"
 windows-sys = "0.45.0"
 winreg = "0.51.0"
-
+walkdir = "2.5.0"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
