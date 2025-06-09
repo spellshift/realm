@@ -5,4 +5,12 @@
     ],
     "rust-analyzer.check.command": "clippy",
     "rust-analyzer.showUnlinkedFileNotification": false,
+    "files.associations": {
+        "*.eldritch": "python",
+        "*.eldr": "python",
+    },
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportPossiblyUnboundVariable": "none",
+        "reportInvalidStringEscapeSequence": "none",
+    },
 }
