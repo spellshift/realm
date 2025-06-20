@@ -14,7 +14,7 @@ Before reading this guide, please check out the [admin guide](/admin-guide/taver
 
 ### Creating a New Model
 
-1. Initialize the schema `cd tavern && go run entgo.io/ent/cmd/ent init <NAME>`
+1. Initialize the schema `cd tavern/internal && go run entgo.io/ent/cmd/ent new <NAME>`
 2. Update the generated file in `tavern/internal/ent/schema/<NAME>.go`
 3. Ensure you include a `func (<NAME>) Annotations() []schema.Annotation` method which returns a `entgql.QueryField()` annotation to tell entgo to generate a GraphQL root query for this model (if you'd like it to be queryable from the root query)
 4. Update `tavern/internal/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/spellshift/realm/tavern/internal/ent/<NAME>`)
