@@ -83,7 +83,7 @@ mod tests {
         let tmp_dir = tempdir()?;
         let matched_files = ["thesshfile", "anothersshfile"];
         let unmatched_files = ["noswordshere"];
-        let tmp_path = tmp_dir.into_path();
+        let tmp_path = tmp_dir.keep();
         for f in matched_files {
             let mut file = File::create(tmp_path.clone().join(f).clone())?;
             file.write_all(b"Hello\n")?;

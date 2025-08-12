@@ -56,13 +56,12 @@ impl TaskHandle {
 
             // Each message is dispatched in it's own tokio task, managed by this task handle's pool.
             let mut t = tavern.clone();
-            let c = cfg.clone();
 
             // Handle SyncMessages and AsyncMessages differently.
             match msg {
                 Message::Sync(sm) => {
                     let sm_str = sm.to_string();
-                    ret_cfg = match sm.dispatch(&mut t, c) {
+                    ret_cfg = match sm.dispatch(&mut t, ret_cfg.clone()) {
                         Ok(r) => {
                             #[cfg(debug_assertions)]
                             log::info!(
@@ -102,8 +101,9 @@ impl TaskHandle {
                 }
                 Message::Async(am) => {
                     let am_str = am.to_string();
+                    let async_conf = ret_cfg.clone(); // needed due to the move
                     self.pool.spawn(async move {
-                        match am.dispatch(&mut t, c).await {
+                        match am.dispatch(&mut t, async_conf).await {
                             Ok(_) => {
                                 #[cfg(debug_assertions)]
                                 log::info!(

