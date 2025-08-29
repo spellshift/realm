@@ -86,7 +86,7 @@ This isn't ideal as in the UI each new beacon will appear as thought it were on 
 **We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
 Building in the dev container limits variables that might cause issues and is the most tested way to compile.
 
-**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `[INFO] Public key: <SERVER_PUBKEY>`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
+**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `[INFO] Public key: <SERVER_PUBKEY>`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY_B64`**
 
 ### Linux
 
@@ -96,7 +96,7 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
+IMIX_SERVER_PUBKEY_B64="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### MacOS
@@ -120,9 +120,9 @@ sudo apt install gcc-mingw-w64
 cd realm/implants/imix/
 
 # Build imix.exe
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY_B64="<SERVER_PUBKEY>" cargo build --release --target=x86_64-pc-windows-gnu
 # Build imix.svc.exe
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY_B64="<SERVER_PUBKEY>" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --lib --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY_B64="<SERVER_PUBKEY>" cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```

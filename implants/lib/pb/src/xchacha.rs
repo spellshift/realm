@@ -17,13 +17,21 @@ use tonic::{
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-/* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY environment variable during compilation.
+/* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY_B64 environment variable during compilation.
  * To find the servers pubkey check the startup messages on the server look for `[INFO] Public key: <SERVER_PUBKEY>`
+ *
+ * NOTE: This will fail to compile if the `IMIX_SERVER_PUBKEY_B64` environment variable is not set.
+ * It will also fail to compile if the key is not a valid base64 string or if the decoded key is not 32 bytes long.
  */
-static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_PUBKEY").as_bytes());
+static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_PUBKEY_B64").as_bytes());
 
 // ------------
 
+// The key_history map is used to store the shared secret for a given public key.
+// The public key is the client's ephemeral public key. The shared secret is
+// derived from the client's ephemeral private key and the server's public key.
+// The key_history is used to store the shared secret so that it can be used
+// to decrypt the response from the server.
 fn key_history() -> &'static Mutex<HashMap<[u8; 32], [u8; 32]>> {
     static ARRAY: OnceLock<Mutex<HashMap<[u8; 32], [u8; 32]>>> = OnceLock::new();
     ARRAY.get_or_init(|| Mutex::new(HashMap::new()))
@@ -38,7 +46,7 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
         .lock()
         .unwrap() // Mutex's must unwrap
         .get(&pub_key)
-        .context("Key not found")?;
+        .context("Shared key not found for public key")?;
     Ok(res)
 }
 
@@ -96,9 +104,10 @@ where
 
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
         if !buf.has_remaining_mut() {
-            // Can't add to the buffer.
-            #[cfg(debug_assertions)]
-            log::debug!("DANGER can't add to the buffer.");
+            return Err(Status::new(
+                tonic::Code::ResourceExhausted,
+                "Buffer does not have enough capacity to encode message",
+            ));
         }
 
         // Store server pubkey
