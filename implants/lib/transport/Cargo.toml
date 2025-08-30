@@ -5,8 +5,10 @@ edition = "2021"
 
 [features]
 default = []
-grpc = []
+http = []
 mock = ["dep:mockall"]
+grpc = []
+
 
 [dependencies]
 pb = { workspace = true }
