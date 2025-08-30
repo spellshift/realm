@@ -24,6 +24,9 @@ static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_P
 
 // ------------
 
+// The client and server may have multiple connections open and they may not resolve in order or sequentially.
+// To handle this ephemeral public keys and shared secrets are stored in a hashmap key_history where they can be looked up
+// by public key.
 fn key_history() -> &'static Mutex<HashMap<[u8; 32], [u8; 32]>> {
     static ARRAY: OnceLock<Mutex<HashMap<[u8; 32], [u8; 32]>>> = OnceLock::new();
     ARRAY.get_or_init(|| Mutex::new(HashMap::new()))
@@ -34,11 +37,12 @@ fn add_key_history(pub_key: [u8; 32], shared_secret: [u8; 32]) {
 }
 
 fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
+    // Lookup the shared secret based on the public key
     let res = *key_history()
         .lock()
         .unwrap() // Mutex's must unwrap
         .get(&pub_key)
-        .context("Key not found")?;
+        .context("Unable to find shared secret for the public key recieved")?;
     Ok(res)
 }
 
@@ -96,7 +100,7 @@ where
 
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
         if !buf.has_remaining_mut() {
-            // Can't add to the buffer.
+            // This should never happen but if it does the agent will be unable to queue new messages to the buffer until it's drained.
             #[cfg(debug_assertions)]
             log::debug!("DANGER can't add to the buffer.");
         }
@@ -125,7 +129,7 @@ where
             Ok(ct) => ct,
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("err: {:?}", err);
+                log::debug!("encode error unable to read bytes while encrypting: {:?}", err);
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
@@ -164,12 +168,16 @@ where
             Ok(n) => n,
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("err: {:?}", err);
+                log::debug!("decode error unable to read bytes from decode reader: {:?}", err);
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
 
-        // TODO validate buffer size to avoid index out of bounds accesses
+        if bytes_read < PUBKEY_LEN + NONCE_LEN {
+            let err = anyhow::anyhow!("Message from server is too small to contain public key and nonce");
+            log::debug!("Input buffer from server during decode faild validation: {:?}", err);
+            return Err(Status::new(tonic::Code::Internal, err.to_string()));
+        }
         let buf = bytes_in
             .get(0..bytes_read)
             .context("Bytes read doesn't match buffer size")
@@ -192,7 +200,18 @@ where
 
         // Get private key based on messages public key
         let tmp_client_public_bytes = client_public.to_vec();
-        let client_public_bytes = tmp_client_public_bytes.try_into().unwrap(); // Bruh idk how to not unwrap this :sob:
+        let client_public_bytes = match tmp_client_public_bytes.try_into() {
+            Ok(arr) => arr,
+            Err(err) => {
+                #[cfg(debug_assertions)]
+                log::debug!("Unable to cast public key bytes from vector to slice during decode function: {:?}", err);
+
+                return Err(Status::new(
+                    tonic::Code::Internal,
+                    "Unable to cast public key bytes from vector to slice during decode function",
+                ));
+            }
+        };
 
         let client_private_bytes = get_key(client_public_bytes).map_err(from_anyhow_error)?;
         // Shouldn't need private key again once the message has been decrypted
