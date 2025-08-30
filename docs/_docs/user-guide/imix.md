@@ -86,7 +86,7 @@ This isn't ideal as in the UI each new beacon will appear as thought it were on 
 **We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
 Building in the dev container limits variables that might cause issues and is the most tested way to compile.
 
-**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `[INFO] Public key: <SERVER_PUBKEY>`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
+**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
 ### Linux
 

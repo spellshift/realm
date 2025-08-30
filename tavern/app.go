@@ -345,24 +345,24 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func generate_key_pair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
-	x22519 := ecdh.X25519()
-	priv_key, err := x22519.GenerateKey(rand.Reader)
+func generateKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
+	curve := ecdh.X25519()
+	privateKey, err := curve.GenerateKey(rand.Reader)
 	if err != nil {
-		log.Printf("[ERROR] Failed to generate private key: %v\n", err)
+		slog.Error(fmt.Sprintf("failed to generate private key: %v\n", err))
 		return nil, nil, err
 	}
-	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
+	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
 	if err != nil {
-		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
+		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
 		return nil, nil, err
 	}
 
-	return public_key, priv_key, nil
+	return publicKey, privateKey, nil
 }
 
 func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
-	x22519 := ecdh.X25519()
+	curve := ecdh.X25519()
 
 	var secretsManager secrets.SecretsManager
 	var err error
@@ -373,52 +373,53 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 		secretsManager, err = secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
 	}
 	if err != nil {
-		log.Printf("[ERROR] Unable to setup secrets manager\n")
-		log.Printf("[ERROR] If you're running locally try setting `export SECRETS_FILE_PATH='/tmp/secrets'` \n")
+		slog.Error("unable to setup secrets manager")
+		slog.Error("if you're running locally try setting `export SECRETS_FILE_PATH='/tmp/secrets'` \n")
+		panic("unable to connect to secrets manager")
 	}
 
 	// Check if we already have a key
-	priv_key_string, err := secretsManager.GetValue("tavern_encryption_private_key")
+	privateKeyString, err := secretsManager.GetValue("tavern_encryption_private_key")
 	if err != nil {
 		// Generate a new one if it doesn't exist
-		pub_key, priv_key, err := generate_key_pair()
+		pubKey, privateKey, err := generateKeyPair()
 		if err != nil {
-			log.Printf("[ERROR] Key generation failed: %v", err)
+			slog.Error(fmt.Sprintf("key generation failed: %v", err))
 			return nil, nil
 		}
 
-		priv_key_bytes, err := x509.MarshalPKCS8PrivateKey(priv_key)
+		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 		if err != nil {
-			log.Printf("[ERROR] Unable to marshal private key: %v", err)
+			slog.Error(fmt.Sprintf("unable to marshal private key: %v", err))
 			return nil, nil
 		}
-		_, err = secretsManager.SetValue("tavern_encryption_private_key", priv_key_bytes)
+		_, err = secretsManager.SetValue("tavern_encryption_private_key", privateKeyBytes)
 		if err != nil {
-			log.Printf("[ERROR] Unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
+			slog.Error(fmt.Sprintf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err))
 			return nil, nil
 		}
-		return pub_key, priv_key
+		return pubKey, privateKey
 	}
 
 	// Parse private key bytes
-	tmp, err := x509.ParsePKCS8PrivateKey(priv_key_string)
+	tmp, err := x509.ParsePKCS8PrivateKey(privateKeyString)
 	if err != nil {
-		log.Printf("[ERROR] Unable to parse private key %v\n", err)
+		slog.Error(fmt.Sprintf("unable to parse private key %v", err))
 	}
-	priv_key := tmp.(*ecdh.PrivateKey)
+	privateKey := tmp.(*ecdh.PrivateKey)
 
-	public_key, err := x22519.NewPublicKey(priv_key.PublicKey().Bytes())
+	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
 	if err != nil {
-		log.Printf("[ERROR] Failed to generate public key: %v\n", err)
-		panic("[ERROR] Failed to generate public key")
+		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
+		panic("failed to generate public key")
 	}
 
-	return public_key, priv_key
+	return publicKey, privateKey
 }
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 	pub, priv := getKeyPair()
-	log.Println("[INFO] Public key: ", base64.StdEncoding.EncodeToString(pub.Bytes()))
+	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
 	c2srv := c2.New(client, grpcShellMux)
 	xchacha := cryptocodec.StreamDecryptCodec{

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
@@ -39,7 +40,7 @@ func (g Gcp) GetValue(key string) ([]byte, error) {
 	// Call the API.
 	result, err := g.client.AccessSecretVersion(g.clientctx, accessRequest)
 	if err != nil {
-		log.Printf("[ERROR] failed to access secret version: %v\n", err)
+		slog.Error(fmt.Sprintf("failed to access secret version: %v", err))
 		return []byte{}, err
 	}
 
@@ -82,7 +83,7 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 
 	old_value, err := g.GetValue(key)
 	if err != nil && !strings.Contains(err.Error(), "code = NotFound") {
-		log.Printf("[ERROR] Failed to get old secret: %v\n", err)
+		slog.Error(fmt.Sprintf("failed to get old secret: %v", err))
 		return []byte{}, err
 	}
 
@@ -116,7 +117,7 @@ func NewGcp(projectID string) (SecretsManager, error) {
 		tmp, err := GetCurrentGcpProject(ctx)
 		projectID = tmp
 		if err != nil {
-			log.Printf("[ERROR] Failed to get current project ID: %v\n", err)
+			slog.Error(fmt.Sprintf("failed to get current project ID: %v\n", err))
 			return nil, err
 		}
 	}
@@ -125,7 +126,7 @@ func NewGcp(projectID string) (SecretsManager, error) {
 	// Create the client.
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		log.Printf("[ERROR] Failed to setup client: %v\n", err)
+		slog.Error(fmt.Sprintf("failed to setup client: %v\n", err))
 		return nil, err
 	}
 

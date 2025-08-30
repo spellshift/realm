@@ -5,7 +5,9 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"log"
+	"log/slog"
 	"runtime"
 	"strconv"
 	"sync"
@@ -54,7 +56,7 @@ func castBytesToBufSlice(buf []byte) (mem.BufferSlice, error) {
 	r := bytes.NewBuffer(buf)
 	res, e := mem.ReadAll(r, mem.DefaultBufferPool())
 	if e != nil {
-		log.Println("[ERROR] Failed to read failure_bytes ", e)
+		slog.Error(fmt.Sprintf("failed to read failure_bytes %s", e))
 		return res, e
 	}
 	return res, nil
@@ -76,13 +78,13 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 	id, err := goid()
 	if err != nil {
-		log.Println("[ERROR] Unable to find GOID ", id)
+		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
 		return castBytesToBufSlice(FAILURE_BYTES)
 	}
 	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
 	if err != nil {
-		log.Println("[ERROR] Unable to marshall data")
+		slog.Error("Unable to marshall data")
 		return res, err
 	}
 	enc_res := s.Csvc.Encrypt(res.Materialize())
@@ -94,7 +96,7 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
 	id, err := goid()
 	if err != nil {
-		log.Println("[ERROR] Unable to find GOID ", id)
+		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
 		return err
 	}
 	dec_buf, pub_key := s.Csvc.Decrypt(buf.Materialize())
@@ -103,12 +105,12 @@ func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
 
 	proto := encoding.GetCodecV2("proto")
 	if proto == nil {
-		log.Println("[ERROR] 'proto' codec is not registered")
+		slog.Error("'proto' codec is not registered")
 		return errors.New("'proto' codec is not registered")
 	}
 	dec_mem_slice, err := castBytesToBufSlice(dec_buf)
 	if err != nil {
-		log.Println("[ERROR] Unable to cast decrypted bytes to mem.BufferSlice")
+		slog.Error("Unable to cast decrypted bytes to mem.BufferSlice")
 		return err
 	}
 	return proto.Unmarshal(dec_mem_slice, v)
@@ -133,13 +135,13 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 	x22519_curve := ecdh.X25519()
 	client_pub_key, err := x22519_curve.NewPublicKey(client_pub_key_bytes)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create public key %v\n", err)
+		slog.Error(fmt.Sprintf("failed to create public key %v", err))
 		return FAILURE_BYTES
 	}
 
 	shared_key, err := csvc.priv_key.ECDH(client_pub_key)
 	if err != nil {
-		log.Printf("[ERROR] Failed to get shared secret %v\n", err)
+		slog.Error(fmt.Sprintf("failed to get shared secret %v", err))
 		return FAILURE_BYTES
 	}
 
@@ -149,7 +151,7 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Read in pub key
 	if len(in_arr) < x25519.Size {
-		log.Printf("[ERROR] Input bytes to short %d expected at least %d\n", len(in_arr), x25519.Size)
+		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), x25519.Size))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -157,7 +159,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	id, err := goid()
 	if err != nil {
-		log.Println("[ERROR] Failed to get goid")
+		slog.Error("failed to get goid")
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 	session_pub_keys.Store(id, client_pub_key_bytes)
@@ -167,7 +169,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	aead, err := chacha20poly1305.NewX(derived_key)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create xchacha key %v\n", err)
+		slog.Error(fmt.Sprintf("failed to create xchacha key %v", err))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -176,7 +178,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	// Read nonce & cipher text
 	if len(in_arr) < aead.NonceSize() {
-		log.Printf("[ERROR] Input bytes to short %d expected at least %d\n", len(in_arr), aead.NonceSize())
+		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), aead.NonceSize()))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]
@@ -184,7 +186,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Decrypt
 	plaintext, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		log.Printf("[ERROR] Failed to decrypt %v\n", err)
+		slog.Error(fmt.Sprintf("failed to decrypt %v", err))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -196,13 +198,13 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	// Get the client pub key?
 	id, err := goid()
 	if err != nil {
-		log.Println("[ERROR] Unable to find GOID ", id)
+		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
 		return FAILURE_BYTES
 	}
 
 	client_pub_key_bytes, ok := session_pub_keys.Load(id)
 	if !ok {
-		log.Println("[ERROR] Public key not found")
+		slog.Error("Public key not found")
 		return FAILURE_BYTES
 	}
 
@@ -213,13 +215,13 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
 	aead, err := chacha20poly1305.NewX(shared_key)
 	if err != nil {
-		log.Printf("[ERROR] Failed to create xchacha key %v\n", err)
+		slog.Error(fmt.Sprintf("failed to create xchacha key %v", err))
 		return FAILURE_BYTES
 	}
 
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(in_arr)+aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
-		log.Printf("[ERROR] Failed to encrypt %v\n", err)
+		slog.Error(fmt.Sprintf("Failed to encrypt %v", err))
 		return FAILURE_BYTES
 	}
 	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
