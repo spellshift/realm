@@ -19,6 +19,7 @@ chacha20poly1305 = { workspace = true }
 bytes = { workspace = true }
 rand = { workspace = true }
 x25519-dalek = { workspace = true }
+lru = { workspace = true }
 
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
