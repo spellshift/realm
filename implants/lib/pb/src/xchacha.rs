@@ -5,10 +5,11 @@ use const_decoder::Decoder as const_decode;
 use prost::Message;
 use rand::rngs::OsRng;
 use rand_chacha::rand_core::SeedableRng;
+use lru::LruCache;
 use std::{
-    collections::HashMap,
     io::{Read, Write},
     marker::PhantomData,
+    num::NonZeroUsize,
     sync::{Mutex, OnceLock},
 };
 use tonic::{
@@ -24,16 +25,22 @@ static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_P
 
 // ------------
 
+const KEY_CACHE_SIZE: usize = 1024;
+
 // The client and server may have multiple connections open and they may not resolve in order or sequentially.
 // To handle this ephemeral public keys and shared secrets are stored in a hashmap key_history where they can be looked up
 // by public key.
-fn key_history() -> &'static Mutex<HashMap<[u8; 32], [u8; 32]>> {
-    static ARRAY: OnceLock<Mutex<HashMap<[u8; 32], [u8; 32]>>> = OnceLock::new();
-    ARRAY.get_or_init(|| Mutex::new(HashMap::new()))
+fn key_history() -> &'static Mutex<LruCache<[u8; 32], [u8; 32]>> {
+    static ARRAY: OnceLock<Mutex<LruCache<[u8; 32], [u8; 32]>>> = OnceLock::new();
+    ARRAY.get_or_init(|| {
+        Mutex::new(LruCache::new(
+            NonZeroUsize::new(KEY_CACHE_SIZE).unwrap(),
+        ))
+    })
 }
 
 fn add_key_history(pub_key: [u8; 32], shared_secret: [u8; 32]) {
-    key_history().lock().unwrap().insert(pub_key, shared_secret); // Mutex's must unwrap
+    key_history().lock().unwrap().put(pub_key, shared_secret); // Mutex's must unwrap
 }
 
 fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
@@ -46,8 +53,8 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
     Ok(res)
 }
 
-fn del_key(pub_key: [u8; 32]) -> Option<([u8; 32], [u8; 32])> {
-    key_history().lock().unwrap().remove_entry(&pub_key)
+fn del_key(pub_key: [u8; 32]) -> Option<[u8; 32]> {
+    key_history().lock().unwrap().pop(&pub_key)
 }
 
 // ------------
@@ -248,4 +255,24 @@ fn from_decode_error(error: prost::DecodeError) -> Status {
     // Map Protobuf parse errors to an INTERNAL status code, as per
     // https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
     Status::new(tonic::Code::Internal, error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_key_history_bounded() {
+        let mut key_history = key_history().lock().unwrap();
+        for i in 0..KEY_CACHE_SIZE * 2 {
+            let mut pub_key = [0u8; 32];
+            let mut shared_secret = [0u8; 32];
+            pub_key[0] = i as u8;
+            pub_key[1] = (i >> 8) as u8;
+            shared_secret[0] = i as u8;
+            shared_secret[1] = (i >> 8) as u8;
+            key_history.put(pub_key, shared_secret);
+        }
+        assert_eq!(key_history.len(), KEY_CACHE_SIZE);
+    }
 }
