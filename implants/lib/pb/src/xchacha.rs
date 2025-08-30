@@ -2,10 +2,10 @@ use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
 use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
 use const_decoder::Decoder as const_decode;
+use lru::LruCache;
 use prost::Message;
 use rand::rngs::OsRng;
 use rand_chacha::rand_core::SeedableRng;
-use lru::LruCache;
 use std::{
     io::{Read, Write},
     marker::PhantomData,
@@ -32,11 +32,7 @@ const KEY_CACHE_SIZE: usize = 1024;
 // by public key.
 fn key_history() -> &'static Mutex<LruCache<[u8; 32], [u8; 32]>> {
     static ARRAY: OnceLock<Mutex<LruCache<[u8; 32], [u8; 32]>>> = OnceLock::new();
-    ARRAY.get_or_init(|| {
-        Mutex::new(LruCache::new(
-            NonZeroUsize::new(KEY_CACHE_SIZE).unwrap(),
-        ))
-    })
+    ARRAY.get_or_init(|| Mutex::new(LruCache::new(NonZeroUsize::new(KEY_CACHE_SIZE).unwrap())))
 }
 
 fn add_key_history(pub_key: [u8; 32], shared_secret: [u8; 32]) {
