@@ -15,11 +15,10 @@ func createTestSecrets(t *testing.T) string {
 	tmpDir := t.TempDir()
 	secretsPath := path.Join(tmpDir, "secrets.yaml")
 	data := []byte(`
-secrets:
-  - key: TAVERN_PRIVATE_KEY
-    value: !!binary Fe8E/SVf7MLgCHzBWvjdnavejsJijJZD9mPvLQbgybE=
-  - key: super_secret_test_data
-    value: hello world!
+- key: TAVERN_PRIVATE_KEY
+  value: !!binary Fe8E/SVf7MLgCHzBWvjdnavejsJijJZD9mPvLQbgybE=
+- key: super_secret_test_data
+  value: hello world!
 `)
 	err := os.WriteFile(secretsPath, data, 0644)
 	if err != nil {

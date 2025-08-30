@@ -136,7 +136,10 @@ where
             Ok(ct) => ct,
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("encode error unable to read bytes while encrypting: {:?}", err);
+                log::debug!(
+                    "encode error unable to read bytes while encrypting: {:?}",
+                    err
+                );
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
@@ -175,14 +178,21 @@ where
             Ok(n) => n,
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("decode error unable to read bytes from decode reader: {:?}", err);
+                log::debug!(
+                    "decode error unable to read bytes from decode reader: {:?}",
+                    err
+                );
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
 
         if bytes_read < PUBKEY_LEN + NONCE_LEN {
-            let err = anyhow::anyhow!("Message from server is too small to contain public key and nonce");
-            log::debug!("Input buffer from server during decode faild validation: {:?}", err);
+            let err =
+                anyhow::anyhow!("Message from server is too small to contain public key and nonce");
+            log::debug!(
+                "Input buffer from server during decode faild validation: {:?}",
+                err
+            );
             return Err(Status::new(tonic::Code::Internal, err.to_string()));
         }
         let buf = bytes_in
