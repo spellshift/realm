@@ -72,7 +72,7 @@
 	"remoteUser": "vscode",
 	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
 	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "sudo chown -R vscode:vscode /workspaces && cd /workspaces && git clone https://github.com/spellshift/realm.git",
+	"postCreateCommand": "if [[ ! -d '/workspaces/realm' ]]; then sudo chown -R vscode:vscode /workspaces && cd /workspaces && git clone https://github.com/spellshift/realm.git; fi",
 	"mounts": [
 		"source=realm-bashhistory,target=/commandhistory,type=volume"
 	]
