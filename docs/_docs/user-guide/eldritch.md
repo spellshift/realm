@@ -135,7 +135,7 @@ of the broader tome.
 `agent.set_callback_interval(new_interval: int) -> None`
 
 The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
-running agent's callback interval to the passed value. This configuration change will
+running agent's callback interval to the passed value as seconds. This configuration change will
 not persist across agent reboots.
 
 ### agent.set_callback_uri
