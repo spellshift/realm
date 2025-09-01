@@ -1,0 +1,6 @@
+def set_callback_interval(interval):
+    agent.set_callback_interval(interval)
+    print(f"Set agent callback time to {interval} seconds")
+
+
+set_callback_interval(int(input_params['time']))
