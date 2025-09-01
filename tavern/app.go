@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"log/slog"
@@ -25,11 +28,13 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 )
@@ -340,9 +345,88 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
+func generateKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
+	curve := ecdh.X25519()
+	privateKey, err := curve.GenerateKey(rand.Reader)
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed to generate private key: %v\n", err))
+		return nil, nil, err
+	}
+	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
+		return nil, nil, err
+	}
+
+	return publicKey, privateKey, nil
+}
+
+func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
+	curve := ecdh.X25519()
+
+	var secretsManager secrets.SecretsManager
+	var err error
+
+	if EnvSecretsManagerPath.String() == "" {
+		secretsManager, err = secrets.NewGcp("")
+	} else {
+		secretsManager, err = secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
+	}
+	if err != nil {
+		slog.Error("unable to setup secrets manager")
+		slog.Error("if you're running locally try setting `export SECRETS_FILE_PATH='/tmp/secrets'` \n")
+		panic("unable to connect to secrets manager")
+	}
+
+	// Check if we already have a key
+	privateKeyString, err := secretsManager.GetValue("tavern_encryption_private_key")
+	if err != nil {
+		// Generate a new one if it doesn't exist
+		pubKey, privateKey, err := generateKeyPair()
+		if err != nil {
+			slog.Error(fmt.Sprintf("key generation failed: %v", err))
+			return nil, nil
+		}
+
+		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+		if err != nil {
+			slog.Error(fmt.Sprintf("unable to marshal private key: %v", err))
+			return nil, nil
+		}
+		_, err = secretsManager.SetValue("tavern_encryption_private_key", privateKeyBytes)
+		if err != nil {
+			slog.Error(fmt.Sprintf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err))
+			return nil, nil
+		}
+		return pubKey, privateKey
+	}
+
+	// Parse private key bytes
+	tmp, err := x509.ParsePKCS8PrivateKey(privateKeyString)
+	if err != nil {
+		slog.Error(fmt.Sprintf("unable to parse private key %v", err))
+	}
+	privateKey := tmp.(*ecdh.PrivateKey)
+
+	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
+		panic("failed to generate public key")
+	}
+
+	return publicKey, privateKey
+}
+
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+	pub, priv := getKeyPair()
+	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
+
 	c2srv := c2.New(client, grpcShellMux)
+	xchacha := cryptocodec.StreamDecryptCodec{
+		Csvc: cryptocodec.NewCryptoSvc(priv),
+	}
 	grpcSrv := grpc.NewServer(
+		grpc.ForceServerCodecV2(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
