@@ -5,8 +5,8 @@ edition = "2021"
 
 [features]
 default = []
-grpc = ["dep:tonic", "dep:tokio-stream"]
-http1 = ["dep:hyper", "dep:hyper-proxy", "dep:hyper-rustls", "dep:tokio-rustls", "dep:rustls", "dep:webpki-roots"]
+grpc = []
+http1 = []
 mock = ["dep:mockall"]
 
 [dependencies]
@@ -19,17 +19,14 @@ prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 trait-variant = { workspace = true }
 
-hyper = { version = "0.14", features = ["client", "http1"], optional = true }
-hyper-proxy = { workspace = true, optional = true }
-hyper-rustls = { workspace = true, optional = true }
-tokio-rustls = { workspace = true, optional = true }
-rustls = { workspace = true, optional = true }
-webpki-roots = { workspace = true, optional = true }
-tokio-stream = { workspace = true, optional = true }
-tonic = { workspace = true, features = ["tls-webpki-roots"], optional = true }
+hyper = { version = "0.14", features = ["client", "http1"] }
+hyper-proxy = { workspace = true }
+hyper-rustls = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+webpki-roots = { workspace = true }
+tokio-stream = { workspace = true }
+tonic = { workspace = true, features = ["tls-webpki-roots"] }
 
 # [feature = mock]
-mockall = { workspace = true, optional = true }
-
-[dev-dependencies]
-hyper = { version = "0.14", features = ["server"] }
+mockall = { workspace = true, optional = true}
