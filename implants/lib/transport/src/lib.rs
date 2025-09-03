@@ -3,6 +3,11 @@ mod grpc;
 #[cfg(feature = "grpc")]
 pub use grpc::GRPC;
 
+#[cfg(feature = "tcp")]
+mod tcp;
+#[cfg(feature = "tcp")]
+pub use tcp::TCP;
+
 #[cfg(feature = "mock")]
 mod mock;
 #[cfg(feature = "mock")]
