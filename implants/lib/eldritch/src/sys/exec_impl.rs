@@ -306,6 +306,7 @@ mod tests {
             )?
             .stdout
             .to_lowercase();
+            log::info!("res: {:?}", res);
             assert!(
                 res.contains("runneradmin")
                     || res.contains("Administrator")
