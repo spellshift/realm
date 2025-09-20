@@ -361,7 +361,15 @@ func generateKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 	return publicKey, privateKey, nil
 }
 
-func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
+func GetPubKey() (*ecdh.PublicKey, error) {
+	pub, _, err := getKeyPair()
+	if err != nil {
+		return nil, err
+	}
+	return pub, nil
+}
+
+func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 	curve := ecdh.X25519()
 
 	var secretsManager secrets.SecretsManager
@@ -375,7 +383,7 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 	if err != nil {
 		slog.Error("unable to setup secrets manager")
 		slog.Error("if you're running locally try setting `export SECRETS_FILE_PATH='/tmp/secrets'` \n")
-		panic("unable to connect to secrets manager")
+		return nil, nil, fmt.Errorf("unable to connect to secrets manager: %s", err.Error())
 	}
 
 	// Check if we already have a key
@@ -384,41 +392,40 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey) {
 		// Generate a new one if it doesn't exist
 		pubKey, privateKey, err := generateKeyPair()
 		if err != nil {
-			slog.Error(fmt.Sprintf("key generation failed: %v", err))
-			return nil, nil
+			return nil, nil, fmt.Errorf("key generation failed: %v", err)
 		}
 
 		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 		if err != nil {
-			slog.Error(fmt.Sprintf("unable to marshal private key: %v", err))
-			return nil, nil
+			return nil, nil, fmt.Errorf("unable to marshal private key: %v", err)
 		}
 		_, err = secretsManager.SetValue("tavern_encryption_private_key", privateKeyBytes)
 		if err != nil {
-			slog.Error(fmt.Sprintf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err))
-			return nil, nil
+			return nil, nil, fmt.Errorf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
 		}
-		return pubKey, privateKey
+		return pubKey, privateKey, nil
 	}
 
 	// Parse private key bytes
 	tmp, err := x509.ParsePKCS8PrivateKey(privateKeyString)
 	if err != nil {
-		slog.Error(fmt.Sprintf("unable to parse private key %v", err))
+		return nil, nil, fmt.Errorf("unable to parse private key: %v", err)
 	}
 	privateKey := tmp.(*ecdh.PrivateKey)
 
 	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
-		panic("failed to generate public key")
+		return nil, nil, fmt.Errorf("failed to generate public key: %v", err)
 	}
 
-	return publicKey, privateKey
+	return publicKey, privateKey, nil
 }
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
-	pub, priv := getKeyPair()
+	pub, priv, err := getKeyPair()
+	if err != nil {
+		panic(err)
+	}
 	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
 	c2srv := c2.New(client, grpcShellMux)
