@@ -304,7 +304,8 @@ mod tests {
                 HashMap::new(),
                 false,
             )?
-            .stdout;
+            .stdout
+            .to_lowercase();
             assert!(
                 res.contains("runneradmin")
                     || res.contains("Administrator")
