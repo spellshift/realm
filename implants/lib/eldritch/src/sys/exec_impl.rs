@@ -306,7 +306,7 @@ mod tests {
             )?
             .stdout;
             assert!(
-                res.contains("runner") || res.contains("Administrator") || res.contains("user")
+                res.contains("runneradmin") || res.contains("Administrator") || res.contains("user")
             );
         }
         Ok(())
