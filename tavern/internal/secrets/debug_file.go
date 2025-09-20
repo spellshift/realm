@@ -42,13 +42,13 @@ func (s DebugFileSecrets) GetName() string {
 func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 	path, err := s.ensureSecretsFileExist()
 	if err != nil {
-		slog.Error("failed to create secrets file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to create secrets file %s: %v", path, err))
 		return []byte{}, err
 	}
 
 	secrets, err := s.getYamlStruct(path)
 	if err != nil {
-		slog.Error("failed to parse YAML file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to parse YAML file %s: %v", path, err))
 		return []byte{}, err
 	}
 
@@ -75,7 +75,7 @@ func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 
 	err = s.setYamlStruct(path, secrets)
 	if err != nil {
-		slog.Error("failed to update YAML file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to update YAML file %s: %v", path, err))
 		return []byte{}, err
 	}
 
@@ -87,7 +87,7 @@ func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 
 	secrets, err := s.getYamlStruct(path)
 	if err != nil {
-		slog.Error("failed to parse YAML file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to parse YAML file %s: %v", path, err))
 		return []byte{}, err
 	}
 
@@ -103,20 +103,20 @@ func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 	data, err := yaml.Marshal(secrets)
 	if err != nil {
-		slog.Error("failed to parse file YAML %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to parse file YAML %s: %v", path, err))
 		return err
 	}
 
 	file, err := os.OpenFile(path, os.O_RDWR, DEFAULT_PERMS)
 	if err != nil {
-		slog.Error("failed to open secrets file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to open secrets file %s: %v", path, err))
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(data)
 	if err != nil {
-		slog.Error("failed to read file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to read file %s: %v", path, err))
 		return err
 	}
 
@@ -126,7 +126,7 @@ func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	file, err := os.OpenFile(path, os.O_RDWR, DEFAULT_PERMS)
 	if err != nil {
-		slog.Error("failed to open secrets file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to open secrets file %s: %v", path, err))
 		return Secrets{}, err
 	}
 	defer file.Close()
@@ -134,7 +134,7 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	data := make([]byte, MAX_FILE_SIZE)
 	n, err := file.Read(data)
 	if err != nil {
-		slog.Error("failed to read file %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to read file %s: %v", path, err))
 		return Secrets{}, err
 	}
 
@@ -143,7 +143,7 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	var secrets Secrets
 	err = yaml.Unmarshal(data, &secrets)
 	if err != nil {
-		slog.Error("failed to parse file YAML %s: %v", path, err)
+		slog.Error(fmt.Sprintf("failed to parse file YAML %s: %v", path, err))
 		return Secrets{}, err
 	}
 
