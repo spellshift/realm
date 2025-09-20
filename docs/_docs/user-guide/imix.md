@@ -16,6 +16,7 @@ Imix has compile-time configuration, that may be specified using environment var
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
+| IMIX_SERVER_PUBKEY | The public key for the tavern server. | - | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
