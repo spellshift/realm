@@ -97,6 +97,8 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
 IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
@@ -119,6 +121,9 @@ sudo apt install gcc-mingw-w64
 
 # Build imix
 cd realm/implants/imix/
+
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
 
 # Build imix.exe
 IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --target=x86_64-pc-windows-gnu
