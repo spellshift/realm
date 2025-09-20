@@ -306,9 +306,7 @@ mod tests {
             )?
             .stdout
             .to_lowercase();
-            assert!(
-                res.contains("test")
-            );
+            assert!(res.contains("test"));
         }
         Ok(())
     }
