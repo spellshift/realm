@@ -200,10 +200,19 @@ resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
   }
 }
 
-resource "google_secret_manager_secret_iam_binding" "tavern-secrets-binding" {
+resource "google_secret_manager_secret_iam_binding" "tavern-secrets-read-binding" {
   project = var.gcp_project
   secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
   role = "roles/secretmanager.secretAccessor"
+  members = [
+    "serviceAccount:${google_service_account.svctavern.email}",
+  ]
+}
+
+resource "google_secret_manager_secret_iam_binding" "tavern-secrets-write-binding" {
+  project = var.gcp_project
+  secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
+  role = "roles/secretmanager.secretVersionAdder"
   members = [
     "serviceAccount:${google_service_account.svctavern.email}",
   ]
@@ -389,7 +398,8 @@ resource "google_cloud_run_service" "tavern" {
 
   depends_on = [
     google_project_iam_member.tavern-sqlclient-binding,
-    google_secret_manager_secret_iam_binding.tavern-secrets-binding,
+    google_secret_manager_secret_iam_binding.tavern-secrets-read-binding,
+    google_secret_manager_secret_iam_binding.tavern-secrets-write-binding,
     google_project_iam_member.tavern-metricwriter-binding,
     google_project_iam_member.tavern-logwriter-binding,
     google_project_service.cloud_run_api,
