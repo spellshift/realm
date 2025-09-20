@@ -299,18 +299,15 @@ mod tests {
                 String::from("C:\\Windows\\System32\\cmd.exe"),
                 vec![
                     String::from("/c"),
-                    String::from("net user | findstr /i admin"),
+                    String::from("echo test_pass | findstr /i test"),
                 ],
                 HashMap::new(),
                 false,
             )?
             .stdout
             .to_lowercase();
-            log::info!("res: {:?}", res);
             assert!(
-                res.contains("runneradmin")
-                    || res.contains("administrator")
-                    || res.contains("user")
+                res.contains("test")
             );
         }
         Ok(())
