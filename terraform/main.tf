@@ -431,3 +431,12 @@ resource "google_cloud_run_domain_mapping" "tavern-domain" {
     route_name = google_cloud_run_service.tavern.name
   }
 }
+
+data "external" "pubkey" {
+  count = var.oauth_domain == "" ? 0 : 1
+  program = ["bash", "${path.module}/../bin/getpubkey.sh", google_cloud_run_domain_mapping.tavern-domain[count.index].name]
+}
+
+output "pubkey" {
+  value = var.oauth_domain == "" ? "Unable to get pubkey automatically" : "export IMIX_SERVER_PUBKEY=\"${lookup(data.external.pubkey[0].result, "Pubkey")}\""
+}
