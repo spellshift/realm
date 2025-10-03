@@ -23,7 +23,7 @@ const QuestHeader = () => {
                     </Button>
                 </div>
             </div>
-            <PageHeader title="Quests" description="Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks assocaited with a single beacon." />
+            <PageHeader title="Quests" description="Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks associated with a single beacon." />
         </div>
     );
 }
