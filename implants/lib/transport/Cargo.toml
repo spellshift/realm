@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 default = []
 grpc = []
+http1 = []
 mock = ["dep:mockall"]
 
 [dependencies]
@@ -16,13 +17,16 @@ log = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+trait-variant = { workspace = true }
+
+hyper = { version = "0.14", features = ["client", "http1"] }
+hyper-proxy = { workspace = true }
+hyper-rustls = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+webpki-roots = { workspace = true }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-webpki-roots"] }
-trait-variant = { workspace = true }
-hyper = { version = "0.14", features = [
-    "client",
-] } # Had to user an older version of hyper to support hyper-proxy
-hyper-proxy = {version = "0.9.1", default-features = false, features = ["rustls"]}
 
 # [feature = mock]
-mockall = { workspace = true, optional = true }
+mockall = { workspace = true, optional = true}
