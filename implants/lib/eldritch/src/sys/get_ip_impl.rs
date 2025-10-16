@@ -65,7 +65,7 @@ fn handle_get_ip() -> Result<Vec<NetInterface>> {
     Ok(res)
 }
 
-fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict> {
+fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> Result<Dict<'_>> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
@@ -81,7 +81,7 @@ fn create_dict_from_interface(starlark_heap: &Heap, interface: NetInterface) -> 
     Ok(tmp_res)
 }
 
-pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict>> {
+pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict<'_>>> {
     let mut final_res: Vec<Dict> = Vec::new();
     for network_interface in handle_get_ip()? {
         let tmp_res = create_dict_from_interface(starlark_heap, network_interface)?;
