@@ -16,7 +16,6 @@ host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
 
 aes = "0.8.3"
-generic-array = "=0.14.7"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"
 anyhow = "1.0.65"
