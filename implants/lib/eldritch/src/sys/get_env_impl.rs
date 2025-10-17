@@ -4,7 +4,7 @@ use starlark::values::dict::Dict;
 use starlark::values::Heap;
 use std::env;
 
-pub fn get_env(starlark_heap: &Heap) -> Result<Dict> {
+pub fn get_env(starlark_heap: &Heap) -> Result<Dict<'_>> {
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
 

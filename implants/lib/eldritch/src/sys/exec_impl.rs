@@ -22,7 +22,7 @@ pub fn exec(
     args: Vec<String>,
     disown: Option<bool>,
     env_vars: Option<SmallMap<String, String>>,
-) -> Result<Dict> {
+) -> Result<Dict<'_>> {
     let mut env_vars_map = HashMap::new();
     if let Some(e) = env_vars {
         for (k, v) in e {
