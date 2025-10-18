@@ -15,7 +15,7 @@ FROM build-cache as prod-build
 RUN go build -ldflags='-w -extldflags "-static"' -o /app/build/tavern ./tavern
 
 # Production
-FROM debian:buster as production
+FROM debian:bookworm as production
 WORKDIR /app
 CMD ["/app/tavern"]
 EXPOSE 80 443 8080
