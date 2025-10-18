@@ -101,7 +101,7 @@ fn main() -> anyhow::Result<()> {
     } else {
         let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
         for embedded_file_path in eldritch::assets::Asset::iter() {
-            let filename = embedded_file_path.split('/').last().unwrap_or("");
+            let filename = embedded_file_path.split('/').next_back().unwrap_or("");
             println!("{}", embedded_file_path);
             if filename == "main.eldritch" {
                 let tome_contents_extraction_result =

@@ -239,8 +239,8 @@ impl Runtime {
                 Err(local_error) => {
                     return Err(anyhow::anyhow!(
                         "[eldritch] Failed to create hashed key for key {}: {}",
-                        new_key.to_string(),
-                        local_error.to_string()
+                        new_key,
+                        local_error
                     ))
                 }
             };
