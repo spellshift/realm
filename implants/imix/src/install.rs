@@ -12,7 +12,7 @@ pub async fn install() {
 
     // Iterate through all embedded files
     for embedded_file_path in eldritch::assets::Asset::iter() {
-        let filename = embedded_file_path.split('/').last().unwrap_or("");
+        let filename = embedded_file_path.split('/').next_back().unwrap_or("");
 
         #[cfg(debug_assertions)]
         log::debug!("checking asset {embedded_file_path}");
