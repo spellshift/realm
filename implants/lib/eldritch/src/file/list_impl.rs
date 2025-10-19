@@ -191,10 +191,7 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
                 ) {
                     Ok(local_file_list) => local_file_list,
                     Err(local_err) => {
-                        return Err(anyhow::anyhow!(
-                            "Failed to get file list: {}",
-                            local_err.to_string()
-                        ))
+                        return Err(anyhow::anyhow!("Failed to get file list: {}", local_err))
                     }
                 };
                 for file in file_list {
