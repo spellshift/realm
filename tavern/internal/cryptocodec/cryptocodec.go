@@ -76,6 +76,7 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 }
 
 func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
+	slog.Error(fmt.Sprintf("request"))
 	id, err := goid()
 	if err != nil {
 		slog.Error(fmt.Sprintf("unable to find GOID %d", id))

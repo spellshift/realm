@@ -6,7 +6,6 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"log/slog"
@@ -24,11 +23,11 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"realm.pub/tavern/cli/transport"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
-	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
@@ -49,6 +48,37 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app.Description = "Teamserver implementation for Realm, see https://docs.realm.pub for more details"
 	app.Usage = "Time for an Adventure!"
 	app.Version = Version
+	app.Commands = []cli.Command{
+		{
+			Name: "transport",
+			Usage: "proxy c2 connections from agent to upstream Tavern server",
+			Subcommands: []cli.Command{
+				{
+					Name: "http1",
+					Usage: "start an HTTP/1.1 transport proxy",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name: "upstream",
+							Value: "http://127.0.0.1:80",
+							Usage: "define upstream tavern server",
+						},
+					},
+					Action: func(cctx *cli.Context) error {
+						tCfg := &Config{}
+						for idx, opt := range options {
+							slog.DebugContext(ctx, fmt.Sprintf("applying option %d", idx))
+							opt(tCfg)
+						}
+						t, err := transport.NewHTTP1Transport(tCfg.srv, cctx.String("upstream"))
+						if err != nil {
+							return err
+						}
+						return t.ForwardRequests(ctx)
+					},
+				},
+			},
+		},
+	}
 	app.Action = cli.ActionFunc(func(*cli.Context) error {
 		return run(ctx, options...)
 	})
@@ -422,18 +452,18 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 }
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
-	pub, priv, err := getKeyPair()
-	if err != nil {
-		panic(err)
-	}
-	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
+	// pub, priv, err := getKeyPair()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
 	c2srv := c2.New(client, grpcShellMux)
-	xchacha := cryptocodec.StreamDecryptCodec{
-		Csvc: cryptocodec.NewCryptoSvc(priv),
-	}
+	// xchacha := cryptocodec.StreamDecryptCodec{
+	// 	Csvc: cryptocodec.NewCryptoSvc(priv),
+	// }
 	grpcSrv := grpc.NewServer(
-		grpc.ForceServerCodecV2(xchacha),
+		// grpc.ForceServerCodecV2(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
