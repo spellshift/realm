@@ -6,7 +6,6 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"log/slog"
@@ -28,7 +27,6 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
-	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
@@ -422,18 +420,18 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 }
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
-	pub, priv, err := getKeyPair()
-	if err != nil {
-		panic(err)
-	}
-	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
+	// pub, priv, err := getKeyPair()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
 	c2srv := c2.New(client, grpcShellMux)
-	xchacha := cryptocodec.StreamDecryptCodec{
-		Csvc: cryptocodec.NewCryptoSvc(priv),
-	}
+	// xchacha := cryptocodec.StreamDecryptCodec{
+	// 	Csvc: cryptocodec.NewCryptoSvc(priv),
+	// }
 	grpcSrv := grpc.NewServer(
-		grpc.ForceServerCodecV2(xchacha),
+		// grpc.ForceServerCodecV2(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)

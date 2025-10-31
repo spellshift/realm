@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build Eldritch Proto
     match tonic_build::configure()
         .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
+        // .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
         .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build C2 Protos
     match tonic_build::configure()
         .out_dir("./src/generated")
-        .codec_path("crate::xchacha::ChachaCodec")
+        // .codec_path("crate::xchacha::ChachaCodec")
         .build_server(false)
         .extern_path(".eldritch", "crate::eldritch")
         .compile(&["c2.proto"], &["../../../tavern/internal/c2/proto/"])
