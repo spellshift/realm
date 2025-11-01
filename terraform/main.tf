@@ -236,6 +236,12 @@ resource "google_project_iam_member" "tavern-logwriter-binding" {
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
+resource "google_project_iam_member" "tavern-pubsub-binding" {
+  project = var.gcp_project
+  role    = "roles/pubsub.admin"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
 
 resource "google_pubsub_topic" "shell_input" {
   count = var.disable_gcp_pubsub ? 0 : 1
@@ -432,11 +438,11 @@ resource "google_cloud_run_domain_mapping" "tavern-domain" {
   }
 }
 
-data "external" "pubkey" {
-  count = var.oauth_domain == "" ? 0 : 1
-  program = ["bash", "${path.module}/../bin/getpubkey.sh", google_cloud_run_domain_mapping.tavern-domain[count.index].name]
-}
+# data "external" "pubkey" {
+#   count = var.oauth_domain == "" ? 0 : 1
+#   program = ["bash", "${path.module}/../bin/getpubkey.sh", google_cloud_run_domain_mapping.tavern-domain[count.index].name]
+# }
 
-output "pubkey" {
-  value = var.oauth_domain == "" ? "Unable to get pubkey automatically" : "export IMIX_SERVER_PUBKEY=\"${lookup(data.external.pubkey[0].result, "Pubkey")}\""
-}
+# output "pubkey" {
+#   value = var.oauth_domain == "" ? "Unable to get pubkey automatically" : "export IMIX_SERVER_PUBKEY=\"${lookup(data.external.pubkey[0].result, "Pubkey")}\""
+# }

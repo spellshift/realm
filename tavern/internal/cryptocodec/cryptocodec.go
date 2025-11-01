@@ -9,6 +9,7 @@ import (
 	"log"
 	"log/slog"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"sync"
 
@@ -25,6 +26,17 @@ type SyncMap struct {
 	Mutex sync.RWMutex   // Read Write Mutex to allow for multiple readers
 	Map   map[int][]byte // Example data map
 }
+
+func (s *SyncMap) String() string {
+	res := ""
+	defer s.Mutex.Unlock()
+	s.Mutex.Lock()
+	for k, v := range s.Map {
+		res = fmt.Sprintf("%skey: %d val: %x\n", res, k, v)
+	}
+	return res
+}
+
 
 func NewSyncMap() *SyncMap {
 	return &SyncMap{Mutex: sync.RWMutex{}, Map: make(map[int][]byte)}
@@ -76,11 +88,6 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 }
 
 func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
-	id, err := goid()
-	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
-		return castBytesToBufSlice(FAILURE_BYTES)
-	}
 	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
 	if err != nil {
@@ -94,14 +101,7 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
-	id, err := goid()
-	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
-		return err
-	}
-	dec_buf, pub_key := s.Csvc.Decrypt(buf.Materialize())
-
-	session_pub_keys.Store(id, pub_key)
+	dec_buf, _ := s.Csvc.Decrypt(buf.Materialize())
 
 	proto := encoding.GetCodecV2("proto")
 	if proto == nil {
@@ -196,20 +196,28 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 // TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	// Get the client pub key?
-	id, err := goid()
+	ids, err := goAllIds()
 	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
+		slog.Error(fmt.Sprintf("unable to find GOID: ", err))
 		return FAILURE_BYTES
 	}
+	slog.Info(fmt.Sprintf("all ids: %v", ids))
+	slog.Info(fmt.Sprintf("all keys: %v", session_pub_keys.String()))
 
-	client_pub_key_bytes, ok := session_pub_keys.Load(id)
+	var id int
+	var client_pub_key_bytes []byte
+	ok := false
+	for _, id = range ids {
+		client_pub_key_bytes, ok = session_pub_keys.Load(id)
+		if ok {
+			break
+		}
+	}
+
 	if !ok {
-		slog.Error("Public key not found")
+		slog.Error("Public key not found for any ID")
 		return FAILURE_BYTES
 	}
-
-	// We should only need to use these once so delete it after use
-	session_pub_keys.Delete(id)
 
 	// Generate shared secret
 	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
@@ -225,7 +233,28 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 		return FAILURE_BYTES
 	}
 	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
+
+	// We should only need to use these once so delete it after use
+	session_pub_keys.Delete(id)
+
 	return append(client_pub_key_bytes, encryptedMsg...)
+}
+
+
+func goAllIds() ([]int, error) {
+	buf := debug.Stack()
+	var ids []int
+	elems := bytes.Fields(buf)
+	for i, elem := range elems {
+		if bytes.Equal(elem, []byte("goroutine")) && i+1 < len(elems) {
+			id, err := strconv.Atoi(string(elems[i+1]))
+			if err != nil {
+				return nil, err
+			}
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
 
 // TODO: Find a better way

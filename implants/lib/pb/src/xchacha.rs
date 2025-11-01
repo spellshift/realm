@@ -182,6 +182,14 @@ where
             }
         };
 
+        if bytes_read == 0 {
+            let item = Message::decode(bytes_in.get(0..bytes_read).unwrap())
+                .map(Option::Some)
+                .map_err(from_decode_error)?;
+
+            return Ok(item);
+        }
+
         if bytes_read < PUBKEY_LEN + NONCE_LEN {
             let err =
                 anyhow::anyhow!("Message from server is too small to contain public key and nonce");
