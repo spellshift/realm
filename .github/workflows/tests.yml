@@ -29,7 +29,9 @@ jobs:
     - name: 🔎 Test
       run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 📶 Upload Coverage Results
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -82,4 +84,6 @@ jobs:
         cargo fmt --check &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
