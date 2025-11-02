@@ -27,3 +27,4 @@ whoami = { workspace = true }
 [build-dependencies]
 tonic-build = { workspace = true, features = ["prost"] }
 which = { workspace = true }
+home = "=0.5.11"
