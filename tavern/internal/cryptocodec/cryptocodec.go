@@ -215,7 +215,7 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	}
 
 	if !ok {
-		slog.Error("Public key not found for any ID")
+		slog.Error("Public key not found for any ID") // Assume this is a new connection.
 		return FAILURE_BYTES
 	}
 
