@@ -28,6 +28,7 @@ Imix has run-time configuration, that may be specified using environment variabl
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
+| IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
 
 ## Logging
 

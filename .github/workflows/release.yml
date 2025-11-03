@@ -21,9 +21,9 @@ jobs:
     name: 🚀 [Linux] Tavern
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: ⚡ Setup Golang
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
@@ -50,7 +50,7 @@ jobs:
     name: 🚀 [Linux] Imix
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -84,7 +84,7 @@ jobs:
     name: 🚀 [MacOS] Imix
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -113,7 +113,7 @@ jobs:
     name: 🚀 [Windows] Imix
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -180,7 +180,7 @@ jobs:
     name: 🚀 [Linux] Golem
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -214,7 +214,7 @@ jobs:
     name: 🚀 [MacOS] Golem
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -243,7 +243,7 @@ jobs:
       name: 🚀 [Windows] Golem
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v5
         - name: 🛠️ Setup Rust Toolchain
           uses: actions-rs/toolchain@v1
           with:

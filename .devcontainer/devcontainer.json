@@ -7,15 +7,6 @@
 		}
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/common-utils:2": {
-			"installZsh": true,
-			"configureZshAsDefaultShell": true,
-			"installOhMyZsh": true,
-			"installOhMyZshConfig": true,
-			"username": "vscode",
-			"userUid": "1001",
-			"userGid": "automatic"
-		},
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "1.23"
 		},
@@ -31,7 +22,6 @@
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
 		},
-		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
 	},
 	"customizations": {
 		"vscode": {
@@ -56,18 +46,13 @@
 			},
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"DavidAnson.vscode-markdownlint",
 				"golang.Go",
 				"graphql.vscode-graphql",
 				"GraphQL.vscode-graphql-syntax",
 				"HashiCorp.terraform",
 				"rust-lang.rust-analyzer",
-				"sourcegraph.sourcegraph"
 			]
 		}
 	},
-	"appPort": [
-		"127.0.0.1:80:80"
-	],
 	"remoteUser": "vscode"
 }
