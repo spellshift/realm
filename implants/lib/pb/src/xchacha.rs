@@ -1,6 +1,9 @@
 use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
-use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
+use chacha20poly1305::{
+    aead::{generic_array::GenericArray, Aead, AeadMutInPlace},
+    AeadCore, KeyInit,
+};
 use const_decoder::Decoder as const_decode;
 use lru::LruCache;
 use prost::Message;
@@ -169,8 +172,8 @@ where
     fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
         // public key + xchacha nonce + ciphertext
         let mut reader = buf.reader();
-        let mut bytes_in = vec![0; DEFAULT_CODEC_BUFFER_SIZE];
-        let bytes_read = match reader.read(&mut bytes_in) {
+        let mut bytes_in: Vec<u8> = Vec::new();
+        let bytes_read = match reader.read_to_end(&mut bytes_in) {
             Ok(n) => n,
             Err(err) => {
                 #[cfg(debug_assertions)]
@@ -181,14 +184,15 @@ where
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
+        log::debug!("Bytes read from server: {}", bytes_read);
 
-        // if bytes_read == 0 {
-        //     let item = Message::decode(bytes_in.get(0..bytes_read).unwrap())
-        //         .map(Option::Some)
-        //         .map_err(from_decode_error)?;
+        if bytes_read == 0 {
+            let item = Message::decode(bytes_in.get(0..bytes_read).unwrap())
+                .map(Option::Some)
+                .map_err(from_decode_error)?;
 
-        //     return Ok(item);
-        // }
+            return Ok(item);
+        }
 
         if bytes_read < PUBKEY_LEN + NONCE_LEN {
             let err =
@@ -235,19 +239,22 @@ where
         };
 
         let client_private_bytes = get_key(client_public_bytes).map_err(from_anyhow_error)?;
-        // Shouldn't need private key again once the message has been decrypted
-        del_key(client_public_bytes);
 
         let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
             &client_private_bytes,
         ));
+
+        log::debug!("client_private_bytes: {:02X?}", client_private_bytes);
+        log::debug!("client_public_bytes: {:02X?}", client_public_bytes);
+        log::debug!("nonce: {:02X?}", nonce);
+        log::debug!("ciphertext: {:02X?}", ciphertext);
 
         // Decrypt message
         let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
             Ok(pt) => pt,
             Err(err) => {
                 #[cfg(debug_assertions)]
-                log::debug!("Error decrypting response: {:?}", err);
+                log::debug!("Error decrypting response: {}", err);
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
@@ -256,6 +263,9 @@ where
         let item = Message::decode(bytes::Bytes::from(plaintext))
             .map(Option::Some)
             .map_err(from_decode_error)?;
+
+        // Shouldn't need private key again once the message has been decrypted
+        del_key(client_public_bytes);
 
         Ok(item)
     }

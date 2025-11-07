@@ -195,6 +195,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 // TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
+	slog.Info(fmt.Sprintf("plaintext to size: %d", len(in_arr)))
 	// Get the client pub key?
 	ids, err := goAllIds()
 	if err != nil {
