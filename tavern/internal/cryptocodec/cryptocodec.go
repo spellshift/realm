@@ -236,7 +236,7 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
 
 	// We should only need to use these once so delete it after use
-	session_pub_keys.Delete(id)
+	// session_pub_keys.Delete(id)
 
 	return append(client_pub_key_bytes, encryptedMsg...)
 }

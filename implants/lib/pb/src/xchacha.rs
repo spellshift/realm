@@ -52,10 +52,6 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
     Ok(res)
 }
 
-fn del_key(pub_key: [u8; 32]) -> Option<[u8; 32]> {
-    key_history().lock().unwrap().pop(&pub_key)
-}
-
 // ------------
 
 #[derive(Debug, Clone, Default)]
@@ -154,7 +150,6 @@ where
 
 // ---
 //
-const DEFAULT_CODEC_BUFFER_SIZE: usize = 8 * 1024;
 const PUBKEY_LEN: usize = 32;
 const NONCE_LEN: usize = 24;
 
@@ -265,7 +260,7 @@ where
             .map_err(from_decode_error)?;
 
         // Shouldn't need private key again once the message has been decrypted
-        del_key(client_public_bytes);
+        // del_key(client_public_bytes);
 
         Ok(item)
     }
