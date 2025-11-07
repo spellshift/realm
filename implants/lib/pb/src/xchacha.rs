@@ -151,7 +151,6 @@ where
 
 // ---
 //
-const DEFAULT_CODEC_BUFFER_SIZE: usize = 8 * 1024;
 const PUBKEY_LEN: usize = 32;
 const NONCE_LEN: usize = 24;
 
@@ -169,8 +168,8 @@ where
     fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
         // public key + xchacha nonce + ciphertext
         let mut reader = buf.reader();
-        let mut bytes_in = vec![0; DEFAULT_CODEC_BUFFER_SIZE];
-        let bytes_read = match reader.read(&mut bytes_in) {
+        let mut bytes_in = Vec::new();
+        let bytes_read = match reader.read_to_end(&mut bytes_in) {
             Ok(n) => n,
             Err(err) => {
                 #[cfg(debug_assertions)]
@@ -181,6 +180,16 @@ where
                 return Err(Status::new(tonic::Code::Internal, err.to_string()));
             }
         };
+
+        log::debug!("Bytes read from server: {}", bytes_read);
+
+        if bytes_read == 0 {
+            let item = Message::decode(bytes_in.get(0..bytes_read).unwrap())
+                .map(Option::Some)
+                .map_err(from_decode_error)?;
+
+            return Ok(item);
+        }
 
         if bytes_read < PUBKEY_LEN + NONCE_LEN {
             let err =
