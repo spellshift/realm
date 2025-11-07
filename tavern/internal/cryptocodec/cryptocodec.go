@@ -10,43 +10,37 @@ import (
 	"log/slog"
 	"runtime"
 	"strconv"
-	"sync"
 
 	"github.com/cloudflare/circl/dh/x25519"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"golang.org/x/crypto/chacha20poly1305"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/mem"
 )
 
-// TODO: Switch to a gomap and mutex.
 var session_pub_keys = NewSyncMap()
 
+// This size limits the number of concurrent connections each server can handle.
+// I can't imagine a single server handling more than 10k connections at once but just in case.
+const LRUCACHE_SIZE = 10480
 type SyncMap struct {
-	Mutex sync.RWMutex   // Read Write Mutex to allow for multiple readers
-	Map   map[int][]byte // Example data map
+	Map   *lru.Cache[int, []byte] // Example data map
 }
 
 func NewSyncMap() *SyncMap {
-	return &SyncMap{Mutex: sync.RWMutex{}, Map: make(map[int][]byte)}
+	l, err := lru.New[int, []byte](LRUCACHE_SIZE)
+	if err != nil {
+		slog.Error("Failed to create LRU cache")
+	}
+	return &SyncMap{Map: l}
 }
 
 func (s *SyncMap) Load(key int) ([]byte, bool) {
-	defer s.Mutex.Unlock()
-	s.Mutex.Lock()
-	res, ok := s.Map[key]
-	return res, ok
+	return s.Map.Get(key)
 }
 
 func (s *SyncMap) Store(key int, value []byte) {
-	defer s.Mutex.Unlock()
-	s.Mutex.Lock()
-	s.Map[key] = value
-}
-
-func (s *SyncMap) Delete(key int) {
-	defer s.Mutex.Unlock()
-	s.Mutex.Lock()
-	delete(s.Map, key)
+	s.Map.Add(key, value)
 }
 
 // TODO: Should we make this a random long byte array in case it gets used anywhere to avoid encrypting data with a weak key? - Sliver handles errors in this way.
@@ -207,9 +201,6 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 		slog.Error("Public key not found")
 		return FAILURE_BYTES
 	}
-
-	// We should only need to use these once so delete it after use
-	session_pub_keys.Delete(id)
 
 	// Generate shared secret
 	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
