@@ -237,11 +237,6 @@ where
             &client_private_bytes,
         ));
 
-        log::debug!("client_private_bytes: {:02X?}", client_private_bytes);
-        log::debug!("client_public_bytes: {:02X?}", client_public_bytes);
-        log::debug!("nonce: {:02X?}", nonce);
-        log::debug!("ciphertext: {:02X?}", ciphertext);
-
         // Decrypt message
         let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
             Ok(pt) => pt,

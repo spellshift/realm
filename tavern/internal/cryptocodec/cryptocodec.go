@@ -81,14 +81,6 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 }
 
 func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
-	ids, err := goAllIds()
-	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID: %s", err))
-		return castBytesToBufSlice(FAILURE_BYTES)
-	}
-	slog.Info(fmt.Sprintf("all ids: %v", ids))
-	slog.Info(fmt.Sprintf("all keys: %s", session_pub_keys))
-
 	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
 	if err != nil {
@@ -196,7 +188,6 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 // TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
-	// Get the client pub key?
 	ids, err := goAllIds()
 	if err != nil {
 		slog.Error(fmt.Sprintf("unable to find GOID %s", err))
