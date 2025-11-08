@@ -371,7 +371,7 @@ func GetPubKey() (*ecdh.PublicKey, error) {
 
 func newSecretsManager() (secrets.SecretsManager, error) {
 	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
-		return secrets.NewDebugFileSecrets("/etc/tavern-secrets")
+		return secrets.NewDebugFileSecrets("/tmp/tavern-secrets")
 	}
 	if EnvSecretsManagerPath.String() == "" {
 		return secrets.NewGcp(EnvGCPProjectID.String())
