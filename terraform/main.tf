@@ -236,22 +236,10 @@ resource "google_project_iam_member" "tavern-logwriter-binding" {
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
-resource "google_pubsub_subscription_iam_binding" "pubsub_input" {
-  count = var.disable_gcp_pubsub ? 0 : 1
-  subscription = google_pubsub_subscription.shell_input-sub[0].name
-  role         = "roles/pubsub.editor"
-  members = [
-    "serviceAccount:${google_service_account.svctavern.email}",
-  ]
-}
-
-resource "google_pubsub_subscription_iam_binding" "pubsub_output" {
-  count = var.disable_gcp_pubsub ? 0 : 1
-  subscription = google_pubsub_subscription.shell_output-sub[0].name
-  role         = "roles/pubsub.editor"
-  members = [
-    "serviceAccount:${google_service_account.svctavern.email}",
-  ]
+resource "google_project_iam_member" "tavern-pubsub-binding" {
+  project = var.gcp_project
+  role    = "roles/pubsub.editor"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
 resource "google_pubsub_topic" "shell_input" {
@@ -419,6 +407,7 @@ resource "google_cloud_run_service" "tavern" {
     google_secret_manager_secret_iam_binding.tavern-secrets-write-binding,
     google_project_iam_member.tavern-metricwriter-binding,
     google_project_iam_member.tavern-logwriter-binding,
+    google_project_iam_member.tavern-pubsub-binding,
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
     google_sql_user.tavern-user,
