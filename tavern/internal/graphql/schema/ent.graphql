@@ -2319,6 +2319,11 @@ type Shell implements Node {
     last: Int
 
     """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
     Filtering options for Users returned from the connection.
     """
     where: UserWhereInput
@@ -3517,6 +3522,25 @@ type UserEdge {
   A cursor for use in pagination.
   """
   cursor: Cursor!
+}
+"""
+Ordering options for User connections
+"""
+input UserOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Users.
+  """
+  field: UserOrderField!
+}
+"""
+Properties by which User connections can be ordered.
+"""
+enum UserOrderField {
+  NAME
 }
 """
 UserWhereInput is used for filtering User objects.

@@ -218,8 +218,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Beacons      func(childComplexity int, where *ent.BeaconWhereInput) int
-		Files        func(childComplexity int, where *ent.FileWhereInput) int
+		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		Files        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
 		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
@@ -227,10 +227,10 @@ type ComplexityRoot struct {
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, where *ent.TagWhereInput) int
+		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, where *ent.UserWhereInput) int
+		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -281,7 +281,7 @@ type ComplexityRoot struct {
 	}
 
 	Shell struct {
-		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.UserWhereInput) int
+		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Beacon         func(childComplexity int) int
 		ClosedAt       func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -1318,7 +1318,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Beacons(childComplexity, args["where"].(*ent.BeaconWhereInput)), true
+		return e.complexity.Query.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
 
 	case "Query.files":
 		if e.complexity.Query.Files == nil {
@@ -1330,7 +1330,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
+		return e.complexity.Query.Files(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.FileOrder), args["where"].(*ent.FileWhereInput)), true
 
 	case "Query.hosts":
 		if e.complexity.Query.Hosts == nil {
@@ -1421,7 +1421,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tags(childComplexity, args["where"].(*ent.TagWhereInput)), true
+		return e.complexity.Query.Tags(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TagOrder), args["where"].(*ent.TagWhereInput)), true
 
 	case "Query.tasks":
 		if e.complexity.Query.Tasks == nil {
@@ -1445,7 +1445,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tomes(childComplexity, args["where"].(*ent.TomeWhereInput)), true
+		return e.complexity.Query.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -1457,7 +1457,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["where"].(*ent.UserWhereInput)), true
+		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Quest.bundle":
 		if e.complexity.Quest.Bundle == nil {
@@ -1682,7 +1682,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Shell.ActiveUsers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.UserWhereInput)), true
+		return e.complexity.Shell.ActiveUsers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Shell.beacon":
 		if e.complexity.Shell.Beacon == nil {
@@ -2266,6 +2266,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
+		ec.unmarshalInputUserOrder,
 		ec.unmarshalInputUserWhereInput,
 	)
 	first := true
@@ -4691,6 +4692,11 @@ type Shell implements Node {
     last: Int
 
     """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
     Filtering options for Users returned from the connection.
     """
     where: UserWhereInput
@@ -5891,6 +5897,25 @@ type UserEdge {
   cursor: Cursor!
 }
 """
+Ordering options for User connections
+"""
+input UserOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Users.
+  """
+  field: UserOrderField!
+}
+"""
+Properties by which User connections can be ordered.
+"""
+enum UserOrderField {
+  NAME
+}
+"""
 UserWhereInput is used for filtering User objects.
 Input was generated by ent.
 """
@@ -5967,7 +5992,25 @@ input UserWhereInput {
 scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
-  files(where: FileWhereInput): [File!]! @requireRole(role: USER)
+  files(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Files returned from the connection."""
+    orderBy: [FileOrder!]
+
+    """Filtering options for Files returned from the connection."""
+    where: FileWhereInput
+  ): FileConnection! @requireRole(role: USER)
   quests(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -6025,7 +6068,25 @@ scalar Uint64
     """Filtering options for Repositories returned from the connection."""
     where: RepositoryWhereInput
   ): RepositoryConnection! @requireRole(role: USER)
-  beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
+  beacons(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Beacons returned from the connection."""
+    orderBy: [BeaconOrder!]
+
+    """Filtering options for Beacons returned from the connection."""
+    where: BeaconWhereInput
+  ): BeaconConnection! @requireRole(role: USER)
   hosts(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -6045,9 +6106,63 @@ scalar Uint64
     """Filtering options for Hosts returned from the connection."""
     where: HostWhereInput
   ): HostConnection! @requireRole(role: USER)
-  tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
-  tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
-  users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  tags(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [TagOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: TagWhereInput
+  ): TagConnection! @requireRole(role: USER)
+  tomes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tomes returned from the connection."""
+    orderBy: [TomeOrder!]
+
+    """Filtering options for Tomes returned from the connection."""
+    where: TomeWhereInput
+  ): TomeConnection! @requireRole(role: USER)
+  users(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Users returned from the connection."""
+    orderBy: [UserOrder!]
+
+    """Filtering options for Users returned from the connection."""
+    where: UserWhereInput
+  ): UserConnection! @requireRole(role: USER)
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

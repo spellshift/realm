@@ -27,15 +27,15 @@ import (
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
-	Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error)
+	Files(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) (*ent.FileConnection, error)
 	Quests(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) (*ent.QuestConnection, error)
 	Tasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) (*ent.TaskConnection, error)
 	Repositories(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) (*ent.RepositoryConnection, error)
-	Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error)
+	Beacons(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) (*ent.BeaconConnection, error)
 	Hosts(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) (*ent.HostConnection, error)
-	Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error)
-	Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error)
-	Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error)
+	Tags(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) (*ent.TagConnection, error)
+	Tomes(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) (*ent.TomeConnection, error)
+	Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error)
 	Shells(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) (*ent.ShellConnection, error)
 	Me(ctx context.Context) (*ent.User, error)
 }
@@ -1219,13 +1219,128 @@ func (ec *executionContext) field_Query___type_argsName(
 func (ec *executionContext) field_Query_beacons_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_beacons_argsWhere(ctx, rawArgs)
+	arg0, err := ec.field_Query_beacons_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	arg1, err := ec.field_Query_beacons_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := ec.field_Query_beacons_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := ec.field_Query_beacons_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := ec.field_Query_beacons_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Query_beacons_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Query_beacons_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_beacons_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_beacons_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_beacons_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_beacons_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.BeaconOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.BeaconOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.BeaconOrder
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_beacons_argsWhere(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -1247,13 +1362,128 @@ func (ec *executionContext) field_Query_beacons_argsWhere(
 func (ec *executionContext) field_Query_files_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_files_argsWhere(ctx, rawArgs)
+	arg0, err := ec.field_Query_files_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	arg1, err := ec.field_Query_files_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := ec.field_Query_files_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := ec.field_Query_files_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := ec.field_Query_files_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Query_files_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Query_files_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_files_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_files_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_files_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_files_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.FileOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.FileOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOFileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFileOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.FileOrder
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_files_argsWhere(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -1903,13 +2133,128 @@ func (ec *executionContext) field_Query_shells_argsWhere(
 func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_tags_argsWhere(ctx, rawArgs)
+	arg0, err := ec.field_Query_tags_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	arg1, err := ec.field_Query_tags_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := ec.field_Query_tags_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := ec.field_Query_tags_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := ec.field_Query_tags_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Query_tags_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Query_tags_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.TagOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.TagOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOTagOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.TagOrder
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_tags_argsWhere(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -2074,13 +2419,128 @@ func (ec *executionContext) field_Query_tasks_argsWhere(
 func (ec *executionContext) field_Query_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_tomes_argsWhere(ctx, rawArgs)
+	arg0, err := ec.field_Query_tomes_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	arg1, err := ec.field_Query_tomes_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := ec.field_Query_tomes_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := ec.field_Query_tomes_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := ec.field_Query_tomes_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Query_tomes_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Query_tomes_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tomes_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tomes_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tomes_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tomes_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.TomeOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.TomeOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.TomeOrder
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_tomes_argsWhere(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -2102,13 +2562,128 @@ func (ec *executionContext) field_Query_tomes_argsWhere(
 func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_users_argsWhere(ctx, rawArgs)
+	arg0, err := ec.field_Query_users_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg0
+	args["after"] = arg0
+	arg1, err := ec.field_Query_users_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := ec.field_Query_users_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := ec.field_Query_users_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := ec.field_Query_users_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Query_users_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Query_users_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_users_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_users_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_users_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_users_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.UserOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.UserOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.UserOrder
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_users_argsWhere(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -2436,11 +3011,16 @@ func (ec *executionContext) field_Shell_activeUsers_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Shell_activeUsers_argsWhere(ctx, rawArgs)
+	arg4, err := ec.field_Shell_activeUsers_argsOrderBy(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Shell_activeUsers_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
 	return args, nil
 }
 func (ec *executionContext) field_Shell_activeUsers_argsAfter(
@@ -2512,6 +3092,24 @@ func (ec *executionContext) field_Shell_activeUsers_argsLast(
 	}
 
 	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Shell_activeUsers_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.UserOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.UserOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.UserOrder
 	return zeroVal, nil
 }
 
@@ -8722,17 +9320,17 @@ func (ec *executionContext) _Query_files(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Files(rctx, fc.Args["where"].(*ent.FileWhereInput))
+			return ec.resolvers.Query().Files(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.FileOrder), fc.Args["where"].(*ent.FileWhereInput))
 		}
 
 		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				var zeroVal []*ent.File
+				var zeroVal *ent.FileConnection
 				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				var zeroVal []*ent.File
+				var zeroVal *ent.FileConnection
 				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
@@ -8745,10 +9343,10 @@ func (ec *executionContext) _Query_files(ctx context.Context, field graphql.Coll
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.File); ok {
+		if data, ok := tmp.(*ent.FileConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.File`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.FileConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8760,9 +9358,9 @@ func (ec *executionContext) _Query_files(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.File)
+	res := resTmp.(*ent.FileConnection)
 	fc.Result = res
-	return ec.marshalNFile2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFileᚄ(ctx, field.Selections, res)
+	return ec.marshalNFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFileConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8773,22 +9371,14 @@ func (ec *executionContext) fieldContext_Query_files(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_File_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_File_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_File_lastModifiedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_File_name(ctx, field)
-			case "size":
-				return ec.fieldContext_File_size(ctx, field)
-			case "hash":
-				return ec.fieldContext_File_hash(ctx, field)
-			case "tomes":
-				return ec.fieldContext_File_tomes(ctx, field)
+			case "edges":
+				return ec.fieldContext_FileConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_FileConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_FileConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type File", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type FileConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -9090,17 +9680,17 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Beacons(rctx, fc.Args["where"].(*ent.BeaconWhereInput))
+			return ec.resolvers.Query().Beacons(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
 		}
 
 		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				var zeroVal []*ent.Beacon
+				var zeroVal *ent.BeaconConnection
 				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				var zeroVal []*ent.Beacon
+				var zeroVal *ent.BeaconConnection
 				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
@@ -9113,10 +9703,10 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.Beacon); ok {
+		if data, ok := tmp.(*ent.BeaconConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Beacon`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.BeaconConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9128,9 +9718,9 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Beacon)
+	res := resTmp.(*ent.BeaconConnection)
 	fc.Result = res
-	return ec.marshalNBeacon2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx, field.Selections, res)
+	return ec.marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9141,32 +9731,14 @@ func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Beacon_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Beacon_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_Beacon_lastModifiedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_Beacon_name(ctx, field)
-			case "principal":
-				return ec.fieldContext_Beacon_principal(ctx, field)
-			case "identifier":
-				return ec.fieldContext_Beacon_identifier(ctx, field)
-			case "agentIdentifier":
-				return ec.fieldContext_Beacon_agentIdentifier(ctx, field)
-			case "lastSeenAt":
-				return ec.fieldContext_Beacon_lastSeenAt(ctx, field)
-			case "interval":
-				return ec.fieldContext_Beacon_interval(ctx, field)
-			case "host":
-				return ec.fieldContext_Beacon_host(ctx, field)
-			case "tasks":
-				return ec.fieldContext_Beacon_tasks(ctx, field)
-			case "shells":
-				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "edges":
+				return ec.fieldContext_BeaconConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_BeaconConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_BeaconConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type BeaconConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -9288,17 +9860,17 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tags(rctx, fc.Args["where"].(*ent.TagWhereInput))
+			return ec.resolvers.Query().Tags(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
 		}
 
 		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				var zeroVal []*ent.Tag
+				var zeroVal *ent.TagConnection
 				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				var zeroVal []*ent.Tag
+				var zeroVal *ent.TagConnection
 				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
@@ -9311,10 +9883,10 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.Tag); ok {
+		if data, ok := tmp.(*ent.TagConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Tag`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.TagConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9326,9 +9898,9 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Tag)
+	res := resTmp.(*ent.TagConnection)
 	fc.Result = res
-	return ec.marshalNTag2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagᚄ(ctx, field.Selections, res)
+	return ec.marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9339,16 +9911,14 @@ func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field g
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tag_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tag_name(ctx, field)
-			case "kind":
-				return ec.fieldContext_Tag_kind(ctx, field)
-			case "hosts":
-				return ec.fieldContext_Tag_hosts(ctx, field)
+			case "edges":
+				return ec.fieldContext_TagConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TagConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_TagConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TagConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -9380,17 +9950,17 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tomes(rctx, fc.Args["where"].(*ent.TomeWhereInput))
+			return ec.resolvers.Query().Tomes(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
 		}
 
 		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				var zeroVal []*ent.Tome
+				var zeroVal *ent.TomeConnection
 				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				var zeroVal []*ent.Tome
+				var zeroVal *ent.TomeConnection
 				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
@@ -9403,10 +9973,10 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.Tome); ok {
+		if data, ok := tmp.(*ent.TomeConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.Tome`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.TomeConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9418,9 +9988,9 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Tome)
+	res := resTmp.(*ent.TomeConnection)
 	fc.Result = res
-	return ec.marshalNTome2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeᚄ(ctx, field.Selections, res)
+	return ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9431,34 +10001,14 @@ func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tome_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Tome_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_Tome_lastModifiedAt(ctx, field)
-			case "name":
-				return ec.fieldContext_Tome_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Tome_description(ctx, field)
-			case "author":
-				return ec.fieldContext_Tome_author(ctx, field)
-			case "supportModel":
-				return ec.fieldContext_Tome_supportModel(ctx, field)
-			case "tactic":
-				return ec.fieldContext_Tome_tactic(ctx, field)
-			case "paramDefs":
-				return ec.fieldContext_Tome_paramDefs(ctx, field)
-			case "eldritch":
-				return ec.fieldContext_Tome_eldritch(ctx, field)
-			case "files":
-				return ec.fieldContext_Tome_files(ctx, field)
-			case "uploader":
-				return ec.fieldContext_Tome_uploader(ctx, field)
-			case "repository":
-				return ec.fieldContext_Tome_repository(ctx, field)
+			case "edges":
+				return ec.fieldContext_TomeConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TomeConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_TomeConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type TomeConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -9490,17 +10040,17 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Users(rctx, fc.Args["where"].(*ent.UserWhereInput))
+			return ec.resolvers.Query().Users(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
 		}
 
 		directive1 := func(ctx context.Context) (any, error) {
 			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
 			if err != nil {
-				var zeroVal []*ent.User
+				var zeroVal *ent.UserConnection
 				return zeroVal, err
 			}
 			if ec.directives.RequireRole == nil {
-				var zeroVal []*ent.User
+				var zeroVal *ent.UserConnection
 				return zeroVal, errors.New("directive requireRole is not implemented")
 			}
 			return ec.directives.RequireRole(ctx, nil, directive0, role)
@@ -9513,10 +10063,10 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*ent.User); ok {
+		if data, ok := tmp.(*ent.UserConnection); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*realm.pub/tavern/internal/ent.User`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.UserConnection`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9528,9 +10078,9 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.User)
+	res := resTmp.(*ent.UserConnection)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9541,22 +10091,14 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "photoURL":
-				return ec.fieldContext_User_photoURL(ctx, field)
-			case "isActivated":
-				return ec.fieldContext_User_isActivated(ctx, field)
-			case "isAdmin":
-				return ec.fieldContext_User_isAdmin(ctx, field)
-			case "tomes":
-				return ec.fieldContext_User_tomes(ctx, field)
-			case "activeShells":
-				return ec.fieldContext_User_activeShells(ctx, field)
+			case "edges":
+				return ec.fieldContext_UserConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_UserConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_UserConnection_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -11676,7 +12218,7 @@ func (ec *executionContext) _Shell_activeUsers(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ActiveUsers(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.UserWhereInput))
+		return obj.ActiveUsers(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23563,6 +24105,44 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserOrder(ctx context.Context, obj any) (ent.UserOrder, error) {
+	var it ent.UserOrder
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNUserOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, obj any) (ent.UserWhereInput, error) {
 	var it ent.UserWhereInput
 	asMap := map[string]any{}
@@ -27650,50 +28230,6 @@ func (ec *executionContext) marshalNBeacon2realmᚗpubᚋtavernᚋinternalᚋent
 	return ec._Beacon(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNBeacon2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Beacon) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v *ent.Beacon) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -27702,6 +28238,10 @@ func (ec *executionContext) marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋ
 		return graphql.Null
 	}
 	return ec._Beacon(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBeaconConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx context.Context, sel ast.SelectionSet, v ent.BeaconConnection) graphql.Marshaler {
+	return ec._BeaconConnection(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx context.Context, sel ast.SelectionSet, v *ent.BeaconConnection) graphql.Marshaler {
@@ -27775,58 +28315,8 @@ func (ec *executionContext) marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCurso
 	return v
 }
 
-func (ec *executionContext) marshalNFile2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.File) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFile(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFile(ctx context.Context, sel ast.SelectionSet, v *ent.File) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._File(ctx, sel, v)
+func (ec *executionContext) marshalNFileConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐFileConnection(ctx context.Context, sel ast.SelectionSet, v ent.FileConnection) graphql.Marshaler {
+	return ec._FileConnection(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐFileConnection(ctx context.Context, sel ast.SelectionSet, v *ent.FileConnection) graphql.Marshaler {
@@ -28271,50 +28761,6 @@ func (ec *executionContext) marshalNTag2realmᚗpubᚋtavernᚋinternalᚋentᚐ
 	return ec._Tag(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTag2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tag) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v *ent.Tag) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -28323,6 +28769,10 @@ func (ec *executionContext) marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋent
 		return graphql.Null
 	}
 	return ec._Tag(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTagConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection(ctx context.Context, sel ast.SelectionSet, v ent.TagConnection) graphql.Marshaler {
+	return ec._TagConnection(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection(ctx context.Context, sel ast.SelectionSet, v *ent.TagConnection) graphql.Marshaler {
@@ -28425,50 +28875,6 @@ func (ec *executionContext) marshalNTome2realmᚗpubᚋtavernᚋinternalᚋent�
 	return ec._Tome(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNTome2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tome) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome(ctx context.Context, sel ast.SelectionSet, v *ent.Tome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -28477,6 +28883,10 @@ func (ec *executionContext) marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋen
 		return graphql.Null
 	}
 	return ec._Tome(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTomeConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx context.Context, sel ast.SelectionSet, v ent.TomeConnection) graphql.Marshaler {
+	return ec._TomeConnection(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx context.Context, sel ast.SelectionSet, v *ent.TomeConnection) graphql.Marshaler {
@@ -28564,50 +28974,6 @@ func (ec *executionContext) marshalNUser2realmᚗpubᚋtavernᚋinternalᚋent�
 	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUser2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -28618,6 +28984,10 @@ func (ec *executionContext) marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋen
 	return ec._User(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNUserConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v ent.UserConnection) graphql.Marshaler {
+	return ec._UserConnection(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v *ent.UserConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -28626,6 +28996,27 @@ func (ec *executionContext) marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋint
 		return graphql.Null
 	}
 	return ec._UserConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUserOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrder(ctx context.Context, v any) (*ent.UserOrder, error) {
+	res, err := ec.unmarshalInputUserOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUserOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderField(ctx context.Context, v any) (*ent.UserOrderField, error) {
+	var res = new(ent.UserOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.UserOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalNUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx context.Context, v any) (*ent.UserWhereInput, error) {
@@ -30443,6 +30834,26 @@ func (ec *executionContext) marshalOUserEdge2ᚖrealmᚗpubᚋtavernᚋinternal�
 		return graphql.Null
 	}
 	return ec._UserEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ(ctx context.Context, v any) ([]*ent.UserOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.UserOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUserOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx context.Context, v any) ([]*ent.UserWhereInput, error) {

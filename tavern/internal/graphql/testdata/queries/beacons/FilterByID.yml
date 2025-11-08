@@ -12,14 +12,20 @@ requestor:
 query: |
   query Beacons {
     beacons(where: {id: 1337}) {
-      id
-      host {
-        id
+      edges {
+        node {
+          id
+          host {
+            id
+          }
+        }
       }
     }
   }
 expected:
   beacons:
-    - id: "1337"
-      host:
-        id: "1010"
+    edges:
+      - node:
+          id: "1337"
+          host:
+            id: "1010"

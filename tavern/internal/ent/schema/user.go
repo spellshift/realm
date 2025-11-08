@@ -26,6 +26,9 @@ func (User) Fields() []ent.Field {
 		field.String("name").
 			MinLen(3).
 			MaxLen(25).
+			Annotations(
+				entgql.OrderField("NAME"),
+			).
 			Comment("The name displayed for the user"),
 		field.String("oauth_id").
 			Sensitive().

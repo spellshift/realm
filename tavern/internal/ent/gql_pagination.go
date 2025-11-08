@@ -4878,6 +4878,53 @@ func (u *UserQuery) Paginate(
 	return conn, nil
 }
 
+var (
+	// UserOrderFieldName orders User by name.
+	UserOrderFieldName = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.Name, nil
+		},
+		column: user.FieldName,
+		toTerm: user.ByName,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f UserOrderField) String() string {
+	var str string
+	switch f.column {
+	case UserOrderFieldName.column:
+		str = "NAME"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f UserOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *UserOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("UserOrderField %T must be a string", v)
+	}
+	switch str {
+	case "NAME":
+		*f = *UserOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid UserOrderField", str)
+	}
+	return nil
+}
+
 // UserOrderField defines the ordering field of User.
 type UserOrderField struct {
 	// Value extracts the ordering value from the given User.
