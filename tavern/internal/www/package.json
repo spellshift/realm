@@ -8,7 +8,7 @@
     "@chakra-ui/react": "^2.5.5",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@headlessui/react": "^1.7.13",
+    "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.0.16",
     "@tanstack/react-table": "^8.9.3",
     "@testing-library/jest-dom": "^5.16.5",
