@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"runtime"
+	"runtime/debug"
 	"strconv"
 
 	"github.com/cloudflare/circl/dh/x25519"
@@ -34,6 +34,17 @@ func NewSyncMap() *SyncMap {
 	}
 	return &SyncMap{Map: l}
 }
+
+func (s *SyncMap) String() string {
+	var res string
+	allkeys := s.Map.Keys()
+	for _, k := range allkeys {
+		v, _ := s.Map.Peek(k)
+		res = fmt.Sprintf("%sid: %d pubkey: %x\n", res, k, v)
+	}
+	return res
+}
+
 
 func (s *SyncMap) Load(key int) ([]byte, bool) {
 	return s.Map.Get(key)
@@ -70,11 +81,14 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 }
 
 func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
-	id, err := goid()
+	ids, err := goAllIds()
 	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
+		slog.Error(fmt.Sprintf("unable to find GOID: %s", err))
 		return castBytesToBufSlice(FAILURE_BYTES)
 	}
+	slog.Info(fmt.Sprintf("all ids: %v", ids))
+	slog.Info(fmt.Sprintf("all keys: %s", session_pub_keys))
+
 	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
 	if err != nil {
@@ -88,14 +102,7 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
-	id, err := goid()
-	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
-		return err
-	}
-	dec_buf, pub_key := s.Csvc.Decrypt(buf.Materialize())
-
-	session_pub_keys.Store(id, pub_key)
+	dec_buf, _ := s.Csvc.Decrypt(buf.Materialize())
 
 	proto := encoding.GetCodecV2("proto")
 	if proto == nil {
@@ -151,12 +158,12 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	client_pub_key_bytes := in_arr[:x25519.Size]
 
-	id, err := goid()
+	ids, err := goAllIds()
 	if err != nil {
 		slog.Error("failed to get goid")
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
-	session_pub_keys.Store(id, client_pub_key_bytes)
+	session_pub_keys.Store(ids.Id, client_pub_key_bytes)
 
 	// Generate shared secret
 	derived_key := csvc.generate_shared_key(client_pub_key_bytes)
@@ -190,15 +197,25 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 // TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	// Get the client pub key?
-	id, err := goid()
+	ids, err := goAllIds()
 	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %d", id))
+		slog.Error(fmt.Sprintf("unable to find GOID %s", err))
 		return FAILURE_BYTES
 	}
 
-	client_pub_key_bytes, ok := session_pub_keys.Load(id)
+	var id int
+	var client_pub_key_bytes []byte
+	ok := false
+	for idx, id := range []int{ids.Id, ids.ParentId} {
+		client_pub_key_bytes, ok = session_pub_keys.Load(id)
+		if ok {
+			slog.Info(fmt.Sprintf("found public key for id: %d idx: %d", id, idx))
+			break
+		}
+	}
+
 	if !ok {
-		slog.Error("Public key not found")
+		slog.Error(fmt.Sprintf("public key not found for id: %d", id))
 		return FAILURE_BYTES
 	}
 
@@ -219,24 +236,30 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	return append(client_pub_key_bytes, encryptedMsg...)
 }
 
-// TODO: Find a better way
-// This is terrible, slow, and should never be used.
-func goid() (int, error) {
-	buf := make([]byte, 32)
-	n := runtime.Stack(buf, false)
-	buf = buf[:n]
-	// goroutine 1 [running]: ...
-	var goroutinePrefix = []byte("goroutine ")
-	var errBadStack = errors.New("invalid runtime.Stack output")
-	buf, ok := bytes.CutPrefix(buf, goroutinePrefix)
-	if !ok {
-		return 0, errBadStack
-	}
+type GoidTrace struct {
+	Id int
+	ParentId int
+	Others []int
+}
 
-	i := bytes.IndexByte(buf, ' ')
-	if i < 0 {
-		return 0, errBadStack
+func goAllIds() (GoidTrace, error) {
+	buf := debug.Stack()
+	// slog.Info(fmt.Sprintf("debug stack: %s", buf))
+	var ids []int
+	elems := bytes.Fields(buf)
+	for i, elem := range elems {
+		if bytes.Equal(elem, []byte("goroutine")) && i+1 < len(elems) {
+			id, err := strconv.Atoi(string(elems[i+1]))
+			if err != nil {
+				return GoidTrace{}, err
+			}
+			ids = append(ids, id)
+		}
 	}
-
-	return strconv.Atoi(string(buf[:i]))
+	res := GoidTrace{
+		Id: ids[0],
+		ParentId: ids[1],
+		Others: ids[2:],
+	}
+	return res, nil
 }
