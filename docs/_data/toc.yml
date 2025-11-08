@@ -26,6 +26,8 @@
           url: "admin-guide/tavern#configuration"
         - title: "GraphQL API"
           url: "admin-guide/tavern#graphql-api"
+        - title: "CDN"
+          url: "admin-guide/tavern#cdn-http-api"
 - title: Developer Guide
   url: dev-guide/introduction
   links:
