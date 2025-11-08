@@ -371,6 +371,7 @@ func GetPubKey() (*ecdh.PublicKey, error) {
 
 func newSecretsManager() (secrets.SecretsManager, error) {
 	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
+		slog.Error("No configuration provided for secret manager path, using a potentially insecure default.")
 		return secrets.NewDebugFileSecrets("/tmp/tavern-secrets")
 	}
 	if EnvSecretsManagerPath.String() == "" {
