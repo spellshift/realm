@@ -369,21 +369,23 @@ func GetPubKey() (*ecdh.PublicKey, error) {
 	return pub, nil
 }
 
+func newSecretsManager() (secrets.SecretsManager, error) {
+	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
+		return secrets.NewDebugFileSecrets("/tmp/secrets")
+	}
+	if EnvSecretsManagerPath.String() == "" {
+		return secrets.NewGcp(EnvGCPProjectID.String())
+	}
+
+	return secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
+}
+
 func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 	curve := ecdh.X25519()
 
-	var secretsManager secrets.SecretsManager
-	var err error
-
-	if EnvSecretsManagerPath.String() == "" {
-		secretsManager, err = secrets.NewGcp("")
-	} else {
-		secretsManager, err = secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
-	}
-	if err != nil {
-		slog.Error("unable to setup secrets manager")
-		slog.Error("if you're running locally try setting `export SECRETS_FILE_PATH='/tmp/secrets'` \n")
-		return nil, nil, fmt.Errorf("unable to connect to secrets manager: %s", err.Error())
+	secretsManager, err := newSecretsManager()
+	if err != nil || secretsManager == nil {
+		return nil, nil, fmt.Errorf("failed to configure secret manager: %w", err)
 	}
 
 	// Check if we already have a key
