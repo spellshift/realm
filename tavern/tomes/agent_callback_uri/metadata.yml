@@ -1,0 +1,10 @@
+name: Set agent callback URI
+description: Modify the agents callback URI.
+author: hulto
+tactic: DEFENSE_EVASION
+support_model: FIRST_PARTY
+paramdefs:
+- name: uri
+  type: string
+  label: New callback URI
+  placeholder: "128"

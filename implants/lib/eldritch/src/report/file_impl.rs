@@ -1,14 +1,17 @@
-use crate::runtime::{messages::ReportFileMessage, Environment};
+use crate::runtime::{
+    messages::{AsyncMessage, ReportFileMessage},
+    Environment,
+};
 use anyhow::Result;
 
 pub fn file(env: &Environment, path: String) -> Result<()> {
-    env.send(ReportFileMessage { id: env.id(), path })?;
+    env.send(AsyncMessage::from(ReportFileMessage { id: env.id(), path }))?;
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
 
@@ -26,7 +29,7 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::ReportFile(m) = msg {
+                    if let Message::Async(AsyncMessage::ReportFile(m)) = msg {
                         assert_eq!(tc.id, m.id);
                         assert_eq!(tc.want_path, m.path);
                         found = true;

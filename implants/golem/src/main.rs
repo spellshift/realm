@@ -7,7 +7,7 @@ mod inter;
 
 use anyhow::{anyhow, Result};
 use clap::{Arg, Command};
-use eldritch::runtime::Message;
+use eldritch::runtime::{messages::AsyncMessage, Message};
 use pb::eldritch::Tome;
 use std::collections::HashMap;
 use std::fs;
@@ -41,8 +41,8 @@ async fn run_tomes(tomes: Vec<ParsedTome>) -> Result<Vec<String>> {
 
         for msg in runtime.messages() {
             match msg {
-                Message::ReportText(m) => result.push(m.text()),
-                Message::ReportError(m) => errors.push(m.error),
+                Message::Async(AsyncMessage::ReportText(m)) => result.push(m.text()),
+                Message::Async(AsyncMessage::ReportError(m)) => errors.push(m.error),
                 _ => {}
             }
         }
@@ -101,7 +101,7 @@ fn main() -> anyhow::Result<()> {
     } else {
         let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
         for embedded_file_path in eldritch::assets::Asset::iter() {
-            let filename = embedded_file_path.split('/').last().unwrap_or("");
+            let filename = embedded_file_path.split('/').next_back().unwrap_or("");
             println!("{}", embedded_file_path);
             if filename == "main.eldritch" {
                 let tome_contents_extraction_result =

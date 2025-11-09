@@ -1,7 +1,8 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::{anyhow, Result};
 use pb::{
     c2::ReportFileRequest,
+    config::Config,
     eldritch::{File, FileMetadata},
 };
 use std::{io::Read, sync::mpsc::sync_channel};
@@ -23,8 +24,8 @@ pub struct ReportFileMessage {
     pub(crate) path: String,
 }
 
-impl Dispatcher for ReportFileMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+impl AsyncDispatcher for ReportFileMessage {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         // Configure Limits
         const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
         const MAX_CHUNKS_QUEUED: usize = 10; // 10 KB Limit (in channel)

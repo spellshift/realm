@@ -23,3 +23,7 @@ lsp-types = { workspace = true }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 tempfile = { workspace = true }
+
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+static_vcruntime = { workspace = true }

@@ -25,7 +25,7 @@ export const HostContextProvider = ({ children }: { children: React.ReactNode })
         }
     });
 
-    const host = data?.hosts && data?.hosts.length > 0 ? data.hosts[0] : undefined as HostType | undefined;
+    const host = data?.hosts?.edges && data?.hosts?.edges.length > 0 ? data.hosts?.edges[0]?.node : undefined as HostType | undefined;
 
     return (
         <HostContext.Provider value={{ data: host, loading, error }}>

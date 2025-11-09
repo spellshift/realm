@@ -1,6 +1,9 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
-use pb::c2::{ReportTaskOutputRequest, TaskOutput};
+use pb::{
+    c2::{ReportTaskOutputRequest, TaskOutput},
+    config::Config,
+};
 
 /*
  * ReportTextMessage reports textual output (e.g. from `print()`) created by this tome's evaluation.
@@ -18,8 +21,8 @@ impl ReportTextMessage {
     }
 }
 
-impl Dispatcher for ReportTextMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+impl AsyncDispatcher for ReportTextMessage {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {

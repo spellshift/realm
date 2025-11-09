@@ -4,6 +4,7 @@ mod decode_b64_impl;
 mod encode_b64_impl;
 mod from_json_impl;
 mod hash_file_impl;
+mod is_json_impl;
 mod to_json_impl;
 
 use starlark::environment::MethodsBuilder;
@@ -51,6 +52,12 @@ fn methods(builder: &mut MethodsBuilder) {
     fn decode_b64<'v>(this: &CryptoLibrary, content: String, encode_type: Option<String>) -> anyhow::Result<String> {
         decode_b64_impl::decode_b64(content, encode_type)
     }
+
+    #[allow(unused_variables)]
+    fn is_json<'v>(this: &CryptoLibrary, starlark_heap: &'v Heap, content: String) -> anyhow::Result<bool> {
+        is_json_impl::is_json(content)
+    }
+
 
     #[allow(unused_variables)]
     fn from_json<'v>(this: &CryptoLibrary, starlark_heap: &'v Heap, content: String) -> anyhow::Result<Value<'v>> {

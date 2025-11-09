@@ -1,5 +1,4 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { formatDistance } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import HostTile from "../../../components/HostTile";
 import Table from "../../../components/tavern-base-ui/Table";
@@ -8,7 +7,6 @@ import Badge from "../../../components/tavern-base-ui/badge/Badge";
 
 
 const HostTable = ({ data }: any) => {
-    const currentDate = new Date();
     const navigate = useNavigate();
     const princialColors = Object.values(PrincipalAdminTypes);
     const onToggle = (row: any) => {
@@ -84,7 +82,7 @@ const HostTable = ({ data }: any) => {
         {
             id: "lastSeenAt",
             header: 'Last callback',
-            accessorFn: row => formatDistance(new Date(row.lastSeenAt), currentDate),
+            accessorFn: row => row.formattedLastSeenAt,
             footer: props => props.column.id,
             maxSize: 100,
             sortingFn: (

@@ -83,6 +83,7 @@ write_systemd_service()
 
 The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
+- `agent` - Used for meta-style interactions with the agent itself.
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
@@ -128,6 +129,24 @@ The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
 executes it in the runtime environment of the executing tome. This means that
 any `print`s or `eprint`s or output from the script will be merged with that
 of the broader tome.
+
+### agent.set_callback_interval
+
+`agent.set_callback_interval(new_interval: int) -> None`
+
+The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
+running agent's callback interval to the passed value as seconds. This configuration change will
+not persist across agent reboots.
+
+### agent.set_callback_uri
+
+`agent.set_callback_uri(new_uri: str) -> None`
+
+The <b>agent.set_callback_uri</b> method takes an string and changes the
+running agent's callback uri to the passed value. This configuration change will
+not persist across agent reboots. NOTE: please ensure the passed URI path is correct
+for the underlying `Transport` being used, as a URI can take many forms and we make no
+assumptions on `Transport` requirements no gut checks are applied to the passed string.
 
 ---
 
@@ -223,16 +242,21 @@ crypto.from_json("{\"foo\":\"bar\"}")
 }
 ```
 
-### crypto.hash_file
+### crypto.is_json
 
-`crypto.hash_file(file: str, algo: str) -> str`
+`crypto.is_json(content: str) -> bool`
 
-The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+The <b>crypto.is_json</b> tests if JSON is valid.
 
-- MD5
-- SHA1
-- SHA256
-- SHA512
+```python
+crypto.is_json("{\"foo\":\"bar\"}")
+True
+```
+
+```python
+crypto.is_json("foobar")
+False
+```
 
 ### crypto.to_json
 
@@ -244,6 +268,17 @@ The <b>crypto.to_json</b> method converts given type to JSON text.
 crypto.to_json({"foo": "bar"})
 "{\"foo\":\"bar\"}"
 ```
+
+### crypto.hash_file
+
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512
 
 ---
 
@@ -376,6 +411,19 @@ This function supports globbing with `*` for example:
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
 file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
+```
+
+### file.read_binary
+
+`file.read(path: str) -> List<int>`
+
+The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+This function supports globbing with `*` for example:
+
+```python
+file.read_binary("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
+file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.remove

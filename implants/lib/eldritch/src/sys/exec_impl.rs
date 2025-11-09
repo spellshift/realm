@@ -299,15 +299,14 @@ mod tests {
                 String::from("C:\\Windows\\System32\\cmd.exe"),
                 vec![
                     String::from("/c"),
-                    String::from("wmic useraccount get name | findstr /i admin"),
+                    String::from("echo admin | findstr /i admin"),
                 ],
                 HashMap::new(),
                 false,
             )?
-            .stdout;
-            assert!(
-                res.contains("runner") || res.contains("Administrator") || res.contains("user")
-            );
+            .stdout
+            .to_lowercase();
+            assert!(res.contains("admin"));
         }
         Ok(())
     }

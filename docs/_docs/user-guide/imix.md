@@ -16,10 +16,19 @@ Imix has compile-time configuration, that may be specified using environment var
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
+| IMIX_SERVER_PUBKEY | The public key for the tavern server. | - | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
 | IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
+| IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
+
+Imix has run-time configuration, that may be specified using environment variables during execution.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
+| IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
 
 ## Logging
 
@@ -64,15 +73,22 @@ Imix uses the `host_unique` library under `implants/lib/host_unique` to determin
 We recommend that you use the `File` for the most reliability:
 
 - Exists across reboots
-- Garunteed to be unique per host (because the bot creates it)
+- Guaranteed to be unique per host (because the bot creates it)
 - Can be used by multiple instances of the beacon on the same host.
 
 If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+
+For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
 
 If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
 This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.
 
 ## Static cross compilation
+
+**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
+Building in the dev container limits variables that might cause issues and is the most tested way to compile.
+
+**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
 ### Linux
 
@@ -82,7 +98,9 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
-cargo build --release --bin imix --target=x86_64-unknown-linux-musl
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### MacOS
@@ -104,10 +122,14 @@ sudo apt install gcc-mingw-w64
 
 # Build imix
 cd realm/implants/imix/
+
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+
 # Build imix.exe
-cargo build --release --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --target=x86_64-pc-windows-gnu
 # Build imix.svc.exe
-cargo build --release --features win_service --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
-cargo build --release --lib --target=x86_64-pc-windows-gnu
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```

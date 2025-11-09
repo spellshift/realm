@@ -12,7 +12,10 @@ use crate::{
     report::ReportLibrary,
     runtime::{
         eprint_impl,
-        messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+        messages::{
+            reduce, AsyncMessage, Message, ReportErrorMessage, ReportFinishMessage,
+            ReportStartMessage,
+        },
         Environment,
     },
     sys::SysLibrary,
@@ -41,13 +44,13 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at
         let start = Utc::now();
-        match env.send(ReportStartMessage {
+        match env.send(AsyncMessage::from(ReportStartMessage {
             id,
             exec_started_at: Timestamp {
                 seconds: start.timestamp(),
                 nanos: start.timestamp_subsec_nanos() as i32,
             },
-        }) {
+        })) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
@@ -78,10 +81,10 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
                 );
 
                 // Report evaluation errors
-                match env.send(ReportErrorMessage {
+                match env.send(AsyncMessage::from(ReportErrorMessage {
                     id,
                     error: format!("{:?}", err),
-                }) {
+                })) {
                     Ok(_) => {}
                     Err(_send_err) => {
                         #[cfg(debug_assertions)]
@@ -98,13 +101,13 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
 
         // Send exec_finished_at
         let finish = Utc::now();
-        match env.send(ReportFinishMessage {
+        match env.send(AsyncMessage::from(ReportFinishMessage {
             id,
             exec_finished_at: Timestamp {
                 seconds: finish.timestamp(),
                 nanos: finish.timestamp_subsec_nanos() as i32,
             },
-        }) {
+        })) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
@@ -236,8 +239,8 @@ impl Runtime {
                 Err(local_error) => {
                     return Err(anyhow::anyhow!(
                         "[eldritch] Failed to create hashed key for key {}: {}",
-                        new_key.to_string(),
-                        local_error.to_string()
+                        new_key,
+                        local_error
                     ))
                 }
             };
