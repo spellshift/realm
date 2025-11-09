@@ -92,6 +92,7 @@ func (s *Stream) Close() error {
 	defer s.mu.Unlock()
 
 	close(s.recv)
+	close(s.recvOrdered)
 	return nil
 }
 
@@ -169,44 +170,46 @@ func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message,
 	if !ok {
 		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
 		dst <- msg
-	} else if index == buf.nextToSend || buf.nextToSend == 0 {
-		// If we receive the message we're looking for or if this is the first
-		// message we've received, send it and update nextToSend
-		dst <- msg
-		buf.nextToSend = index + 1
-	} else if index < buf.nextToSend {
-		// We prefer to drop messages instead of sending them out of order
-		// If we receive a message after a subsequent one has been sent, drop it
+		return
+	}
+
+	if index < buf.nextToSend {
 		slog.ErrorContext(ctx, "dropping message because subsequent message has already been sent",
 			"msg_log_id", msg.LoggableID,
 			"next_to_send", buf.nextToSend,
 			"order_index", index,
 		)
-	} else {
-		// If we receive the message out of order, buffer it
-		buf.data[index] = msg
+		return
 	}
+
+	buf.data[index] = msg
+	buf.flushBuffer(ctx, dst)
 }
 
 func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Message) {
 	for {
 		msg, ok := buf.data[buf.nextToSend]
-		if !ok || msg == nil {
-			// If our buffer has grown too large, skip waiting for messages
+		if !ok {
 			if len(buf.data) > maxStreamOrderBuf {
+				// To prevent getting stuck, find the lowest index in the buffer and jump to it.
+				lowestIndex := uint64(0)
+				for k := range buf.data {
+					if lowestIndex == 0 || k < lowestIndex {
+						lowestIndex = k
+					}
+				}
 				slog.ErrorContext(ctx, "sessionBuffer overflow, skipping message to catch up",
 					"skipped_message_index", buf.nextToSend,
+					"new_index", lowestIndex,
 					"buffered_msgs_count", len(buf.data),
 				)
-				buf.nextToSend += 1
+				buf.nextToSend = lowestIndex
 				continue
 			}
-
-			// Otherwise, continue waiting for the next message in the order
 			break
 		}
 		dst <- msg
 		delete(buf.data, buf.nextToSend)
-		buf.nextToSend += 1
+		buf.nextToSend++
 	}
 }
