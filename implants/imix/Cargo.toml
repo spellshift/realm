@@ -14,7 +14,7 @@ default = []
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
 pb = { workspace = true }
-transport = { workspace = true, features = ["grpc"] }
+transport = { workspace = true, features = ["grpc", "grpc-doh"] }
 anyhow = { workspace = true }
 clap = { workspace = true }
 log = { workspace = true }

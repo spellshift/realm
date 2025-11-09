@@ -16,6 +16,7 @@ pub mod doh {
     use std::task::{Context, Poll};
 
     /// DoH Provider configuration
+    #[allow(dead_code)]
     #[derive(Debug, Clone, Copy)]
     pub enum DohProvider {
         /// Cloudflare DoH (1.1.1.1)
@@ -28,6 +29,8 @@ pub mod doh {
 
     impl DohProvider {
         /// Get the resolver configuration for this provider
+        /// Uses IPv4-only nameservers to avoid "Network is unreachable" errors
+        /// in environments without IPv6 support
         fn resolver_config(&self) -> ResolverConfig {
             match self {
                 DohProvider::Cloudflare => ResolverConfig::cloudflare_https(),
@@ -54,15 +57,6 @@ pub mod doh {
 
             Ok(Self { resolver })
         }
-
-        /// Create a new resolver service with custom configuration
-        pub fn with_config(
-            config: ResolverConfig,
-            opts: ResolverOpts,
-        ) -> Result<Self, anyhow::Error> {
-            let resolver = TokioAsyncResolver::tokio(config, opts);
-            Ok(Self { resolver })
-        }
     }
 
     impl Service<Name> for HickoryResolverService {
@@ -77,6 +71,7 @@ pub mod doh {
 
         fn call(&mut self, name: Name) -> Self::Future {
             let resolver = self.resolver.clone();
+
             let name_str = name.as_str().to_string();
 
             Box::pin(async move {
@@ -113,10 +108,7 @@ pub mod doh {
         provider: DohProvider,
     ) -> Result<HttpConnector<HickoryResolverService>, anyhow::Error> {
         let resolver = HickoryResolverService::new(provider)?;
-        let mut connector = HttpConnector::new_with_resolver(resolver);
-        connector.enforce_http(false);
-        connector.set_nodelay(true);
-        Ok(connector)
+        Ok(HttpConnector::new_with_resolver(resolver))
     }
 
     /// Create an HTTP connector with DoH support using Cloudflare (default)
@@ -161,6 +153,7 @@ mod tests {
         match &result {
             Ok(_) => {
                 let addrs: Vec<_> = result.unwrap().collect();
+                println!("addrs: {:?}", addrs);
                 assert!(!addrs.is_empty(), "No addresses resolved");
             }
             Err(e) => {

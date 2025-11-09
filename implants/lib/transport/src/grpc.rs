@@ -32,16 +32,13 @@ impl Transport for GRPC {
 
         // Create HTTP connector with DNS-over-HTTPS support if enabled
         #[cfg(feature = "grpc-doh")]
-        let http = crate::dns_resolver::doh::create_default_doh_connector()?;
+        let mut http = crate::dns_resolver::doh::create_default_doh_connector()?;
 
         #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
 
-        #[cfg(not(feature = "grpc-doh"))]
-        {
-            http.enforce_http(false);
-            http.set_nodelay(true);
-        }
+        http.enforce_http(false);
+        http.set_nodelay(true);
 
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
@@ -59,7 +56,7 @@ impl Transport for GRPC {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
                 .rate_limit(1, Duration::from_millis(25))
-                .connect_lazy(),
+                .connect_with_connector_lazy(http),
         };
 
         let grpc = tonic::client::Grpc::new(channel);
