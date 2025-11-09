@@ -1,4 +1,4 @@
-package c2
+package c2_test
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
@@ -62,7 +63,7 @@ func TestReverseShell_E2E(t *testing.T) {
 	go wsMux.Start(ctx)
 	go grpcMux.Start(ctx)
 
-	c2pb.RegisterC2Server(s, New(graph, grpcMux))
+	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			t.Logf("Server exited with error: %v", err)

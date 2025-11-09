@@ -117,7 +117,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		if err != nil {
 			slog.ErrorContext(ctx, "reverse shell closed and failed to load ent for updates",
 				"error", err,
-				"shell_id", shell.ID,
+				"shell_id", shellID,
 			)
 			return
 		}
@@ -133,11 +133,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 
 	// Register stream with Mux
 	srv.mux.Register(pubsubStream)
-	defer func() {
-		// we need to unregister the stream after we've sent the close message
-		time.Sleep(1 * time.Second)
-		srv.mux.Unregister(pubsubStream)
-	}()
+	defer srv.mux.Unregister(pubsubStream)
 
 	// WaitGroup to manage tasks
 	var wg sync.WaitGroup

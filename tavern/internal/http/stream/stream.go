@@ -191,10 +191,6 @@ func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Me
 		msg, ok := buf.data[buf.nextToSend]
 		if !ok {
 			if len(buf.data) > maxStreamOrderBuf {
-				slog.ErrorContext(ctx, "sessionBuffer overflow, skipping message to catch up",
-					"skipped_message_index", buf.nextToSend,
-					"buffered_msgs_count", len(buf.data),
-				)
 				// To prevent getting stuck, find the lowest index in the buffer and jump to it.
 				lowestIndex := uint64(0)
 				for k := range buf.data {
@@ -202,6 +198,11 @@ func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Me
 						lowestIndex = k
 					}
 				}
+				slog.ErrorContext(ctx, "sessionBuffer overflow, skipping message to catch up",
+					"skipped_message_index", buf.nextToSend,
+					"new_index", lowestIndex,
+					"buffered_msgs_count", len(buf.data),
+				)
 				buf.nextToSend = lowestIndex
 				continue
 			}
