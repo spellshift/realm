@@ -172,13 +172,15 @@ mod tests {
     #[cfg(unix)]
     use std::{fs::Permissions, os::unix::fs::PermissionsExt};
 
-    use crate::runtime::Message;
+    use crate::runtime::{Message, messages::AsyncMessage};
     use pb::eldritch::Tome;
     use tempfile::TempDir;
 
     #[tokio::test]
     #[cfg(unix)]
     async fn test_find_file() {
+        use crate::runtime::messages::AsyncMessage;
+
         let dir = TempDir::new().unwrap();
         let file = dir.path().join("test.txt");
         std::fs::write(&file, "test").unwrap();
@@ -196,11 +198,11 @@ mod tests {
         let messages: Vec<Message> = runtime
             .collect()
             .into_iter()
-            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .filter(|x| matches!(x, Message::Async(AsyncMessage::ReportAggOutput(_))))
             .collect();
         let message = messages.first().unwrap();
 
-        if let Message::ReportAggOutput(output) = message {
+        if let Message::Async(AsyncMessage::ReportAggOutput(output)) = message {
             assert_eq!(output.text, "1\n");
         } else {
             panic!("Expected ReportAggOutputMessage");
@@ -227,11 +229,11 @@ mod tests {
         let messages: Vec<Message> = runtime
             .collect()
             .into_iter()
-            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .filter(|x| matches!(x, Message::Async(AsyncMessage::ReportAggOutput(_))))
             .collect();
         let message = messages.first().unwrap();
 
-        if let Message::ReportAggOutput(output) = message {
+        if let Message::Async(AsyncMessage::ReportAggOutput(output)) = message {
             assert_eq!(output.text, "1\n");
         } else {
             panic!("Expected ReportAggOutputMessage");
@@ -262,11 +264,11 @@ mod tests {
         let messages: Vec<Message> = runtime
             .collect()
             .into_iter()
-            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .filter(|x| matches!(x, Message::Async(AsyncMessage::ReportAggOutput(_))))
             .collect();
         let message = messages.first().unwrap();
 
-        if let Message::ReportAggOutput(output) = message {
+        if let Message::Async(AsyncMessage::ReportAggOutput(output)) = message {
             assert!(output.error.is_some());
             assert_eq!(
                 output.error.as_ref().unwrap().msg,
@@ -300,11 +302,11 @@ mod tests {
         let messages: Vec<Message> = runtime
             .collect()
             .into_iter()
-            .filter(|x| matches!(x, Message::ReportAggOutput(_)))
+            .filter(|x| matches!(x,Message::Async(AsyncMessage::ReportAggOutput(_))))
             .collect();
         let message = messages.first().unwrap();
 
-        if let Message::ReportAggOutput(output) = message {
+        if let Message::Async(AsyncMessage::ReportAggOutput(output)) = message {
             assert!(output.error.is_some());
         } else {
             panic!("Expected ReportAggOutputMessage");
