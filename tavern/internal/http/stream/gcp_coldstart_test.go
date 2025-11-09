@@ -1,4 +1,4 @@
-package stream
+package stream_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
+	"realm.pub/tavern/internal/http/stream"
 )
 
 func TestPreventPubSubColdStarts_ValidInterval(t *testing.T) {
@@ -26,7 +27,7 @@ func TestPreventPubSubColdStarts_ValidInterval(t *testing.T) {
 	}
 	defer sub.Shutdown(ctx)
 
-	go PreventPubSubColdStarts(ctx, 50*time.Millisecond, "mem://valid", "mem://valid")
+	go stream.PreventPubSubColdStarts(ctx, 50*time.Millisecond, "mem://valid", "mem://valid")
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)
@@ -53,7 +54,7 @@ func TestPreventPubSubColdStarts_ZeroInterval(t *testing.T) {
 	}
 	defer sub.Shutdown(ctx)
 
-	go PreventPubSubColdStarts(ctx, 0, "mem://zero", "mem://zero")
+	go stream.PreventPubSubColdStarts(ctx, 0, "mem://zero", "mem://zero")
 
 	// Expect to not receive a message and for the context to timeout
 	_, err = sub.Receive(ctx)
@@ -76,7 +77,7 @@ func TestPreventPubSubColdStarts_SubMillisecondInterval(t *testing.T) {
 	}
 	defer sub.Shutdown(ctx)
 
-	go PreventPubSubColdStarts(ctx, 1*time.Microsecond, "mem://sub", "mem://sub")
+	go stream.PreventPubSubColdStarts(ctx, 1*time.Microsecond, "mem://sub", "mem://sub")
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)

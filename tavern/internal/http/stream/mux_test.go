@@ -1,4 +1,4 @@
-package stream
+package stream_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
+	"realm.pub/tavern/internal/http/stream"
 )
 
 func TestMux(t *testing.T) {
@@ -24,12 +25,12 @@ func TestMux(t *testing.T) {
 	defer sub.Shutdown(ctx)
 
 	// Create Mux
-	mux := NewMux(topic, sub)
+	mux := stream.NewMux(topic, sub)
 	go mux.Start(ctx)
 
 	// Create and Register Streams
-	stream1 := New("stream1")
-	stream2 := New("stream2")
+	stream1 := stream.New("stream1")
+	stream2 := stream.New("stream2")
 
 	mux.Register(stream1)
 	mux.Register(stream2)

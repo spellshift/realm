@@ -50,7 +50,7 @@ func TestStream_MessageOrdering(t *testing.T) {
 		stream.processOneMessage(ctx, &pubsub.Message{
 			Body: []byte("message 2"),
 			Metadata: map[string]string{
-				"id":                 "ordering-stream",
+				"id":               "ordering-stream",
 				metadataOrderKey:   "test-key",
 				metadataOrderIndex: "2",
 			},
@@ -58,7 +58,7 @@ func TestStream_MessageOrdering(t *testing.T) {
 		stream.processOneMessage(ctx, &pubsub.Message{
 			Body: []byte("message 1"),
 			Metadata: map[string]string{
-				"id":                 "ordering-stream",
+				"id":               "ordering-stream",
 				metadataOrderKey:   "test-key",
 				metadataOrderIndex: "1",
 			},
@@ -66,7 +66,7 @@ func TestStream_MessageOrdering(t *testing.T) {
 		stream.processOneMessage(ctx, &pubsub.Message{
 			Body: []byte("message 0"),
 			Metadata: map[string]string{
-				"id":                 "ordering-stream",
+				"id":               "ordering-stream",
 				metadataOrderKey:   "test-key",
 				metadataOrderIndex: "0",
 			},

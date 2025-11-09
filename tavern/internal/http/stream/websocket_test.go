@@ -1,4 +1,4 @@
-package stream
+package stream_test
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	_ "gocloud.dev/pubsub/mempubsub"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/http/stream"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -74,7 +75,7 @@ func TestNewShellHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create Mux with the correct topics
-	mux := NewMux(inputTopic, outputSub)
+	mux := stream.NewMux(inputTopic, outputSub)
 	go mux.Start(ctx)
 
 	// Create a test shell
@@ -82,7 +83,7 @@ func TestNewShellHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a test server
-	handler := NewShellHandler(graph, mux)
+	handler := stream.NewShellHandler(graph, mux)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
