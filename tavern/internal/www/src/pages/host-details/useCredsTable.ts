@@ -1,8 +1,8 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
-import { GET_HOST_CREDENTIALS } from "../../../utils/queries";
-import { CredentialType, HostType } from "../../../utils/consts";
-import { groupBy } from "../../../utils/utils";
+import { GET_HOST_CREDENTIALS } from "../../utils/queries";
+import { CredentialType, HostType } from "../../utils/consts";
+import { groupBy } from "../../utils/utils";
 
 export const useCredsTable = (hostId: number) => {
     const [creds, setCreds] = useState([] as CredentialType[]);

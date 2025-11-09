@@ -1,5 +1,5 @@
 import { add } from "date-fns";
-import { BeaconType, QuestParam, TomeParams, TomeTag } from "./consts";
+import { BeaconType, FilterBarOption, QuestParam, TomeParams, TomeTag } from "./consts";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -25,7 +25,13 @@ export const safelyJsonParse = (value: string) => {
     return { error, params };
 };
 
-export function getFilterNameByTypes(typeFilters: Array<any>) {
+export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
+    "beacon": Array<string>,
+    "service":  Array<string>,
+    "group":  Array<string>,
+    "host":  Array<string>,
+    "platform": Array<string>
+} {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
             accumulator.beacon.push(currentValue.name);

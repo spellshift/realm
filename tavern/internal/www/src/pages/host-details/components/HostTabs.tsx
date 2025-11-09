@@ -2,13 +2,28 @@ import React, { useContext } from "react"
 import { Tab } from "@headlessui/react"
 import { ArrowsUpDownIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/20/solid"
 import { HostContext } from "../../../context/HostContext";
-import { HostTaskContext } from "../../../context/HostTaskContext";
 import { KeyIcon } from "@heroicons/react/24/outline";
 import { getOfflineOnlineStatus } from "../../../utils/utils";
+import { useQuery } from "@apollo/client";
+import { useParams } from "react-router-dom";
+import { GET_HOST_TASK_COUNT } from "../../../utils/queries";
+
 
 const HostTabs = () => {
+    const { hostId } = useParams();
     const { data: host } = useContext(HostContext);
-    const { data: tasksQuery } = useContext(HostTaskContext);
+    const { data: hostTaskData } = useQuery(GET_HOST_TASK_COUNT, {
+        variables: {
+            "where":
+            {
+                "hasBeaconWith": {
+                    "hasHostWith": {
+                        "id": hostId
+                    }
+                }
+            }
+        }
+    });
 
     const { online } = getOfflineOnlineStatus(host?.beacons || []);
 
@@ -29,7 +44,7 @@ const HostTabs = () => {
                     Tasks
                 </div>
                 <div>
-                    {tasksQuery?.tasks?.totalCount && `(${tasksQuery?.tasks?.totalCount})`}
+                    {hostTaskData?.tasks?.totalCount && `(${hostTaskData.tasks.totalCount})`}
                 </div>
             </Tab>
             <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
