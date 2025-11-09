@@ -1,4 +1,3 @@
-use crate::Transport;
 use anyhow::Result;
 use hyper::Uri;
 use pb::c2::*;
@@ -6,6 +5,14 @@ use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
+
+#[cfg(feature = "grpc-doh")]
+use hyper::client::HttpConnector;
+
+#[cfg(feature = "grpc-doh")]
+use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
+
+use crate::Transport;
 
 use std::time::Duration;
 
@@ -32,7 +39,8 @@ impl Transport for GRPC {
 
         // Create HTTP connector with DNS-over-HTTPS support if enabled
         #[cfg(feature = "grpc-doh")]
-        let mut http = crate::dns_resolver::doh::create_default_doh_connector()?;
+        let mut http: HttpConnector<HickoryResolverService> =
+            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
 
         #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();

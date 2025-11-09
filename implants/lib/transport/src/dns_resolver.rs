@@ -15,22 +15,15 @@ pub mod doh {
     use std::pin::Pin;
     use std::task::{Context, Poll};
 
-    /// DoH Provider configuration
     #[allow(dead_code)]
     #[derive(Debug, Clone, Copy)]
     pub enum DohProvider {
-        /// Cloudflare DoH (1.1.1.1)
         Cloudflare,
-        /// Google DoH (8.8.8.8)
         Google,
-        /// Quad9 DoH (9.9.9.9)
         Quad9,
     }
 
     impl DohProvider {
-        /// Get the resolver configuration for this provider
-        /// Uses IPv4-only nameservers to avoid "Network is unreachable" errors
-        /// in environments without IPv6 support
         fn resolver_config(&self) -> ResolverConfig {
             match self {
                 DohProvider::Cloudflare => ResolverConfig::cloudflare_https(),
@@ -110,12 +103,6 @@ pub mod doh {
         let resolver = HickoryResolverService::new(provider)?;
         Ok(HttpConnector::new_with_resolver(resolver))
     }
-
-    /// Create an HTTP connector with DoH support using Cloudflare (default)
-    pub fn create_default_doh_connector(
-    ) -> Result<HttpConnector<HickoryResolverService>, anyhow::Error> {
-        create_doh_connector(DohProvider::Cloudflare)
-    }
 }
 
 #[cfg(test)]
@@ -133,7 +120,7 @@ mod tests {
     #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_connector_creation() {
-        let result = create_default_doh_connector();
+        let result = create_doh_connector(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH connector");
     }
 

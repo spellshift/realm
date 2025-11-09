@@ -24,9 +24,6 @@ hyper = { version = "0.14", features = [
     "client",
 ] } # Had to user an older version of hyper to support hyper-proxy
 hyper-proxy = {version = "0.9.1", default-features = false, features = ["rustls"]}
-rustls = { version = "0.21.12", features = ["dangerous_configuration"]}
-
-# [feature = grpc-doh]
 hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "webpki-roots"], optional = true }
 
 # [feature = mock]
