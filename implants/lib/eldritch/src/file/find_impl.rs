@@ -172,7 +172,7 @@ mod tests {
     #[cfg(unix)]
     use std::{fs::Permissions, os::unix::fs::PermissionsExt};
 
-    use crate::runtime::{Message, messages::AsyncMessage};
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::Tome;
     use tempfile::TempDir;
 
@@ -302,7 +302,7 @@ mod tests {
         let messages: Vec<Message> = runtime
             .collect()
             .into_iter()
-            .filter(|x| matches!(x,Message::Async(AsyncMessage::ReportAggOutput(_))))
+            .filter(|x| matches!(x, Message::Async(AsyncMessage::ReportAggOutput(_))))
             .collect();
         let message = messages.first().unwrap();
 
