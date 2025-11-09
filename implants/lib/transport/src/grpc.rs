@@ -30,9 +30,18 @@ impl Transport for GRPC {
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
+        // Create HTTP connector with DNS-over-HTTPS support if enabled
+        #[cfg(feature = "grpc-doh")]
+        let http = crate::dns_resolver::doh::create_default_doh_connector()?;
+
+        #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
-        http.enforce_http(false);
-        http.set_nodelay(true);
+
+        #[cfg(not(feature = "grpc-doh"))]
+        {
+            http.enforce_http(false);
+            http.set_nodelay(true);
+        }
 
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {

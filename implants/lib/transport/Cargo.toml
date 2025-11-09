@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 default = []
 grpc = []
+grpc-doh = ["grpc", "dep:hickory-resolver"]
 mock = ["dep:mockall"]
 
 [dependencies]
@@ -23,6 +24,9 @@ hyper = { version = "0.14", features = [
     "client",
 ] } # Had to user an older version of hyper to support hyper-proxy
 hyper-proxy = {version = "0.9.1", default-features = false, features = ["rustls"]}
+
+# [feature = grpc-doh]
+hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls"], optional = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }
