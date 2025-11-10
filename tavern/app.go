@@ -52,8 +52,24 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app.Action = cli.ActionFunc(func(*cli.Context) error {
 		return run(ctx, options...)
 	})
+	app.Commands = []cli.Command{
+		{
+			Name: "redirector",
+			Usage: "Run a redirector connecting agents using a specific transport to the server",
+			Subcommands: []cli.Command{
+				{
+					Name: "http",
+					Usage: "Run an HTTP/1.1 redirector",
+					Action: func(cCtx *cli.Context) error {
+						return httpRedirectorRun(ctx, cCtx.Args().First(), options...)
+					},
+				},
+			},
+		},
+	}
 	return
 }
+
 
 func run(ctx context.Context, options ...func(*Config)) error {
 	srv, err := NewServer(ctx, options...)
