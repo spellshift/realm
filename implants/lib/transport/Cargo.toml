@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 default = []
 grpc = []
+http = []
 mock = ["dep:mockall"]
 
 [dependencies]
