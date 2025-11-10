@@ -70,12 +70,11 @@ mod tests {
         let src_name = tmp_dir_src.path().file_name().unwrap().to_str().unwrap();
         let dst_path = src_path.clone() + "_compressed.tar.gz";
         let decompressed_path = src_path.clone() + "_decompressed";
-        let inner_decompresed_path =
-            Path::new(&decompressed_path.clone())
-                .join(src_name)
-                .to_str()
-                .unwrap()
-                .to_string();
+        let inner_decompresed_path = Path::new(&decompressed_path.clone())
+            .join(src_name)
+            .to_str()
+            .unwrap()
+            .to_string();
 
         let test_data = vec!["Hello", "World", "Goodbye"];
 
