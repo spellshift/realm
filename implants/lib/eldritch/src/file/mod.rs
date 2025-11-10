@@ -181,8 +181,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn find(this: &FileLibrary, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> anyhow::Result<Vec<String>> {
-        find_impl::find(path, name, file_type, permissions, modified_time, create_time)
+    fn find<'v>(this: &FileLibrary, starlark_eval: &mut Evaluator<'v, '_>, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> anyhow::Result<Vec<String>> {
+        find_impl::find(starlark_eval, path, name, file_type, permissions, modified_time, create_time)
     }
 
     #[allow(unused_variables)]
