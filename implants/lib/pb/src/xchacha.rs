@@ -266,6 +266,84 @@ fn from_decode_error(error: prost::DecodeError) -> Status {
     Status::new(tonic::Code::Internal, error.to_string())
 }
 
+// Public helper functions for HTTP transport that replicate the XChaCha20-Poly1305 encryption
+// These use the same crypto logic as the ChachaCodec but without Tonic buffer wrappers
+pub fn encode_with_chacha<T, U>(msg: T) -> Result<Vec<u8>>
+where
+    T: Message + Send + 'static,
+    U: Message + Default + Send + 'static,
+{
+    // Store server pubkey
+    let server_public = PublicKey::from(SERVER_PUBKEY);
+
+    // Generate ephemeral keys
+    let rng = rand_chacha::ChaCha20Rng::from_entropy();
+    let client_secret = EphemeralSecret::random_from_rng(rng);
+    let client_public = PublicKey::from(&client_secret);
+
+    // Generate shared secret
+    let shared_secret = client_secret.diffie_hellman(&server_public);
+    add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
+
+    // Generate nonce and cipher
+    let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
+        shared_secret.as_bytes(),
+    ));
+    let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
+
+    // Encrypt data
+    let pt_vec = msg.encode_to_vec();
+    let ciphertext = cipher.encrypt(&nonce, pt_vec.as_slice())
+        .map_err(|e| anyhow::anyhow!("Encryption failed: {:?}", e))?;
+
+    // Build result: pubkey + nonce + ciphertext
+    let mut result = Vec::new();
+    result.extend_from_slice(client_public.as_bytes());
+    result.extend_from_slice(nonce.as_slice());
+    result.extend_from_slice(&ciphertext);
+
+    Ok(result)
+}
+
+pub fn decode_with_chacha<T, U>(data: &[u8]) -> Result<U>
+where
+    T: Message + Send + 'static,
+    U: Message + Default + Send + 'static,
+{
+    const PUBKEY_LEN: usize = 32;
+    const NONCE_LEN: usize = 24;
+
+    if data.len() == 0 {
+        let msg = U::decode(&data[..]).context("Failed to decode empty message")?;
+        return Ok(msg);
+    }
+
+    if data.len() < PUBKEY_LEN + NONCE_LEN {
+        anyhow::bail!("Message too small to contain public key and nonce");
+    }
+
+    // Extract components
+    let client_public = &data[0..PUBKEY_LEN];
+    let nonce = &data[PUBKEY_LEN..PUBKEY_LEN + NONCE_LEN];
+    let ciphertext = &data[PUBKEY_LEN + NONCE_LEN..];
+
+    // Get the shared secret from key history
+    let client_public_bytes: [u8; 32] = client_public.try_into()
+        .context("Failed to convert public key bytes")?;
+    let shared_secret = get_key(client_public_bytes)?;
+
+    // Decrypt
+    let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&shared_secret));
+    let plaintext = cipher.decrypt(GenericArray::from_slice(nonce), ciphertext)
+        .map_err(|e| anyhow::anyhow!("Decryption failed: {:?}", e))?;
+
+    // Decode protobuf
+    let msg = U::decode(bytes::Bytes::from(plaintext))
+        .context("Failed to decode protobuf message")?;
+
+    Ok(msg)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

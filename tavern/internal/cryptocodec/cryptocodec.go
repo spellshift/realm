@@ -147,6 +147,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), x25519.Size))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
+	slog.Info(fmt.Sprintf("in_arr: % 02x", in_arr))
 
 	client_pub_key_bytes := in_arr[:x25519.Size]
 

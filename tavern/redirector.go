@@ -5,12 +5,40 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding"
 )
+
+// RawCodec passes through raw bytes without marshaling/unmarshaling
+type RawCodec struct{}
+
+func (RawCodec) Marshal(v interface{}) ([]byte, error) {
+	if b, ok := v.([]byte); ok {
+		return b, nil
+	}
+	return nil, fmt.Errorf("failed to marshal, message is %T", v)
+}
+
+func (RawCodec) Unmarshal(data []byte, v interface{}) error {
+	if b, ok := v.(*[]byte); ok {
+		*b = data
+		return nil
+	}
+	return fmt.Errorf("failed to unmarshal, message is %T", v)
+}
+
+func (RawCodec) Name() string {
+	return "raw"
+}
+
+func init() {
+	encoding.RegisterCodec(RawCodec{})
+}
 
 func httpRedirectorRun(ctx context.Context, upstream string, options ...func(*Config)) error {
 	// Initialize Config
@@ -33,7 +61,11 @@ func httpRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 		handleHTTPRequest(w, r, conn)
 	})
 
-	server := cfg.srv
+	server := &http.Server{
+		Addr:    cfg.srv.Addr,
+		Handler: mux,
+	}
+
 
 	fmt.Printf("HTTP/1.1 proxy listening on %s, forwarding to gRPC server at %s\n", server.Addr, upstream)
 	if err := server.ListenAndServe(); err != nil {
@@ -49,20 +81,15 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	println("here")
 
 	// Extract method name from path (e.g., "/SayHello")
 	methodName := r.URL.Path
-	if len(methodName) > 0 && methodName[0] == '/' {
-		methodName = methodName[1:]
-	}
 
 	if methodName == "" {
 		http.Error(w, "Method name required in path", http.StatusBadRequest)
 		return
 	}
-
-	// Construct full gRPC method path
-	fullMethod := fmt.Sprintf("/%s/%s", "c2.C2", methodName)
 
 	// Read the raw protobuf request body
 	requestBody, err := io.ReadAll(r.Body)
@@ -72,16 +99,17 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 	}
 	defer r.Body.Close()
 
-	fmt.Printf("[HTTP -> gRPC] Method: %s, Body size: %d bytes\n", fullMethod, len(requestBody))
+	fmt.Printf("[HTTP -> gRPC] Method: %s, Body size: %d bytes\n", methodName, len(requestBody))
 
 	// Make gRPC call with raw bytes
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	slog.Info(fmt.Sprintf("requestBody: % 02x", requestBody))
 	var responseBody []byte
 	err = conn.Invoke(
 		ctx,
-		fullMethod,
+		methodName,
 		requestBody,
 		&responseBody,
 		grpc.CallContentSubtype("raw"),
