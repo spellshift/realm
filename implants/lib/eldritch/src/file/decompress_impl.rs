@@ -35,7 +35,7 @@ mod tests {
     use crate::file::compress_impl::compress;
 
     use super::*;
-    use std::{fs, io::prelude::*};
+    use std::{fs, io::prelude::*, path::Path};
     use tempfile::{tempdir, NamedTempFile};
 
     #[test]
@@ -45,7 +45,7 @@ mod tests {
         // Create files
         let mut tmp_file_src = NamedTempFile::new()?;
         let path_src = String::from(tmp_file_src.path().to_str().unwrap());
-        let path_dst = String::from(tmp_file_src.path().to_str().unwrap()) + "_compressed.gz";
+        let path_dst = path_src.clone() + "_compressed.gz";
 
         // Write to file
         tmp_file_src.write_all(content.as_bytes())?;
@@ -67,17 +67,21 @@ mod tests {
         // Create files
         let tmp_dir_src = tempdir()?;
         let src_path = String::from(tmp_dir_src.path().to_str().unwrap());
-        let dst_path = String::from(tmp_dir_src.path().to_str().unwrap()) + "_compressed.tar.gz";
-        let decompressed_path =
-            String::from(tmp_dir_src.path().to_str().unwrap()) + "_decompressed";
+        let src_name = tmp_dir_src.path().file_name().unwrap().to_str().unwrap();
+        let dst_path = src_path.clone() + "_compressed.tar.gz";
+        let decompressed_path = src_path.clone() + "_decompressed";
         let inner_decompresed_path =
-            decompressed_path.clone() + "/" + src_path.rsplit('/').next().unwrap();
+            Path::new(&decompressed_path.clone())
+                .join(src_name)
+                .to_str()
+                .unwrap()
+                .to_string();
 
         let test_data = vec!["Hello", "World", "Goodbye"];
 
         for (i, v) in test_data.iter().enumerate() {
-            let tmp_file = format!("{}/{}.txt", tmp_dir_src.path().to_str().unwrap(), i);
-            let _res = fs::write(tmp_file, v);
+            let tmp_file_path = tmp_dir_src.path().join(format!("{}.txt", i));
+            let _res = fs::write(tmp_file_path, v);
         }
 
         compress(src_path.clone(), dst_path.clone())?;
@@ -86,7 +90,11 @@ mod tests {
 
         // Read decompressed files
         for (i, v) in test_data.iter().enumerate() {
-            let decompressed_file = format!("{}/{}.txt", inner_decompresed_path, i);
+            let decompressed_file = Path::new(&inner_decompresed_path)
+                .join(format!("{}.txt", i))
+                .to_str()
+                .unwrap()
+                .to_string();
             let decompressed_content = fs::read_to_string(decompressed_file)?;
             assert_eq!(decompressed_content, *v);
         }
