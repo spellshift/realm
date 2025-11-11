@@ -288,7 +288,86 @@ impl Transport for HTTP {
         &mut self,
         request: Receiver<ReportFileRequest>,
     ) -> Result<ReportFileResponse> {
-        unimplemented!("todo")
+        // Build the URL
+        let url = format!("{}{}", self.base_url, REPORT_FILE_PATH);
+        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
+
+        // Create a channel to stream request chunks
+        let (mut tx, body) = hyper::Body::channel();
+
+        // Spawn a task to send all chunks
+        tokio::spawn(async move {
+            let mut chunk_count = 0;
+            for req_chunk in request {
+                chunk_count += 1;
+
+                #[cfg(debug_assertions)]
+                log::debug!("Sending file chunk {}", chunk_count);
+
+                // Marshal and encrypt each chunk
+                let request_bytes = match marshal_with_codec::<ReportFileRequest, ReportFileResponse>(req_chunk) {
+                    Ok(bytes) => bytes,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to marshal chunk {}: {}", chunk_count, err);
+                        return;
+                    }
+                };
+
+                // Write gRPC frame header: [compression_flag(1)][length(4)]
+                let mut frame_header = [0u8; 5];
+                frame_header[0] = 0x00; // No compression
+                let len_bytes = (request_bytes.len() as u32).to_be_bytes();
+                frame_header[1..5].copy_from_slice(&len_bytes);
+
+                // Send frame header
+                if tx.send_data(hyper::body::Bytes::from(frame_header.to_vec())).await.is_err() {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send frame header for chunk {}", chunk_count);
+                    return;
+                }
+
+                // Send encrypted chunk
+                if tx.send_data(hyper::body::Bytes::from(request_bytes)).await.is_err() {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send chunk {}", chunk_count);
+                    return;
+                }
+            }
+
+            #[cfg(debug_assertions)]
+            log::debug!("Completed sending {} file chunks", chunk_count);
+        });
+
+        // Build the HTTP request with streaming body
+        let req = hyper::Request::builder()
+            .method(hyper::Method::POST)
+            .uri(uri)
+            .header("Content-Type", "application/grpc")
+            .body(body)
+            .context("Failed to build HTTP request")?;
+
+        // Send the request
+        let response = self
+            .client
+            .request(req)
+            .await
+            .context("Failed to send HTTP request")?;
+
+        if response.status() != StatusCode::OK {
+            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
+        }
+
+        // Read the response body
+        let body_bytes = hyper::body::to_bytes(response.into_body())
+            .await
+            .context("Failed to read response body")?;
+
+        // Unmarshal: Decrypt and decode the response using the codec
+        let response_msg =
+            unmarshal_with_codec::<ReportFileRequest, ReportFileResponse>(&body_bytes)?;
+
+        Ok(response_msg)
     }
 
     async fn report_process_list(

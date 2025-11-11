@@ -61,6 +61,9 @@ func httpRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 	mux.HandleFunc("/c2.C2/FetchAsset", func(w http.ResponseWriter, r *http.Request) {
 		handleFetchAssetStreaming(w, r, conn)
 	})
+	mux.HandleFunc("/c2.C2/ReportFile", func(w http.ResponseWriter, r *http.Request) {
+		handleReportFileStreaming(w, r, conn)
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleHTTPRequest(w, r, conn)
 	})
@@ -182,6 +185,113 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 	}
 
 	fmt.Printf("[gRPC -> HTTP] Streamed %d chunks, total %d bytes\n", chunkCount, totalBytes)
+}
+
+func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
+	// Only accept POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fmt.Printf("[HTTP -> gRPC Client Streaming] Method: /c2.C2/ReportFile\n")
+
+	// Create a client streaming call
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	stream, err := conn.NewStream(
+		ctx,
+		&grpc.StreamDesc{
+			StreamName:    "ReportFile",
+			ServerStreams: false,
+			ClientStreams: true,
+		},
+		"/c2.C2/ReportFile",
+		grpc.CallContentSubtype("raw"),
+	)
+	if err != nil {
+		fmt.Printf("[gRPC Stream Error] Failed to create stream: %v\n", err)
+		http.Error(w, fmt.Sprintf("Failed to create gRPC stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Read gRPC-framed messages from HTTP request body and forward to gRPC stream
+	buffer := make([]byte, 0, 64*1024) // 64KB buffer
+	chunkCount := 0
+
+	for {
+		// Read HTTP body data
+		readBuf := make([]byte, 32*1024) // Read 32KB at a time
+		n, readErr := r.Body.Read(readBuf)
+		if n > 0 {
+			buffer = append(buffer, readBuf[:n]...)
+		}
+
+		// Process complete gRPC frames from buffer
+		for len(buffer) >= 5 {
+			// Read gRPC frame header: [compression_flag(1)][length(4)]
+			compressionFlag := buffer[0]
+			messageLength := binary.BigEndian.Uint32(buffer[1:5])
+
+			// Check if we have the complete message
+			if len(buffer) < 5+int(messageLength) {
+				// Need more data
+				break
+			}
+
+			// Extract the complete encrypted message (skip frame header)
+			encryptedMessage := buffer[5 : 5+messageLength]
+			buffer = buffer[5+messageLength:] // Remove processed data from buffer
+
+			chunkCount++
+			fmt.Printf("[Client Stream] Received chunk %d: compression=%d, length=%d bytes\n",
+				chunkCount, compressionFlag, messageLength)
+
+			// Send to gRPC stream
+			if err := stream.SendMsg(encryptedMessage); err != nil {
+				fmt.Printf("[gRPC Stream Error] Failed to send message: %v\n", err)
+				http.Error(w, fmt.Sprintf("Failed to send gRPC message: %v", err), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// Check if we've finished reading the HTTP body
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			fmt.Printf("[HTTP Read Error] %v\n", readErr)
+			http.Error(w, fmt.Sprintf("Failed to read request body: %v", readErr), http.StatusBadRequest)
+			return
+		}
+	}
+
+	fmt.Printf("[Client Stream] Sent %d chunks total\n", chunkCount)
+
+	// Close the send side
+	if err := stream.CloseSend(); err != nil {
+		fmt.Printf("[gRPC Stream Error] Failed to close send: %v\n", err)
+		http.Error(w, fmt.Sprintf("Failed to close gRPC send: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Receive the single response
+	var responseBody []byte
+	if err := stream.RecvMsg(&responseBody); err != nil {
+		fmt.Printf("[gRPC Stream Error] Failed to receive response: %v\n", err)
+		http.Error(w, fmt.Sprintf("Failed to receive gRPC response: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody))
+
+	// Write the response back to the HTTP client
+	w.Header().Set("Content-Type", "application/grpc")
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write(responseBody); err != nil {
+		fmt.Printf("[HTTP Write Error] %v\n", err)
+	}
 }
 
 func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
