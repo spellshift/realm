@@ -418,3 +418,254 @@ impl Transport for HTTP {
         unimplemented!("todo")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bytes::BytesMut;
+
+    mod grpc_frame_tests {
+        use super::*;
+
+        #[test]
+        fn test_frame_header_new() {
+            let header = grpc_frame::FrameHeader::new(1234);
+            assert_eq!(header.compression_flag, 0x00);
+            assert_eq!(header.message_length, 1234);
+        }
+
+        #[test]
+        fn test_frame_header_encode() {
+            let header = grpc_frame::FrameHeader::new(0x12345678);
+            let encoded = header.encode();
+
+            assert_eq!(encoded.len(), 5);
+            assert_eq!(encoded[0], 0x00); // compression flag
+            assert_eq!(encoded[1], 0x12); // big-endian length
+            assert_eq!(encoded[2], 0x34);
+            assert_eq!(encoded[3], 0x56);
+            assert_eq!(encoded[4], 0x78);
+        }
+
+        #[test]
+        fn test_frame_header_try_decode_success() {
+            let mut buffer = BytesMut::new();
+            buffer.extend_from_slice(&[0x00, 0x00, 0x00, 0x01, 0x00]);
+
+            let header = grpc_frame::FrameHeader::try_decode(&buffer).unwrap();
+            assert_eq!(header.compression_flag, 0x00);
+            assert_eq!(header.message_length, 256);
+        }
+
+        #[test]
+        fn test_frame_header_try_decode_insufficient_data() {
+            let buffer = BytesMut::from(&[0x00, 0x01, 0x02][..]); // Only 3 bytes
+
+            let header = grpc_frame::FrameHeader::try_decode(&buffer);
+            assert!(header.is_none());
+        }
+
+        #[test]
+        fn test_frame_header_extract_frame_success() {
+            let mut buffer = BytesMut::new();
+            // Header: no compression, 10 bytes
+            buffer.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x0A]);
+            // Message: 10 bytes of data
+            buffer.extend_from_slice(b"0123456789");
+
+            let result = grpc_frame::FrameHeader::extract_frame(&mut buffer);
+            assert!(result.is_some());
+
+            let (header, message) = result.unwrap();
+            assert_eq!(header.message_length, 10);
+            assert_eq!(message.len(), 10);
+            assert_eq!(&message[..], b"0123456789");
+            assert_eq!(buffer.len(), 0); // Buffer should be empty
+        }
+
+        #[test]
+        fn test_frame_header_extract_frame_incomplete() {
+            let mut buffer = BytesMut::new();
+            // Header: no compression, 10 bytes
+            buffer.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x0A]);
+            // Message: only 5 bytes (incomplete)
+            buffer.extend_from_slice(b"01234");
+
+            let result = grpc_frame::FrameHeader::extract_frame(&mut buffer);
+            assert!(result.is_none());
+            assert_eq!(buffer.len(), 10); // Buffer unchanged
+        }
+
+        #[test]
+        fn test_frame_header_extract_multiple_frames() {
+            let mut buffer = BytesMut::new();
+
+            // First frame: 5 bytes
+            buffer.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x05]);
+            buffer.extend_from_slice(b"AAAAA");
+
+            // Second frame: 3 bytes
+            buffer.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x03]);
+            buffer.extend_from_slice(b"BBB");
+
+            // Extract first frame
+            let (header1, msg1) = grpc_frame::FrameHeader::extract_frame(&mut buffer).unwrap();
+            assert_eq!(header1.message_length, 5);
+            assert_eq!(&msg1[..], b"AAAAA");
+
+            // Extract second frame
+            let (header2, msg2) = grpc_frame::FrameHeader::extract_frame(&mut buffer).unwrap();
+            assert_eq!(header2.message_length, 3);
+            assert_eq!(&msg2[..], b"BBB");
+
+            // No more frames
+            assert!(grpc_frame::FrameHeader::extract_frame(&mut buffer).is_none());
+            assert_eq!(buffer.len(), 0);
+        }
+
+        #[test]
+        fn test_frame_header_zero_length_message() {
+            let mut buffer = BytesMut::new();
+            buffer.extend_from_slice(&[0x00, 0x00, 0x00, 0x00, 0x00]);
+
+            let (header, message) = grpc_frame::FrameHeader::extract_frame(&mut buffer).unwrap();
+            assert_eq!(header.message_length, 0);
+            assert_eq!(message.len(), 0);
+        }
+
+        #[test]
+        fn test_frame_header_max_length() {
+            let header = grpc_frame::FrameHeader::new(u32::MAX);
+            let encoded = header.encode();
+
+            let buffer = BytesMut::from(&encoded[..]);
+
+            let decoded = grpc_frame::FrameHeader::try_decode(&buffer).unwrap();
+            assert_eq!(decoded.message_length, u32::MAX);
+        }
+
+        #[test]
+        fn test_frame_header_compression_flag() {
+            let mut buffer = BytesMut::new();
+            buffer.extend_from_slice(&[0x01, 0x00, 0x00, 0x00, 0x00]); // compression flag = 1
+
+            let header = grpc_frame::FrameHeader::try_decode(&buffer).unwrap();
+            assert_eq!(header.compression_flag, 0x01);
+        }
+
+        #[test]
+        fn test_frame_header_partial_frame_across_reads() {
+            let mut buffer = BytesMut::new();
+
+            // Simulate first chunk: partial header
+            buffer.extend_from_slice(&[0x00, 0x00]);
+            assert!(grpc_frame::FrameHeader::extract_frame(&mut buffer).is_none());
+
+            // Simulate second chunk: rest of header + partial data
+            buffer.extend_from_slice(&[0x00, 0x00, 0x05]); // Complete header now
+            buffer.extend_from_slice(b"AB");               // Partial data
+            assert!(grpc_frame::FrameHeader::extract_frame(&mut buffer).is_none());
+
+            // Simulate third chunk: rest of data
+            buffer.extend_from_slice(b"CDE");
+            let (header, message) = grpc_frame::FrameHeader::extract_frame(&mut buffer).unwrap();
+            assert_eq!(header.message_length, 5);
+            assert_eq!(&message[..], b"ABCDE");
+        }
+
+        #[test]
+        fn test_frame_header_roundtrip() {
+            let original = grpc_frame::FrameHeader::new(42);
+            let encoded = original.encode();
+            let buffer = BytesMut::from(&encoded[..]);
+            let decoded = grpc_frame::FrameHeader::try_decode(&buffer).unwrap();
+
+            assert_eq!(original.compression_flag, decoded.compression_flag);
+            assert_eq!(original.message_length, decoded.message_length);
+        }
+    }
+
+    mod http_helpers_tests {
+        use super::*;
+
+        #[test]
+        fn test_build_uri_success() {
+            let http = HTTP {
+                client: hyper::Client::new(),
+                base_url: "http://localhost:8080".to_string(),
+            };
+
+            let uri = http.build_uri("/test/path").unwrap();
+            assert_eq!(uri.to_string(), "http://localhost:8080/test/path");
+        }
+
+        #[test]
+        fn test_build_uri_with_trailing_slash() {
+            let http = HTTP {
+                client: hyper::Client::new(),
+                base_url: "http://localhost:8080/".to_string(),
+            };
+
+            let uri = http.build_uri("/test/path").unwrap();
+            assert!(uri.to_string().contains("test/path"));
+        }
+
+        #[test]
+        fn test_build_uri_without_leading_slash() {
+            let http = HTTP {
+                client: hyper::Client::new(),
+                base_url: "http://localhost:8080".to_string(),
+            };
+
+            let uri = http.build_uri("test/path").unwrap();
+            assert!(uri.to_string().contains("test/path"));
+        }
+
+        #[test]
+        fn test_build_uri_invalid() {
+            let http = HTTP {
+                client: hyper::Client::new(),
+                base_url: "not a valid url".to_string(),
+            };
+
+            let result = http.build_uri("/test");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_request_builder_headers_and_method() {
+            let http = HTTP {
+                client: hyper::Client::new(),
+                base_url: "http://localhost".to_string(),
+            };
+
+            let uri = http.build_uri("/test").unwrap();
+            let request = http
+                .request_builder(uri)
+                .body(hyper::Body::empty())
+                .unwrap();
+
+            assert_eq!(request.method(), hyper::Method::POST);
+            assert_eq!(
+                request.headers().get("content-type").unwrap(),
+                "application/grpc"
+            );
+        }
+
+        #[test]
+        fn test_request_builder_uri() {
+            let http = HTTP {
+                client: hyper::Client::new(),
+                base_url: "http://example.com".to_string(),
+            };
+
+            let uri = http.build_uri("/api/test").unwrap();
+            let request = http
+                .request_builder(uri.clone())
+                .body(hyper::Body::empty())
+                .unwrap();
+
+            assert_eq!(request.uri(), &uri);
+        }
+    }
+}
