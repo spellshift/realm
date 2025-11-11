@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
@@ -57,6 +58,9 @@ func httpRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 	defer conn.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/c2.C2/FetchAsset", func(w http.ResponseWriter, r *http.Request) {
+		handleFetchAssetStreaming(w, r, conn)
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleHTTPRequest(w, r, conn)
 	})
@@ -73,6 +77,111 @@ func httpRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 	}
 
 	return nil
+}
+
+func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
+	// Only accept POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Read the raw protobuf request body
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	fmt.Printf("[HTTP -> gRPC Streaming] Method: /c2.C2/FetchAsset, Body size: %d bytes\n", len(requestBody))
+
+	// Create a streaming call
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	stream, err := conn.NewStream(
+		ctx,
+		&grpc.StreamDesc{
+			StreamName:    "FetchAsset",
+			ServerStreams: true,
+			ClientStreams: false,
+		},
+		"/c2.C2/FetchAsset",
+		grpc.CallContentSubtype("raw"),
+	)
+	if err != nil {
+		fmt.Printf("[gRPC Stream Error] Failed to create stream: %v\n", err)
+		http.Error(w, fmt.Sprintf("Failed to create gRPC stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Send the request
+	if err := stream.SendMsg(requestBody); err != nil {
+		fmt.Printf("[gRPC Stream Error] Failed to send request: %v\n", err)
+		http.Error(w, fmt.Sprintf("Failed to send gRPC request: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Close the send side
+	if err := stream.CloseSend(); err != nil {
+		fmt.Printf("[gRPC Stream Error] Failed to close send: %v\n", err)
+		http.Error(w, fmt.Sprintf("Failed to close gRPC send: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Set headers and start streaming response
+	w.Header().Set("Content-Type", "application/grpc")
+	w.WriteHeader(http.StatusOK)
+
+	// Get flusher for chunked transfer encoding
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	// Stream each encrypted chunk as it arrives from gRPC
+	chunkCount := 0
+	totalBytes := 0
+
+	for {
+		var responseChunk []byte
+		err := stream.RecvMsg(&responseChunk)
+		if err == io.EOF {
+			// Stream finished successfully
+			break
+		}
+		if err != nil {
+			fmt.Printf("[gRPC Stream Error] Failed to receive message: %v\n", err)
+			return
+		}
+
+		chunkCount++
+		totalBytes += len(responseChunk)
+		fmt.Printf("[gRPC Stream] Received chunk %d: %d bytes\n", chunkCount, len(responseChunk))
+
+		// Write gRPC frame header: [compression_flag(1)][length(4)]
+		var frameHeader [5]byte
+		frameHeader[0] = 0x00 // No compression
+		binary.BigEndian.PutUint32(frameHeader[1:], uint32(len(responseChunk)))
+
+		if _, err := w.Write(frameHeader[:]); err != nil {
+			fmt.Printf("[HTTP Write Error] Failed to write frame header: %v\n", err)
+			return
+		}
+
+		// Write encrypted chunk immediately to HTTP client
+		if _, err := w.Write(responseChunk); err != nil {
+			fmt.Printf("[HTTP Write Error] Failed to write chunk: %v\n", err)
+			return
+		}
+
+		// Flush to send chunk immediately (HTTP chunked transfer encoding)
+		flusher.Flush()
+	}
+
+	fmt.Printf("[gRPC -> HTTP] Streamed %d chunks, total %d bytes\n", chunkCount, totalBytes)
 }
 
 func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
