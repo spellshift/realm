@@ -77,7 +77,7 @@ func TestMux(t *testing.T) {
 	mux.Unregister(stream1)
 
 	// Give the mux a moment to unregister the stream
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// Send another message for stream1
 	err = topic.Send(ctx, &pubsub.Message{

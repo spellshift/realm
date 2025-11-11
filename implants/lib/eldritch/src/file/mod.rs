@@ -1,6 +1,7 @@
 mod append_impl;
 mod compress_impl;
 mod copy_impl;
+mod decompress_impl;
 mod exists_impl;
 mod find_impl;
 mod follow_impl;
@@ -92,6 +93,12 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
+    fn decompress(this: &FileLibrary, src: String, dst: String) -> anyhow::Result<NoneType> {
+        decompress_impl::decompress(src, dst)?;
+        Ok(NoneType{})
+    }
+
+    #[allow(unused_variables)]
     fn exists(this: &FileLibrary, path: String) -> anyhow::Result<bool> {
         exists_impl::exists(path)
     }
@@ -174,8 +181,8 @@ fn methods(builder: &mut MethodsBuilder) {
     }
 
     #[allow(unused_variables)]
-    fn find(this: &FileLibrary, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> anyhow::Result<Vec<String>> {
-        find_impl::find(path, name, file_type, permissions, modified_time, create_time)
+    fn find<'v>(this: &FileLibrary, starlark_eval: &mut Evaluator<'v, '_>, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<u64>, modified_time: Option<u64>, create_time: Option<u64>) -> anyhow::Result<Vec<String>> {
+        find_impl::find(starlark_eval, path, name, file_type, permissions, modified_time, create_time)
     }
 
     #[allow(unused_variables)]
