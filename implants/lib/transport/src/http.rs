@@ -415,7 +415,7 @@ impl Transport for HTTP {
         rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        unimplemented!("todo")
+        Err(anyhow::anyhow!("http/1.1 transport does not support reverse shell"))
     }
 }
 
