@@ -1,11 +1,11 @@
 use crate::Transport;
 use anyhow::{Context, Result};
+use bytes::{Buf, BytesMut};
 use hyper::body::HttpBody;
 use hyper::StatusCode;
 use pb::c2::*;
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
-use bytes::{Buf, BytesMut};
 
 /// gRPC frame header utilities for encoding/decoding wire protocol frames
 mod grpc_frame {
@@ -149,11 +149,7 @@ impl HTTP {
 
     /// Generic helper method for unary RPC calls (request-response pattern).
     /// Handles marshaling, HTTP request/response, and unmarshaling for all unary operations.
-    async fn unary_rpc<Req, Resp>(
-        &mut self,
-        request: Req,
-        path: &str,
-    ) -> Result<Resp>
+    async fn unary_rpc<Req, Resp>(&mut self, request: Req, path: &str) -> Result<Resp>
     where
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
@@ -194,7 +190,9 @@ impl HTTP {
 
         loop {
             // Process all complete frames in the buffer
-            while let Some((header, encrypted_message)) = grpc_frame::FrameHeader::extract_frame(&mut buffer) {
+            while let Some((header, encrypted_message)) =
+                grpc_frame::FrameHeader::extract_frame(&mut buffer)
+            {
                 message_count += 1;
 
                 #[cfg(debug_assertions)]
@@ -221,7 +219,10 @@ impl HTTP {
                     buffer.extend_from_slice(&chunk);
                 }
                 Some(Err(err)) => {
-                    return Err(anyhow::anyhow!("Failed to read chunk from response: {}", err));
+                    return Err(anyhow::anyhow!(
+                        "Failed to read chunk from response: {}",
+                        err
+                    ));
                 }
                 None => {
                     // No more data from HTTP
@@ -233,7 +234,10 @@ impl HTTP {
         // Check if there's leftover data in the buffer
         if !buffer.is_empty() {
             #[cfg(debug_assertions)]
-            log::warn!("Incomplete data remaining in buffer: {} bytes", buffer.len());
+            log::warn!(
+                "Incomplete data remaining in buffer: {} bytes",
+                buffer.len()
+            );
         }
 
         #[cfg(debug_assertions)]
@@ -354,14 +358,21 @@ impl Transport for HTTP {
         let response = self.send_and_validate(req).await?;
 
         // Stream the response frames
-        Self::stream_grpc_frames::<FetchAssetRequest, FetchAssetResponse, _>(response, |response_msg| {
-            tx.send(response_msg).map_err(|_err| {
-                #[cfg(debug_assertions)]
-                log::error!("Failed to send downloaded file chunk: {}: {}", filename, _err);
+        Self::stream_grpc_frames::<FetchAssetRequest, FetchAssetResponse, _>(
+            response,
+            |response_msg| {
+                tx.send(response_msg).map_err(|_err| {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "Failed to send downloaded file chunk: {}: {}",
+                        filename,
+                        _err
+                    );
 
-                anyhow::anyhow!("Failed to send response through channel")
-            })
-        })
+                    anyhow::anyhow!("Failed to send response through channel")
+                })
+            },
+        )
         .await
     }
 
@@ -415,7 +426,9 @@ impl Transport for HTTP {
         rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!("http/1.1 transport does not support reverse shell"))
+        Err(anyhow::anyhow!(
+            "http/1.1 transport does not support reverse shell"
+        ))
     }
 }
 
@@ -563,7 +576,7 @@ mod tests {
 
             // Simulate second chunk: rest of header + partial data
             buffer.extend_from_slice(&[0x00, 0x00, 0x05]); // Complete header now
-            buffer.extend_from_slice(b"AB");               // Partial data
+            buffer.extend_from_slice(b"AB"); // Partial data
             assert!(grpc_frame::FrameHeader::extract_frame(&mut buffer).is_none());
 
             // Simulate third chunk: rest of data
