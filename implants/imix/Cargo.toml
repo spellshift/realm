@@ -13,7 +13,8 @@ default = []
 
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
-pb = { workspace = true }
+
+pb = { workspace = true, features = ["imix"]}
 transport = { workspace = true, features = ["http"] }
 anyhow = { workspace = true }
 clap = { workspace = true }

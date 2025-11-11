@@ -21,8 +21,14 @@ use x25519_dalek::{EphemeralSecret, PublicKey};
 /* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY environment variable during compilation.
  * To find the servers pubkey check the startup messages on the server look for `[INFO] Public key: <SERVER_PUBKEY>`
  */
+#[cfg(feature = "imix")]
 static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_PUBKEY").as_bytes());
 
+#[cfg(not(feature = "imix"))]
+static SERVER_PUBKEY: [u8; 32] = [
+    165, 30, 122, 188, 50, 89, 111, 214, 247, 4, 189, 217, 188, 37, 200, 190, 2, 180, 175, 107,
+    194, 147, 177, 98, 103, 84, 99, 120, 72, 73, 87, 37,
+];
 // ------------
 
 const KEY_CACHE_SIZE: usize = 1024;
