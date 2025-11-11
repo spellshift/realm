@@ -142,6 +142,27 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 }
 
 func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
+	if len(in_arr) == 0 {
+		// ids, err := goAllIds()
+		// if err != nil {
+		// 	slog.Error(fmt.Sprintf("unable to find GOID %s", err))
+		// }
+		// var client_pub_key_bytes []byte
+		// ok := false
+		// for idx, id := range []int{ids.Id, ids.ParentId} {
+		// 	client_pub_key_bytes, ok = session_pub_keys.Load(id)
+		// 	if ok {
+		// 		slog.Info(fmt.Sprintf("found public key for id: %d idx: %d", id, idx))
+		// 		break
+		// 	}
+		// }
+		// if !ok {
+		// 	slog.Error(fmt.Sprintf("public key not found for id: %d", ids.Id))
+		// 	return FAILURE_BYTES, FAILURE_BYTES
+		// }
+		// return in_arr, client_pub_key_bytes
+		return []byte{}, []byte{}
+	}
 	// Read in pub key
 	if len(in_arr) < x25519.Size {
 		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), x25519.Size))

