@@ -3,6 +3,9 @@ mod grpc;
 #[cfg(feature = "grpc")]
 pub use grpc::GRPC;
 
+#[cfg(feature = "grpc-doh")]
+mod dns_resolver;
+
 #[cfg(feature = "http")]
 mod http;
 #[cfg(feature = "http")]
