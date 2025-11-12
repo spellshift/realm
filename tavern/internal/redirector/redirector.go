@@ -2,12 +2,16 @@ package redirector
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding"
 )
@@ -56,9 +60,49 @@ func HTTPRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 		opt(cfg)
 	}
 
+	// Parse host:port to determine if TLS should be used
+	url, err := url.Parse(upstream)
+	if err != nil {
+		return fmt.Errorf("failed to parse upstream address: %v", err)
+	}
+
+	port := url.Port()
+
+	tc := credentials.NewTLS(&tls.Config{})
+	if (url.Scheme == "http") {
+		if (url.Port() == "") {
+			port = "80"
+		}
+		tc = insecure.NewCredentials()
+	}
+
+	if (url.Port() == "") {
+		port = "443"
+	}
+
 	conn, err := grpc.NewClient(
-		upstream,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		url.Host,
+		grpc.WithTransportCredentials(tc),
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+			// Resolve using IPv4 only (A records, not AAAA records)
+			ips, err := net.DefaultResolver.LookupIP(ctx, "ip4", url.Hostname())
+			if err != nil {
+				return nil, err
+			}
+			if len(ips) == 0 {
+				return nil, fmt.Errorf("no IPv4 addresses found for %s", url.Hostname())
+			}
+
+			// Force IPv4 by using "tcp4" instead of "tcp"
+			dialer := &net.Dialer{}
+			tcpConn, err := dialer.DialContext(ctx, "tcp4", net.JoinHostPort(ips[0].String(), port))
+			if err != nil {
+				return nil, err
+			}
+
+			return tcpConn, nil
+		}),
+
 	)
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
@@ -272,6 +316,7 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 
 	if err != nil {
 		fmt.Printf("[gRPC Error] %v\n", err)
+		fmt.Printf("[grpc response body: %v\n]", responseBody)
 		http.Error(w, fmt.Sprintf("gRPC call failed: %v", err), http.StatusInternalServerError)
 		return
 	}
