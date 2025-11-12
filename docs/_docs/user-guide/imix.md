@@ -90,6 +90,12 @@ Building in the dev container limits variables that might cause issues and is th
 
 **Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
+## Optional build flags
+These flags are passed to cargo build Eg.:
+`cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
+
+- `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
+
 ### Linux
 
 ```bash

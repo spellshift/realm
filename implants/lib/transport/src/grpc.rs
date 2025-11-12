@@ -1,4 +1,3 @@
-use crate::Transport;
 use anyhow::Result;
 use hyper::Uri;
 use pb::c2::*;
@@ -6,6 +5,14 @@ use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
+
+#[cfg(feature = "grpc-doh")]
+use hyper::client::HttpConnector;
+
+#[cfg(feature = "grpc-doh")]
+use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
+
+use crate::Transport;
 
 use std::time::Duration;
 
@@ -30,7 +37,14 @@ impl Transport for GRPC {
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
+        // Create HTTP connector with DNS-over-HTTPS support if enabled
+        #[cfg(feature = "grpc-doh")]
+        let mut http: HttpConnector<HickoryResolverService> =
+            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
+
+        #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
+
         http.enforce_http(false);
         http.set_nodelay(true);
 
@@ -50,7 +64,7 @@ impl Transport for GRPC {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
                 .rate_limit(1, Duration::from_millis(25))
-                .connect_lazy(),
+                .connect_with_connector_lazy(http),
         };
 
         let grpc = tonic::client::Grpc::new(channel);
