@@ -1,6 +1,6 @@
 use crate::Transport;
 use anyhow::{Context, Result};
-use bytes::{Buf, BytesMut};
+use bytes::BytesMut;
 use hyper::body::HttpBody;
 use hyper::StatusCode;
 use pb::c2::*;
@@ -80,7 +80,7 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
-static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
+static _REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
 // Uses the helper functions exported from pb::xchacha
@@ -186,20 +186,16 @@ impl HTTP {
     {
         let mut body = response.into_body();
         let mut buffer = BytesMut::new();
-        let mut message_count = 0;
 
         loop {
             // Process all complete frames in the buffer
-            while let Some((header, encrypted_message)) =
+            while let Some((_header, encrypted_message)) =
                 grpc_frame::FrameHeader::extract_frame(&mut buffer)
             {
-                message_count += 1;
-
                 #[cfg(debug_assertions)]
                 log::debug!(
-                    "Received complete encrypted message {}: compression={}, {} bytes",
-                    message_count,
-                    header.compression_flag,
+                    "Received complete encrypted message: compression={}, {} bytes",
+                    _header.compression_flag,
                     encrypted_message.len()
                 );
 
@@ -241,7 +237,7 @@ impl HTTP {
         }
 
         #[cfg(debug_assertions)]
-        log::debug!("Completed streaming {} messages", message_count);
+        log::debug!("Completed streaming messages");
 
         Ok(())
     }
@@ -255,19 +251,13 @@ impl HTTP {
         let (mut tx, body) = hyper::Body::channel();
 
         tokio::spawn(async move {
-            let mut chunk_count = 0;
             for req_chunk in receiver {
-                chunk_count += 1;
-
-                #[cfg(debug_assertions)]
-                log::debug!("Sending chunk {}", chunk_count);
-
                 // Marshal and encrypt each chunk
                 let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk) {
                     Ok(bytes) => bytes,
-                    Err(err) => {
+                    Err(_err) => {
                         #[cfg(debug_assertions)]
-                        log::error!("Failed to marshal chunk {}: {}", chunk_count, err);
+                        log::error!("Failed to marshal chunk: {}", _err);
                         return;
                     }
                 };
@@ -282,7 +272,7 @@ impl HTTP {
                     .is_err()
                 {
                     #[cfg(debug_assertions)]
-                    log::error!("Failed to send frame header for chunk {}", chunk_count);
+                    log::error!("Failed to send frame header for chunk");
                     return;
                 }
 
@@ -293,13 +283,13 @@ impl HTTP {
                     .is_err()
                 {
                     #[cfg(debug_assertions)]
-                    log::error!("Failed to send chunk {}", chunk_count);
+                    log::error!("Failed to send chunk");
                     return;
                 }
             }
 
             #[cfg(debug_assertions)]
-            log::debug!("Completed sending {} chunks", chunk_count);
+            log::debug!("Completed sending chunks");
         });
 
         body
@@ -423,8 +413,8 @@ impl Transport for HTTP {
 
     async fn reverse_shell(
         &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
         Err(anyhow::anyhow!(
             "http/1.1 transport does not support reverse shell"
