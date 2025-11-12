@@ -21,7 +21,6 @@ clap = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 pretty_env_logger = { workspace = true }
-transport = { workspace = true, features = ["grpc"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = "0.6.0"
