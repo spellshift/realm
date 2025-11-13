@@ -1,6 +1,7 @@
 mod eval_impl;
 mod set_callback_interval_impl;
 mod set_callback_uri_impl;
+mod task_list_impl;
 
 use starlark::{
     environment::MethodsBuilder,

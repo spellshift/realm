@@ -126,6 +126,9 @@ pub enum SyncMessage {
 
     #[display(fmt = "SetCallbackUri")]
     SetCallbackUri(SetCallbackUriMessage),
+
+    #[display(fmt = "GetTasks")]
+    GetTasks(GetTasksMessage),
 }
 
 impl SyncDispatcher for SyncMessage {
