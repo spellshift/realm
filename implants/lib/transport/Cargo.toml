@@ -6,8 +6,8 @@ edition = "2021"
 [features]
 default = []
 grpc = []
-http = []
 grpc-doh = ["grpc", "dep:hickory-resolver"]
+http = []
 mock = ["dep:mockall"]
 
 [dependencies]

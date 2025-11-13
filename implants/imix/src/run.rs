@@ -6,7 +6,7 @@ pub use crate::install::install;
 use crate::version::VERSION;
 pub use pb::config::Config;
 
-use transport::{Transport, HTTP};
+use transport::{ActiveTransport, Transport};
 
 pub async fn handle_main() {
     if let Some(("install", _)) = Command::new("imix")
@@ -43,7 +43,7 @@ pub async fn handle_main() {
 }
 
 async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg, HTTP::init())?;
+    let mut agent = Agent::new(cfg, ActiveTransport::init())?;
     agent.callback_loop().await?;
     Ok(())
 }
