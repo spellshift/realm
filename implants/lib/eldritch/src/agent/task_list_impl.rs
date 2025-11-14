@@ -2,7 +2,6 @@ use crate::runtime::{messages::SetCallbackUriMessage, messages::SyncMessage, Env
 use anyhow::Result;
 
 pub fn task_list(env: &Environment) -> Result<()> {
-    env.send(msg)
     Ok(())
 }
 

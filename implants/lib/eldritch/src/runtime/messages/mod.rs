@@ -1,4 +1,5 @@
 mod fetch_asset;
+mod get_tasks;
 mod reduce;
 mod report_agg_output;
 mod report_credential;
@@ -31,6 +32,8 @@ use anyhow::Result;
 use derive_more::{Display, From};
 use report_agg_output::ReportAggOutputMessage;
 use std::future::Future;
+
+use crate::runtime::messages::get_tasks::GetTasksMessage;
 
 // AsyncDispatcher defines the shared "dispatch" method used by all `AsyncMessage` variants to send their data using a transport.
 pub trait AsyncDispatcher {
@@ -139,6 +142,7 @@ impl SyncDispatcher for SyncMessage {
         match self {
             Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg),
             Self::SetCallbackUri(msg) => msg.dispatch(transport, cfg),
+            Self::GetTasks(msg) => msg.dispatch(transport, cfg),
         }
     }
 }

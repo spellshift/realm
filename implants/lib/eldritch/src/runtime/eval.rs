@@ -33,13 +33,14 @@ use starlark::{
     syntax::{AstModule, Dialect},
     values::{dict::Dict, none::NoneType, AllocValue},
 };
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use tokio::task::JoinHandle;
 
 pub async fn start(id: i64, tome: Tome) -> Runtime {
     let (tx, rx) = channel::<Message>();
+    let (ttx, rrx) = channel::<Message>();
 
-    let env = Environment { id, tx };
+    let env = Environment { id, tx, rrx };
 
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at
@@ -119,6 +120,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
     Runtime {
         handle: Some(handle),
         rx,
+        ttx,
     }
 }
 
@@ -132,6 +134,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
 pub struct Runtime {
     handle: Option<JoinHandle<()>>,
     rx: Receiver<Message>,
+    ttx: Sender<Message>,
 }
 
 #[starlark_module]

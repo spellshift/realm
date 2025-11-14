@@ -5,13 +5,14 @@ use starlark::{
     values::{AnyLifetime, ProvidesStaticType},
     PrintHandler,
 };
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Receiver, Sender};
 
 #[allow(clippy::needless_lifetimes)]
 #[derive(ProvidesStaticType)]
 pub struct Environment {
     pub(super) id: i64,
     pub(super) tx: Sender<Message>,
+    pub(super) rrx: Receiver<Message>,
 }
 
 impl Environment {
@@ -34,9 +35,13 @@ impl Environment {
         Ok(())
     }
 
+    pub fn recv(&self) -> Result<Message> {
+        self.rrx.recv().map_err(|e| anyhow::anyhow!(e))
+    }
+
     #[cfg(test)]
-    pub fn mock(id: i64, tx: Sender<Message>) -> Self {
-        Self { id, tx }
+    pub fn mock(id: i64, tx: Sender<Message>, rrx: Receiver<Message>) -> Self {
+        Self { id, tx, rrx }
     }
 }
 
