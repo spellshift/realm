@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -54,7 +55,7 @@ func getFlusher(w http.ResponseWriter) (http.Flusher, bool) {
 
 // handleStreamError logs and returns an HTTP error for gRPC stream errors
 func handleStreamError(w http.ResponseWriter, message string, err error) {
-	fmt.Printf("[gRPC Stream Error] %s: %v\n", message, err)
+	slog.Error(fmt.Sprintf("[gRPC Stream Error] %s: %v\n", message, err))
 	http.Error(w, fmt.Sprintf("%s: %v", message, err), http.StatusInternalServerError)
 }
 

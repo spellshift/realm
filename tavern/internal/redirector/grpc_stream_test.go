@@ -13,10 +13,10 @@ func TestStreamConfigFetchAsset(t *testing.T) {
 	if fetchAssetStream.MethodPath != "/c2.C2/FetchAsset" {
 		t.Errorf("Expected method path '/c2.C2/FetchAsset', got '%s'", fetchAssetStream.MethodPath)
 	}
-	if !fetchAssetStream.ServerStreams {
+	if !fetchAssetStream.Desc.ServerStreams {
 		t.Error("FetchAsset should have server streaming enabled")
 	}
-	if fetchAssetStream.ClientStreams {
+	if fetchAssetStream.Desc.ClientStreams {
 		t.Error("FetchAsset should not have client streaming enabled")
 	}
 }
@@ -26,10 +26,10 @@ func TestStreamConfigReportFile(t *testing.T) {
 	if reportFileStream.MethodPath != "/c2.C2/ReportFile" {
 		t.Errorf("Expected method path '/c2.C2/ReportFile', got '%s'", reportFileStream.MethodPath)
 	}
-	if reportFileStream.ServerStreams {
+	if reportFileStream.Desc.ServerStreams {
 		t.Error("ReportFile should not have server streaming enabled")
 	}
-	if !reportFileStream.ClientStreams {
+	if !reportFileStream.Desc.ClientStreams {
 		t.Error("ReportFile should have client streaming enabled")
 	}
 }
@@ -74,13 +74,13 @@ func TestStreamConfigProperties(t *testing.T) {
 
 	for _, tc := range configs {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.cfg.ServerStreams != tc.expectServer {
+			if tc.cfg.Desc.ServerStreams != tc.expectServer {
 				t.Errorf("%s: ServerStreams mismatch", tc.name)
 			}
-			if tc.cfg.ClientStreams != tc.expectClient {
+			if tc.cfg.Desc.ClientStreams != tc.expectClient {
 				t.Errorf("%s: ClientStreams mismatch", tc.name)
 			}
-			if tc.cfg.StreamName == "" {
+			if tc.cfg.Desc.StreamName == "" {
 				t.Errorf("%s: StreamName should not be empty", tc.name)
 			}
 			if tc.cfg.MethodPath == "" {

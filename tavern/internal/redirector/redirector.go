@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -29,14 +30,14 @@ func (c *Config) SetServer(srv *http.Server) {
 // RawCodec passes through raw bytes without marshaling/unmarshaling
 type RawCodec struct{}
 
-func (RawCodec) Marshal(v interface{}) ([]byte, error) {
+func (RawCodec) Marshal(v any) ([]byte, error) {
 	if b, ok := v.([]byte); ok {
 		return b, nil
 	}
 	return nil, fmt.Errorf("failed to marshal, message is %T", v)
 }
 
-func (RawCodec) Unmarshal(data []byte, v interface{}) error {
+func (RawCodec) Unmarshal(data []byte, v any) error {
 	if b, ok := v.(*[]byte); ok {
 		*b = data
 		return nil
@@ -66,19 +67,16 @@ func HTTPRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 		return fmt.Errorf("failed to parse upstream address: %v", err)
 	}
 
-	port := url.Port()
-
 	tc := credentials.NewTLS(&tls.Config{})
-	if (url.Scheme == "http") {
-		if (url.Port() == "") {
+	port := url.Port()
+	if port == "" {
+		if(url.Scheme == "http") {
 			port = "80"
+			tc = insecure.NewCredentials()
 		}
-		tc = insecure.NewCredentials()
-	}
-
-	if (url.Port() == "") {
 		port = "443"
 	}
+
 
 	conn, err := grpc.NewClient(
 		url.Host,
@@ -126,7 +124,7 @@ func HTTPRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 	}
 
 
-	fmt.Printf("HTTP/1.1 proxy listening on %s, forwarding to gRPC server at %s\n", server.Addr, upstream)
+	slog.Info(fmt.Sprintf("HTTP/1.1 proxy listening on %s, forwarding to gRPC server at %s\n", server.Addr, upstream))
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to start HTTP server: %v", err)
 	}
@@ -144,7 +142,7 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	fmt.Printf("[HTTP -> gRPC Streaming] Method: /c2.C2/FetchAsset, Body size: %d bytes\n", len(requestBody))
+	slog.Info(fmt.Sprintf("[HTTP -> gRPC Streaming] Method: /c2.C2/FetchAsset, Body size: %d bytes\n", len(requestBody)))
 
 	ctx, cancel := createRequestContext(streamingTimeout)
 	defer cancel()
@@ -182,31 +180,31 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 			break
 		}
 		if err != nil {
-			fmt.Printf("[gRPC Stream Error] Failed to receive message: %v\n", err)
+			slog.Debug(fmt.Sprintf("[gRPC Stream Error] Failed to receive message: %v\n", err))
 			return
 		}
 
 		chunkCount++
 		totalBytes += len(responseChunk)
-		fmt.Printf("[gRPC Stream] Received chunk %d: %d bytes\n", chunkCount, len(responseChunk))
+		slog.Debug(fmt.Sprintf("[gRPC Stream] Received chunk %d: %d bytes\n", chunkCount, len(responseChunk)))
 
 		// Write gRPC frame header
 		frameHeader := NewFrameHeader(uint32(len(responseChunk)))
 		encodedHeader := frameHeader.Encode()
 		if _, err := w.Write(encodedHeader[:]); err != nil {
-			fmt.Printf("[HTTP Write Error] Failed to write frame header: %v\n", err)
+			slog.Debug(fmt.Sprintf("[HTTP Write Error] Failed to write frame header: %v\n", err))
 			return
 		}
 
 		if _, err := w.Write(responseChunk); err != nil {
-			fmt.Printf("[HTTP Write Error] Failed to write chunk: %v\n", err)
+			slog.Debug(fmt.Sprintf("[HTTP Write Error] Failed to write chunk: %v\n", err))
 			return
 		}
 
 		flusher.Flush()
 	}
 
-	fmt.Printf("[gRPC -> HTTP] Streamed %d chunks, total %d bytes\n", chunkCount, totalBytes)
+	slog.Debug(fmt.Sprintf("[gRPC -> HTTP] Streamed %d chunks, total %d bytes\n", chunkCount, totalBytes))
 }
 
 func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
@@ -214,7 +212,7 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	fmt.Printf("[HTTP -> gRPC Client Streaming] Method: /c2.C2/ReportFile\n")
+	slog.Info(("[HTTP -> gRPC Client Streaming] Method: /c2.C2/ReportFile\n"))
 
 	ctx, cancel := createRequestContext(streamingTimeout)
 	defer cancel()
@@ -244,8 +242,8 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 
 			buffer = remaining
 			chunkCount++
-			fmt.Printf("[Client Stream] Received chunk %d: compression=%d, length=%d bytes\n",
-				chunkCount, header.CompressionFlag, header.MessageLength)
+			slog.Debug(fmt.Sprintf("[Client Stream] Received chunk %d: compression=%d, length=%d bytes\n",
+				chunkCount, header.CompressionFlag, header.MessageLength))
 
 			if err := stream.SendMsg(message); err != nil {
 				handleStreamError(w, "Failed to send gRPC message", err)
@@ -257,13 +255,13 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 			break
 		}
 		if readErr != nil {
-			fmt.Printf("[HTTP Read Error] %v\n", readErr)
+			slog.Debug(fmt.Sprintf("[HTTP Read Error] %v\n", readErr))
 			http.Error(w, fmt.Sprintf("Failed to read request body: %v", readErr), http.StatusBadRequest)
 			return
 		}
 	}
 
-	fmt.Printf("[Client Stream] Sent %d chunks total\n", chunkCount)
+	slog.Debug(fmt.Sprintf("[Client Stream] Sent %d chunks total\n", chunkCount))
 
 	if err := stream.CloseSend(); err != nil {
 		handleStreamError(w, "Failed to close gRPC send", err)
@@ -276,11 +274,11 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	fmt.Printf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody))
+	slog.Debug(fmt.Sprintf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody)))
 
 	setGRPCResponseHeaders(w)
 	if _, err := w.Write(responseBody); err != nil {
-		fmt.Printf("[HTTP Write Error] %v\n", err)
+		slog.Debug(fmt.Sprintf("[HTTP Write Error] %v\n", err))
 	}
 }
 
@@ -300,7 +298,7 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 		return
 	}
 
-	fmt.Printf("[HTTP -> gRPC] Method: %s, Body size: %d bytes\n", methodName, len(requestBody))
+	slog.Info(fmt.Sprintf("[HTTP -> gRPC] Method: %s, Body size: %d bytes\n", methodName, len(requestBody)))
 
 	ctx, cancel := createRequestContext(unaryTimeout)
 	defer cancel()
@@ -315,16 +313,16 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 	)
 
 	if err != nil {
-		fmt.Printf("[gRPC Error] %v\n", err)
-		fmt.Printf("[grpc response body: %v\n]", responseBody)
+		slog.Error(fmt.Sprintf("[gRPC Error] %v\n", err))
+		slog.Error(fmt.Sprintf("[grpc response body: %v\n]", responseBody))
 		http.Error(w, fmt.Sprintf("gRPC call failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Printf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody))
+	slog.Debug(fmt.Sprintf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody)))
 
 	setGRPCResponseHeaders(w)
 	if _, err := w.Write(responseBody); err != nil {
-		fmt.Printf("[HTTP Write Error] %v\n", err)
+		slog.Error(fmt.Sprintf("[HTTP Write Error] %v\n", err))
 	}
 }

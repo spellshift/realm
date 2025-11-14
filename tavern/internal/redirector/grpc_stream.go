@@ -8,26 +8,28 @@ import (
 
 // streamConfig represents gRPC stream configuration
 type streamConfig struct {
-	StreamName    string
-	MethodPath    string
-	ServerStreams bool
-	ClientStreams bool
+	Desc grpc.StreamDesc
+	MethodPath string
 }
 
 // Common stream configurations
 var (
 	fetchAssetStream = streamConfig{
-		StreamName:    "FetchAsset",
+		Desc: grpc.StreamDesc{
+			StreamName: "FetchAsset",
+			ServerStreams: true,
+			ClientStreams: false,
+		},
 		MethodPath:    "/c2.C2/FetchAsset",
-		ServerStreams: true,
-		ClientStreams: false,
 	}
 
 	reportFileStream = streamConfig{
-		StreamName:    "ReportFile",
+		Desc: grpc.StreamDesc{
+			StreamName:    "ReportFile",
+			ServerStreams: false,
+			ClientStreams: true,
+		},
 		MethodPath:    "/c2.C2/ReportFile",
-		ServerStreams: false,
-		ClientStreams: true,
 	}
 )
 
@@ -35,11 +37,7 @@ var (
 func createStream(ctx context.Context, conn *grpc.ClientConn, cfg streamConfig) (grpc.ClientStream, error) {
 	return conn.NewStream(
 		ctx,
-		&grpc.StreamDesc{
-			StreamName:    cfg.StreamName,
-			ServerStreams: cfg.ServerStreams,
-			ClientStreams: cfg.ClientStreams,
-		},
+		&cfg.Desc,
 		cfg.MethodPath,
 		grpc.CallContentSubtype("raw"),
 	)

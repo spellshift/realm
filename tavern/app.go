@@ -59,7 +59,7 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 			Usage: "Run a redirector connecting agents using a specific transport to the server",
 			Subcommands: []cli.Command{
 				{
-					Name: "http",
+					Name: "http1",
 					Usage: "Run an HTTP/1.1 redirector",
 					Action: func(cCtx *cli.Context) error {
 						// Convert main.Config options to redirector.Config options

@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 # Check if compiled by imix
 win_service = []
 default = ["transport/grpc"]
-http = ["transport/http"]
+http1 = ["transport/http1"]
 transport-grpc-doh = ["transport/grpc-doh"]
 
 [dependencies]
