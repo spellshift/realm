@@ -53,7 +53,6 @@ func newApp(ctx context.Context) (app *cli.App) {
 	app.Usage = "Time for an Adventure!"
 	app.Version = Version
 	app.Action = func(c *cli.Context) error {
-		slog.Error("WHAT THE HELLY")
 		return runTavern(
 			ctx,
 			ConfigureHTTPServerFromEnv(),
