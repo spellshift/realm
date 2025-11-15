@@ -46,25 +46,43 @@ func init() {
 	configureLogging()
 }
 
-func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
+func newApp(ctx context.Context) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "tavern"
 	app.Description = "Teamserver implementation for Realm, see https://docs.realm.pub for more details"
 	app.Usage = "Time for an Adventure!"
 	app.Version = Version
-	app.Action = cli.ActionFunc(func(*cli.Context) error {
-		return run(ctx, options...)
-	})
+	app.Action = func(c *cli.Context) error {
+		slog.Error("WHAT THE HELLY")
+		return runTavern(
+			ctx,
+			ConfigureHTTPServerFromEnv(),
+			ConfigureMySQLFromEnv(),
+			ConfigureOAuthFromEnv("/oauth/authorize"),
+		)
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:      "redirector",
 			Usage:     "Run a redirector connecting agents using a specific transport to the server",
-			ArgsUsage: "[upstream_address] [transport=http1] [listen_on=8080]",
+			ArgsUsage: "[upstream_address]",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "listen",
+					Usage: "Address to listen on for incoming redirector traffic (default: :8080)",
+					Value: ":8080",
+				},
+				cli.StringFlag{
+					Name:  "transport",
+					Usage: "Transport protocol to use for redirector (default: http1)",
+					Value: "http1",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				var (
-					upstream  = c.Args().Get(0)
-					listenOn  = c.Args().Get(1)
-					transport = c.Args().Get(2)
+					upstream  = c.Args().First()
+					listenOn  = c.String("listen")
+					transport = c.String("transport")
 				)
 				if upstream == "" {
 					return fmt.Errorf("gRPC upstream address is required (first argument)")
@@ -101,7 +119,7 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	return
 }
 
-func run(ctx context.Context, options ...func(*Config)) error {
+func runTavern(ctx context.Context, options ...func(*Config)) error {
 	srv, err := NewServer(ctx, options...)
 	if err != nil {
 		return err

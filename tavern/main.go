@@ -14,11 +14,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	app := newApp(ctx,
-		ConfigureHTTPServerFromEnv(),
-		ConfigureMySQLFromEnv(),
-		ConfigureOAuthFromEnv("/oauth/authorize"),
-	)
+	app := newApp(ctx)
 	if err := app.Run(os.Args); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("fatal error: %v", err)
 	}
