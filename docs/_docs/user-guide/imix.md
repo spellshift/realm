@@ -102,10 +102,14 @@ These flags are passed to cargo build Eg.:
 ```bash
 rustup target add x86_64-unknown-linux-musl
 
-sudo apt update
-sudo apt install musl-tools
+apt update
+apt install musl-tools
+
+# Build imix
 cd realm/implants/imix/
-# To get a servers pubkey:
+
+# To get a server's pubkey:
+# apt install jq
 # curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
 IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
@@ -116,7 +120,7 @@ IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x
 <https://developer.apple.com/forums/thread/706419>
 
 **Cross compilation is more complicated than we'll support**
-Check out this blog a starting point for cross compiling.
+Check out this blog as a starting point for cross-compiling.
 <https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html/>
 
 ### Windows
@@ -124,13 +128,14 @@ Check out this blog a starting point for cross compiling.
 ```bash
 rustup target add x86_64-pc-windows-gnu
 
-sudo apt update
-sudo apt install gcc-mingw-w64
+apt update
+apt install gcc-mingw-w64
 
 # Build imix
 cd realm/implants/imix/
 
-# To get a servers pubkey:
+# To get a server's pubkey:
+# apt install jq
 # curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
 
 # Build imix.exe
