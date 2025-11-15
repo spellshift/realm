@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"runtime/debug"
 	"strconv"
@@ -23,8 +22,9 @@ var session_pub_keys = NewSyncMap()
 // This size limits the number of concurrent connections each server can handle.
 // I can't imagine a single server handling more than 10k connections at once but just in case.
 const LRUCACHE_SIZE = 10480
+
 type SyncMap struct {
-	Map   *lru.Cache[int, []byte] // Example data map
+	Map *lru.Cache[int, []byte] // Example data map
 }
 
 func NewSyncMap() *SyncMap {
@@ -44,7 +44,6 @@ func (s *SyncMap) String() string {
 	}
 	return res
 }
-
 
 func (s *SyncMap) Load(key int) ([]byte, bool) {
 	return s.Map.Get(key)
@@ -68,8 +67,8 @@ func castBytesToBufSlice(buf []byte) (mem.BufferSlice, error) {
 }
 
 func init() {
-	log.Println("[INFO] Loading xchacha20-poly1305")
 	encoding.RegisterCodecV2(StreamDecryptCodec{})
+	slog.Debug("[cryptocodec] application-layer cryptography registered xchacha20-poly1305 gRPC codec")
 }
 
 type StreamDecryptCodec struct {
@@ -228,9 +227,9 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 }
 
 type GoidTrace struct {
-	Id int
+	Id       int
 	ParentId int
-	Others []int
+	Others   []int
 }
 
 func goAllIds() (GoidTrace, error) {
@@ -248,9 +247,9 @@ func goAllIds() (GoidTrace, error) {
 		}
 	}
 	res := GoidTrace{
-		Id: ids[0],
+		Id:       ids[0],
 		ParentId: ids[1],
-		Others: ids[2:],
+		Others:   ids[2:],
 	}
 	return res, nil
 }
