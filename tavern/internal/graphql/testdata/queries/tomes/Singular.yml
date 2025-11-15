@@ -8,9 +8,15 @@ requestor:
 query: |
   query Tomes {
     tomes {
-      id
+      edges {
+        node {
+          id
+        }
+      }
     }
   }
 expected:
   tomes:
-    - id: "2000"
+    edges:
+      - node:
+          id: "2000"

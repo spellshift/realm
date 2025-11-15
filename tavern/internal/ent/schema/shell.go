@@ -52,6 +52,10 @@ func (Shell) Edges() []ent.Edge {
 			Required().
 			Comment("User that created the shell"),
 		edge.To("active_users", User.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Users that are currently using the shell"),
 	}
 }

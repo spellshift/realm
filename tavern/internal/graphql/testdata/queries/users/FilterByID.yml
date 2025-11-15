@@ -8,9 +8,15 @@ requestor:
 query: |
   query Users {
     users(where: {id: 5}) {
-      id
+      edges {
+        node {
+          id
+        }
+      }
     }
   }
 expected:
   users:
-    - id: "5"
+    edges:
+      - node:
+          id: "5"

@@ -12,12 +12,19 @@ query: |
   query MyTomes {
     me {
       tomes {
-        id
+        edges {
+          node {
+            id
+          }
+        }
       }
     }
   }
 expected:
   me:
     tomes:
-      - id: "2000"
-      - id: "2001"
+      edges:
+        - node:
+            id: "2000"
+        - node:
+            id: "2001"

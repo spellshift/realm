@@ -84,6 +84,10 @@ func (Tome) Fields() []ent.Field {
 func (Tome) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("files", File.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
 		edge.To("uploader", User.Type).
 			Unique().
@@ -103,6 +107,8 @@ func (Tome) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Tome) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 			entgql.MutationUpdate(),

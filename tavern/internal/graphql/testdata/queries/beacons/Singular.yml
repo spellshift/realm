@@ -10,16 +10,22 @@ requestor:
 query: |
   query Beacons {
     beacons {
-      id
-      host {
-        id
+      edges {
+        node {
+          id
+          host {
+            id
+          }
+          interval
+        }
       }
-      interval
     }
   }
 expected:
   beacons:
-    - id: "1337"
-      host:
-        id: "1010"
-      interval: 120
+    edges:
+      - node:
+          id: "1337"
+          host:
+            id: "1010"
+          interval: 120
