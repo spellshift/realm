@@ -83,6 +83,13 @@ For Windows hosts, a `Registry` selector is available, but must be enabled befor
 If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
 This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.
 
+## Optional build flags
+These flags are passed to cargo build Eg.:
+`cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
+
+- `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
+- `--features http --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
+
 ## Static cross compilation
 
 **We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
@@ -90,12 +97,6 @@ Building in the dev container limits variables that might cause issues and is th
 
 **Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
-## Optional build flags
-These flags are passed to cargo build Eg.:
-`cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
-
-- `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
-- `--features http --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
 
 ### Linux
 
@@ -140,3 +141,11 @@ IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --features win_servic
 # Build imix.dll
 IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```
+
+## Building outside the devcontainer
+
+If you're unable to build imix inside the devcontainer you can try the following though it's not recomeneded:
+1. Install rustup from: https://rust-lang.org/tools/install/
+2. Make sure you have the correct version of rust installed. See: `realm/implants/rust-toolchain`. You can use the `rustup install <ver> && rustup default <ver>`
+2. Check for the correct version with `cargo version`
+3. Then follow the above instructions for static cross compilation.

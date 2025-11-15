@@ -49,8 +49,15 @@ The warnings you see here indicate that there are settings recommended for produ
 
 [Imix](/user-guide/imix) is the supported [Agent](/user-guide/terminology#agent) for Realm. This fiery trickster resides within your target network, eagerly awaiting your commands whispered through magical [Eldritch](/user-guide/terminology#eldritch) [Tomes](/user-guide/terminology#tome). These [Tomes](/user-guide/terminology#tome), inspired by [MITRE ATT&CK tactics](https://attack.mitre.org/matrices/enterprise/), empower [Imix](/user-guide/imix) to scout, exploit weaknesses, and launch attacks against target systems.
 
+**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
+Building in the dev container limits variables that might cause issues and is the most tested way to compile.
+
 ```bash
 # Assumes you have already cloned the repository and are in the 'realm' directory
+
+# Get the tavern server's public key
+curl http://localhost/status | jq -r '.Pubkey'
+export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 cd ./implants/imix && cargo run
 ```
 

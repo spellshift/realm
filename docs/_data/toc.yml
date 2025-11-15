@@ -18,7 +18,7 @@
   url: admin-guide/tavern
   links:
     - title: "Tavern"
-      url: "admin-guide/tavern"
+      url: "admin-guide/tavern" 
       children:
         - title: "Deployment"
           url: "admin-guide/tavern#deployment"
