@@ -70,11 +70,11 @@ func HTTPRedirectorRun(ctx context.Context, upstream string, options ...func(*Co
 	tc := credentials.NewTLS(&tls.Config{})
 	port := url.Port()
 	if port == "" {
+		port = "443"
 		if(url.Scheme == "http") {
 			port = "80"
 			tc = insecure.NewCredentials()
 		}
-		port = "443"
 	}
 
 
