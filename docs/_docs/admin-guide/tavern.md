@@ -102,6 +102,10 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
   * After adding a CloudSQL connection to your CloudRun instance, this unix socket is available at `/cloudsql/<CONNECTION_STRING>` (e.g. `/cloudsql/realm-379301:us-east4:tavern-db`).
 * You must create a new database in your CloudSQL instance before launching Tavern and ensure the `MYSQL_DB` env var is set accordingly.
 
+## Redirectors
+
+By default Tavern only supports GRPC connections directly to the server. To Enable additional protocols or additional IPs / Domain names in your callbacks utilize tavern redirectors which recieve traffic using a specific protocol like HTTP/1.1 and then forward it to an upstream tavern server over GRPC. See: `tavern redirector -help`
+
 ## Configuration
 
 ### Webserver

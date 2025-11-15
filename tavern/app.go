@@ -34,6 +34,7 @@ import (
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/redirector"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
@@ -52,8 +53,35 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	app.Action = cli.ActionFunc(func(*cli.Context) error {
 		return run(ctx, options...)
 	})
+	app.Commands = []cli.Command{
+		{
+			Name: "redirector",
+			Usage: "Run a redirector connecting agents using a specific transport to the server",
+			Subcommands: []cli.Command{
+				{
+					Name: "http1",
+					Usage: "Run an HTTP/1.1 redirector",
+					Action: func(cCtx *cli.Context) error {
+						// Convert main.Config options to redirector.Config options
+						redirectorOptions := []func(*redirector.Config){
+							func(cfg *redirector.Config) {
+								// Apply main Config to get server settings
+								mainCfg := &Config{}
+								for _, opt := range options {
+									opt(mainCfg)
+								}
+								cfg.SetServer(mainCfg.srv)
+							},
+						}
+						return redirector.HTTPRedirectorRun(ctx, cCtx.Args().First(), redirectorOptions...)
+					},
+				},
+			},
+		},
+	}
 	return
 }
+
 
 func run(ctx context.Context, options ...func(*Config)) error {
 	srv, err := NewServer(ctx, options...)
@@ -446,6 +474,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
 			return
 		}
+
 
 		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
 			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)

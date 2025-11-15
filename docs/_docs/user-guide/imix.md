@@ -95,6 +95,7 @@ These flags are passed to cargo build Eg.:
 `cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
 
 - `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
+- `--features http --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
 
 ### Linux
 

@@ -19,7 +19,7 @@ macro_rules! callback_uri {
     () => {
         match option_env!("IMIX_CALLBACK_URI") {
             Some(uri) => uri,
-            None => "http://127.0.0.1:80/grpc",
+            None => "http://127.0.0.1:80",
         }
     };
 }
