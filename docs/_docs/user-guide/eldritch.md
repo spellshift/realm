@@ -302,6 +302,18 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 
 The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
 
+### file.decompress
+
+`file.decompress(src: str, dst: str) -> None`
+
+The <b>file.decompress</b> method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
+
+```python
+file.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
+file.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')
+# Files will exist in /tmp/bob_ssh_output/.ssh/*
+```
+
 ### file.exists
 
 `file.exists(path: str) -> bool`
