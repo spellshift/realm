@@ -19,7 +19,7 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	slog.Info(fmt.Sprintf("[HTTP -> gRPC Streaming] Method: /c2.C2/FetchAsset, Body size: %d bytes\n", len(requestBody)))
+	slog.Debug(fmt.Sprintf("[HTTP1 -> gRPC Streaming] Method: /c2.C2/FetchAsset, Body size: %d bytes\n", len(requestBody)))
 
 	ctx, cancel := createRequestContext(streamingTimeout)
 	defer cancel()
@@ -57,7 +57,7 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 			break
 		}
 		if err != nil {
-			slog.Debug(fmt.Sprintf("[gRPC Stream Error] Failed to receive message: %v\n", err))
+			slog.Error(fmt.Sprintf("[gRPC Stream Error] Failed to receive message: %v\n", err))
 			return
 		}
 
@@ -69,19 +69,19 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		frameHeader := newFrameHeader(uint32(len(responseChunk)))
 		encodedHeader := frameHeader.Encode()
 		if _, err := w.Write(encodedHeader[:]); err != nil {
-			slog.Debug(fmt.Sprintf("[HTTP Write Error] Failed to write frame header: %v\n", err))
+			slog.Error(fmt.Sprintf("[HTTP Write Error] Failed to write frame header: %v\n", err))
 			return
 		}
 
 		if _, err := w.Write(responseChunk); err != nil {
-			slog.Debug(fmt.Sprintf("[HTTP Write Error] Failed to write chunk: %v\n", err))
+			slog.Error(fmt.Sprintf("[HTTP Write Error] Failed to write chunk: %v\n", err))
 			return
 		}
 
 		flusher.Flush()
 	}
 
-	slog.Debug(fmt.Sprintf("[gRPC -> HTTP] Streamed %d chunks, total %d bytes\n", chunkCount, totalBytes))
+	slog.Debug(fmt.Sprintf("[gRPC -> HTTP1] Streamed %d chunks, total %d bytes\n", chunkCount, totalBytes))
 }
 
 func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
@@ -89,7 +89,7 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	slog.Info(("[HTTP -> gRPC Client Streaming] Method: /c2.C2/ReportFile\n"))
+	slog.Debug(("[HTTP1 -> gRPC Client Streaming] Method: /c2.C2/ReportFile\n"))
 
 	ctx, cancel := createRequestContext(streamingTimeout)
 	defer cancel()
@@ -151,7 +151,7 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	slog.Debug(fmt.Sprintf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody)))
+	slog.Debug(fmt.Sprintf("[gRPC -> HTTP1] Response size: %d bytes\n", len(responseBody)))
 
 	setGRPCResponseHeaders(w)
 	if _, err := w.Write(responseBody); err != nil {
@@ -175,7 +175,7 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 		return
 	}
 
-	slog.Info(fmt.Sprintf("[HTTP -> gRPC] Method: %s, Body size: %d bytes\n", methodName, len(requestBody)))
+	slog.Debug(fmt.Sprintf("[HTTP1 -> gRPC] Method: %s, Body size: %d bytes\n", methodName, len(requestBody)))
 
 	ctx, cancel := createRequestContext(unaryTimeout)
 	defer cancel()
@@ -196,7 +196,7 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 		return
 	}
 
-	slog.Info(fmt.Sprintf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody)))
+	slog.Debug(fmt.Sprintf("[gRPC -> HTTP1] Response size: %d bytes\n", len(responseBody)))
 
 	setGRPCResponseHeaders(w)
 	if _, err := w.Write(responseBody); err != nil {
