@@ -16,7 +16,7 @@ Imix has compile-time configuration, that may be specified using environment var
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:80` | No |
-| IMIX_SERVER_PUBKEY | The public key for the tavern server. | - | Yes |
+| IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | - | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
@@ -91,11 +91,12 @@ Building in the dev container limits variables that might cause issues and is th
 **Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
 ## Optional build flags
+
 These flags are passed to cargo build Eg.:
 `cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
 
 - `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
-- `--features http --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
+- `--features http1 --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
 
 ### Linux
 

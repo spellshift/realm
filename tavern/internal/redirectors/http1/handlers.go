@@ -1,136 +1,13 @@
-package redirector
+package http1
 
 import (
-	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
-	"net"
 	"net/http"
-	"net/url"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/encoding"
 )
-
-// Config holds configuration for the HTTP redirector
-type Config struct {
-	srv *http.Server
-}
-
-// SetServer sets the HTTP server configuration
-func (c *Config) SetServer(srv *http.Server) {
-	c.srv = srv
-}
-
-// RawCodec passes through raw bytes without marshaling/unmarshaling
-type RawCodec struct{}
-
-func (RawCodec) Marshal(v any) ([]byte, error) {
-	if b, ok := v.([]byte); ok {
-		return b, nil
-	}
-	return nil, fmt.Errorf("failed to marshal, message is %T", v)
-}
-
-func (RawCodec) Unmarshal(data []byte, v any) error {
-	if b, ok := v.(*[]byte); ok {
-		*b = data
-		return nil
-	}
-	return fmt.Errorf("failed to unmarshal, message is %T", v)
-}
-
-func (RawCodec) Name() string {
-	return "raw"
-}
-
-func init() {
-	encoding.RegisterCodec(RawCodec{})
-}
-
-// HTTPRedirectorRun starts an HTTP/1.1 to gRPC proxy/redirector
-func HTTPRedirectorRun(ctx context.Context, upstream string, options ...func(*Config)) error {
-	// Initialize Config
-	cfg := &Config{}
-	for _, opt := range options {
-		opt(cfg)
-	}
-
-	// Parse host:port to determine if TLS should be used
-	url, err := url.Parse(upstream)
-	if err != nil {
-		return fmt.Errorf("failed to parse upstream address: %v", err)
-	}
-
-	tc := credentials.NewTLS(&tls.Config{})
-	port := url.Port()
-	if port == "" {
-		port = "443"
-		if(url.Scheme == "http") {
-			port = "80"
-			tc = insecure.NewCredentials()
-		}
-	}
-
-
-	conn, err := grpc.NewClient(
-		url.Host,
-		grpc.WithTransportCredentials(tc),
-		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
-			// Resolve using IPv4 only (A records, not AAAA records)
-			ips, err := net.DefaultResolver.LookupIP(ctx, "ip4", url.Hostname())
-			if err != nil {
-				return nil, err
-			}
-			if len(ips) == 0 {
-				return nil, fmt.Errorf("no IPv4 addresses found for %s", url.Hostname())
-			}
-
-			// Force IPv4 by using "tcp4" instead of "tcp"
-			dialer := &net.Dialer{}
-			tcpConn, err := dialer.DialContext(ctx, "tcp4", net.JoinHostPort(ips[0].String(), port))
-			if err != nil {
-				return nil, err
-			}
-
-			return tcpConn, nil
-		}),
-
-	)
-	if err != nil {
-		log.Fatalf("Failed to connect to gRPC server: %v", err)
-	}
-	defer conn.Close()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/c2.C2/FetchAsset", func(w http.ResponseWriter, r *http.Request) {
-		handleFetchAssetStreaming(w, r, conn)
-	})
-	mux.HandleFunc("/c2.C2/ReportFile", func(w http.ResponseWriter, r *http.Request) {
-		handleReportFileStreaming(w, r, conn)
-	})
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handleHTTPRequest(w, r, conn)
-	})
-
-	server := &http.Server{
-		Addr:    cfg.srv.Addr,
-		Handler: mux,
-	}
-
-
-	slog.Info(fmt.Sprintf("HTTP/1.1 proxy listening on %s, forwarding to gRPC server at %s\n", server.Addr, upstream))
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("Failed to start HTTP server: %v", err)
-	}
-
-	return nil
-}
 
 func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
 	if !requirePOST(w, r) {
@@ -189,7 +66,7 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		slog.Debug(fmt.Sprintf("[gRPC Stream] Received chunk %d: %d bytes\n", chunkCount, len(responseChunk)))
 
 		// Write gRPC frame header
-		frameHeader := NewFrameHeader(uint32(len(responseChunk)))
+		frameHeader := newFrameHeader(uint32(len(responseChunk)))
 		encodedHeader := frameHeader.Encode()
 		if _, err := w.Write(encodedHeader[:]); err != nil {
 			slog.Debug(fmt.Sprintf("[HTTP Write Error] Failed to write frame header: %v\n", err))
@@ -235,7 +112,7 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 
 		// Process complete gRPC frames from buffer
 		for {
-			header, message, remaining, ok := ExtractFrame(buffer)
+			header, message, remaining, ok := extractFrame(buffer)
 			if !ok {
 				break
 			}
@@ -319,7 +196,7 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 		return
 	}
 
-	slog.Debug(fmt.Sprintf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody)))
+	slog.Info(fmt.Sprintf("[gRPC -> HTTP] Response size: %d bytes\n", len(responseBody)))
 
 	setGRPCResponseHeaders(w)
 	if _, err := w.Write(responseBody); err != nil {

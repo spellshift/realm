@@ -1,4 +1,4 @@
-package redirector
+package http1
 
 import (
 	"context"

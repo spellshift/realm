@@ -1,4 +1,4 @@
-package redirector
+package http1
 
 import (
 	"testing"
@@ -63,10 +63,10 @@ func TestCreateStreamWithContext(t *testing.T) {
 // TestStreamConfigProperties tests properties of stream configurations
 func TestStreamConfigProperties(t *testing.T) {
 	configs := []struct {
-		name           string
-		cfg            streamConfig
-		expectServer   bool
-		expectClient   bool
+		name         string
+		cfg          streamConfig
+		expectServer bool
+		expectClient bool
 	}{
 		{"FetchAsset", fetchAssetStream, true, false},
 		{"ReportFile", reportFileStream, false, true},
