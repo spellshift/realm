@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/redirectors"
@@ -29,6 +30,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 	s := grpc.NewServer(
 		grpc.UnknownServiceHandler(r.handler(upstream)),
+		grpc.ForceServerCodec(encoding.GetCodec("raw")),
 	)
 
 	go func() {
