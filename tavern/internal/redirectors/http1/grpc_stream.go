@@ -1,4 +1,4 @@
-package redirector
+package http1
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 // streamConfig represents gRPC stream configuration
 type streamConfig struct {
-	Desc grpc.StreamDesc
+	Desc       grpc.StreamDesc
 	MethodPath string
 }
 
@@ -16,11 +16,11 @@ type streamConfig struct {
 var (
 	fetchAssetStream = streamConfig{
 		Desc: grpc.StreamDesc{
-			StreamName: "FetchAsset",
+			StreamName:    "FetchAsset",
 			ServerStreams: true,
 			ClientStreams: false,
 		},
-		MethodPath:    "/c2.C2/FetchAsset",
+		MethodPath: "/c2.C2/FetchAsset",
 	}
 
 	reportFileStream = streamConfig{
@@ -29,7 +29,7 @@ var (
 			ServerStreams: false,
 			ClientStreams: true,
 		},
-		MethodPath:    "/c2.C2/ReportFile",
+		MethodPath: "/c2.C2/ReportFile",
 	}
 )
 

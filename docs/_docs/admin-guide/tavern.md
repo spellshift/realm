@@ -110,7 +110,7 @@ By default Tavern only supports GRPC connections directly to the server. To Enab
 
 ### Webserver
 
-By default, Tavern will listen on `0.0.0.0:80`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
+By default, Tavern will listen on `0.0.0.0:8000`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
 
 ### Metrics
 
@@ -119,7 +119,7 @@ By default, Tavern does not export metrics. You may use the below environment co
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | ENABLE_METRICS | Set to any value to enable the "/metrics" endpoint. | Disabled | No |
-| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8080` | No |
+| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8000` | No |
 
 ### Secrets
 
@@ -236,7 +236,7 @@ func main() {
  defer cancel()
 
  // Setup your Tavern URL (e.g. from env vars)
- tavernURL := "http://127.0.0.1"
+ tavernURL := "http://127.0.0.1:8000"
 
  // Configure Browser (uses the default system browser)
  browser := auth.BrowserFunc(browser.OpenURL)
@@ -280,7 +280,7 @@ Running Tavern with the `DISABLE_DEFAULT_TOMES` environment variable set will di
 
 ```sh
 DISABLE_DEFAULT_TOMES=1 go run ./tavern
-2024/03/02 01:32:22 [WARN] No value for 'HTTP_LISTEN_ADDR' provided, defaulting to 0.0.0.0:80
+2024/03/02 01:32:22 [WARN] No value for 'HTTP_LISTEN_ADDR' provided, defaulting to 0.0.0.0:8000
 2024/03/02 01:32:22 [WARN] MySQL is not configured, using SQLite
 2024/03/02 01:32:22 [WARN] OAuth is not configured, authentication disabled
 2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_IDLE_CONNS' provided, defaulting to 10

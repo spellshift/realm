@@ -34,46 +34,82 @@ import (
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
-	"realm.pub/tavern/internal/redirector"
+	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
+
+	_ "realm.pub/tavern/internal/redirectors/http1"
 )
 
 func init() {
 	configureLogging()
 }
 
-func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
+func newApp(ctx context.Context) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "tavern"
 	app.Description = "Teamserver implementation for Realm, see https://docs.realm.pub for more details"
 	app.Usage = "Time for an Adventure!"
 	app.Version = Version
-	app.Action = cli.ActionFunc(func(*cli.Context) error {
-		return run(ctx, options...)
-	})
+	app.Action = func(c *cli.Context) error {
+		return runTavern(
+			ctx,
+			ConfigureHTTPServerFromEnv(),
+			ConfigureMySQLFromEnv(),
+			ConfigureOAuthFromEnv("/oauth/authorize"),
+		)
+	}
 	app.Commands = []cli.Command{
 		{
-			Name: "redirector",
-			Usage: "Run a redirector connecting agents using a specific transport to the server",
-			Subcommands: []cli.Command{
-				{
-					Name: "http1",
-					Usage: "Run an HTTP/1.1 redirector",
-					Action: func(cCtx *cli.Context) error {
-						// Convert main.Config options to redirector.Config options
-						redirectorOptions := []func(*redirector.Config){
-							func(cfg *redirector.Config) {
-								// Apply main Config to get server settings
-								mainCfg := &Config{}
-								for _, opt := range options {
-									opt(mainCfg)
-								}
-								cfg.SetServer(mainCfg.srv)
-							},
+			Name:      "redirector",
+			Usage:     "Run a redirector connecting agents using a specific transport to the server",
+			ArgsUsage: "[upstream_address]",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "listen",
+					Usage: "Address to listen on for incoming redirector traffic (default: :8080)",
+					Value: ":8080",
+				},
+				cli.StringFlag{
+					Name:  "transport",
+					Usage: "Transport protocol to use for redirector (default: http1)",
+					Value: "http1",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					upstream  = c.Args().First()
+					listenOn  = c.String("listen")
+					transport = c.String("transport")
+				)
+				if upstream == "" {
+					return fmt.Errorf("gRPC upstream address is required (first argument)")
+				}
+				if listenOn == "" {
+					listenOn = ":8080"
+				}
+				if transport == "" {
+					transport = "http1"
+				}
+				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn)
+				return redirectors.Run(ctx, transport, listenOn, upstream)
+			},
+			Subcommands: cli.Commands{
+				cli.Command{
+					Name:  "list",
+					Usage: "List available redirectors",
+					Action: func(c *cli.Context) error {
+						redirectorNames := redirectors.List()
+						if len(redirectorNames) == 0 {
+							fmt.Println("No redirectors registered")
+							return nil
 						}
-						return redirector.HTTPRedirectorRun(ctx, cCtx.Args().First(), redirectorOptions...)
+						fmt.Println("Available redirectors:")
+						for _, name := range redirectorNames {
+							fmt.Printf("- %s\n", name)
+						}
+						return nil
 					},
 				},
 			},
@@ -82,8 +118,7 @@ func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
 	return
 }
 
-
-func run(ctx context.Context, options ...func(*Config)) error {
+func runTavern(ctx context.Context, options ...func(*Config)) error {
 	srv, err := NewServer(ctx, options...)
 	if err != nil {
 		return err
@@ -474,7 +509,6 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
 			return
 		}
-
 
 		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
 			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
