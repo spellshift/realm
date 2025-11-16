@@ -903,20 +903,22 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
 
 ```json
 [
-    {
-        "name": "eth0",
-        "ips": [
-            "172.17.0.2/24"
-        ],
-        "mac": "02:42:ac:11:00:02"
-    },
-    {
-        "name": "lo",
-        "ips": [
-            "127.0.0.1/8"
-        ],
-        "mac": "00:00:00:00:00:00"
-    }
+  {
+    "name": "lo0",
+    "ip": "127.0.0.1"
+  },
+  {
+    "name": "lo0",
+    "ip": "::1"
+  },
+  {
+    "name": "en0",
+    "ip": "fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15"
+  },
+  {
+    "name": "en0",
+    "ip": "10.0.124.42"
+  }
 ]
 ```
 
