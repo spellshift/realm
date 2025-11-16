@@ -41,7 +41,7 @@ impl HostIDSelector for Registry {
         // On non‑Windows targets this selector is unavailable
         #[cfg(not(target_os = "windows"))]
         {
-            return None;
+            None
         }
 
         #[cfg(target_os = "windows")]

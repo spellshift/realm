@@ -1,3 +1,4 @@
+use assert_cmd::cargo_bin; // Find our binary
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
 use std::io::prelude::*;
@@ -5,12 +6,10 @@ use std::process::{Command, Stdio}; // Run programs
 use std::str;
 
 const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test/";
-
 // Test running `./golem ./nonexistentdir/run.tome`
 #[test]
 fn test_golem_main_file_not_found() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("golem")?;
-
+    let mut cmd = Command::new(cargo_bin!("golem"));
     cmd.arg("nonexistentdir/run.tome");
     #[cfg(target_os = "linux")]
     cmd.assert()
@@ -23,11 +22,10 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
 
     Ok(())
 }
-
 // Test running `./golem ../../bin/golem_cli_test/syntax_fail.tome`
 #[test]
 fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("golem")?;
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.tome"));
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -36,11 +34,10 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
 
     Ok(())
 }
-
 // Test running `./golem ../../bin/golem_cli_test/hello_world.tome`
 #[test]
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("golem")?;
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.tome"));
     cmd.assert()
@@ -49,11 +46,10 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
 
     Ok(())
 }
-
 // Test running `./golem ../../bin/golem_cli_test/eldritch_test.tome`
 #[test]
 fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("golem")?;
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}eldritch_test.tome"));
     cmd.assert()
@@ -62,11 +58,10 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
 
     Ok(())
 }
-
 // Test running `./golem ../../bin/golem_cli_test/eldritch_test.tome`
 #[test]
 fn test_golem_main_basic_async() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("golem")?;
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}download_test.tome"));
     cmd.assert()
@@ -74,14 +69,12 @@ fn test_golem_main_basic_async() -> anyhow::Result<()> {
         .stdout(predicate::str::contains(r#"OKAY!"#));
     Ok(())
 }
-
 // Test running `echo -e "test_var = 'hello'\nprint(test_var)" | ./golem` for interactive mode.
 // verifies that the process exits successfully. Not the output of the command.
 // The way the interactive context returns data doesn't seem to work with how Command::stdout() works.
 #[test]
 fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
-    let golem_exec = Command::cargo_bin("golem")?;
-    let golem_exec_path = golem_exec.get_program();
+    let golem_exec_path = cargo_bin!("golem");
 
     let mut child = Command::new(golem_exec_path)
         .arg("-i")
@@ -105,7 +98,7 @@ fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
 // Test running `./golem` to execute embedded scripts.
 #[test]
 fn test_golem_main_embedded_files() -> anyhow::Result<()> {
-    let mut cmd = Command::cargo_bin("golem")?;
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.assert()
         .success()
