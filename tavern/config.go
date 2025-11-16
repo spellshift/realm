@@ -44,7 +44,7 @@ var (
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
-	EnvHTTPListenAddr        = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:80"}
+	EnvHTTPListenAddr        = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:8000"}
 	EnvHTTPMetricsListenAddr = EnvString{"HTTP_METRICS_LISTEN_ADDR", "127.0.0.1:8080"}
 
 	// EnvOAuthClientID set to configure OAuth Client ID.

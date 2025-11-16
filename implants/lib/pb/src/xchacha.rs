@@ -32,6 +32,8 @@ static SERVER_PUBKEY: [u8; 32] = [
 // ------------
 
 const KEY_CACHE_SIZE: usize = 1024;
+const PUBKEY_LEN: usize = 32;
+const NONCE_LEN: usize = 24;
 
 // The client and server may have multiple connections open and they may not resolve in order or sequentially.
 // To handle this ephemeral public keys and shared secrets are stored in a hashmap key_history where they can be looked up
@@ -53,6 +55,83 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
         .get(&pub_key)
         .context("Unable to find shared secret for the public key recieved")?;
     Ok(res)
+}
+
+fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
+    // Store server pubkey
+    let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
+
+    // Generate ephemeral keys
+    let rng = rand_chacha::ChaCha20Rng::from_entropy();
+    let client_secret = EphemeralSecret::random_from_rng(rng);
+    let client_public = PublicKey::from(&client_secret);
+
+    // Generate shared secret
+    let shared_secret = client_secret.diffie_hellman(&server_public);
+    add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
+
+    // Generate nonce and cipher
+    let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
+        shared_secret.as_bytes(),
+    ));
+    let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
+
+    // Encrypt data
+    let ciphertext: Vec<u8> = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
+        Ok(ct) => ct,
+        Err(err) => {
+            #[cfg(debug_assertions)]
+            log::debug!(
+                "encode error unable to read bytes while encrypting: {:?}",
+                err
+            );
+            return Err(anyhow::anyhow!("Encryption failed: {:?}", err));
+        }
+    };
+
+    // Build result: pubkey + nonce + ciphertext
+    let mut result = Vec::new();
+    result.extend_from_slice(client_public.as_bytes());
+    result.extend_from_slice(nonce.as_slice());
+    result.extend_from_slice(&ciphertext);
+
+    Ok(result)
+}
+
+fn decrypt_impl(ct_vec: Vec<u8>) -> Result<Vec<u8>> {
+    if ct_vec.is_empty() {
+        return Ok(vec![]);
+    }
+
+    if ct_vec.len() < PUBKEY_LEN + NONCE_LEN {
+        anyhow::bail!("Message too small to contain public key and nonce");
+    }
+
+    // Extract components
+    let client_public = ct_vec
+        .get(0..PUBKEY_LEN)
+        .context("Input buffer doesn't have enough bytes for public key")?;
+
+    let nonce = ct_vec
+        .get(PUBKEY_LEN..PUBKEY_LEN + NONCE_LEN)
+        .context("Input buffer doesn't have enough bytes for nonce")?;
+
+    let ciphertext = ct_vec
+        .get(PUBKEY_LEN + NONCE_LEN..)
+        .context("Input buffer doesn't have enough bytes for ciphertext")?;
+
+    // Get private key based on messages public key
+
+    let client_private_bytes = get_key(client_public.try_into()?).map_err(from_anyhow_error)?;
+
+    let cipher =
+        chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&client_private_bytes));
+
+    let plaintext = cipher
+        .decrypt(GenericArray::from_slice(nonce), ciphertext)
+        .map_err(|e| anyhow::anyhow!("Decryption failed: {:?}", e))?;
+
+    Ok(plaintext)
 }
 
 // ------------
@@ -110,42 +189,10 @@ where
             log::debug!("DANGER can't add to the buffer.");
         }
 
-        // Store server pubkey
-        let server_public = PublicKey::from(SERVER_PUBKEY);
-
-        // Generate ephemeral keys
-        let rng = rand_chacha::ChaCha20Rng::from_entropy();
-        let client_secret = EphemeralSecret::random_from_rng(rng);
-        let client_public = PublicKey::from(&client_secret);
-
-        // Generate shared secret
-        let shared_secret = client_secret.diffie_hellman(&server_public);
-        add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
-
-        // Generate nonce
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
-            shared_secret.as_bytes(),
-        ));
-        let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
-
-        // Encrypt data
-        let pt_vec = item.encode_to_vec();
-        let ciphertext = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
-            Ok(ct) => ct,
-            Err(err) => {
-                #[cfg(debug_assertions)]
-                log::debug!(
-                    "encode error unable to read bytes while encrypting: {:?}",
-                    err
-                );
-                return Err(Status::new(tonic::Code::Internal, err.to_string()));
-            }
+        let _ = match encrypt_impl(item.encode_to_vec()) {
+            Ok(pub_nonce_ct) => buf.writer().write_all(&pub_nonce_ct),
+            Err(err) => return Err(Status::new(tonic::Code::Internal, err.to_string())),
         };
-
-        // Write pubkey + nonce + cipher text
-        buf.writer().write_all(client_public.as_bytes())?;
-        buf.writer().write_all(nonce.as_slice())?;
-        buf.writer().write_all(ciphertext.as_slice())?;
 
         Ok(())
     }
@@ -153,8 +200,6 @@ where
 
 // ---
 //
-const PUBKEY_LEN: usize = 32;
-const NONCE_LEN: usize = 24;
 
 #[derive(Debug)]
 pub struct ChachaDecrypt<T, U>(PhantomData<(T, U)>, ChaChaSvc);
@@ -193,65 +238,8 @@ where
             return Ok(item);
         }
 
-        if bytes_read < PUBKEY_LEN + NONCE_LEN {
-            let err =
-                anyhow::anyhow!("Message from server is too small to contain public key and nonce");
-            log::debug!(
-                "Input buffer from server during decode faild validation: {:?}",
-                err
-            );
-            return Err(Status::new(tonic::Code::Internal, err.to_string()));
-        }
-        let buf = bytes_in
-            .get(0..bytes_read)
-            .context("Bytes read doesn't match buffer size")
+        let plaintext = decrypt_impl(bytes_in.get(0..bytes_read).unwrap().to_vec())
             .map_err(from_anyhow_error)?;
-
-        let client_public = buf
-            .get(0..PUBKEY_LEN)
-            .context("Input buffer doesn't have enough bytes for public key")
-            .map_err(from_anyhow_error)?;
-
-        let nonce = buf
-            .get(PUBKEY_LEN..PUBKEY_LEN + NONCE_LEN)
-            .context("Input buffer doesn't have enough bytes for nonce")
-            .map_err(from_anyhow_error)?;
-
-        let ciphertext = buf
-            .get(PUBKEY_LEN + NONCE_LEN..)
-            .context("Input buffer doesn't have enough bytes for ciphertext")
-            .map_err(from_anyhow_error)?;
-
-        // Get private key based on messages public key
-        let tmp_client_public_bytes = client_public.to_vec();
-        let client_public_bytes = match tmp_client_public_bytes.try_into() {
-            Ok(arr) => arr,
-            Err(err) => {
-                #[cfg(debug_assertions)]
-                log::debug!("Unable to cast public key bytes from vector to slice during decode function: {:?}", err);
-
-                return Err(Status::new(
-                    tonic::Code::Internal,
-                    "Unable to cast public key bytes from vector to slice during decode function",
-                ));
-            }
-        };
-
-        let client_private_bytes = get_key(client_public_bytes).map_err(from_anyhow_error)?;
-
-        let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
-            &client_private_bytes,
-        ));
-
-        // Decrypt message
-        let plaintext = match cipher.decrypt(GenericArray::from_slice(nonce), ciphertext.as_ref()) {
-            Ok(pt) => pt,
-            Err(err) => {
-                #[cfg(debug_assertions)]
-                log::debug!("Error decrypting response: {:?}", err);
-                return Err(Status::new(tonic::Code::Internal, err.to_string()));
-            }
-        };
 
         // Serialize
         let item = Message::decode(bytes::Bytes::from(plaintext))
@@ -270,6 +258,28 @@ fn from_decode_error(error: prost::DecodeError) -> Status {
     // Map Protobuf parse errors to an INTERNAL status code, as per
     // https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
     Status::new(tonic::Code::Internal, error.to_string())
+}
+
+pub fn encode_with_chacha<T, U>(msg: T) -> Result<Vec<u8>>
+where
+    T: Message + Send + 'static,
+    U: Message + Default + Send + 'static,
+{
+    encrypt_impl(msg.encode_to_vec())
+}
+
+pub fn decode_with_chacha<T, U>(data: &[u8]) -> Result<U>
+where
+    T: Message + Send + 'static,
+    U: Message + Default + Send + 'static,
+{
+    // Decode protobuf
+    match decrypt_impl(data.to_vec()) {
+        Ok(plaintext) => {
+            U::decode(bytes::Bytes::from(plaintext)).context("Failed to decode protobuf message")
+        }
+        Err(err) => Err(err),
+    }
 }
 
 #[cfg(test)]
