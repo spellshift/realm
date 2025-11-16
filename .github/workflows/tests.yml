@@ -78,6 +78,13 @@ jobs:
       uses: taiki-e/install-action@v2
       with:
         tool: nextest,cargo-llvm-cov
+    - name: Setup Zig
+      uses: korandoru/setup-zig@v1
+      with:
+        zig-version: 0.16.0-dev.1326+2e6f7d36b
+    - name: Install zigbuild
+      run: |
+        cargo install cargo-zigbuild
     - name: 🔎 Run tests
       run: |
         cd ./implants/ &&
