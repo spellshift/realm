@@ -74,8 +74,8 @@ func newApp(ctx context.Context) (app *cli.App) {
 				},
 				cli.StringFlag{
 					Name:  "transport",
-					Usage: "Transport protocol to use for redirector (default: http1)",
-					Value: "http1",
+					Usage: "Transport protocol to use for redirector",
+					Value: "grpc",
 				},
 			},
 			Action: func(c *cli.Context) error {
