@@ -20,7 +20,7 @@
 		"ghcr.io/devcontainers/features/rust:1": {
 			"version": "1.87",
 			"profile": "minimal",
-			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu"
+			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,aarch64-apple-darwin,x86_64-apple-darwin"
 		},
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
@@ -53,9 +53,17 @@
 				"graphql.vscode-graphql",
 				"GraphQL.vscode-graphql-syntax",
 				"HashiCorp.terraform",
-				"rust-lang.rust-analyzer",
+				"rust-lang.rust-analyzer"
 			]
 		}
 	},
-	"remoteUser": "vscode"
+	"remoteUser": "vscode",
+	// Setup MacOS cross compilation first need to copy MacOS SDK:
+	// Rancher doesn't allow you to mount outside /tmp/ or /Users/ so we need to copy the SDK somewhere.
+	// sudo cp -r $(readlink -f $(xcrun --sdk macosx --show-sdk-path)) ~/MacOSX.sdk
+	// Uncomment the mount bellow to enable cross compilation on apple hardware.
+	// "mounts": [
+	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
+	// ],
+	"postAttachCommand": "cargo install cargo-zigbuild"
 }

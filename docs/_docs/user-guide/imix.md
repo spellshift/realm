@@ -116,18 +116,37 @@ IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x
 **MacOS does not support static compilation**
 <https://developer.apple.com/forums/thread/706419>
 
-**Cross compilation is more complicated than we'll support**
-Check out this blog a starting point for cross compiling.
-<https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html/>
+[Apple's SDK and XCode TOS](https://www.apple.com/legal/sla/docs/xcode.pdf) require compilation be performed on apple hardware. Rust doesn't support cross compiling Linux -> MacOS out of the box due to dependencies on the above SDKs. In order to cross compile you first need to make the SDK available to the runtime. Below we've documented how you can compile MacOS binaries from the Linux devcontainer.
+
+#### Setup
+Setup the MacOS SDK in a place that docker can access.
+Rancher desktop doesn't allow you to mount folders besides ~/ and /tmp/
+therefore we need to copy it into an accesible location.
+Run the following on your MacOS host:
+
+```bash
+sudo cp -r $(readlink -f $(xcrun --sdk macosx --show-sdk-path)) ~/MacOSX.sdk
+```
+
+Modify .devcontainer/devcontainer.json by uncommenting the MacOSX.sdk mount. This will expose the newly copied SDK into the container allowing cargo to link against the MacOS SDK.
+```json
+    "mounts": [
+	 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
+    ],
+```
+
+*Reopen realm in devcontainer*
+```bash
+cd realm/implants/imix
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo zigbuild  --release --target aarch64-apple-darwin
+```
+
 
 ### Windows
 
 ```bash
-rustup target add x86_64-pc-windows-gnu
-
-sudo apt update
-sudo apt install gcc-mingw-w64
-
 # Build imix
 cd realm/implants/imix/
 

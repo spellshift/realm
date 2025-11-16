@@ -3,3 +3,28 @@ rustflags = [
     "-Clink-arg=/DEBUG:NONE",
     "-C", "target-feature=+crt-static",
 ]
+
+# Make sure you've followed the insructions in `imix.md` on how to setup MacOS cross compilation.
+# Realm must be built from the devcontainer.
+
+# cargo zigbuild --target x86_64-apple-darwin
+[target.x86_64-apple-darwin]
+linker = "cargo-zigbuild"
+rustflags = [
+  "-C", "link-arg=-isysroot",
+  "-C", "link-arg=/MacOSX.sdk",
+  "-C", "link-arg=-F/MacOSX.sdk/System/Library/Frameworks",
+  "-C", "link-arg=-L/MacOSX.sdk/usr/lib",
+  "-C", "link-arg=-lresolv",
+]
+
+# cargo zigbuild --target aarch64-apple-darwin
+[target.aarch64-apple-darwin]
+linker = "cargo-zigbuild"
+rustflags = [
+  "-C", "link-arg=-isysroot",
+  "-C", "link-arg=/MacOSX.sdk",
+  "-C", "link-arg=-F/MacOSX.sdk/System/Library/Frameworks",
+  "-C", "link-arg=-L/MacOSX.sdk/usr/lib",
+  "-C", "link-arg=-lresolv",
+]
