@@ -2,7 +2,7 @@ name: Release
 
 env:
   CARGO_TERM_COLOR: always
-  IMIX_CALLBACK_URI: http://127.0.0.1
+  IMIX_CALLBACK_URI: http://127.0.0.1:8000
 
 on:
   workflow_dispatch: ~
