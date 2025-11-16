@@ -39,6 +39,7 @@ import (
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 
+	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 )
 
@@ -73,8 +74,8 @@ func newApp(ctx context.Context) (app *cli.App) {
 				},
 				cli.StringFlag{
 					Name:  "transport",
-					Usage: "Transport protocol to use for redirector (default: http1)",
-					Value: "http1",
+					Usage: "Transport protocol to use for redirector",
+					Value: "grpc",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -90,7 +91,7 @@ func newApp(ctx context.Context) (app *cli.App) {
 					listenOn = ":8080"
 				}
 				if transport == "" {
-					transport = "http1"
+					transport = "grpc"
 				}
 				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn)
 				return redirectors.Run(ctx, transport, listenOn, upstream)
