@@ -106,9 +106,12 @@ rustup target add x86_64-unknown-linux-musl
 sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
+export IMIX_CALLBACK_URI="http://localhost"
 # To get a servers pubkey:
 # curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --bin imix --target=x86_64-unknown-linux-musl
+export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
+
+cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### MacOS
@@ -137,10 +140,14 @@ Modify .devcontainer/devcontainer.json by uncommenting the MacOSX.sdk mount. Thi
 
 *Reopen realm in devcontainer*
 ```bash
-cd realm/implants/imix
+cd realm/implants/imix/
+
+export IMIX_CALLBACK_URI="http://localhost"
 # To get a servers pubkey:
 # curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo zigbuild  --release --target aarch64-apple-darwin
+export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
+
+cargo zigbuild  --release --target aarch64-apple-darwin
 ```
 
 
@@ -150,13 +157,15 @@ IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo zigbuild  --release --target aarch64-
 # Build imix
 cd realm/implants/imix/
 
+export IMIX_CALLBACK_URI="http://localhost"
 # To get a servers pubkey:
 # curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 # Build imix.exe
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --target=x86_64-pc-windows-gnu
+ cargo build --release --target=x86_64-pc-windows-gnu
 # Build imix.svc.exe
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --features win_service --target=x86_64-pc-windows-gnu
+cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
-IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>" cargo build --release --lib --target=x86_64-pc-windows-gnu
+cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```
