@@ -36,7 +36,7 @@ macro_rules! proxy_uri {
 
 /*
  * Compile-time constant for the agent callback URI, derived from the IMIX_CALLBACK_URI environment variable during compilation.
- * Defaults to "http://127.0.0.1:80/grpc" if this is unset.
+ * Defaults to "http://127.0.0.1:8000/grpc" if this is unset.
  */
 pub const CALLBACK_URI: &str = callback_uri!();
 

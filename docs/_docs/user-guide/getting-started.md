@@ -67,7 +67,7 @@ These configurations can be controlled via Environment Variables at `imix` compi
 
 ### Quests
 
-Now it's time to provide our [Beacon](/user-guide/terminology#beacon) it's first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:80/](http://127.0.0.1:80/).
+Now it's time to provide our [Beacon](/user-guide/terminology#beacon) it's first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 #### Beacon Selection
 

@@ -236,7 +236,7 @@ func main() {
  defer cancel()
 
  // Setup your Tavern URL (e.g. from env vars)
- tavernURL := "http://127.0.0.1"
+ tavernURL := "http://127.0.0.1:8000"
 
  // Configure Browser (uses the default system browser)
  browser := auth.BrowserFunc(browser.OpenURL)
