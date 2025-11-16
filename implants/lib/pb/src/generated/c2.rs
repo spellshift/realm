@@ -403,6 +403,7 @@ pub mod c2_client {
         /// Providing content of the file is optional. If content is provided:
         ///   - Hash will automatically be calculated and the provided hash will be ignored.
         ///   - Size will automatically be calculated and the provided size will be ignored.
+        ///
         /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
         /// Any existing files at the provided path for the host are replaced.
         pub async fn report_file(

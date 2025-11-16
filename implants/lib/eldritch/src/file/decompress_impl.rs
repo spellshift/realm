@@ -76,7 +76,7 @@ mod tests {
             .unwrap()
             .to_string();
 
-        let test_data = vec!["Hello", "World", "Goodbye"];
+        let test_data = ["Hello", "World", "Goodbye"];
 
         for (i, v) in test_data.iter().enumerate() {
             let tmp_file_path = tmp_dir_src.path().join(format!("{}.txt", i));
