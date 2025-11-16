@@ -8,7 +8,7 @@ rustflags = [
 # Realm must be built from the devcontainer.
 
 # cargo zigbuild --target x86_64-apple-darwin
-[target.x86_64-apple-darwin]
+[target.'cfg(all(target_os= "x86_64-apple-darwin", host_os != "macos"))']
 linker = "cargo-zigbuild"
 rustflags = [
   "-C", "link-arg=-isysroot",
@@ -19,7 +19,7 @@ rustflags = [
 ]
 
 # cargo zigbuild --target aarch64-apple-darwin
-[target.aarch64-apple-darwin]
+[target.'cfg(all(target_os= "aarch64-apple-darwin", host_os != "macos"))']
 linker = "cargo-zigbuild"
 rustflags = [
   "-C", "link-arg=-isysroot",
