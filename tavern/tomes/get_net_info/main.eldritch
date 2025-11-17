@@ -17,11 +17,11 @@ def print_table(rows: list[list]):
 
 def ifconfig():
     print("HOSTNAME " + sys.hostname())
-    rows = [["IFACE", "IP", "MAC"]]
+    rows = [["IFACE", "IP"]]
     ip_res = sys.get_ip()
     for interface in ip_res:
-        for ip in interface['ips']:
-            rows.append([interface['name'], ip, interface['mac']])
+        rows.append([interface['name'], interface['ip']])
+
     print_table(rows)
 
 
