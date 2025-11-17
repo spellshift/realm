@@ -142,7 +142,8 @@ Modify .devcontainer/devcontainer.json by uncommenting the MacOSX.sdk mount. Thi
 *Reopen realm in devcontainer*
 ```bash
 cd realm/implants/imix/
-
+# Tell the linker to use the MacOSX.sdk
+export RUSTFLAGS="-Clink-arg=-isysroot -Clink-arg=/MacOSX.sdk -Clink-arg=-F/MacOSX.sdk/System/Library/Frameworks -Clink-arg=-L/MacOSX.sdk/usr/lib -Clink-arg=-lresolv"
 export IMIX_CALLBACK_URI="http://localhost"
 # To get a servers pubkey:
 # curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
