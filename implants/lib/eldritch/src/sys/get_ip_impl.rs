@@ -19,7 +19,7 @@ fn create_dict_from_interface(starlark_heap: &Heap, name: String, ip: IpAddr) ->
 }
 
 pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict>> {
-    let network_interfaces = list_afinet_netifas().unwrap();
+    let network_interfaces = list_afinet_netifas()?;
 
     let mut final_res: Vec<Dict> = Vec::new();
     for (name, ip) in network_interfaces.iter() {
