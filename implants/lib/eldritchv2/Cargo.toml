@@ -1,0 +1,14 @@
+[package]
+name = "eldritchv2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[lib]
+name = "eldritchv2"
+path = "src/lib.rs"
+
+[[bin]]
+name = "repl"
+path = "bin/repl.rs"
