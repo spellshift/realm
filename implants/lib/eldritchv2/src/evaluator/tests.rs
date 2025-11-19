@@ -27,3 +27,14 @@ fn test_eval_if_statement() {
     let result = eval("if true:\n    return 5\n").unwrap();
     assert_eq!(result, Object::Integer(5));
 }
+
+#[test]
+fn test_eval_simple_fn() {
+    let input = r"
+def myfunc():
+    return 5
+return myfunc()
+    ";
+    let result = eval(input).unwrap();
+    assert_eq!(result, Object::Integer(5));
+}
