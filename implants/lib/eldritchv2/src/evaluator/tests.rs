@@ -1,9 +1,29 @@
-extern crate std;
+use super::*;
+use crate::lexer::Lexer;
+use crate::parser::Parser;
 
-// TODO: Add evaluator tests here!
+fn eval(input: &str) -> Option<Object> {
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut evaluator = Evaluator::new();
+    evaluator.eval_program(&program)
+}
 
-// This test can be helpful to determine if we can run any tests at all.
 #[test]
-fn test_always_pass() {
-    assert_eq!(2 + 2, 4);
+fn test_eval_integer_expression() {
+    let result = eval("5\n").unwrap();
+    assert_eq!(result, Object::Integer(5));
+}
+
+#[test]
+fn test_eval_return_statement() {
+    let result = eval("return 5\n").unwrap();
+    assert_eq!(result, Object::Integer(5));
+}
+
+#[test]
+fn test_eval_if_statement() {
+    let result = eval("if true:\n    return 5\n").unwrap();
+    assert_eq!(result, Object::Integer(5));
 }

@@ -85,6 +85,7 @@ def a_user_defined_func(param1, param2):
         Token::Identifier("false".to_string()),
         Token::Outdent,
         Token::Outdent,
+            Token::Eof,
     ];
     assert_eq!(tokens, expected_tokens);
 }
@@ -103,6 +104,7 @@ if true:
         Token::Return,
         Token::Int(1),
         Token::Outdent,
+            Token::Eof,
     ];
     assert_eq!(tokens, expected);
 }
@@ -126,6 +128,7 @@ def f():
         Token::Identifier("pass".to_string()),
         Token::Outdent,
         Token::Outdent,
+            Token::Eof,
     ];
     assert_eq!(tokens, expected);
 }
