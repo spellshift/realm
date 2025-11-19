@@ -291,7 +291,7 @@ impl<'a> Lexer<'a> {
                 self.token_buffer.reverse();
                 return self.token_buffer.pop();
             }
-            None
+            Some(Token::Eof)
         }
     }
 }
