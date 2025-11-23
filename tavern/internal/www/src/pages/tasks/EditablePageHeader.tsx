@@ -1,16 +1,19 @@
-import { ApolloError } from "@apollo/client";
 import { FC } from "react";
 import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
 import Breadcrumbs from "../../components/Breadcrumbs";
-import PageHeader from "../../components/tavern-base-ui/PageHeader";
+import { useParams } from "react-router-dom";
+import { GET_QUEST_BY_ID_QUERY } from "../../utils/queries";
+import { useQuery } from "@apollo/client";
 
-type EditablePageHeaderProps = {
-    questId?: string;
-    data: any;
-    error?: ApolloError | undefined;
-    loading: boolean;
-}
-export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data }) => {
+export const EditablePageHeader: FC = () => {
+    const { questId } = useParams();
+    const { data } = useQuery(GET_QUEST_BY_ID_QUERY, {
+        variables: {
+            "where": {
+                "id": questId
+            }
+        }
+    });
 
     const questsName = data?.quests?.edges[0]?.node?.name || questId;
 
@@ -39,7 +42,6 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data 
                     />
                 }
             </div>
-            <PageHeader title={data?.quests?.edges[0]?.node?.name || questId} />
         </div>
     );
 };

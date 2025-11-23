@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import { useCredsTable } from "../hooks/useCredsTable";
+import { useCredsTable } from "../useCredsTable";
 import CredentialTable from "./CredentialTable";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { FormLabel, Heading, Switch } from "@chakra-ui/react";

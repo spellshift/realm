@@ -11,7 +11,6 @@ import { useLocation } from "react-router-dom";
 
 const QuestForm = () => {
     const location = useLocation();
-    //the data here will be an object since an object was
     const data = location.state;
     const [currStep, setCurrStep] = useState<number>(data?.step || 0);
     const { submitQuest } = useSubmitQuest();

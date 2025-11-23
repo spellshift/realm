@@ -19,6 +19,7 @@ import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
 import { AdminPortal } from "./pages/admin";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
+import { FilterProvider } from "./context/FilterContext";
 
 
 const router = createBrowserRouter([
@@ -75,7 +76,9 @@ export const App = () => {
       <AuthorizationContextProvider>
         <TagContextProvider>
           <UserPreferencesContextProvider>
-            <RouterProvider router={router} />
+            <FilterProvider>
+              <RouterProvider router={router} />
+            </FilterProvider>
           </UserPreferencesContextProvider>
         </TagContextProvider>
       </AuthorizationContextProvider>

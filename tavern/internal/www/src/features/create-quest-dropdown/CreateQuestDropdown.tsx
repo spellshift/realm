@@ -33,7 +33,7 @@ export const CreateQuestDropdown = ({
                 <Menu.Button className="inline-flex w-full justify-center">
                     {showLabel ?
                         <Button
-                            buttonStyle={{ color: 'gray', size: "md" }}
+                            buttonStyle={{ color: 'purple', size: "md" }}
                             rightIcon={<ChevronDownIcon
                                 className="h-5 w-5"
                                 aria-hidden="true"
