@@ -18,7 +18,7 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
                 }]} />
                 <div>
                     <Button
-                        buttonStyle={{ color: "gray", "size": "md" }}
+                        buttonStyle={{ color: "purple", "size": "md" }}
                         leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />}
                         onClick={() => setOpen(true)}
                     >

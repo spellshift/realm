@@ -7,24 +7,25 @@ import Table from "../../../components/tavern-base-ui/Table";
 import { QuestTableRowType } from "../../../utils/consts";
 import UserImageAndName from "../../../components/UserImageAndName";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import { useFilters } from "../../../context/FilterContext";
 
 
 
 type Props = {
     quests: Array<QuestTableRowType>;
-    filtersSelected: Array<any>;
 }
 export const QuestTable = (props: Props) => {
-    const { quests, filtersSelected } = props;
+    const { filters } = useFilters();
+    const { quests } = props;
     const navigate = useNavigate();
 
     const currentDate = new Date();
 
     const onToggle = useCallback((row: any) => {
         navigate(`/tasks/${row?.original?.node?.id}`, {
-            state: filtersSelected
+            state: filters
         })
-    }, [filtersSelected, navigate]);
+    }, [filters, navigate]);
 
     const columns: ColumnDef<any>[] = [
         {

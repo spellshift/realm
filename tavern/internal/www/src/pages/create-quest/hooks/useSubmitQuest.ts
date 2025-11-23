@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreateQuestProps } from "../../../utils/consts";
 import { GET_QUEST_QUERY } from "../../../utils/queries";
+import { useFilters } from "../../../context/FilterContext";
 
 export const useSubmitQuest = () => {
+    const { updateFilters } = useFilters();
     const [error, setError] = useState(false);
     const navigate = useNavigate();
 
@@ -24,6 +26,7 @@ export const useSubmitQuest = () => {
     }
 
     const handleOnCompleted = (result: any) => {
+        updateFilters({'filtersEnabled': false});
         navigate(`/tasks/${result?.createQuest?.id}`);
     }
 

@@ -1,14 +1,16 @@
 import { SearchIcon } from "@chakra-ui/icons";
-import { Heading, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
+import { Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
 import { debounce } from "lodash"
 
 type Props = {
     placeholder: string;
+    defaultValue?: string;
     setSearch: (args: string) => void;
+    isDisabled?: boolean;
 }
 const FreeTextSearch = (props: Props) => {
-    const { placeholder, setSearch } = props;
+    const { placeholder, defaultValue, setSearch, isDisabled } = props;
 
     const debouncedSearch = useRef(
         debounce(async (criteria) => {
@@ -27,13 +29,13 @@ const FreeTextSearch = (props: Props) => {
     }, [debouncedSearch]);
 
     return (
-        <div className="flex-1 gap-1">
-            <Heading size="sm" mb={2}> {placeholder}</Heading>
+        <div className="flex flex-col gap-1">
+            <label className="text-gray-700"> {placeholder}</label>
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
                     <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input type='text' placeholder={placeholder} onChange={handleChange} />
+                <Input type='text' defaultValue={defaultValue} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
             </InputGroup>
         </div>
     );

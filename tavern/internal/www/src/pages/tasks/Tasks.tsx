@@ -4,13 +4,12 @@ import { PageWrapper } from "../../features/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enums";
-import FilterBar from "../../components/FilterBar";
 import { useTasks } from "../../hooks/useTasks";
 import { Task } from "../../utils/consts";
 import { EditablePageHeader } from "./EditablePageHeader";
-import { useQuests } from "../../hooks/useQuests";
 import Button from "../../components/tavern-base-ui/button/Button";
 import TaskCard from "../../features/task-card/TaskCard";
+import FilterControls, { FilterPageType } from "../../components/filter-controls";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -19,31 +18,21 @@ const Tasks = () => {
         data,
         loading,
         error,
-        setSearch,
-        setFiltersSelected,
-        filtersSelected,
         updateTaskList,
         page,
         setPage
     } = useTasks(pageType, questId);
 
-    const {
-        data: questData,
-        loading: questLoading,
-        error: questError,
-        setFiltersSelected: setQuestFiltersSelected
-    } = useQuests(false, questId);
-
-    const handleFilterSelected = (filtersSelected: Array<any>) => {
-        setFiltersSelected(filtersSelected);
-        setQuestFiltersSelected(filtersSelected);
-    }
-
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
-            <EditablePageHeader questId={questId} data={questData} loading={questLoading} error={questError} />
-            <div className="bg-white rounded-lg mt-2">
-                <FilterBar setSearch={setSearch} filtersSelected={filtersSelected} setFiltersSelected={handleFilterSelected} />
+            <EditablePageHeader />
+            <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">{data?.tasks?.edges[0]?.node?.quest.name || questId}</h3>
+                <div className="flex flex-row justify-end">
+                    {/* Sorting not added yet */}
+                    {/* <Button leftIcon={<Bars3BottomLeftIcon className="w-4" />} buttonVariant="ghost" buttonStyle={{ color: 'gray', size: "md" }} onClick={() => console.log("hi")}>Sort</Button> */}
+                    <FilterControls type={FilterPageType.TASK} />
+                </div>
             </div>
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />
@@ -66,7 +55,7 @@ const Tasks = () => {
                         <EmptyState label="No data found" details="Try creating a new quest or adjusting filters." type={EmptyStateType.noData}>
                             <Link to="/createQuest">
                                 <Button
-                                    buttonStyle={{ color: "gray", "size": "md" }}
+                                    buttonStyle={{ color: "purple", "size": "md" }}
                                     type="button"
                                 >
                                     Create new quest

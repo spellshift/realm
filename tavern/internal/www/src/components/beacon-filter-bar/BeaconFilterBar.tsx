@@ -1,5 +1,4 @@
 import React from "react";
-import { Heading } from "@chakra-ui/react";
 import Select, { createFilter, } from "react-select"
 import { BeaconType, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
@@ -11,11 +10,13 @@ type Props = {
     services: Array<TomeTag>;
     hosts: Array<HostType>;
     filtersSelected?: any;
+    initialFilters?: any;
+    isDisabled?: boolean;
 }
 export const BeaconFilterBar = (props: Props) => {
     // TODO add host to filter
 
-    const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected } = props;
+    const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected, isDisabled, initialFilters } = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
 
     // TODO: IN the future lets style things purple
@@ -109,9 +110,10 @@ export const BeaconFilterBar = (props: Props) => {
     };
 
     return (
-        <div>
-            <Heading size="sm" mb={2}> Filter by platform, service, group, hosts, and beacon</Heading>
+        <div className="flex flex-col gap-1">
+            <label className=" font-medium text-gray-700">Beacon fields</label>
             <Select
+                isDisabled={isDisabled}
                 isSearchable={true}
                 isMulti
                 options={getFormattedOptions(beacons, groups, services, hosts)}
@@ -121,6 +123,7 @@ export const BeaconFilterBar = (props: Props) => {
                     stringify: option => `${option.label}`,
                 })}
                 value={filtersSelected || undefined}
+                defaultValue={initialFilters || undefined}
             />
         </div>
     );
