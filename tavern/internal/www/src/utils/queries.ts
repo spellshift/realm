@@ -1,34 +1,51 @@
 import { gql } from "@apollo/client";
 
 export const GET_TAG_FILTERS = gql`
-    query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
+
+query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
         groupTags:tags(where: $groupTag) {
-            id
-            name
-            kind
-        },
-        serviceTags:tags(where: $serviceTag) {
-            id
-            name
-            kind
-        },
-        beacons {
-            id
-            name
-            principal
-            lastSeenAt
-            interval
-            host{
+            edges{
+              node{
                 id
                 name
-                primaryIP
-                platform
-                tags {
-                    id
-                    kind
-                    name
-                }
+            	kind
+              }
             }
+        },
+        serviceTags:tags(where: $serviceTag) {
+            edges{
+              node{
+                id
+                name
+            	kind
+              }
+            }
+        },
+        beacons {
+          edges{
+            node{
+              id
+              name
+              principal
+              lastSeenAt
+              interval
+              host{
+                  id
+                  name
+                  primaryIP
+                  platform
+                  tags {
+                    edges{
+                      node{
+                        id
+                        kind
+                        name
+                      }
+                    }
+                  }
+              }
+            }
+          }
         },
         hosts{
             edges{
@@ -58,40 +75,52 @@ export const GET_HOST_QUERY = gql`
             before:$before,
             orderBy: $orderBy
         ){
-            pageInfo{
+            pageInfo {
                 hasNextPage
                 hasPreviousPage
                 startCursor
                 endCursor
             }
             totalCount
-            edges{
-                node{
-                    id
-                    name
-                    primaryIP
-                    platform
-                    lastSeenAt
-                    tags{
-                        name
-                        id
-                        kind
+            edges {
+            node {
+                id
+                name
+                primaryIP
+                platform
+                lastSeenAt
+                tags {
+                    edges {
+                        node {
+                            name
+                            id
+                            kind
+                        }
                     }
-                    beacons{
-                        id
-                        name
-                        principal
-                        interval
-                        lastSeenAt
+                }
+                beacons {
+                    edges {
+                        node {
+                            id
+                            name
+                            principal
+                            interval
+                            lastSeenAt
+                        }
                     }
-                    credentials{
-                        id
+                }
+                credentials {
+                    edges {
+                        node {
+                            id
+                        }
                     }
                 }
             }
-
+            }
         }
-}`;
+    }
+`;
 
 export const GET_TOMES_QUERY = gql`
     query GetTomes($where: TomeWhereInput) {
@@ -414,34 +443,34 @@ export const GET_TASK_DETAILS_QUERY = gql`
     }
 }`
 
-export const GET_SEARCH_FILTERS = gql`
-    query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
-        groupTags:tags(where: $groupTag) {
-            label:name
-            value:id
-            id
-            name
-            kind
-        },
-        serviceTags:tags(where: $serviceTag) {
-            label:name
-            value:id
-            id
-            name
-            kind
-        },
-        beacons{
-            label:name
-            value:id
-            id
-            name
-        }
-        hosts{
-            label:name
-            value:id
-        }
-    }
-`;
+// export const GET_SEARCH_FILTERS = gql`
+//     query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
+//         groupTags:tags(where: $groupTag) {
+//             label:name
+//             value:id
+//             id
+//             name
+//             kind
+//         },
+//         serviceTags:tags(where: $serviceTag) {
+//             label:name
+//             value:id
+//             id
+//             name
+//             kind
+//         },
+//         beacons{
+//             label:name
+//             value:id
+//             id
+//             name
+//         }
+//         hosts{
+//             label:name
+//             value:id
+//         }
+//     }
+// `;
 
 export const GET_USER_QUERY = gql`
     query GetUserQuery($where: UserWhereInput){

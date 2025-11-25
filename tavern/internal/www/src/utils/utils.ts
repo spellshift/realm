@@ -1,5 +1,7 @@
 import { add } from "date-fns";
 import { BeaconType, FilterBarOption, QuestParam, TomeParams, TomeTag } from "./consts";
+import { BeaconEdge, HostNode, OnlineOfflineStatus } from "./queryInterfaces";
+import { PrincipalAdminTypes } from "./enums";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -59,10 +61,26 @@ export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
         });
 };
 
-export const getOfflineOnlineStatus = (beacons: any) : {online: number, offline: number} => {
+export const getFormatForPrincipal = (beacons: BeaconEdge[]) => {
+    const uniqueListOFPrincipals = beacons.reduce((acc: any, curr: BeaconEdge) => (acc[curr.node["principal"]] = curr, acc), {});
+    const princialUserList = Object.values(PrincipalAdminTypes) as Array<string>;
+    const finalList = [] as Array<string>;
+    for (const property in uniqueListOFPrincipals) {
+        if(princialUserList.indexOf(property) !== -1){
+            finalList.unshift(property);
+        }
+        else{
+            finalList.push(property);
+        }
+    }
+    return finalList;
+};
+
+
+export const getOfflineOnlineStatus = (beacons: BeaconEdge[]) : OnlineOfflineStatus => {
     return beacons.reduce(
-        (accumulator: any, currentValue: any) => {
-            const beaconOffline = checkIfBeaconOffline(currentValue);
+        (accumulator: OnlineOfflineStatus, currentValue: BeaconEdge) => {
+            const beaconOffline = checkIfBeaconOffline(currentValue.node);
             if (beaconOffline) {
                 accumulator.offline += 1;
             }
