@@ -62,61 +62,90 @@ func newApp(ctx context.Context) (app *cli.App) {
 		)
 	}
 	app.Commands = []cli.Command{
-		{
-			Name:      "redirector",
-			Usage:     "Run a redirector connecting agents using a specific transport to the server",
-			ArgsUsage: "[upstream_address]",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "listen",
-					Usage: "Address to listen on for incoming redirector traffic (default: :8080)",
-					Value: ":8080",
-				},
-				cli.StringFlag{
-					Name:  "transport",
-					Usage: "Transport protocol to use for redirector",
-					Value: "grpc",
-				},
+		buildRedirectorCommand(ctx),
+	}
+	return
+}
+
+// buildRedirectorCommand creates the redirector command with subcommands for each transport
+func buildRedirectorCommand(ctx context.Context) cli.Command {
+	// Build a subcommand for each registered redirector
+	allRedirectors := redirectors.GetAll()
+	subcommands := make(cli.Commands, 0, len(allRedirectors)+1)
+
+	for name, redirector := range allRedirectors {
+		redirectorName := name
+
+		// Default port varies by redirector type
+		defaultPort := ":8080"
+		if redirectorName == "dns" {
+			defaultPort = ":53"
+		}
+
+		// Start with common flags
+		flags := []cli.Flag{
+			cli.StringFlag{
+				Name:  "listen",
+				Usage: "Address to listen on for incoming redirector traffic",
+				Value: defaultPort,
 			},
+		}
+
+		// Add redirector-specific flags
+		if fp, ok := redirector.(redirectors.FlagProvider); ok {
+			flags = append(flags, fp.Flags()...)
+		}
+
+		subcommands = append(subcommands, cli.Command{
+			Name:      redirectorName,
+			Usage:     fmt.Sprintf("Run %s redirector", redirectorName),
+			ArgsUsage: "[upstream_address]",
+			Flags:     flags,
 			Action: func(c *cli.Context) error {
-				var (
-					upstream  = c.Args().First()
-					listenOn  = c.String("listen")
-					transport = c.String("transport")
-				)
+				upstream := c.Args().First()
 				if upstream == "" {
 					return fmt.Errorf("gRPC upstream address is required (first argument)")
 				}
-				if listenOn == "" {
-					listenOn = ":8080"
-				}
-				if transport == "" {
-					transport = "grpc"
-				}
-				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn)
-				return redirectors.Run(ctx, transport, listenOn, upstream)
-			},
-			Subcommands: cli.Commands{
-				cli.Command{
-					Name:  "list",
-					Usage: "List available redirectors",
-					Action: func(c *cli.Context) error {
-						redirectorNames := redirectors.List()
-						if len(redirectorNames) == 0 {
-							fmt.Println("No redirectors registered")
-							return nil
+
+				listenOn := c.String("listen")
+
+				// Build options map from CLI flags
+				opts := make(map[string]interface{})
+				for _, flag := range flags {
+					flagName := flag.GetName()
+
+					// Extract value based on flag type
+					switch flag.(type) {
+					case cli.StringFlag:
+						if val := c.String(flagName); val != "" {
+							opts[flagName] = val
 						}
-						fmt.Println("Available redirectors:")
-						for _, name := range redirectorNames {
-							fmt.Printf("- %s\n", name)
+					case cli.StringSliceFlag:
+						if val := c.StringSlice(flagName); len(val) > 0 {
+							opts[flagName] = val
 						}
-						return nil
-					},
-				},
+					case cli.IntFlag:
+						if c.IsSet(flagName) {
+							opts[flagName] = c.Int(flagName)
+						}
+					case cli.BoolFlag:
+						if c.IsSet(flagName) {
+							opts[flagName] = c.Bool(flagName)
+						}
+					}
+				}
+
+				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", redirectorName, "listen_on", listenOn)
+				return redirectors.Run(ctx, redirectorName, listenOn, upstream, opts)
 			},
-		},
+		})
 	}
-	return
+
+	return cli.Command{
+		Name:        "redirector",
+		Usage:       "Run a redirector connecting agents using a specific transport to the server",
+		Subcommands: subcommands,
+	}
 }
 
 func runTavern(ctx context.Context, options ...func(*Config)) error {

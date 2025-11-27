@@ -22,7 +22,7 @@ func init() {
 type Redirector struct{}
 
 // Redirect implements the redirectors.Redirector interface.
-func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
+func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, opts map[string]interface{}) error {
 	lis, err := net.Listen("tcp", listenOn)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)

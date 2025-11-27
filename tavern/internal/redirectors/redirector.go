@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/urfave/cli"
 	"google.golang.org/grpc"
 )
 
@@ -18,7 +19,12 @@ var (
 
 // A Redirector for traffic to an upstream gRPC server
 type Redirector interface {
-	Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error
+	Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, opts map[string]interface{}) error
+}
+
+// FlagProvider is an optional interface that redirectors can implement to provide custom CLI flags
+type FlagProvider interface {
+	Flags() []cli.Flag
 }
 
 // Register makes a Redirector available by the provided name.
@@ -42,8 +48,19 @@ func List() []string {
 	return slices.Sorted(maps.Keys(redirectors))
 }
 
+// GetAll returns all registered redirectors (for flag collection)
+func GetAll() map[string]Redirector {
+	mu.RLock()
+	defer mu.RUnlock()
+	result := make(map[string]Redirector, len(redirectors))
+	for k, v := range redirectors {
+		result[k] = v
+	}
+	return result
+}
+
 // Run starts the redirector with the given name, connecting to the specified upstream address
-func Run(ctx context.Context, name string, listenOn string, upstreamAddr string) error {
+func Run(ctx context.Context, name string, listenOn string, upstreamAddr string, opts map[string]interface{}) error {
 	// Get the Redirector
 	mu.RLock()
 	redirector, exists := redirectors[name]
@@ -64,5 +81,5 @@ func Run(ctx context.Context, name string, listenOn string, upstreamAddr string)
 	slog.DebugContext(ctx, "redirectors: connected to upstream grpc", "redirector_name", name, "upstream_addr", upstreamAddr)
 
 	// Start the redirector
-	return redirector.Redirect(ctx, listenOn, upstream)
+	return redirector.Redirect(ctx, listenOn, upstream, opts)
 }
