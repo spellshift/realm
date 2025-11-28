@@ -6,6 +6,20 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+// --- Helper Functions ---
+
+fn is_truthy(value: &Value) -> bool {
+    match value {
+        Value::None => false,
+        Value::Bool(b) => *b,
+        Value::Int(i) => *i != 0,
+        Value::String(s) => !s.is_empty(),
+        Value::List(l) => !l.borrow().is_empty(),
+        Value::Dictionary(d) => !d.borrow().is_empty(),
+        Value::Function(_) | Value::NativeFunction(_, _) => true,
+    }
+}
+
 // --- Interpreter ---
 
 pub struct Interpreter {
@@ -75,6 +89,30 @@ impl Interpreter {
                 Err(e) => Err(format!("Input error: {}", e)),
             }
         });
+
+        self.define_builtin("assert", 1, |args| {
+            if !is_truthy(&args[0]) {
+                return Err(format!(
+                    "Assertion failed: value '{:?}' is not truthy",
+                    args[0]
+                ));
+            }
+            Ok(Value::None)
+        });
+
+        self.define_builtin("assert_eq", 2, |args| {
+            if args[0] != args[1] {
+                return Err(format!(
+                    "Assertion failed: left != right\n  Left:  {:?}\n  Right: {:?}",
+                    args[0], args[1]
+                ));
+            }
+            Ok(Value::None)
+        });
+
+        self.define_builtin("fail", 1, |args| {
+            Err(format!("Test failed explicitly: {}", args[0].to_string()))
+        });
     }
 
     pub fn execute_eval(&mut self, input: &str) -> Result<Value, String> {
@@ -101,7 +139,6 @@ impl Interpreter {
         Ok(eval_interp.return_value)
     }
 
-    // Restored: Now accepts &str, parses, executes, and returns the result Value
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
         let mut lexer = Lexer::new(input.to_string());
         let tokens = lexer.scan_tokens()?;
@@ -112,11 +149,9 @@ impl Interpreter {
 
         for stmt in stmts {
             match &stmt {
-                // If it's an expression (e.g., "1+1" or "foo()"), evaluate it and track the result
                 Stmt::Expression(expr) => {
                     last_val = self.evaluate(expr)?;
                 }
-                // For other statements, execute them. If they trigger a return, handle it.
                 _ => {
                     self.execute(&stmt)?;
                     if self.should_return {
@@ -132,6 +167,29 @@ impl Interpreter {
         Ok(last_val)
     }
 
+    // --- Scope Helper ---
+
+    // Updates an existing variable in the nearest scope, or defines it in the current scope if new.
+    fn assign_variable(&mut self, name: &str, value: Value) {
+        let mut env_opt = Some(Rc::clone(&self.env));
+        let mut target_env = None;
+
+        // Traverse up to find if the variable already exists
+        while let Some(env) = env_opt {
+            if env.borrow().values.contains_key(name) {
+                target_env = Some(env.clone());
+                break;
+            }
+            env_opt = env.borrow().parent.clone();
+        }
+
+        if let Some(env) = target_env {
+            env.borrow_mut().values.insert(name.to_string(), value);
+        } else {
+            self.env.borrow_mut().values.insert(name.to_string(), value);
+        }
+    }
+
     // --- Execution Logic ---
 
     fn execute(&mut self, stmt: &Stmt) -> Result<(), String> {
@@ -145,14 +203,16 @@ impl Interpreter {
             }
             Stmt::Assignment(name, expr) => {
                 let value = self.evaluate(expr)?;
-                self.env.borrow_mut().values.insert(name.clone(), value);
+                self.assign_variable(name, value);
             }
             Stmt::If(condition, then_branch, else_branch) => {
                 let eval_cond = &self.evaluate(condition)?;
-                if self.is_truthy(eval_cond) {
-                    self.execute_block(then_branch)?;
+                if is_truthy(eval_cond) {
+                    // FIX: Execute in current scope, do not create new scope
+                    self.execute_stmts(then_branch)?;
                 } else if let Some(else_stmts) = else_branch {
-                    self.execute_block(else_stmts)?;
+                    // FIX: Execute in current scope
+                    self.execute_stmts(else_stmts)?;
                 }
             }
             Stmt::Return(expr) => {
@@ -185,20 +245,11 @@ impl Interpreter {
                 let list = list_rc.borrow();
 
                 for item in list.iter() {
-                    let loop_env = Rc::new(RefCell::new(Environment {
-                        parent: Some(Rc::clone(&self.env)),
-                        values: HashMap::new(),
-                    }));
+                    // FIX: Do not create a new environment for the loop.
+                    // Assign loop variable in the current scope.
+                    self.assign_variable(ident, item.clone());
 
-                    loop_env
-                        .borrow_mut()
-                        .values
-                        .insert(ident.clone(), item.clone());
-
-                    let original_env = Rc::clone(&self.env);
-                    self.env = loop_env;
-                    self.execute_block(body)?;
-                    self.env = original_env;
+                    self.execute_stmts(body)?;
 
                     if self.should_return {
                         return Ok(());
@@ -209,23 +260,14 @@ impl Interpreter {
         Ok(())
     }
 
-    fn execute_block(&mut self, stmts: &[Stmt]) -> Result<(), String> {
-        let env = Rc::new(RefCell::new(Environment {
-            parent: Some(Rc::clone(&self.env)),
-            values: HashMap::new(),
-        }));
-
-        let original_env = Rc::clone(&self.env);
-        self.env = env;
-
+    // New helper: executes a list of statements in the *current* environment
+    fn execute_stmts(&mut self, stmts: &[Stmt]) -> Result<(), String> {
         for stmt in stmts {
             self.execute(stmt)?;
             if self.should_return {
                 break;
             }
         }
-
-        self.env = original_env;
         Ok(())
     }
 
@@ -239,7 +281,7 @@ impl Interpreter {
             Expr::Call(callee, args) => self.call_function(callee, args),
             Expr::List(elements) => self.evaluate_list_literal(elements),
             Expr::Dictionary(entries) => self.evaluate_dict_literal(entries),
-            Expr::Index(obj, index) => self.evaluate_index(obj, index), // New evaluation call
+            Expr::Index(obj, index) => self.evaluate_index(obj, index),
             Expr::FString(segments) => self.evaluate_fstring(segments),
         }
     }
@@ -395,10 +437,18 @@ impl Interpreter {
         match (a, op.clone(), b) {
             (a, Token::Eq, b) => Ok(Value::Bool(a == b)),
             (a, Token::NotEq, b) => Ok(Value::Bool(a != b)),
+            (Value::Int(a), Token::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
+            (Value::Int(a), Token::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
+
             (Value::Int(a), Token::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Token::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Token::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
-            (Value::Int(a), Token::Slash, Value::Int(b)) => Ok(Value::Int(a / b)),
+            (Value::Int(a), Token::Slash, Value::Int(b)) => {
+                if b == 0 {
+                    return Err("attempt to divide by zero".to_string());
+                }
+                Ok(Value::Int(a / b))
+            }
             (Value::String(a), Token::Plus, Value::String(b)) => Ok(Value::String(a + &b)),
             _ => Err(format!(
                 "Unsupported binary operation: {:?} {:?} {:?}",
@@ -410,15 +460,7 @@ impl Interpreter {
     }
 
     fn is_truthy(&self, value: &Value) -> bool {
-        match value {
-            Value::None => false,
-            Value::Bool(b) => *b,
-            Value::Int(i) => *i != 0,
-            Value::String(s) => !s.is_empty(),
-            Value::List(l) => !l.borrow().is_empty(),
-            Value::Dictionary(d) => !d.borrow().is_empty(),
-            Value::Function(_) | Value::NativeFunction(_, _) => true,
-        }
+        is_truthy(value)
     }
 }
 

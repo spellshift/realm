@@ -311,6 +311,8 @@ impl Lexer {
             '}' => Ok(self.add_token(Token::RBrace)),
             ',' => Ok(self.add_token(Token::Comma)),
             ':' => Ok(self.add_token(Token::Colon)),
+            // FIX: Add Semicolon support, treating it as a Newline token
+            ';' => Ok(self.add_token(Token::Newline)),
             '+' => Ok(self.add_token(Token::Plus)),
             '-' => Ok(self.add_token(Token::Minus)),
             '*' => Ok(self.add_token(Token::Star)),
