@@ -13,6 +13,18 @@ fn build_bin_create_file_dll() {
     println!("cargo:rerun-if-changed=../../../bin/create_file_dll/src/main.rs");
     println!("cargo:rerun-if-changed=../../../bin/create_file_dll/Cargo.toml");
 
+    let target_arch = std::env::var_os("CARGO_CFG_TARGET_ARCH").unwrap();
+    let target_arch_str = target_arch.to_str().unwrap();
+    let target_vendor = std::env::var_os("CARGO_CFG_TARGET_VENDOR").unwrap();
+    let target_vendor_str = target_vendor.to_str().unwrap();
+    let target_os = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap();
+    let target_os_str = target_os.to_str().unwrap();
+    let target_env = std::env::var_os("CARGO_CFG_TARGET_ENV").unwrap();
+    let target_env_str = target_env.to_str().unwrap();
+
+    let target_triple =
+        format!("{target_arch_str}-{target_vendor_str}-{target_os_str}-{target_env_str}");
+
     // Get the path of the create_file_dll workspace member
     let cargo_root = env!("CARGO_MANIFEST_DIR");
     let relative_path_to_test_dll = "../../../bin/create_file_dll/";
@@ -22,7 +34,7 @@ fn build_bin_create_file_dll() {
 
     println!("Starting cargo build lib");
     let res = Command::new("cargo")
-        .args(["build", "--lib"])
+        .args(["build", "--lib", &format!("--target={target_triple}")])
         .current_dir(test_dll_path)
         .stderr(Stdio::piped())
         .spawn()
@@ -37,7 +49,7 @@ fn build_bin_create_file_dll() {
         .for_each(|line| println!("cargo dll build: {}", line));
 
     let relative_path_to_test_dll_file =
-        "../../../bin/create_file_dll/target/debug/create_file_dll.dll";
+        &format!("../../../bin/create_file_dll/target/{target_triple}/debug/create_file_dll.dll");
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
 }

@@ -413,9 +413,14 @@ mod tests {
     use sysinfo::{Pid, PidExt, ProcessExt, Signal, System, SystemExt};
     use tempfile::NamedTempFile;
 
-    #[cfg(target_os = "windows")]
+    #[cfg(host_family = "windows")]
     const TEST_DLL_BYTES: &[u8] = include_bytes!(
-        "..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll"
+        "..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\x86_64-pc-windows-gnu\\debug\\create_file_dll.dll"
+    );
+
+    #[cfg(host_family = "unix")]
+    const TEST_DLL_BYTES: &[u8] = include_bytes!(
+        "../../../../../bin/create_file_dll/target/x86_64-pc-windows-gnu/debug/create_file_dll.dll"
     );
 
     #[test]
