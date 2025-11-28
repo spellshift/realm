@@ -1,0 +1,11 @@
+[package]
+name = "eldritchv2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# No external dependencies required for this implementation.
+
+[[bin]]
+name = "eldritch"
+path = "bin/repl.rs"

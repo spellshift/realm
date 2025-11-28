@@ -1,0 +1,31 @@
+   Compiling eldritchv2 v0.1.0 (/workspaces/realm/implants/lib/eldritchv2)
+error[E0308]: mismatched types
+   --> lib/eldritchv2/src/interpreter.rs:347:34
+    |
+347 |                     self.execute(stmt)?;
+    |                          ------- ^^^^ expected `&Stmt`, found `Stmt`
+    |                          |
+    |                          arguments to this method are incorrect
+    |
+note: method defined here
+   --> lib/eldritchv2/src/interpreter.rs:130:8
+    |
+130 |     fn execute(&mut self, stmt: &Stmt) -> Result<(), String> {
+    |        ^^^^^^^            -----------
+help: consider borrowing here
+    |
+347 |                     self.execute(&stmt)?;
+    |                                  +
+
+error[E0502]: cannot borrow `*self` as mutable because it is also borrowed as immutable
+   --> lib/eldritchv2/src/interpreter.rs:144:36
+    |
+144 |                 if self.is_truthy(&self.evaluate(condition)?) {
+    |                    ---- ---------  ^^^^^^^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+    |                    |    |
+    |                    |    immutable borrow later used by call
+    |                    immutable borrow occurs here
+
+Some errors have detailed explanations: E0308, E0502.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `eldritchv2` (lib) due to 2 previous errors
