@@ -8,6 +8,7 @@ default = []
 grpc = []
 grpc-doh = ["grpc", "dep:hickory-resolver"]
 http1 = []
+dns = ["dep:data-encoding", "dep:rand"]
 mock = ["dep:mockall"]
 
 [dependencies]
@@ -27,6 +28,8 @@ hyper = { version = "0.14", features = [
 ] } # Had to user an older version of hyper to support hyper-proxy
 hyper-proxy = {version = "0.9.1", default-features = false, features = ["rustls"]}
 hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "webpki-roots"], optional = true }
+data-encoding = { version = "2.9.0", optional = true }
+rand = { workspace = true, optional = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }

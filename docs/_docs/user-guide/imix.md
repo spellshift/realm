@@ -15,7 +15,7 @@ Imix has compile-time configuration, that may be specified using environment var
 
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
-| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:8000` | No |
+| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://` or `dns://`) | `http://127.0.0.1:8000` | No |
 | IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | - | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
@@ -29,6 +29,8 @@ Imix has run-time configuration, that may be specified using environment variabl
 | ------- | ----------- | ------- | -------- |
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
 | IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
+
+
 
 ## Logging
 
@@ -97,6 +99,7 @@ These flags are passed to cargo build Eg.:
 
 - `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
 - `--features http1 --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
+- `--features dns --no-default-features` - Changes the default grpc transport to use DNS. Requires running the dns redirector. See the [DNS Transport Configuration](#dns-transport-configuration) section for more information on how to configure the DNS transport URI.
 
 ### Linux
 
@@ -170,4 +173,36 @@ export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
 cargo build --release --lib --target=x86_64-pc-windows-gnu
+```
+
+
+## DNS Transport Configuration
+
+The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either a specific DNS server or the system's default resolver.
+
+### DNS URI Format
+
+When using the DNS transport, configure `IMIX_CALLBACK_URI` with the following format:
+
+```
+dns://<server>/<domain>[?type=<TYPE>&fallback=<true|false>]
+```
+
+**Parameters:**
+- `<server>` - DNS server IP address, or `*` to use system resolver (recommended)
+- `<domain>` - Base domain for DNS queries (e.g., `c2.example.com` will result in queries like `abcd1234.c2.example.com`)
+- `type` (optional) - Preferred DNS record type: `TXT` (default), `A`, or `AAAA`
+- `fallback` (optional) - Enable automatic fallback to other record types on failure (default: `true`)
+
+**Examples:**
+
+```bash
+# Use specific DNS server (8.8.8.8) with TXT records and fallback enabled
+export IMIX_CALLBACK_URI="dns://8.8.8.8/c2.example.com"
+
+# Use system resolver, prefer A records only
+export IMIX_CALLBACK_URI="dns://*/c2.example.com?type=A"
+
+# Use system resolver with AAAA records and no fallback
+export IMIX_CALLBACK_URI="dns://*/c2.example.com?type=AAAA&fallback=false"
 ```

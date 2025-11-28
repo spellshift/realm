@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 win_service = []
 default = ["transport/grpc"]
 http1 = ["transport/http1"]
+dns = ["transport/dns"]
 transport-grpc-doh = ["transport/grpc-doh"]
 
 [dependencies]
