@@ -232,6 +232,11 @@ impl Interpreter {
         }
     }
 
+    // New: Inserts directly into current environment, shadowing any outer var.
+    fn define_variable(&mut self, name: &str, value: Value) {
+        self.env.borrow_mut().values.insert(name.to_string(), value);
+    }
+
     fn execute(&mut self, stmt: &Stmt) -> Result<(), String> {
         if self.flow != Flow::Next {
             return Ok(());
@@ -329,7 +334,113 @@ impl Interpreter {
             Expr::GetAttr(obj, name) => self.evaluate_getattr(obj, name.to_string()),
             Expr::Slice(obj, start, stop, step) => self.evaluate_slice(obj, start, stop, step),
             Expr::FString(segments) => self.evaluate_fstring(segments),
+            // New: Comprehensions
+            Expr::ListComp {
+                body,
+                var,
+                iterable,
+                cond,
+            } => self.evaluate_list_comp(body, var, iterable, cond),
+            Expr::DictComp {
+                key,
+                value,
+                var,
+                iterable,
+                cond,
+            } => self.evaluate_dict_comp(key, value, var, iterable, cond),
         }
+    }
+
+    fn evaluate_list_comp(
+        &mut self,
+        body: &Expr,
+        var: &str,
+        iterable: &Expr,
+        cond: &Option<Box<Expr>>,
+    ) -> Result<Value, String> {
+        let iterable_val = self.evaluate(iterable)?;
+        let items = match iterable_val {
+            Value::List(l) => l.borrow().clone(),
+            Value::Tuple(t) => t.clone(),
+            _ => {
+                return Err(format!(
+                    "Type '{:?}' is not iterable",
+                    get_type_name(&iterable_val)
+                ))
+            }
+        };
+
+        // Create new scope for comprehension
+        let comp_env = Rc::new(RefCell::new(Environment {
+            parent: Some(Rc::clone(&self.env)),
+            values: HashMap::new(),
+        }));
+        let original_env = Rc::clone(&self.env);
+        self.env = comp_env;
+
+        let mut results = Vec::new();
+        for item in items {
+            self.define_variable(var, item);
+            let include = match cond {
+                Some(c) => is_truthy(&self.evaluate(c)?),
+                None => true,
+            };
+            if include {
+                results.push(self.evaluate(body)?);
+            }
+        }
+
+        self.env = original_env;
+        Ok(Value::List(Rc::new(RefCell::new(results))))
+    }
+
+    fn evaluate_dict_comp(
+        &mut self,
+        key_expr: &Expr,
+        val_expr: &Expr,
+        var: &str,
+        iterable: &Expr,
+        cond: &Option<Box<Expr>>,
+    ) -> Result<Value, String> {
+        let iterable_val = self.evaluate(iterable)?;
+        let items = match iterable_val {
+            Value::List(l) => l.borrow().clone(),
+            Value::Tuple(t) => t.clone(),
+            _ => {
+                return Err(format!(
+                    "Type '{:?}' is not iterable",
+                    get_type_name(&iterable_val)
+                ))
+            }
+        };
+
+        let comp_env = Rc::new(RefCell::new(Environment {
+            parent: Some(Rc::clone(&self.env)),
+            values: HashMap::new(),
+        }));
+        let original_env = Rc::clone(&self.env);
+        self.env = comp_env;
+
+        let mut results = HashMap::new();
+        for item in items {
+            self.define_variable(var, item);
+            let include = match cond {
+                Some(c) => is_truthy(&self.evaluate(c)?),
+                None => true,
+            };
+            if include {
+                let k = self.evaluate(key_expr)?;
+                let v = self.evaluate(val_expr)?;
+                let k_str = match k {
+                    Value::String(s) => s,
+                    _ => return Err("Dict keys must be strings".into()),
+                };
+                results.insert(k_str, v);
+            }
+        }
+
+        self.env = original_env;
+        Ok(Value::Dictionary(Rc::new(RefCell::new(results))))
     }
 
     fn evaluate_list_literal(&mut self, elements: &[Expr]) -> Result<Value, String> {
@@ -472,7 +583,6 @@ impl Interpreter {
                         current += step_val;
                     }
                 } else {
-                    // Very basic backwards loop for now
                     while current > end && current >= 0 && current < len as i64 {
                         result.push(list[current as usize].clone());
                         current += step_val;
@@ -686,7 +796,6 @@ impl Interpreter {
                 Ok(Value::Int(a / b))
             }
 
-            // Bitwise
             (Value::Int(a), Token::BitAnd, Value::Int(b)) => Ok(Value::Int(a & b)),
             (Value::Int(a), Token::BitOr, Value::Int(b)) => Ok(Value::Int(a | b)),
             (Value::Int(a), Token::BitXor, Value::Int(b)) => Ok(Value::Int(a ^ b)),

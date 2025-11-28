@@ -26,7 +26,7 @@ pub enum Value {
     Int(i64),
     String(String),
     List(Rc<RefCell<Vec<Value>>>),
-    Tuple(Vec<Value>), // New: Tuples are immutable, so plain Vec is fine
+    Tuple(Vec<Value>),
     Dictionary(Rc<RefCell<HashMap<String, Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),
@@ -52,7 +52,7 @@ impl PartialEq for Value {
                 }
                 a.borrow().eq(&*b.borrow())
             }
-            (Value::Tuple(a), Value::Tuple(b)) => a == b, // Deep equality for tuples
+            (Value::Tuple(a), Value::Tuple(b)) => a == b,
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a == b,
             (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => r1 == r2 && n1 == n2,
@@ -78,7 +78,7 @@ pub enum Expr {
     LogicalOp(Box<Expr>, Token, Box<Expr>),
     Call(Box<Expr>, Vec<Expr>),
     List(Vec<Expr>),
-    Tuple(Vec<Expr>), // New
+    Tuple(Vec<Expr>),
     Dictionary(Vec<(Expr, Expr)>),
     Index(Box<Expr>, Box<Expr>),
     GetAttr(Box<Expr>, String),
@@ -89,6 +89,21 @@ pub enum Expr {
         Option<Box<Expr>>,
     ),
     FString(Vec<FStringSegment>),
+    // [body for var in iterable if condition]
+    ListComp {
+        body: Box<Expr>,
+        var: String,
+        iterable: Box<Expr>,
+        cond: Option<Box<Expr>>,
+    },
+    // {key: value for var in iterable if condition}
+    DictComp {
+        key: Box<Expr>,
+        value: Box<Expr>,
+        var: String,
+        iterable: Box<Expr>,
+        cond: Option<Box<Expr>>,
+    },
 }
 
 #[derive(Debug, Clone)]

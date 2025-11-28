@@ -258,8 +258,6 @@ impl Parser {
         Ok(Stmt::Expression(expr))
     }
 
-    // --- Expression Parsing (Precedence) ---
-
     fn expression(&mut self) -> Result<Expr, String> {
         self.logic_or()
     }
@@ -304,7 +302,7 @@ impl Parser {
     }
 
     fn comparison(&mut self) -> Result<Expr, String> {
-        let mut expr = self.bitwise_or()?; // Changed from term()
+        let mut expr = self.bitwise_or()?;
         while self.match_token(&[Token::Lt, Token::Gt, Token::LtEq, Token::GtEq]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.bitwise_or()?;
@@ -313,7 +311,6 @@ impl Parser {
         Ok(expr)
     }
 
-    // New: Bitwise precedence layers
     fn bitwise_or(&mut self) -> Result<Expr, String> {
         let mut expr = self.bitwise_xor()?;
         while self.match_token(&[Token::BitOr]) {
@@ -365,7 +362,6 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Expr, String> {
-        // Handle unary minus and bitwise not
         if self.match_token(&[Token::Minus, Token::BitNot]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.factor()?;
@@ -496,17 +492,13 @@ impl Parser {
         }
 
         if self.match_token(&[Token::LParen]) {
-            // Check for empty tuple ()
             if self.match_token(&[Token::RParen]) {
                 return Ok(Expr::Tuple(Vec::new()));
-            }
-
+            } // Empty tuple
             let expr = self.expression()?;
-
-            // Check for tuple with one or more elements (expr, ...)
+            // Check for tuple
             if self.match_token(&[Token::Comma]) {
                 let mut elements = vec![expr];
-                // Loop to catch remaining elements
                 if !self.check(&Token::RParen) {
                     loop {
                         elements.push(self.expression()?);
@@ -518,8 +510,6 @@ impl Parser {
                 self.consume(|t| matches!(t, Token::RParen), "Expected ')' after tuple.")?;
                 return Ok(Expr::Tuple(elements));
             }
-
-            // Regular grouping (expression)
             self.consume(
                 |t| matches!(t, Token::RParen),
                 "Expected ')' after expression.",
@@ -528,12 +518,53 @@ impl Parser {
         }
 
         if self.match_token(&[Token::LBracket]) {
-            let mut elements = Vec::new();
-            if !self.check(&Token::RBracket) {
-                loop {
-                    elements.push(self.expression()?);
-                    if !self.match_token(&[Token::Comma]) {
-                        break;
+            // Check for empty list
+            if self.match_token(&[Token::RBracket]) {
+                return Ok(Expr::List(Vec::new()));
+            }
+
+            let first_expr = self.expression()?;
+
+            // LIST COMPREHENSION: Check for 'for'
+            if self.match_token(&[Token::For]) {
+                let var_token = self.consume(
+                    |t| matches!(t, Token::Identifier(_)),
+                    "Expected iteration variable name.",
+                )?;
+                let var = match var_token {
+                    Token::Identifier(s) => s.clone(),
+                    _ => unreachable!(),
+                };
+
+                self.consume(|t| matches!(t, Token::In), "Expected 'in'.")?;
+                let iterable = self.expression()?;
+
+                let mut cond = None;
+                if self.match_token(&[Token::If]) {
+                    cond = Some(Box::new(self.expression()?));
+                }
+
+                self.consume(
+                    |t| matches!(t, Token::RBracket),
+                    "Expected ']' after list comprehension.",
+                )?;
+                return Ok(Expr::ListComp {
+                    body: Box::new(first_expr),
+                    var,
+                    iterable: Box::new(iterable),
+                    cond,
+                });
+            }
+
+            // Normal List
+            let mut elements = vec![first_expr];
+            if self.match_token(&[Token::Comma]) {
+                if !self.check(&Token::RBracket) {
+                    loop {
+                        elements.push(self.expression()?);
+                        if !self.match_token(&[Token::Comma]) {
+                            break;
+                        }
                     }
                 }
             }
@@ -542,18 +573,59 @@ impl Parser {
         }
 
         if self.match_token(&[Token::LBrace]) {
-            let mut entries = Vec::new();
-            if !self.check(&Token::RBrace) {
-                loop {
-                    let key = self.expression()?;
-                    self.consume(
-                        |t| matches!(t, Token::Colon),
-                        "Expected ':' after dictionary key.",
-                    )?;
-                    let value = self.expression()?;
-                    entries.push((key, value));
-                    if !self.match_token(&[Token::Comma]) {
-                        break;
+            // Empty dict
+            if self.match_token(&[Token::RBrace]) {
+                return Ok(Expr::Dictionary(Vec::new()));
+            }
+
+            let key_expr = self.expression()?;
+            self.consume(|t| matches!(t, Token::Colon), "Expected ':' after key.")?;
+            let val_expr = self.expression()?;
+
+            // DICT COMPREHENSION
+            if self.match_token(&[Token::For]) {
+                let var_token = self.consume(
+                    |t| matches!(t, Token::Identifier(_)),
+                    "Expected iteration variable name.",
+                )?;
+                let var = match var_token {
+                    Token::Identifier(s) => s.clone(),
+                    _ => unreachable!(),
+                };
+
+                self.consume(|t| matches!(t, Token::In), "Expected 'in'.")?;
+                let iterable = self.expression()?;
+
+                let mut cond = None;
+                if self.match_token(&[Token::If]) {
+                    cond = Some(Box::new(self.expression()?));
+                }
+
+                self.consume(
+                    |t| matches!(t, Token::RBrace),
+                    "Expected '}' after dict comprehension.",
+                )?;
+                return Ok(Expr::DictComp {
+                    key: Box::new(key_expr),
+                    value: Box::new(val_expr),
+                    var,
+                    iterable: Box::new(iterable),
+                    cond,
+                });
+            }
+
+            // Normal Dict
+            let mut entries = vec![(key_expr, val_expr)];
+            if self.match_token(&[Token::Comma]) {
+                if !self.check(&Token::RBrace) {
+                    loop {
+                        let k = self.expression()?;
+                        self.consume(|t| matches!(t, Token::Colon), "Expected ':'.")?;
+                        let v = self.expression()?;
+                        entries.push((k, v));
+                        if !self.match_token(&[Token::Comma]) {
+                            break;
+                        }
                     }
                 }
             }

@@ -1,5 +1,35 @@
 mod assert;
 
+// --- Comprehensions ---
+
+#[test]
+fn test_comprehensions() {
+    assert::pass(
+        r#"
+        l = [x * 2 for x in [1, 2, 3]]
+        assert_eq(l, [2, 4, 6])
+
+        l = [x for x in [1, 2, 3, 4] if x > 2]
+        assert_eq(l, [3, 4])
+
+        # Scoping check: x should not leak (or rather, we check it doesn't overwrite outer if we implement that)
+        # Note: Starlark specs say it doesn't leak. Our implementation creates a new scope, so it shouldn't.
+        x = 100
+        l = [x for x in [1, 2]]
+        assert_eq(x, 100)
+    "#,
+    );
+
+    assert::pass(
+        r#"
+        # keys must be strings in our dict implementation currently
+        d = {str(x): x*x for x in [1, 2]}
+        assert_eq(d["1"], 1)
+        assert_eq(d["2"], 4)
+    "#,
+    );
+}
+
 // --- Tuples ---
 
 #[test]
@@ -41,6 +71,11 @@ fn test_literals_and_constants() {
         False == False
         True != False
         None == None
+        None != False
+        None != True
+        None != 0
+        None != ""
+        None != []
         1 == 1
         "hello" == "hello"
         [1, 2] == [1, 2]
