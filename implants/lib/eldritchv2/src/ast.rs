@@ -17,7 +17,6 @@ pub struct Function {
     pub closure: Rc<RefCell<Environment>>,
 }
 
-// Type alias for native/built-in function implementations
 pub type BuiltinFn = fn(&[Value]) -> Result<Value, String>;
 
 #[derive(Debug, Clone)]
@@ -26,15 +25,13 @@ pub enum Value {
     Bool(bool),
     Int(i64),
     String(String),
-    // Use Rc<RefCell<...>> for mutable, shareable data structures
     List(Rc<RefCell<Vec<Value>>>),
     Dictionary(Rc<RefCell<HashMap<String, Value>>>),
-    Function(Function), // Holds the full function definition and closure environment
-    NativeFunction(String, BuiltinFn), // (name, function pointer)
+    Function(Function),
+    NativeFunction(String, BuiltinFn),
+    BoundMethod(Box<Value>, String),
 }
 
-// Manual implementation of PartialEq because Rc<RefCell<...>> does not implement it,
-// but we need comparison for basic types like Int and Bool.
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -43,22 +40,28 @@ impl PartialEq for Value {
             (Value::Int(a), Value::Int(b)) => a == b,
             (Value::String(a), Value::String(b)) => a == b,
 
-            // For Lists and Dictionaries, we rely on reference equality for simplicity
-            // in the core language comparison operations (==, !=). Deep equality
-            // is usually implemented via a custom native function if needed.
-            (Value::List(a), Value::List(b)) => Rc::ptr_eq(a, b),
-            (Value::Dictionary(a), Value::Dictionary(b)) => Rc::ptr_eq(a, b),
+            // FIX: Use deep equality for List and Dictionary
+            (Value::List(a), Value::List(b)) => {
+                if Rc::ptr_eq(a, b) {
+                    return true;
+                }
+                a.borrow().eq(&*b.borrow())
+            }
+            (Value::Dictionary(a), Value::Dictionary(b)) => {
+                if Rc::ptr_eq(a, b) {
+                    return true;
+                }
+                a.borrow().eq(&*b.borrow())
+            }
 
-            // Functions are equal if their memory references are the same
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a == b,
-
+            (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => r1 == r2 && n1 == n2,
             _ => false,
         }
     }
 }
 
-// Required if PartialEq is implemented manually
 impl Eq for Value {}
 
 #[derive(Debug, Clone)]
@@ -72,10 +75,19 @@ pub enum Expr {
     Literal(Value),
     Identifier(String),
     BinaryOp(Box<Expr>, Token, Box<Expr>),
+    UnaryOp(Token, Box<Expr>),
+    LogicalOp(Box<Expr>, Token, Box<Expr>),
     Call(Box<Expr>, Vec<Expr>),
     List(Vec<Expr>),
     Dictionary(Vec<(Expr, Expr)>),
-    Index(Box<Expr>, Box<Expr>), // New: Index/Subscript expression: obj[index]
+    Index(Box<Expr>, Box<Expr>),
+    GetAttr(Box<Expr>, String),
+    Slice(
+        Box<Expr>,
+        Option<Box<Expr>>,
+        Option<Box<Expr>>,
+        Option<Box<Expr>>,
+    ),
     FString(Vec<FStringSegment>),
 }
 
@@ -87,4 +99,6 @@ pub enum Stmt {
     Return(Option<Expr>),
     Def(String, Vec<String>, Vec<Stmt>),
     For(String, Expr, Vec<Stmt>),
+    Break,
+    Continue,
 }

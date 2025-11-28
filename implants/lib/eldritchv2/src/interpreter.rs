@@ -16,16 +16,55 @@ fn is_truthy(value: &Value) -> bool {
         Value::String(s) => !s.is_empty(),
         Value::List(l) => !l.borrow().is_empty(),
         Value::Dictionary(d) => !d.borrow().is_empty(),
-        Value::Function(_) | Value::NativeFunction(_, _) => true,
+        Value::Function(_) | Value::NativeFunction(_, _) | Value::BoundMethod(_, _) => true,
     }
+}
+
+fn get_type_name(value: &Value) -> String {
+    match value {
+        Value::None => "NoneType".to_string(),
+        Value::Bool(_) => "bool".to_string(),
+        Value::Int(_) => "int".to_string(),
+        Value::String(_) => "string".to_string(),
+        Value::List(_) => "list".to_string(),
+        Value::Dictionary(_) => "dict".to_string(),
+        Value::Function(_) | Value::NativeFunction(_, _) | Value::BoundMethod(_, _) => {
+            "function".to_string()
+        }
+    }
+}
+
+// Helper to normalize slice indices (Python-style)
+fn normalize_index(idx: i64, len: usize) -> usize {
+    let len_i64 = len as i64;
+    if idx < 0 {
+        if idx + len_i64 < 0 {
+            0
+        } else {
+            (idx + len_i64) as usize
+        }
+    } else {
+        if idx > len_i64 {
+            len
+        } else {
+            idx as usize
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub enum Flow {
+    Next,
+    Break,
+    Continue,
+    Return(Value),
 }
 
 // --- Interpreter ---
 
 pub struct Interpreter {
     pub env: Rc<RefCell<Environment>>,
-    pub should_return: bool,
-    pub return_value: Value,
+    pub flow: Flow,
 }
 
 impl Interpreter {
@@ -37,8 +76,7 @@ impl Interpreter {
 
         let mut interpreter = Interpreter {
             env,
-            should_return: false,
-            return_value: Value::None,
+            flow: Flow::Next,
         };
 
         interpreter.define_builtins();
@@ -71,7 +109,6 @@ impl Interpreter {
                 [Value::Int(start), Value::Int(end)] => (*start, *end),
                 _ => return Err("Range expects one or two integer arguments.".to_string()),
             };
-
             let mut list = Vec::new();
             if start < end {
                 for i in start..end {
@@ -81,13 +118,20 @@ impl Interpreter {
             Ok(Value::List(Rc::new(RefCell::new(list))))
         });
 
-        self.define_builtin("input", 1, |_| {
-            use std::io;
-            let mut input = String::new();
-            match io::stdin().read_line(&mut input) {
-                Ok(_) => Ok(Value::String(input.trim().to_string())),
-                Err(e) => Err(format!("Input error: {}", e)),
-            }
+        self.define_builtin("type", 1, |args| Ok(Value::String(get_type_name(&args[0]))));
+        self.define_builtin("bool", 1, |args| Ok(Value::Bool(is_truthy(&args[0]))));
+        self.define_builtin("str", 1, |args| Ok(Value::String(args[0].to_string())));
+        self.define_builtin("int", 1, |args| match &args[0] {
+            Value::Int(i) => Ok(Value::Int(*i)),
+            Value::Bool(b) => Ok(Value::Int(if *b { 1 } else { 0 })),
+            Value::String(s) => s
+                .parse::<i64>()
+                .map(Value::Int)
+                .map_err(|_| format!("invalid literal for int(): '{}'", s)),
+            _ => Err(format!(
+                "int() argument must be a string, bytes or number, not '{}'",
+                get_type_name(&args[0])
+            )),
         });
 
         self.define_builtin("assert", 1, |args| {
@@ -128,15 +172,18 @@ impl Interpreter {
 
         let mut eval_interp = Interpreter {
             env: eval_env,
-            should_return: false,
-            return_value: Value::None,
+            flow: Flow::Next,
         };
 
         for stmt in ast {
             eval_interp.execute(&stmt)?;
         }
 
-        Ok(eval_interp.return_value)
+        if let Flow::Return(v) = eval_interp.flow {
+            Ok(v)
+        } else {
+            Ok(Value::None)
+        }
     }
 
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
@@ -154,10 +201,9 @@ impl Interpreter {
                 }
                 _ => {
                     self.execute(&stmt)?;
-                    if self.should_return {
-                        let ret = self.return_value.clone();
-                        self.should_return = false;
-                        self.return_value = Value::None;
+                    if let Flow::Return(v) = &self.flow {
+                        let ret = v.clone();
+                        self.flow = Flow::Next;
                         return Ok(ret);
                     }
                     last_val = Value::None;
@@ -167,14 +213,9 @@ impl Interpreter {
         Ok(last_val)
     }
 
-    // --- Scope Helper ---
-
-    // Updates an existing variable in the nearest scope, or defines it in the current scope if new.
     fn assign_variable(&mut self, name: &str, value: Value) {
         let mut env_opt = Some(Rc::clone(&self.env));
         let mut target_env = None;
-
-        // Traverse up to find if the variable already exists
         while let Some(env) = env_opt {
             if env.borrow().values.contains_key(name) {
                 target_env = Some(env.clone());
@@ -182,7 +223,6 @@ impl Interpreter {
             }
             env_opt = env.borrow().parent.clone();
         }
-
         if let Some(env) = target_env {
             env.borrow_mut().values.insert(name.to_string(), value);
         } else {
@@ -190,10 +230,8 @@ impl Interpreter {
         }
     }
 
-    // --- Execution Logic ---
-
     fn execute(&mut self, stmt: &Stmt) -> Result<(), String> {
-        if self.should_return {
+        if self.flow != Flow::Next {
             return Ok(());
         }
 
@@ -208,18 +246,16 @@ impl Interpreter {
             Stmt::If(condition, then_branch, else_branch) => {
                 let eval_cond = &self.evaluate(condition)?;
                 if is_truthy(eval_cond) {
-                    // FIX: Execute in current scope, do not create new scope
                     self.execute_stmts(then_branch)?;
                 } else if let Some(else_stmts) = else_branch {
-                    // FIX: Execute in current scope
                     self.execute_stmts(else_stmts)?;
                 }
             }
             Stmt::Return(expr) => {
-                self.return_value = expr
+                let val = expr
                     .as_ref()
-                    .map_or(Value::None, |e| self.evaluate(e).unwrap());
-                self.should_return = true;
+                    .map_or(Ok(Value::None), |e| self.evaluate(e))?;
+                self.flow = Flow::Return(val);
             }
             Stmt::Def(name, params, body) => {
                 let func = Value::Function(Function {
@@ -241,47 +277,55 @@ impl Interpreter {
                         ))
                     }
                 };
-
                 let list = list_rc.borrow();
 
                 for item in list.iter() {
-                    // FIX: Do not create a new environment for the loop.
-                    // Assign loop variable in the current scope.
                     self.assign_variable(ident, item.clone());
-
                     self.execute_stmts(body)?;
-
-                    if self.should_return {
-                        return Ok(());
+                    match &self.flow {
+                        Flow::Break => {
+                            self.flow = Flow::Next;
+                            break;
+                        }
+                        Flow::Continue => {
+                            self.flow = Flow::Next;
+                            continue;
+                        }
+                        Flow::Return(_) => return Ok(()),
+                        Flow::Next => {}
                     }
                 }
             }
+            Stmt::Break => self.flow = Flow::Break,
+            Stmt::Continue => self.flow = Flow::Continue,
         }
         Ok(())
     }
 
-    // New helper: executes a list of statements in the *current* environment
     fn execute_stmts(&mut self, stmts: &[Stmt]) -> Result<(), String> {
         for stmt in stmts {
             self.execute(stmt)?;
-            if self.should_return {
+            if self.flow != Flow::Next {
                 break;
             }
         }
         Ok(())
     }
 
-    // --- Evaluation Logic ---
-
     fn evaluate(&mut self, expr: &Expr) -> Result<Value, String> {
         match expr {
             Expr::Literal(value) => Ok(value.clone()),
             Expr::Identifier(name) => self.lookup_variable(name),
             Expr::BinaryOp(left, op, right) => self.apply_binary_op(left, op, right),
+            Expr::UnaryOp(op, right) => self.apply_unary_op(op, right),
+            Expr::LogicalOp(left, op, right) => self.apply_logical_op(left, op, right),
             Expr::Call(callee, args) => self.call_function(callee, args),
             Expr::List(elements) => self.evaluate_list_literal(elements),
             Expr::Dictionary(entries) => self.evaluate_dict_literal(entries),
             Expr::Index(obj, index) => self.evaluate_index(obj, index),
+            // Updated: Using to_string() as requested
+            Expr::GetAttr(obj, name) => self.evaluate_getattr(obj, name.to_string()),
+            Expr::Slice(obj, start, stop, step) => self.evaluate_slice(obj, start, stop, step),
             Expr::FString(segments) => self.evaluate_fstring(segments),
         }
     }
@@ -299,7 +343,6 @@ impl Interpreter {
         for (key_expr, value_expr) in entries {
             let key_val = self.evaluate(key_expr)?;
             let value_val = self.evaluate(value_expr)?;
-
             let key_str = match key_val {
                 Value::String(s) => s,
                 _ => return Err("Dictionary keys must be strings.".to_string()),
@@ -320,10 +363,16 @@ impl Interpreter {
                     _ => return Err("List indices must be integers".to_string()),
                 };
                 let list = l.borrow();
-                if idx_int < 0 || idx_int as usize >= list.len() {
+                // Handle negative indexing
+                let true_idx = if idx_int < 0 {
+                    list.len() as i64 + idx_int
+                } else {
+                    idx_int
+                };
+                if true_idx < 0 || true_idx as usize >= list.len() {
                     return Err("List index out of range".to_string());
                 }
-                Ok(list[idx_int as usize].clone())
+                Ok(list[true_idx as usize].clone())
             }
             Value::Dictionary(d) => {
                 let key_str = match idx_val {
@@ -338,6 +387,83 @@ impl Interpreter {
             }
             _ => Err(format!("Type not subscriptable: {:?}", obj_val)),
         }
+    }
+
+    fn evaluate_slice(
+        &mut self,
+        obj: &Expr,
+        start: &Option<Box<Expr>>,
+        stop: &Option<Box<Expr>>,
+        step: &Option<Box<Expr>>,
+    ) -> Result<Value, String> {
+        let obj_val = self.evaluate(obj)?;
+        match obj_val {
+            Value::List(l) => {
+                let list = l.borrow();
+                let len = list.len();
+                let step_val = if let Some(s) = step {
+                    match self.evaluate(s)? {
+                        Value::Int(i) => i,
+                        _ => return Err("Slice step must be integer".into()),
+                    }
+                } else {
+                    1
+                };
+                if step_val == 0 {
+                    return Err("slice step cannot be zero".into());
+                }
+
+                let start_val = if let Some(s) = start {
+                    match self.evaluate(s)? {
+                        Value::Int(i) => i,
+                        _ => return Err("Slice start must be integer".into()),
+                    }
+                } else {
+                    if step_val > 0 {
+                        0
+                    } else {
+                        len as i64 - 1
+                    }
+                };
+                let stop_val = if let Some(s) = stop {
+                    match self.evaluate(s)? {
+                        Value::Int(i) => i,
+                        _ => return Err("Slice stop must be integer".into()),
+                    }
+                } else {
+                    if step_val > 0 {
+                        len as i64
+                    } else {
+                        -1
+                    }
+                }; // -1 indicates before start
+
+                let mut result = Vec::new();
+                let mut current = normalize_index(start_val, len) as i64;
+                let end = normalize_index(stop_val, len) as i64;
+
+                if step_val > 0 {
+                    while current < end && current < len as i64 {
+                        result.push(list[current as usize].clone());
+                        current += step_val;
+                    }
+                } else {
+                    // Basic backward iteration support
+                    // Note: Starlark slicing is complex; this is a simplified version
+                    while current > end && current >= 0 && current < len as i64 {
+                        result.push(list[current as usize].clone());
+                        current += step_val;
+                    }
+                }
+                Ok(Value::List(Rc::new(RefCell::new(result))))
+            }
+            _ => Err(format!("Type not sliceable: {:?}", obj_val)),
+        }
+    }
+
+    fn evaluate_getattr(&mut self, obj: &Expr, name: String) -> Result<Value, String> {
+        let obj_val = self.evaluate(obj)?;
+        Ok(Value::BoundMethod(Box::new(obj_val), name))
     }
 
     fn evaluate_fstring(&mut self, segments: &[FStringSegment]) -> Result<Value, String> {
@@ -376,7 +502,6 @@ impl Interpreter {
 
         match callee_val {
             Value::NativeFunction(_, f) => f(args_slice),
-
             Value::Function(Function {
                 name,
                 params,
@@ -385,48 +510,126 @@ impl Interpreter {
             }) => {
                 if params.len() != args_slice.len() {
                     return Err(format!(
-                        "Function '{}' expected {} arguments but got {}.",
+                        "Function '{}' expected {} arguments.",
                         name,
-                        params.len(),
-                        args_slice.len()
+                        params.len()
                     ));
                 }
-
                 let function_env = Rc::new(RefCell::new(Environment {
                     parent: Some(closure),
                     values: HashMap::new(),
                 }));
-
                 for (param, arg) in params.iter().zip(args_slice.iter()) {
                     function_env
                         .borrow_mut()
                         .values
                         .insert(param.clone(), arg.clone());
                 }
-
                 let original_env = Rc::clone(&self.env);
                 self.env = function_env;
+                let old_flow = self.flow.clone(); // Push flow stack
+                self.flow = Flow::Next;
 
-                self.should_return = false;
-                self.return_value = Value::None;
+                self.execute_stmts(&body)?;
 
-                let mut return_val = Value::None;
-                for stmt in body {
-                    self.execute(&stmt)?;
-                    if self.should_return {
-                        return_val = self.return_value.clone();
-                        break;
-                    }
-                }
-
+                let ret_val = if let Flow::Return(v) = &self.flow {
+                    v.clone()
+                } else {
+                    Value::None
+                };
                 self.env = original_env;
-
-                self.should_return = false;
-                self.return_value = Value::None;
-
-                Ok(return_val)
+                self.flow = old_flow; // Pop flow stack
+                Ok(ret_val)
+            }
+            // Handle Method Calls
+            Value::BoundMethod(receiver, method_name) => {
+                self.call_bound_method(&receiver, &method_name, args_slice)
             }
             _ => Err(format!("Cannot call value of type: {:?}", callee_val)),
+        }
+    }
+
+    fn call_bound_method(
+        &mut self,
+        receiver: &Value,
+        method: &str,
+        args: &[Value],
+    ) -> Result<Value, String> {
+        match (receiver, method) {
+            (Value::List(l), "append") => {
+                if args.len() != 1 {
+                    return Err("append() takes exactly one argument".into());
+                }
+                l.borrow_mut().push(args[0].clone());
+                Ok(Value::None)
+            }
+            (Value::List(l), "pop") => {
+                if let Some(v) = l.borrow_mut().pop() {
+                    Ok(v)
+                } else {
+                    Err("pop from empty list".into())
+                }
+            }
+            (Value::Dictionary(d), "keys") => {
+                let keys: Vec<Value> = d
+                    .borrow()
+                    .keys()
+                    .map(|k| Value::String(k.clone()))
+                    .collect();
+                Ok(Value::List(Rc::new(RefCell::new(keys))))
+            }
+            (Value::String(s), "split") => {
+                let delim = if args.len() > 0 {
+                    args[0].to_string()
+                } else {
+                    " ".to_string()
+                };
+                let parts: Vec<Value> = s
+                    .split(&delim)
+                    .map(|p| Value::String(p.to_string()))
+                    .collect();
+                Ok(Value::List(Rc::new(RefCell::new(parts))))
+            }
+            (Value::String(s), "strip") => Ok(Value::String(s.trim().to_string())),
+            (Value::String(s), "lower") => Ok(Value::String(s.to_lowercase())),
+            (Value::String(s), "upper") => Ok(Value::String(s.to_uppercase())),
+            _ => Err(format!(
+                "Object of type '{}' has no method '{}'",
+                get_type_name(receiver),
+                method
+            )),
+        }
+    }
+
+    fn apply_unary_op(&mut self, op: &Token, right: &Expr) -> Result<Value, String> {
+        let val = self.evaluate(right)?;
+        match op {
+            Token::Minus => match val {
+                Value::Int(i) => Ok(Value::Int(-i)),
+                _ => Err("Unary '-' only valid for integers".into()),
+            },
+            Token::Not => Ok(Value::Bool(!is_truthy(&val))),
+            _ => Err("Invalid unary operator".into()),
+        }
+    }
+
+    fn apply_logical_op(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, String> {
+        // Short-circuiting logic
+        let left_val = self.evaluate(left)?;
+        match op {
+            Token::Or => {
+                if is_truthy(&left_val) {
+                    return Ok(left_val);
+                }
+                self.evaluate(right)
+            }
+            Token::And => {
+                if !is_truthy(&left_val) {
+                    return Ok(left_val);
+                }
+                self.evaluate(right)
+            }
+            _ => Err("Invalid logical operator".into()),
         }
     }
 
@@ -437,30 +640,37 @@ impl Interpreter {
         match (a, op.clone(), b) {
             (a, Token::Eq, b) => Ok(Value::Bool(a == b)),
             (a, Token::NotEq, b) => Ok(Value::Bool(a != b)),
+
+            // INT Comparisons
             (Value::Int(a), Token::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
             (Value::Int(a), Token::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
+            (Value::Int(a), Token::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
+            (Value::Int(a), Token::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
 
+            // STRING Comparisons
+            (Value::String(a), Token::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
+            (Value::String(a), Token::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
+            (Value::String(a), Token::LtEq, Value::String(b)) => Ok(Value::Bool(a <= b)),
+            (Value::String(a), Token::GtEq, Value::String(b)) => Ok(Value::Bool(a >= b)),
+
+            // Arithmetic
             (Value::Int(a), Token::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Token::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Token::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
             (Value::Int(a), Token::Slash, Value::Int(b)) => {
                 if b == 0 {
-                    return Err("attempt to divide by zero".to_string());
+                    return Err("divide by zero".into());
                 }
                 Ok(Value::Int(a / b))
             }
             (Value::String(a), Token::Plus, Value::String(b)) => Ok(Value::String(a + &b)),
             _ => Err(format!(
-                "Unsupported binary operation: {:?} {:?} {:?}",
+                "Unsupported binary op: {:?} {:?} {:?}",
                 self.evaluate(left)?,
                 op,
                 self.evaluate(right)?
             )),
         }
-    }
-
-    fn is_truthy(&self, value: &Value) -> bool {
-        is_truthy(value)
     }
 }
 
@@ -495,6 +705,9 @@ impl ToString for Value {
             }
             Value::Function(f) => format!("<function {}>", f.name),
             Value::NativeFunction(name, _) => format!("<native function {}>", name),
+            Value::BoundMethod(receiver, name) => {
+                format!("<bound method {}.{} >", get_type_name(receiver), name)
+            }
         }
     }
 }

@@ -11,14 +11,11 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    // --- Helpers ---
-
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
     }
 
     fn check(&self, token: &Token) -> bool {
-        // Must check bounds first to prevent panic in peek()
         if self.is_at_end() {
             return false;
         }
@@ -54,16 +51,11 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        // FIX: Check bounds first to prevent index out of bounds panic in self.peek().
         if self.current >= self.tokens.len() {
             return true;
         }
-
-        // If within bounds, check if the token is the Eof marker.
         matches!(&self.tokens[self.current], Token::Eof)
     }
-
-    // --- Grammar Rules ---
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, String> {
         let mut statements = Vec::new();
@@ -126,37 +118,36 @@ impl Parser {
             |t| matches!(t, Token::Colon),
             "Expected ':' before function body.",
         )?;
-        self.consume(
-            |t| matches!(t, Token::Newline),
-            "Expected newline before block.",
-        )?;
-        self.consume(
-            |t| matches!(t, Token::Indent),
-            "Expected indentation for function body.",
-        )?;
 
-        let body = self.block()?;
-
+        let body = self.parse_block_or_statement()?;
         Ok(Stmt::Def(name, parameters, body))
     }
 
-    fn block(&mut self) -> Result<Vec<Stmt>, String> {
-        let mut stmts = Vec::new();
-        while !self.check(&Token::Dedent) && !self.is_at_end() {
-            while matches!(self.peek(), Token::Newline) {
-                self.advance();
+    fn parse_block_or_statement(&mut self) -> Result<Vec<Stmt>, String> {
+        if self.match_token(&[Token::Newline]) {
+            self.consume(
+                |t| matches!(t, Token::Indent),
+                "Expected indentation after newline.",
+            )?;
+            let mut stmts = Vec::new();
+            while !self.check(&Token::Dedent) && !self.is_at_end() {
+                while matches!(self.peek(), Token::Newline) {
+                    self.advance();
+                }
+                if self.check(&Token::Dedent) {
+                    break;
+                }
+                stmts.push(self.declaration()?);
             }
-            if self.check(&Token::Dedent) {
-                break;
-            }
-
-            stmts.push(self.declaration()?);
+            self.consume(
+                |t| matches!(t, Token::Dedent),
+                "Expected dedent after block.",
+            )?;
+            Ok(stmts)
+        } else {
+            let stmt = self.statement()?;
+            Ok(vec![stmt])
         }
-        self.consume(
-            |t| matches!(t, Token::Dedent),
-            "Expected dedent after block.",
-        )?;
-        Ok(stmts)
     }
 
     fn statement(&mut self) -> Result<Stmt, String> {
@@ -166,6 +157,24 @@ impl Parser {
             self.return_statement()
         } else if self.match_token(&[Token::For]) {
             self.for_statement()
+        } else if self.match_token(&[Token::Break]) {
+            // FIX: Don't consume Dedent. Just ensure we are at the end of a statement.
+            if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
+                self.consume(
+                    |t| matches!(t, Token::Newline),
+                    "Expected newline after break.",
+                )?;
+            }
+            Ok(Stmt::Break)
+        } else if self.match_token(&[Token::Continue]) {
+            // FIX: Don't consume Dedent.
+            if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
+                self.consume(
+                    |t| matches!(t, Token::Newline),
+                    "Expected newline after continue.",
+                )?;
+            }
+            Ok(Stmt::Continue)
         } else {
             self.expression_statement()
         }
@@ -180,29 +189,16 @@ impl Parser {
             Token::Identifier(s) => s.clone(),
             _ => unreachable!(),
         };
-
         self.consume(
             |t| matches!(t, Token::In),
             "Expected 'in' after iteration variable.",
         )?;
-
         let iterable = self.expression()?;
-
         self.consume(
             |t| matches!(t, Token::Colon),
             "Expected ':' before loop body.",
         )?;
-        self.consume(
-            |t| matches!(t, Token::Newline),
-            "Expected newline before loop block.",
-        )?;
-        self.consume(
-            |t| matches!(t, Token::Indent),
-            "Expected indentation for loop body.",
-        )?;
-
-        let body = self.block()?;
-
+        let body = self.parse_block_or_statement()?;
         Ok(Stmt::For(ident, iterable, body))
     }
 
@@ -212,64 +208,88 @@ impl Parser {
             |t| matches!(t, Token::Colon),
             "Expected ':' after condition.",
         )?;
-        self.consume(|t| matches!(t, Token::Newline), "Expected newline.")?;
-        self.consume(|t| matches!(t, Token::Indent), "Expected indent.")?;
-
-        let then_branch = self.block()?;
+        let then_branch = self.parse_block_or_statement()?;
         let mut else_branch = None;
 
         if self.match_token(&[Token::Elif]) {
-            // Elif is an 'else' that contains a nested 'if' statement (the 'else' body is just the inner 'if')
             let inner_if = self.if_statement()?;
             else_branch = Some(vec![inner_if]);
         } else if self.match_token(&[Token::Else]) {
             self.consume(|t| matches!(t, Token::Colon), "Expected ':' after else.")?;
-            self.consume(|t| matches!(t, Token::Newline), "Expected newline.")?;
-            self.consume(|t| matches!(t, Token::Indent), "Expected indent.")?;
-            else_branch = Some(self.block()?);
+            else_branch = Some(self.parse_block_or_statement()?);
         }
-
         Ok(Stmt::If(condition, then_branch, else_branch))
     }
 
     fn return_statement(&mut self) -> Result<Stmt, String> {
         let mut value = None;
-        if !self.check(&Token::Newline) {
+        if !self.check(&Token::Newline) && !self.check(&Token::Eof) && !self.check(&Token::Dedent) {
             value = Some(self.expression()?);
         }
-        self.consume(
-            |t| matches!(t, Token::Newline) || matches!(t, Token::Eof),
-            "Expected newline after return.",
-        )?;
+        if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
+            self.consume(
+                |t| matches!(t, Token::Newline),
+                "Expected newline after return.",
+            )?;
+        }
         Ok(Stmt::Return(value))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, String> {
         let expr = self.expression()?;
-
         if self.match_token(&[Token::Assign]) {
             if let Expr::Identifier(name) = expr {
                 let value = self.expression()?;
-                self.consume(
-                    |t| matches!(t, Token::Newline) || matches!(t, Token::Eof),
-                    "Expected newline after assignment.",
-                )?;
+                if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
+                    self.consume(
+                        |t| matches!(t, Token::Newline),
+                        "Expected newline after assignment.",
+                    )?;
+                }
                 return Ok(Stmt::Assignment(name, value));
             } else {
                 return Err("Invalid assignment target.".to_string());
             }
         }
-
-        self.consume(
-            |t| matches!(t, Token::Newline) || matches!(t, Token::Eof),
-            "Expected newline after expression.",
-        )?;
+        if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
+            self.consume(
+                |t| matches!(t, Token::Newline),
+                "Expected newline after expression.",
+            )?;
+        }
         Ok(Stmt::Expression(expr))
     }
 
-    // --- Expression Parsing (Precedence) ---
-
     fn expression(&mut self) -> Result<Expr, String> {
+        self.logic_or()
+    }
+
+    fn logic_or(&mut self) -> Result<Expr, String> {
+        let mut expr = self.logic_and()?;
+        while self.match_token(&[Token::Or]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.logic_and()?;
+            expr = Expr::LogicalOp(Box::new(expr), operator, Box::new(right));
+        }
+        Ok(expr)
+    }
+
+    fn logic_and(&mut self) -> Result<Expr, String> {
+        let mut expr = self.logic_not()?;
+        while self.match_token(&[Token::And]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.logic_not()?;
+            expr = Expr::LogicalOp(Box::new(expr), operator, Box::new(right));
+        }
+        Ok(expr)
+    }
+
+    fn logic_not(&mut self) -> Result<Expr, String> {
+        if self.match_token(&[Token::Not]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.logic_not()?;
+            return Ok(Expr::UnaryOp(operator, Box::new(right)));
+        }
         self.equality()
     }
 
@@ -285,7 +305,7 @@ impl Parser {
 
     fn comparison(&mut self) -> Result<Expr, String> {
         let mut expr = self.term()?;
-        while self.match_token(&[Token::Lt, Token::Gt]) {
+        while self.match_token(&[Token::Lt, Token::Gt, Token::LtEq, Token::GtEq]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.term()?;
             expr = Expr::BinaryOp(Box::new(expr), operator, Box::new(right));
@@ -304,6 +324,12 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Expr, String> {
+        if self.match_token(&[Token::Minus]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.factor()?;
+            return Ok(Expr::UnaryOp(operator, Box::new(right)));
+        }
+
         let mut expr = self.call()?;
         while self.match_token(&[Token::Slash, Token::Star]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -320,13 +346,54 @@ impl Parser {
             if self.match_token(&[Token::LParen]) {
                 expr = self.finish_call(expr)?;
             } else if self.match_token(&[Token::LBracket]) {
-                // New: Handle Indexing / Subscripting [index]
-                let index = self.expression()?;
+                let mut start = None;
+                let mut stop = None;
+                let mut step = None;
+                let mut is_slice = false;
+
+                if self.match_token(&[Token::Colon]) {
+                    is_slice = true;
+                    if !self.check(&Token::Colon) && !self.check(&Token::RBracket) {
+                        stop = Some(Box::new(self.expression()?));
+                    }
+                    if self.match_token(&[Token::Colon]) {
+                        if !self.check(&Token::RBracket) {
+                            step = Some(Box::new(self.expression()?));
+                        }
+                    }
+                } else {
+                    start = Some(Box::new(self.expression()?));
+                    if self.match_token(&[Token::Colon]) {
+                        is_slice = true;
+                        if !self.check(&Token::Colon) && !self.check(&Token::RBracket) {
+                            stop = Some(Box::new(self.expression()?));
+                        }
+                        if self.match_token(&[Token::Colon]) {
+                            if !self.check(&Token::RBracket) {
+                                step = Some(Box::new(self.expression()?));
+                            }
+                        }
+                    }
+                }
+
                 self.consume(
                     |t| matches!(t, Token::RBracket),
                     "Expected ']' after subscript.",
                 )?;
-                expr = Expr::Index(Box::new(expr), Box::new(index));
+
+                if is_slice {
+                    expr = Expr::Slice(Box::new(expr), start, stop, step);
+                } else {
+                    expr = Expr::Index(Box::new(expr), start.unwrap());
+                }
+            } else if self.match_token(&[Token::Dot]) {
+                let name_token = self.consume(
+                    |t| matches!(t, Token::Identifier(_)),
+                    "Expect property name after '.'.",
+                )?;
+                if let Token::Identifier(name) = name_token {
+                    expr = Expr::GetAttr(Box::new(expr), name.clone());
+                }
             } else {
                 break;
             }
@@ -368,14 +435,12 @@ impl Parser {
             }
         }
 
-        // Handle normal strings
         if self.match_token(&[Token::String(String::new())]) {
             if let Token::String(s) = &self.tokens[self.current - 1] {
                 return Ok(Expr::Literal(Value::String(s.clone())));
             }
         }
 
-        // Handle FStrings using the token stream provided by the lexer
         if self.match_token(&[Token::FStringContent(Vec::new())]) {
             if let Token::FStringContent(fstring_tokens) = &self.tokens[self.current - 1] {
                 return self.parse_fstring_content(fstring_tokens.clone());
@@ -397,7 +462,6 @@ impl Parser {
             return Ok(expr);
         }
 
-        // --- List Literal ---
         if self.match_token(&[Token::LBracket]) {
             let mut elements = Vec::new();
             if !self.check(&Token::RBracket) {
@@ -412,23 +476,17 @@ impl Parser {
             return Ok(Expr::List(elements));
         }
 
-        // --- Dictionary Literal ---
         if self.match_token(&[Token::LBrace]) {
             let mut entries = Vec::new();
             if !self.check(&Token::RBrace) {
                 loop {
-                    // Key must be an expression (usually a string literal or identifier)
                     let key = self.expression()?;
-
                     self.consume(
                         |t| matches!(t, Token::Colon),
                         "Expected ':' after dictionary key.",
                     )?;
-
-                    // Value is an expression
                     let value = self.expression()?;
                     entries.push((key, value));
-
                     if !self.match_token(&[Token::Comma]) {
                         break;
                     }
@@ -440,15 +498,11 @@ impl Parser {
             )?;
             return Ok(Expr::Dictionary(entries));
         }
-        // --- End Dictionary Literal ---
 
         Err(format!("Expect expression. Found {:?}", self.peek()))
     }
 
-    // Parses the token stream generated inside an f-string by the lexer
     fn parse_fstring_content(&mut self, fstring_tokens: Vec<Token>) -> Result<Expr, String> {
-        // The internal token stream lacks an Eof token, which causes the internal parser
-        // to panic when it reaches the end. We append one manually for safety.
         let mut tokens_with_eof = fstring_tokens;
         tokens_with_eof.push(Token::Eof);
 
@@ -456,32 +510,23 @@ impl Parser {
         let mut segments = Vec::new();
 
         while !internal_parser.is_at_end() {
-            // Check for the literal string part first (must be a String token from the lexer)
             if let Token::String(s) = internal_parser.peek() {
                 segments.push(FStringSegment::Literal(s.clone()));
                 internal_parser.advance();
             } else if internal_parser.match_token(&[Token::LParen]) {
-                // If it's a LParen, it signals the start of an embedded expression
-                // (The lexer replaces '{' with LParen and '}' with RParen around the expression tokens)
-
-                // Parse the expression using the temporary parser's rules
                 let expr = internal_parser.expression()?;
                 segments.push(FStringSegment::Expression(expr));
-
-                // Consume the closing RParen (which was the '}')
                 internal_parser.consume(
                     |t| matches!(t, Token::RParen),
                     "Expected ')' to close f-string embedded expression.",
                 )?;
             } else {
-                // This path should ideally never be reached if the lexer is correct and we handle Eof
                 return Err(format!(
                     "Unexpected token in f-string content: {:?}",
                     internal_parser.peek()
                 ));
             }
         }
-
         Ok(Expr::FString(segments))
     }
 }
