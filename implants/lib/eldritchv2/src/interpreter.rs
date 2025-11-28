@@ -1,4 +1,7 @@
-use super::ast::{BuiltinFn, Environment, Expr, FStringSegment, Function, Stmt, Value};
+use super::ast::{
+    Argument, BuiltinFn, Environment, Expr, FStringSegment, Function, Param, RuntimeParam, Stmt,
+    Value,
+};
 use super::lexer::Lexer;
 use super::parser::Parser;
 use super::token::Token;
@@ -232,7 +235,6 @@ impl Interpreter {
         }
     }
 
-    // New: Inserts directly into current environment, shadowing any outer var.
     fn define_variable(&mut self, name: &str, value: Value) {
         self.env.borrow_mut().values.insert(name.to_string(), value);
     }
@@ -265,9 +267,25 @@ impl Interpreter {
                 self.flow = Flow::Return(val);
             }
             Stmt::Def(name, params, body) => {
+                // Convert AST Param -> RuntimeParam by evaluating defaults NOW
+                let mut runtime_params = Vec::new();
+                for param in params {
+                    match param {
+                        Param::Normal(n) => runtime_params.push(RuntimeParam::Normal(n.clone())),
+                        Param::Star(n) => runtime_params.push(RuntimeParam::Star(n.clone())),
+                        Param::StarStar(n) => {
+                            runtime_params.push(RuntimeParam::StarStar(n.clone()))
+                        }
+                        Param::WithDefault(n, default_expr) => {
+                            let val = self.evaluate(default_expr)?;
+                            runtime_params.push(RuntimeParam::WithDefault(n.clone(), val));
+                        }
+                    }
+                }
+
                 let func = Value::Function(Function {
                     name: name.clone(),
-                    params: params.clone(),
+                    params: runtime_params,
                     body: body.clone(),
                     closure: self.env.clone(),
                 });
@@ -326,7 +344,7 @@ impl Interpreter {
             Expr::BinaryOp(left, op, right) => self.apply_binary_op(left, op, right),
             Expr::UnaryOp(op, right) => self.apply_unary_op(op, right),
             Expr::LogicalOp(left, op, right) => self.apply_logical_op(left, op, right),
-            Expr::Call(callee, args) => self.call_function(callee, args),
+            Expr::Call(callee, args) => self.call_function(callee, args), // Note: args is now Vec<Argument>
             Expr::List(elements) => self.evaluate_list_literal(elements),
             Expr::Tuple(elements) => self.evaluate_tuple_literal(elements),
             Expr::Dictionary(entries) => self.evaluate_dict_literal(entries),
@@ -334,7 +352,6 @@ impl Interpreter {
             Expr::GetAttr(obj, name) => self.evaluate_getattr(obj, name.to_string()),
             Expr::Slice(obj, start, stop, step) => self.evaluate_slice(obj, start, stop, step),
             Expr::FString(segments) => self.evaluate_fstring(segments),
-            // New: Comprehensions
             Expr::ListComp {
                 body,
                 var,
@@ -351,6 +368,7 @@ impl Interpreter {
         }
     }
 
+    // ... [ListComp and DictComp helpers from previous update remain here] ...
     fn evaluate_list_comp(
         &mut self,
         body: &Expr,
@@ -369,15 +387,12 @@ impl Interpreter {
                 ))
             }
         };
-
-        // Create new scope for comprehension
         let comp_env = Rc::new(RefCell::new(Environment {
             parent: Some(Rc::clone(&self.env)),
             values: HashMap::new(),
         }));
         let original_env = Rc::clone(&self.env);
         self.env = comp_env;
-
         let mut results = Vec::new();
         for item in items {
             self.define_variable(var, item);
@@ -389,7 +404,6 @@ impl Interpreter {
                 results.push(self.evaluate(body)?);
             }
         }
-
         self.env = original_env;
         Ok(Value::List(Rc::new(RefCell::new(results))))
     }
@@ -413,14 +427,12 @@ impl Interpreter {
                 ))
             }
         };
-
         let comp_env = Rc::new(RefCell::new(Environment {
             parent: Some(Rc::clone(&self.env)),
             values: HashMap::new(),
         }));
         let original_env = Rc::clone(&self.env);
         self.env = comp_env;
-
         let mut results = HashMap::new();
         for item in items {
             self.define_variable(var, item);
@@ -438,7 +450,6 @@ impl Interpreter {
                 results.insert(k_str, v);
             }
         }
-
         self.env = original_env;
         Ok(Value::Dictionary(Rc::new(RefCell::new(results))))
     }
@@ -613,6 +624,7 @@ impl Interpreter {
         Ok(Value::String(parts.join("")))
     }
 
+    // FIX: Added missing lookup_variable method
     fn lookup_variable(&self, name: &str) -> Result<Value, String> {
         let mut current_env = Some(Rc::clone(&self.env));
         while let Some(env_rc) = current_env {
@@ -625,39 +637,146 @@ impl Interpreter {
         Err(format!("Undefined variable: '{}'", name))
     }
 
-    fn call_function(&mut self, callee: &Expr, args: &[Expr]) -> Result<Value, String> {
+    fn call_function(&mut self, callee: &Expr, args: &[Argument]) -> Result<Value, String> {
         let callee_val = self.evaluate(callee)?;
-        let mut evaluated_args = Vec::new();
+
+        // 1. Evaluate arguments into a standard form (list of positional, map of keywords)
+        let mut pos_args_val = Vec::new();
+        let mut kw_args_val = HashMap::new();
+
         for arg in args {
-            evaluated_args.push(self.evaluate(arg)?);
+            match arg {
+                Argument::Positional(expr) => pos_args_val.push(self.evaluate(expr)?),
+                Argument::Keyword(name, expr) => {
+                    let val = self.evaluate(expr)?;
+                    kw_args_val.insert(name.clone(), val);
+                }
+                Argument::StarArgs(expr) => {
+                    let val = self.evaluate(expr)?;
+                    match val {
+                        Value::List(l) => pos_args_val.extend(l.borrow().clone()),
+                        Value::Tuple(t) => pos_args_val.extend(t.clone()),
+                        _ => {
+                            return Err(format!(
+                                "*args argument must be iterable, got {:?}",
+                                get_type_name(&val)
+                            ))
+                        }
+                    }
+                }
+                Argument::KwArgs(expr) => {
+                    let val = self.evaluate(expr)?;
+                    match val {
+                        Value::Dictionary(d) => kw_args_val.extend(d.borrow().clone()),
+                        _ => {
+                            return Err(format!(
+                                "**kwargs argument must be a dict, got {:?}",
+                                get_type_name(&val)
+                            ))
+                        }
+                    }
+                }
+            }
         }
-        let args_slice = evaluated_args.as_slice();
+
+        let args_slice = pos_args_val.as_slice();
 
         match callee_val {
-            Value::NativeFunction(_, f) => f(args_slice),
+            Value::NativeFunction(_, f) => f(args_slice), // Note: Native funcs usually only take positional currently in this toy impl
             Value::Function(Function {
                 name,
                 params,
                 body,
                 closure,
             }) => {
-                if params.len() != args_slice.len() {
-                    return Err(format!(
-                        "Function '{}' expected {} arguments.",
-                        name,
-                        params.len()
-                    ));
-                }
                 let function_env = Rc::new(RefCell::new(Environment {
                     parent: Some(closure),
                     values: HashMap::new(),
                 }));
-                for (param, arg) in params.iter().zip(args_slice.iter()) {
-                    function_env
-                        .borrow_mut()
-                        .values
-                        .insert(param.clone(), arg.clone());
+
+                // 2. Bind Arguments to Parameters
+                let mut pos_idx = 0;
+
+                for param in params {
+                    match param {
+                        RuntimeParam::Normal(param_name) => {
+                            if pos_idx < pos_args_val.len() {
+                                function_env
+                                    .borrow_mut()
+                                    .values
+                                    .insert(param_name.clone(), pos_args_val[pos_idx].clone());
+                                pos_idx += 1;
+                            } else if let Some(val) = kw_args_val.remove(&param_name) {
+                                function_env
+                                    .borrow_mut()
+                                    .values
+                                    .insert(param_name.clone(), val);
+                            } else {
+                                return Err(format!("Missing required argument: '{}'", param_name));
+                            }
+                        }
+                        RuntimeParam::WithDefault(param_name, default_val) => {
+                            if pos_idx < pos_args_val.len() {
+                                function_env
+                                    .borrow_mut()
+                                    .values
+                                    .insert(param_name.clone(), pos_args_val[pos_idx].clone());
+                                pos_idx += 1;
+                            } else if let Some(val) = kw_args_val.remove(&param_name) {
+                                function_env
+                                    .borrow_mut()
+                                    .values
+                                    .insert(param_name.clone(), val);
+                            } else {
+                                function_env
+                                    .borrow_mut()
+                                    .values
+                                    .insert(param_name.clone(), default_val.clone());
+                            }
+                        }
+                        RuntimeParam::Star(param_name) => {
+                            let remaining = if pos_idx < pos_args_val.len() {
+                                pos_args_val[pos_idx..].to_vec()
+                            } else {
+                                Vec::new()
+                            };
+                            // *args consumes all remaining positional
+                            pos_idx = pos_args_val.len();
+                            function_env
+                                .borrow_mut()
+                                .values
+                                .insert(param_name.clone(), Value::Tuple(remaining));
+                        }
+                        RuntimeParam::StarStar(param_name) => {
+                            // **kwargs consumes all remaining keywords
+                            let mut dict = HashMap::new();
+                            for (k, v) in kw_args_val.drain() {
+                                dict.insert(k, v);
+                            }
+                            function_env.borrow_mut().values.insert(
+                                param_name.clone(),
+                                Value::Dictionary(Rc::new(RefCell::new(dict))),
+                            );
+                        }
+                    }
                 }
+
+                // Check for excess arguments
+                if pos_idx < pos_args_val.len() {
+                    return Err(format!(
+                        "Function '{}' got too many positional arguments.",
+                        name
+                    ));
+                }
+                if !kw_args_val.is_empty() {
+                    // keys that weren't consumed
+                    let keys: Vec<&String> = kw_args_val.keys().collect();
+                    return Err(format!(
+                        "Function '{}' got unexpected keyword arguments: {:?}",
+                        name, keys
+                    ));
+                }
+
                 let original_env = Rc::clone(&self.env);
                 self.env = function_env;
                 let old_flow = self.flow.clone();
@@ -675,6 +794,9 @@ impl Interpreter {
                 Ok(ret_val)
             }
             Value::BoundMethod(receiver, method_name) => {
+                // For bound methods, we just pass the evaluated args to the helper
+                // Note: The helper assumes positional args for now, full kwargs support for builtins isn't implemented here
+                // but we can pass the positional list.
                 self.call_bound_method(&receiver, &method_name, args_slice)
             }
             _ => Err(format!("Cannot call value of type: {:?}", callee_val)),
@@ -776,16 +898,19 @@ impl Interpreter {
             (a, Token::Eq, b) => Ok(Value::Bool(a == b)),
             (a, Token::NotEq, b) => Ok(Value::Bool(a != b)),
 
+            // INT Comparisons
             (Value::Int(a), Token::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
             (Value::Int(a), Token::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
             (Value::Int(a), Token::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
             (Value::Int(a), Token::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
 
+            // STRING Comparisons
             (Value::String(a), Token::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
             (Value::String(a), Token::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
             (Value::String(a), Token::LtEq, Value::String(b)) => Ok(Value::Bool(a <= b)),
             (Value::String(a), Token::GtEq, Value::String(b)) => Ok(Value::Bool(a >= b)),
 
+            // Arithmetic
             (Value::Int(a), Token::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Token::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Token::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
@@ -796,6 +921,7 @@ impl Interpreter {
                 Ok(Value::Int(a / b))
             }
 
+            // Bitwise
             (Value::Int(a), Token::BitAnd, Value::Int(b)) => Ok(Value::Int(a & b)),
             (Value::Int(a), Token::BitOr, Value::Int(b)) => Ok(Value::Int(a | b)),
             (Value::Int(a), Token::BitXor, Value::Int(b)) => Ok(Value::Int(a ^ b)),

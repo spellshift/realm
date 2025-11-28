@@ -24,6 +24,7 @@ pub enum Token {
     BitNot,
     LShift,
     RShift,
+    StarStar, // New: ** (Power or kwargs)
 
     // One or two character tokens
     Eq,

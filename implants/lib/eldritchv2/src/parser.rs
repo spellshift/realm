@@ -1,5 +1,5 @@
-use super::ast::{Expr, FStringSegment, Stmt, Value};
-use super::token::Token;
+use super::ast::{Argument, Expr, FStringSegment, Param, Stmt, Value};
+use super::token::Token; // Updated imports
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -13,6 +13,13 @@ impl Parser {
 
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
+    }
+    fn peek_next(&self) -> &Token {
+        if self.current + 1 < self.tokens.len() {
+            &self.tokens[self.current + 1]
+        } else {
+            &self.tokens[self.current]
+        }
     }
 
     fn check(&self, token: &Token) -> bool {
@@ -94,16 +101,48 @@ impl Parser {
             "Expected '(' after function name.",
         )?;
 
-        let mut parameters = Vec::new();
+        let mut params = Vec::new();
         if !self.check(&Token::RParen) {
             loop {
-                let param_token = self.consume(
-                    |t| matches!(t, Token::Identifier(_)),
-                    "Expected parameter name.",
-                )?;
-                if let Token::Identifier(param_name) = param_token {
-                    parameters.push(param_name.clone());
+                if self.match_token(&[Token::Star]) {
+                    // *args
+                    let param_token = self.consume(
+                        |t| matches!(t, Token::Identifier(_)),
+                        "Expected name after *.",
+                    )?;
+                    if let Token::Identifier(param_name) = param_token {
+                        params.push(Param::Star(param_name.clone()));
+                    }
+                } else if self.match_token(&[Token::StarStar]) {
+                    // **kwargs
+                    let param_token = self.consume(
+                        |t| matches!(t, Token::Identifier(_)),
+                        "Expected name after **.",
+                    )?;
+                    if let Token::Identifier(param_name) = param_token {
+                        params.push(Param::StarStar(param_name.clone()));
+                    }
+                } else {
+                    // FIX: Clone the param name immediately to satisfy borrow checker
+                    let param_token = self.consume(
+                        |t| matches!(t, Token::Identifier(_)),
+                        "Expected parameter name.",
+                    )?;
+                    let param_name = if let Token::Identifier(name) = param_token {
+                        name.clone()
+                    } else {
+                        unreachable!()
+                    };
+
+                    // Check for default value
+                    if self.match_token(&[Token::Assign]) {
+                        let default_val = self.expression()?;
+                        params.push(Param::WithDefault(param_name, default_val));
+                    } else {
+                        params.push(Param::Normal(param_name));
+                    }
                 }
+
                 if !self.match_token(&[Token::Comma]) {
                     break;
                 }
@@ -120,7 +159,7 @@ impl Parser {
         )?;
 
         let body = self.parse_block_or_statement()?;
-        Ok(Stmt::Def(name, parameters, body))
+        Ok(Stmt::Def(name, params, body))
     }
 
     fn parse_block_or_statement(&mut self) -> Result<Vec<Stmt>, String> {
@@ -257,6 +296,8 @@ impl Parser {
         }
         Ok(Stmt::Expression(expr))
     }
+
+    // --- Expression Parsing (Precedence) ---
 
     fn expression(&mut self) -> Result<Expr, String> {
         self.logic_or()
@@ -443,7 +484,33 @@ impl Parser {
         let mut args = Vec::new();
         if !self.check(&Token::RParen) {
             loop {
-                args.push(self.expression()?);
+                // FIX: Check for keyword arg (Identifier = Expression) without borrowing self mutably incorrectly
+                let is_keyword = if let Token::Identifier(_) = self.peek() {
+                    matches!(self.peek_next(), Token::Assign)
+                } else {
+                    false
+                };
+
+                if self.match_token(&[Token::Star]) {
+                    let expr = self.expression()?;
+                    args.push(Argument::StarArgs(expr));
+                } else if self.match_token(&[Token::StarStar]) {
+                    let expr = self.expression()?;
+                    args.push(Argument::KwArgs(expr));
+                } else if is_keyword {
+                    // FIX: Extract name and clone it before parsing the rest
+                    let name = if let Token::Identifier(s) = self.advance() {
+                        s.clone()
+                    } else {
+                        unreachable!()
+                    };
+                    self.advance(); // Consume '='
+                    let val = self.expression()?;
+                    args.push(Argument::Keyword(name, val));
+                } else {
+                    args.push(Argument::Positional(self.expression()?));
+                }
+
                 if !self.match_token(&[Token::Comma]) {
                     break;
                 }
@@ -494,9 +561,8 @@ impl Parser {
         if self.match_token(&[Token::LParen]) {
             if self.match_token(&[Token::RParen]) {
                 return Ok(Expr::Tuple(Vec::new()));
-            } // Empty tuple
+            }
             let expr = self.expression()?;
-            // Check for tuple
             if self.match_token(&[Token::Comma]) {
                 let mut elements = vec![expr];
                 if !self.check(&Token::RParen) {
@@ -518,36 +584,28 @@ impl Parser {
         }
 
         if self.match_token(&[Token::LBracket]) {
-            // Check for empty list
             if self.match_token(&[Token::RBracket]) {
                 return Ok(Expr::List(Vec::new()));
             }
 
             let first_expr = self.expression()?;
 
-            // LIST COMPREHENSION: Check for 'for'
             if self.match_token(&[Token::For]) {
                 let var_token = self.consume(
                     |t| matches!(t, Token::Identifier(_)),
-                    "Expected iteration variable name.",
+                    "Expected iteration variable.",
                 )?;
                 let var = match var_token {
                     Token::Identifier(s) => s.clone(),
                     _ => unreachable!(),
                 };
-
                 self.consume(|t| matches!(t, Token::In), "Expected 'in'.")?;
                 let iterable = self.expression()?;
-
                 let mut cond = None;
                 if self.match_token(&[Token::If]) {
                     cond = Some(Box::new(self.expression()?));
                 }
-
-                self.consume(
-                    |t| matches!(t, Token::RBracket),
-                    "Expected ']' after list comprehension.",
-                )?;
+                self.consume(|t| matches!(t, Token::RBracket), "Expected ']'.")?;
                 return Ok(Expr::ListComp {
                     body: Box::new(first_expr),
                     var,
@@ -556,7 +614,6 @@ impl Parser {
                 });
             }
 
-            // Normal List
             let mut elements = vec![first_expr];
             if self.match_token(&[Token::Comma]) {
                 if !self.check(&Token::RBracket) {
@@ -573,7 +630,6 @@ impl Parser {
         }
 
         if self.match_token(&[Token::LBrace]) {
-            // Empty dict
             if self.match_token(&[Token::RBrace]) {
                 return Ok(Expr::Dictionary(Vec::new()));
             }
@@ -582,29 +638,22 @@ impl Parser {
             self.consume(|t| matches!(t, Token::Colon), "Expected ':' after key.")?;
             let val_expr = self.expression()?;
 
-            // DICT COMPREHENSION
             if self.match_token(&[Token::For]) {
                 let var_token = self.consume(
                     |t| matches!(t, Token::Identifier(_)),
-                    "Expected iteration variable name.",
+                    "Expected iteration variable.",
                 )?;
                 let var = match var_token {
                     Token::Identifier(s) => s.clone(),
                     _ => unreachable!(),
                 };
-
                 self.consume(|t| matches!(t, Token::In), "Expected 'in'.")?;
                 let iterable = self.expression()?;
-
                 let mut cond = None;
                 if self.match_token(&[Token::If]) {
                     cond = Some(Box::new(self.expression()?));
                 }
-
-                self.consume(
-                    |t| matches!(t, Token::RBrace),
-                    "Expected '}' after dict comprehension.",
-                )?;
+                self.consume(|t| matches!(t, Token::RBrace), "Expected '}'.")?;
                 return Ok(Expr::DictComp {
                     key: Box::new(key_expr),
                     value: Box::new(val_expr),
@@ -614,7 +663,6 @@ impl Parser {
                 });
             }
 
-            // Normal Dict
             let mut entries = vec![(key_expr, val_expr)];
             if self.match_token(&[Token::Comma]) {
                 if !self.check(&Token::RBrace) {

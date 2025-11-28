@@ -9,13 +9,45 @@ pub struct Environment {
     pub values: HashMap<String, Value>,
 }
 
+// --- Function Definitions (Runtime) ---
+
+#[derive(Debug, Clone)]
+pub enum RuntimeParam {
+    Normal(String),
+    WithDefault(String, Value), // Default evaluated at definition time
+    Star(String),
+    StarStar(String),
+}
+
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
-    pub params: Vec<String>,
+    pub params: Vec<RuntimeParam>,
     pub body: Vec<Stmt>,
     pub closure: Rc<RefCell<Environment>>,
 }
+
+// --- Function Definitions (AST) ---
+
+#[derive(Debug, Clone)]
+pub enum Param {
+    Normal(String),
+    WithDefault(String, Expr),
+    Star(String),
+    StarStar(String),
+}
+
+// --- Call Arguments (AST) ---
+
+#[derive(Debug, Clone)]
+pub enum Argument {
+    Positional(Expr),
+    Keyword(String, Expr),
+    StarArgs(Expr),
+    KwArgs(Expr),
+}
+
+// --- Values & Expressions ---
 
 pub type BuiltinFn = fn(&[Value]) -> Result<Value, String>;
 
@@ -76,7 +108,7 @@ pub enum Expr {
     BinaryOp(Box<Expr>, Token, Box<Expr>),
     UnaryOp(Token, Box<Expr>),
     LogicalOp(Box<Expr>, Token, Box<Expr>),
-    Call(Box<Expr>, Vec<Expr>),
+    Call(Box<Expr>, Vec<Argument>), // Updated to use Argument enum
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
     Dictionary(Vec<(Expr, Expr)>),
@@ -89,14 +121,12 @@ pub enum Expr {
         Option<Box<Expr>>,
     ),
     FString(Vec<FStringSegment>),
-    // [body for var in iterable if condition]
     ListComp {
         body: Box<Expr>,
         var: String,
         iterable: Box<Expr>,
         cond: Option<Box<Expr>>,
     },
-    // {key: value for var in iterable if condition}
     DictComp {
         key: Box<Expr>,
         value: Box<Expr>,
@@ -112,7 +142,7 @@ pub enum Stmt {
     Assignment(String, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
-    Def(String, Vec<String>, Vec<Stmt>),
+    Def(String, Vec<Param>, Vec<Stmt>), // Updated to use Param enum
     For(String, Expr, Vec<Stmt>),
     Break,
     Continue,

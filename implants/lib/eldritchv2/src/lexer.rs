@@ -44,13 +44,6 @@ impl Lexer {
         self.source[self.current]
     }
 
-    fn peek_next(&self) -> char {
-        if self.current + 1 >= self.source.len() {
-            return '\0';
-        }
-        self.source[self.current + 1]
-    }
-
     fn match_char(&mut self, expected: char) -> bool {
         if self.is_at_end() || self.source[self.current] != expected {
             return false;
@@ -306,19 +299,25 @@ impl Lexer {
             ';' => Ok(self.add_token(Token::Newline)),
             '+' => Ok(self.add_token(Token::Plus)),
             '-' => Ok(self.add_token(Token::Minus)),
-            '*' => Ok(self.add_token(Token::Star)),
+            '*' => {
+                // FIX: Check for ** token
+                if self.match_char('*') {
+                    Ok(self.add_token(Token::StarStar))
+                } else {
+                    Ok(self.add_token(Token::Star))
+                }
+            }
             '/' => Ok(self.add_token(Token::Slash)),
-            '&' => Ok(self.add_token(Token::BitAnd)), // New
-            '|' => Ok(self.add_token(Token::BitOr)),  // New
-            '^' => Ok(self.add_token(Token::BitXor)), // New
-            '~' => Ok(self.add_token(Token::BitNot)), // New
+            '&' => Ok(self.add_token(Token::BitAnd)),
+            '|' => Ok(self.add_token(Token::BitOr)),
+            '^' => Ok(self.add_token(Token::BitXor)),
+            '~' => Ok(self.add_token(Token::BitNot)),
             '=' => Ok(if self.match_char('=') {
                 self.add_token(Token::Eq)
             } else {
                 self.add_token(Token::Assign)
             }),
             '<' => {
-                // Updated for LShift
                 if self.match_char('<') {
                     Ok(self.add_token(Token::LShift))
                 } else if self.match_char('=') {
@@ -328,7 +327,6 @@ impl Lexer {
                 }
             }
             '>' => {
-                // Updated for RShift
                 if self.match_char('>') {
                     Ok(self.add_token(Token::RShift))
                 } else if self.match_char('=') {

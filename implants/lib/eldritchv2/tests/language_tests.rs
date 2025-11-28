@@ -1,5 +1,71 @@
 mod assert;
 
+// --- Function Arguments ---
+
+#[test]
+fn test_function_arguments() {
+    // Default arguments
+    assert::pass(
+        r#"
+        def f(a, b=10):
+            return a + b
+        assert_eq(f(5), 15)
+        assert_eq(f(5, 20), 25)
+    "#,
+    );
+
+    // Keyword arguments
+    assert::pass(
+        r#"
+        def f(a, b, c=5):
+            return a + b + c
+        assert_eq(f(1, 2), 8)
+        assert_eq(f(a=1, b=2), 8)
+        assert_eq(f(b=2, a=1), 8)
+        assert_eq(f(1, c=10, b=2), 13)
+    "#,
+    );
+
+    // *args
+    assert::pass(
+        r#"
+        def f(a, *args):
+            return len(args)
+        assert_eq(f(1), 0)
+        assert_eq(f(1, 2, 3), 2)
+    "#,
+    );
+
+    // **kwargs
+    assert::pass(
+        r#"
+        def f(a, **kwargs):
+            return kwargs["x"]
+        assert_eq(f(1, x=10), 10)
+    "#,
+    );
+
+    // All together
+    assert::pass(
+        r#"
+        def f(a, b=2, *args, **kwargs):
+            return a + b + len(args) + len(kwargs)
+
+        # a=1, b=2, args=[], kwargs={} -> 1+2+0+0 = 3
+        assert_eq(f(1), 3)
+
+        # a=1, b=3, args=[], kwargs={} -> 1+3+0+0 = 4
+        assert_eq(f(1, 3), 4)
+
+        # a=1, b=3, args=[4, 5], kwargs={} -> 1+3+2+0 = 6
+        assert_eq(f(1, 3, 4, 5), 6)
+
+        # a=1, b=3, args=[4], kwargs={"x": 1} -> 1+3+1+1 = 6
+        assert_eq(f(1, 3, 4, x=1), 6)
+    "#,
+    );
+}
+
 // --- Comprehensions ---
 
 #[test]
