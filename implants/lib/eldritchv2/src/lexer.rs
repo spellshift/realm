@@ -1,5 +1,5 @@
 use super::token::Token;
-use std::collections::VecDeque; // Added for queue
+use std::collections::VecDeque;
 
 pub struct Lexer {
     source: Vec<char>,
@@ -8,7 +8,7 @@ pub struct Lexer {
     line: usize,
     indent_stack: Vec<usize>,
     nesting: usize,
-    pending_tokens: VecDeque<Token>, // New: Queue for buffered tokens (like multiple Dedents)
+    pending_tokens: VecDeque<Token>,
 }
 
 impl Lexer {
@@ -23,7 +23,7 @@ impl Lexer {
             line: 1,
             indent_stack: vec![0],
             nesting: 0,
-            pending_tokens: VecDeque::new(), // Initialize queue
+            pending_tokens: VecDeque::new(),
         }
     }
 
@@ -42,6 +42,13 @@ impl Lexer {
             return '\0';
         }
         self.source[self.current]
+    }
+
+    fn peek_next(&self) -> char {
+        if self.current + 1 >= self.source.len() {
+            return '\0';
+        }
+        self.source[self.current + 1]
     }
 
     fn match_char(&mut self, expected: char) -> bool {
@@ -201,7 +208,6 @@ impl Lexer {
     }
 
     fn next_token(&mut self) -> Result<Token, String> {
-        // FIX: Check pending_tokens first
         if let Some(token) = self.pending_tokens.pop_front() {
             return Ok(token);
         }
@@ -237,10 +243,7 @@ impl Lexer {
                     if *self.indent_stack.last().unwrap() != indent_count {
                         return Err(format!("Inconsistent indentation on line {}", self.line));
                     }
-
                     self.current = self.start + indent_count;
-
-                    // FIX: Queue up extra dedents
                     if !dedents.is_empty() {
                         let first = dedents.remove(0);
                         for t in dedents {
@@ -305,21 +308,35 @@ impl Lexer {
             '-' => Ok(self.add_token(Token::Minus)),
             '*' => Ok(self.add_token(Token::Star)),
             '/' => Ok(self.add_token(Token::Slash)),
+            '&' => Ok(self.add_token(Token::BitAnd)), // New
+            '|' => Ok(self.add_token(Token::BitOr)),  // New
+            '^' => Ok(self.add_token(Token::BitXor)), // New
+            '~' => Ok(self.add_token(Token::BitNot)), // New
             '=' => Ok(if self.match_char('=') {
                 self.add_token(Token::Eq)
             } else {
                 self.add_token(Token::Assign)
             }),
-            '<' => Ok(if self.match_char('=') {
-                self.add_token(Token::LtEq)
-            } else {
-                self.add_token(Token::Lt)
-            }),
-            '>' => Ok(if self.match_char('=') {
-                self.add_token(Token::GtEq)
-            } else {
-                self.add_token(Token::Gt)
-            }),
+            '<' => {
+                // Updated for LShift
+                if self.match_char('<') {
+                    Ok(self.add_token(Token::LShift))
+                } else if self.match_char('=') {
+                    Ok(self.add_token(Token::LtEq))
+                } else {
+                    Ok(self.add_token(Token::Lt))
+                }
+            }
+            '>' => {
+                // Updated for RShift
+                if self.match_char('>') {
+                    Ok(self.add_token(Token::RShift))
+                } else if self.match_char('=') {
+                    Ok(self.add_token(Token::GtEq))
+                } else {
+                    Ok(self.add_token(Token::Gt))
+                }
+            }
             '!' => Ok(if self.match_char('=') {
                 self.add_token(Token::NotEq)
             } else {

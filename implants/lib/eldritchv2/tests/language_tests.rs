@@ -1,6 +1,37 @@
 mod assert;
 
-// --- Basic Types & Literals ---
+// --- Tuples ---
+
+#[test]
+fn test_tuples() {
+    assert::pass(
+        r#"
+        t = (1, 2, 3)
+        assert_eq(t[0], 1)
+        assert_eq(len(t), 3)
+        assert_eq((1,), (1,))
+        assert_eq((), ())
+    "#,
+    );
+}
+
+// --- Bitwise Operators ---
+
+#[test]
+fn test_bitwise() {
+    assert::all_true(
+        r#"
+        (1 & 2) == 0
+        (1 | 2) == 3
+        (1 ^ 3) == 2
+        ~0 == -1
+        (1 << 2) == 4
+        (8 >> 1) == 4
+    "#,
+    );
+}
+
+// --- Existing Tests (Preserved) ---
 
 #[test]
 fn test_literals_and_constants() {
@@ -65,12 +96,8 @@ fn test_logic_operators() {
         (True or (1/0)) == True
     "#,
     );
-
-    // Explicitly check false cases (all_true expects expression to evaluate to True)
     assert::pass("assert((False and (1/0)) == False)");
 }
-
-// --- Control Flow ---
 
 #[test]
 fn test_if_else() {
@@ -92,7 +119,6 @@ fn test_if_else() {
     "#,
     );
 
-    // Elif chains
     assert::pass(
         r#"
         def check(x):
@@ -111,7 +137,6 @@ fn test_if_else() {
 
 #[test]
 fn test_loops() {
-    // Basic iteration
     assert::pass(
         r#"
         sum = 0
@@ -121,7 +146,6 @@ fn test_loops() {
     "#,
     );
 
-    // Range iteration
     assert::pass(
         r#"
         sum = 0
@@ -131,7 +155,6 @@ fn test_loops() {
     "#,
     );
 
-    // Break
     assert::pass(
         r#"
         res = 0
@@ -143,7 +166,6 @@ fn test_loops() {
     "#,
     );
 
-    // Continue
     assert::pass(
         r#"
         count = 0
@@ -155,7 +177,6 @@ fn test_loops() {
     "#,
     );
 
-    // Nested loops
     assert::pass(
         r#"
         total = 0
@@ -168,8 +189,6 @@ fn test_loops() {
     "#,
     );
 }
-
-// --- Functions ---
 
 #[test]
 fn test_functions_basic() {
@@ -242,11 +261,8 @@ fn test_closures() {
     );
 }
 
-// --- Data Structures ---
-
 #[test]
 fn test_lists() {
-    // Literal and Indexing
     assert::pass(
         r#"
         l = [10, 20, 30]
@@ -257,7 +273,6 @@ fn test_lists() {
     "#,
     );
 
-    // Methods
     assert::pass(
         r#"
         l = []
@@ -271,7 +286,6 @@ fn test_lists() {
     "#,
     );
 
-    // Slicing
     assert::pass(
         r#"
         l = [0, 1, 2, 3, 4]
@@ -297,7 +311,6 @@ fn test_dictionaries() {
     "#,
     );
 
-    // Dynamic keys
     assert::pass(
         r#"
         k = "foo"
@@ -306,7 +319,6 @@ fn test_dictionaries() {
     "#,
     );
 
-    // Complex nesting (multiline)
     assert::pass(
         r#"
         d = {
@@ -319,8 +331,6 @@ fn test_dictionaries() {
     );
 }
 
-// --- Strings ---
-
 #[test]
 fn test_strings() {
     assert::pass(
@@ -329,7 +339,6 @@ fn test_strings() {
         y = "world"
         assert_eq(x + " " + y, "hello world")
 
-        # Methods
         assert_eq(" a ".strip(), "a")
         assert_eq("A".lower(), "a")
         assert_eq("a".upper(), "A")
@@ -337,7 +346,6 @@ fn test_strings() {
     "#,
     );
 
-    // F-strings
     assert::pass(
         r#"
         name = "Bob"
@@ -347,8 +355,6 @@ fn test_strings() {
     "#,
     );
 }
-
-// --- Built-ins ---
 
 #[test]
 fn test_type_conversions() {
@@ -376,11 +382,10 @@ fn test_introspection() {
         type(None) == "NoneType"
         type([]) == "list"
         type({}) == "dict"
+        type(()) == "tuple"
     "#,
     );
 }
-
-// --- Error Handling ---
 
 #[test]
 fn test_runtime_errors() {

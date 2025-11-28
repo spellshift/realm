@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq)] // Added PartialEq derive for easier testing
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Single-character tokens
     LParen,
@@ -9,7 +9,7 @@ pub enum Token {
     RBrace,
     Comma,
     Colon,
-    Dot, // Added Dot
+    Dot,
     Minus,
     Plus,
     Star,
@@ -17,13 +17,21 @@ pub enum Token {
     Assign,
     Newline,
 
+    // Bitwise operators
+    BitAnd,
+    BitOr,
+    BitXor,
+    BitNot,
+    LShift,
+    RShift,
+
     // One or two character tokens
     Eq,
     NotEq,
     Lt,
     Gt,
     LtEq,
-    GtEq, // Added LtEq (<=) and GtEq (>=)
+    GtEq,
 
     // Literals
     Identifier(String),
@@ -44,9 +52,9 @@ pub enum Token {
     None,
     And,
     Or,
-    Not, // Added Logical Operators
+    Not,
     Break,
-    Continue, // Added Loop Control
+    Continue,
 
     // Structural
     Indent,

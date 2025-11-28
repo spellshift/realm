@@ -16,6 +16,7 @@ fn is_truthy(value: &Value) -> bool {
         Value::String(s) => !s.is_empty(),
         Value::List(l) => !l.borrow().is_empty(),
         Value::Dictionary(d) => !d.borrow().is_empty(),
+        Value::Tuple(t) => !t.is_empty(),
         Value::Function(_) | Value::NativeFunction(_, _) | Value::BoundMethod(_, _) => true,
     }
 }
@@ -28,13 +29,13 @@ fn get_type_name(value: &Value) -> String {
         Value::String(_) => "string".to_string(),
         Value::List(_) => "list".to_string(),
         Value::Dictionary(_) => "dict".to_string(),
+        Value::Tuple(_) => "tuple".to_string(),
         Value::Function(_) | Value::NativeFunction(_, _) | Value::BoundMethod(_, _) => {
             "function".to_string()
         }
     }
 }
 
-// Helper to normalize slice indices (Python-style)
 fn normalize_index(idx: i64, len: usize) -> usize {
     let len_i64 = len as i64;
     if idx < 0 {
@@ -100,6 +101,7 @@ impl Interpreter {
             Value::String(s) => Ok(Value::Int(s.len() as i64)),
             Value::List(l) => Ok(Value::Int(l.borrow().len() as i64)),
             Value::Dictionary(d) => Ok(Value::Int(d.borrow().len() as i64)),
+            Value::Tuple(t) => Ok(Value::Int(t.len() as i64)),
             _ => Err(format!("'len()' is not defined for type: {:?}", args[0])),
         });
 
@@ -321,9 +323,9 @@ impl Interpreter {
             Expr::LogicalOp(left, op, right) => self.apply_logical_op(left, op, right),
             Expr::Call(callee, args) => self.call_function(callee, args),
             Expr::List(elements) => self.evaluate_list_literal(elements),
+            Expr::Tuple(elements) => self.evaluate_tuple_literal(elements),
             Expr::Dictionary(entries) => self.evaluate_dict_literal(entries),
             Expr::Index(obj, index) => self.evaluate_index(obj, index),
-            // Updated: Using to_string() as requested
             Expr::GetAttr(obj, name) => self.evaluate_getattr(obj, name.to_string()),
             Expr::Slice(obj, start, stop, step) => self.evaluate_slice(obj, start, stop, step),
             Expr::FString(segments) => self.evaluate_fstring(segments),
@@ -336,6 +338,14 @@ impl Interpreter {
             vals.push(self.evaluate(expr)?);
         }
         Ok(Value::List(Rc::new(RefCell::new(vals))))
+    }
+
+    fn evaluate_tuple_literal(&mut self, elements: &[Expr]) -> Result<Value, String> {
+        let mut vals = Vec::new();
+        for expr in elements {
+            vals.push(self.evaluate(expr)?);
+        }
+        Ok(Value::Tuple(vals))
     }
 
     fn evaluate_dict_literal(&mut self, entries: &[(Expr, Expr)]) -> Result<Value, String> {
@@ -363,7 +373,6 @@ impl Interpreter {
                     _ => return Err("List indices must be integers".to_string()),
                 };
                 let list = l.borrow();
-                // Handle negative indexing
                 let true_idx = if idx_int < 0 {
                     list.len() as i64 + idx_int
                 } else {
@@ -373,6 +382,21 @@ impl Interpreter {
                     return Err("List index out of range".to_string());
                 }
                 Ok(list[true_idx as usize].clone())
+            }
+            Value::Tuple(t) => {
+                let idx_int = match idx_val {
+                    Value::Int(i) => i,
+                    _ => return Err("Tuple indices must be integers".to_string()),
+                };
+                let true_idx = if idx_int < 0 {
+                    t.len() as i64 + idx_int
+                } else {
+                    idx_int
+                };
+                if true_idx < 0 || true_idx as usize >= t.len() {
+                    return Err("Tuple index out of range".to_string());
+                }
+                Ok(t[true_idx as usize].clone())
             }
             Value::Dictionary(d) => {
                 let key_str = match idx_val {
@@ -436,7 +460,7 @@ impl Interpreter {
                     } else {
                         -1
                     }
-                }; // -1 indicates before start
+                };
 
                 let mut result = Vec::new();
                 let mut current = normalize_index(start_val, len) as i64;
@@ -448,8 +472,7 @@ impl Interpreter {
                         current += step_val;
                     }
                 } else {
-                    // Basic backward iteration support
-                    // Note: Starlark slicing is complex; this is a simplified version
+                    // Very basic backwards loop for now
                     while current > end && current >= 0 && current < len as i64 {
                         result.push(list[current as usize].clone());
                         current += step_val;
@@ -527,7 +550,7 @@ impl Interpreter {
                 }
                 let original_env = Rc::clone(&self.env);
                 self.env = function_env;
-                let old_flow = self.flow.clone(); // Push flow stack
+                let old_flow = self.flow.clone();
                 self.flow = Flow::Next;
 
                 self.execute_stmts(&body)?;
@@ -538,10 +561,9 @@ impl Interpreter {
                     Value::None
                 };
                 self.env = original_env;
-                self.flow = old_flow; // Pop flow stack
+                self.flow = old_flow;
                 Ok(ret_val)
             }
-            // Handle Method Calls
             Value::BoundMethod(receiver, method_name) => {
                 self.call_bound_method(&receiver, &method_name, args_slice)
             }
@@ -609,12 +631,15 @@ impl Interpreter {
                 _ => Err("Unary '-' only valid for integers".into()),
             },
             Token::Not => Ok(Value::Bool(!is_truthy(&val))),
+            Token::BitNot => match val {
+                Value::Int(i) => Ok(Value::Int(!i)),
+                _ => Err("Bitwise '~' only valid for integers".into()),
+            },
             _ => Err("Invalid unary operator".into()),
         }
     }
 
     fn apply_logical_op(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, String> {
-        // Short-circuiting logic
         let left_val = self.evaluate(left)?;
         match op {
             Token::Or => {
@@ -641,19 +666,16 @@ impl Interpreter {
             (a, Token::Eq, b) => Ok(Value::Bool(a == b)),
             (a, Token::NotEq, b) => Ok(Value::Bool(a != b)),
 
-            // INT Comparisons
             (Value::Int(a), Token::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
             (Value::Int(a), Token::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
             (Value::Int(a), Token::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
             (Value::Int(a), Token::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
 
-            // STRING Comparisons
             (Value::String(a), Token::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
             (Value::String(a), Token::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
             (Value::String(a), Token::LtEq, Value::String(b)) => Ok(Value::Bool(a <= b)),
             (Value::String(a), Token::GtEq, Value::String(b)) => Ok(Value::Bool(a >= b)),
 
-            // Arithmetic
             (Value::Int(a), Token::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Token::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Token::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
@@ -663,6 +685,14 @@ impl Interpreter {
                 }
                 Ok(Value::Int(a / b))
             }
+
+            // Bitwise
+            (Value::Int(a), Token::BitAnd, Value::Int(b)) => Ok(Value::Int(a & b)),
+            (Value::Int(a), Token::BitOr, Value::Int(b)) => Ok(Value::Int(a | b)),
+            (Value::Int(a), Token::BitXor, Value::Int(b)) => Ok(Value::Int(a ^ b)),
+            (Value::Int(a), Token::LShift, Value::Int(b)) => Ok(Value::Int(a << b)),
+            (Value::Int(a), Token::RShift, Value::Int(b)) => Ok(Value::Int(a >> b)),
+
             (Value::String(a), Token::Plus, Value::String(b)) => Ok(Value::String(a + &b)),
             _ => Err(format!(
                 "Unsupported binary op: {:?} {:?} {:?}",
@@ -691,6 +721,13 @@ impl ToString for Value {
                 "[{}]",
                 l.borrow()
                     .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            Value::Tuple(t) => format!(
+                "({})",
+                t.iter()
                     .map(|v| v.to_string())
                     .collect::<Vec<String>>()
                     .join(", ")

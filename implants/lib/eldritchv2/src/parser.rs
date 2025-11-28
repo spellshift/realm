@@ -158,7 +158,6 @@ impl Parser {
         } else if self.match_token(&[Token::For]) {
             self.for_statement()
         } else if self.match_token(&[Token::Break]) {
-            // FIX: Don't consume Dedent. Just ensure we are at the end of a statement.
             if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
                 self.consume(
                     |t| matches!(t, Token::Newline),
@@ -167,7 +166,6 @@ impl Parser {
             }
             Ok(Stmt::Break)
         } else if self.match_token(&[Token::Continue]) {
-            // FIX: Don't consume Dedent.
             if !self.is_at_end() && !matches!(self.peek(), Token::Dedent) {
                 self.consume(
                     |t| matches!(t, Token::Newline),
@@ -260,6 +258,8 @@ impl Parser {
         Ok(Stmt::Expression(expr))
     }
 
+    // --- Expression Parsing (Precedence) ---
+
     fn expression(&mut self) -> Result<Expr, String> {
         self.logic_or()
     }
@@ -304,8 +304,49 @@ impl Parser {
     }
 
     fn comparison(&mut self) -> Result<Expr, String> {
-        let mut expr = self.term()?;
+        let mut expr = self.bitwise_or()?; // Changed from term()
         while self.match_token(&[Token::Lt, Token::Gt, Token::LtEq, Token::GtEq]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.bitwise_or()?;
+            expr = Expr::BinaryOp(Box::new(expr), operator, Box::new(right));
+        }
+        Ok(expr)
+    }
+
+    // New: Bitwise precedence layers
+    fn bitwise_or(&mut self) -> Result<Expr, String> {
+        let mut expr = self.bitwise_xor()?;
+        while self.match_token(&[Token::BitOr]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.bitwise_xor()?;
+            expr = Expr::BinaryOp(Box::new(expr), operator, Box::new(right));
+        }
+        Ok(expr)
+    }
+
+    fn bitwise_xor(&mut self) -> Result<Expr, String> {
+        let mut expr = self.bitwise_and()?;
+        while self.match_token(&[Token::BitXor]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.bitwise_and()?;
+            expr = Expr::BinaryOp(Box::new(expr), operator, Box::new(right));
+        }
+        Ok(expr)
+    }
+
+    fn bitwise_and(&mut self) -> Result<Expr, String> {
+        let mut expr = self.shift()?;
+        while self.match_token(&[Token::BitAnd]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.shift()?;
+            expr = Expr::BinaryOp(Box::new(expr), operator, Box::new(right));
+        }
+        Ok(expr)
+    }
+
+    fn shift(&mut self) -> Result<Expr, String> {
+        let mut expr = self.term()?;
+        while self.match_token(&[Token::LShift, Token::RShift]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.term()?;
             expr = Expr::BinaryOp(Box::new(expr), operator, Box::new(right));
@@ -324,7 +365,8 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Expr, String> {
-        if self.match_token(&[Token::Minus]) {
+        // Handle unary minus and bitwise not
+        if self.match_token(&[Token::Minus, Token::BitNot]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.factor()?;
             return Ok(Expr::UnaryOp(operator, Box::new(right)));
@@ -454,7 +496,30 @@ impl Parser {
         }
 
         if self.match_token(&[Token::LParen]) {
+            // Check for empty tuple ()
+            if self.match_token(&[Token::RParen]) {
+                return Ok(Expr::Tuple(Vec::new()));
+            }
+
             let expr = self.expression()?;
+
+            // Check for tuple with one or more elements (expr, ...)
+            if self.match_token(&[Token::Comma]) {
+                let mut elements = vec![expr];
+                // Loop to catch remaining elements
+                if !self.check(&Token::RParen) {
+                    loop {
+                        elements.push(self.expression()?);
+                        if !self.match_token(&[Token::Comma]) {
+                            break;
+                        }
+                    }
+                }
+                self.consume(|t| matches!(t, Token::RParen), "Expected ')' after tuple.")?;
+                return Ok(Expr::Tuple(elements));
+            }
+
+            // Regular grouping (expression)
             self.consume(
                 |t| matches!(t, Token::RParen),
                 "Expected ')' after expression.",

@@ -26,6 +26,7 @@ pub enum Value {
     Int(i64),
     String(String),
     List(Rc<RefCell<Vec<Value>>>),
+    Tuple(Vec<Value>), // New: Tuples are immutable, so plain Vec is fine
     Dictionary(Rc<RefCell<HashMap<String, Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),
@@ -39,8 +40,6 @@ impl PartialEq for Value {
             (Value::Bool(a), Value::Bool(b)) => a == b,
             (Value::Int(a), Value::Int(b)) => a == b,
             (Value::String(a), Value::String(b)) => a == b,
-
-            // FIX: Use deep equality for List and Dictionary
             (Value::List(a), Value::List(b)) => {
                 if Rc::ptr_eq(a, b) {
                     return true;
@@ -53,7 +52,7 @@ impl PartialEq for Value {
                 }
                 a.borrow().eq(&*b.borrow())
             }
-
+            (Value::Tuple(a), Value::Tuple(b)) => a == b, // Deep equality for tuples
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a == b,
             (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => r1 == r2 && n1 == n2,
@@ -79,6 +78,7 @@ pub enum Expr {
     LogicalOp(Box<Expr>, Token, Box<Expr>),
     Call(Box<Expr>, Vec<Expr>),
     List(Vec<Expr>),
+    Tuple(Vec<Expr>), // New
     Dictionary(Vec<(Expr, Expr)>),
     Index(Box<Expr>, Box<Expr>),
     GetAttr(Box<Expr>, String),
