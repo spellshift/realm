@@ -1,12 +1,12 @@
-import { Shell } from "../../../utils/consts";
 import { CommandLineIcon, } from "@heroicons/react/24/outline";
 import { Image } from "@chakra-ui/react";
 
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useNavigate } from "react-router-dom";
+import { ShellEdge, UserEdge } from "../../../utils/interfacesQuery";
 
-const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
+const TaskShells = ({ shells }: { shells: Array<ShellEdge> }) => {
     const nav = useNavigate();
 
     if (!shells || shells?.length < 1) {
@@ -15,7 +15,7 @@ const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
 
     return (
         <div className="flex flex-col gap-4 max-h-80 overflow-y-scroll overflow-x-scroll">
-            {shells.map((shell) => {
+            {shells.map(({ node: shell }: ShellEdge) => {
                 const closeAtTime = new Date(shell.closedAt || "");
 
                 return (
@@ -34,7 +34,7 @@ const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
                                             <div className="flex flex-row gap-1 items-center ">
                                                 Active users:
                                             </div>
-                                            {shell?.activeUsers?.map((user) => {
+                                            {shell?.activeUsers?.edges.map(({ node: user }: UserEdge) => {
                                                 const userImage = (user?.photoURL && user?.photoURL !== "") ? user?.photoURL : PlaceholderUser;
                                                 return (
                                                     <div className="flex flex-row gap-1 items-center flex-wrap">
@@ -50,7 +50,7 @@ const TaskShells = ({ shells }: { shells: Array<Shell> }) => {
                                                     </div>
                                                 )
                                             })}
-                                            {shell?.activeUsers.length === 0 && <div>None found</div>}
+                                            {shell?.activeUsers.edges.length === 0 && <div>None found</div>}
                                         </div>
                                         <div className="-mt-1">
                                             <Button

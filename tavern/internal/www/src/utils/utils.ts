@@ -1,7 +1,8 @@
 import { add } from "date-fns";
-import { BeaconType, FilterBarOption, QuestParam, TomeParams, TomeTag } from "./consts";
-import { BeaconEdge, HostNode, OnlineOfflineStatus } from "./queryInterfaces";
+import { BeaconType, QuestParam, TomeParams, } from "./consts";
+import { BeaconEdge } from "./interfacesQuery";
 import { PrincipalAdminTypes } from "./enums";
+import { FilterBarOption, OnlineOfflineStatus, TomeInputParams } from "./interfacesUI";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -147,7 +148,7 @@ export function getTacticColor(tactic: string) {
             return "#4b5563";
     }
 }
-export function constructTomeParams(questParamamters?: string, tomeParameters?: string): Array<QuestParam> {
+export function constructTomeParams(questParamamters?: string | null, tomeParameters?: string | null): Array<TomeInputParams> {
     if (!questParamamters || !tomeParameters) {
         return [];
     }

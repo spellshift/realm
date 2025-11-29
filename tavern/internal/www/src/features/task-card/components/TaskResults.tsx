@@ -2,7 +2,7 @@ import { CodeBlock, tomorrow } from "react-code-blocks";
 
 const TaskResults = ({
     result
-}: { result?: string }) => {
+}: { result?: string | null }) => {
     return (
         <div className="text-sm max-h-80 overflow-y-scroll overflow-x-scroll py-1">
             <div className="max-w-fit">

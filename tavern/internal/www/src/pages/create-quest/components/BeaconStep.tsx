@@ -1,6 +1,6 @@
 import { Heading, Text, Stack, StackItem, Box, FormLabel, Switch } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
-import React, { FC, useCallback } from "react";
+import { FC, useCallback } from "react";
 import {
     AutoSizer as _AutoSizer,
     AutoSizerProps,
@@ -10,18 +10,18 @@ import {
 
 import { BeaconFilterBar } from "../../../components/beacon-filter-bar";
 import BeaconOption from "../../../components/beacon-option/BeaconOption";
-import { BeaconType, HostType, TomeTag } from "../../../utils/consts";
 import { useBeaconFilter } from "../hooks/useBeaconFilter";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import { BeaconNode, HostNode, TagNode } from "../../../utils/interfacesQuery";
 
 const Grid = _Grid as unknown as FC<GridProps>;
 const AutoSizer = _AutoSizer as unknown as FC<AutoSizerProps>;
 
 type Props = {
-    beacons: Array<BeaconType>;
-    groups: Array<TomeTag>;
-    services: Array<TomeTag>;
-    hosts: Array<HostType>;
+    beacons: Array<BeaconNode>;
+    groups: Array<TagNode>;
+    services: Array<TagNode>;
+    hosts: Array<HostNode>;
     selectedBeacons: any;
     setSelectedBeacons: any;
 }

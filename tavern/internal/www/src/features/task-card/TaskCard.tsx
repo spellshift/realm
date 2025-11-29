@@ -1,4 +1,3 @@
-import { Task } from "../../utils/consts";
 import { FC } from "react";
 import TaskTimeStamp from "./components/TaskTimeStamp";
 import TaskHostBeacon from "./components/TaskHostBeacon";
@@ -9,9 +8,10 @@ import TaskShells from "./components/TaskShells";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import TaskResults from "./components/TaskResults";
+import { TaskNode } from "../../utils/interfacesQuery";
 
 interface TaskCardType {
-    task: Task
+    task: TaskNode
 }
 
 const TaskCard: FC<TaskCardType> = (
@@ -29,7 +29,7 @@ const TaskCard: FC<TaskCardType> = (
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2">
                 <div className="border-t-4 border-gray-100 flex flex-col gap-4 px-4 py-2 w-full">
-                    <TaskHostBeacon beaconData={task.beacon} />
+                    <TaskHostBeacon beacon={task.beacon} />
                     <TaskTimeStamp {...task} />
                     <TaskParameters quest={task?.quest} />
                     <UserImageAndName userData={task?.quest?.creator} />
@@ -38,7 +38,7 @@ const TaskCard: FC<TaskCardType> = (
                     <TabList className="flex flex-row gap-2 text-gray-600 bg-gray-100">
                         <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><DocumentTextIcon className="w-4" /> Output</Tab>
                         {task?.error && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><NoSymbolIcon className="w-4" /> Error</Tab>}
-                        {task?.shells?.length > 0 && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><CommandLineIcon className="w-4" /> Shells</Tab>}
+                        {task?.shells?.edges.length > 0 && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><CommandLineIcon className="w-4" /> Shells</Tab>}
                     </TabList>
                     <TabPanels className="px-4">
                         <TabPanel>
@@ -48,8 +48,8 @@ const TaskCard: FC<TaskCardType> = (
                             <TabPanel>
                                 <TaskResults result={task?.error} />
                             </TabPanel>}
-                        {task?.shells?.length > 0 && <TabPanel>
-                            <TaskShells shells={task?.shells} />
+                        {task?.shells?.edges.length > 0 && <TabPanel>
+                            <TaskShells shells={task?.shells?.edges} />
                         </TabPanel>}
                     </TabPanels>
                 </TabGroup>

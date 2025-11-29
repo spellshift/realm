@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import { ApolloError, useQuery } from "@apollo/client";
 import { GET_TAG_FILTERS } from "../utils/queries";
-import { BeaconEdge, TagContextProps, TagContextQueryResponse, TagEdge } from "../utils/queryInterfaces";
+import { BeaconEdge, TagContextProps, TagContextQueryResponse, TagEdge } from "../utils/interfacesQuery";
 
 const defaultValue = { data: undefined, isLoading: false, error: undefined } as { data: undefined | TagContextProps, isLoading: boolean, error: ApolloError | undefined };
 

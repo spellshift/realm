@@ -346,77 +346,96 @@ export const GET_HOST_TASK_COUNT = gql`
 `;
 
 export const GET_TASK_QUERY = gql`
-    query GetTasks($where: TaskWhereInput, $first: Int, $last:Int, $after: Cursor, $before:Cursor, $orderBy: [TaskOrder!]) {
-            tasks(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
-                pageInfo{
-                    hasNextPage
-                    hasPreviousPage
-                    startCursor
-                    endCursor
-                }
-        	    totalCount
-                edges{
-                    node{
+    query GetTasks($where: TaskWhereInput, $first: Int, $last: Int, $after: Cursor, $before: Cursor, $orderBy: [TaskOrder!]) {
+    tasks(
+        where: $where
+        first: $first
+        last: $last
+        after: $after
+        before: $before
+        orderBy: $orderBy
+    ) {
+        pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+        }
+        totalCount
+        edges {
+        node {
+            id
+            lastModifiedAt
+            outputSize
+            execStartedAt
+            execFinishedAt
+            createdAt
+            claimedAt
+            error
+            output
+            shells {
+            edges{
+                node{
+                    id
+                    closedAt
+                    activeUsers {
+                    edges{
+                        node{
                         id
-                        lastModifiedAt
-                        outputSize
-                        execStartedAt
-                        execFinishedAt
-                        createdAt
-                        claimedAt
-                        error
-                        output
-                        shells {
-                                id
-                                closedAt
-                                activeUsers{
-                                    id
-                                    name
-                                    photoURL
-                                    isActivated
-                                    isAdmin
-                                }
-                        }
-                        quest{
-                            id
-                            name
-                            creator{
-                                id
-                                name
-                                photoURL
-                            }
-                            tome{
-                                id
-                                name
-                                description
-                                eldritch
-                                tactic
-                                paramDefs
-                                supportModel
-                            }
-                            parameters
-                        }
-                        beacon {
-                            id
-                            name
-                            principal
-                            lastSeenAt
-                            interval
-                                host{
-                                id
-                                name
-                                primaryIP
-                                platform
-                                tags {
-                                    id
-                                    name
-                                    kind
-                                }
-                            }
+                        name
+                        photoURL
+                        isActivated
+                        isAdmin
                         }
                     }
                 }
+            }
+            }
+            }
+            quest {
+            id
+            name
+            creator {
+                id
+                name
+                photoURL
+            }
+            tome {
+                id
+                name
+                description
+                eldritch
+                tactic
+                paramDefs
+                supportModel
+            }
+            parameters
+            }
+            beacon {
+            id
+            name
+            principal
+            lastSeenAt
+            interval
+            host {
+                id
+                name
+                primaryIP
+                platform
+                tags {
+                edges{
+                    node{
+                    id
+                    name
+                    kind
+                    }
+                }
+                }
+            }
+            }
         }
+        }
+    }
     }
 `;
 
@@ -490,14 +509,17 @@ export const GET_HOST_CREDENTIALS = gql`
             edges{
                 node{
                     credentials {
-                        createdAt
-                        lastModifiedAt
-                        principal
-                        kind
-                        secret
+                      edges{
+                        node{
+                          createdAt
+                          lastModifiedAt
+                          principal
+                          kind
+                          secret
+                        }
+                      }
                     }
                 }
             }
         }
-    }
-`;
+}`;

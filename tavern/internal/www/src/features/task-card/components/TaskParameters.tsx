@@ -1,10 +1,11 @@
 import { FC } from "react";
-import { QuestProps, TomeParams } from "../../../utils/consts";
 import { constructTomeParams } from "../../../utils/utils";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
+import { QuestNode } from "../../../utils/interfacesQuery";
+import { TomeInputParams } from "../../../utils/interfacesUI";
 
 interface TaskParametersType {
-    quest?: QuestProps
+    quest?: QuestNode | undefined
 }
 const TaskParameters: FC<TaskParametersType> = ({
     quest
@@ -18,7 +19,7 @@ const TaskParameters: FC<TaskParametersType> = ({
                 <div className="text-gray-600 break-all">
                     {quest?.tome?.name}
                 </div>
-                {params.map((paramDef: TomeParams) => {
+                {params.map((paramDef: TomeInputParams) => {
                     if (paramDef.value) {
                         return (
                             <div className="flex flex-row gap-1 text-sm text-gray-600" key={paramDef.name}>

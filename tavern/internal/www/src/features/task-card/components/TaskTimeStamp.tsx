@@ -1,8 +1,8 @@
 import { FC, ReactElement } from "react";
-import { Task } from "../../../utils/consts";
 import { ClockIcon } from "@heroicons/react/24/outline";
+import { TaskNode } from "../../../utils/interfacesQuery";
 
-interface TaskTimeStampType extends Pick<Task, 'createdAt' | 'execStartedAt' | 'execFinishedAt'> { };
+interface TaskTimeStampType extends Pick<TaskNode, 'createdAt' | 'execStartedAt' | 'execFinishedAt'> { };
 
 const TaskTimeStamp: FC<TaskTimeStampType> = ({
     createdAt,

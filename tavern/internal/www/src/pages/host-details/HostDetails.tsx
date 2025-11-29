@@ -1,7 +1,7 @@
 import React from "react";
 
 import { PageNavItem } from "../../utils/enums";
-import { Tab } from "@headlessui/react";
+import { TabGroup, TabPanel, TabPanels } from "@headlessui/react";
 import { HostContextProvider } from "../../context/HostContext";
 import HostDetailsSection from "./components/HostDetailsSection";
 import { PageWrapper } from "../../features/page-wrapper";
@@ -18,20 +18,20 @@ const HostDetails = () => {
                 <HostBreadcrumbs />
                 <HostDetailsSection />
                 <div className="flex flex-col gap-4 mt-2">
-                    <Tab.Group>
+                    <TabGroup>
                         <HostTabs />
-                        <Tab.Panels>
-                            <Tab.Panel>
+                        <TabPanels>
+                            <TabPanel>
                                 <BeaconTab />
-                            </Tab.Panel>
-                            <Tab.Panel>
+                            </TabPanel>
+                            <TabPanel>
                                 <HostTaskTab />
-                            </Tab.Panel>
-                            <Tab.Panel>
+                            </TabPanel>
+                            <TabPanel>
                                 <CredentialTab />
-                            </Tab.Panel>
-                        </Tab.Panels>
-                    </Tab.Group>
+                            </TabPanel>
+                        </TabPanels>
+                    </TabGroup>
                 </div>
             </PageWrapper>
         </HostContextProvider>

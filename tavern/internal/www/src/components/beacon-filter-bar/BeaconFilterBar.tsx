@@ -1,7 +1,7 @@
 import React from "react";
 import Select, { createFilter, } from "react-select"
 import { SupportedPlatforms } from "../../utils/enums";
-import { BeaconNode, HostNode, TagNode } from "../../utils/queryInterfaces";
+import { BeaconNode, HostNode, TagNode } from "../../utils/interfacesQuery";
 
 type Props = {
     setFiltersSelected: (arg1: any) => void;

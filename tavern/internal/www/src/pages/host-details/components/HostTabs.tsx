@@ -1,5 +1,5 @@
 import React, { useContext } from "react"
-import { Tab } from "@headlessui/react"
+import { Tab, TabList } from "@headlessui/react"
 import { ArrowsUpDownIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/20/solid"
 import { HostContext } from "../../../context/HostContext";
 import { KeyIcon } from "@heroicons/react/24/outline";
@@ -25,17 +25,17 @@ const HostTabs = () => {
         }
     });
 
-    const { online } = getOfflineOnlineStatus(host?.beacons || []);
+    const { online } = getOfflineOnlineStatus(host?.beacons?.edges || []);
 
     return (
-        <Tab.List className="flex flex-row space-x-4 border-gray-200 w-full bg-gray-100 ">
+        <TabList className="flex flex-row space-x-4 border-gray-200 w-full bg-gray-100 ">
             <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
                 <ArrowsUpDownIcon className="w-4 h-4" />
                 <div>
                     Beacons
                 </div>
                 <div>
-                    {(host?.beacons?.length !== undefined && host?.beacons?.length !== null) && `(${online}/${host?.beacons?.length})`}
+                    {(host?.beacons?.edges?.length !== undefined && host?.beacons?.edges?.length !== null) && `(${online}/${host?.beacons?.edges?.length})`}
                 </div>
             </Tab>
             <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
@@ -53,10 +53,10 @@ const HostTabs = () => {
                     Credentials
                 </div>
                 <div>
-                    {host?.credentials?.length && `(${host?.credentials?.length || 0})`}
+                    {host?.credentials?.edges?.length && `(${host?.credentials?.edges?.length || 0})`}
                 </div>
             </Tab>
-        </Tab.List>
+        </TabList>
     )
 }
 export default HostTabs;

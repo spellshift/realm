@@ -1,27 +1,27 @@
 import { BugAntIcon } from "@heroicons/react/24/outline";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { FC } from "react";
-import { BeaconType } from "../../../utils/consts";
 import { checkIfBeaconOffline } from "../../../utils/utils";
+import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
 
 interface TaskHostBeaconType {
-    beaconData: BeaconType
+    beacon: BeaconNode
 }
 
-const TaskHostBeacon: FC<TaskHostBeaconType> = ({ beaconData }) => {
+const TaskHostBeacon: FC<TaskHostBeaconType> = ({ beacon }) => {
     const {
         host,
         principal,
         name
-    } = beaconData;
-    const beaconOffline = checkIfBeaconOffline(beaconData);
+    } = beacon;
+    const beaconOffline = checkIfBeaconOffline(beacon);
 
     return (
         <div className=" flex flex-row gap-4">
             <BugAntIcon className="h-5 w-5 mt-2" />
             <div className="flex flex-col gap-1 ">
                 <div className="text-gray-600">
-                    {name}@{host.name}
+                    {name}@{host?.name}
                 </div>
                 <div className="flex flex-row gap-2 flex-wrap">
                     {(principal && principal !== "") &&
@@ -33,8 +33,8 @@ const TaskHostBeacon: FC<TaskHostBeaconType> = ({ beaconData }) => {
                     {host?.platform &&
                         <Badge>{host?.platform}</Badge>
                     }
-                    {host?.tags && host?.tags.map((tag: any) => {
-                        return <Badge key={tag.id}>{tag.name}</Badge>
+                    {host?.tags && host?.tags?.edges?.map((tag: TagEdge) => {
+                        return <Badge key={tag.node.id}>{tag.node.name}</Badge>
                     })}
                     {beaconOffline && <Badge>Offline</Badge>}
                 </div>

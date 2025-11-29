@@ -1,9 +1,9 @@
 
-import React, { useContext } from "react"
+import { useContext } from "react"
 import { BeaconFilterBar } from "./beacon-filter-bar";
 import { TagContext } from "../context/TagContext";
 import FreeTextSearch from "./tavern-base-ui/DebouncedFreeTextSearch";
-import { FilterBarOption } from "../utils/consts";
+import { FilterBarOption } from "../utils/interfacesUI";
 
 type Props = {
     searchPlaceholder?: string;

@@ -1,11 +1,11 @@
 import React, { createContext } from "react";
 import { useQuery } from "@apollo/client";
-import { HostType } from "../utils/consts";
 import { GET_HOST_QUERY } from "../utils/queries";
 import { useParams } from "react-router-dom";
+import { HostNode } from "../utils/interfacesQuery";
 
 export type HostContextQueryType = {
-    data: undefined | HostType;
+    data: HostNode | undefined;
     loading: boolean;
     error: any;
 }
@@ -25,7 +25,7 @@ export const HostContextProvider = ({ children }: { children: React.ReactNode })
         }
     });
 
-    const host = data?.hosts?.edges && data?.hosts?.edges.length > 0 ? data.hosts?.edges[0]?.node : undefined as HostType | undefined;
+    const host = data?.hosts?.totalCount ? data?.hosts.edges[0].node : undefined;
 
     return (
         <HostContext.Provider value={{ data: host, loading, error }}>

@@ -4,7 +4,7 @@ import { GET_HOST_QUERY } from "../../utils/queries";
 import { TableRowLimit } from "../../utils/enums";
 import { Filters, useFilters } from "../../context/FilterContext";
 import { constructBeaconFilterQuery, } from "../../utils/constructQueryUtils";
-import { Cursor, HostQueryTopLevel } from "../../utils/queryInterfaces";
+import { Cursor, HostQueryTopLevel } from "../../utils/interfacesQuery";
 
 interface HostsHook {
     data: HostQueryTopLevel

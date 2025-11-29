@@ -34,14 +34,6 @@ export type TagOptionType = {
     label: string,
 } & TomeTag;
 
-export type KindOfTag = 'service' | 'group';
-
-export type FilterBarOption = {
-    label?: string;
-    id: string;
-    name: string;
-    kind: string;
-}
 export type HostType = {
     id: string;
     name: string;
@@ -181,14 +173,6 @@ export type UpdateUserProps = {
     activated: boolean,
     admin: boolean,
 };
-
-export type CredentialType = {
-    principal: string;
-    kind: string;
-    secret: string;
-    createdAt: string;
-    lastModifiedAt: string;
-}
 
 export type NavigationItemType = {
     name: string;

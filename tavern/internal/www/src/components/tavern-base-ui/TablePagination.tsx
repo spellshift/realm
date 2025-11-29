@@ -1,4 +1,4 @@
-import { Cursor, QueryPageInfo } from "../../utils/queryInterfaces";
+import { Cursor, QueryPageInfo } from "../../utils/interfacesQuery";
 import Button from "./button/Button";
 
 type Props = {

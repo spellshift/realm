@@ -9,8 +9,8 @@ const HostDetailsSection = () => {
     const [isOpen, setOpen] = useState(false);
     const { data: host } = useContext(HostContext);
 
-    const serviceTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "service")];
-    const groupTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "group")];
+    const serviceTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "service")]?.node;
+    const groupTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "group")]?.node;
 
     return (
         <div className="flex flex-col gap-4">

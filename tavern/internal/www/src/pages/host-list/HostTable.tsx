@@ -4,7 +4,7 @@ import HostTile from "../../components/HostTile";
 import Table from "../../components/tavern-base-ui/Table";
 import { PrincipalAdminTypes } from "../../utils/enums";
 import Badge from "../../components/tavern-base-ui/badge/Badge";
-import { HostEdge } from "../../utils/queryInterfaces";
+import { HostEdge } from "../../utils/interfacesQuery";
 import { getFormatForPrincipal, getOfflineOnlineStatus } from "../../utils/utils";
 import { formatDistance } from "date-fns";
 

@@ -1,4 +1,4 @@
-import { HostNode, TagNode } from "../utils/queryInterfaces";
+import { HostNode } from "../utils/interfacesQuery";
 import Badge from "./tavern-base-ui/badge/Badge";
 
 const HostTile = ({ data }: { data: HostNode }) => {
