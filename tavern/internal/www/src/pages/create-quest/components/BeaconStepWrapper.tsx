@@ -5,14 +5,15 @@ import { getOnlineBeacons, isBeaconSelected } from "../../../utils/utils";
 import BeaconStep from "./BeaconStep";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { SelectedBeacons } from "../../../utils/interfacesUI";
+import { QuestFormikProps } from "../types";
 
 type Props = {
-    setCurrStep: (arg1: number) => void;
-    formik: any;
+    setCurrStep: (step: number) => void;
+    formik: QuestFormikProps;
 }
 export const BeaconStepWrapper = (props: Props) => {
     const { setCurrStep, formik } = props;
-    const [selectedBeacons, setSelectedBeacons] = useState<any>({});
+    const [selectedBeacons, setSelectedBeacons] = useState<SelectedBeacons>({});
 
     const { data, isLoading } = useContext(TagContext);
 
@@ -20,9 +21,9 @@ export const BeaconStepWrapper = (props: Props) => {
 
     const hasBeaconSelected = isBeaconSelected(selectedBeacons);
 
-    const handleClickContinue = (selectedBeacons: SelectedBeacons) => {
-        const beaconToSubmit = [] as Array<string>;
-        for (let key in selectedBeacons) {
+    const handleClickContinue = () => {
+        const beaconToSubmit: string[] = [];
+        for (const key in selectedBeacons) {
             if (selectedBeacons[key] === true) {
                 beaconToSubmit.push(key);
             }
@@ -46,7 +47,7 @@ export const BeaconStepWrapper = (props: Props) => {
             <div className="flex flex-row gap-2">
                 <Button
                     buttonStyle={{ color: "purple", size: "md" }}
-                    onClick={() => handleClickContinue(selectedBeacons)}
+                    onClick={handleClickContinue}
                     disabled={!hasBeaconSelected}
                 >
                     Continue

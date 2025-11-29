@@ -22,7 +22,7 @@ export const CreateQuest = () => {
                 <EmptyState type={EmptyStateType.loading} label="loading beacon info..." />
             ) : error ? (
                 <EmptyState type={EmptyStateType.error} label="Error loading beacon info" />
-            ) : data?.beacons && data?.beacons?.length > 0 ? (
+            ) : data?.beacons && data.beacons.length > 0 ? (
                 <QuestForm />
             ) : (
                 <EmptyStateNoBeacon />

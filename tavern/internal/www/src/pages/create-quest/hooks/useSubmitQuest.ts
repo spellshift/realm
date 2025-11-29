@@ -4,15 +4,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GET_QUEST_QUERY } from "../../../utils/queries";
 import { useFilters } from "../../../context/FilterContext";
-import { TomeNode } from "../../../utils/interfacesQuery";
-import { FieldInputParams } from "../../../utils/interfacesUI";
+import { QuestFormValues } from "../types";
 
-export type CreateQuestProps = {
-    name: string,
-    tome: TomeNode | null,
-    params: Array<FieldInputParams>,
-    beacons: Array<string>,
-};
+export type CreateQuestProps = QuestFormValues;
 
 export const useSubmitQuest = () => {
     const { updateFilters } = useFilters();
@@ -33,9 +27,9 @@ export const useSubmitQuest = () => {
         }
     }
 
-    const handleOnCompleted = (result: any) => {
+    const handleOnCompleted = (result: { createQuest: { id: string } }) => {
         updateFilters({'filtersEnabled': false});
-        navigate(`/tasks/${result?.createQuest?.id}`);
+        navigate(`/tasks/${result.createQuest.id}`);
     }
 
     const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
@@ -44,21 +38,16 @@ export const useSubmitQuest = () => {
       ]});
 
     const submitQuest = (props: CreateQuestProps) => {
-        var param_obj = {}
-        for (var param of props.params) {
-            var tmp_param = {
-                [param.name]: param.value
-            }
-            param_obj = {
-                ...tmp_param,
-                ...param_obj,
-            }
-        }
+        const param_obj = props.params.reduce((acc, param) => {
+            acc[param.name] = param.value;
+            return acc;
+        }, {} as Record<string, any>);
+
         const formatVariables = {
             "variables": {
                 "IDs": props.beacons,
                 "input": {
-                    "name": props?.name,
+                    "name": props.name,
                     "tomeID": props.tome?.id,
                     "parameters": JSON.stringify(param_obj),
                 }

@@ -5,18 +5,19 @@ import { safelyJsonParse } from "../../../utils/utils";
 import TomeRadioGroup from "./TomeRadioGroup";
 import { TomeNode } from "../../../utils/interfacesQuery";
 import { FieldInputParams } from "../../../utils/interfacesUI";
+import { QuestFormikProps } from "../types";
 
 type Props = {
-    formik: any;
+    formik: QuestFormikProps;
     data: TomeNode[];
 }
 const TomeStep = (props: Props) => {
     const { formik, data } = props;
 
     const handleSelectTome = (tome: TomeNode) => {
-        const { params } = safelyJsonParse(tome?.paramDefs || "");
+        const { params } = safelyJsonParse(tome.paramDefs || "");
         formik.setFieldValue('tome', tome);
-        formik.setFieldValue('params', params ? params : []);
+        formik.setFieldValue('params', params || []);
     };
 
     if (data.length < 1) {
@@ -34,10 +35,10 @@ const TomeStep = (props: Props) => {
             <TomeRadioGroup
                 label="Select a tome"
                 data={data}
-                selected={formik?.values?.tome}
+                selected={formik.values.tome}
                 setSelected={handleSelectTome}
             />
-            {formik?.values?.params.length > 0 && formik?.values?.params.map((field: FieldInputParams, index: number) => {
+            {formik.values.params.length > 0 && formik.values.params.map((field: FieldInputParams, index: number) => {
                 return (
                     <FormTextArea
                         key={field.name}

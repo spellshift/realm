@@ -8,10 +8,11 @@ import BeaconStepWrapper from "./BeaconStepWrapper";
 import { useSubmitQuest } from "../hooks/useSubmitQuest";
 import { getRandomQuestName } from "../../../utils/questNames";
 import { useLocation } from "react-router-dom";
+import { QuestFormValues, LocationStateData } from "../types";
 
 const QuestForm = () => {
     const location = useLocation();
-    const data = location.state;
+    const data = location.state as LocationStateData | undefined;
     const [currStep, setCurrStep] = useState<number>(data?.step || 0);
     const { submitQuest } = useSubmitQuest();
     const placeholderTitle = getRandomQuestName();
@@ -23,14 +24,14 @@ const QuestForm = () => {
         { name: 'Confirm quest details', description: 'Step 3', href: '#', step: 2 },
     ];
 
-    const formik = useFormik({
+    const formik = useFormik<QuestFormValues>({
         initialValues: {
             name: data?.name || placeholderTitle,
             tome: data?.tome || null,
             params: data?.params || [],
             beacons: data?.beacons || [],
         },
-        onSubmit: (values: any) => submitQuest(values),
+        onSubmit: (values: QuestFormValues) => submitQuest(values),
     });
 
     function getStepView(step: number) {
@@ -42,7 +43,7 @@ const QuestForm = () => {
             case 2:
                 return <FinalizeStep setCurrStep={setCurrStep} formik={formik} />
             default:
-                return <div>An error has occured</div>;
+                return <div>An error has occurred</div>;
         }
     }
 

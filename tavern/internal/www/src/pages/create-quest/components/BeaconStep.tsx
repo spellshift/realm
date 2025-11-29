@@ -51,7 +51,7 @@ const BeaconStep = (props: Props) => {
     const handleCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
             const newState = { ...currentState };
-            filteredBeacons.map((beacon: any) => {
+            filteredBeacons.forEach((beacon: BeaconNode) => {
                 newState[beacon.id] = true;
             });
             return newState;
@@ -61,7 +61,7 @@ const BeaconStep = (props: Props) => {
     const handleUnCheckAllFiltered = useCallback(() => {
         setSelectedBeacons((currentState: any) => {
             const newState = { ...currentState };
-            filteredBeacons.map((beacon: any) => {
+            filteredBeacons.forEach((beacon: BeaconNode) => {
                 newState[beacon.id] = false;
             });
             return newState;
@@ -107,7 +107,7 @@ const BeaconStep = (props: Props) => {
                                 <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
                             </div>
                             <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
-                                <FormLabel htmlFor='isSelected' className="mt-1">
+                                <FormLabel htmlFor='isOnePerHost' className="mt-1">
                                     <Heading size="sm" >View one beacon per host</Heading>
                                 </FormLabel>
                                 <Switch id='isOnePerHost' className="pt-1" colorScheme="purple" onChange={() => setViewOnlyOnePerHost((value) => !value)} />

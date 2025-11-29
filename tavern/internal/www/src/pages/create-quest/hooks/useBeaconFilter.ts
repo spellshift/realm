@@ -123,7 +123,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
 
     const filterByOnePerHost = useCallback((beacons: Array<BeaconNode>) => {
         if(viewOnlyOnePerHost){
-            const princials = Object.values(PrincipalAdminTypes) as Array<string>;
+            const principals = Object.values(PrincipalAdminTypes) as Array<string>;
             const hosts = {} as {[key: string]: BeaconNode};
 
             for(let beaconIndex in beacons){
@@ -132,7 +132,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
                 if( hostId && !(hostId in hosts) ){
                     hosts[hostId] = beacons[beaconIndex];
                 }
-                else if(hostId && (princials.indexOf(hosts[hostId].principal) === -1) && (princials.indexOf(beacons[beaconIndex].principal) !== -1)){
+                else if(hostId && (principals.indexOf(hosts[hostId].principal) === -1) && (principals.indexOf(beacons[beaconIndex].principal) !== -1)){
                     hosts[hostId] = beacons[beaconIndex];
                 }
             }

@@ -5,21 +5,22 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 import { FieldInputParams } from "../../../utils/interfacesUI";
 import { GET_TOMES_QUERY } from "../../../utils/queries";
 import { TomeQueryTopLevel } from "../../../utils/interfacesQuery";
+import { QuestFormikProps } from "../types";
 
 type Props = {
     setCurrStep: (step: number) => void;
-    formik: any;
+    formik: QuestFormikProps;
 }
 
 const TomeStepWrapper = (props: Props) => {
     const { setCurrStep, formik } = props;
     const { loading, error, data } = useQuery<TomeQueryTopLevel>(GET_TOMES_QUERY);
 
-    const hasAllParamsSet = formik?.values?.params.filter((param: FieldInputParams) => {
-        return param?.value && param?.value !== "";
+    const paramsWithValues = formik.values.params.filter((param: FieldInputParams) => {
+        return param?.value != null && param?.value !== "";
     });
 
-    const isContinueDisabled = hasAllParamsSet.length !== formik?.values?.params.length || formik?.values?.tome === null;
+    const isContinueDisabled = paramsWithValues.length !== formik.values.params.length || formik.values.tome === null;
 
     const tomeNodes = data?.tomes?.edges?.map(edge => edge.node) || [];
 

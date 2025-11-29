@@ -22,6 +22,7 @@ export const CreateQuestDropdown = ({
         edges: Array<LimitedTaskNode>
     }
 }) => {
+    console.log(tasks);
     const {
         handleCreateQuestWithNewTome,
         handleCreateQuestWithSameTome
