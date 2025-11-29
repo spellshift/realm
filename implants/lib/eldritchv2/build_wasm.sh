@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-# Ensure wasm-pack is installed, or try to use cargo directly if possible.
-# Assuming environment might not have wasm-pack.
-# If not, we can try to install it or fail gracefully.
-
 echo "Building WASM..."
 
 # Check if wasm-pack is available
@@ -22,4 +18,15 @@ else
     fi
 fi
 
-echo "Done."
+# Deploy to docs
+# Assuming the script runs from implants/lib/eldritchv2/
+TARGET_DIR="../../../docs/assets/eldritch-repl"
+echo "Deploying to $TARGET_DIR..."
+
+mkdir -p "$TARGET_DIR"
+
+# Copy index.html and pkg
+cp www/index.html "$TARGET_DIR/"
+cp -r www/pkg "$TARGET_DIR/"
+
+echo "Done. REPL is available at docs/assets/eldritch-repl/index.html"
