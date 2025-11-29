@@ -373,17 +373,49 @@ impl Lexer {
             ':' => Ok(self.add_token(TokenKind::Colon)),
             '.' => Ok(self.add_token(TokenKind::Dot)),
             ';' => Ok(self.add_token(TokenKind::Newline)),
-            '+' => Ok(self.add_token(TokenKind::Plus)),
-            '-' => Ok(self.add_token(TokenKind::Minus)),
+            '+' => {
+                if self.match_char('=') {
+                    Ok(self.add_token(TokenKind::PlusAssign))
+                } else {
+                    Ok(self.add_token(TokenKind::Plus))
+                }
+            }
+            '-' => {
+                if self.match_char('=') {
+                    Ok(self.add_token(TokenKind::MinusAssign))
+                } else {
+                    Ok(self.add_token(TokenKind::Minus))
+                }
+            }
             '*' => {
                 if self.match_char('*') {
                     Ok(self.add_token(TokenKind::StarStar))
+                } else if self.match_char('=') {
+                    Ok(self.add_token(TokenKind::StarAssign))
                 } else {
                     Ok(self.add_token(TokenKind::Star))
                 }
             }
-            '/' => Ok(self.add_token(TokenKind::Slash)),
-            '%' => Ok(self.add_token(TokenKind::Percent)), // Added Percent
+            '/' => {
+                if self.match_char('/') {
+                    if self.match_char('=') {
+                        Ok(self.add_token(TokenKind::SlashSlashAssign))
+                    } else {
+                        Ok(self.add_token(TokenKind::SlashSlash))
+                    }
+                } else if self.match_char('=') {
+                    Ok(self.add_token(TokenKind::SlashAssign))
+                } else {
+                    Ok(self.add_token(TokenKind::Slash))
+                }
+            }
+            '%' => {
+                if self.match_char('=') {
+                    Ok(self.add_token(TokenKind::PercentAssign))
+                } else {
+                    Ok(self.add_token(TokenKind::Percent))
+                }
+            }
             '&' => Ok(self.add_token(TokenKind::BitAnd)),
             '|' => Ok(self.add_token(TokenKind::BitOr)),
             '^' => Ok(self.add_token(TokenKind::BitXor)),

@@ -7,6 +7,7 @@ pub mod interpreter;
 pub mod lexer;
 pub mod parser;
 pub mod token;
+pub mod macros;
 
 // Re-export core types
 pub use ast::Value;

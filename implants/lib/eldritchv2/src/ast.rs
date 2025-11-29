@@ -195,6 +195,11 @@ pub enum ExprKind {
         params: Vec<Param>,
         body: Box<Expr>,
     },
+    If {
+        cond: Box<Expr>,
+        then_branch: Box<Expr>,
+        else_branch: Box<Expr>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -206,7 +211,8 @@ pub struct Stmt {
 #[derive(Debug, Clone)]
 pub enum StmtKind {
     Expression(Expr),
-    Assignment(String, Expr),
+    Assignment(Expr, Expr), // Changed from String to Expr for unpacking
+    AugmentedAssignment(Expr, TokenKind, Expr), // Target, Op, Value
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
     Def(String, Vec<Param>, Vec<Stmt>),

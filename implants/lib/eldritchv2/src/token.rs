@@ -48,6 +48,15 @@ pub enum TokenKind {
     LShift,
     RShift,
     StarStar,
+    SlashSlash,
+
+    // Augmented assignments
+    PlusAssign,
+    MinusAssign,
+    StarAssign,
+    SlashAssign,
+    PercentAssign,
+    SlashSlashAssign,
 
     // One or two character tokens
     Eq,

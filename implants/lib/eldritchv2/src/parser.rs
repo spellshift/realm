@@ -252,7 +252,7 @@ impl Parser {
             }
             Ok(self.make_stmt(StmtKind::Pass, start, start))
         } else {
-            self.expression_statement()
+            self.assignment_or_expression_statement()
         }
     }
 
@@ -351,26 +351,98 @@ impl Parser {
         Ok(self.make_stmt(StmtKind::Return(value), start, end))
     }
 
-    fn expression_statement(&mut self) -> Result<Stmt, String> {
-        let expr = self.expression()?;
+    fn assignment_or_expression_statement(&mut self) -> Result<Stmt, String> {
+        let mut expr = self.expression()?;
         let start = expr.span;
+
+        // Handle tuple unpacking syntax: a, b = ...
+        if self.match_token(&[TokenKind::Comma]) {
+            let mut elements = vec![expr];
+
+            // Allow trailing comma if next is Assign or Newline
+            if !self.check(&TokenKind::Assign) && !self.check(&TokenKind::Newline) && !self.check(&TokenKind::Dedent) {
+                loop {
+                    elements.push(self.expression()?);
+                    if !self.match_token(&[TokenKind::Comma]) {
+                        break;
+                    }
+                    // Check if trailing comma
+                    if self.check(&TokenKind::Assign) || self.check(&TokenKind::Newline) {
+                        break;
+                    }
+                }
+            }
+
+            let end_span = elements.last().unwrap().span;
+            expr = self.make_expr(ExprKind::Tuple(elements), start, end_span);
+        }
+
         let mut end = expr.span;
 
+        // Normal assignment
         if self.match_token(&[TokenKind::Assign]) {
-            if let ExprKind::Identifier(name) = expr.kind {
-                let value = self.expression()?;
-                end = value.span;
-                if !self.is_at_end() && !matches!(self.peek().kind, TokenKind::Dedent) {
-                    self.consume(
-                        |t| matches!(t, TokenKind::Newline),
-                        "Expected newline after assignment.",
-                    )?;
+            let value = self.expression()?;
+
+            // Allow explicit tuple on RHS too: a, b = 1, 2
+            let mut final_value = value;
+            if self.match_token(&[TokenKind::Comma]) {
+                let mut elements = vec![final_value];
+                if !self.check(&TokenKind::Newline) && !self.check(&TokenKind::Dedent) {
+                    loop {
+                        elements.push(self.expression()?);
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
+                        if self.check(&TokenKind::Newline) {
+                            break;
+                        }
+                    }
                 }
-                return Ok(self.make_stmt(StmtKind::Assignment(name, value), start, end));
-            } else {
-                return Err("Invalid assignment target.".to_string());
+                let end_span = elements.last().unwrap().span;
+                let start_span = elements[0].span;
+                final_value = self.make_expr(ExprKind::Tuple(elements), start_span, end_span);
             }
+
+            end = final_value.span;
+            if !self.is_at_end() && !matches!(self.peek().kind, TokenKind::Dedent) {
+                self.consume(
+                    |t| matches!(t, TokenKind::Newline),
+                    "Expected newline after assignment.",
+                )?;
+            }
+            return Ok(self.make_stmt(StmtKind::Assignment(expr, final_value), start, end));
         }
+
+        // Augmented assignment
+        if self.match_token(&[
+            TokenKind::PlusAssign,
+            TokenKind::MinusAssign,
+            TokenKind::StarAssign,
+            TokenKind::SlashAssign,
+            TokenKind::SlashSlashAssign,
+            TokenKind::PercentAssign,
+        ]) {
+            // Augmented assignment does not support tuple unpacking
+            if let ExprKind::Tuple(_) = expr.kind {
+                return Err("Augmented assignment does not support tuple unpacking".to_string());
+            }
+
+            let op = self.tokens[self.current - 1].kind.clone();
+            let value = self.expression()?;
+            end = value.span;
+            if !self.is_at_end() && !matches!(self.peek().kind, TokenKind::Dedent) {
+                self.consume(
+                    |t| matches!(t, TokenKind::Newline),
+                    "Expected newline after augmented assignment.",
+                )?;
+            }
+            return Ok(self.make_stmt(
+                StmtKind::AugmentedAssignment(expr, op, value),
+                start,
+                end,
+            ));
+        }
+
         if !self.is_at_end() && !matches!(self.peek().kind, TokenKind::Dedent) {
             self.consume(
                 |t| matches!(t, TokenKind::Newline),
@@ -381,10 +453,40 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, String> {
+        // Handle ternary if expression: x if cond else y
+        // It has lower precedence than lambda? No, Python: lambda : x if y else z
+        // So we parse lambda first, but inside lambda body we can have if-expr.
+        // But lambda is parsed specially.
+        // Actually precedence:
+        // lambda
+        // if-else
+        // or
+        // ...
+
         if self.match_token(&[TokenKind::Lambda]) {
             return self.lambda_expression();
         }
-        self.logic_or()
+
+        let expr = self.logic_or()?;
+
+        if self.match_token(&[TokenKind::If]) {
+            let cond = self.logic_or()?;
+            self.consume(|t| matches!(t, TokenKind::Else), "Expected 'else'.")?;
+            let else_branch = self.expression()?;
+            let start = expr.span;
+            let end = else_branch.span;
+            return Ok(self.make_expr(
+                ExprKind::If {
+                    cond: Box::new(cond),
+                    then_branch: Box::new(expr),
+                    else_branch: Box::new(else_branch),
+                },
+                start,
+                end,
+            ));
+        }
+
+        Ok(expr)
     }
 
     fn lambda_expression(&mut self) -> Result<Expr, String> {
@@ -526,6 +628,7 @@ impl Parser {
             TokenKind::Gt,
             TokenKind::LtEq,
             TokenKind::GtEq,
+            TokenKind::In,
         ]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.bitwise_or()?;
@@ -621,22 +724,15 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Expr, String> {
-        if self.match_token(&[TokenKind::Minus, TokenKind::BitNot]) {
+        let mut expr = self.unary_expr()?;
+        while self.match_token(&[
+            TokenKind::Slash,
+            TokenKind::SlashSlash,
+            TokenKind::Star,
+            TokenKind::Percent,
+        ]) {
             let operator = self.tokens[self.current - 1].clone();
-            let right = self.factor()?;
-            let start = operator.span;
-            let end = right.span;
-            return Ok(self.make_expr(
-                ExprKind::UnaryOp(operator.kind, Box::new(right)),
-                start,
-                end,
-            ));
-        }
-
-        let mut expr = self.call()?;
-        while self.match_token(&[TokenKind::Slash, TokenKind::Star, TokenKind::Percent]) {
-            let operator = self.tokens[self.current - 1].clone();
-            let right = self.call()?;
+            let right = self.unary_expr()?;
             let start = expr.span;
             let end = right.span;
             expr = self.make_expr(
@@ -646,6 +742,21 @@ impl Parser {
             );
         }
         Ok(expr)
+    }
+
+    fn unary_expr(&mut self) -> Result<Expr, String> {
+        if self.match_token(&[TokenKind::Minus, TokenKind::BitNot]) {
+            let operator = self.tokens[self.current - 1].clone();
+            let right = self.unary_expr()?;
+            let start = operator.span;
+            let end = right.span;
+            return Ok(self.make_expr(
+                ExprKind::UnaryOp(operator.kind, Box::new(right)),
+                start,
+                end,
+            ));
+        }
+        self.call()
     }
 
     fn call(&mut self) -> Result<Expr, String> {
@@ -872,9 +983,15 @@ impl Parser {
                 };
 
                 self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
-                let iterable = self.expression()?;
+                // Use logic_or to avoid consuming the 'if' of the comprehension
+                let iterable = self.logic_or()?;
                 let mut cond = None;
                 if self.match_token(&[TokenKind::If]) {
+                    // Condition can be a full expression (ternary allowed inside it if parenthesized? no, generally allowed)
+                    // The condition of a comprehension: [x for x in y if (a if b else c)]
+                    // If we use expression(), it might consume 'else' if there was one after the comprehension?
+                    // But comprehensions are closed by ']'.
+                    // So expression() is safe here.
                     cond = Some(Box::new(self.expression()?));
                 }
                 let end = self
@@ -937,7 +1054,8 @@ impl Parser {
                 };
 
                 self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
-                let iterable = self.expression()?;
+                // Use logic_or to avoid consuming the 'if' of the comprehension
+                let iterable = self.logic_or()?;
                 let mut cond = None;
                 if self.match_token(&[TokenKind::If]) {
                     cond = Some(Box::new(self.expression()?));
