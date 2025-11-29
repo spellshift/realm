@@ -1,8 +1,7 @@
 import { add } from "date-fns";
-import { BeaconType, QuestParam, TomeParams, } from "./consts";
-import { BeaconEdge } from "./interfacesQuery";
+import { BeaconEdge, BeaconNode } from "./interfacesQuery";
 import { PrincipalAdminTypes } from "./enums";
-import { FilterBarOption, OnlineOfflineStatus, TomeInputParams } from "./interfacesUI";
+import { FilterBarOption, OnlineOfflineStatus, FieldInputParams } from "./interfacesUI";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -97,9 +96,9 @@ export const getOfflineOnlineStatus = (beacons: BeaconEdge[]) : OnlineOfflineSta
     );
 };
 
-export function getOnlineBeacons(beacons: Array<BeaconType>): Array<BeaconType> {
+export function getOnlineBeacons(beacons: Array<BeaconNode>): Array<BeaconNode> {
     const currentDate = new Date();
-    return beacons.filter((beacon: BeaconType) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
+    return beacons.filter((beacon: BeaconNode) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
 }
 export function checkIfBeaconOffline(beacon: { lastSeenAt: string, interval: number }): boolean {
     const currentDate = new Date();
@@ -148,7 +147,7 @@ export function getTacticColor(tactic: string) {
             return "#4b5563";
     }
 }
-export function constructTomeParams(questParamamters?: string | null, tomeParameters?: string | null): Array<TomeInputParams> {
+export function constructTomeParams(questParamamters?: string | null, tomeParameters?: string | null): Array<FieldInputParams> {
     if (!questParamamters || !tomeParameters) {
         return [];
     }
@@ -156,7 +155,7 @@ export function constructTomeParams(questParamamters?: string | null, tomeParame
     const paramValues = JSON.parse(questParamamters) || {};
     const paramFields = JSON.parse(tomeParameters || "") || [];
 
-    const fieldWithValue = paramFields.map((field: TomeParams) => {
+    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
@@ -165,8 +164,8 @@ export function constructTomeParams(questParamamters?: string | null, tomeParame
 
     return fieldWithValue;
 }
-export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<TomeParams>): Array<QuestParam> {
-    const fieldWithValue = paramFields.map((field: TomeParams) => {
+export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<FieldInputParams>): Array<FieldInputParams> {
+    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""

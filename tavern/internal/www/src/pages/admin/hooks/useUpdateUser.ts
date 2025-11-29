@@ -1,7 +1,6 @@
 import { gql, useMutation, ApolloError } from "@apollo/client"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UpdateUserProps } from "../../../utils/consts";
 import { GET_USER_QUERY } from "../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
 
@@ -18,6 +17,12 @@ interface UpdateUserMutationVariables {
         isAdmin: boolean;
     };
 }
+
+interface UpdateUserProps{
+    id: number,
+    activated: boolean,
+    admin: boolean,
+};
 
 interface UseUpdateUserReturn {
     submitUpdateUser: (props: UpdateUserProps) => Promise<void>;
@@ -45,7 +50,7 @@ export const useUpdateUser = (): UseUpdateUserReturn => {
         }
     }
 
-    const handleOnCompleted = (result: UpdateUserMutationResponse) => {
+    const handleOnCompleted = () => {
         navigate('/admin');
     }
 

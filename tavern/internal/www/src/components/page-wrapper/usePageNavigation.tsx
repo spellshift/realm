@@ -10,8 +10,16 @@ import {
 } from '@heroicons/react/24/outline';
 import { useContext } from 'react';
 import { AuthorizationContext } from '../../context/AuthorizationContext';
-import { NavigationItemType } from '../../utils/consts';
 import { PageNavItem } from '../../utils/enums';
+
+interface NavigationItemType {
+    name: string;
+    href: string;
+    icon?: any;
+    target?: string;
+    internal?: boolean;
+    adminOnly?: boolean;
+}
 
 export const usePageNavigation = () => {
     const { data } = useContext(AuthorizationContext);

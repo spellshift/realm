@@ -2,9 +2,9 @@ import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
-import { Tome } from '../../utils/consts'
 import { LimitedTaskNode, useCreateQuest } from './useCreateQuest'
 import Button from '../../components/tavern-base-ui/button/Button'
+import { TomeNode } from '../../utils/interfacesQuery'
 
 
 export const CreateQuestDropdown = ({
@@ -17,7 +17,7 @@ export const CreateQuestDropdown = ({
     showLabel?: boolean,
     name: string,
     originalParms: string,
-    tome: Tome,
+    tome: TomeNode,
     tasks: {
         edges: Array<LimitedTaskNode>
     }

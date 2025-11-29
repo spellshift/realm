@@ -15,7 +15,7 @@ export interface OnlineOfflineStatus {
     offline: number;
 }
 
-export type TomeInputParams = {
+export type FieldInputParams = {
     name: string;
     label: string;
     type: string;
@@ -33,3 +33,6 @@ export interface RepositoryRow {
         publicKey?: string;
     };
 }
+export type SelectedBeacons = {
+    [beaconId: string]: boolean
+};

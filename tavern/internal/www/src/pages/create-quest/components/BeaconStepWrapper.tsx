@@ -1,10 +1,10 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { TagContext } from "../../../context/TagContext";
-import { SelectedBeacons } from "../../../utils/consts";
 import { getOnlineBeacons, isBeaconSelected } from "../../../utils/utils";
 import BeaconStep from "./BeaconStep";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import { SelectedBeacons } from "../../../utils/interfacesUI";
 
 type Props = {
     setCurrStep: (arg1: number) => void;
@@ -16,7 +16,6 @@ export const BeaconStepWrapper = (props: Props) => {
 
     const { data, isLoading } = useContext(TagContext);
 
-    //filter to only show online beacons
     const onlineBeacons = getOnlineBeacons(data?.beacons || []);
 
     const hasBeaconSelected = isBeaconSelected(selectedBeacons);

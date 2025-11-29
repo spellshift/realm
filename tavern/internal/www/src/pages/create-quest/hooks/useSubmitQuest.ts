@@ -2,9 +2,17 @@ import { gql, useMutation } from "@apollo/client"
 import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreateQuestProps } from "../../../utils/consts";
 import { GET_QUEST_QUERY } from "../../../utils/queries";
 import { useFilters } from "../../../context/FilterContext";
+import { TomeNode } from "../../../utils/interfacesQuery";
+import { FieldInputParams } from "../../../utils/interfacesUI";
+
+export type CreateQuestProps = {
+    name: string,
+    tome: TomeNode | null,
+    params: Array<FieldInputParams>,
+    beacons: Array<string>,
+};
 
 export const useSubmitQuest = () => {
     const { updateFilters } = useFilters();
@@ -31,8 +39,8 @@ export const useSubmitQuest = () => {
     }
 
     const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_QUEST_QUERY, // DocumentNode object parsed with gql
-        'GetQuests' // Query name
+        GET_QUEST_QUERY,
+        'GetQuests'
       ]});
 
     const submitQuest = (props: CreateQuestProps) => {

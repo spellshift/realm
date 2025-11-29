@@ -126,20 +126,20 @@ export const GET_TOMES_QUERY = gql`
     query GetTomes($where: TomeWhereInput) {
         tomes(where: $where){
             edges{
-            node{
-                id
-                name
-                paramDefs
-                tactic
-                eldritch
-                supportModel
-                description
-                uploader{
+                node{
                     id
                     name
-                    photoURL
+                    paramDefs
+                    tactic
+                    eldritch
+                    supportModel
+                    description
+                    uploader{
+                        id
+                        name
+                        photoURL
+                    }
                 }
-            }
             }
         }
     }

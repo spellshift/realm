@@ -6,7 +6,6 @@ import {
 import './style.css';
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
@@ -20,6 +19,7 @@ import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { FilterProvider } from "./context/FilterContext";
 import { Tomes } from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
+import { CreateQuest } from "./pages/create-quest/CreateQuest";
 
 
 const router = createBrowserRouter([

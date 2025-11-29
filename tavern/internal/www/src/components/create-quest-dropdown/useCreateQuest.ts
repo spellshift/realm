@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 
-import { BeaconType, Tome } from "../../utils/consts";
 import { checkIfBeaconOffline, constructTomeParams } from "../../utils/utils";
+import { BeaconNode, TomeNode } from "../../utils/interfacesQuery";
 
 export type LimitedTaskNode = {
     node: {
-        beacon: BeaconType
+        beacon: BeaconNode
     }
 };
 
@@ -49,7 +49,7 @@ export const useCreateQuest = () => {
     };
 
 
-    const handleCreateQuestWithSameTome = (name: string, originalParms: string, tome: Tome, tasks: {
+    const handleCreateQuestWithSameTome = (name: string, originalParms: string, tome: TomeNode, tasks: {
         edges: Array<LimitedTaskNode>
     }) => {
         const beacons = formatBeaconList(tasks);

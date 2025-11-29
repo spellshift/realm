@@ -5,9 +5,9 @@ import BeaconTile from "../../../components/BeaconTile";
 import FormTextField from "../../../components/tavern-base-ui/FormTextField";
 import TomeAccordion from "../../../components/TomeAccordion";
 import { TagContext } from "../../../context/TagContext";
-import { BeaconType } from "../../../utils/consts";
 import { convertArrayToObject } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import { BeaconNode } from "../../../utils/interfacesQuery";
 
 
 type Props = {
@@ -25,9 +25,9 @@ const FinalizeStep = (props: Props) => {
 
     const { data } = useContext(TagContext);
 
-    function getSelectedBeacons(beacons: Array<BeaconType>, selectedBeaconIds: Array<string>) {
+    function getSelectedBeacons(beacons: Array<BeaconNode>, selectedBeaconIds: Array<string>) {
         const beaconSelectedObject = convertArrayToObject(selectedBeaconIds);
-        return beacons.filter((beacon: BeaconType) => beaconSelectedObject[beacon?.id]);
+        return beacons.filter((beacon: BeaconNode) => beaconSelectedObject[beacon?.id]);
     }
 
     const beaconsSelected = getSelectedBeacons(data?.beacons || [], formik.values.beacons);
