@@ -1,10 +1,10 @@
 use wasm_bindgen::prelude::*;
 use crate::{Interpreter, Value};
-use crate::lexer::Lexer;
-use crate::token::TokenKind;
+use crate::repl::{Repl, Input, ReplAction};
 use alloc::string::ToString;
 use alloc::string::String;
 use alloc::format;
+use alloc::vec::Vec;
 
 #[wasm_bindgen]
 extern "C" {
@@ -24,106 +24,166 @@ fn wasm_print(args: &[Value]) -> Result<Value, String> {
 }
 
 #[wasm_bindgen]
-pub struct WasmInterpreter {
+pub struct WasmRepl {
     interp: Interpreter,
+    repl: Repl,
 }
 
 #[wasm_bindgen]
-impl WasmInterpreter {
+pub struct RenderState {
+    prompt: String,
+    buffer: String,
+    cursor: usize,
+}
+
+#[wasm_bindgen]
+impl RenderState {
+    #[wasm_bindgen(getter)]
+    pub fn prompt(&self) -> String { self.prompt.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn buffer(&self) -> String { self.buffer.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn cursor(&self) -> usize { self.cursor }
+}
+
+#[wasm_bindgen]
+pub struct ExecutionResult {
+    output: Option<String>,
+    echo: Option<String>,
+}
+
+#[wasm_bindgen]
+impl ExecutionResult {
+    #[wasm_bindgen(getter)]
+    pub fn output(&self) -> Option<String> { self.output.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn echo(&self) -> Option<String> { self.echo.clone() }
+}
+
+#[wasm_bindgen]
+impl WasmRepl {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> WasmInterpreter {
+    pub fn new() -> WasmRepl {
         let mut interp = Interpreter::new();
         interp.register_function("print", wasm_print);
-        WasmInterpreter { interp }
+        WasmRepl {
+            interp,
+            repl: Repl::new(),
+        }
     }
 
-    pub fn run(&mut self, code: &str) -> String {
+    pub fn load_history(&mut self, js_history: Vec<JsValue>) {
+        let history: Vec<String> = js_history.iter().filter_map(|x| x.as_string()).collect();
+        self.repl.load_history(history);
+    }
+
+    pub fn get_history(&self) -> Vec<JsValue> {
+        self.repl.get_history().iter().map(|s| JsValue::from_str(s)).collect()
+    }
+
+    pub fn get_state(&self) -> RenderState {
+        let s = self.repl.get_render_state();
+        RenderState {
+            prompt: s.prompt,
+            buffer: s.buffer,
+            cursor: s.cursor,
+        }
+    }
+
+    pub fn handle_key(&mut self, key: &str, ctrl: bool, _alt: bool, _meta: bool, shift: bool) -> ExecutionResult {
+        let input = match key {
+            "Enter" => if shift { Input::ForceEnter } else { Input::Enter },
+            "Backspace" => Input::Backspace,
+            "Delete" => Input::Delete,
+            "ArrowLeft" => Input::Left,
+            "ArrowRight" => Input::Right,
+            "ArrowUp" => Input::Up,
+            "ArrowDown" => Input::Down,
+            "Home" => Input::Home,
+            "End" => Input::End,
+            "Tab" => Input::Tab,
+            "c" if ctrl => Input::Cancel,
+            "l" if ctrl => Input::ClearScreen,
+            "u" if ctrl => Input::KillLine,
+            "k" if ctrl => Input::KillToEnd,
+            "w" if ctrl => Input::WordBackspace,
+            _ => {
+                if key.len() == 1 && !ctrl {
+                    Input::Char(key.chars().next().unwrap())
+                } else {
+                    return ExecutionResult { output: None, echo: None };
+                }
+            }
+        };
+
+        self.process_input(input)
+    }
+
+    pub fn handle_paste(&mut self, text: &str) -> ExecutionResult {
+        let mut final_res = ExecutionResult { output: None, echo: None };
+        let mut echo_acc = String::new();
+        let mut output_acc = String::new();
+
+        if !text.contains('\n') {
+            for c in text.chars() {
+                self.repl.handle_input(Input::Char(c));
+            }
+            return final_res;
+        }
+
+        // Split by lines but keep newlines to drive logic?
+        // Actually we can process char by char.
+        for c in text.chars() {
+            let input = if c == '\n' { Input::Enter } else { Input::Char(c) };
+            let res = self.process_input(input);
+
+            if let Some(e) = res.echo {
+                if !echo_acc.is_empty() { echo_acc.push('\n'); }
+                echo_acc.push_str(&e);
+            }
+            if let Some(o) = res.output {
+                if !output_acc.is_empty() { output_acc.push('\n'); }
+                output_acc.push_str(&o);
+            }
+        }
+
+        if !echo_acc.is_empty() { final_res.echo = Some(echo_acc); }
+        if !output_acc.is_empty() { final_res.output = Some(output_acc); }
+        final_res
+    }
+
+    fn process_input(&mut self, input: Input) -> ExecutionResult {
+        match self.repl.handle_input(input) {
+            ReplAction::Submit { code, last_line, prompt } => {
+                let echo = format!("{}{}", prompt, last_line);
+                let res = self.execute(&code);
+                ExecutionResult {
+                    echo: Some(echo),
+                    output: res.output
+                }
+            },
+            ReplAction::AcceptLine { line, prompt } => {
+                ExecutionResult {
+                    output: None,
+                    echo: Some(format!("{}{}", prompt, line))
+                }
+            },
+            ReplAction::Render => ExecutionResult { output: None, echo: None },
+            ReplAction::None => ExecutionResult { output: None, echo: None },
+            ReplAction::Quit => ExecutionResult { output: Some("Use 'exit' or close tab.".to_string()), echo: None },
+        }
+    }
+
+    fn execute(&mut self, code: &str) -> ExecutionResult {
         match self.interp.interpret(code) {
             Ok(v) => {
                 if let Value::None = v {
-                    String::new()
+                    ExecutionResult { output: None, echo: None }
                 } else {
-                    v.to_string()
+                    ExecutionResult { output: Some(v.to_string()), echo: None }
                 }
             },
-            Err(e) => format!("Error: {}", e),
+            Err(e) => ExecutionResult { output: Some(format!("Error: {}", e)), echo: None },
         }
-    }
-}
-
-#[wasm_bindgen]
-pub fn check_complete(code: &str) -> bool {
-    let trimmed = code.trim();
-    if trimmed.is_empty() {
-        return false;
-    }
-
-    // Lexer check for balance and string termination
-    let lex_result = Lexer::new(code.to_string()).scan_tokens();
-    let is_syntactically_complete = match lex_result {
-        Ok(tokens) => {
-            let mut balance = 0;
-            for t in tokens {
-                match t.kind {
-                    TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => balance += 1,
-                    TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                        if balance > 0 { balance -= 1; }
-                    }
-                    _ => {}
-                }
-            }
-            balance == 0
-        }
-        Err(e) => {
-            // If "Unterminated string literal" and NOT "(newline)", it's incomplete string
-            if e.contains("Unterminated string literal") && !e.contains("(newline)") {
-                false
-            } else {
-                true // Syntax error or complete string
-            }
-        }
-    };
-
-    if !is_syntactically_complete {
-        return false;
-    }
-
-    // Heuristics
-    let ends_with_colon = trimmed.ends_with(':');
-    let is_multi_line = trimmed.lines().count() > 1;
-
-    // Check for empty line at the end (indicates block termination)
-    // We look for two newlines at the end, possibly separated by whitespace.
-    // Since we expect the JS to append \n after every input, a blank line input results in \n\s*\n at the end.
-    // We need to be careful with \r\n vs \n.
-    // Let's check if the suffix matches \n\s*\n?
-    // Or just look at the last characters.
-    let ends_with_empty_line = {
-        // Find last newline
-        if let Some(last_nl) = code.rfind('\n') {
-             // Check content between prev newline and this one
-             if let Some(prev_nl) = code[..last_nl].rfind('\n') {
-                 let last_line = &code[prev_nl+1..last_nl];
-                 last_line.trim().is_empty()
-             } else {
-                 // Only one newline found.
-                 // If the string starts with empty line?
-                 // e.g. "   \n"
-                 code[..last_nl].trim().is_empty()
-             }
-        } else {
-            false
-        }
-    };
-
-    // Execute if:
-    // 1. Single line AND not ending in colon.
-    // 2. Multi-line AND ends with empty line.
-    if !is_multi_line && !ends_with_colon {
-        true
-    } else if is_multi_line && ends_with_empty_line {
-        true
-    } else {
-        false
     }
 }

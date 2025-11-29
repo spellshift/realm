@@ -130,14 +130,52 @@
             if (e.key === 'l' && e.ctrlKey) e.preventDefault();
 
             // Handle Key via Rust
+            // We map JS event to simple "Key" + Modifiers
+            // But WasmRepl expects specific strings for keys it knows, or single chars.
+
             let key = e.key;
 
-            // Pass shiftKey to handle_key
-            const result = repl.handle_key(key, e.ctrlKey, e.altKey, e.metaKey, e.shiftKey);
+            const result = repl.handle_key(key, e.ctrlKey, e.altKey, e.metaKey);
 
-            // Handle echo (the command or line accepted)
-            if (result.echo) {
-                printLine(result.echo);
+            if (result.should_print && result.output !== undefined) {
+                // Command executed and produced output (or error)
+                // First, commit the current line to the terminal display
+                // Wait, the Repl has already cleared the buffer inside handle_key(Submit)
+                // We need to capture the "what was just typed" to print it to history?
+                // The Repl logic clears buffer on Submit.
+                // Does `Repl` return the submitted code? Yes, `ReplAction::Submit(code)`.
+                // But `handle_key` returns `ExecutionResult`.
+                // We need to print the command that was just executed to the terminal log,
+                // because `render()` will show an empty prompt now.
+                //
+                // Issue: `handle_key` in `wasm.rs` swallows the submitted code.
+                // We probably want to print the *previous* state or the submitted code before showing output.
+                //
+                // FIX: `wasm.rs` should return the code executed OR we assume the UI handles "echo".
+                // In CLI `repl.rs`, we print the buffer before clearing.
+                // In `wasm.rs`, we don't have easy access to the buffer *before* the action unless we query it first.
+                //
+                // Better approach: When `handle_key` returns a result that implies execution,
+                // it should probably include the "echo" of the command if needed?
+                // OR `render()` logic handles the active line, but once submitted, it's gone from `repl`.
+                //
+                // Let's modify JS to:
+                // 1. Get state.
+                // 2. Call handle_key.
+                // 3. If "Submit" happened (how do we know? `should_print` is true usually implies output or error),
+                //    we need to know what was submitted to print ">>> command".
+                //
+                // Actually, `wasm.rs` `execute` could verify if we should echo?
+                // Or simply: The `Repl` engine clears the buffer.
+                // If we want to mimic a terminal, we should print the command to the scrollback.
+                //
+                // I should update `wasm.rs` to include `echo_command` in `ExecutionResult`?
+                // Or I can just manually manage it in JS if I knew what it was.
+                //
+                // Let's modify `wasm.rs` to return `echo: Option<String>` in `ExecutionResult`.
+                // Wait, `repl.rs` `handle_input` returns `Submit(String)`.
+                // `wasm.rs` consumes it.
+                // I will update `wasm.rs` now to pass that back.
             }
 
             // Check output
@@ -145,10 +183,16 @@
                 printLine(result.output);
             }
 
+            // If we just submitted, we need to print the *prompt + command* that was submitted?
+            // The `render()` will show a fresh prompt.
+            // The previous command is gone.
+            // THIS IS A PROBLEM.
+            // I need to update `wasm.rs` to return the executed command so I can print it.
+
             // Re-render
             render();
 
-            if (result.output || result.echo) {
+            if (result.should_print) {
                 saveHistory();
             }
         });
@@ -157,14 +201,26 @@
              e.preventDefault();
              const text = (e.clipboardData || window.clipboardData).getData('text');
              if (text) {
+                 // We need to echo the pasted text as prompts?
+                 // `wasm.rs` `handle_paste` returns output.
+                 // But it doesn't return the "echo" of what was pasted.
+                 // If I paste `if True:\n  pass`, I want to see:
+                 // >>> if True:
+                 // ...   pass
+                 // (output)
+                 //
+                 // `handle_paste` in `wasm.rs` is a bit black-box.
+                 // It runs the loop.
+                 // We should probably change `handle_paste` to return a list of "events" to render?
+                 // Or just print inside `handle_paste`?
+                 // `repl_print` prints output.
+                 // We could add `repl_echo(prompt, line)` callback?
+
                  const res = repl.handle_paste(text);
-                 if (res.echo) printLine(res.echo);
                  if (res.output) printLine(res.output);
                  render();
              }
         });
-
-        main();
     </script>
 </body>
 </html>

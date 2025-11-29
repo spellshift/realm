@@ -1,11 +1,18 @@
-use eldritchv2::lexer::Lexer;
-use eldritchv2::token::TokenKind;
-use eldritchv2::{Interpreter, Value};
-use rustyline::error::ReadlineError;
-use rustyline::{Cmd, Config, EditMode, Editor, KeyCode, KeyEvent, Modifiers};
+use crossterm::{
+    cursor,
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    style::Stylize,
+    terminal::{self, ClearType},
+    ExecutableCommand, QueueableCommand,
+};
+use eldritchv2::{Interpreter, Repl, Value};
+use eldritchv2::repl::{Input, ReplAction};
+use std::io::{self, Write};
+use std::time::Duration;
 
-fn main() -> rustyline::Result<()> {
+fn main() -> io::Result<()> {
     let mut interpreter = Interpreter::new();
+    let mut repl = Repl::new();
 
     // Register STD-dependent builtins
     interpreter.register_function("print", |args| {
@@ -20,135 +27,129 @@ fn main() -> rustyline::Result<()> {
     });
 
     interpreter.register_function("input", |_| {
+        terminal::disable_raw_mode().unwrap();
         let mut input = String::new();
-        match std::io::stdin().read_line(&mut input) {
+        let res = match std::io::stdin().read_line(&mut input) {
             Ok(_) => Ok(Value::String(input.trim().to_string())),
             Err(e) => Err(format!("Input error: {}", e)),
-        }
+        };
+        terminal::enable_raw_mode().unwrap();
+        res
     });
 
-    println!("Starlark-like REPL (Rust)");
+    println!("Eldritch REPL (Rust + Crossterm)");
     println!("Type 'exit' to quit. End blocks with an empty line.");
-    println!("Features: Arrow keys, History (Ctrl+R), Clear (Ctrl+L).");
-    println!(
-        "Navigation: Start (Ctrl+A), End (Ctrl+E). Editing: Del Word (Ctrl+W), Del Line (Ctrl+U)."
-    );
-    println!("Tab key inserts 4 spaces.");
-    println!("Built-ins: dir() can be used to inspect object attributes.");
 
-    // Explicitly configure Emacs mode to ensure standard control keys work
-    let config = Config::builder().edit_mode(EditMode::Emacs).build();
-
-    // Initialize Rustyline editor with the config
-    let mut rl = Editor::<(), rustyline::history::FileHistory>::with_config(config)?;
-
-    // Bind Tab to insert 4 spaces instead of triggering completion
-    rl.bind_sequence(
-        KeyEvent(KeyCode::Tab, Modifiers::NONE),
-        Cmd::Insert(1, "    ".into()),
-    );
-
-    if rl.load_history("history.txt").is_err() {
-        // No history file found, start fresh
+    // Load history
+    if let Ok(content) = std::fs::read_to_string("history.txt") {
+        let history: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        repl.load_history(history);
     }
 
-    let mut buffer = String::new();
+    let mut stdout = io::stdout();
+    terminal::enable_raw_mode()?;
+
+    render(&mut stdout, &repl)?;
 
     loop {
-        // Decide prompt based on whether we're in a block
-        let prompt = if buffer.is_empty() { ">>> " } else { "... " };
+        if event::poll(Duration::from_millis(100))? {
+            match event::read()? {
+                Event::Key(key) => {
+                    let input = map_key(key);
+                    if let Some(input) = input {
+                        match repl.handle_input(input) {
+                            ReplAction::Quit => break,
+                            ReplAction::Submit { code, last_line: _, prompt: _ } => {
+                                // Clear current line visual and move down
+                                // We don't need to manually print the last line because it's already on screen?
+                                // Wait, `repl.handle_input` cleared the buffer.
+                                // If we just move down, the *old* buffer is still on the screen.
+                                // BUT `render()` will be called next? No.
+                                // We are submitting.
+                                // The user typed "print(1)" [Enter].
+                                // Screen shows ">>> print(1)". Cursor at end.
+                                // We receive Submit.
+                                // We just need to MoveToNextLine.
+                                stdout.execute(cursor::MoveToNextLine(1))?;
 
-        let readline = rl.readline(prompt);
-
-        match readline {
-            Ok(line) => {
-                let _ = rl.add_history_entry(line.as_str());
-
-                let trimmed_line = line.trim();
-                if trimmed_line == "exit" {
-                    break;
-                }
-
-                buffer.push_str(&line);
-                buffer.push('\n');
-
-                // Check for incomplete input (open brackets or strings)
-                let mut is_incomplete = false;
-                let lex_result = Lexer::new(buffer.clone()).scan_tokens();
-
-                match lex_result {
-                    Ok(tokens) => {
-                        // Check for unbalanced nesting
-                        let mut balance = 0;
-                        for t in tokens {
-                            match t.kind {
-                                TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => {
-                                    balance += 1
-                                }
-                                TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                                    if balance > 0 {
-                                        balance -= 1;
+                                terminal::disable_raw_mode()?;
+                                match interpreter.interpret(&code) {
+                                    Ok(v) => {
+                                        if !matches!(v, Value::None) {
+                                            println!("{:?}", v);
+                                        }
                                     }
+                                    Err(e) => println!("Error: {}", e),
                                 }
-                                _ => {}
-                            }
-                        }
-                        if balance > 0 {
-                            is_incomplete = true;
-                        }
-                    }
-                    Err(e) => {
-                        // Check for unterminated strings that allow newlines (triple quoted)
-                        if e.contains("Unterminated string literal") && !e.contains("(newline)") {
-                            is_incomplete = true;
+                                terminal::enable_raw_mode()?;
+
+                                render(&mut stdout, &repl)?;
+                            },
+                            ReplAction::AcceptLine { line: _, prompt: _ } => {
+                                // User hit Enter for multi-line.
+                                // Screen shows ">>> if True:". Cursor at end.
+                                // We just need to move to next line.
+                                stdout.execute(cursor::MoveToNextLine(1))?;
+                                render(&mut stdout, &repl)?;
+                            },
+                            ReplAction::Render => {
+                                render(&mut stdout, &repl)?;
+                            },
+                            ReplAction::None => {},
                         }
                     }
                 }
-
-                if is_incomplete {
-                    continue;
-                }
-
-                // Heuristic:
-                // 1. If the line ends with ':', it's definitely a block start (if/for/def).
-                // 2. If we are already inside a block (buffer has multiple lines), we wait for an empty line.
-                let ends_with_colon = trimmed_line.ends_with(':');
-                let is_multi_line = buffer.lines().count() > 1;
-                let is_empty_input = trimmed_line.is_empty();
-
-                // Execute if:
-                // - It's a single line that DOESN'T end in ':' (e.g., print(x) or d = {'a':1})
-                // - OR we are in a multi-line block and the user hit Enter on an empty line.
-                let should_execute =
-                    (!ends_with_colon && !is_multi_line) || (is_multi_line && is_empty_input);
-
-                if should_execute {
-                    match interpreter.interpret(&buffer) {
-                        Ok(v) => {
-                            if !matches!(v, Value::None) {
-                                println!("{:?}", v)
-                            }
-                        }
-                        Err(e) => println!("Error: {}", e),
-                    }
-                    buffer.clear();
-                }
-            }
-            Err(ReadlineError::Interrupted) => {
-                println!("^C");
-                buffer.clear();
-            }
-            Err(ReadlineError::Eof) => {
-                println!("^D");
-                break;
-            }
-            Err(err) => {
-                println!("Error: {:?}", err);
-                break;
+                _ => {}
             }
         }
     }
 
-    rl.save_history("history.txt")?;
+    terminal::disable_raw_mode()?;
+
+    let history = repl.get_history();
+    let content = history.join("\n");
+    std::fs::write("history.txt", content)?;
+
+    Ok(())
+}
+
+fn map_key(key: KeyEvent) -> Option<Input> {
+    match key.code {
+        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::Cancel),
+        KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::ClearScreen),
+        KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::EOF),
+        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::KillLine),
+        KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::KillToEnd),
+        KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::WordBackspace),
+        KeyCode::Char(c) => Some(Input::Char(c)),
+        KeyCode::Enter => Some(Input::Enter),
+        KeyCode::Backspace => Some(Input::Backspace),
+        KeyCode::Delete => Some(Input::Delete),
+        KeyCode::Left => Some(Input::Left),
+        KeyCode::Right => Some(Input::Right),
+        KeyCode::Up => Some(Input::Up),
+        KeyCode::Down => Some(Input::Down),
+        KeyCode::Home => Some(Input::Home),
+        KeyCode::End => Some(Input::End),
+        KeyCode::Tab => Some(Input::Tab),
+        _ => None,
+    }
+}
+
+fn render(stdout: &mut io::Stdout, repl: &Repl) -> io::Result<()> {
+    let state = repl.get_render_state();
+
+    // We are on the "current line".
+    // Clear it first.
+    stdout.queue(terminal::Clear(ClearType::CurrentLine))?;
+    stdout.queue(cursor::MoveToColumn(0))?;
+
+    let full_line = format!("{}{}", state.prompt.as_str().blue(), state.buffer);
+    stdout.write_all(full_line.as_bytes())?;
+
+    let cursor_col = state.prompt.len() as u16 + state.cursor as u16;
+    stdout.queue(cursor::MoveToColumn(cursor_col))?;
+
+    stdout.flush()?;
     Ok(())
 }
