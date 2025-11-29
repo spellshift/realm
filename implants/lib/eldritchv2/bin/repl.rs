@@ -1,5 +1,5 @@
 use eldritchv2::lexer::Lexer;
-use eldritchv2::token::{Token, TokenKind};
+use eldritchv2::token::TokenKind;
 use eldritchv2::{Interpreter, Value};
 use rustyline::error::ReadlineError;
 use rustyline::{Cmd, Config, EditMode, Editor, KeyCode, KeyEvent, Modifiers};
