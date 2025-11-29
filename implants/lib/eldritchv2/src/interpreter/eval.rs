@@ -402,6 +402,12 @@ fn evaluate_getattr(
         }
     }
 
+    // Support Foreign Objects
+    if let Value::Foreign(_) = &obj_val {
+        // Return a bound method where the receiver is the foreign object
+        return Ok(Value::BoundMethod(Box::new(obj_val), name));
+    }
+
     Ok(Value::BoundMethod(Box::new(obj_val), name))
 }
 
@@ -490,7 +496,13 @@ fn call_function(
 
     match callee_val {
         Value::NativeFunction(_, f) => {
+             if !kw_args_val.is_empty() {
+                return runtime_error(span, "NativeFunction does not accept keyword arguments");
+            }
             f(args_slice).map_err(|e| EldritchError { message: e, span })
+        }
+        Value::NativeFunctionWithKwargs(_, f) => {
+            f(args_slice, &kw_args_val).map_err(|e| EldritchError { message: e, span })
         }
         Value::Function(Function {
             name,
@@ -617,8 +629,17 @@ fn call_function(
             result
         }
         Value::BoundMethod(receiver, method_name) => {
-            call_bound_method(&receiver, &method_name, args_slice)
-                .map_err(|e| EldritchError { message: e, span })
+            // Check if receiver is Foreign
+            if let Value::Foreign(foreign) = receiver.as_ref() {
+                 foreign.call_method(&method_name, args_slice, &kw_args_val)
+                    .map_err(|e| EldritchError { message: e, span })
+            } else {
+                if !kw_args_val.is_empty() {
+                    return runtime_error(span, "BoundMethod does not accept keyword arguments");
+                }
+                call_bound_method(&receiver, &method_name, args_slice)
+                    .map_err(|e| EldritchError { message: e, span })
+            }
         }
         _ => runtime_error(
             span,

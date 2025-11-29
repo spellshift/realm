@@ -2,6 +2,7 @@ use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
 use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
@@ -46,8 +47,19 @@ pub enum Argument {
 }
 
 pub type BuiltinFn = fn(&[Value]) -> Result<Value, String>;
+pub type BuiltinFnWithKwargs = fn(&[Value], &BTreeMap<String, Value>) -> Result<Value, String>;
 
-#[derive(Debug, Clone)]
+pub trait ForeignValue: fmt::Debug + Send + Sync {
+    fn type_name(&self) -> &str;
+    fn call_method(
+        &self,
+        name: &str,
+        args: &[Value],
+        kwargs: &BTreeMap<String, Value>,
+    ) -> Result<Value, String>;
+}
+
+#[derive(Clone)]
 pub enum Value {
     None,
     Bool(bool),
@@ -59,7 +71,30 @@ pub enum Value {
     Dictionary(Rc<RefCell<BTreeMap<String, Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),
+    NativeFunctionWithKwargs(String, BuiltinFnWithKwargs),
     BoundMethod(Box<Value>, String),
+    Foreign(Arc<dyn ForeignValue>),
+}
+
+// Manual Debug implementation for Value because NativeFunction/BuiltinFn are not Debug
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::None => write!(f, "None"),
+            Value::Bool(b) => write!(f, "Bool({})", b),
+            Value::Int(i) => write!(f, "Int({})", i),
+            Value::String(s) => write!(f, "String({:?})", s),
+            Value::Bytes(b) => write!(f, "Bytes({:?})", b),
+            Value::List(l) => write!(f, "List({:?})", l),
+            Value::Tuple(t) => write!(f, "Tuple({:?})", t),
+            Value::Dictionary(d) => write!(f, "Dictionary({:?})", d),
+            Value::Function(func) => write!(f, "Function({:?})", func),
+            Value::NativeFunction(name, _) => write!(f, "NativeFunction({})", name),
+            Value::NativeFunctionWithKwargs(name, _) => write!(f, "NativeFunctionWithKwargs({})", name),
+            Value::BoundMethod(receiver, name) => write!(f, "BoundMethod({:?}, {})", receiver, name),
+            Value::Foreign(obj) => write!(f, "Foreign({:?})", obj),
+        }
+    }
 }
 
 impl PartialEq for Value {
@@ -85,7 +120,9 @@ impl PartialEq for Value {
             (Value::Tuple(a), Value::Tuple(b)) => a == b,
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a == b,
+            (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => a == b,
             (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => r1 == r2 && n1 == n2,
+            (Value::Foreign(a), Value::Foreign(b)) => Arc::ptr_eq(a, b),
             _ => false,
         }
     }
@@ -140,7 +177,9 @@ impl fmt::Display for Value {
             // For functions, just print name to avoid circular dep with get_type_name
             Value::Function(func) => write!(f, "<function {}>", func.name),
             Value::NativeFunction(name, _) => write!(f, "<native function {}>", name),
+            Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {}>", name),
             Value::BoundMethod(_, name) => write!(f, "<bound method {}>", name),
+            Value::Foreign(obj) => write!(f, "<{}>", obj.type_name()),
         }
     }
 }

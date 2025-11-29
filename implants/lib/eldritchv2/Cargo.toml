@@ -7,7 +7,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Common dependencies can go here
+eldritch-macros = { path = "../eldritch-macros" }
+lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 crossterm = "0.27"
