@@ -5,10 +5,15 @@ use alloc::string::ToString;
 use alloc::string::String;
 use alloc::format;
 use alloc::vec::Vec;
+use std::cell::RefCell;
 
 #[wasm_bindgen]
 extern "C" {
     fn repl_print(s: &str);
+}
+
+thread_local! {
+    static OUTPUT_BUFFER: RefCell<String> = RefCell::new(String::new());
 }
 
 fn wasm_print(args: &[Value]) -> Result<Value, String> {
@@ -19,7 +24,15 @@ fn wasm_print(args: &[Value]) -> Result<Value, String> {
         }
         out.push_str(&arg.to_string());
     }
-    repl_print(&out);
+
+    OUTPUT_BUFFER.with(|b| {
+        let mut buf = b.borrow_mut();
+        if !buf.is_empty() {
+             buf.push('\n');
+        }
+        buf.push_str(&out);
+    });
+
     Ok(Value::None)
 }
 
@@ -50,6 +63,7 @@ impl RenderState {
 pub struct ExecutionResult {
     output: Option<String>,
     echo: Option<String>,
+    clear: bool,
 }
 
 #[wasm_bindgen]
@@ -58,6 +72,8 @@ impl ExecutionResult {
     pub fn output(&self) -> Option<String> { self.output.clone() }
     #[wasm_bindgen(getter)]
     pub fn echo(&self) -> Option<String> { self.echo.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn clear(&self) -> bool { self.clear }
 }
 
 #[wasm_bindgen]
@@ -107,11 +123,18 @@ impl WasmRepl {
             "u" if ctrl => Input::KillLine,
             "k" if ctrl => Input::KillToEnd,
             "w" if ctrl => Input::WordBackspace,
+            "r" if ctrl => Input::HistorySearch,
             _ => {
+                // If ctrl is pressed but not matched above, we might still want to pass it through if it's a char?
+                // But generally ctrl+char are commands.
+                // The original code:
                 if key.len() == 1 && !ctrl {
                     Input::Char(key.chars().next().unwrap())
+                } else if key.len() == 1 && ctrl {
+                     // For search, we might need ctrl chars later, but for now strict mapping
+                     return ExecutionResult { output: None, echo: None, clear: false };
                 } else {
-                    return ExecutionResult { output: None, echo: None };
+                    return ExecutionResult { output: None, echo: None, clear: false };
                 }
             }
         };
@@ -120,7 +143,7 @@ impl WasmRepl {
     }
 
     pub fn handle_paste(&mut self, text: &str) -> ExecutionResult {
-        let mut final_res = ExecutionResult { output: None, echo: None };
+        let mut final_res = ExecutionResult { output: None, echo: None, clear: false };
         let mut echo_acc = String::new();
         let mut output_acc = String::new();
 
@@ -131,8 +154,6 @@ impl WasmRepl {
             return final_res;
         }
 
-        // Split by lines but keep newlines to drive logic?
-        // Actually we can process char by char.
         for c in text.chars() {
             let input = if c == '\n' { Input::Enter } else { Input::Char(c) };
             let res = self.process_input(input);
@@ -159,31 +180,55 @@ impl WasmRepl {
                 let res = self.execute(&code);
                 ExecutionResult {
                     echo: Some(echo),
-                    output: res.output
+                    output: res.output,
+                    clear: false
                 }
             },
             ReplAction::AcceptLine { line, prompt } => {
                 ExecutionResult {
                     output: None,
-                    echo: Some(format!("{}{}", prompt, line))
+                    echo: Some(format!("{}{}", prompt, line)),
+                    clear: false
                 }
             },
-            ReplAction::Render => ExecutionResult { output: None, echo: None },
-            ReplAction::None => ExecutionResult { output: None, echo: None },
-            ReplAction::Quit => ExecutionResult { output: Some("Use 'exit' or close tab.".to_string()), echo: None },
+            ReplAction::Render => ExecutionResult { output: None, echo: None, clear: false },
+            ReplAction::ClearScreen => ExecutionResult { output: None, echo: None, clear: true },
+            ReplAction::None => ExecutionResult { output: None, echo: None, clear: false },
+            ReplAction::Quit => ExecutionResult { output: Some("Use 'exit' or close tab.".to_string()), echo: None, clear: false },
         }
     }
 
     fn execute(&mut self, code: &str) -> ExecutionResult {
+        // Clear buffer
+        OUTPUT_BUFFER.with(|b| b.borrow_mut().clear());
+
         match self.interp.interpret(code) {
             Ok(v) => {
+                let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
+
                 if let Value::None = v {
-                    ExecutionResult { output: None, echo: None }
+                    // Do not print None
                 } else {
-                    ExecutionResult { output: Some(v.to_string()), echo: None }
+                    if !out.is_empty() {
+                         out.push('\n');
+                    }
+                    out.push_str(&v.to_string());
+                }
+
+                if out.is_empty() {
+                    ExecutionResult { output: None, echo: None, clear: false }
+                } else {
+                    ExecutionResult { output: Some(out), echo: None, clear: false }
                 }
             },
-            Err(e) => ExecutionResult { output: Some(format!("Error: {}", e)), echo: None },
+            Err(e) => {
+                let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
+                if !out.is_empty() {
+                    out.push('\n');
+                }
+                out.push_str(&format!("Error: {}", e));
+                ExecutionResult { output: Some(out), echo: None, clear: false }
+            },
         }
     }
 }
