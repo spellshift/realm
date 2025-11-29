@@ -1,8 +1,27 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Span {
+    pub start: usize, // Byte index start
+    pub end: usize,   // Byte index end
+    pub line: usize,  // Line number (1-based)
+}
+
+impl Span {
+    pub fn new(start: usize, end: usize, line: usize) -> Self {
+        Span { start, end, line }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub struct Token {
+    pub kind: TokenKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenKind {
     // Single-character tokens
     LParen,
     RParen,
@@ -17,6 +36,7 @@ pub enum Token {
     Plus,
     Star,
     Slash,
+    Percent,
     Assign,
     Newline,
 
@@ -40,7 +60,7 @@ pub enum Token {
     // Literals
     Identifier(String),
     String(String),
-    Bytes(Vec<u8>), // New: Byte string literal
+    Bytes(Vec<u8>),
     Integer(i64),
     FStringContent(Vec<Token>),
 
@@ -60,6 +80,8 @@ pub enum Token {
     Not,
     Break,
     Continue,
+    Pass, // Added Pass
+    Lambda,
 
     // Structural
     Indent,
@@ -67,24 +89,26 @@ pub enum Token {
     Eof,
 }
 
-impl Token {
-    pub fn from_keyword(s: &str) -> Option<Token> {
+impl TokenKind {
+    pub fn from_keyword(s: &str) -> Option<TokenKind> {
         match s {
-            "def" => Some(Token::Def),
-            "if" => Some(Token::If),
-            "elif" => Some(Token::Elif),
-            "else" => Some(Token::Else),
-            "return" => Some(Token::Return),
-            "for" => Some(Token::For),
-            "in" => Some(Token::In),
-            "True" => Some(Token::True),
-            "False" => Some(Token::False),
-            "None" => Some(Token::None),
-            "and" => Some(Token::And),
-            "or" => Some(Token::Or),
-            "not" => Some(Token::Not),
-            "break" => Some(Token::Break),
-            "continue" => Some(Token::Continue),
+            "def" => Some(TokenKind::Def),
+            "if" => Some(TokenKind::If),
+            "elif" => Some(TokenKind::Elif),
+            "else" => Some(TokenKind::Else),
+            "return" => Some(TokenKind::Return),
+            "for" => Some(TokenKind::For),
+            "in" => Some(TokenKind::In),
+            "True" => Some(TokenKind::True),
+            "False" => Some(TokenKind::False),
+            "None" => Some(TokenKind::None),
+            "and" => Some(TokenKind::And),
+            "or" => Some(TokenKind::Or),
+            "not" => Some(TokenKind::Not),
+            "break" => Some(TokenKind::Break),
+            "continue" => Some(TokenKind::Continue),
+            "pass" => Some(TokenKind::Pass), // Added mapping
+            "lambda" => Some(TokenKind::Lambda),
             _ => None,
         }
     }

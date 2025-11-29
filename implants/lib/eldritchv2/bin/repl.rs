@@ -1,5 +1,5 @@
 use eldritchv2::lexer::Lexer;
-use eldritchv2::token::Token;
+use eldritchv2::token::{Token, TokenKind};
 use eldritchv2::{Interpreter, Value};
 use rustyline::error::ReadlineError;
 use rustyline::{Cmd, Config, EditMode, Editor, KeyCode, KeyEvent, Modifiers};
@@ -48,7 +48,7 @@ fn main() -> rustyline::Result<()> {
         Cmd::Insert(1, "    ".into()),
     );
 
-    if rl.load_history("eldritch_history.txt").is_err() {
+    if rl.load_history("history.txt").is_err() {
         // No history file found, start fresh
     }
 
@@ -81,9 +81,11 @@ fn main() -> rustyline::Result<()> {
                         // Check for unbalanced nesting
                         let mut balance = 0;
                         for t in tokens {
-                            match t {
-                                Token::LParen | Token::LBracket | Token::LBrace => balance += 1,
-                                Token::RParen | Token::RBracket | Token::RBrace => {
+                            match t.kind {
+                                TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => {
+                                    balance += 1
+                                }
+                                TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
                                     if balance > 0 {
                                         balance -= 1;
                                     }
@@ -97,8 +99,6 @@ fn main() -> rustyline::Result<()> {
                     }
                     Err(e) => {
                         // Check for unterminated strings that allow newlines (triple quoted)
-                        // The lexer error "Unterminated string literal on line X" implies EOF was reached inside string.
-                        // If it says "(newline)", it's a single-line string error, which we don't wait for.
                         if e.contains("Unterminated string literal") && !e.contains("(newline)") {
                             is_incomplete = true;
                         }
@@ -149,6 +149,6 @@ fn main() -> rustyline::Result<()> {
         }
     }
 
-    rl.save_history("eldritch_history.txt")?;
+    rl.save_history("history.txt")?;
     Ok(())
 }

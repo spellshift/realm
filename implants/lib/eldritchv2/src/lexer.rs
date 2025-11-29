@@ -1,4 +1,4 @@
-use super::token::Token;
+use super::token::{Span, Token, TokenKind};
 use alloc::collections::VecDeque;
 use alloc::format;
 use alloc::string::String;
@@ -63,8 +63,11 @@ impl Lexer {
         true
     }
 
-    fn add_token(&self, token: Token) -> Token {
-        token
+    fn add_token(&self, kind: TokenKind) -> Token {
+        Token {
+            kind,
+            span: Span::new(self.start, self.current, self.line),
+        }
     }
 
     fn skip_comment(&mut self) {
@@ -78,10 +81,10 @@ impl Lexer {
             self.advance();
         }
         let value: String = self.source[self.start..self.current].iter().collect();
-        if let Some(token) = Token::from_keyword(&value) {
-            token
+        if let Some(kind) = TokenKind::from_keyword(&value) {
+            self.add_token(kind)
         } else {
-            self.add_token(Token::Identifier(value))
+            self.add_token(TokenKind::Identifier(value))
         }
     }
 
@@ -91,7 +94,7 @@ impl Lexer {
         }
         let value: String = self.source[self.start..self.current].iter().collect();
         let number: i64 = value.parse().unwrap_or(0);
-        self.add_token(Token::Integer(number))
+        self.add_token(TokenKind::Integer(number))
     }
 
     fn string(
@@ -107,9 +110,8 @@ impl Lexer {
         }
 
         let mut fstring_tokens = Vec::new();
-        let mut current_literal = String::new(); // For String or Bytes (as chars initially)
+        let mut current_literal = String::new();
 
-        // Check for triple quote
         let is_triple = if self.peek() == quote_char && self.peek_next() == quote_char {
             self.advance();
             self.advance();
@@ -125,29 +127,24 @@ impl Lexer {
 
             let c = self.peek();
 
-            // Check end of string
             if c == quote_char {
                 if is_triple {
                     if self.peek_next() == quote_char {
-                        // Potential end of triple, need to check 3rd char
-                        // We can't easily peek 2 ahead with this struct, but we can advance check
-                        // Current at 1st quote.
                         if self.current + 2 < self.source.len()
                             && self.source[self.current + 2] == quote_char
                         {
-                            self.advance(); // consume 1st
-                            self.advance(); // consume 2nd
-                            self.advance(); // consume 3rd
+                            self.advance();
+                            self.advance();
+                            self.advance();
                             break;
                         }
                     }
                 } else {
-                    self.advance(); // consume quote
+                    self.advance();
                     break;
                 }
             }
 
-            // Disallow unescaped newlines in single-quoted strings
             if c == '\n' {
                 if !is_triple {
                     return Err(format!(
@@ -159,9 +156,8 @@ impl Lexer {
             }
 
             if c == '{' && is_fstring && !is_bytes {
-                // F-strings can't be byte strings
                 if !current_literal.is_empty() {
-                    fstring_tokens.push(Token::String(current_literal.clone()));
+                    fstring_tokens.push(self.create_string_token(current_literal.clone()));
                     current_literal.clear();
                 }
                 self.advance();
@@ -185,7 +181,7 @@ impl Lexer {
                     '\'' => current_literal.push('\''),
                     '\n' => {
                         self.line += 1;
-                    } // Line continuation
+                    }
                     c => current_literal.push(c),
                 }
             } else {
@@ -194,17 +190,22 @@ impl Lexer {
         }
 
         if is_bytes {
-            // Convert to bytes. In this simple impl, we just cast char to u8.
-            // Real implementation would handle hex escapes \xNN etc.
             let bytes: Vec<u8> = current_literal.chars().map(|c| c as u8).collect();
-            Ok(Token::Bytes(bytes))
+            Ok(self.add_token(TokenKind::Bytes(bytes)))
         } else if is_fstring {
             if !current_literal.is_empty() {
-                fstring_tokens.push(Token::String(current_literal));
+                fstring_tokens.push(self.create_string_token(current_literal));
             }
-            Ok(Token::FStringContent(fstring_tokens))
+            Ok(self.add_token(TokenKind::FStringContent(fstring_tokens)))
         } else {
-            Ok(self.add_token(Token::String(current_literal)))
+            Ok(self.add_token(TokenKind::String(current_literal)))
+        }
+    }
+
+    fn create_string_token(&self, s: String) -> Token {
+        Token {
+            kind: TokenKind::String(s),
+            span: Span::new(self.current, self.current, self.line),
         }
     }
 
@@ -237,18 +238,21 @@ impl Lexer {
 
         loop {
             let token = expr_lexer.next_token()?;
-            match token {
-                Token::Eof => break,
-                Token::Newline | Token::Indent | Token::Dedent => continue,
-                Token::String(s) => tokens.push(Token::String(s)),
+            match token.kind {
+                TokenKind::Eof => break,
+                TokenKind::Newline | TokenKind::Indent | TokenKind::Dedent => continue,
+                TokenKind::String(s) => tokens.push(Token {
+                    kind: TokenKind::String(s),
+                    span: token.span,
+                }),
                 _ => tokens.push(token),
             }
         }
         self.advance();
 
-        let mut final_tokens = vec![Token::LParen];
+        let mut final_tokens = vec![self.add_token(TokenKind::LParen)];
         final_tokens.extend(tokens);
-        final_tokens.push(Token::RParen);
+        final_tokens.push(self.add_token(TokenKind::RParen));
         Ok(final_tokens)
     }
 
@@ -256,13 +260,13 @@ impl Lexer {
         let mut tokens = Vec::new();
         loop {
             match self.next_token() {
-                Ok(token) => match token {
-                    Token::Eof => {
+                Ok(token) => match token.kind {
+                    TokenKind::Eof => {
                         while *self.indent_stack.last().unwrap() > 0 {
                             self.indent_stack.pop();
-                            tokens.push(Token::Dedent);
+                            tokens.push(self.add_token(TokenKind::Dedent));
                         }
-                        tokens.push(Token::Eof);
+                        tokens.push(self.add_token(TokenKind::Eof));
                         return Ok(tokens);
                     }
                     _ => tokens.push(token),
@@ -291,19 +295,19 @@ impl Lexer {
                 indent_count += 1;
             }
             if self.is_at_end() {
-                return Ok(Token::Eof);
+                return Ok(self.add_token(TokenKind::Eof));
             }
 
             if self.peek() != '\n' {
                 let current_indent = *self.indent_stack.last().unwrap();
                 if indent_count > current_indent {
                     self.indent_stack.push(indent_count);
-                    return Ok(Token::Indent);
+                    return Ok(self.add_token(TokenKind::Indent));
                 } else if indent_count < current_indent {
                     let mut dedents = Vec::new();
                     while *self.indent_stack.last().unwrap() > indent_count {
                         self.indent_stack.pop();
-                        dedents.push(self.add_token(Token::Dedent));
+                        dedents.push(self.add_token(TokenKind::Dedent));
                     }
                     if *self.indent_stack.last().unwrap() != indent_count {
                         return Err(format!("Inconsistent indentation on line {}", self.line));
@@ -329,7 +333,7 @@ impl Lexer {
         }
         self.start = self.current;
         if self.is_at_end() {
-            return Ok(Token::Eof);
+            return Ok(self.add_token(TokenKind::Eof));
         }
 
         let c = self.advance();
@@ -337,77 +341,78 @@ impl Lexer {
         match c {
             '(' => {
                 self.nesting += 1;
-                Ok(self.add_token(Token::LParen))
+                Ok(self.add_token(TokenKind::LParen))
             }
             ')' => {
                 if self.nesting > 0 {
                     self.nesting -= 1;
                 }
-                Ok(self.add_token(Token::RParen))
+                Ok(self.add_token(TokenKind::RParen))
             }
             '[' => {
                 self.nesting += 1;
-                Ok(self.add_token(Token::LBracket))
+                Ok(self.add_token(TokenKind::LBracket))
             }
             ']' => {
                 if self.nesting > 0 {
                     self.nesting -= 1;
                 }
-                Ok(self.add_token(Token::RBracket))
+                Ok(self.add_token(TokenKind::RBracket))
             }
             '{' => {
                 self.nesting += 1;
-                Ok(self.add_token(Token::LBrace))
+                Ok(self.add_token(TokenKind::LBrace))
             }
             '}' => {
                 if self.nesting > 0 {
                     self.nesting -= 1;
                 }
-                Ok(self.add_token(Token::RBrace))
+                Ok(self.add_token(TokenKind::RBrace))
             }
-            ',' => Ok(self.add_token(Token::Comma)),
-            ':' => Ok(self.add_token(Token::Colon)),
-            '.' => Ok(self.add_token(Token::Dot)),
-            ';' => Ok(self.add_token(Token::Newline)),
-            '+' => Ok(self.add_token(Token::Plus)),
-            '-' => Ok(self.add_token(Token::Minus)),
+            ',' => Ok(self.add_token(TokenKind::Comma)),
+            ':' => Ok(self.add_token(TokenKind::Colon)),
+            '.' => Ok(self.add_token(TokenKind::Dot)),
+            ';' => Ok(self.add_token(TokenKind::Newline)),
+            '+' => Ok(self.add_token(TokenKind::Plus)),
+            '-' => Ok(self.add_token(TokenKind::Minus)),
             '*' => {
                 if self.match_char('*') {
-                    Ok(self.add_token(Token::StarStar))
+                    Ok(self.add_token(TokenKind::StarStar))
                 } else {
-                    Ok(self.add_token(Token::Star))
+                    Ok(self.add_token(TokenKind::Star))
                 }
             }
-            '/' => Ok(self.add_token(Token::Slash)),
-            '&' => Ok(self.add_token(Token::BitAnd)),
-            '|' => Ok(self.add_token(Token::BitOr)),
-            '^' => Ok(self.add_token(Token::BitXor)),
-            '~' => Ok(self.add_token(Token::BitNot)),
+            '/' => Ok(self.add_token(TokenKind::Slash)),
+            '%' => Ok(self.add_token(TokenKind::Percent)), // Added Percent
+            '&' => Ok(self.add_token(TokenKind::BitAnd)),
+            '|' => Ok(self.add_token(TokenKind::BitOr)),
+            '^' => Ok(self.add_token(TokenKind::BitXor)),
+            '~' => Ok(self.add_token(TokenKind::BitNot)),
             '=' => Ok(if self.match_char('=') {
-                self.add_token(Token::Eq)
+                self.add_token(TokenKind::Eq)
             } else {
-                self.add_token(Token::Assign)
+                self.add_token(TokenKind::Assign)
             }),
             '<' => {
                 if self.match_char('<') {
-                    Ok(self.add_token(Token::LShift))
+                    Ok(self.add_token(TokenKind::LShift))
                 } else if self.match_char('=') {
-                    Ok(self.add_token(Token::LtEq))
+                    Ok(self.add_token(TokenKind::LtEq))
                 } else {
-                    Ok(self.add_token(Token::Lt))
+                    Ok(self.add_token(TokenKind::Lt))
                 }
             }
             '>' => {
                 if self.match_char('>') {
-                    Ok(self.add_token(Token::RShift))
+                    Ok(self.add_token(TokenKind::RShift))
                 } else if self.match_char('=') {
-                    Ok(self.add_token(Token::GtEq))
+                    Ok(self.add_token(TokenKind::GtEq))
                 } else {
-                    Ok(self.add_token(Token::Gt))
+                    Ok(self.add_token(TokenKind::Gt))
                 }
             }
             '!' => Ok(if self.match_char('=') {
-                self.add_token(Token::NotEq)
+                self.add_token(TokenKind::NotEq)
             } else {
                 return Err(format!("Unexpected character: {} on line {}", c, self.line));
             }),
@@ -417,7 +422,7 @@ impl Lexer {
             }
             '\n' => {
                 self.line += 1;
-                Ok(self.add_token(Token::Newline))
+                Ok(self.add_token(TokenKind::Newline))
             }
             '"' | '\'' => self.string(c, false, false),
             'b' => {
@@ -426,7 +431,6 @@ impl Lexer {
                     self.advance(); // consume the quote
                     self.string(quote_char, false, true) // is_fstring=false, is_bytes=true
                 } else {
-                    // Standard identifier starting with b
                     self.current = self.start;
                     Ok(self.identifier())
                 }

@@ -1,10 +1,12 @@
-use super::token::Token;
+use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
+use alloc::format;
 use alloc::rc::Rc;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cell::RefCell;
+use core::fmt;
 
 #[derive(Debug)]
 pub struct Environment {
@@ -92,6 +94,58 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
+// Moved Display implementation here so it is available globally
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::None => write!(f, "None"),
+            Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
+            Value::Int(i) => write!(f, "{}", i),
+            Value::String(s) => write!(f, "{}", s),
+            Value::Bytes(b) => write!(f, "{:?}", b),
+            Value::List(l) => {
+                write!(f, "[")?;
+                let list = l.borrow();
+                for (i, v) in list.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                write!(f, "]")
+            }
+            Value::Tuple(t) => {
+                write!(f, "(")?;
+                for (i, v) in t.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                if t.len() == 1 {
+                    write!(f, ",")?;
+                }
+                write!(f, ")")
+            }
+            Value::Dictionary(d) => {
+                write!(f, "{{")?;
+                let dict = d.borrow();
+                for (i, (k, v)) in dict.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}: {}", k, v)?;
+                }
+                write!(f, "}}")
+            }
+            // For functions, just print name to avoid circular dep with get_type_name
+            Value::Function(func) => write!(f, "<function {}>", func.name),
+            Value::NativeFunction(name, _) => write!(f, "<native function {}>", name),
+            Value::BoundMethod(_, name) => write!(f, "<bound method {}>", name),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum FStringSegment {
     Literal(String),
@@ -99,12 +153,18 @@ pub enum FStringSegment {
 }
 
 #[derive(Debug, Clone)]
-pub enum Expr {
+pub struct Expr {
+    pub kind: ExprKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone)]
+pub enum ExprKind {
     Literal(Value),
     Identifier(String),
-    BinaryOp(Box<Expr>, Token, Box<Expr>),
-    UnaryOp(Token, Box<Expr>),
-    LogicalOp(Box<Expr>, Token, Box<Expr>),
+    BinaryOp(Box<Expr>, TokenKind, Box<Expr>),
+    UnaryOp(TokenKind, Box<Expr>),
+    LogicalOp(Box<Expr>, TokenKind, Box<Expr>),
     Call(Box<Expr>, Vec<Argument>),
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
@@ -131,16 +191,27 @@ pub enum Expr {
         iterable: Box<Expr>,
         cond: Option<Box<Expr>>,
     },
+    Lambda {
+        params: Vec<Param>,
+        body: Box<Expr>,
+    },
 }
 
 #[derive(Debug, Clone)]
-pub enum Stmt {
+pub struct Stmt {
+    pub kind: StmtKind,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone)]
+pub enum StmtKind {
     Expression(Expr),
     Assignment(String, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
     Def(String, Vec<Param>, Vec<Stmt>),
-    For(Vec<String>, Expr, Vec<Stmt>), // Updated: var name changed to Vec<String> for unpacking
+    For(Vec<String>, Expr, Vec<Stmt>),
     Break,
     Continue,
+    Pass,
 }
