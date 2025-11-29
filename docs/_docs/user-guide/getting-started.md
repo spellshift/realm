@@ -16,6 +16,7 @@ git clone https://github.com/spellshift/realm && cd ./realm
 go run ./tavern
 
 # Start Agent
+export IMIX_SERVER_PUBKEY="$(curl http://localhost:8000/status | jq -r '.Pubkey')"
 cd implants/imix && cargo run
 ```
 
@@ -51,7 +52,12 @@ The warnings you see here indicate that there are settings recommended for produ
 
 ```bash
 # Assumes you have already cloned the repository and are in the 'realm' directory
-cd ./implants/imix && cargo run
+cd ./implants/imix
+
+# Set the server pubkey this assumes you've already started a local tavern instance
+export IMIX_SERVER_PUBKEY="$(curl http://localhost:8000/status | jq -r '.Pubkey')"
+
+cargo run
 ```
 
 ![starting-imix](/assets/img/user-guide/getting-started/starting-imix.png)
