@@ -16,7 +16,7 @@ crossterm = "0.27"
 wasm-bindgen = "0.2"
 
 [features]
-default = []
+default = ["std"]
 std = []
 
 [[bin]]
