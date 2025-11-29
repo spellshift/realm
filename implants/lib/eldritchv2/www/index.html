@@ -18,6 +18,10 @@
             word-wrap: break-word;
             outline: none;
         }
+        #current-line {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
         .prompt {
             color: #569cd6;
             margin-right: 0px; /* Spacing handled by content */
@@ -29,6 +33,16 @@
             background-color: #d4d4d4;
             color: #1e1e1e;
         }
+        /* Visual indicator when not focused */
+        body.not-focused .cursor {
+            background-color: transparent;
+            border: 1px solid #d4d4d4;
+            color: #d4d4d4;
+        }
+        body.not-focused {
+            opacity: 0.8;
+        }
+
         /* Hide the actual input but keep it functional */
         #hidden-input {
             position: absolute;
@@ -57,6 +71,8 @@
 
         // Output handling
         window.repl_print = (s) => {
+            // This is kept for backward compatibility if any direct calls remain,
+            // but the primary output path should now be through handle_key/execute returns.
             printLine(s);
         };
 
@@ -82,8 +98,23 @@
             printLine("Eldritch REPL initialized.\nType code and press Enter.\n");
             render();
 
-            // Focus hidden input
-            document.body.addEventListener('click', () => inputEl.focus());
+            // Focus handling
+            inputEl.addEventListener('focus', () => {
+                document.body.classList.remove('not-focused');
+                render(); // Re-render to update cursor style if needed
+            });
+
+            inputEl.addEventListener('blur', () => {
+                document.body.classList.add('not-focused');
+                render();
+            });
+
+            // Focus hidden input on click anywhere
+            document.body.addEventListener('click', () => {
+                inputEl.focus();
+            });
+
+            // Initial focus
             inputEl.focus();
         }
 
@@ -135,12 +166,17 @@
             // Pass shiftKey to handle_key
             const result = repl.handle_key(key, e.ctrlKey, e.altKey, e.metaKey, e.shiftKey);
 
-            // Handle echo (the command or line accepted)
+            // Handle clear screen
+            if (result.clear) {
+                termEl.innerHTML = '';
+            }
+
+            // Handle echo (the command or line accepted) FIRST
             if (result.echo) {
                 printLine(result.echo);
             }
 
-            // Check output
+            // Then output
             if (result.output) {
                 printLine(result.output);
             }
