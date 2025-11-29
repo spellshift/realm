@@ -222,14 +222,25 @@ impl Parser {
     }
 
     fn for_statement(&mut self) -> Result<Stmt, String> {
-        let ident_token = self.consume(
-            |t| matches!(t, Token::Identifier(_)),
-            "Expected iteration variable name after 'for'.",
-        )?;
-        let ident = match ident_token {
-            Token::Identifier(s) => s.clone(),
-            _ => unreachable!(),
-        };
+        let mut vars = Vec::new();
+        loop {
+            let ident_token = self.consume(
+                |t| matches!(t, Token::Identifier(_)),
+                "Expected iteration variable name.",
+            )?;
+            let ident = match ident_token {
+                Token::Identifier(s) => s.clone(),
+                _ => unreachable!(),
+            };
+            vars.push(ident);
+
+            if self.match_token(&[Token::Comma]) {
+                continue;
+            } else {
+                break;
+            }
+        }
+
         self.consume(
             |t| matches!(t, Token::In),
             "Expected 'in' after iteration variable.",
@@ -240,7 +251,7 @@ impl Parser {
             "Expected ':' before loop body.",
         )?;
         let body = self.parse_block_or_statement()?;
-        Ok(Stmt::For(ident, iterable, body))
+        Ok(Stmt::For(vars, iterable, body))
     }
 
     fn if_statement(&mut self) -> Result<Stmt, String> {
@@ -543,6 +554,13 @@ impl Parser {
         if self.match_token(&[Token::String(String::new())]) {
             if let Token::String(s) = &self.tokens[self.current - 1] {
                 return Ok(Expr::Literal(Value::String(s.clone())));
+            }
+        }
+
+        // FIX: Handle Token::Bytes
+        if self.match_token(&[Token::Bytes(Vec::new())]) {
+            if let Token::Bytes(b) = &self.tokens[self.current - 1] {
+                return Ok(Expr::Literal(Value::Bytes(b.clone())));
             }
         }
 

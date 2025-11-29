@@ -1,5 +1,235 @@
 mod assert;
 
+// --- Enumerate Tests ---
+
+#[test]
+fn test_enumerate() {
+    // Basic enumeration on list
+    assert::pass(
+        r#"
+        l = ["a", "b", "c"]
+        res = []
+        for i, x in enumerate(l):
+            res.append([i, x])
+        assert_eq(res, [[0, "a"], [1, "b"], [2, "c"]])
+    "#,
+    );
+
+    // Enumerate with custom start index
+    assert::pass(
+        r#"
+        l = ["a", "b"]
+        res = []
+        for i, x in enumerate(l, 10):
+            res.append([i, x])
+        assert_eq(res, [[10, "a"], [11, "b"]])
+    "#,
+    );
+
+    // Enumerate on tuple
+    assert::pass(
+        r#"
+        t = ("x", "y")
+        res_indices = []
+        res_values = []
+        for i, v in enumerate(t):
+            res_indices.append(i)
+            res_values.append(v)
+        assert_eq(res_indices, [0, 1])
+        assert_eq(res_values, ["x", "y"])
+    "#,
+    );
+
+    // Enumerate on string
+    assert::pass(
+        r#"
+        s = "hi"
+        res = []
+        for i, c in enumerate(s):
+            res.append([i, c])
+        assert_eq(res, [[0, "h"], [1, "i"]])
+    "#,
+    );
+
+    // Validation: Enumerate returns a list of tuples, which can be indexed manually if not unpacking
+    assert::pass(
+        r#"
+        e = enumerate(["a", "b"])
+        assert_eq(e[0], (0, "a"))
+        assert_eq(e[1], (1, "b"))
+    "#,
+    );
+}
+
+// --- Method Tests ---
+
+#[test]
+fn test_list_methods() {
+    assert::pass(
+        r#"
+        # append
+        l = [1]
+        l.append(2)
+        assert_eq(l, [1, 2])
+
+        # extend
+        l.extend([3, 4])
+        assert_eq(l, [1, 2, 3, 4])
+        l.extend((5,))
+        assert_eq(l, [1, 2, 3, 4, 5])
+
+        # insert
+        l = [1, 3]
+        l.insert(1, 2)
+        assert_eq(l, [1, 2, 3])
+        l.insert(0, 0)
+        assert_eq(l, [0, 1, 2, 3])
+        l.insert(100, 4) # Out of bounds index clamps to end
+        assert_eq(l, [0, 1, 2, 3, 4])
+
+        # remove
+        l = [1, 2, 3, 2]
+        l.remove(2)
+        assert_eq(l, [1, 3, 2])
+
+        # index
+        l = [10, 20, 30]
+        assert_eq(l.index(20), 1)
+
+        # pop
+        l = [1, 2]
+        assert_eq(l.pop(), 2)
+        assert_eq(l, [1])
+
+        # sort
+        l = [3, 1, 2]
+        l.sort()
+        assert_eq(l, [1, 2, 3])
+
+        # Sort strings
+        l = ["b", "a", "c"]
+        l.sort()
+        assert_eq(l, ["a", "b", "c"])
+    "#,
+    );
+
+    assert::fail("l = [1]; l.remove(2)", "ValueError");
+    assert::fail("l = [1]; l.index(2)", "ValueError");
+}
+
+#[test]
+fn test_dict_methods() {
+    assert::pass(
+        r#"
+        d = {"a": 1, "b": 2}
+
+        # keys, values, items
+        ks = d.keys()
+        assert_eq(len(ks), 2)
+
+        vs = d.values()
+        assert_eq(len(vs), 2)
+
+        it = d.items()
+        assert_eq(len(it), 2)
+
+        # get
+        assert_eq(d.get("a"), 1)
+        assert_eq(d.get("c"), None)
+        assert_eq(d.get("c", 10), 10)
+
+        # update
+        d.update({"c": 3})
+        assert_eq(d["c"], 3)
+        assert_eq(d["a"], 1)
+
+        # popitem
+        d = {"x": 1}
+        item = d.popitem()
+        assert_eq(item, ("x", 1))
+        assert_eq(len(d), 0)
+    "#,
+    );
+
+    assert::fail("d={}; d.popitem()", "empty");
+}
+
+#[test]
+fn test_string_methods() {
+    assert::pass(
+        r#"
+        s = "Hello World"
+
+        # lower/upper
+        assert_eq(s.lower(), "hello world")
+        assert_eq(s.upper(), "HELLO WORLD")
+
+        # split
+        assert_eq("a,b,c".split(","), ["a", "b", "c"])
+        assert_eq("a b c".split(" "), ["a", "b", "c"])
+
+        # strip
+        assert_eq("  abc  ".strip(), "abc")
+
+        # starts/ends
+        assert_eq(s.startswith("Hell"), True)
+        assert_eq(s.endswith("ld"), True)
+        assert_eq(s.startswith("x"), False)
+
+        # find
+        assert_eq(s.find("World"), 6)
+        assert_eq(s.find("x"), -1)
+
+        # replace
+        assert_eq("banana".replace("a", "o"), "bonono")
+
+        # join
+        l = ["a", "b", "c"]
+        assert_eq("-".join(l), "a-b-c")
+
+        # format
+        assert_eq("Hello {} {}".format("Mr", "Bond"), "Hello Mr Bond")
+    "#,
+    );
+}
+
+#[test]
+fn test_slicing_robust() {
+    assert::pass(
+        r#"
+        l = [0, 1, 2, 3, 4, 5]
+
+        # Standard
+        assert_eq(l[1:4], [1, 2, 3])
+
+        # Step
+        assert_eq(l[::2], [0, 2, 4])
+
+        # Reversal
+        assert_eq(l[::-1], [5, 4, 3, 2, 1, 0])
+
+        # Reversal with bounds
+        # Start at index 4 (val 4), stop before 1 (val 1), step -1
+        # Indices: 4, 3, 2. Values: [4, 3, 2]
+        assert_eq(l[4:1:-1], [4, 3, 2])
+
+        # Negative indices with reversal
+        # -1 is 5. -3 is 3.
+        # l[-1:-3:-1] -> indices [5, 4]. Values [5, 4].
+        assert_eq(l[-1:-3:-1], [5, 4])
+
+        # Strings
+        s = "abcdef"
+        assert_eq(s[::-1], "fedcba")
+        assert_eq(s[4:1:-1], "edc")
+
+        # Tuples
+        t = (1, 2, 3)
+        assert_eq(t[::-1], (3, 2, 1))
+    "#,
+    );
+}
+
 // --- Function Arguments ---
 
 #[test]
@@ -78,8 +308,7 @@ fn test_comprehensions() {
         l = [x for x in [1, 2, 3, 4] if x > 2]
         assert_eq(l, [3, 4])
 
-        # Scoping check: x should not leak (or rather, we check it doesn't overwrite outer if we implement that)
-        # Note: Starlark specs say it doesn't leak. Our implementation creates a new scope, so it shouldn't.
+        # Scoping check: x should not leak
         x = 100
         l = [x for x in [1, 2]]
         assert_eq(x, 100)
@@ -88,7 +317,6 @@ fn test_comprehensions() {
 
     assert::pass(
         r#"
-        # keys must be strings in our dict implementation currently
         d = {str(x): x*x for x in [1, 2]}
         assert_eq(d["1"], 1)
         assert_eq(d["2"], 4)
@@ -127,7 +355,7 @@ fn test_bitwise() {
     );
 }
 
-// --- Existing Tests (Preserved) ---
+// --- Literals & Constants ---
 
 #[test]
 fn test_literals_and_constants() {
@@ -333,6 +561,18 @@ fn test_recursion() {
 }
 
 #[test]
+fn test_recursion_limit() {
+    assert::fail(
+        r#"
+        def crash():
+            crash()
+        crash()
+    "#,
+        "Recursion limit exceeded",
+    );
+}
+
+#[test]
 fn test_closures() {
     assert::pass(
         r#"
@@ -386,17 +626,6 @@ fn test_lists() {
         assert_eq(l, [1])
     "#,
     );
-
-    assert::pass(
-        r#"
-        l = [0, 1, 2, 3, 4]
-        assert_eq(l[0:2], [0, 1])
-        assert_eq(l[2:], [2, 3, 4])
-        assert_eq(l[:2], [0, 1])
-        assert_eq(l[::2], [0, 2, 4])
-        assert_eq(l[:], [0, 1, 2, 3, 4])
-    "#,
-    );
 }
 
 #[test]
@@ -439,20 +668,47 @@ fn test_strings() {
         x = "hello"
         y = "world"
         assert_eq(x + " " + y, "hello world")
-
-        assert_eq(" a ".strip(), "a")
-        assert_eq("A".lower(), "a")
-        assert_eq("a".upper(), "A")
-        assert_eq("a,b".split(","), ["a", "b"])
     "#,
     );
 
+    // F-strings
     assert::pass(
         r#"
         name = "Bob"
         age = 20
         assert_eq(f"{name} is {age}", "Bob is 20")
         assert_eq(f"Next is {age + 1}", "Next is 21")
+    "#,
+    );
+}
+
+#[test]
+fn test_byte_strings() {
+    assert::pass(
+        r#"
+        b = b"hello"
+        assert_eq(len(b), 5)
+        assert_eq(type(b), "bytes")
+    "#,
+    );
+}
+
+#[test]
+fn test_doc_strings() {
+    assert::pass(
+        r#"
+        def func():
+            """This is a docstring"""
+            return 1
+        assert_eq(func(), 1)
+    "#,
+    );
+
+    assert::pass(
+        r#"
+        s = """line1
+        line2"""
+        assert_eq(type(s), "string")
     "#,
     );
 }

@@ -40,6 +40,7 @@ pub enum Token {
     // Literals
     Identifier(String),
     String(String),
+    Bytes(Vec<u8>), // New: Byte string literal
     Integer(i64),
     FStringContent(Vec<Token>),
 

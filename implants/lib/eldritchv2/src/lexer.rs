@@ -48,6 +48,13 @@ impl Lexer {
         self.source[self.current]
     }
 
+    fn peek_next(&self) -> char {
+        if self.current + 1 >= self.source.len() {
+            return '\0';
+        }
+        self.source[self.current + 1]
+    }
+
     fn match_char(&mut self, expected: char) -> bool {
         if self.is_at_end() || self.source[self.current] != expected {
             return false;
@@ -87,18 +94,72 @@ impl Lexer {
         self.add_token(Token::Integer(number))
     }
 
-    fn string(&mut self, quote_char: char, is_fstring: bool) -> Result<Token, String> {
-        if is_fstring {
+    fn string(
+        &mut self,
+        quote_char: char,
+        is_fstring: bool,
+        is_bytes: bool,
+    ) -> Result<Token, String> {
+        if is_fstring || is_bytes {
             self.start = self.current;
         } else {
             self.start += 1;
         }
 
         let mut fstring_tokens = Vec::new();
-        let mut current_literal = String::new();
+        let mut current_literal = String::new(); // For String or Bytes (as chars initially)
 
-        while self.peek() != quote_char && !self.is_at_end() && self.peek() != '\n' {
-            if self.peek() == '{' && is_fstring {
+        // Check for triple quote
+        let is_triple = if self.peek() == quote_char && self.peek_next() == quote_char {
+            self.advance();
+            self.advance();
+            true
+        } else {
+            false
+        };
+
+        loop {
+            if self.is_at_end() {
+                return Err(format!("Unterminated string literal on line {}", self.line));
+            }
+
+            let c = self.peek();
+
+            // Check end of string
+            if c == quote_char {
+                if is_triple {
+                    if self.peek_next() == quote_char {
+                        // Potential end of triple, need to check 3rd char
+                        // We can't easily peek 2 ahead with this struct, but we can advance check
+                        // Current at 1st quote.
+                        if self.current + 2 < self.source.len()
+                            && self.source[self.current + 2] == quote_char
+                        {
+                            self.advance(); // consume 1st
+                            self.advance(); // consume 2nd
+                            self.advance(); // consume 3rd
+                            break;
+                        }
+                    }
+                } else {
+                    self.advance(); // consume quote
+                    break;
+                }
+            }
+
+            // Disallow unescaped newlines in single-quoted strings
+            if c == '\n' {
+                if !is_triple {
+                    return Err(format!(
+                        "Unterminated string literal (newline) on line {}",
+                        self.line
+                    ));
+                }
+                self.line += 1;
+            }
+
+            if c == '{' && is_fstring && !is_bytes {
+                // F-strings can't be byte strings
                 if !current_literal.is_empty() {
                     fstring_tokens.push(Token::String(current_literal.clone()));
                     current_literal.clear();
@@ -109,15 +170,22 @@ impl Lexer {
                 continue;
             }
 
-            if self.peek() == '\\' {
+            if c == '\\' {
                 self.advance();
-                match self.advance() {
+                if self.is_at_end() {
+                    return Err("Unterminated string literal".into());
+                }
+                let escaped = self.advance();
+                match escaped {
                     'n' => current_literal.push('\n'),
                     't' => current_literal.push('\t'),
                     'r' => current_literal.push('\r'),
                     '\\' => current_literal.push('\\'),
                     '"' => current_literal.push('"'),
                     '\'' => current_literal.push('\''),
+                    '\n' => {
+                        self.line += 1;
+                    } // Line continuation
                     c => current_literal.push(c),
                 }
             } else {
@@ -125,12 +193,12 @@ impl Lexer {
             }
         }
 
-        if self.peek() != quote_char {
-            return Err(format!("Unterminated string literal on line {}", self.line));
-        }
-        self.advance();
-
-        if is_fstring {
+        if is_bytes {
+            // Convert to bytes. In this simple impl, we just cast char to u8.
+            // Real implementation would handle hex escapes \xNN etc.
+            let bytes: Vec<u8> = current_literal.chars().map(|c| c as u8).collect();
+            Ok(Token::Bytes(bytes))
+        } else if is_fstring {
             if !current_literal.is_empty() {
                 fstring_tokens.push(Token::String(current_literal));
             }
@@ -351,12 +419,23 @@ impl Lexer {
                 self.line += 1;
                 Ok(self.add_token(Token::Newline))
             }
-            '"' | '\'' => self.string(c, false),
+            '"' | '\'' => self.string(c, false, false),
+            'b' => {
+                if self.peek() == '"' || self.peek() == '\'' {
+                    let quote_char = self.peek();
+                    self.advance(); // consume the quote
+                    self.string(quote_char, false, true) // is_fstring=false, is_bytes=true
+                } else {
+                    // Standard identifier starting with b
+                    self.current = self.start;
+                    Ok(self.identifier())
+                }
+            }
             'f' | 'F' => {
                 if self.peek() == '"' || self.peek() == '\'' {
                     let quote_char = self.peek();
                     self.advance();
-                    self.string(quote_char, true)
+                    self.string(quote_char, true, false)
                 } else {
                     self.current = self.start;
                     Ok(self.identifier())

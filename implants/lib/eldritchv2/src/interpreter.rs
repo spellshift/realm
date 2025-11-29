@@ -14,6 +14,10 @@ use alloc::string::ToString;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::RefCell;
+use core::cmp::Ordering;
+
+// Reduced to prevent stack overflow in debug builds
+const MAX_RECURSION_DEPTH: usize = 64;
 
 // --- Helper Functions ---
 
@@ -23,6 +27,7 @@ fn is_truthy(value: &Value) -> bool {
         Value::Bool(b) => *b,
         Value::Int(i) => *i != 0,
         Value::String(s) => !s.is_empty(),
+        Value::Bytes(b) => !b.is_empty(),
         Value::List(l) => !l.borrow().is_empty(),
         Value::Dictionary(d) => !d.borrow().is_empty(),
         Value::Tuple(t) => !t.is_empty(),
@@ -36,6 +41,7 @@ fn get_type_name(value: &Value) -> String {
         Value::Bool(_) => "bool".to_string(),
         Value::Int(_) => "int".to_string(),
         Value::String(_) => "string".to_string(),
+        Value::Bytes(_) => "bytes".to_string(),
         Value::List(_) => "list".to_string(),
         Value::Dictionary(_) => "dict".to_string(),
         Value::Tuple(_) => "tuple".to_string(),
@@ -43,6 +49,43 @@ fn get_type_name(value: &Value) -> String {
             "function".to_string()
         }
     }
+}
+
+fn get_dir_attributes(value: &Value) -> Vec<String> {
+    let mut attrs = match value {
+        Value::List(_) => vec![
+            "append".to_string(),
+            "extend".to_string(),
+            "index".to_string(),
+            "insert".to_string(),
+            "pop".to_string(),
+            "remove".to_string(),
+            "sort".to_string(),
+        ],
+        Value::Dictionary(_) => vec![
+            "get".to_string(),
+            "items".to_string(),
+            "keys".to_string(),
+            "popitem".to_string(),
+            "update".to_string(),
+            "values".to_string(),
+        ],
+        Value::String(_) => vec![
+            "endswith".to_string(),
+            "find".to_string(),
+            "format".to_string(),
+            "join".to_string(),
+            "lower".to_string(),
+            "replace".to_string(),
+            "split".to_string(),
+            "startswith".to_string(),
+            "strip".to_string(),
+            "upper".to_string(),
+        ],
+        _ => Vec::new(),
+    };
+    attrs.sort();
+    attrs
 }
 
 fn normalize_index(idx: i64, len: usize) -> usize {
@@ -62,6 +105,42 @@ fn normalize_index(idx: i64, len: usize) -> usize {
     }
 }
 
+// Helper for sorting
+fn compare_values(a: &Value, b: &Value) -> Result<Ordering, String> {
+    match (a, b) {
+        (Value::None, Value::None) => Ok(Ordering::Equal),
+        (Value::Bool(l), Value::Bool(r)) => Ok(l.cmp(r)),
+        (Value::Int(l), Value::Int(r)) => Ok(l.cmp(r)),
+        (Value::String(l), Value::String(r)) => Ok(l.cmp(r)),
+        (Value::Bytes(l), Value::Bytes(r)) => Ok(l.cmp(r)),
+        (Value::List(l), Value::List(r)) => {
+            let l_vec = l.borrow();
+            let r_vec = r.borrow();
+            for (v1, v2) in l_vec.iter().zip(r_vec.iter()) {
+                let ord = compare_values(v1, v2)?;
+                if ord != Ordering::Equal {
+                    return Ok(ord);
+                }
+            }
+            Ok(l_vec.len().cmp(&r_vec.len()))
+        }
+        (Value::Tuple(l), Value::Tuple(r)) => {
+            for (v1, v2) in l.iter().zip(r.iter()) {
+                let ord = compare_values(v1, v2)?;
+                if ord != Ordering::Equal {
+                    return Ok(ord);
+                }
+            }
+            Ok(l.len().cmp(&r.len()))
+        }
+        _ => Err(format!(
+            "Type mismatch or unsortable types: {} <-> {}",
+            get_type_name(a),
+            get_type_name(b)
+        )),
+    }
+}
+
 #[derive(Clone, PartialEq)]
 pub enum Flow {
     Next,
@@ -75,6 +154,7 @@ pub enum Flow {
 pub struct Interpreter {
     pub env: Rc<RefCell<Environment>>,
     pub flow: Flow,
+    pub depth: usize, // Tracks recursion depth
 }
 
 impl Interpreter {
@@ -87,13 +167,13 @@ impl Interpreter {
         let mut interpreter = Interpreter {
             env,
             flow: Flow::Next,
+            depth: 0,
         };
 
         interpreter.define_builtins();
         interpreter
     }
 
-    // Internal helper for defining built-ins
     fn define_builtin(&mut self, name: &str, _arity: usize, func: BuiltinFn) {
         self.env.borrow_mut().values.insert(
             name.to_string(),
@@ -101,32 +181,20 @@ impl Interpreter {
         );
     }
 
-    // Public API to allow host applications (like the REPL) to inject native functions
-    // that might rely on std (IO, Files, etc.)
     pub fn register_function(&mut self, name: &str, func: BuiltinFn) {
         self.define_builtin(name, 0, func);
     }
 
     fn define_builtins(&mut self) {
-        // In no_std, we can't default 'print' to stdout.
-        // We define a dummy that does nothing unless the 'std' feature is active.
-        // The REPL should overwrite this with a proper implementation.
         self.define_builtin("print", 1, |args| {
             #[cfg(feature = "std")]
-            {
-                // If compiled with std feature, we can print.
-                // Note: We need to be careful about println! macro availability.
-                // In a no_std crate, println! isn't available by default even with cfg(feature="std")
-                // unless we import it or the user registers a new print function.
-                // Ideally, the REPL overwrites this.
-                use std::println;
-                println!("{}", args[0].to_string());
-            }
+            println!("{}", args[0].to_string());
             Ok(Value::None)
         });
 
         self.define_builtin("len", 1, |args| match &args[0] {
             Value::String(s) => Ok(Value::Int(s.len() as i64)),
+            Value::Bytes(b) => Ok(Value::Int(b.len() as i64)),
             Value::List(l) => Ok(Value::Int(l.borrow().len() as i64)),
             Value::Dictionary(d) => Ok(Value::Int(d.borrow().len() as i64)),
             Value::Tuple(t) => Ok(Value::Int(t.len() as i64)),
@@ -148,6 +216,37 @@ impl Interpreter {
             Ok(Value::List(Rc::new(RefCell::new(list))))
         });
 
+        self.define_builtin("enumerate", 1, |args| {
+            let iterable = &args[0];
+            let start = if args.len() > 1 {
+                match args[1] {
+                    Value::Int(i) => i,
+                    _ => return Err("enumerate() start must be an integer".to_string()),
+                }
+            } else {
+                0
+            };
+
+            let items = match iterable {
+                Value::List(l) => l.borrow().clone(),
+                Value::Tuple(t) => t.clone(),
+                Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
+                _ => {
+                    return Err(format!(
+                        "Type '{:?}' is not iterable",
+                        get_type_name(iterable)
+                    ))
+                }
+            };
+
+            let mut pairs = Vec::new();
+            for (i, item) in items.into_iter().enumerate() {
+                pairs.push(Value::Tuple(vec![Value::Int(i as i64 + start), item]));
+            }
+
+            Ok(Value::List(Rc::new(RefCell::new(pairs))))
+        });
+
         self.define_builtin("type", 1, |args| Ok(Value::String(get_type_name(&args[0]))));
         self.define_builtin("bool", 1, |args| Ok(Value::Bool(is_truthy(&args[0]))));
         self.define_builtin("str", 1, |args| Ok(Value::String(args[0].to_string())));
@@ -162,6 +261,33 @@ impl Interpreter {
                 "int() argument must be a string, bytes or number, not '{}'",
                 get_type_name(&args[0])
             )),
+        });
+
+        self.define_builtin("dir", 1, |args| {
+            if args.is_empty() {
+                let builtins = vec![
+                    "assert",
+                    "assert_eq",
+                    "bool",
+                    "dir",
+                    "enumerate",
+                    "fail",
+                    "int",
+                    "len",
+                    "print",
+                    "range",
+                    "str",
+                    "type",
+                ];
+                let val_attrs: Vec<Value> = builtins
+                    .into_iter()
+                    .map(|s| Value::String(s.to_string()))
+                    .collect();
+                return Ok(Value::List(Rc::new(RefCell::new(val_attrs))));
+            }
+            let attrs = get_dir_attributes(&args[0]);
+            let val_attrs: Vec<Value> = attrs.into_iter().map(Value::String).collect();
+            Ok(Value::List(Rc::new(RefCell::new(val_attrs))))
         });
 
         self.define_builtin("assert", 1, |args| {
@@ -203,6 +329,7 @@ impl Interpreter {
         let mut eval_interp = Interpreter {
             env: eval_env,
             flow: Flow::Next,
+            depth: self.depth,
         };
 
         for stmt in ast {
@@ -292,7 +419,6 @@ impl Interpreter {
                 self.flow = Flow::Return(val);
             }
             Stmt::Def(name, params, body) => {
-                // Convert AST Param -> RuntimeParam by evaluating defaults NOW
                 let mut runtime_params = Vec::new();
                 for param in params {
                     match param {
@@ -316,10 +442,11 @@ impl Interpreter {
                 });
                 self.env.borrow_mut().values.insert(name.clone(), func);
             }
-            Stmt::For(ident, iterable, body) => {
+            Stmt::For(idents, iterable, body) => {
                 let iterable_val = self.evaluate(iterable)?;
                 let list_rc = match iterable_val {
                     Value::List(rc) => rc,
+                    Value::Tuple(v) => Rc::new(RefCell::new(v)), // Temporary wrap for iterator
                     _ => {
                         return Err(format!(
                             "'for' loop can only iterate over lists/iterables. Found {:?}",
@@ -330,7 +457,25 @@ impl Interpreter {
                 let list = list_rc.borrow();
 
                 for item in list.iter() {
-                    self.assign_variable(ident, item.clone());
+                    if idents.len() == 1 {
+                        self.assign_variable(&idents[0], item.clone());
+                    } else {
+                        // Unpacking
+                        let parts = match item {
+                            Value::List(l) => l.borrow().clone(),
+                            Value::Tuple(t) => t.clone(),
+                            _ => return Err("Cannot unpack non-iterable".to_string()),
+                        };
+
+                        if parts.len() != idents.len() {
+                            return Err(format!("ValueError: too many/not enough values to unpack (expected {}, got {})", idents.len(), parts.len()));
+                        }
+
+                        for (var, val) in idents.iter().zip(parts.into_iter()) {
+                            self.assign_variable(var, val);
+                        }
+                    }
+
                     self.execute_stmts(body)?;
                     match &self.flow {
                         Flow::Break => {
@@ -392,6 +537,8 @@ impl Interpreter {
             } => self.evaluate_dict_comp(key, value, var, iterable, cond),
         }
     }
+
+    // ... [Rest of file unchanged except for removal of Stmt::For with single variable] ...
 
     fn evaluate_list_comp(
         &mut self,
@@ -559,6 +706,76 @@ impl Interpreter {
         }
     }
 
+    fn adjust_slice_indices(
+        &self,
+        length: i64,
+        start: &Option<i64>,
+        stop: &Option<i64>,
+        step: i64,
+    ) -> (i64, i64) {
+        let start_val = if let Some(s) = start {
+            let mut s = *s;
+            if s < 0 {
+                s += length;
+            }
+            if step < 0 {
+                if s >= length {
+                    length - 1
+                } else if s < 0 {
+                    -1
+                } else {
+                    s
+                }
+            } else {
+                if s < 0 {
+                    0
+                } else if s > length {
+                    length
+                } else {
+                    s
+                }
+            }
+        } else {
+            if step < 0 {
+                length - 1
+            } else {
+                0
+            }
+        };
+
+        let stop_val = if let Some(s) = stop {
+            let mut s = *s;
+            if s < 0 {
+                s += length;
+            }
+            if step < 0 {
+                if s < -1 {
+                    -1
+                } else if s >= length {
+                    length - 1
+                } else {
+                    s
+                }
+            } else {
+                if s < 0 {
+                    0
+                } else if s > length {
+                    length
+                } else {
+                    s
+                }
+            }
+        } else {
+            if step < 0 {
+                -1
+            } else {
+                length
+            }
+        };
+
+        (start_val, stop_val)
+    }
+
     fn evaluate_slice(
         &mut self,
         obj: &Expr,
@@ -567,63 +784,111 @@ impl Interpreter {
         step: &Option<Box<Expr>>,
     ) -> Result<Value, String> {
         let obj_val = self.evaluate(obj)?;
+
+        let step_val = if let Some(s) = step {
+            match self.evaluate(s)? {
+                Value::Int(i) => i,
+                _ => return Err("Slice step must be integer".into()),
+            }
+        } else {
+            1
+        };
+
+        if step_val == 0 {
+            return Err("slice step cannot be zero".into());
+        }
+
+        let start_val_opt = if let Some(s) = start {
+            match self.evaluate(s)? {
+                Value::Int(i) => Some(i),
+                _ => return Err("Slice start must be integer".into()),
+            }
+        } else {
+            None
+        };
+
+        let stop_val_opt = if let Some(s) = stop {
+            match self.evaluate(s)? {
+                Value::Int(i) => Some(i),
+                _ => return Err("Slice stop must be integer".into()),
+            }
+        } else {
+            None
+        };
+
         match obj_val {
             Value::List(l) => {
                 let list = l.borrow();
-                let len = list.len();
-                let step_val = if let Some(s) = step {
-                    match self.evaluate(s)? {
-                        Value::Int(i) => i,
-                        _ => return Err("Slice step must be integer".into()),
-                    }
-                } else {
-                    1
-                };
-                if step_val == 0 {
-                    return Err("slice step cannot be zero".into());
-                }
-
-                let start_val = if let Some(s) = start {
-                    match self.evaluate(s)? {
-                        Value::Int(i) => i,
-                        _ => return Err("Slice start must be integer".into()),
-                    }
-                } else {
-                    if step_val > 0 {
-                        0
-                    } else {
-                        len as i64 - 1
-                    }
-                };
-                let stop_val = if let Some(s) = stop {
-                    match self.evaluate(s)? {
-                        Value::Int(i) => i,
-                        _ => return Err("Slice stop must be integer".into()),
-                    }
-                } else {
-                    if step_val > 0 {
-                        len as i64
-                    } else {
-                        -1
-                    }
-                };
+                let len = list.len() as i64;
+                let (i, j) =
+                    self.adjust_slice_indices(len, &start_val_opt, &stop_val_opt, step_val);
 
                 let mut result = Vec::new();
-                let mut current = normalize_index(start_val, len) as i64;
-                let end = normalize_index(stop_val, len) as i64;
+                let mut curr = i;
 
                 if step_val > 0 {
-                    while current < end && current < len as i64 {
-                        result.push(list[current as usize].clone());
-                        current += step_val;
+                    while curr < j {
+                        if curr >= 0 && curr < len {
+                            result.push(list[curr as usize].clone());
+                        }
+                        curr += step_val;
                     }
                 } else {
-                    while current > end && current >= 0 && current < len as i64 {
-                        result.push(list[current as usize].clone());
-                        current += step_val;
+                    while curr > j {
+                        if curr >= 0 && curr < len {
+                            result.push(list[curr as usize].clone());
+                        }
+                        curr += step_val;
                     }
                 }
                 Ok(Value::List(Rc::new(RefCell::new(result))))
+            }
+            Value::Tuple(t) => {
+                let len = t.len() as i64;
+                let (i, j) =
+                    self.adjust_slice_indices(len, &start_val_opt, &stop_val_opt, step_val);
+                let mut result = Vec::new();
+                let mut curr = i;
+                if step_val > 0 {
+                    while curr < j {
+                        if curr >= 0 && curr < len {
+                            result.push(t[curr as usize].clone());
+                        }
+                        curr += step_val;
+                    }
+                } else {
+                    while curr > j {
+                        if curr >= 0 && curr < len {
+                            result.push(t[curr as usize].clone());
+                        }
+                        curr += step_val;
+                    }
+                }
+                Ok(Value::Tuple(result))
+            }
+            Value::String(s) => {
+                let chars: Vec<char> = s.chars().collect();
+                let len = chars.len() as i64;
+                let (i, j) =
+                    self.adjust_slice_indices(len, &start_val_opt, &stop_val_opt, step_val);
+                let mut result_chars = Vec::new();
+                let mut curr = i;
+                if step_val > 0 {
+                    while curr < j {
+                        if curr >= 0 && curr < len {
+                            result_chars.push(chars[curr as usize]);
+                        }
+                        curr += step_val;
+                    }
+                } else {
+                    while curr > j {
+                        if curr >= 0 && curr < len {
+                            result_chars.push(chars[curr as usize]);
+                        }
+                        curr += step_val;
+                    }
+                }
+                Ok(Value::String(result_chars.into_iter().collect()))
             }
             _ => Err(format!("Type not sliceable: {:?}", obj_val)),
         }
@@ -711,107 +976,121 @@ impl Interpreter {
                 body,
                 closure,
             }) => {
-                let function_env = Rc::new(RefCell::new(Environment {
-                    parent: Some(closure),
-                    values: BTreeMap::new(),
-                }));
+                if self.depth >= MAX_RECURSION_DEPTH {
+                    return Err("Recursion limit exceeded".into());
+                }
+                self.depth += 1;
 
-                let mut pos_idx = 0;
+                let result = (|| {
+                    let function_env = Rc::new(RefCell::new(Environment {
+                        parent: Some(closure),
+                        values: BTreeMap::new(),
+                    }));
 
-                for param in params {
-                    match param {
-                        RuntimeParam::Normal(param_name) => {
-                            if pos_idx < pos_args_val.len() {
-                                function_env
-                                    .borrow_mut()
-                                    .values
-                                    .insert(param_name.clone(), pos_args_val[pos_idx].clone());
-                                pos_idx += 1;
-                            } else if let Some(val) = kw_args_val.remove(&param_name) {
-                                function_env
-                                    .borrow_mut()
-                                    .values
-                                    .insert(param_name.clone(), val);
-                            } else {
-                                return Err(format!("Missing required argument: '{}'", param_name));
-                            }
-                        }
-                        RuntimeParam::WithDefault(param_name, default_val) => {
-                            if pos_idx < pos_args_val.len() {
-                                function_env
-                                    .borrow_mut()
-                                    .values
-                                    .insert(param_name.clone(), pos_args_val[pos_idx].clone());
-                                pos_idx += 1;
-                            } else if let Some(val) = kw_args_val.remove(&param_name) {
-                                function_env
-                                    .borrow_mut()
-                                    .values
-                                    .insert(param_name.clone(), val);
-                            } else {
-                                function_env
-                                    .borrow_mut()
-                                    .values
-                                    .insert(param_name.clone(), default_val.clone());
-                            }
-                        }
-                        RuntimeParam::Star(param_name) => {
-                            let remaining = if pos_idx < pos_args_val.len() {
-                                pos_args_val[pos_idx..].to_vec()
-                            } else {
-                                Vec::new()
-                            };
-                            pos_idx = pos_args_val.len();
-                            function_env
-                                .borrow_mut()
-                                .values
-                                .insert(param_name.clone(), Value::Tuple(remaining));
-                        }
-                        RuntimeParam::StarStar(param_name) => {
-                            let mut dict = BTreeMap::new();
-                            let keys_to_move: Vec<String> = kw_args_val.keys().cloned().collect();
-                            for k in keys_to_move {
-                                if let Some(v) = kw_args_val.remove(&k) {
-                                    dict.insert(k, v);
+                    let mut pos_idx = 0;
+
+                    for param in params {
+                        match param {
+                            RuntimeParam::Normal(param_name) => {
+                                if pos_idx < pos_args_val.len() {
+                                    function_env
+                                        .borrow_mut()
+                                        .values
+                                        .insert(param_name.clone(), pos_args_val[pos_idx].clone());
+                                    pos_idx += 1;
+                                } else if let Some(val) = kw_args_val.remove(&param_name) {
+                                    function_env
+                                        .borrow_mut()
+                                        .values
+                                        .insert(param_name.clone(), val);
+                                } else {
+                                    return Err(format!(
+                                        "Missing required argument: '{}'",
+                                        param_name
+                                    ));
                                 }
                             }
-                            function_env.borrow_mut().values.insert(
-                                param_name.clone(),
-                                Value::Dictionary(Rc::new(RefCell::new(dict))),
-                            );
+                            RuntimeParam::WithDefault(param_name, default_val) => {
+                                if pos_idx < pos_args_val.len() {
+                                    function_env
+                                        .borrow_mut()
+                                        .values
+                                        .insert(param_name.clone(), pos_args_val[pos_idx].clone());
+                                    pos_idx += 1;
+                                } else if let Some(val) = kw_args_val.remove(&param_name) {
+                                    function_env
+                                        .borrow_mut()
+                                        .values
+                                        .insert(param_name.clone(), val);
+                                } else {
+                                    function_env
+                                        .borrow_mut()
+                                        .values
+                                        .insert(param_name.clone(), default_val.clone());
+                                }
+                            }
+                            RuntimeParam::Star(param_name) => {
+                                let remaining = if pos_idx < pos_args_val.len() {
+                                    pos_args_val[pos_idx..].to_vec()
+                                } else {
+                                    Vec::new()
+                                };
+                                pos_idx = pos_args_val.len();
+                                function_env
+                                    .borrow_mut()
+                                    .values
+                                    .insert(param_name.clone(), Value::Tuple(remaining));
+                            }
+                            RuntimeParam::StarStar(param_name) => {
+                                let mut dict = BTreeMap::new();
+                                let keys_to_move: Vec<String> =
+                                    kw_args_val.keys().cloned().collect();
+                                for k in keys_to_move {
+                                    if let Some(v) = kw_args_val.remove(&k) {
+                                        dict.insert(k, v);
+                                    }
+                                }
+                                function_env.borrow_mut().values.insert(
+                                    param_name.clone(),
+                                    Value::Dictionary(Rc::new(RefCell::new(dict))),
+                                );
+                            }
                         }
                     }
-                }
 
-                if pos_idx < pos_args_val.len() {
-                    return Err(format!(
-                        "Function '{}' got too many positional arguments.",
-                        name
-                    ));
-                }
-                if !kw_args_val.is_empty() {
-                    let keys: Vec<&String> = kw_args_val.keys().collect();
-                    return Err(format!(
-                        "Function '{}' got unexpected keyword arguments: {:?}",
-                        name, keys
-                    ));
-                }
+                    if pos_idx < pos_args_val.len() {
+                        return Err(format!(
+                            "Function '{}' got too many positional arguments.",
+                            name
+                        ));
+                    }
+                    if !kw_args_val.is_empty() {
+                        let keys: Vec<&String> = kw_args_val.keys().collect();
+                        return Err(format!(
+                            "Function '{}' got unexpected keyword arguments: {:?}",
+                            name, keys
+                        ));
+                    }
 
-                let original_env = Rc::clone(&self.env);
-                self.env = function_env;
-                let old_flow = self.flow.clone();
-                self.flow = Flow::Next;
+                    let original_env = Rc::clone(&self.env);
+                    self.env = function_env;
+                    let old_flow = self.flow.clone();
+                    self.flow = Flow::Next;
 
-                self.execute_stmts(&body)?;
+                    self.execute_stmts(&body)?;
 
-                let ret_val = if let Flow::Return(v) = &self.flow {
-                    v.clone()
-                } else {
-                    Value::None
-                };
-                self.env = original_env;
-                self.flow = old_flow;
-                Ok(ret_val)
+                    let ret_val = if let Flow::Return(v) = &self.flow {
+                        v.clone()
+                    } else {
+                        Value::None
+                    };
+                    self.env = original_env;
+                    self.flow = old_flow;
+                    Ok(ret_val)
+                })();
+
+                self.depth -= 1;
+                result
             }
             Value::BoundMethod(receiver, method_name) => {
                 self.call_bound_method(&receiver, &method_name, args_slice)
@@ -834,6 +1113,67 @@ impl Interpreter {
                 l.borrow_mut().push(args[0].clone());
                 Ok(Value::None)
             }
+            (Value::List(l), "extend") => {
+                if args.len() != 1 {
+                    return Err("extend() takes exactly one argument".into());
+                }
+                let iterable = &args[0];
+                match iterable {
+                    Value::List(other) => l.borrow_mut().extend(other.borrow().clone()),
+                    Value::Tuple(other) => l.borrow_mut().extend(other.clone()),
+                    _ => {
+                        return Err(format!(
+                            "extend() expects an iterable, got {}",
+                            get_type_name(iterable)
+                        ))
+                    }
+                }
+                Ok(Value::None)
+            }
+            (Value::List(l), "insert") => {
+                if args.len() != 2 {
+                    return Err("insert() takes exactly two arguments".into());
+                }
+                let idx = match args[0] {
+                    Value::Int(i) => i,
+                    _ => return Err("insert() index must be an integer".into()),
+                };
+                let val = args[1].clone();
+                let mut vec = l.borrow_mut();
+                let len = vec.len() as i64;
+                let index = if idx < 0 {
+                    (len + idx).max(0) as usize
+                } else {
+                    idx.min(len) as usize
+                };
+                vec.insert(index, val);
+                Ok(Value::None)
+            }
+            (Value::List(l), "remove") => {
+                if args.len() != 1 {
+                    return Err("remove() takes exactly one argument".into());
+                }
+                let target = &args[0];
+                let mut vec = l.borrow_mut();
+                if let Some(pos) = vec.iter().position(|x| x == target) {
+                    vec.remove(pos);
+                    Ok(Value::None)
+                } else {
+                    Err("ValueError: list.remove(x): x not in list".into())
+                }
+            }
+            (Value::List(l), "index") => {
+                if args.len() != 1 {
+                    return Err("index() takes exactly one argument".into());
+                } // Simplification
+                let target = &args[0];
+                let vec = l.borrow();
+                if let Some(pos) = vec.iter().position(|x| x == target) {
+                    Ok(Value::Int(pos as i64))
+                } else {
+                    Err("ValueError: list.index(x): x not in list".into())
+                }
+            }
             (Value::List(l), "pop") => {
                 if let Some(v) = l.borrow_mut().pop() {
                     Ok(v)
@@ -841,6 +1181,12 @@ impl Interpreter {
                     Err("pop from empty list".into())
                 }
             }
+            (Value::List(l), "sort") => {
+                let mut vec = l.borrow_mut();
+                vec.sort_by(|a, b| compare_values(a, b).unwrap_or(Ordering::Equal));
+                Ok(Value::None)
+            }
+
             (Value::Dictionary(d), "keys") => {
                 let keys: Vec<Value> = d
                     .borrow()
@@ -849,6 +1195,60 @@ impl Interpreter {
                     .collect();
                 Ok(Value::List(Rc::new(RefCell::new(keys))))
             }
+            (Value::Dictionary(d), "values") => {
+                let values: Vec<Value> = d.borrow().values().cloned().collect();
+                Ok(Value::List(Rc::new(RefCell::new(values))))
+            }
+            (Value::Dictionary(d), "items") => {
+                let items: Vec<Value> = d
+                    .borrow()
+                    .iter()
+                    .map(|(k, v)| Value::Tuple(vec![Value::String(k.clone()), v.clone()]))
+                    .collect();
+                Ok(Value::List(Rc::new(RefCell::new(items))))
+            }
+            (Value::Dictionary(d), "get") => {
+                if args.len() < 1 || args.len() > 2 {
+                    return Err("get() takes 1 or 2 arguments".into());
+                }
+                let key = match &args[0] {
+                    Value::String(s) => s,
+                    _ => return Err("Dict keys must be strings".into()),
+                };
+                let default = if args.len() == 2 {
+                    args[1].clone()
+                } else {
+                    Value::None
+                };
+                match d.borrow().get(key) {
+                    Some(v) => Ok(v.clone()),
+                    None => Ok(default),
+                }
+            }
+            (Value::Dictionary(d), "update") => {
+                if args.len() != 1 {
+                    return Err("update() takes exactly one argument".into());
+                }
+                match &args[0] {
+                    Value::Dictionary(other) => {
+                        let other_map = other.borrow().clone();
+                        d.borrow_mut().extend(other_map);
+                        Ok(Value::None)
+                    }
+                    _ => Err("update() requires a dictionary".into()),
+                }
+            }
+            (Value::Dictionary(d), "popitem") => {
+                let mut map = d.borrow_mut();
+                let last_key = map.keys().next_back().cloned();
+                if let Some(k) = last_key {
+                    let v = map.remove(&k).unwrap();
+                    Ok(Value::Tuple(vec![Value::String(k), v]))
+                } else {
+                    Err("popitem(): dictionary is empty".into())
+                }
+            }
+
             (Value::String(s), "split") => {
                 let delim = if args.len() > 0 {
                     args[0].to_string()
@@ -864,6 +1264,78 @@ impl Interpreter {
             (Value::String(s), "strip") => Ok(Value::String(s.trim().to_string())),
             (Value::String(s), "lower") => Ok(Value::String(s.to_lowercase())),
             (Value::String(s), "upper") => Ok(Value::String(s.to_uppercase())),
+            (Value::String(s), "startswith") => {
+                if args.len() != 1 {
+                    return Err("startswith() takes 1 argument".into());
+                }
+                let prefix = args[0].to_string();
+                Ok(Value::Bool(s.starts_with(&prefix)))
+            }
+            (Value::String(s), "endswith") => {
+                if args.len() != 1 {
+                    return Err("endswith() takes 1 argument".into());
+                }
+                let suffix = args[0].to_string();
+                Ok(Value::Bool(s.ends_with(&suffix)))
+            }
+            (Value::String(s), "find") => {
+                if args.len() != 1 {
+                    return Err("find() takes 1 argument".into());
+                }
+                let sub = args[0].to_string();
+                match s.find(&sub) {
+                    Some(idx) => Ok(Value::Int(idx as i64)),
+                    None => Ok(Value::Int(-1)),
+                }
+            }
+            (Value::String(s), "replace") => {
+                if args.len() != 2 {
+                    return Err("replace() takes 2 arguments".into());
+                }
+                let old = args[0].to_string();
+                let new = args[1].to_string();
+                Ok(Value::String(s.replace(&old, &new)))
+            }
+            (Value::String(s), "join") => {
+                if args.len() != 1 {
+                    return Err("join() takes 1 argument".into());
+                }
+                match &args[0] {
+                    Value::List(l) => {
+                        let list = l.borrow();
+                        let strs: Result<Vec<String>, _> = list
+                            .iter()
+                            .map(|v| match v {
+                                Value::String(ss) => Ok(ss.clone()),
+                                _ => Err("join() expects list of strings"),
+                            })
+                            .collect();
+                        Ok(Value::String(strs?.join(s)))
+                    }
+                    _ => Err("join() expects a list".into()),
+                }
+            }
+            (Value::String(s), "format") => {
+                let mut result = String::new();
+                let mut arg_idx = 0;
+                let chars: Vec<char> = s.chars().collect();
+                let mut i = 0;
+                while i < chars.len() {
+                    if chars[i] == '{' && i + 1 < chars.len() && chars[i + 1] == '}' {
+                        if arg_idx >= args.len() {
+                            return Err("tuple index out of range".into());
+                        }
+                        result.push_str(&args[arg_idx].to_string());
+                        arg_idx += 1;
+                        i += 2;
+                    } else {
+                        result.push(chars[i]);
+                        i += 1;
+                    }
+                }
+                Ok(Value::String(result))
+            }
+
             _ => Err(format!(
                 "Object of type '{}' has no method '{}'",
                 get_type_name(receiver),
@@ -915,16 +1387,19 @@ impl Interpreter {
             (a, Token::Eq, b) => Ok(Value::Bool(a == b)),
             (a, Token::NotEq, b) => Ok(Value::Bool(a != b)),
 
+            // INT Comparisons
             (Value::Int(a), Token::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
             (Value::Int(a), Token::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
             (Value::Int(a), Token::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
             (Value::Int(a), Token::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
 
+            // STRING Comparisons
             (Value::String(a), Token::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
             (Value::String(a), Token::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
             (Value::String(a), Token::LtEq, Value::String(b)) => Ok(Value::Bool(a <= b)),
             (Value::String(a), Token::GtEq, Value::String(b)) => Ok(Value::Bool(a >= b)),
 
+            // Arithmetic
             (Value::Int(a), Token::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Token::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Token::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
@@ -935,6 +1410,7 @@ impl Interpreter {
                 Ok(Value::Int(a / b))
             }
 
+            // Bitwise
             (Value::Int(a), Token::BitAnd, Value::Int(b)) => Ok(Value::Int(a & b)),
             (Value::Int(a), Token::BitOr, Value::Int(b)) => Ok(Value::Int(a | b)),
             (Value::Int(a), Token::BitXor, Value::Int(b)) => Ok(Value::Int(a ^ b)),
@@ -965,6 +1441,7 @@ impl ToString for Value {
             }
             Value::Int(i) => i.to_string(),
             Value::String(s) => s.clone(),
+            Value::Bytes(b) => format!("{:?}", b),
             Value::List(l) => format!(
                 "[{}]",
                 l.borrow()

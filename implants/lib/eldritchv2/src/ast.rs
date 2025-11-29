@@ -9,7 +9,6 @@ use core::cell::RefCell;
 #[derive(Debug)]
 pub struct Environment {
     pub parent: Option<Rc<RefCell<Environment>>>,
-    // BTreeMap is used instead of HashMap for no_std compatibility
     pub values: BTreeMap<String, Value>,
 }
 
@@ -53,6 +52,7 @@ pub enum Value {
     Bool(bool),
     Int(i64),
     String(String),
+    Bytes(Vec<u8>),
     List(Rc<RefCell<Vec<Value>>>),
     Tuple(Vec<Value>),
     Dictionary(Rc<RefCell<BTreeMap<String, Value>>>),
@@ -68,6 +68,7 @@ impl PartialEq for Value {
             (Value::Bool(a), Value::Bool(b)) => a == b,
             (Value::Int(a), Value::Int(b)) => a == b,
             (Value::String(a), Value::String(b)) => a == b,
+            (Value::Bytes(a), Value::Bytes(b)) => a == b,
             (Value::List(a), Value::List(b)) => {
                 if Rc::ptr_eq(a, b) {
                     return true;
@@ -139,7 +140,7 @@ pub enum Stmt {
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
     Def(String, Vec<Param>, Vec<Stmt>),
-    For(String, Expr, Vec<Stmt>),
+    For(Vec<String>, Expr, Vec<Stmt>), // Updated: var name changed to Vec<String> for unpacking
     Break,
     Continue,
 }
