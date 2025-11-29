@@ -1,5 +1,3 @@
-import React from "react";
-
 import { PageNavItem } from "../../utils/enums";
 import { TabGroup, TabPanel, TabPanels } from "@headlessui/react";
 import { HostContextProvider } from "../../context/HostContext";
