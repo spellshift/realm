@@ -1,5 +1,5 @@
 import React from "react";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import Breadcrumbs from "../../components/Breadcrumbs";

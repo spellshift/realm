@@ -2,7 +2,7 @@ import { PageNavItem } from "../../utils/enums";
 import { TabGroup, TabPanel, TabPanels } from "@headlessui/react";
 import { HostContextProvider } from "../../context/HostContext";
 import HostDetailsSection from "./components/HostDetailsSection";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import HostTabs from "./components/HostTabs";
 import BeaconTab from "./components/BeaconTab";
 import CredentialTab from "./components/CredentialTab";

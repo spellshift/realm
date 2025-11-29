@@ -2,7 +2,7 @@ import { CommandLineIcon, } from "@heroicons/react/24/outline";
 import { Image } from "@chakra-ui/react";
 
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
-import Button from "../../../components/tavern-base-ui/button/Button";
+import Button from "../../tavern-base-ui/button/Button";
 import { useNavigate } from "react-router-dom";
 import { ShellEdge, UserEdge } from "../../../utils/interfacesQuery";
 

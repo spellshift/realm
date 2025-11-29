@@ -1,7 +1,7 @@
 import { AdminAccessGate } from "../../components/admin-access-gate";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import { UserTableWrapper } from "./components/UserTableWrapper";
 

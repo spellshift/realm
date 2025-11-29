@@ -1,6 +1,6 @@
 import { FunctionComponent, useContext, useState } from 'react'
 import { PageNavItem } from '../../utils/enums';
-import { AccessGate } from '../../components/access-gate';
+import { AccessGate } from '../access-gate';
 import FullSidebarNav from './FullSidebarNav';
 import MobileNav from './MobileNav';
 import MinimizedSidebarNav from './MinimizedSidebarNav';

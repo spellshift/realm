@@ -88,6 +88,7 @@ export type Task = {
     execFinishedAt: string,
     beacon: BeaconType,
     createdAt: string,
+    claimedAt: string | null,
     error: string,
     quest?: QuestProps,
     shells: Array<Shell>

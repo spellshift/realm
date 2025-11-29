@@ -1,5 +1,5 @@
 import { BugAntIcon } from "@heroicons/react/24/outline";
-import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import Badge from "../../tavern-base-ui/badge/Badge";
 import { FC } from "react";
 import { checkIfBeaconOffline } from "../../../utils/utils";
 import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
