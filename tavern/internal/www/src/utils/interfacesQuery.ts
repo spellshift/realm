@@ -131,12 +131,34 @@ export interface TomeNode {
     supportModel: string;
 }
 
+// Quest-related interfaces
+export interface TaskCountOnly {
+    totalCount: number;
+}
+
+export interface LastModifiedTaskNode {
+    lastModifiedAt: string;
+}
+
+export interface LastModifiedTaskEdge {
+    node: LastModifiedTaskNode;
+}
+
+export interface LastUpdatedTaskConnection {
+    edges: LastModifiedTaskEdge[];
+}
+
 export interface QuestNode {
     id: string;
     name: string;
     creator: UserNode;
     tome: TomeNode;
     parameters: string | null;
+    lastUpdatedTask?: LastUpdatedTaskConnection;
+    tasksTotal?: TaskCountOnly;
+    tasksOutput?: TaskCountOnly;
+    tasksError?: TaskCountOnly;
+    tasksFinished?: TaskCountOnly;
 }
 
 export interface TaskNode {
@@ -186,4 +208,51 @@ export interface HostCredentialsQueryResponse {
 
 export interface HostCredentialsQueryTopLevel {
     hosts: HostCredentialsQueryResponse;
+}
+
+export interface QuestEdge {
+    node: QuestNode;
+}
+
+export interface QuestQueryResponse {
+    totalCount: number;
+    pageInfo: QueryPageInfo;
+    edges: QuestEdge[];
+}
+
+export interface QuestQueryTopLevel {
+    quests: QuestQueryResponse;
+}
+
+export interface OrderByField {
+    direction: "ASC" | "DESC";
+    field: string;
+}
+
+export interface QuestWhereInput {
+    id?: string;
+    nameContains?: string;
+    [key: string]: unknown;
+}
+
+export interface TaskWhereInput {
+    execFinishedAtNotNil?: boolean;
+    outputSizeGT?: number;
+    errorNotNil?: boolean;
+    [key: string]: unknown;
+}
+
+export interface GetQuestQueryVariables {
+    where?: QuestWhereInput;
+    whereTotalTask?: TaskWhereInput;
+    whereFinishedTask?: TaskWhereInput;
+    whereOutputTask?: TaskWhereInput;
+    whereErrorTask?: TaskWhereInput;
+    firstTask?: number;
+    orderByTask?: OrderByField[];
+    first?: number;
+    last?: number;
+    after?: Cursor;
+    before?: Cursor;
+    orderBy?: OrderByField[];
 }
