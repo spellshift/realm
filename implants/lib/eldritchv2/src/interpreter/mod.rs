@@ -78,6 +78,15 @@ impl Interpreter {
         );
     }
 
+    pub fn register_module(&mut self, name: &str, module: Value) {
+        // Ensure the value is actually a dictionary or structurally appropriate for a module
+        // We accept any Value, but practically it should be a Dictionary of functions
+        self.env
+            .borrow_mut()
+            .values
+            .insert(name.to_string(), module);
+    }
+
     // ... (rest of file omitted for brevity, it matches previous versions)
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
         let mut lexer = Lexer::new(input.to_string());
@@ -161,9 +170,12 @@ impl Interpreter {
             StmtKind::Expression(expr) => {
                 self.evaluate(expr)?;
             }
-            StmtKind::Assignment(name, expr) => {
-                let value = self.evaluate(expr)?;
-                self.assign_variable(name, value);
+            StmtKind::Assignment(target_expr, value_expr) => {
+                let value = self.evaluate(value_expr)?;
+                self.assign(target_expr, value)?;
+            }
+            StmtKind::AugmentedAssignment(target_expr, op, value_expr) => {
+                self.execute_augmented_assignment(target_expr, op, value_expr)?;
             }
             StmtKind::If(condition, then_branch, else_branch) => {
                 let eval_cond = &self.evaluate(condition)?;
@@ -304,6 +316,18 @@ impl Interpreter {
                 cond,
             } => self.evaluate_dict_comp(key, value, var, iterable, cond),
             ExprKind::Lambda { params, body } => self.evaluate_lambda(params, body),
+            ExprKind::If {
+                cond,
+                then_branch,
+                else_branch,
+            } => {
+                let cond_val = self.evaluate(cond)?;
+                if is_truthy(&cond_val) {
+                    self.evaluate(then_branch)
+                } else {
+                    self.evaluate(else_branch)
+                }
+            }
         }
     }
 
@@ -630,6 +654,14 @@ impl Interpreter {
 
     fn evaluate_getattr(&mut self, obj: &Expr, name: String) -> Result<Value, EldritchError> {
         let obj_val = self.evaluate(obj)?;
+
+        // Support dot access for dictionary keys (useful for modules)
+        if let Value::Dictionary(d) = &obj_val {
+            if let Some(val) = d.borrow().get(&name) {
+                return Ok(val.clone());
+            }
+        }
+
         Ok(Value::BoundMethod(Box::new(obj_val), name))
     }
 
@@ -1081,14 +1113,31 @@ impl Interpreter {
                 if b == 0 {
                     return runtime_error(span, "divide by zero");
                 }
+                // Standard division (for integers, acts like floor in Rust, but behavior is technically floor div)
                 Ok(Value::Int(a / b))
+            }
+            (Value::Int(a), TokenKind::SlashSlash, Value::Int(b)) => {
+                if b == 0 {
+                    return runtime_error(span, "divide by zero");
+                }
+                // Floor division with correct negative handling (Python style)
+                // Rust integer division truncates toward zero.
+                // We want floor (towards negative infinity).
+                let mut res = a / b;
+                // If the result is not exact and the signs are different, we need to subtract 1 (or add -1)
+                if (a % b != 0) && ((a < 0) ^ (b < 0)) {
+                    res -= 1;
+                }
+                Ok(Value::Int(res))
             }
             // Modulo
             (Value::Int(a), TokenKind::Percent, Value::Int(b)) => {
                 if b == 0 {
                     return runtime_error(span, "modulo by zero");
                 }
-                Ok(Value::Int(a % b))
+                // Python style modulo
+                let res = ((a % b) + b) % b;
+                Ok(Value::Int(res))
             }
 
             // Bitwise
@@ -1099,7 +1148,250 @@ impl Interpreter {
             (Value::Int(a), TokenKind::RShift, Value::Int(b)) => Ok(Value::Int(a >> b)),
 
             (Value::String(a), TokenKind::Plus, Value::String(b)) => Ok(Value::String(a + &b)),
+            (Value::String(a), TokenKind::Percent, b_val) => {
+                // String formatting
+                self.string_modulo_format(&a, &b_val, span)
+            }
             _ => runtime_error(span, &format!("Unsupported binary op")),
+        }
+    }
+
+    fn string_modulo_format(
+        &mut self,
+        fmt_str: &str,
+        val: &Value,
+        span: Span,
+    ) -> Result<Value, EldritchError> {
+        // Simple implementation of %s formatting
+        let mut result = String::new();
+        let mut chars = fmt_str.chars().peekable();
+        let mut val_idx = 0;
+        let vals: Vec<Value> = match val {
+            Value::Tuple(t) => t.clone(),
+            _ => vec![val.clone()],
+        };
+
+        while let Some(c) = chars.next() {
+            if c == '%' {
+                if let Some(&next) = chars.peek() {
+                    if next == 's' {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        result.push_str(&vals[val_idx].to_string());
+                        val_idx += 1;
+                    } else if next == '%' {
+                        chars.next();
+                        result.push('%');
+                    } else {
+                        // For now only support %s and %%
+                        return runtime_error(
+                            span,
+                            &format!("Unsupported format specifier: %{}", next),
+                        );
+                    }
+                } else {
+                    return runtime_error(span, "incomplete format");
+                }
+            } else {
+                result.push(c);
+            }
+        }
+
+        if val_idx < vals.len() {
+            // It is okay if we have extra args if they were not consumed?
+            // Python raises TypeError: not all arguments converted during string formatting
+            return runtime_error(span, "not all arguments converted during string formatting");
+        }
+
+        Ok(Value::String(result))
+    }
+
+    fn assign(&mut self, target: &Expr, value: Value) -> Result<(), EldritchError> {
+        match &target.kind {
+            ExprKind::Identifier(name) => {
+                self.assign_variable(name, value);
+                Ok(())
+            }
+            ExprKind::List(elements) | ExprKind::Tuple(elements) => {
+                // Unpacking
+                let values = match value {
+                    Value::List(l) => l.borrow().clone(),
+                    Value::Tuple(t) => t.clone(),
+                    _ => {
+                        return runtime_error(
+                            target.span,
+                            &format!("cannot unpack non-iterable {:?}", get_type_name(&value)),
+                        )
+                    }
+                };
+
+                if elements.len() != values.len() {
+                    return runtime_error(
+                        target.span,
+                        &format!(
+                            "ValueError: too many/not enough values to unpack (expected {}, got {})",
+                            elements.len(),
+                            values.len()
+                        ),
+                    );
+                }
+
+                for (target_elem, val_elem) in elements.iter().zip(values.into_iter()) {
+                    self.assign(target_elem, val_elem)?;
+                }
+                Ok(())
+            }
+            ExprKind::Index(obj_expr, index_expr) => {
+                let obj = self.evaluate(obj_expr)?;
+                let index = self.evaluate(index_expr)?;
+                match obj {
+                    Value::List(l) => {
+                        let idx_int = match index {
+                            Value::Int(i) => i,
+                            _ => return runtime_error(index_expr.span, "List indices must be integers"),
+                        };
+                        let mut list = l.borrow_mut();
+                         let true_idx = if idx_int < 0 {
+                            list.len() as i64 + idx_int
+                        } else {
+                            idx_int
+                        };
+                        if true_idx < 0 || true_idx as usize >= list.len() {
+                            return runtime_error(target.span, "List assignment index out of range");
+                        }
+                        list[true_idx as usize] = value;
+                        Ok(())
+                    }
+                    Value::Dictionary(d) => {
+                         let key_str = match index {
+                            Value::String(s) => s,
+                            _ => return runtime_error(index_expr.span, "Dictionary keys must be strings"),
+                        };
+                        d.borrow_mut().insert(key_str, value);
+                        Ok(())
+                    }
+                    _ => runtime_error(target.span, "Object does not support item assignment"),
+                }
+            }
+            _ => runtime_error(target.span, "cannot assign to this expression"),
+        }
+    }
+
+    fn execute_augmented_assignment(
+        &mut self,
+        target: &Expr,
+        op: &TokenKind,
+        value_expr: &Expr,
+    ) -> Result<(), EldritchError> {
+        let span = target.span;
+        let right = self.evaluate(value_expr)?;
+
+        // For simple identifiers, read, op, write
+        match &target.kind {
+            ExprKind::Identifier(name) => {
+                let left = self.lookup_variable(name, span)?;
+                let bin_op = match op {
+                    TokenKind::PlusAssign => TokenKind::Plus,
+                    TokenKind::MinusAssign => TokenKind::Minus,
+                    TokenKind::StarAssign => TokenKind::Star,
+                    TokenKind::SlashAssign => TokenKind::Slash,
+                    TokenKind::SlashSlashAssign => TokenKind::SlashSlash,
+                    TokenKind::PercentAssign => TokenKind::Percent,
+                    _ => return runtime_error(span, "Unknown augmented assignment operator"),
+                };
+
+                // Construct dummy expressions for apply_binary_op call to reuse logic
+                let left_expr = Expr { kind: ExprKind::Literal(left), span };
+                let right_expr = Expr { kind: ExprKind::Literal(right), span };
+
+                let new_val = self.apply_binary_op(&left_expr, &bin_op, &right_expr, span)?;
+                self.assign_variable(name, new_val);
+                Ok(())
+            }
+            ExprKind::Index(obj_expr, index_expr) => {
+                 let obj = self.evaluate(obj_expr)?;
+                 let index = self.evaluate(index_expr)?;
+
+                 // This is tricky: we need to get the item, op it, and set it back.
+                 // For mutable objects (List, Dict), we can modify in place or set item.
+
+                 let current_val = match &obj {
+                    Value::List(l) => {
+                        let idx_int = match index {
+                            Value::Int(i) => i,
+                            _ => return runtime_error(index_expr.span, "List indices must be integers"),
+                        };
+                        let list = l.borrow();
+                         let true_idx = if idx_int < 0 {
+                            list.len() as i64 + idx_int
+                        } else {
+                            idx_int
+                        };
+                        if true_idx < 0 || true_idx as usize >= list.len() {
+                            return runtime_error(span, "List index out of range");
+                        }
+                        list[true_idx as usize].clone()
+                    }
+                    Value::Dictionary(d) => {
+                         let key_str = match &index {
+                            Value::String(s) => s,
+                            _ => return runtime_error(index_expr.span, "Dictionary keys must be strings"),
+                        };
+                        let dict = d.borrow();
+                        match dict.get(key_str) {
+                            Some(v) => v.clone(),
+                            None => return runtime_error(span, "KeyError"),
+                        }
+                    }
+                    _ => return runtime_error(span, "Object does not support item assignment"),
+                 };
+
+                let bin_op = match op {
+                    TokenKind::PlusAssign => TokenKind::Plus,
+                    TokenKind::MinusAssign => TokenKind::Minus,
+                    TokenKind::StarAssign => TokenKind::Star,
+                    TokenKind::SlashAssign => TokenKind::Slash,
+                    TokenKind::SlashSlashAssign => TokenKind::SlashSlash,
+                    TokenKind::PercentAssign => TokenKind::Percent,
+                    _ => return runtime_error(span, "Unknown augmented assignment operator"),
+                };
+
+                 let left_expr = Expr { kind: ExprKind::Literal(current_val), span };
+                 let right_expr = Expr { kind: ExprKind::Literal(right), span };
+                 let new_val = self.apply_binary_op(&left_expr, &bin_op, &right_expr, span)?;
+
+                 // Set back
+                 match obj {
+                    Value::List(l) => {
+                        // Need to re-calculate index as borrow ends
+                        let idx_int = match index {
+                            Value::Int(i) => i,
+                            _ => unreachable!(),
+                        };
+                         let mut list = l.borrow_mut();
+                         let true_idx = if idx_int < 0 {
+                            list.len() as i64 + idx_int
+                        } else {
+                            idx_int
+                        };
+                        list[true_idx as usize] = new_val;
+                        Ok(())
+                    }
+                    Value::Dictionary(d) => {
+                         let key_str = match index {
+                            Value::String(s) => s,
+                            _ => unreachable!(),
+                        };
+                        d.borrow_mut().insert(key_str, new_val);
+                        Ok(())
+                    }
+                    _ => unreachable!(),
+                 }
+
+            }
+            _ => runtime_error(span, "Illegal target for augmented assignment"),
         }
     }
 }
