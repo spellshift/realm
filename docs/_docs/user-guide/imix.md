@@ -156,15 +156,6 @@ cargo zigbuild  --release --target aarch64-apple-darwin
 ### Windows
 
 ```bash
-# Build the reflective loader
-cd realm/bin/reflective_loader
-
-cargo xwin build --release \
-    -Z build-std=core,compiler_builtins \
-    -Z build-std-features=compiler-builtins-mem \
-    --target x86_64-pc-windows-msvc
-cd -
-
 # Build imix
 cd realm/implants/imix/
 
