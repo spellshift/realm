@@ -67,6 +67,12 @@ impl ToValue for String {
     }
 }
 
+impl ToValue for () {
+    fn to_value(self) -> Value {
+        Value::None
+    }
+}
+
 impl ToValue for bool {
     fn to_value(self) -> Value {
         Value::Bool(self)
@@ -126,7 +132,9 @@ fn get_type_name(v: &Value) -> &'static str {
         Value::Dictionary(_) => "dict",
         Value::Function(_) => "function",
         Value::NativeFunction(_, _) => "native_function",
+        Value::NativeFunctionWithKwargs(_, _) => "native_function_kwargs",
         Value::BoundMethod(_, _) => "bound_method",
+        Value::Foreign(_) => "foreign_object",
     }
 }
 

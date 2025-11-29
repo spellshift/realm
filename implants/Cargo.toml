@@ -5,7 +5,7 @@ members = [
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
-    "lib/host_unique", "lib/eldritchv2",
+    "lib/host_unique", "lib/eldritchv2", "lib/eldritch-macros",
 ]
 resolver = "2"
 

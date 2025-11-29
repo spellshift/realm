@@ -15,7 +15,11 @@ pub fn is_truthy(value: &Value) -> bool {
         Value::List(l) => !l.borrow().is_empty(),
         Value::Dictionary(d) => !d.borrow().is_empty(),
         Value::Tuple(t) => !t.is_empty(),
-        Value::Function(_) | Value::NativeFunction(_, _) | Value::BoundMethod(_, _) => true,
+        Value::Function(_)
+        | Value::NativeFunction(_, _)
+        | Value::NativeFunctionWithKwargs(_, _)
+        | Value::BoundMethod(_, _)
+        | Value::Foreign(_) => true,
     }
 }
 
@@ -29,9 +33,11 @@ pub fn get_type_name(value: &Value) -> String {
         Value::List(_) => "list".to_string(),
         Value::Dictionary(_) => "dict".to_string(),
         Value::Tuple(_) => "tuple".to_string(),
-        Value::Function(_) | Value::NativeFunction(_, _) | Value::BoundMethod(_, _) => {
-            "function".to_string()
-        }
+        Value::Function(_)
+        | Value::NativeFunction(_, _)
+        | Value::NativeFunctionWithKwargs(_, _)
+        | Value::BoundMethod(_, _) => "function".to_string(),
+        Value::Foreign(f) => f.type_name().to_string(),
     }
 }
 

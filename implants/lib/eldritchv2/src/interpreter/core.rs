@@ -13,6 +13,7 @@ use super::builtins::get_all_builtins;
 use super::error::{runtime_error, EldritchError};
 use super::exec;
 use super::eval;
+use crate::get_global_libraries;
 
 #[derive(Clone, PartialEq)]
 pub enum Flow {
@@ -42,6 +43,7 @@ impl Interpreter {
         };
 
         interpreter.load_builtins();
+        interpreter.load_libraries();
         interpreter
     }
 
@@ -54,6 +56,13 @@ impl Interpreter {
             .borrow_mut()
             .values
             .insert("pass".to_string(), Value::None);
+    }
+
+    fn load_libraries(&mut self) {
+        let libs = get_global_libraries();
+        for (name, val) in libs {
+            self.env.borrow_mut().values.insert(name, Value::Foreign(val));
+        }
     }
 
     pub fn register_function(&mut self, name: &str, func: BuiltinFn) {
