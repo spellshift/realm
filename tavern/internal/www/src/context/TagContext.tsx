@@ -3,12 +3,16 @@ import { ApolloError, useQuery } from "@apollo/client";
 import { GET_TAG_FILTERS } from "../utils/queries";
 import { BeaconEdge, TagContextProps, TagContextQueryResponse, TagEdge } from "../utils/interfacesQuery";
 
-const defaultValue = { data: undefined, isLoading: false, error: undefined } as { data: undefined | TagContextProps, isLoading: boolean, error: ApolloError | undefined };
+const defaultValue = {
+    data: { beacons: [], groupTags: [], serviceTags: [], hosts: [] },
+    isLoading: false,
+    error: undefined
+} as { data: TagContextProps, isLoading: boolean, error: ApolloError | undefined };
 
 export const TagContext = createContext(defaultValue);
 
 export const TagContextProvider = ({ children }: { children: React.ReactNode }) => {
-    const [tags, setTags] = useState({} as TagContextProps);
+    const [tags, setTags] = useState<TagContextProps>({ beacons: [], groupTags: [], serviceTags: [], hosts: [] });
 
     const PARAMS = {
         variables: {

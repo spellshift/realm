@@ -17,7 +17,7 @@ export const BeaconStepWrapper = (props: Props) => {
 
     const { data, isLoading } = useContext(TagContext);
 
-    const onlineBeacons = getOnlineBeacons(data?.beacons || []);
+    const onlineBeacons = getOnlineBeacons(data.beacons);
 
     const hasBeaconSelected = isBeaconSelected(selectedBeacons);
 
@@ -38,11 +38,11 @@ export const BeaconStepWrapper = (props: Props) => {
                 <h2 className="text-xl font-semibold text-gray-900">Select agent beacons</h2>
                 <p className="text-sm text-gray-700 italic">Only active beacons are available for selection</p>
             </div>
-            {isLoading || data === undefined ?
+            {isLoading ?
                 (
                     <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
                 ) : (
-                    <BeaconStep beacons={onlineBeacons} groups={data?.groupTags || []} services={data?.serviceTags || []} hosts={data?.hosts || []} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
+                    <BeaconStep beacons={onlineBeacons} groups={data.groupTags} services={data.serviceTags} hosts={data.hosts} selectedBeacons={selectedBeacons} setSelectedBeacons={setSelectedBeacons} />
                 )}
             <div className="flex flex-row gap-2">
                 <Button

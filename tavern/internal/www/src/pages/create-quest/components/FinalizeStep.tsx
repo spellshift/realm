@@ -14,11 +14,12 @@ import { QuestFormikProps } from "../types";
 type Props = {
     setCurrStep: (step: number) => void;
     formik: QuestFormikProps;
+    loading?: boolean;
 }
 const FinalizeStep = (props: Props) => {
-    const { formik, setCurrStep } = props;
+    const { formik, setCurrStep, loading = false } = props;
 
-    const isContinueDisabled = formik.values.name === "";
+    const isContinueDisabled = formik.values.name === "" || loading;
 
     const handleNameQuest = (name: string) => {
         formik.setFieldValue('name', name);
@@ -31,7 +32,7 @@ const FinalizeStep = (props: Props) => {
         return beacons.filter((beacon: BeaconNode) => beaconSelectedObject[beacon.id]);
     }
 
-    const beaconsSelected = getSelectedBeacons(data?.beacons || [], formik.values.beacons);
+    const beaconsSelected = getSelectedBeacons(data.beacons, formik.values.beacons);
 
 
     return (
@@ -60,10 +61,14 @@ const FinalizeStep = (props: Props) => {
                 value={formik.values.name}
                 onChange={(event) => handleNameQuest(event.target.value)}
             />
+            {formik.errors.name && formik.touched.name && (
+                <p className="text-sm text-red-600 mt-1">{formik.errors.name}</p>
+            )}
             <div className="flex flex-row gap-2">
                 <Button
                     buttonVariant="ghost"
                     onClick={() => setCurrStep(1)}
+                    disabled={loading}
                 >
                     Back
                 </Button>
@@ -75,7 +80,7 @@ const FinalizeStep = (props: Props) => {
                     disabled={isContinueDisabled}
                     type="submit"
                 >
-                    Submit
+                    {loading ? "Creating quest..." : "Submit"}
                 </Button>
             </div>
         </div>

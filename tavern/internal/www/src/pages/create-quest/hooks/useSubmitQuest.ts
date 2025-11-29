@@ -48,7 +48,7 @@ export const useSubmitQuest = () => {
                 "IDs": props.beacons,
                 "input": {
                     "name": props.name,
-                    "tomeID": props.tome?.id,
+                    "tomeID": props.tome!.id,
                     "parameters": JSON.stringify(param_obj),
                 }
             }
