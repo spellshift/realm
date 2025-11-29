@@ -20,7 +20,7 @@
 		"ghcr.io/devcontainers/features/rust:1": {
 			"version": "1.87",
 			"profile": "minimal",
-			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,aarch64-apple-darwin,x86_64-apple-darwin"
+			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,x86_64-pc-windows-msvc,aarch64-apple-darwin,x86_64-apple-darwin"
 		},
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
@@ -65,5 +65,5 @@
 	// "mounts": [
 	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
 	// ],
-	"postAttachCommand": "cargo install cargo-zigbuild"
+	"postAttachCommand": "cargo install cargo-zigbuild && cargo install xwin --target x86_64-unknown-linux-gnu"
 }

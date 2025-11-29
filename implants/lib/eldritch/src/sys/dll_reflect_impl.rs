@@ -20,18 +20,18 @@ use {
     },
 };
 
-#[cfg(all(host_family = "windows", target_os = "windows"))]
-macro_rules! win_target {
-    () => {
-        r"x86_64-pc-windows-msvc"
-    };
-}
-#[cfg(all(host_family = "unix", target_os = "windows"))]
-macro_rules! win_target {
-    () => {
-        r"x86_64-pc-windows-gnu"
-    };
-}
+// #[cfg(all(host_family = "windows", target_os = "windows"))]
+// macro_rules! win_target {
+//     () => {
+//         r"x86_64-pc-windows-msvc"
+//     };
+// }
+// #[cfg(all(host_family = "unix", target_os = "windows"))]
+// macro_rules! win_target {
+//     () => {
+//         r"x86_64-pc-windows-gnu"
+//     };
+// }
 
 #[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
@@ -65,7 +65,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    win_target!(),
+    "x86_64-pc-windows-msvc",
     sep!(),
     "release",
     sep!(),
