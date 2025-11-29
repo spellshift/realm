@@ -45,7 +45,7 @@
 
         /* Hide the actual input but keep it functional */
         #hidden-input {
-            position: absolute;
+            position: fixed;
             opacity: 0;
             top: 0;
             left: -9999px;
@@ -111,6 +111,12 @@
 
             // Focus hidden input on click anywhere
             document.body.addEventListener('click', () => {
+                // If the user has selected text, do not steal focus,
+                // otherwise they cannot copy the text.
+                const sel = window.getSelection();
+                if (sel && sel.toString().length > 0) {
+                    return;
+                }
                 inputEl.focus();
             });
 
@@ -137,6 +143,12 @@
             const after = buf.substring(safeCur + 1);
 
             inputHtml = escape(before) + `<span class="cursor">${escape(charAtCursor)}</span>` + escape(after);
+
+            // Handle multi-line indentation alignment
+            if (state.prompt.length > 0) {
+                const padding = ' '.repeat(state.prompt.length);
+                inputHtml = inputHtml.replace(/\n/g, '\n' + padding);
+            }
 
             currentLineEl.innerHTML = promptSpan + inputHtml;
             window.scrollTo(0, document.body.scrollHeight);
