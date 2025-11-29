@@ -95,6 +95,11 @@ fn main() -> io::Result<()> {
                             ReplAction::Render => {
                                 render(&mut stdout, &repl)?;
                             },
+                            ReplAction::ClearScreen => {
+                                stdout.execute(terminal::Clear(ClearType::All))?;
+                                stdout.execute(cursor::MoveTo(0, 0))?;
+                                render(&mut stdout, &repl)?;
+                            },
                             ReplAction::None => {},
                         }
                     }
@@ -121,6 +126,7 @@ fn map_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::KillLine),
         KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::KillToEnd),
         KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::WordBackspace),
+        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::HistorySearch),
         KeyCode::Char(c) => Some(Input::Char(c)),
         KeyCode::Enter => Some(Input::Enter),
         KeyCode::Backspace => Some(Input::Backspace),

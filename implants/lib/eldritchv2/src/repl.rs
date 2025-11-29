@@ -23,12 +23,14 @@ pub enum Input {
     ClearScreen,     // Ctrl+L
     Cancel,          // Ctrl+C
     EOF,             // Ctrl+D
+    HistorySearch,   // Ctrl+R
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ReplAction {
     None,
     Render, // State changed, need redraw
+    ClearScreen, // Clear screen request
     Submit { code: String, last_line: String, prompt: String }, // Command block ready to execute
     AcceptLine { line: String, prompt: String }, // Intermediate line accepted (for multi-line)
     Quit,
@@ -39,6 +41,13 @@ pub struct RenderState {
     pub prompt: String,
     pub buffer: String,
     pub cursor: usize,
+}
+
+#[derive(Debug, Clone)]
+struct SearchState {
+    query: String,
+    match_index: Option<usize>, // Index in history
+    saved_buffer: String,       // Buffer content before search started
 }
 
 pub struct Repl {
@@ -57,6 +66,7 @@ pub struct Repl {
 
     // State
     is_multiline: bool,
+    search_state: Option<SearchState>,
 }
 
 impl Repl {
@@ -69,6 +79,7 @@ impl Repl {
             history_idx: None,
             saved_buffer: String::new(),
             is_multiline: false,
+            search_state: None,
         }
     }
 
@@ -81,6 +92,9 @@ impl Repl {
     }
 
     fn current_prompt(&self) -> String {
+        if let Some(ref search) = self.search_state {
+            return alloc::format!("(reverse-i-search)`{}': ", search.query);
+        }
         if self.pending_block.is_empty() { ">>> ".to_string() } else { "... ".to_string() }
     }
 
@@ -93,6 +107,10 @@ impl Repl {
     }
 
     pub fn handle_input(&mut self, input: Input) -> ReplAction {
+        if self.search_state.is_some() {
+            return self.handle_search_input(input);
+        }
+
         match input {
             Input::Char(c) => self.insert_char(c),
             Input::Tab => self.insert_str("    "),
@@ -109,10 +127,152 @@ impl Repl {
             Input::KillToEnd => self.kill_to_end(),
             Input::KillLine => self.kill_line(),
             Input::WordBackspace => self.word_backspace(),
-            Input::ClearScreen => ReplAction::Render,
+            Input::ClearScreen => ReplAction::ClearScreen,
             Input::Cancel => self.cancel(),
             Input::EOF => ReplAction::Quit,
+            Input::HistorySearch => self.start_search(),
         }
+    }
+
+    fn start_search(&mut self) -> ReplAction {
+        if self.history.is_empty() {
+            return ReplAction::None;
+        }
+        self.search_state = Some(SearchState {
+            query: String::new(),
+            match_index: None,
+            saved_buffer: self.buffer.clone(),
+        });
+        self.buffer.clear();
+        self.cursor = 0;
+        ReplAction::Render
+    }
+
+    fn handle_search_input(&mut self, input: Input) -> ReplAction {
+        match input {
+            Input::HistorySearch => self.search_next(),
+            Input::Char(c) => self.search_append(c),
+            Input::Backspace => self.search_backspace(),
+            Input::Enter => self.end_search(true),
+            Input::Cancel => self.end_search(false), // Cancel restores original buffer
+            // Navigation keys could accept the search and move cursor?
+            Input::Left | Input::Right | Input::Home | Input::End => {
+                self.end_search(true);
+                // Re-process the navigation input on the restored buffer?
+                // For simplicity, just accept the search result and let user navigate next.
+                // Or we could re-dispatch. Let's just accept.
+                ReplAction::Render
+            },
+            _ => ReplAction::None,
+        }
+    }
+
+    fn search_next(&mut self) -> ReplAction {
+        // Find next match backwards
+        let state = self.search_state.as_ref().unwrap();
+        if state.query.is_empty() {
+             return ReplAction::None;
+        }
+
+        let start_idx = state.match_index.unwrap_or(self.history.len());
+        if start_idx == 0 {
+            return ReplAction::None;
+        }
+
+        let query = state.query.clone();
+        // Search backwards from start_idx - 1
+        for i in (0..start_idx).rev() {
+            if self.history[i].contains(&query) {
+                self.search_state.as_mut().unwrap().match_index = Some(i);
+                self.buffer = self.history[i].clone();
+                // Cursor position: Zsh usually puts it at end of match or end of line.
+                // We'll put it at end of line to visualize the match clearly.
+                // Wait, in search mode, the buffer displayed IS the match.
+                // The prompt shows the query.
+
+                // Let's highlight match?
+                // RenderState only has one buffer string.
+                // We just show the history line in the buffer.
+                // The cursor in RenderState is an index into buffer.
+                // We can set cursor to where the match starts?
+                if let Some(pos) = self.buffer.find(&query) {
+                    self.cursor = pos; // Point to start of match?
+                } else {
+                    self.cursor = 0;
+                }
+                return ReplAction::Render;
+            }
+        }
+
+        ReplAction::None
+    }
+
+    fn search_append(&mut self, c: char) -> ReplAction {
+        if let Some(state) = self.search_state.as_mut() {
+            state.query.push(c);
+            state.match_index = None; // Reset match index to search from end
+        }
+        // Trigger a search with new query
+        self.perform_search()
+    }
+
+    fn search_backspace(&mut self) -> ReplAction {
+        if let Some(state) = self.search_state.as_mut() {
+            if !state.query.is_empty() {
+                state.query.pop();
+                state.match_index = None;
+            }
+        }
+        self.perform_search()
+    }
+
+    fn perform_search(&mut self) -> ReplAction {
+        let query = self.search_state.as_ref().unwrap().query.clone();
+        if query.is_empty() {
+            self.buffer.clear();
+            self.cursor = 0;
+            return ReplAction::Render;
+        }
+
+        // Always search from end for fresh query
+        for (i, item) in self.history.iter().enumerate().rev() {
+            if item.contains(&query) {
+                self.search_state.as_mut().unwrap().match_index = Some(i);
+                self.buffer = item.clone();
+                if let Some(pos) = self.buffer.find(&query) {
+                    self.cursor = pos;
+                } else {
+                    self.cursor = 0;
+                }
+                return ReplAction::Render;
+            }
+        }
+
+        // No match
+        self.buffer.clear(); // Or keep previous match? Standard is usually showing failing search
+        // We'll clear for now to indicate no match found
+        self.cursor = 0;
+        ReplAction::Render
+    }
+
+    fn end_search(&mut self, accept: bool) -> ReplAction {
+        let saved = self.search_state.as_ref().unwrap().saved_buffer.clone();
+
+        if accept {
+             // Keep current buffer (the match)
+             // Restore saved buffer if no match was found (buffer empty)?
+             // If buffer is empty (no match), maybe restore saved.
+             if self.buffer.is_empty() {
+                 self.buffer = saved;
+             }
+        } else {
+            // Restore original buffer
+            self.buffer = saved;
+        }
+
+        self.cursor = self.buffer.len(); // Move cursor to end
+        self.search_state = None;
+        ReplAction::Render
     }
 
     fn insert_char(&mut self, c: char) -> ReplAction {
