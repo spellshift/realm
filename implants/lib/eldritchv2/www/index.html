@@ -5,62 +5,395 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eldritch REPL</title>
     <style>
-        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
-        #terminal { white-space: pre-wrap; margin-bottom: 20px; }
-        #input-line { display: flex; }
-        #prompt { margin-right: 10px; color: #569cd6; }
-        #code { background: transparent; border: none; color: #d4d4d4; flex-grow: 1; outline: none; font-family: monospace; font-size: 16px; }
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+            overflow-y: scroll;
+        }
+        #terminal {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            outline: none;
+        }
+        .prompt {
+            color: #569cd6;
+            margin-right: 5px;
+        }
+        .continuation {
+            color: #569cd6;
+            margin-right: 5px;
+        }
+        .cursor {
+            background-color: #d4d4d4;
+            color: #1e1e1e;
+        }
+        /* Hide the actual input but keep it functional */
+        #hidden-input {
+            position: absolute;
+            opacity: 0;
+            top: 0;
+            left: -9999px;
+        }
+        #history-search {
+            background: #2d2d2d;
+            border: 1px solid #333;
+            padding: 2px;
+            color: #d4d4d4;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <h1>Eldritch REPL</h1>
     <div id="terminal"></div>
-    <div id="input-line">
-        <span id="prompt">&gt;&gt;&gt;</span>
-        <input type="text" id="code" autofocus autocomplete="off">
-    </div>
+    <div id="history-search">(reverse-i-search)`<span id="search-query"></span>': <span id="search-result"></span></div>
+    <textarea id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 
     <script type="module">
-        import init, { WasmInterpreter } from './pkg/eldritchv2.js';
+        import init, { WasmInterpreter, check_complete } from './pkg/eldritchv2.js';
 
         let interpreter;
-        const term = document.getElementById('terminal');
-        const input = document.getElementById('code');
+        const termEl = document.getElementById('terminal');
+        const inputEl = document.getElementById('hidden-input');
+        const searchEl = document.getElementById('history-search');
+        const searchQueryEl = document.getElementById('search-query');
+        const searchResultEl = document.getElementById('search-result');
 
-        // Define repl_print globally for Rust to call
+        // State
+        let history = [];
+        let historyIndex = -1;
+        let buffer = ""; // Accumulated code buffer (multi-line)
+        let currentInput = ""; // Current line being edited
+        let cursor = 0;
+        let isSearchMode = false;
+        let searchBuffer = "";
+
+        // Persistence
+        const HISTORY_KEY = 'eldritch_history';
+        try {
+            const saved = localStorage.getItem(HISTORY_KEY);
+            if (saved) {
+                history = JSON.parse(saved);
+            }
+        } catch(e) { console.error(e); }
+
+        function saveHistory() {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-1000))); // Keep last 1000
+        }
+
+        // Output handling
         window.repl_print = (s) => {
-            term.innerText += s + '\n';
-            term.scrollTop = term.scrollHeight;
+            printLine(s);
         };
+
+        function printLine(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            termEl.insertBefore(div, document.getElementById('current-line'));
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // Rendering current line
+        function renderCurrentLine() {
+            let lineContainer = document.getElementById('current-line');
+            if (!lineContainer) {
+                lineContainer = document.createElement('div');
+                lineContainer.id = 'current-line';
+                termEl.appendChild(lineContainer);
+            }
+
+            // Determine prompt
+            const isContinuation = buffer.length > 0;
+            const promptText = isContinuation ? '... ' : '>>> ';
+            const promptSpan = `<span class="${isContinuation ? 'continuation' : 'prompt'}">${promptText}</span>`;
+
+            // Render input with cursor
+            let inputHtml = '';
+            const line = currentInput;
+
+            // Safety against out of bounds
+            if (cursor < 0) cursor = 0;
+            if (cursor > line.length) cursor = line.length;
+
+            const before = line.substring(0, cursor);
+            const charAtCursor = line.substring(cursor, cursor + 1) || ' '; // Space if at end
+            const after = line.substring(cursor + 1);
+
+            // Escape HTML
+            const escape = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            inputHtml = escape(before) + `<span class="cursor">${escape(charAtCursor)}</span>` + escape(after);
+
+            lineContainer.innerHTML = promptSpan + inputHtml;
+            window.scrollTo(0, document.body.scrollHeight);
+        }
 
         async function main() {
             await init();
             interpreter = new WasmInterpreter();
-            term.innerText += "Eldritch REPL initialized.\nType code and press Enter.\n";
+            printLine("Eldritch REPL initialized.\nType code and press Enter.\n");
+            renderCurrentLine();
+
+            // Focus hidden input
+            document.body.addEventListener('click', () => inputEl.focus());
+            inputEl.focus();
         }
 
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const code = input.value;
-                term.innerText += '>>> ' + code + '\n';
-                input.value = '';
+        // History Search Logic
+        function updateSearch() {
+            searchQueryEl.innerText = searchBuffer;
+            // Find last matching entry
+            const match = history.slice().reverse().find(h => h.includes(searchBuffer));
+            if (match) {
+                searchResultEl.innerText = match;
+            } else {
+                searchResultEl.innerText = "(failed)";
+            }
+        }
 
-                if (code.trim() === 'clear') {
-                    term.innerText = '';
-                    return;
+        function exitSearch(apply) {
+            isSearchMode = false;
+            searchEl.style.display = 'none';
+            if (apply) {
+                const match = history.slice().reverse().find(h => h.includes(searchBuffer));
+                if (match) {
+                    currentInput = match;
+                    cursor = currentInput.length;
                 }
+            }
+            renderCurrentLine();
+        }
 
-                try {
-                    const res = interpreter.run(code);
-                    if (res) {
-                        term.innerText += res + '\n';
+        // Input Handling
+        inputEl.addEventListener('keydown', (e) => {
+            // Prevent default behavior for most keys we handle
+            // We read e.key
+
+            if (isSearchMode) {
+                e.preventDefault();
+                if (e.key === 'Backspace') {
+                    searchBuffer = searchBuffer.slice(0, -1);
+                    updateSearch();
+                } else if (e.key === 'Enter') {
+                    exitSearch(true);
+                } else if (e.key === 'Escape' || (e.ctrlKey && e.key === 'g')) {
+                    exitSearch(false);
+                } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                    searchBuffer += e.key;
+                    updateSearch();
+                } else if (e.ctrlKey && e.key === 'r') {
+                     // Cycle? Simplify to just stay in search
+                }
+                return;
+            }
+
+            // Shortcuts
+            if (e.ctrlKey) {
+                switch (e.key) {
+                    case 'r':
+                        e.preventDefault();
+                        isSearchMode = true;
+                        searchBuffer = "";
+                        searchEl.style.display = 'block';
+                        updateSearch();
+                        return;
+                    case 'a':
+                        e.preventDefault();
+                        cursor = 0;
+                        renderCurrentLine();
+                        return;
+                    case 'e':
+                        e.preventDefault();
+                        cursor = currentInput.length;
+                        renderCurrentLine();
+                        return;
+                    case 'u':
+                        e.preventDefault();
+                        currentInput = currentInput.substring(cursor);
+                        cursor = 0;
+                        renderCurrentLine();
+                        return;
+                    case 'k': // Kill to end (Emacs style, commonly paired with u)
+                        e.preventDefault();
+                        currentInput = currentInput.substring(0, cursor);
+                        renderCurrentLine();
+                        return;
+                    case 'w':
+                        e.preventDefault();
+                        // Word back
+                        // Find start of word before cursor
+                        let i = cursor - 1;
+                        // Skip spaces
+                        while (i >= 0 && currentInput[i] === ' ') i--;
+                        // Skip non-spaces
+                        while (i >= 0 && currentInput[i] !== ' ') i--;
+                        const cutPoint = i + 1;
+                        currentInput = currentInput.substring(0, cutPoint) + currentInput.substring(cursor);
+                        cursor = cutPoint;
+                        renderCurrentLine();
+                        return;
+                    case 'l':
+                        e.preventDefault();
+                        termEl.innerHTML = ''; // Clear screen
+                        renderCurrentLine();
+                        return;
+                    case 'c':
+                        e.preventDefault();
+                        // Cancel current input
+                        printLine((buffer.length > 0 ? "... " : ">>> ") + currentInput + "^C");
+                        buffer = "";
+                        currentInput = "";
+                        cursor = 0;
+                        renderCurrentLine();
+                        return;
+                }
+            }
+
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (history.length > 0) {
+                    if (historyIndex < history.length - 1) {
+                        historyIndex++;
+                        currentInput = history[history.length - 1 - historyIndex];
+                        cursor = currentInput.length;
+                        renderCurrentLine();
                     }
-                } catch (err) {
-                    term.innerText += 'JS Error: ' + err + '\n';
                 }
-                term.scrollTop = term.scrollHeight;
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    currentInput = history[history.length - 1 - historyIndex];
+                    cursor = currentInput.length;
+                    renderCurrentLine();
+                } else if (historyIndex === 0) {
+                    historyIndex = -1;
+                    currentInput = "";
+                    cursor = 0;
+                    renderCurrentLine();
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (cursor > 0) {
+                    cursor--;
+                    renderCurrentLine();
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (cursor < currentInput.length) {
+                    cursor++;
+                    renderCurrentLine();
+                }
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleEnter();
+                return;
+            }
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (cursor > 0) {
+                    currentInput = currentInput.slice(0, cursor - 1) + currentInput.slice(cursor);
+                    cursor--;
+                    renderCurrentLine();
+                }
+                return;
+            }
+
+            if (e.key === 'Delete') {
+                e.preventDefault();
+                if (cursor < currentInput.length) {
+                    currentInput = currentInput.slice(0, cursor) + currentInput.slice(cursor + 1);
+                    renderCurrentLine();
+                }
+                return;
+            }
+
+            // Normal typing
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                // Insert at cursor
+                currentInput = currentInput.slice(0, cursor) + e.key + currentInput.slice(cursor);
+                cursor++;
+                renderCurrentLine();
+                return;
             }
         });
+
+        // Paste support
+        inputEl.addEventListener('paste', (e) => {
+             e.preventDefault();
+             const text = (e.clipboardData || window.clipboardData).getData('text');
+             if (text) {
+                 // Handle newlines in paste?
+                 // Simple implementation: Replace newlines with spaces or just insert raw?
+                 // A real terminal handles pasted newlines by executing them sequentially or inserting them.
+                 // For now, let's just insert it raw into the current line, converting newlines to spaces?
+                 // Or better: support multi-line paste by splitting?
+                 // Let's keep it simple: insert at cursor.
+                 currentInput = currentInput.slice(0, cursor) + text + currentInput.slice(cursor);
+                 cursor += text.length;
+                 renderCurrentLine();
+             }
+        });
+
+        function handleEnter() {
+            // 1. Commit current line to display
+            const prompt = buffer.length > 0 ? "... " : ">>> ";
+            printLine(prompt + currentInput);
+
+            // 2. Append to buffer
+            const line = currentInput;
+            buffer += line + "\n";
+            currentInput = "";
+            cursor = 0;
+            historyIndex = -1;
+
+            // 3. Check for completeness
+            const isComplete = check_complete(buffer);
+
+            if (isComplete) {
+                // Execute
+                try {
+                    const res = interpreter.run(buffer);
+                    if (res) {
+                         printLine(res);
+                    }
+                } catch (err) {
+                    printLine("JS Error: " + err);
+                }
+
+                // Add to history (only if not empty and unique-ish?)
+                if (buffer.trim().length > 0) {
+                    // Remove trailing newline for history storage
+                    const historyEntry = buffer.trimEnd();
+                    // Don't add duplicate of last command
+                    if (history.length === 0 || history[history.length - 1] !== historyEntry) {
+                        history.push(historyEntry);
+                        saveHistory();
+                    }
+                }
+
+                buffer = "";
+            }
+
+            // If not complete, buffer retains content, prompt changes to "... "
+            renderCurrentLine();
+        }
 
         main();
     </script>
