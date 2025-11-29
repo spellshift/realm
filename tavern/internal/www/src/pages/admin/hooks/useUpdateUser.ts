@@ -1,13 +1,33 @@
-import { gql, useMutation } from "@apollo/client"
-import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
+import { gql, useMutation, ApolloError } from "@apollo/client"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UpdateUserProps } from "../../../utils/consts";
 import { GET_USER_QUERY } from "../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
 
-export const useUpdateUser = () => {
-    const [error, setError] = useState(false);
+interface UpdateUserMutationResponse {
+    updateUser: {
+        id: string;
+    };
+}
+
+interface UpdateUserMutationVariables {
+    id: string;
+    input: {
+        isActivated: boolean;
+        isAdmin: boolean;
+    };
+}
+
+interface UseUpdateUserReturn {
+    submitUpdateUser: (props: UpdateUserProps) => Promise<void>;
+    loading: boolean;
+    error: boolean;
+    reset: () => void;
+}
+
+export const useUpdateUser = (): UseUpdateUserReturn => {
+    const [error, setError] = useState<boolean>(false);
     const navigate = useNavigate();
     const toast = useToast();
 
@@ -19,28 +39,35 @@ export const useUpdateUser = () => {
         }
     `;
 
-    const handleError = (error: NetworkError | GraphQLErrors) => {
+    const handleError = (error: ApolloError) => {
         if(error){
             setError(true);
         }
     }
 
-    const handleOnCompleted = (result: any) => {
+    const handleOnCompleted = (result: UpdateUserMutationResponse) => {
         navigate('/admin');
     }
 
-    const [activateUserMutation, {loading, reset}] = useMutation(ACTIVATE_USER_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_USER_QUERY, // DocumentNode object parsed with gql
-        'GetUserQuery' // Query name
-    ]});
+    const [activateUserMutation, {loading, reset}] = useMutation<UpdateUserMutationResponse, UpdateUserMutationVariables>(
+        ACTIVATE_USER_MUTATION,
+        {
+            onCompleted: handleOnCompleted,
+            onError: handleError,
+            refetchQueries: [
+                GET_USER_QUERY,
+                'GetUserQuery'
+            ]
+        }
+    );
 
-    const submitUpdateUser = async (props: UpdateUserProps) => {
-        const formatVariables = {
-            "variables": {
-                "id": props.id,
-                "input": {
-                    "isActivated": props.activated,
-                    "isAdmin": props.admin,
+    const submitUpdateUser = async (props: UpdateUserProps): Promise<void> => {
+        const formatVariables: { variables: UpdateUserMutationVariables } = {
+            variables: {
+                id: props.id.toString(),
+                input: {
+                    isActivated: props.activated,
+                    isAdmin: props.admin,
                 }
             }
         };
@@ -49,7 +76,7 @@ export const useUpdateUser = () => {
             status: "loading",
             position: "bottom-right",
         });
-        let {errors} = await activateUserMutation(formatVariables);
+        const { errors } = await activateUserMutation(formatVariables);
         toast.close(loadingToast);
         if(errors){
             toast({

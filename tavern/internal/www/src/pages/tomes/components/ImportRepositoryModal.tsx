@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import { FormSteps } from "../../../components/form-steps";
 import Modal from "../../../components/tavern-base-ui/Modal";
-import { RepositoryType, Tome } from "../../../utils/consts";
+import { RepositoryNode, TomeEdge } from "../../../utils/interfacesQuery";
 import StepAddDeploymentKey from "./StepAddDeploymentKey";
 import StepCreateRepository from "./StepCreateRepository";
 
@@ -9,18 +9,19 @@ type ImportRepositoryModalProps = {
     isOpen: boolean,
     setOpen: (arg: any) => any,
 }
-const defaultNewRepository = {
+const defaultNewRepository: RepositoryNode = {
     id: "",
-    createdAt: "",
     lastModifiedAt: "",
     url: "",
     publicKey: "",
-    tomes: [] as Array<Tome>,
-    owner: undefined
+    tomes: {
+        edges: [] as TomeEdge[]
+    },
+    owner: null
 };
 
 const ImportRepositoryModal: FC<ImportRepositoryModalProps> = ({ isOpen, setOpen }) => {
-    const [newRepository, setNewRepository] = useState<RepositoryType>(defaultNewRepository);
+    const [newRepository, setNewRepository] = useState<RepositoryNode>(defaultNewRepository);
 
     const [currStep, setCurrStep] = useState(0);
 

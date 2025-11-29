@@ -97,6 +97,17 @@ export interface TagContextProps {
     hosts: Array<HostNode>;
 }
 
+export interface UserQueryTopLevel {
+    users: UserQueryResponse;
+}
+
+export interface UserQueryResponse {
+    pageInfo: QueryPageInfo;
+    totalCount: number;
+    edges: UserEdge[];
+}
+
+
 export interface UserNode {
     id: string;
     name: string;
@@ -124,11 +135,12 @@ export interface ShellEdge {
 export interface TomeNode {
     id: string;
     name: string;
-    description: string;
+    description?: string;
     eldritch: string;
     tactic: string;
     paramDefs: string | null;
     supportModel: string;
+    uploader?: UserNode | null;
 }
 
 // Quest-related interfaces
@@ -254,5 +266,48 @@ export interface GetQuestQueryVariables {
     last?: number;
     after?: Cursor;
     before?: Cursor;
+    orderBy?: OrderByField[];
+}
+
+export interface TomeEdge {
+    node: TomeNode;
+}
+
+export interface TomeQueryResponse {
+    edges: TomeEdge[];
+}
+
+export interface TomeQueryTopLevel {
+    tomes: TomeQueryResponse;
+}
+
+export interface GetTomesQueryVariables {
+    where?: any;
+}
+
+export interface RepositoryNode {
+    id: string;
+    lastModifiedAt: string;
+    url: string;
+    publicKey: string;
+    tomes: {
+        edges: TomeEdge[];
+    };
+    owner: UserNode | null;
+}
+
+export interface RepositoryEdge {
+    node: RepositoryNode;
+}
+
+export interface RepositoryQueryResponse {
+    edges: RepositoryEdge[];
+}
+
+export interface RepositoryQueryTopLevel {
+    repositories: RepositoryQueryResponse;
+}
+
+export interface GetRepositoryQueryVariables {
     orderBy?: OrderByField[];
 }

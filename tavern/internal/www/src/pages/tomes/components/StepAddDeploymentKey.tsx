@@ -1,15 +1,14 @@
 import { Heading } from "@chakra-ui/react";
-import { Ring } from "@uiball/loaders";
 import { FC } from "react";
 import { CopyBlock, tomorrow } from "react-code-blocks";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
-import { RepositoryType } from "../../../utils/consts";
+import { RepositoryNode } from "../../../utils/interfacesQuery";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
 type StepAddDeploymentKeyProps = {
     setCurrStep: (step: number) => void;
-    newRepository: RepositoryType;
+    newRepository: RepositoryNode;
     setOpen: (arg: any) => any;
 }
 

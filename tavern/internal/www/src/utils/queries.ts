@@ -125,20 +125,25 @@ export const GET_HOST_QUERY = gql`
 export const GET_TOMES_QUERY = gql`
     query GetTomes($where: TomeWhereInput) {
         tomes(where: $where){
-        id
-        name
-        paramDefs
-        tactic
-        eldritch
-        supportModel
-        description
-        uploader{
-            id
-            name
-            photoURL
+            edges{
+            node{
+                id
+                name
+                paramDefs
+                tactic
+                eldritch
+                supportModel
+                description
+                uploader{
+                    id
+                    name
+                    photoURL
+                }
+            }
+            }
         }
     }
-}`;
+`;
 
 export const GET_REPOSITORY_QUERY = gql`
     query GetRepository($orderBy: [RepositoryOrder!]){
@@ -150,12 +155,16 @@ export const GET_REPOSITORY_QUERY = gql`
                     url
                     publicKey
                     tomes{
-                        id
-                        name
-                        paramDefs
-                        tactic
-                        eldritch
-                        supportModel
+                      edges{
+                        node{
+                            id
+                            name
+                            paramDefs
+                            tactic
+                            eldritch
+                            supportModel
+                        }
+                      }
                     }
                     owner{
                         id
@@ -165,7 +174,8 @@ export const GET_REPOSITORY_QUERY = gql`
                 }
             }
         }
-}`;
+    }
+`;
 
 export const GET_HOST_TASK_SUMMARY = gql`
     query GetTasks($where: TaskWhereInput) {
@@ -378,11 +388,16 @@ export const GET_TASK_DETAILS_QUERY = gql`
 export const GET_USER_QUERY = gql`
     query GetUserQuery($where: UserWhereInput){
         users(where: $where) {
-            id
-            name
-            photoURL
-            isActivated
-            isAdmin
+            totalCount
+            edges{
+                node{
+                    id
+                    name
+                    photoURL
+                    isActivated
+                    isAdmin
+                }
+            }
         }
     }
 `;

@@ -1,3 +1,5 @@
+import { TomeNode, UserNode } from "./interfacesQuery";
+
 export type KindOfTag = 'service' | 'group';
 
 export interface FilterBarOption {
@@ -19,4 +21,15 @@ export type TomeInputParams = {
     type: string;
     placeholder: string;
     value?: any;
+}
+export interface RepositoryRow {
+    node: {
+        id?: string;
+        url: string;
+        tomes: TomeNode[];
+        owner?: UserNode | null;
+        repoType?: string;
+        lastModifiedAt?: string;
+        publicKey?: string;
+    };
 }

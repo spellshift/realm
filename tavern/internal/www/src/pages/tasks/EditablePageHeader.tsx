@@ -1,13 +1,13 @@
 import { FC } from "react";
-import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useParams } from "react-router-dom";
-import { GET_QUEST_BY_ID_QUERY } from "../../utils/queries";
+import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
+import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
 
 export const EditablePageHeader: FC = () => {
     const { questId } = useParams();
-    const { data } = useQuery(GET_QUEST_BY_ID_QUERY, {
+    const { data } = useQuery(GET_QUEST_QUERY, {
         variables: {
             "where": {
                 "id": questId

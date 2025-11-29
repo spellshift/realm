@@ -1,9 +1,10 @@
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box } from "@chakra-ui/react";
 import { CodeBlock, tomorrow } from "react-code-blocks";
-import { Tome, TomeParams } from "../utils/consts";
+import { TomeParams } from "../utils/consts";
+import { TomeNode } from "../utils/interfacesQuery";
 
 type Props = {
-    tome: Tome,
+    tome: TomeNode,
     params: Array<TomeParams>,
     noParamValues?: boolean
 }

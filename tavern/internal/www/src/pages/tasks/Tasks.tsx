@@ -4,11 +4,11 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enums";
 import { useTasks } from "../../hooks/useTasks";
-import { EditablePageHeader } from "./EditablePageHeader";
 import Button from "../../components/tavern-base-ui/button/Button";
 import TaskCard from "../../components/task-card/TaskCard";
 import FilterControls, { FilterPageType } from "../../components/filter-controls";
 import { TaskEdge } from "../../utils/interfacesQuery";
+import { EditablePageHeader } from "./EditablePageHeader";
 
 const Tasks = () => {
     const { questId } = useParams();
