@@ -63,7 +63,7 @@ jobs:
         toolchain: 'nightly-2025-01-31'
         default: false
         profile: minimal
-        components: rust-src
+        components: rust-src, rustfmt
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
