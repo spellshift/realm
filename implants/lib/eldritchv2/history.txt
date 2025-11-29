@@ -1,0 +1,11 @@
+#V2
+print("hi")
+clear
+exit
+print("hi")
+def do():
+  print("hi")
+do()
+def fucking_around():
+  print("hi")
+fucking_around()

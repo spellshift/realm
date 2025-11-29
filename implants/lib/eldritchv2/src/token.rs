@@ -1,3 +1,6 @@
+use alloc::string::String;
+use alloc::vec::Vec;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Single-character tokens
@@ -24,7 +27,7 @@ pub enum Token {
     BitNot,
     LShift,
     RShift,
-    StarStar, // New: ** (Power or kwargs)
+    StarStar,
 
     // One or two character tokens
     Eq,

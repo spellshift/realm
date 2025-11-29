@@ -1,5 +1,9 @@
 use super::token::Token;
-use std::collections::VecDeque;
+use alloc::collections::VecDeque;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 pub struct Lexer {
     source: Vec<char>,
@@ -300,7 +304,6 @@ impl Lexer {
             '+' => Ok(self.add_token(Token::Plus)),
             '-' => Ok(self.add_token(Token::Minus)),
             '*' => {
-                // FIX: Check for ** token
                 if self.match_char('*') {
                     Ok(self.add_token(Token::StarStar))
                 } else {

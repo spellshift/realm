@@ -1,20 +1,22 @@
 use super::token::Token;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+use alloc::boxed::Box;
+use alloc::collections::BTreeMap;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Environment {
     pub parent: Option<Rc<RefCell<Environment>>>,
-    pub values: HashMap<String, Value>,
+    // BTreeMap is used instead of HashMap for no_std compatibility
+    pub values: BTreeMap<String, Value>,
 }
-
-// --- Function Definitions (Runtime) ---
 
 #[derive(Debug, Clone)]
 pub enum RuntimeParam {
     Normal(String),
-    WithDefault(String, Value), // Default evaluated at definition time
+    WithDefault(String, Value),
     Star(String),
     StarStar(String),
 }
@@ -27,8 +29,6 @@ pub struct Function {
     pub closure: Rc<RefCell<Environment>>,
 }
 
-// --- Function Definitions (AST) ---
-
 #[derive(Debug, Clone)]
 pub enum Param {
     Normal(String),
@@ -37,8 +37,6 @@ pub enum Param {
     StarStar(String),
 }
 
-// --- Call Arguments (AST) ---
-
 #[derive(Debug, Clone)]
 pub enum Argument {
     Positional(Expr),
@@ -46,8 +44,6 @@ pub enum Argument {
     StarArgs(Expr),
     KwArgs(Expr),
 }
-
-// --- Values & Expressions ---
 
 pub type BuiltinFn = fn(&[Value]) -> Result<Value, String>;
 
@@ -59,7 +55,7 @@ pub enum Value {
     String(String),
     List(Rc<RefCell<Vec<Value>>>),
     Tuple(Vec<Value>),
-    Dictionary(Rc<RefCell<HashMap<String, Value>>>),
+    Dictionary(Rc<RefCell<BTreeMap<String, Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),
     BoundMethod(Box<Value>, String),
@@ -108,7 +104,7 @@ pub enum Expr {
     BinaryOp(Box<Expr>, Token, Box<Expr>),
     UnaryOp(Token, Box<Expr>),
     LogicalOp(Box<Expr>, Token, Box<Expr>),
-    Call(Box<Expr>, Vec<Argument>), // Updated to use Argument enum
+    Call(Box<Expr>, Vec<Argument>),
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
     Dictionary(Vec<(Expr, Expr)>),
@@ -142,7 +138,7 @@ pub enum Stmt {
     Assignment(String, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
-    Def(String, Vec<Param>, Vec<Stmt>), // Updated to use Param enum
+    Def(String, Vec<Param>, Vec<Stmt>),
     For(String, Expr, Vec<Stmt>),
     Break,
     Continue,

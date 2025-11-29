@@ -5,9 +5,15 @@ use super::ast::{
 use super::lexer::Lexer;
 use super::parser::Parser;
 use super::token::Token;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+use alloc::boxed::Box;
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::cell::RefCell;
 
 // --- Helper Functions ---
 
@@ -75,7 +81,7 @@ impl Interpreter {
     pub fn new() -> Self {
         let env = Rc::new(RefCell::new(Environment {
             parent: None,
-            values: HashMap::new(),
+            values: BTreeMap::new(),
         }));
 
         let mut interpreter = Interpreter {
@@ -87,6 +93,7 @@ impl Interpreter {
         interpreter
     }
 
+    // Internal helper for defining built-ins
     fn define_builtin(&mut self, name: &str, _arity: usize, func: BuiltinFn) {
         self.env.borrow_mut().values.insert(
             name.to_string(),
@@ -94,9 +101,27 @@ impl Interpreter {
         );
     }
 
+    // Public API to allow host applications (like the REPL) to inject native functions
+    // that might rely on std (IO, Files, etc.)
+    pub fn register_function(&mut self, name: &str, func: BuiltinFn) {
+        self.define_builtin(name, 0, func);
+    }
+
     fn define_builtins(&mut self) {
+        // In no_std, we can't default 'print' to stdout.
+        // We define a dummy that does nothing unless the 'std' feature is active.
+        // The REPL should overwrite this with a proper implementation.
         self.define_builtin("print", 1, |args| {
-            println!("{}", args[0].to_string());
+            #[cfg(feature = "std")]
+            {
+                // If compiled with std feature, we can print.
+                // Note: We need to be careful about println! macro availability.
+                // In a no_std crate, println! isn't available by default even with cfg(feature="std")
+                // unless we import it or the user registers a new print function.
+                // Ideally, the REPL overwrites this.
+                use std::println;
+                println!("{}", args[0].to_string());
+            }
             Ok(Value::None)
         });
 
@@ -172,7 +197,7 @@ impl Interpreter {
 
         let eval_env = Rc::new(RefCell::new(Environment {
             parent: Some(Rc::clone(&self.env)),
-            values: HashMap::new(),
+            values: BTreeMap::new(),
         }));
 
         let mut eval_interp = Interpreter {
@@ -344,7 +369,7 @@ impl Interpreter {
             Expr::BinaryOp(left, op, right) => self.apply_binary_op(left, op, right),
             Expr::UnaryOp(op, right) => self.apply_unary_op(op, right),
             Expr::LogicalOp(left, op, right) => self.apply_logical_op(left, op, right),
-            Expr::Call(callee, args) => self.call_function(callee, args), // Note: args is now Vec<Argument>
+            Expr::Call(callee, args) => self.call_function(callee, args),
             Expr::List(elements) => self.evaluate_list_literal(elements),
             Expr::Tuple(elements) => self.evaluate_tuple_literal(elements),
             Expr::Dictionary(entries) => self.evaluate_dict_literal(entries),
@@ -368,7 +393,6 @@ impl Interpreter {
         }
     }
 
-    // ... [ListComp and DictComp helpers from previous update remain here] ...
     fn evaluate_list_comp(
         &mut self,
         body: &Expr,
@@ -389,7 +413,7 @@ impl Interpreter {
         };
         let comp_env = Rc::new(RefCell::new(Environment {
             parent: Some(Rc::clone(&self.env)),
-            values: HashMap::new(),
+            values: BTreeMap::new(),
         }));
         let original_env = Rc::clone(&self.env);
         self.env = comp_env;
@@ -429,11 +453,11 @@ impl Interpreter {
         };
         let comp_env = Rc::new(RefCell::new(Environment {
             parent: Some(Rc::clone(&self.env)),
-            values: HashMap::new(),
+            values: BTreeMap::new(),
         }));
         let original_env = Rc::clone(&self.env);
         self.env = comp_env;
-        let mut results = HashMap::new();
+        let mut results = BTreeMap::new();
         for item in items {
             self.define_variable(var, item);
             let include = match cond {
@@ -471,7 +495,7 @@ impl Interpreter {
     }
 
     fn evaluate_dict_literal(&mut self, entries: &[(Expr, Expr)]) -> Result<Value, String> {
-        let mut map = HashMap::new();
+        let mut map = BTreeMap::new();
         for (key_expr, value_expr) in entries {
             let key_val = self.evaluate(key_expr)?;
             let value_val = self.evaluate(value_expr)?;
@@ -624,7 +648,6 @@ impl Interpreter {
         Ok(Value::String(parts.join("")))
     }
 
-    // FIX: Added missing lookup_variable method
     fn lookup_variable(&self, name: &str) -> Result<Value, String> {
         let mut current_env = Some(Rc::clone(&self.env));
         while let Some(env_rc) = current_env {
@@ -640,9 +663,8 @@ impl Interpreter {
     fn call_function(&mut self, callee: &Expr, args: &[Argument]) -> Result<Value, String> {
         let callee_val = self.evaluate(callee)?;
 
-        // 1. Evaluate arguments into a standard form (list of positional, map of keywords)
         let mut pos_args_val = Vec::new();
-        let mut kw_args_val = HashMap::new();
+        let mut kw_args_val = BTreeMap::new();
 
         for arg in args {
             match arg {
@@ -682,7 +704,7 @@ impl Interpreter {
         let args_slice = pos_args_val.as_slice();
 
         match callee_val {
-            Value::NativeFunction(_, f) => f(args_slice), // Note: Native funcs usually only take positional currently in this toy impl
+            Value::NativeFunction(_, f) => f(args_slice),
             Value::Function(Function {
                 name,
                 params,
@@ -691,10 +713,9 @@ impl Interpreter {
             }) => {
                 let function_env = Rc::new(RefCell::new(Environment {
                     parent: Some(closure),
-                    values: HashMap::new(),
+                    values: BTreeMap::new(),
                 }));
 
-                // 2. Bind Arguments to Parameters
                 let mut pos_idx = 0;
 
                 for param in params {
@@ -740,7 +761,6 @@ impl Interpreter {
                             } else {
                                 Vec::new()
                             };
-                            // *args consumes all remaining positional
                             pos_idx = pos_args_val.len();
                             function_env
                                 .borrow_mut()
@@ -748,10 +768,12 @@ impl Interpreter {
                                 .insert(param_name.clone(), Value::Tuple(remaining));
                         }
                         RuntimeParam::StarStar(param_name) => {
-                            // **kwargs consumes all remaining keywords
-                            let mut dict = HashMap::new();
-                            for (k, v) in kw_args_val.drain() {
-                                dict.insert(k, v);
+                            let mut dict = BTreeMap::new();
+                            let keys_to_move: Vec<String> = kw_args_val.keys().cloned().collect();
+                            for k in keys_to_move {
+                                if let Some(v) = kw_args_val.remove(&k) {
+                                    dict.insert(k, v);
+                                }
                             }
                             function_env.borrow_mut().values.insert(
                                 param_name.clone(),
@@ -761,7 +783,6 @@ impl Interpreter {
                     }
                 }
 
-                // Check for excess arguments
                 if pos_idx < pos_args_val.len() {
                     return Err(format!(
                         "Function '{}' got too many positional arguments.",
@@ -769,7 +790,6 @@ impl Interpreter {
                     ));
                 }
                 if !kw_args_val.is_empty() {
-                    // keys that weren't consumed
                     let keys: Vec<&String> = kw_args_val.keys().collect();
                     return Err(format!(
                         "Function '{}' got unexpected keyword arguments: {:?}",
@@ -794,9 +814,6 @@ impl Interpreter {
                 Ok(ret_val)
             }
             Value::BoundMethod(receiver, method_name) => {
-                // For bound methods, we just pass the evaluated args to the helper
-                // Note: The helper assumes positional args for now, full kwargs support for builtins isn't implemented here
-                // but we can pass the positional list.
                 self.call_bound_method(&receiver, &method_name, args_slice)
             }
             _ => Err(format!("Cannot call value of type: {:?}", callee_val)),
@@ -898,19 +915,16 @@ impl Interpreter {
             (a, Token::Eq, b) => Ok(Value::Bool(a == b)),
             (a, Token::NotEq, b) => Ok(Value::Bool(a != b)),
 
-            // INT Comparisons
             (Value::Int(a), Token::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
             (Value::Int(a), Token::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
             (Value::Int(a), Token::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
             (Value::Int(a), Token::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
 
-            // STRING Comparisons
             (Value::String(a), Token::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
             (Value::String(a), Token::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
             (Value::String(a), Token::LtEq, Value::String(b)) => Ok(Value::Bool(a <= b)),
             (Value::String(a), Token::GtEq, Value::String(b)) => Ok(Value::Bool(a >= b)),
 
-            // Arithmetic
             (Value::Int(a), Token::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Token::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Token::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
@@ -921,7 +935,6 @@ impl Interpreter {
                 Ok(Value::Int(a / b))
             }
 
-            // Bitwise
             (Value::Int(a), Token::BitAnd, Value::Int(b)) => Ok(Value::Int(a & b)),
             (Value::Int(a), Token::BitOr, Value::Int(b)) => Ok(Value::Int(a | b)),
             (Value::Int(a), Token::BitXor, Value::Int(b)) => Ok(Value::Int(a ^ b)),

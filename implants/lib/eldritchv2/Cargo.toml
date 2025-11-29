@@ -4,8 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+rustyline = "13.0"
 # No external dependencies required for this implementation.
 
 [[bin]]
 name = "eldritch"
 path = "bin/repl.rs"
+
+[target.eldritch.dependencies]
+rustyline = "13.0"

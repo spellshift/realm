@@ -1,5 +1,11 @@
 use super::ast::{Argument, Expr, FStringSegment, Param, Stmt, Value};
-use super::token::Token; // Updated imports
+use super::token::Token;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec; // Added format! macro import
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -26,7 +32,7 @@ impl Parser {
         if self.is_at_end() {
             return false;
         }
-        std::mem::discriminant(self.peek()) == std::mem::discriminant(token)
+        core::mem::discriminant(self.peek()) == core::mem::discriminant(token)
     }
 
     fn advance(&mut self) -> &Token {
@@ -49,7 +55,7 @@ impl Parser {
 
     fn match_token(&mut self, token_types: &[Token]) -> bool {
         for t in token_types {
-            if std::mem::discriminant(self.peek()) == std::mem::discriminant(t) {
+            if core::mem::discriminant(self.peek()) == core::mem::discriminant(t) {
                 self.advance();
                 return true;
             }
@@ -123,7 +129,6 @@ impl Parser {
                         params.push(Param::StarStar(param_name.clone()));
                     }
                 } else {
-                    // FIX: Clone the param name immediately to satisfy borrow checker
                     let param_token = self.consume(
                         |t| matches!(t, Token::Identifier(_)),
                         "Expected parameter name.",
@@ -134,7 +139,6 @@ impl Parser {
                         unreachable!()
                     };
 
-                    // Check for default value
                     if self.match_token(&[Token::Assign]) {
                         let default_val = self.expression()?;
                         params.push(Param::WithDefault(param_name, default_val));
@@ -296,8 +300,6 @@ impl Parser {
         }
         Ok(Stmt::Expression(expr))
     }
-
-    // --- Expression Parsing (Precedence) ---
 
     fn expression(&mut self) -> Result<Expr, String> {
         self.logic_or()
@@ -484,7 +486,6 @@ impl Parser {
         let mut args = Vec::new();
         if !self.check(&Token::RParen) {
             loop {
-                // FIX: Check for keyword arg (Identifier = Expression) without borrowing self mutably incorrectly
                 let is_keyword = if let Token::Identifier(_) = self.peek() {
                     matches!(self.peek_next(), Token::Assign)
                 } else {
@@ -498,7 +499,6 @@ impl Parser {
                     let expr = self.expression()?;
                     args.push(Argument::KwArgs(expr));
                 } else if is_keyword {
-                    // FIX: Extract name and clone it before parsing the rest
                     let name = if let Token::Identifier(s) = self.advance() {
                         s.clone()
                     } else {
