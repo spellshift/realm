@@ -20,18 +20,18 @@ use {
     },
 };
 
-// #[cfg(all(host_family = "windows", target_os = "windows"))]
-// macro_rules! win_target {
-//     () => {
-//         r"x86_64-pc-windows-msvc"
-//     };
-// }
-// #[cfg(all(host_family = "unix", target_os = "windows"))]
-// macro_rules! win_target {
-//     () => {
-//         r"x86_64-pc-windows-gnu"
-//     };
-// }
+#[cfg(all(host_family = "windows", target_os = "windows"))]
+macro_rules! win_target {
+    () => {
+        r"x86_64-pc-windows-msvc"
+    };
+}
+#[cfg(all(host_family = "unix", target_os = "windows"))]
+macro_rules! win_target {
+    () => {
+        r"x86_64-pc-windows-gnu"
+    };
+}
 
 #[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
@@ -415,7 +415,7 @@ mod tests {
 
     #[cfg(host_family = "windows")]
     const TEST_DLL_BYTES: &[u8] = include_bytes!(
-        "..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\x86_64-pc-windows-gnu\\debug\\create_file_dll.dll"
+        "..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\x86_64-pc-windows-msvc\\debug\\create_file_dll.dll"
     );
 
     #[cfg(host_family = "unix")]
