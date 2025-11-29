@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eldritch REPL</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        #terminal { white-space: pre-wrap; margin-bottom: 20px; }
+        #input-line { display: flex; }
+        #prompt { margin-right: 10px; color: #569cd6; }
+        #code { background: transparent; border: none; color: #d4d4d4; flex-grow: 1; outline: none; font-family: monospace; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Eldritch REPL</h1>
+    <div id="terminal"></div>
+    <div id="input-line">
+        <span id="prompt">&gt;&gt;&gt;</span>
+        <input type="text" id="code" autofocus autocomplete="off">
+    </div>
+
+    <script type="module">
+        import init, { WasmInterpreter } from './pkg/eldritchv2.js';
+
+        let interpreter;
+        const term = document.getElementById('terminal');
+        const input = document.getElementById('code');
+
+        // Define repl_print globally for Rust to call
+        window.repl_print = (s) => {
+            term.innerText += s + '\n';
+            term.scrollTop = term.scrollHeight;
+        };
+
+        async function main() {
+            await init();
+            interpreter = new WasmInterpreter();
+            term.innerText += "Eldritch REPL initialized.\nType code and press Enter.\n";
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const code = input.value;
+                term.innerText += '>>> ' + code + '\n';
+                input.value = '';
+
+                if (code.trim() === 'clear') {
+                    term.innerText = '';
+                    return;
+                }
+
+                try {
+                    const res = interpreter.run(code);
+                    if (res) {
+                        term.innerText += res + '\n';
+                    }
+                } catch (err) {
+                    term.innerText += 'JS Error: ' + err + '\n';
+                }
+                term.scrollTop = term.scrollHeight;
+            }
+        });
+
+        main();
+    </script>
+</body>
+</html>
