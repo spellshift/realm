@@ -1,12 +1,12 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TableRowLimit } from "../../utils/enums";
-import { GET_QUEST_BY_ID_QUERY, GET_QUEST_QUERY } from "../../utils/queries";
+import { GET_QUEST_QUERY } from "../../utils/queries";
 import { Filters, useFilters } from "../../context/FilterContext";
 import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, GetQuestQueryVariables, QuestQueryTopLevel } from "../../utils/interfacesQuery";
 
-export const useQuests = (pagination: boolean, id?: string) => {
+export const useQuests = (pagination: boolean) => {
     const [page, setPage] = useState<number>(1);
     const { filters } = useFilters();
 
@@ -16,7 +16,6 @@ export const useQuests = (pagination: boolean, id?: string) => {
 
         const query: GetQuestQueryVariables = {
           where: {
-            ...(id && { id }),
             ...(currentFilters?.filtersEnabled && currentFilters.questName && {
               nameContains: currentFilters.questName
             }),
@@ -56,12 +55,12 @@ export const useQuests = (pagination: boolean, id?: string) => {
         }
 
         return query;
-    }, [pagination, id]);
+    }, [pagination]);
 
     const queryVariables = useMemo(() => constructDefaultQuery(undefined, undefined, filters), [constructDefaultQuery, filters]);
 
     const { loading, data, error, refetch } = useQuery<QuestQueryTopLevel>(
-      id ? GET_QUEST_BY_ID_QUERY : GET_QUEST_QUERY,
+      GET_QUEST_QUERY,
       {
         variables: queryVariables,
         notifyOnNetworkStatusChange: true

@@ -6,14 +6,12 @@ import { useNavigate } from "react-router-dom";
 import Table from "../../../components/tavern-base-ui/Table";
 import UserImageAndName from "../../../components/UserImageAndName";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
-import { useFilters } from "../../../context/FilterContext";
 import { QuestEdge, QuestNode, UserNode } from "../../../utils/interfacesQuery";
 
 type Props = {
     quests: QuestEdge[];
 }
 export const QuestTable = (props: Props) => {
-    const { filters } = useFilters();
     const { quests } = props;
     const navigate = useNavigate();
 
@@ -22,11 +20,8 @@ export const QuestTable = (props: Props) => {
     const onToggle = useCallback((row: Row<QuestEdge>) => {
         const questId = row.original?.node?.id;
         if (!questId) return;
-
-        navigate(`/tasks/${questId}`, {
-            state: filters
-        })
-    }, [filters, navigate]);
+        navigate(`/tasks/${questId}`);
+    }, [navigate]);
 
     const columns: ColumnDef<QuestEdge>[] = [
         {

@@ -250,93 +250,6 @@ export const GET_QUEST_QUERY = gql`
     }
 `;
 
-export const GET_QUEST_BY_ID_QUERY = gql`
-    query GetQuests(
-        $where: QuestWhereInput,
-        $whereTotalTask: TaskWhereInput,
-        $whereFinishedTask: TaskWhereInput,
-        $whereOutputTask: TaskWhereInput,
-        $whereErrorTask: TaskWhereInput,
-        $firstTask: Int,
-        $orderByTask: [TaskOrder!],
-        $first: Int,
-        $last:Int,
-        $after: Cursor,
-        $before:Cursor,
-        $orderBy: [QuestOrder!]
-    ) {
-        quests(where: $where, first: $first, last: $last, after: $after, before:$before, orderBy: $orderBy){
-            totalCount
-            pageInfo{
-                hasNextPage
-                hasPreviousPage
-                startCursor
-                endCursor
-            }
-            edges{
-                node{
-                    id
-                    name
-                    parameters
-                    lastUpdatedTask:tasks(first: $firstTask, orderBy: $orderByTask){
-                        edges{
-                            node{
-                                lastModifiedAt
-                            }
-                        }
-                    }
-                    tasksTotal:tasks(where: $whereTotalTask){
-                        totalCount
-                        edges{
-                            node{
-                                beacon{
-                                    id
-                                    lastSeenAt
-                                    interval
-                                }
-                            }
-                        }
-                    }
-                    tasksOutput:tasks(where: $whereOutputTask){
-                        totalCount
-                        edges{
-                            node{
-                                beacon{
-                                    id
-                                    lastSeenAt
-                                    interval
-                                }
-                            }
-                        }
-                    }
-                    tasksError:tasks(where: $whereErrorTask){
-                        totalCount
-                    }
-                    tasksFinished:tasks(where: $whereFinishedTask){
-                        totalCount
-                    }
-                    tome{
-                        id
-                        name
-                        description
-                        eldritch
-                        tactic
-                        paramDefs
-                        supportModel
-                    }
-                    creator {
-                            id
-                            name
-                            photoURL
-                            isActivated
-                            isAdmin
-                    }
-                }
-            }
-        }
-    }
-`;
-
 export const GET_HOST_TASK_COUNT = gql`
     query GetHostTaskCount($where: TaskWhereInput){
         tasks(where: $where){
@@ -347,95 +260,95 @@ export const GET_HOST_TASK_COUNT = gql`
 
 export const GET_TASK_QUERY = gql`
     query GetTasks($where: TaskWhereInput, $first: Int, $last: Int, $after: Cursor, $before: Cursor, $orderBy: [TaskOrder!]) {
-    tasks(
-        where: $where
-        first: $first
-        last: $last
-        after: $after
-        before: $before
-        orderBy: $orderBy
-    ) {
-        pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-        }
-        totalCount
-        edges {
-        node {
-            id
-            lastModifiedAt
-            outputSize
-            execStartedAt
-            execFinishedAt
-            createdAt
-            claimedAt
-            error
-            output
-            shells {
-            edges{
-                node{
+        tasks(
+            where: $where
+            first: $first
+            last: $last
+            after: $after
+            before: $before
+            orderBy: $orderBy
+        ) {
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            totalCount
+            edges {
+                node {
                     id
-                    closedAt
-                    activeUsers {
-                    edges{
-                        node{
+                    lastModifiedAt
+                    outputSize
+                    execStartedAt
+                    execFinishedAt
+                    createdAt
+                    claimedAt
+                    error
+                    output
+                    shells {
+                        edges{
+                            node{
+                                id
+                                closedAt
+                                activeUsers {
+                                    edges{
+                                        node{
+                                            id
+                                            name
+                                            photoURL
+                                            isActivated
+                                            isAdmin
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    quest {
                         id
                         name
-                        photoURL
-                        isActivated
-                        isAdmin
+                        creator {
+                            id
+                            name
+                            photoURL
+                        }
+                        tome {
+                            id
+                            name
+                            description
+                            eldritch
+                            tactic
+                            paramDefs
+                            supportModel
+                        }
+                        parameters
+                    }
+                    beacon {
+                        id
+                        name
+                        principal
+                        lastSeenAt
+                        interval
+                        host {
+                            id
+                            name
+                            primaryIP
+                            platform
+                            tags {
+                                edges{
+                                    node{
+                                        id
+                                        name
+                                        kind
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-            }
-            }
-            quest {
-            id
-            name
-            creator {
-                id
-                name
-                photoURL
-            }
-            tome {
-                id
-                name
-                description
-                eldritch
-                tactic
-                paramDefs
-                supportModel
-            }
-            parameters
-            }
-            beacon {
-            id
-            name
-            principal
-            lastSeenAt
-            interval
-            host {
-                id
-                name
-                primaryIP
-                platform
-                tags {
-                edges{
-                    node{
-                    id
-                    name
-                    kind
-                    }
-                }
-                }
-            }
-            }
         }
-        }
-    }
     }
 `;
 
@@ -461,35 +374,6 @@ export const GET_TASK_DETAILS_QUERY = gql`
             }
     }
 }`
-
-// export const GET_SEARCH_FILTERS = gql`
-//     query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
-//         groupTags:tags(where: $groupTag) {
-//             label:name
-//             value:id
-//             id
-//             name
-//             kind
-//         },
-//         serviceTags:tags(where: $serviceTag) {
-//             label:name
-//             value:id
-//             id
-//             name
-//             kind
-//         },
-//         beacons{
-//             label:name
-//             value:id
-//             id
-//             name
-//         }
-//         hosts{
-//             label:name
-//             value:id
-//         }
-//     }
-// `;
 
 export const GET_USER_QUERY = gql`
     query GetUserQuery($where: UserWhereInput){
