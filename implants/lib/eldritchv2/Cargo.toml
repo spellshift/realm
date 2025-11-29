@@ -4,25 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
-# Common dependencies can go here
+spin = "0.9"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-crossterm = "0.27"
+crossterm = { version = "0.27", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
+wee_alloc = { version = "0.4.5", optional = true }
 
 [features]
-default = ["std"]
+default = ["default_allocator"]
 std = []
+repl = ["dep:crossterm"]
+default_allocator = ["dep:wee_alloc"]
 
 [[bin]]
 name = "eldritch"
 path = "bin/repl.rs"
-required-features = ["std"]
+required-features = ["std", "repl"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

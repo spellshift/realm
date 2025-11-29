@@ -5,16 +5,14 @@ use alloc::string::ToString;
 use alloc::string::String;
 use alloc::format;
 use alloc::vec::Vec;
-use std::cell::RefCell;
+use spin::Mutex;
 
 #[wasm_bindgen]
 extern "C" {
     fn repl_print(s: &str);
 }
 
-thread_local! {
-    static OUTPUT_BUFFER: RefCell<String> = RefCell::new(String::new());
-}
+static OUTPUT_BUFFER: Mutex<String> = Mutex::new(String::new());
 
 fn wasm_print(args: &[Value]) -> Result<Value, String> {
     let mut out = String::new();
@@ -25,13 +23,11 @@ fn wasm_print(args: &[Value]) -> Result<Value, String> {
         out.push_str(&arg.to_string());
     }
 
-    OUTPUT_BUFFER.with(|b| {
-        let mut buf = b.borrow_mut();
-        if !buf.is_empty() {
-             buf.push('\n');
-        }
-        buf.push_str(&out);
-    });
+    let mut buf = OUTPUT_BUFFER.lock();
+    if !buf.is_empty() {
+         buf.push('\n');
+    }
+    buf.push_str(&out);
 
     Ok(Value::None)
 }
@@ -200,11 +196,11 @@ impl WasmRepl {
 
     fn execute(&mut self, code: &str) -> ExecutionResult {
         // Clear buffer
-        OUTPUT_BUFFER.with(|b| b.borrow_mut().clear());
+        OUTPUT_BUFFER.lock().clear();
 
         match self.interp.interpret(code) {
             Ok(v) => {
-                let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
+                let mut out = OUTPUT_BUFFER.lock().clone();
 
                 if let Value::None = v {
                     // Do not print None
@@ -222,7 +218,7 @@ impl WasmRepl {
                 }
             },
             Err(e) => {
-                let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
+                let mut out = OUTPUT_BUFFER.lock().clone();
                 if !out.is_empty() {
                     out.push('\n');
                 }
