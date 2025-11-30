@@ -102,6 +102,15 @@ impl FromValue for Value {
     }
 }
 
+impl<T: FromValue> FromValue for Option<T> {
+    fn from_value(v: &Value) -> Result<Self, String> {
+        match v {
+            Value::None => Ok(None),
+            _ => Ok(Some(T::from_value(v)?)),
+        }
+    }
+}
+
 // Implementations for ToValue
 impl ToValue for i64 {
     fn to_value(self) -> Value {
@@ -150,6 +159,15 @@ impl<K: ToValue + ToString, V: ToValue> ToValue for BTreeMap<K, V> {
             map.insert(k.to_string(), v.to_value());
         }
         Value::Dictionary(Rc::new(RefCell::new(map)))
+    }
+}
+
+impl<T: ToValue> ToValue for Option<T> {
+    fn to_value(self) -> Value {
+        match self {
+            Some(v) => v.to_value(),
+            None => Value::None,
+        }
     }
 }
 
