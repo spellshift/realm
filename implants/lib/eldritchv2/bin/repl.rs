@@ -41,7 +41,7 @@ fn main() -> io::Result<()> {
     println!("Type 'exit' to quit. End blocks with an empty line.");
 
     // Load history
-    if let Ok(content) = std::fs::read_to_string("history.txt") {
+    if let Ok(content) = std::fs::read_to_string("eldritch_history.txt") {
         let history: Vec<String> = content.lines().map(|s| s.to_string()).collect();
         repl.load_history(history);
     }
@@ -113,7 +113,7 @@ fn main() -> io::Result<()> {
 
     let history = repl.get_history();
     let content = history.join("\n");
-    std::fs::write("history.txt", content)?;
+    std::fs::write("eldritch_history.txt", content)?;
 
     Ok(())
 }
