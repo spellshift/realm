@@ -46,8 +46,12 @@ pub enum Argument {
     KwArgs(Expr),
 }
 
-pub type BuiltinFn = fn(&[Value]) -> Result<Value, String>;
-pub type BuiltinFnWithKwargs = fn(&[Value], &BTreeMap<String, Value>) -> Result<Value, String>;
+pub type BuiltinFn = fn(&Rc<RefCell<Environment>>, &[Value]) -> Result<Value, String>;
+pub type BuiltinFnWithKwargs = fn(
+    &Rc<RefCell<Environment>>,
+    &[Value],
+    &BTreeMap<String, Value>,
+) -> Result<Value, String>;
 
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;

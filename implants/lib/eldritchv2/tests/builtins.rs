@@ -75,3 +75,87 @@ fn test_core_builtins() {
 
     assert::fail("len(1)", "not defined for type");
 }
+
+#[test]
+fn test_dir_scope() {
+    // Test that dir() sees variables in current and parent scopes
+    assert::pass(
+        r#"
+        x = 10
+        d = dir()
+        assert("x" in d)
+        assert("print" in d) # built-in
+    "#,
+    );
+
+    assert::pass(
+        r#"
+        global_var = 1
+        def foo():
+            local_var = 2
+            d = dir()
+            assert("local_var" in d)
+            assert("global_var" in d)
+            assert("print" in d)
+
+        foo()
+    "#,
+    );
+}
+
+#[test]
+fn test_libs_builtins() {
+    assert::pass(
+        r#"
+        l = libs()
+        # We can't guarantee what libs are loaded in test env, but it should return a list
+        assert(type(l) == "list")
+    "#,
+    );
+
+    assert::pass(
+        r#"
+        b = builtins()
+        assert("print" in b)
+        assert("dir" in b)
+        assert("libs" in b)
+        assert("builtins" in b)
+    "#,
+    );
+}
+
+#[test]
+fn test_bytes_builtin() {
+    // String to bytes
+    assert::pass(
+        r#"
+        b = bytes("hello")
+        assert(type(b) == "bytes")
+        assert_eq(len(b), 5)
+    "#,
+    );
+
+    // List of ints to bytes
+    assert::pass(
+        r#"
+        b = bytes([65, 66, 67])
+        assert(type(b) == "bytes")
+        assert_eq(b, bytes("ABC"))
+    "#,
+    );
+
+    // Int to bytes (zero-filled)
+    assert::pass(
+        r#"
+        b = bytes(5)
+        assert(type(b) == "bytes")
+        assert_eq(len(b), 5)
+        assert_eq(b, bytes([0, 0, 0, 0, 0]))
+    "#,
+    );
+
+    // Errors
+    assert::fail("bytes(-1)", "negative");
+    assert::fail("bytes([256])", "range");
+    assert::fail("bytes(['a'])", "integers");
+}

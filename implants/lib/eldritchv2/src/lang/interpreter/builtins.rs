@@ -1,6 +1,7 @@
 use super::utils::{get_dir_attributes, get_type_name, is_truthy};
-use super::super::ast::{BuiltinFn, Value};
+use super::super::ast::{BuiltinFn, Environment, Value};
 use crate::lang::global_libs::get_global_libraries;
+use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -25,10 +26,13 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("map", builtin_stub),
         ("filter", builtin_stub),
         ("reduce", builtin_stub),
+        ("libs", builtin_libs),
+        ("builtins", builtin_builtins),
+        ("bytes", builtin_bytes),
     ]
 }
 
-fn builtin_print(args: &[Value]) -> Result<Value, String> {
+fn builtin_print(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     #[cfg(feature = "std")]
     {
         println!("{}", args[0]);
@@ -38,7 +42,7 @@ fn builtin_print(args: &[Value]) -> Result<Value, String> {
     Ok(Value::None)
 }
 
-fn builtin_len(args: &[Value]) -> Result<Value, String> {
+fn builtin_len(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     match &args[0] {
         Value::String(s) => Ok(Value::Int(s.len() as i64)),
         Value::Bytes(b) => Ok(Value::Int(b.len() as i64)),
@@ -49,7 +53,7 @@ fn builtin_len(args: &[Value]) -> Result<Value, String> {
     }
 }
 
-fn builtin_range(args: &[Value]) -> Result<Value, String> {
+fn builtin_range(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let (start, end) = match args {
         [Value::Int(end)] => (0, *end),
         [Value::Int(start), Value::Int(end)] => (*start, *end),
@@ -64,19 +68,19 @@ fn builtin_range(args: &[Value]) -> Result<Value, String> {
     Ok(Value::List(Rc::new(RefCell::new(list))))
 }
 
-fn builtin_type(args: &[Value]) -> Result<Value, String> {
+fn builtin_type(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     Ok(Value::String(get_type_name(&args[0])))
 }
 
-fn builtin_bool(args: &[Value]) -> Result<Value, String> {
+fn builtin_bool(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     Ok(Value::Bool(is_truthy(&args[0])))
 }
 
-fn builtin_str(args: &[Value]) -> Result<Value, String> {
+fn builtin_str(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     Ok(Value::String(args[0].to_string()))
 }
 
-fn builtin_int(args: &[Value]) -> Result<Value, String> {
+fn builtin_int(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     match &args[0] {
         Value::Int(i) => Ok(Value::Int(*i)),
         Value::Bool(b) => Ok(Value::Int(if *b { 1 } else { 0 })),
@@ -91,45 +95,91 @@ fn builtin_int(args: &[Value]) -> Result<Value, String> {
     }
 }
 
-fn builtin_dir(args: &[Value]) -> Result<Value, String> {
+fn builtin_bytes(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    if args.len() != 1 {
+        return Err("bytes() expects exactly one argument".to_string());
+    }
+
+    match &args[0] {
+        Value::String(s) => Ok(Value::Bytes(s.as_bytes().to_vec())),
+        Value::List(l) => {
+            let list = l.borrow();
+            let mut bytes = Vec::with_capacity(list.len());
+            for item in list.iter() {
+                match item {
+                    Value::Int(i) => {
+                        if *i < 0 || *i > 255 {
+                            return Err(format!("bytes() list items must be integers in range 0-255, got {}", i));
+                        }
+                        bytes.push(*i as u8);
+                    }
+                    _ => return Err(format!("bytes() list items must be integers, got {}", get_type_name(item))),
+                }
+            }
+            Ok(Value::Bytes(bytes))
+        }
+        Value::Int(i) => {
+            if *i < 0 {
+                return Err("bytes() argument cannot be negative".to_string());
+            }
+            Ok(Value::Bytes(vec![0; *i as usize]))
+        }
+        _ => Err(format!(
+            "bytes() argument must be a string, list of integers, or integer size, not '{}'",
+            get_type_name(&args[0])
+        )),
+    }
+}
+
+fn builtin_dir(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
-        // Return list of standard built-ins names
-        let mut builtins = vec![
-            "assert",
-            "assert_eq",
-            "bool",
-            "dir",
-            "enumerate",
-            "fail",
-            "filter",
-            "int",
-            "len",
-            "map",
-            "print",
-            "range",
-            "reduce",
-            "str",
-            "type",
-        ];
+        let mut symbols = BTreeSet::new();
+        let mut current_env = Some(Rc::clone(env));
 
-        // Add registered libraries
-        let libs = get_global_libraries();
-        let mut lib_names: Vec<&str> = libs.keys().map(|s| s.as_str()).collect();
-        builtins.append(&mut lib_names);
-        builtins.sort();
+        // Walk up the environment chain
+        while let Some(env_rc) = current_env {
+            let env_ref = env_rc.borrow();
+            for key in env_ref.values.keys() {
+                symbols.insert(key.clone());
+            }
+            current_env = env_ref.parent.clone();
+        }
 
-        let val_attrs: Vec<Value> = builtins
+        let val_attrs: Vec<Value> = symbols
             .into_iter()
-            .map(|s| Value::String(s.to_string()))
+            .map(Value::String)
             .collect();
         return Ok(Value::List(Rc::new(RefCell::new(val_attrs))));
     }
+
+    // Original behavior for dir(obj)
     let attrs = get_dir_attributes(&args[0]);
     let val_attrs: Vec<Value> = attrs.into_iter().map(Value::String).collect();
     Ok(Value::List(Rc::new(RefCell::new(val_attrs))))
 }
 
-fn builtin_enumerate(args: &[Value]) -> Result<Value, String> {
+fn builtin_libs(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    if !args.is_empty() {
+        return Err("libs() takes no arguments".to_string());
+    }
+    let libs = get_global_libraries();
+    let mut names: Vec<String> = libs.keys().cloned().collect();
+    names.sort();
+    let val_list: Vec<Value> = names.into_iter().map(Value::String).collect();
+    Ok(Value::List(Rc::new(RefCell::new(val_list))))
+}
+
+fn builtin_builtins(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    if !args.is_empty() {
+        return Err("builtins() takes no arguments".to_string());
+    }
+    let mut names: Vec<String> = get_all_builtins().into_iter().map(|(n, _)| n.to_string()).collect();
+    names.sort();
+    let val_list: Vec<Value> = names.into_iter().map(Value::String).collect();
+    Ok(Value::List(Rc::new(RefCell::new(val_list))))
+}
+
+fn builtin_enumerate(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let iterable = &args[0];
     let start = if args.len() > 1 {
         match args[1] {
@@ -157,7 +207,7 @@ fn builtin_enumerate(args: &[Value]) -> Result<Value, String> {
     Ok(Value::List(Rc::new(RefCell::new(pairs))))
 }
 
-fn builtin_assert(args: &[Value]) -> Result<Value, String> {
+fn builtin_assert(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if !is_truthy(&args[0]) {
         return Err(format!(
             "Assertion failed: value '{:?}' is not truthy",
@@ -167,7 +217,7 @@ fn builtin_assert(args: &[Value]) -> Result<Value, String> {
     Ok(Value::None)
 }
 
-fn builtin_assert_eq(args: &[Value]) -> Result<Value, String> {
+fn builtin_assert_eq(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args[0] != args[1] {
         return Err(format!(
             "Assertion failed: left != right\n  Left:  {:?}\n  Right: {:?}",
@@ -177,10 +227,10 @@ fn builtin_assert_eq(args: &[Value]) -> Result<Value, String> {
     Ok(Value::None)
 }
 
-fn builtin_fail(args: &[Value]) -> Result<Value, String> {
+fn builtin_fail(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     Err(format!("Test failed explicitly: {}", args[0]))
 }
 
-fn builtin_stub(_args: &[Value]) -> Result<Value, String> {
+fn builtin_stub(_env: &Rc<RefCell<Environment>>, _args: &[Value]) -> Result<Value, String> {
     Err("internal error: this function should be handled by interpreter".to_string())
 }
