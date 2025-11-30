@@ -496,13 +496,16 @@ fn call_function(
 
     match callee_val {
         Value::NativeFunction(_, f) => {
-             if !kw_args_val.is_empty() {
+            if !kw_args_val.is_empty() {
                 return runtime_error(span, "NativeFunction does not accept keyword arguments");
             }
-            f(args_slice).map_err(|e| EldritchError { message: e, span })
+            f(&interp.env, args_slice).map_err(|e| EldritchError { message: e, span })
         }
         Value::NativeFunctionWithKwargs(_, f) => {
-            f(args_slice, &kw_args_val).map_err(|e| EldritchError { message: e, span })
+            f(&interp.env, args_slice, &kw_args_val).map_err(|e| EldritchError {
+                message: e,
+                span,
+            })
         }
         Value::Function(Function {
             name,
@@ -733,7 +736,10 @@ fn call_value(
     span: Span,
 ) -> Result<Value, EldritchError> {
     match func {
-        Value::NativeFunction(_, f) => f(args).map_err(|e| EldritchError { message: e, span }),
+        Value::NativeFunction(_, f) => f(&interp.env, args).map_err(|e| EldritchError {
+            message: e,
+            span,
+        }),
         Value::Function(Function {
             name: _,
             params: _,

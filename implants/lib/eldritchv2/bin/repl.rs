@@ -15,7 +15,7 @@ fn main() -> io::Result<()> {
     let mut repl = Repl::new();
 
     // Register STD-dependent builtins
-    interpreter.register_function("print", |args| {
+    interpreter.register_function("print", |_env, args| {
         for (i, arg) in args.iter().enumerate() {
             if i > 0 {
                 print!(" ");
@@ -26,7 +26,7 @@ fn main() -> io::Result<()> {
         Ok(Value::None)
     });
 
-    interpreter.register_function("input", |_| {
+    interpreter.register_function("input", |_env, _| {
         terminal::disable_raw_mode().unwrap();
         let mut input = String::new();
         let res = match std::io::stdin().read_line(&mut input) {
