@@ -1,10 +1,9 @@
 import { Heading } from "@chakra-ui/react";
-import { useContext } from "react";
 
 import BeaconTile from "../../../components/BeaconTile";
 import FormTextField from "../../../components/tavern-base-ui/FormTextField";
 import TomeAccordion from "../../../components/TomeAccordion";
-import { TagContext } from "../../../context/TagContext";
+import { useTags } from "../../../context/TagContext";
 import { convertArrayToObject } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { BeaconNode } from "../../../utils/interfacesQuery";
@@ -25,7 +24,7 @@ const FinalizeStep = (props: Props) => {
         formik.setFieldValue('name', name);
     };
 
-    const { data } = useContext(TagContext);
+    const { data } = useTags();
 
     function getSelectedBeacons(beacons: BeaconNode[], selectedBeaconIds: string[]): BeaconNode[] {
         const beaconSelectedObject = convertArrayToObject(selectedBeaconIds);

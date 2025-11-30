@@ -5,8 +5,7 @@ import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 import { useQuery } from "@apollo/client";
 import { GET_USER_QUERY } from "../../utils/queries";
-import { AuthorizationContext } from "../../context/AuthorizationContext";
-import { useContext } from "react";
+import { useAuthorization } from "../../context/AuthorizationContext";
 import { UserNode, UserQueryTopLevel } from "../../utils/interfacesQuery";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import UserTable from "./components/UserTable";
@@ -14,7 +13,7 @@ import UserTable from "./components/UserTable";
 export const AdminPortal = () => {
     const { loading, data, error } = useQuery<UserQueryTopLevel>(GET_USER_QUERY);
 
-    const { data: authData } = useContext(AuthorizationContext);
+    const { data: authData } = useAuthorization();
 
     const currentUser = authData?.me as UserNode | undefined;
 

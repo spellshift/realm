@@ -1,7 +1,6 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
-import { useContext } from "react";
 import Button from "../../../../components/tavern-base-ui/button/Button";
-import { AuthorizationContext } from "../../../../context/AuthorizationContext";
+import { useAuthorization } from "../../../../context/AuthorizationContext";
 import CreatableSelect from "react-select/creatable";
 import { useEditableTag } from "./useEditableTag";
 import { SingleValue } from "react-select";
@@ -10,7 +9,7 @@ import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 
 export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTag, tagSaved?: TagNode, hostId?: string }) {
-    const { data } = useContext(AuthorizationContext);
+    const { data } = useAuthorization();
     const canEdit = data?.me?.isAdmin || false;
     const {
         tagValue,

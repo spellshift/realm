@@ -1,7 +1,6 @@
-import { useContext } from "react"
 import { Tab, TabList } from "@headlessui/react"
 import { ArrowsUpDownIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/20/solid"
-import { HostContext } from "../../../context/HostContext";
+import { useHost } from "../../../context/HostContext";
 import { KeyIcon } from "@heroicons/react/24/outline";
 import { getOfflineOnlineStatus } from "../../../utils/utils";
 import { useQuery } from "@apollo/client";
@@ -11,7 +10,7 @@ import { GET_HOST_TASK_COUNT } from "../../../utils/queries";
 
 const HostTabs = () => {
     const { hostId } = useParams();
-    const { data: host } = useContext(HostContext);
+    const { data: host } = useHost();
     const { data: hostTaskData } = useQuery(GET_HOST_TASK_COUNT, {
         variables: {
             "where":

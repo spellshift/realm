@@ -8,8 +8,7 @@ import {
     ClipboardDocumentListIcon,
     UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import { useContext } from 'react';
-import { AuthorizationContext } from '../../context/AuthorizationContext';
+import { useAuthorization } from '../../context/AuthorizationContext';
 import { PageNavItem } from '../../utils/enums';
 
 interface NavigationItemType {
@@ -22,7 +21,7 @@ interface NavigationItemType {
 }
 
 export const usePageNavigation = () => {
-    const { data } = useContext(AuthorizationContext);
+    const { data } = useAuthorization();
 
     const navigation = [
         { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },

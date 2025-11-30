@@ -1,11 +1,10 @@
 import EmptyStateNoBeacon from "../../../components/empty-states/EmptyStateNoBeacon";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import BeaconTable from "./BeaconTable";
-import { useContext } from "react";
-import { HostContext } from "../../../context/HostContext";
+import { useHost } from "../../../context/HostContext";
 
 const BeaconTab = () => {
-    const { data: host, loading, error } = useContext(HostContext);
+    const { data: host, loading, error } = useHost();
 
     if (loading) {
         return <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />

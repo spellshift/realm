@@ -1,6 +1,6 @@
 import { gql, useMutation } from "@apollo/client";
-import { useCallback, useContext, useEffect, useState } from "react";
-import { TagContext } from "../../../../context/TagContext";
+import { useCallback, useEffect, useState } from "react";
+import { useTags } from "../../../../context/TagContext";
 import { GET_HOST_QUERY, GET_TAG_FILTERS } from "../../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
 import { TagContextProps, TagNode } from "../../../../utils/interfacesQuery";
@@ -8,7 +8,7 @@ import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 export const useEditableTag = (kind: KindOfTag) => {
     const toast = useToast();
-    const { data: allTagData } = useContext(TagContext);
+    const { data: allTagData } = useTags();
     const [options, setOptions ] = useState<Array<FilterBarOption> | undefined>(undefined);
     const [loading, setLoading] = useState(true);
     const [displayEditTag, setDisplayEditTag] = useState(false);

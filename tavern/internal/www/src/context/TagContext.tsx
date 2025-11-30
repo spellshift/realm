@@ -1,15 +1,15 @@
-import React, { createContext, useCallback, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ApolloError, useQuery } from "@apollo/client";
 import { GET_TAG_FILTERS } from "../utils/queries";
 import { BeaconEdge, TagContextProps, TagContextQueryResponse, TagEdge } from "../utils/interfacesQuery";
 
-const defaultValue = {
-    data: { beacons: [], groupTags: [], serviceTags: [], hosts: [] },
-    isLoading: false,
-    error: undefined
-} as { data: TagContextProps, isLoading: boolean, error: ApolloError | undefined };
+type TagContextType = {
+    data: TagContextProps;
+    isLoading: boolean;
+    error: ApolloError | undefined;
+};
 
-export const TagContext = createContext(defaultValue);
+export const TagContext = createContext<TagContextType | undefined>(undefined);
 
 export const TagContextProvider = ({ children }: { children: React.ReactNode }) => {
     const [tags, setTags] = useState<TagContextProps>({ beacons: [], groupTags: [], serviceTags: [], hosts: [] });
@@ -27,10 +27,10 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             return;
         }
         const tags = {
-            beacons: data?.beacons?.edges.map((beacon: BeaconEdge) => beacon.node),
-            groupTags: data?.groupTags.edges.map((tag: TagEdge) => tag.node),
-            serviceTags: data?.serviceTags.edges.map((tag: TagEdge) => tag.node),
-            hosts: data?.hosts?.edges.map((edge: { node: { id: string, name: string } }) => edge.node)
+            beacons: data?.beacons?.edges?.map((beacon: BeaconEdge) => beacon.node) || [],
+            groupTags: data?.groupTags?.edges?.map((tag: TagEdge) => tag.node) || [],
+            serviceTags: data?.serviceTags?.edges?.map((tag: TagEdge) => tag.node) || [],
+            hosts: data?.hosts?.edges?.map((edge: { node: { id: string, name: string } }) => edge.node) || []
         };
         setTags(tags);
     }, []);
@@ -54,4 +54,12 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             {children}
         </TagContext.Provider>
     );
+};
+
+export const useTags = () => {
+    const context = useContext(TagContext);
+    if (context === undefined) {
+        throw new Error('useTags must be used within a TagContextProvider');
+    }
+    return context;
 };

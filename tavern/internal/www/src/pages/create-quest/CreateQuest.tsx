@@ -1,7 +1,6 @@
-import { useContext } from "react";
 import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
-import { TagContext } from "../../context/TagContext";
+import { useTags } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import QuestForm from "./components/QuestForm";
 import EmptyStateNoBeacon from "../../components/empty-states/EmptyStateNoBeacon";
@@ -9,7 +8,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
 
 export const CreateQuest = () => {
-    const { data, isLoading, error } = useContext(TagContext);
+    const { data, isLoading, error } = useTags();
 
     const isDataLoading = isLoading || !data.beacons;
     const hasBeacons = data.beacons && data.beacons.length > 0;
