@@ -1,6 +1,6 @@
 use super::*;
 use eldritch_macros::eldritch_library_impl;
-use crate::ast::Value;
+use crate::lang::ast::Value;
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;

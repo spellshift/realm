@@ -1,7 +1,7 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use crate::lexer::Lexer;
-use crate::token::TokenKind;
+use crate::lang::lexer::Lexer;
+use crate::lang::token::TokenKind;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Input {

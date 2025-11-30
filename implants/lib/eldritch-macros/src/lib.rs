@@ -116,7 +116,7 @@ pub fn eldritch_library_impl(attr: TokenStream, item: TokenStream) -> TokenStrea
     let expanded = quote! {
         #struct_def
 
-        impl #impl_generics eldritchv2::ast::ForeignValue for #struct_name #ty_generics #where_clause {
+        impl #impl_generics eldritchv2::ForeignValue for #struct_name #ty_generics #where_clause {
             fn type_name(&self) -> &str {
                 <Self as #adapter_name>::_eldritch_type_name(self)
             }

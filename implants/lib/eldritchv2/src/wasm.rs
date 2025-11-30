@@ -1,6 +1,8 @@
 use wasm_bindgen::prelude::*;
 use crate::{Interpreter, Value};
 use crate::repl::{Repl, Input, ReplAction};
+#[cfg(feature = "fake_bindings")]
+use crate::register_lib;
 use alloc::string::ToString;
 use alloc::string::String;
 use alloc::format;
@@ -22,9 +24,6 @@ use crate::bindings::{
     report::fake::ReportLibraryFake,
     time::fake::TimeLibraryFake,
 };
-
-#[cfg(feature = "fake_bindings")]
-use crate::register_lib;
 
 #[wasm_bindgen]
 extern "C" {

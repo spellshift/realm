@@ -1,5 +1,5 @@
 use super::utils::{compare_values, get_type_name};
-use crate::ast::Value;
+use super::super::ast::Value;
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};

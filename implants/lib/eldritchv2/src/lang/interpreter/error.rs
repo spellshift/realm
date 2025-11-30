@@ -1,4 +1,4 @@
-use crate::token::Span;
+use super::super::token::Span;
 use alloc::string::{String, ToString};
 use core::fmt;
 
