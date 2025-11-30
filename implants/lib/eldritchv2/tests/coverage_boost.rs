@@ -199,7 +199,7 @@ fn test_ast_display() {
         assert(str(False) == "False")
         assert(str(1) == "1")
         assert(str("s") == "s")
-        assert(str(b"b") == "[98]")
+        assert(str(b"b") == "b")
         assert(str([1, 2]) == "[1, 2]")
         assert(str((1, 2)) == "(1, 2)")
         assert(str((1,)) == "(1,)")

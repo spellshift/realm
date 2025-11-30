@@ -12,6 +12,7 @@ use core::cell::RefCell;
 pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
     vec![
         ("print", builtin_print as BuiltinFn),
+        ("pprint", builtin_pprint),
         ("len", builtin_len),
         ("range", builtin_range),
         ("type", builtin_type),
@@ -41,6 +42,102 @@ fn builtin_print(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Valu
     let _ = args;
     Ok(Value::None)
 }
+
+fn builtin_pprint(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    let indent_width = if args.len() > 1 {
+        match args[1] {
+            Value::Int(i) => i.max(0) as usize,
+            _ => return Err("pprint() indent must be an integer".to_string()),
+        }
+    } else {
+        2 // Default indent
+    };
+
+    if args.is_empty() {
+        return Err("pprint() takes at least 1 argument".to_string());
+    }
+
+    let output = pretty_format(&args[0], 0, indent_width);
+
+    #[cfg(feature = "std")]
+    {
+        println!("{}", output);
+    }
+    #[cfg(not(feature = "std"))]
+    let _ = output;
+
+    Ok(Value::None)
+}
+
+fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> String {
+    let indent_str = " ".repeat(current_indent);
+
+    match val {
+        Value::List(l) => {
+            let list = l.borrow();
+            if list.is_empty() {
+                return "[]".to_string();
+            }
+            let mut s = "[\n".to_string();
+            let next_indent = current_indent + indent_width;
+            let next_indent_str = " ".repeat(next_indent);
+
+            for (i, item) in list.iter().enumerate() {
+                s.push_str(&format!("{}{}", next_indent_str, pretty_format(item, next_indent, indent_width)));
+                if i < list.len() - 1 {
+                    s.push_str(",");
+                }
+                s.push('\n');
+            }
+            s.push_str(&format!("{}]", indent_str));
+            s
+        }
+        Value::Dictionary(d) => {
+            let dict = d.borrow();
+            if dict.is_empty() {
+                return "{}".to_string();
+            }
+            let mut s = "{\n".to_string();
+            let next_indent = current_indent + indent_width;
+            let next_indent_str = " ".repeat(next_indent);
+
+            for (i, (key, value)) in dict.iter().enumerate() {
+                s.push_str(&format!("{}: {}", next_indent_str, key));
+                s.push_str(": ");
+                s.push_str(&pretty_format(value, next_indent, indent_width));
+                if i < dict.len() - 1 {
+                    s.push_str(",");
+                }
+                s.push('\n');
+            }
+            s.push_str(&format!("{}}}", indent_str));
+            s
+        }
+        Value::Tuple(t) => {
+            // Treat tuples similar to lists but with ()
+            if t.is_empty() {
+                return "()".to_string();
+            }
+            let mut s = "(\n".to_string();
+            let next_indent = current_indent + indent_width;
+            let next_indent_str = " ".repeat(next_indent);
+
+            for (i, item) in t.iter().enumerate() {
+                 s.push_str(&format!("{}{}", next_indent_str, pretty_format(item, next_indent, indent_width)));
+                 if i < t.len() - 1 {
+                     s.push_str(",");
+                 } else if t.len() == 1 {
+                     s.push_str(","); // Single item tuple needs comma
+                 }
+                 s.push('\n');
+            }
+            s.push_str(&format!("{})", indent_str));
+            s
+        }
+        _ => format!("{}", val),
+    }
+}
+
 
 fn builtin_len(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     match &args[0] {
@@ -77,7 +174,14 @@ fn builtin_bool(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value
 }
 
 fn builtin_str(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
-    Ok(Value::String(args[0].to_string()))
+    if let Value::Bytes(b) = &args[0] {
+        match String::from_utf8(b.clone()) {
+            Ok(s) => Ok(Value::String(s)),
+            Err(_) => Ok(Value::String(format!("{:?}", b))), // Fallback to representation if not valid UTF-8
+        }
+    } else {
+        Ok(Value::String(args[0].to_string()))
+    }
 }
 
 fn builtin_int(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {

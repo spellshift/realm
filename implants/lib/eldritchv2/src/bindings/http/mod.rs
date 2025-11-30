@@ -13,8 +13,8 @@ pub trait HttpLibrary {
     fn download(&self, url: String, path: String) -> Result<(), String>;
 
     #[eldritch_method]
-    fn request(&self, method: String, url: String, headers: Option<BTreeMap<String, String>>, body: Option<Vec<u8>>) -> Result<BTreeMap<String, Value>, String>;
+    fn get(&self, url: String, headers: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
-    fn upload(&self, url: String, path: String) -> Result<(), String>;
+    fn post(&self, url: String, body: Option<Vec<u8>>, headers: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String>;
 }
