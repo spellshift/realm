@@ -177,20 +177,6 @@ export const GET_REPOSITORY_QUERY = gql`
     }
 `;
 
-export const GET_HOST_TASK_SUMMARY = gql`
-    query GetTasks($where: TaskWhereInput) {
-            tasks(where: $where){
-        	    totalCount
-                edges{
-                    node{
-                        execFinishedAt
-                        outputSize
-                    }
-                }
-        }
-    }
-`;
-
 export const GET_QUEST_QUERY = gql`
     query GetQuests(
         $where: QuestWhereInput,
@@ -362,28 +348,6 @@ export const GET_TASK_QUERY = gql`
     }
 `;
 
-export const GET_TASK_DETAILS_QUERY = gql`
-    query GetOutputForTask($where: TaskWhereInput) {
-            tasks(where: $where, ){
-    				edges{
-                        node{
-                            id
-                            output
-                            shells{
-                                id
-                                closedAt
-                                activeUsers{
-                                    id
-                                    name
-                                    photoURL
-                                    isActivated
-                                    isAdmin
-                                }
-                            }
-                        }
-            }
-    }
-}`
 
 export const GET_USER_QUERY = gql`
     query GetUserQuery($where: UserWhereInput){

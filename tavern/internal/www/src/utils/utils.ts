@@ -10,9 +10,6 @@ export function classNames(...classes: string[]) {
 export const convertArrayToObject = (array: Array<any>) =>
     array.reduce((acc, curr) => (acc[curr] = curr, acc), {});
 
-export const convertArrayOfObjectsToObject = (array: Array<any>, key: string) =>
-    array.reduce((acc, curr) => (acc[curr[key]] = curr, acc), {});
-
 export const safelyJsonParse = (value: string) => {
     let error = false;
     let params = [];

@@ -16,7 +16,6 @@ interface HostsHook {
 }
 
 export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
-    // const currentDate = new Date();
     const [page, setPage] = useState<number>(1);
     const {filters} = useFilters();
 
