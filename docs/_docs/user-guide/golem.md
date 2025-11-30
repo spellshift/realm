@@ -18,10 +18,13 @@ You can leverage the power of Eldritch with minimal exposure in the system proce
 ```bash
 git clone git@github.com:spellshift/realm.git
 cd realm/implants/golem
+
+# Launch and interactive REPL
 cargo run -- -i
-# - or -
+
+# Or run a tome on disk
 cargo build --release && \
-    ../target/debug/golem ../../tests/golem_cli_test/tomes/hello_world.tome
+    ../target/release/golem ../../bin/golem_cli_test/hello_world.eldritch
 ```
 
 ## Creating and testing tomes
@@ -31,7 +34,7 @@ Golem operates in three different modes:
 
 - Interactive `-i`
 - With embedded tomes _no args_
-- On a specific tome `/path/to/tome/eldritch.main`
+- On a specific tome `/path/to/tome/main.eldritch`
 
 In this guide we'll leverage the last one.
 

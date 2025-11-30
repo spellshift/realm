@@ -13,6 +13,9 @@ Imix is an offensive security implant designed for stealthy communication and ad
 
 Imix has compile-time configuration, that may be specified using environment variables during `cargo build`.
 
+**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
+Building in the dev container limits variables that might cause issues and is the most tested way to compile.
+
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:8000` | No |
