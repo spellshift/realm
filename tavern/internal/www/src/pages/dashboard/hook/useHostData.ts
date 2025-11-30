@@ -30,11 +30,6 @@ const defaultHostUsage: HostUsageByKind = {
     platform: []
 };
 
-/**
- * Hook to format host data from GET_HOST_QUERY for dashboard charts
- * @param data - Raw host query data from GET_HOST_QUERY
- * @returns Formatted host activity data by group/service/platform and online/offline statistics
- */
 export const useHostData = (data: HostQueryTopLevel | undefined) => {
     const [loading, setLoading] = useState(false);
     const [hostActivity, setHostActivity] = useState<HostUsageByKind>(defaultHostUsage);

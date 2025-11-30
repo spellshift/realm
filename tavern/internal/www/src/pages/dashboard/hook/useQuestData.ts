@@ -25,11 +25,6 @@ type QuestFormattedData = {
     totalErrors: number;
 }
 
-/**
- * Hook to format task data from GET_TASK_QUERY for dashboard charts
- * @param data - Raw task query data from GET_TASK_QUERY
- * @returns Formatted data for QuestCard charts including timeline, tome usage, group/service usage, and statistics
- */
 export const useQuestData = (data: TaskQueryTopLevel | undefined) => {
     const [loading, setLoading] = useState(false);
     const [formattedData, setFormattedData] = useState<QuestFormattedData>({

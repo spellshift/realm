@@ -41,13 +41,9 @@ export const useDashboardData = (): UseDashboardDataReturn => {
         offlineHostCount
     } = useHostData(hostData);
 
-    // Combine all loading states
     const loading = taskLoading || hostLoading || questFormatLoading || hostFormatLoading;
-
-    // Combine all error states
     const error = taskError || hostError;
 
-    // Memoize the complete dashboard data to prevent unnecessary re-renders
     const dashboardData = useMemo(() => ({
         questData: {
             formattedData,
