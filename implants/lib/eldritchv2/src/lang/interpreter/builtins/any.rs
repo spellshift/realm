@@ -1,0 +1,27 @@
+use alloc::string::String;
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use crate::lang::ast::{Environment, Value};
+use crate::lang::interpreter::utils::{get_type_name, is_truthy};
+use alloc::format;
+
+pub fn builtin_any(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    if args.len() != 1 {
+        return Err(format!("any() takes exactly one argument ({} given)", args.len()));
+    }
+
+    let items = match &args[0] {
+        Value::List(l) => l.borrow().clone(),
+        Value::Tuple(t) => t.clone(),
+        Value::Set(s) => s.borrow().iter().cloned().collect(),
+        Value::Dictionary(d) => d.borrow().keys().map(|k| Value::String(k.clone())).collect(),
+        _ => return Err(format!("'{}' object is not iterable", get_type_name(&args[0]))),
+    };
+
+    for item in items {
+        if is_truthy(&item) {
+            return Ok(Value::Bool(true));
+        }
+    }
+    Ok(Value::Bool(false))
+}

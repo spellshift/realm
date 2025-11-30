@@ -1,11 +1,12 @@
 use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
-use alloc::collections::BTreeMap;
+use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::rc::Rc;
 use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
+use core::cmp::Ordering;
 use core::fmt;
 
 #[derive(Debug)]
@@ -69,11 +70,13 @@ pub enum Value {
     None,
     Bool(bool),
     Int(i64),
+    Float(f64),
     String(String),
     Bytes(Vec<u8>),
     List(Rc<RefCell<Vec<Value>>>),
     Tuple(Vec<Value>),
     Dictionary(Rc<RefCell<BTreeMap<String, Value>>>),
+    Set(Rc<RefCell<BTreeSet<Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),
     NativeFunctionWithKwargs(String, BuiltinFnWithKwargs),
@@ -81,18 +84,20 @@ pub enum Value {
     Foreign(Arc<dyn ForeignValue>),
 }
 
-// Manual Debug implementation for Value because NativeFunction/BuiltinFn are not Debug
+// Manual Debug implementation for Value
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::None => write!(f, "None"),
             Value::Bool(b) => write!(f, "Bool({})", b),
             Value::Int(i) => write!(f, "Int({})", i),
+            Value::Float(fl) => write!(f, "Float({})", fl),
             Value::String(s) => write!(f, "String({:?})", s),
             Value::Bytes(b) => write!(f, "Bytes({:?})", b),
             Value::List(l) => write!(f, "List({:?})", l),
             Value::Tuple(t) => write!(f, "Tuple({:?})", t),
             Value::Dictionary(d) => write!(f, "Dictionary({:?})", d),
+            Value::Set(s) => write!(f, "Set({:?})", s),
             Value::Function(func) => write!(f, "Function({:?})", func),
             Value::NativeFunction(name, _) => write!(f, "NativeFunction({})", name),
             Value::NativeFunctionWithKwargs(name, _) => write!(f, "NativeFunctionWithKwargs({})", name),
@@ -108,6 +113,7 @@ impl PartialEq for Value {
             (Value::None, Value::None) => true,
             (Value::Bool(a), Value::Bool(b)) => a == b,
             (Value::Int(a), Value::Int(b)) => a == b,
+            (Value::Float(a), Value::Float(b)) => a == b, // Note: NaN != NaN usually, but handled by PartialOrd? No, PartialEq
             (Value::String(a), Value::String(b)) => a == b,
             (Value::Bytes(a), Value::Bytes(b)) => a == b,
             (Value::List(a), Value::List(b)) => {
@@ -117,6 +123,12 @@ impl PartialEq for Value {
                 a.borrow().eq(&*b.borrow())
             }
             (Value::Dictionary(a), Value::Dictionary(b)) => {
+                if Rc::ptr_eq(a, b) {
+                    return true;
+                }
+                a.borrow().eq(&*b.borrow())
+            }
+            (Value::Set(a), Value::Set(b)) => {
                 if Rc::ptr_eq(a, b) {
                     return true;
                 }
@@ -135,13 +147,102 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
-// Moved Display implementation here so it is available globally
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Define an ordering between types:
+        // None < Bool < Int < Float < String < Bytes < List < Tuple < Dict < Set < Function < Native < Bound < Foreign
+        let self_discriminant = self.discriminant_value();
+        let other_discriminant = other.discriminant_value();
+
+        if self_discriminant != other_discriminant {
+            return self_discriminant.cmp(&other_discriminant);
+        }
+
+        match (self, other) {
+            (Value::None, Value::None) => Ordering::Equal,
+            (Value::Bool(a), Value::Bool(b)) => a.cmp(b),
+            (Value::Int(a), Value::Int(b)) => a.cmp(b),
+            (Value::Float(a), Value::Float(b)) => a.total_cmp(b),
+            (Value::String(a), Value::String(b)) => a.cmp(b),
+            (Value::Bytes(a), Value::Bytes(b)) => a.cmp(b),
+            (Value::List(a), Value::List(b)) => {
+                if Rc::ptr_eq(a, b) {
+                    return Ordering::Equal;
+                }
+                a.borrow().cmp(&*b.borrow())
+            }
+            (Value::Tuple(a), Value::Tuple(b)) => a.cmp(b),
+            (Value::Dictionary(a), Value::Dictionary(b)) => {
+                 if Rc::ptr_eq(a, b) {
+                    return Ordering::Equal;
+                }
+                // BTreeMap implements Ord
+                a.borrow().cmp(&*b.borrow())
+            }
+             (Value::Set(a), Value::Set(b)) => {
+                 if Rc::ptr_eq(a, b) {
+                    return Ordering::Equal;
+                }
+                // BTreeSet implements Ord
+                a.borrow().cmp(&*b.borrow())
+            }
+            // For functions and others, we just compare pointers or names as best effort
+            // This is primarily to satisfy BTreeSet requirement, not for user-facing logical ordering necessarily.
+            (Value::Function(a), Value::Function(b)) => a.name.cmp(&b.name),
+            (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a.cmp(b),
+            (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => a.cmp(b),
+            (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => {
+                match r1.cmp(r2) {
+                    Ordering::Equal => n1.cmp(n2),
+                    ord => ord,
+                }
+            }
+            (Value::Foreign(a), Value::Foreign(b)) => {
+                let p1 = Arc::as_ptr(a) as *const ();
+                let p2 = Arc::as_ptr(b) as *const ();
+                p1.cmp(&p2)
+            }
+            _ => Ordering::Equal, // Should be covered by discriminant check
+        }
+    }
+}
+
+impl Value {
+    fn discriminant_value(&self) -> u8 {
+        match self {
+            Value::None => 0,
+            Value::Bool(_) => 1,
+            Value::Int(_) => 2,
+            Value::Float(_) => 3,
+            Value::String(_) => 4,
+            Value::Bytes(_) => 5,
+            Value::List(_) => 6,
+            Value::Tuple(_) => 7,
+            Value::Dictionary(_) => 8,
+            Value::Set(_) => 9,
+            Value::Function(_) => 10,
+            Value::NativeFunction(_, _) => 11,
+            Value::NativeFunctionWithKwargs(_, _) => 12,
+            Value::BoundMethod(_, _) => 13,
+            Value::Foreign(_) => 14,
+        }
+    }
+}
+
+// Display implementation
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::None => write!(f, "None"),
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
             Value::Int(i) => write!(f, "{}", i),
+            Value::Float(fl) => write!(f, "{:?}", fl), // Use Debug for floats to get decent formatting (1.0 etc)
             Value::String(s) => write!(f, "{}", s),
             Value::Bytes(b) => write!(f, "{:?}", b),
             Value::List(l) => {
@@ -179,7 +280,17 @@ impl fmt::Display for Value {
                 }
                 write!(f, "}}")
             }
-            // For functions, just print name to avoid circular dep with get_type_name
+            Value::Set(s) => {
+                write!(f, "{{")?;
+                let set = s.borrow();
+                for (i, v) in set.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", v)?;
+                }
+                write!(f, "}}")
+            }
             Value::Function(func) => write!(f, "<function {}>", func.name),
             Value::NativeFunction(name, _) => write!(f, "<native function {}>", name),
             Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {}>", name),
@@ -254,8 +365,8 @@ pub struct Stmt {
 #[derive(Debug, Clone)]
 pub enum StmtKind {
     Expression(Expr),
-    Assignment(Expr, Expr), // Changed from String to Expr for unpacking
-    AugmentedAssignment(Expr, TokenKind, Expr), // Target, Op, Value
+    Assignment(Expr, Expr),
+    AugmentedAssignment(Expr, TokenKind, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
     Def(String, Vec<Param>, Vec<Stmt>),

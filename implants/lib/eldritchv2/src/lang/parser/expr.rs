@@ -470,6 +470,11 @@ impl Parser {
             return Ok(self.make_expr(ExprKind::Literal(Value::Int(i)), span, span));
         }
 
+        if let TokenKind::Float(f) = token.kind {
+            self.advance();
+            return Ok(self.make_expr(ExprKind::Literal(Value::Float(f)), span, span));
+        }
+
         if let TokenKind::String(s) = &token.kind {
             self.advance();
             return Ok(self.make_expr(ExprKind::Literal(Value::String(s.clone())), span, span));
