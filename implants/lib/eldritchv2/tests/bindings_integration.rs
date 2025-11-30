@@ -3,18 +3,18 @@ mod integration {
     extern crate alloc;
     use eldritchv2::{Interpreter, register_lib};
     use eldritchv2::bindings::{
-        agent::AgentLibraryFake,
-        assets::AssetsLibraryFake,
-        crypto::CryptoLibraryFake,
-        file::FileLibraryFake,
-        http::HttpLibraryFake,
-        pivot::PivotLibraryFake,
-        process::ProcessLibraryFake,
-        random::RandomLibraryFake,
-        regex::RegexLibraryFake,
-        report::ReportLibraryFake,
-        sys::SysLibraryFake,
-        time::TimeLibraryFake,
+        agent::fake::AgentLibraryFake,
+        assets::fake::AssetsLibraryFake,
+        crypto::fake::CryptoLibraryFake,
+        file::fake::FileLibraryFake,
+        http::fake::HttpLibraryFake,
+        pivot::fake::PivotLibraryFake,
+        process::fake::ProcessLibraryFake,
+        random::fake::RandomLibraryFake,
+        regex::fake::RegexLibraryFake,
+        report::fake::ReportLibraryFake,
+        sys::fake::SysLibraryFake,
+        time::fake::TimeLibraryFake,
     };
     use alloc::string::ToString;
 

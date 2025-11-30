@@ -1,0 +1,33 @@
+use super::*;
+use eldritch_macros::eldritch_library_impl;
+use crate::ast::Value;
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::collections::BTreeMap;
+
+#[derive(Default, Debug)]
+#[eldritch_library_impl(PivotLibrary)]
+pub struct PivotLibraryFake;
+
+impl PivotLibrary for PivotLibraryFake {
+    fn list(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        Ok(Vec::new())
+    }
+
+    fn start_tcp(&self, _bind_addr: String) -> Result<String, String> {
+        Ok(String::from("pivot-id"))
+    }
+
+    fn stop(&self, _id: String) -> Result<(), String> { Ok(()) }
+}
+
+#[cfg(all(test, feature = "fake_bindings"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pivot_fake() {
+        let pivot = PivotLibraryFake::default();
+        assert_eq!(pivot.start_tcp("0.0.0.0:80".into()).unwrap(), "pivot-id");
+    }
+}
