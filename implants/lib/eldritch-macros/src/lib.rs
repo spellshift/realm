@@ -69,8 +69,8 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
             fn _eldritch_call_method(
                 &self,
                 name: &str,
-                args: &[eldritchv2::Value],
-                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>,
+                _eldritch_args: &[eldritchv2::Value],
+                _eldritch_kwargs: &alloc::collections::BTreeMap<String, eldritchv2::Value>,
             ) -> Result<eldritchv2::Value, String>;
         }
 
@@ -90,8 +90,8 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
             fn _eldritch_call_method(
                 &self,
                 name: &str,
-                args: &[eldritchv2::Value],
-                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>,
+                _eldritch_args: &[eldritchv2::Value],
+                _eldritch_kwargs: &alloc::collections::BTreeMap<String, eldritchv2::Value>,
             ) -> Result<eldritchv2::Value, String> {
                  match name {
                     #(#method_dispatches)*
@@ -129,7 +129,7 @@ pub fn eldritch_library_impl(attr: TokenStream, item: TokenStream) -> TokenStrea
                 &self,
                 name: &str,
                 args: &[eldritchv2::Value],
-                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>,
+                kwargs: &alloc::collections::BTreeMap<String, eldritchv2::Value>,
             ) -> Result<eldritchv2::Value, String> {
                 <Self as #adapter_name>::_eldritch_call_method(self, name, args, kwargs)
             }
@@ -166,9 +166,9 @@ fn generate_args_parsing(sig: &Signature) -> (proc_macro2::TokenStream, proc_mac
 
                 if is_str_ref {
                     parsing.push(quote! {
-                        let #pat: String = if #arg_idx < args.len() {
-                            eldritchv2::conversion::FromValue::from_value(&args[#arg_idx])?
-                        } else if let Some(val) = kwargs.get(#arg_name_str) {
+                        let #pat: String = if #arg_idx < _eldritch_args.len() {
+                            eldritchv2::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
+                        } else if let Some(val) = _eldritch_kwargs.get(#arg_name_str) {
                             eldritchv2::conversion::FromValue::from_value(val)?
                         } else {
                             return Err(format!("Missing argument: {}", #arg_name_str));
@@ -177,9 +177,9 @@ fn generate_args_parsing(sig: &Signature) -> (proc_macro2::TokenStream, proc_mac
                     call_args.push(quote!(&#pat));
                 } else {
                     parsing.push(quote! {
-                        let #pat: #ty = if #arg_idx < args.len() {
-                            eldritchv2::conversion::FromValue::from_value(&args[#arg_idx])?
-                        } else if let Some(val) = kwargs.get(#arg_name_str) {
+                        let #pat: #ty = if #arg_idx < _eldritch_args.len() {
+                            eldritchv2::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
+                        } else if let Some(val) = _eldritch_kwargs.get(#arg_name_str) {
                             eldritchv2::conversion::FromValue::from_value(val)?
                         } else {
                             return Err(format!("Missing argument: {}", #arg_name_str));

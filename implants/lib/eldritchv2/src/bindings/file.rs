@@ -32,10 +32,8 @@ pub trait FileLibrary {
     #[eldritch_method]
     fn is_file(&self, path: String) -> Result<bool, String>;
 
-    /*
     #[eldritch_method]
     fn list(&self, path: String) -> Result<Vec<BTreeMap<String, Value>>, String>;
-    */
 
     #[eldritch_method]
     fn mkdir(&self, path: String, parent: Option<bool>) -> Result<(), String>;
@@ -64,10 +62,8 @@ pub trait FileLibrary {
     #[eldritch_method]
     fn temp_file(&self, name: Option<String>) -> Result<String, String>;
 
-    /*
     #[eldritch_method]
     fn template(&self, template_path: String, dst: String, args: BTreeMap<String, Value>, autoescape: bool) -> Result<(), String>;
-    */
 
     #[eldritch_method]
     fn timestomp(&self, src: String, dst: String) -> Result<(), String>;
@@ -75,10 +71,8 @@ pub trait FileLibrary {
     #[eldritch_method]
     fn write(&self, path: String, content: String) -> Result<(), String>;
 
-    /*
     #[eldritch_method]
     fn find(&self, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<i64>, modified_time: Option<i64>, create_time: Option<i64>) -> Result<Vec<String>, String>;
-    */
 }
 
 #[cfg(feature = "fake_bindings")]
@@ -133,14 +127,12 @@ impl FileLibrary for FileLibraryFake {
         Ok(self.files.lock().contains_key(&path))
     }
 
-    /*
     fn list(&self, _path: String) -> Result<Vec<BTreeMap<String, Value>>, String> {
         // Return dummy file info
         let mut map = BTreeMap::new();
         map.insert("file_name".into(), Value::String("foo".into()));
         Ok(vec![map])
     }
-    */
 
     fn mkdir(&self, _path: String, _parent: Option<bool>) -> Result<(), String> { Ok(()) }
 
@@ -179,9 +171,7 @@ impl FileLibrary for FileLibraryFake {
         Ok(name.unwrap_or_else(|| String::from("/tmp/random")))
     }
 
-    /*
     fn template(&self, _template_path: String, _dst: String, _args: BTreeMap<String, Value>, _autoescape: bool) -> Result<(), String> { Ok(()) }
-    */
 
     fn timestomp(&self, _src: String, _dst: String) -> Result<(), String> { Ok(()) }
 
@@ -190,11 +180,9 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
-    /*
     fn find(&self, _path: String, _name: Option<String>, _file_type: Option<String>, _permissions: Option<i64>, _modified_time: Option<i64>, _create_time: Option<i64>) -> Result<Vec<String>, String> {
         Ok(Vec::new())
     }
-    */
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
