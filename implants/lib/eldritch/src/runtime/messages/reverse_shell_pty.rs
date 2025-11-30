@@ -119,6 +119,8 @@ impl AsyncDispatcher for ReverseShellPTYMessage {
                         Err(TryRecvError::Disconnected) => {
                             #[cfg(debug_assertions)]
                             log::info!("closing output stream, exit channel closed");
+
+                            break;
                         }
                     }
 
