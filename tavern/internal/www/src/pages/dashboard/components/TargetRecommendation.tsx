@@ -1,12 +1,12 @@
 import { FC } from "react";
-import { HostType, TomeTag } from "../../../utils/consts";
 import { getOfflineOnlineStatus } from "../../../utils/utils";
 import { TaskChartKeys } from "../../../utils/enums";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useNavigate } from "react-router-dom";
+import { HostEdge, TagEdge } from "../../../utils/interfacesQuery";
 
 type TargetReccomendationProps = {
-    hosts: Array<HostType>;
+    hosts: Array<HostEdge>;
     data: Array<any>;
     tagKind: string;
 }
@@ -18,8 +18,8 @@ const TargetReccomendation: FC<TargetReccomendationProps> = ({ hosts, data, tagK
 
     const getTotalActiveBeaconsForTagKind = () => {
         const returnedValue = hosts.reduce((acc, curr) => {
-            const matchesGroup = curr?.tags?.find((tag: TomeTag) => { return tag.name === tagWithFewestTasks.name });
-            const beaconStatus = getOfflineOnlineStatus(curr.beacons || [])
+            const matchesGroup = curr?.node?.tags?.edges.find((tag: TagEdge) => { return tag.node.name === tagWithFewestTasks.name });
+            const beaconStatus = getOfflineOnlineStatus(curr?.node.beacons?.edges || [])
             if (matchesGroup) {
                 return acc += beaconStatus.online;
             }

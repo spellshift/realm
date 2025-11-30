@@ -1,15 +1,22 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 import DashboardStatistic from "./DashboardStatistic";
 import TaskBarChart from "./QuestTaskBarChart";
 import SingleDropdownSelector from "../../../components/tavern-base-ui/SingleDropdownSelector";
-import { HostType } from "../../../utils/consts";
 import TagBarChart from "./QuestTagBarChart";
 import TargetReccomendation from "./TargetRecommendation";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import TomeBarChart from "./QuestTomeBarChart";
+import { HostEdge } from "../../../utils/interfacesQuery";
+import { QuestFormattedData } from "../types";
 
-const QuestCard = ({ formattedData, hosts, loading }: { formattedData: any, hosts: Array<HostType>, loading: boolean }) => {
+interface QuestCardProps {
+    formattedData: QuestFormattedData;
+    hosts: HostEdge[];
+    loading: boolean;
+}
+
+const QuestCard = ({ formattedData, hosts, loading }: QuestCardProps) => {
 
     const [selectedOption, setSelectedOption] = useState({
         label: "Creation time",
@@ -40,7 +47,7 @@ const QuestCard = ({ formattedData, hosts, loading }: { formattedData: any, host
             case "creation_time":
                 return (
                     <div className='h-80 overflow-y-scroll'>
-                        <TaskBarChart data={formattedData?.taskTimelime || []} taskTactics={formattedData.taskTactics} loading={loading} />
+                        <TaskBarChart data={formattedData?.taskTimeline || []} taskTactics={formattedData.taskTactics} loading={loading} />
                     </div>
                 );
             case "group":

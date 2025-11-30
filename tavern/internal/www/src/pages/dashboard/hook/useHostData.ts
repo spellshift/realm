@@ -1,8 +1,8 @@
 import { isAfter } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 
-import { HostType, TomeTag } from "../../../utils/consts";
 import { getOfflineOnlineStatus } from "../../../utils/utils";
+import { HostEdge, HostQueryTopLevel, TagEdge } from "../../../utils/interfacesQuery";
 
 type UniqueCountHost = {
     tagId: string,
@@ -14,7 +14,7 @@ type UniqueCountHost = {
     hostsTotal: number,
 }
 
-type HostUsageByKindProps = {
+type HostUsageByKind = {
     group: Array<UniqueCountHost>,
     service: Array<UniqueCountHost>,
     platform: Array<UniqueCountHost>,
@@ -24,33 +24,37 @@ type UniqueCountHostByTag = {
     [key: string]: UniqueCountHost
 }
 
-const defaultHostUsage = {
+const defaultHostUsage: HostUsageByKind = {
     group: [],
     service: [],
     platform: []
-} as HostUsageByKindProps;
+};
 
-
-export const useHostAcitvityData = (data: Array<HostType>) => {
+/**
+ * Hook to format host data from GET_HOST_QUERY for dashboard charts
+ * @param data - Raw host query data from GET_HOST_QUERY
+ * @returns Formatted host activity data by group/service/platform and online/offline statistics
+ */
+export const useHostData = (data: HostQueryTopLevel | undefined) => {
     const [loading, setLoading] = useState(false);
-    const [hostActivity, setHostActivity] = useState<any>(defaultHostUsage);
+    const [hostActivity, setHostActivity] = useState<HostUsageByKind>(defaultHostUsage);
 
     const [onlineHostCount, setOnlineHostCount] = useState(0);
     const [offlineHostCount, setOfflineHostCount] = useState(0);
     const [totalHostCount, setTotalHostCount] = useState(0);
 
-    const applyUniqueTermData = useCallback((term: string | undefined, id: string | undefined, uniqueObject: UniqueCountHostByTag, host: HostType, beaconStatus: any) => {
+    const applyUniqueTermData = useCallback((term: string | undefined, id: string | undefined, uniqueObject: UniqueCountHostByTag, host: HostEdge, beaconStatus: any) => {
         if (!term || !id) {
             return uniqueObject;
         }
 
         if (term in uniqueObject) {
             const currDate = uniqueObject[term]?.lastSeenAt ? new Date(uniqueObject[term].lastSeenAt || "") : new Date("1999/08/08");
-            const newDate = host?.lastSeenAt ? new Date(host?.lastSeenAt || "") : new Date("1999/07/07");;
+            const newDate = host?.node.lastSeenAt ? new Date(host?.node.lastSeenAt || "") : new Date("1999/07/07");;
             const replaceCallback = isAfter(newDate, currDate);
 
             if (replaceCallback) {
-                uniqueObject[term].lastSeenAt = host.lastSeenAt;
+                uniqueObject[term].lastSeenAt = host.node.lastSeenAt;
             }
             uniqueObject[term].total += beaconStatus.online + beaconStatus.offline;
             uniqueObject[term].online += beaconStatus.online;
@@ -65,7 +69,7 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
             uniqueObject[term] = {
                 tagId: id,
                 tag: term,
-                lastSeenAt: host.lastSeenAt,
+                lastSeenAt: host.node.lastSeenAt,
                 online: beaconStatus.online,
                 total: beaconStatus.online + beaconStatus.offline,
                 hostsOnline: beaconStatus.online > 0 ? 1 : 0,
@@ -76,19 +80,19 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
         return uniqueObject;
     }, []);
 
-    const getformattedHosts = useCallback((hosts: any) => {
-        const uniqueGroups = {};
-        const uniqueServices = {};
-        const uniquePlatform = {};
+    const formatHostData = useCallback((hosts: HostEdge[]) => {
+        const uniqueGroups: UniqueCountHostByTag = {};
+        const uniqueServices: UniqueCountHostByTag = {};
+        const uniquePlatform: UniqueCountHostByTag = {};
 
         let onlineCount = 0;
         let totalCount = 0;
         let offlineCount = 0;
 
-        hosts?.forEach((host: HostType) => {
-            const serviceTag = host?.tags ? host?.tags.find((tag: TomeTag) => tag.kind === "service") : { name: "undefined", id: "undefined" };
-            const groupTag = host?.tags ? host?.tags?.find((tag: TomeTag) => tag.kind === "group") : { name: "undefined", id: "undefined" };
-            const beaconStatus = getOfflineOnlineStatus(host.beacons || []);
+        hosts?.forEach((host: HostEdge) => {
+            const serviceTag = host?.node.tags?.edges ? host?.node?.tags?.edges.find((tag: TagEdge) => tag.node.kind === "service")?.node : { name: "undefined", id: "undefined" };
+            const groupTag = host?.node.tags?.edges ? host?.node?.tags?.edges?.find((tag: TagEdge) => tag.node.kind === "group")?.node : { name: "undefined", id: "undefined" };
+            const beaconStatus = getOfflineOnlineStatus(host?.node?.beacons?.edges || []);
 
             if (beaconStatus.online > 0) {
                 onlineCount += 1;
@@ -103,7 +107,7 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
 
             applyUniqueTermData(groupTag?.name, groupTag?.id, uniqueGroups, host, beaconStatus);
             applyUniqueTermData(serviceTag?.name, serviceTag?.id, uniqueServices, host, beaconStatus);
-            applyUniqueTermData(host.platform, host.platform, uniquePlatform, host, beaconStatus);
+            applyUniqueTermData(host.node.platform, host.node.platform, uniquePlatform, host, beaconStatus);
         });
 
         setHostActivity(
@@ -117,15 +121,15 @@ export const useHostAcitvityData = (data: Array<HostType>) => {
         setOnlineHostCount(onlineCount);
         setTotalHostCount(totalCount);
         setOfflineHostCount(offlineCount);
-    }, []);
+    }, [applyUniqueTermData]);
 
     useEffect(() => {
-        if (data && data?.length > 0) {
+        if (data && data?.hosts?.edges && data?.hosts?.edges?.length > 0) {
             setLoading(true);
-            getformattedHosts(data);
+            formatHostData(data.hosts.edges);
             setLoading(false);
         }
-    }, [data, getformattedHosts])
+    }, [data, formatHostData])
 
     return {
         loading,
