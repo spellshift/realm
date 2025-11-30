@@ -5,12 +5,20 @@ use crossterm::{
     terminal::{self, ClearType},
     ExecutableCommand, QueueableCommand,
 };
-use eldritchv2::{Interpreter, Repl, Value};
+use eldritchv2::{Interpreter, Repl, Value, register_lib};
 use eldritchv2::repl::{Input, ReplAction};
 use std::io::{self, Write};
 use std::time::Duration;
 
+#[cfg(feature = "std")]
+use eldritchv2::bindings::process::std::StdProcessLibrary;
+
 fn main() -> io::Result<()> {
+    #[cfg(feature = "std")]
+    {
+        register_lib(StdProcessLibrary::default());
+    }
+
     let mut interpreter = Interpreter::new();
     let mut repl = Repl::new();
 
