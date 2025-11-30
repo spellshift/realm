@@ -81,6 +81,54 @@ fn test_loops() {
         assert_eq(count, 4)
     "#,
     );
+
+}
+
+#[test]
+fn test_loop_scoping_rust() {
+    use eldritchv2::{Interpreter, Value};
+
+    // Test 1: Leakage of loop variable
+    {
+        let mut interp = Interpreter::new();
+        let code = r#"
+for i in range(3):
+    pass
+"#;
+        let _ = interp.interpret(code).unwrap();
+        // i should not exist
+        assert!(interp.interpret("i").is_err(), "Loop variable 'i' leaked");
+    }
+
+    // Test 2: Leakage of inner variable
+    {
+        let mut interp = Interpreter::new();
+        let code = r#"
+for i in range(1):
+    x = 100
+"#;
+        let _ = interp.interpret(code).unwrap();
+        // x should not exist
+        assert!(interp.interpret("x").is_err(), "Inner variable 'x' leaked");
+    }
+
+    // Test 3: Shadowing
+    {
+        let mut interp = Interpreter::new();
+        let code = r#"
+i = 999
+for i in range(3):
+    pass
+"#;
+        let _ = interp.interpret(code).unwrap();
+
+        let result = interp.interpret("i");
+        match result {
+            Ok(Value::Int(val)) => assert_eq!(val, 999, "Outer 'i' should be preserved"),
+            Ok(v) => panic!("Expected Int(999), got {:?}", v),
+            Err(e) => panic!("Outer 'i' should exist: {}", e),
+        }
+    }
 }
 
 #[test]
