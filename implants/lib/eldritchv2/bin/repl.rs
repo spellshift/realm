@@ -13,7 +13,8 @@ use std::time::Duration;
 #[cfg(feature = "stdlib")]
 use eldritchv2::bindings::{
   file::std::StdFileLibrary,
-  process:std::StdProcessLibrary,
+  process::std::StdProcessLibrary,
+  random::std::StdRandomLibrary,
 };
 
 #[cfg(feature = "fake_bindings")]
@@ -25,6 +26,7 @@ fn main() -> io::Result<()> {
     {
       register_lib(StdFileLibrary::default());
       register_lib(StdProcessLibrary::default());
+      register_lib(StdRandomLibrary::default());
     }
 
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
