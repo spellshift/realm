@@ -143,7 +143,7 @@ impl WasmRepl {
         }
     }
 
-    pub fn handle_key(&mut self, key: &str, ctrl: bool, _alt: bool, _meta: bool, shift: bool) -> ExecutionResult {
+    pub fn handle_key(&mut self, key: &str, ctrl: bool, _alt: bool, meta: bool, shift: bool) -> ExecutionResult {
         let input = match key {
             "Enter" => if shift { Input::ForceEnter } else { Input::Enter },
             "Backspace" => Input::Backspace,
@@ -155,6 +155,8 @@ impl WasmRepl {
             "Home" => Input::Home,
             "End" => Input::End,
             "Tab" => Input::Tab,
+            "a" if ctrl => Input::Home,
+            "e" if ctrl => Input::End,
             "c" if ctrl => Input::Cancel,
             "l" if ctrl => Input::ClearScreen,
             "u" if ctrl => Input::KillLine,
@@ -165,9 +167,9 @@ impl WasmRepl {
                 // If ctrl is pressed but not matched above, we might still want to pass it through if it's a char?
                 // But generally ctrl+char are commands.
                 // The original code:
-                if key.len() == 1 && !ctrl {
+                if key.len() == 1 && !ctrl && !meta {
                     Input::Char(key.chars().next().unwrap())
-                } else if key.len() == 1 && ctrl {
+                } else if key.len() == 1 && (ctrl || meta) {
                      // For search, we might need ctrl chars later, but for now strict mapping
                      return ExecutionResult { output: None, echo: None, clear: false };
                 } else {
