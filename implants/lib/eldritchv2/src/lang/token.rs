@@ -71,6 +71,7 @@ pub enum TokenKind {
     String(String),
     Bytes(Vec<u8>),
     Integer(i64),
+    Float(f64),
     FStringContent(Vec<Token>),
 
     // Keywords
@@ -89,7 +90,7 @@ pub enum TokenKind {
     Not,
     Break,
     Continue,
-    Pass, // Added Pass
+    Pass,
     Lambda,
 
     // Structural
@@ -116,7 +117,7 @@ impl TokenKind {
             "not" => Some(TokenKind::Not),
             "break" => Some(TokenKind::Break),
             "continue" => Some(TokenKind::Continue),
-            "pass" => Some(TokenKind::Pass), // Added mapping
+            "pass" => Some(TokenKind::Pass),
             "lambda" => Some(TokenKind::Lambda),
             _ => None,
         }

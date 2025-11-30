@@ -10,10 +10,12 @@ pub fn is_truthy(value: &Value) -> bool {
         Value::None => false,
         Value::Bool(b) => *b,
         Value::Int(i) => *i != 0,
+        Value::Float(f) => *f != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Bytes(b) => !b.is_empty(),
         Value::List(l) => !l.borrow().is_empty(),
         Value::Dictionary(d) => !d.borrow().is_empty(),
+        Value::Set(s) => !s.borrow().is_empty(),
         Value::Tuple(t) => !t.is_empty(),
         Value::Function(_)
         | Value::NativeFunction(_, _)
@@ -28,10 +30,12 @@ pub fn get_type_name(value: &Value) -> String {
         Value::None => "NoneType".to_string(),
         Value::Bool(_) => "bool".to_string(),
         Value::Int(_) => "int".to_string(),
+        Value::Float(_) => "float".to_string(),
         Value::String(_) => "string".to_string(),
         Value::Bytes(_) => "bytes".to_string(),
         Value::List(_) => "list".to_string(),
         Value::Dictionary(_) => "dict".to_string(),
+        Value::Set(_) => "set".to_string(),
         Value::Tuple(_) => "tuple".to_string(),
         Value::Function(_)
         | Value::NativeFunction(_, _)
@@ -59,6 +63,22 @@ pub fn get_dir_attributes(value: &Value) -> Vec<String> {
             "popitem".to_string(),
             "update".to_string(),
             "values".to_string(),
+        ],
+        Value::Set(_) => vec![
+            "add".to_string(),
+            "clear".to_string(),
+            "contains".to_string(), // not standard python but useful
+            "difference".to_string(),
+            "discard".to_string(),
+            "intersection".to_string(),
+            "isdisjoint".to_string(),
+            "issubset".to_string(),
+            "issuperset".to_string(),
+            "pop".to_string(),
+            "remove".to_string(),
+            "symmetric_difference".to_string(),
+            "union".to_string(),
+            "update".to_string(),
         ],
         Value::String(_) => vec![
             "endswith".to_string(),
@@ -149,36 +169,28 @@ pub fn adjust_slice_indices(
 }
 
 pub fn compare_values(a: &Value, b: &Value) -> Result<Ordering, String> {
+    // This function is kept for backward compatibility or explicit usage,
+    // but Value now implements Ord so we can just use a.cmp(b) if types match
+    // or return error if types mismatch (Python-like behavior for < >).
+    // The previous implementation enforced type matching.
+
+    // We should maintain the behavior that mismatched types are not comparable
+    // for < > except for numbers? Python 3 raises TypeError.
+    // The Ord implementation on Value defines a total order for ALL types.
+    // However, the runtime behavior for < > typically wants TypeError for incompatible types.
+    // But `compare_values` was used by `sorted` and comparisons.
+
     match (a, b) {
-        (Value::None, Value::None) => Ok(Ordering::Equal),
-        (Value::Bool(l), Value::Bool(r)) => Ok(l.cmp(r)),
-        (Value::Int(l), Value::Int(r)) => Ok(l.cmp(r)),
-        (Value::String(l), Value::String(r)) => Ok(l.cmp(r)),
-        (Value::Bytes(l), Value::Bytes(r)) => Ok(l.cmp(r)),
-        (Value::List(l), Value::List(r)) => {
-            let l_vec = l.borrow();
-            let r_vec = r.borrow();
-            for (v1, v2) in l_vec.iter().zip(r_vec.iter()) {
-                let ord = compare_values(v1, v2)?;
-                if ord != Ordering::Equal {
-                    return Ok(ord);
-                }
-            }
-            Ok(l_vec.len().cmp(&r_vec.len()))
+        (Value::Int(i1), Value::Float(f2)) => Ok((*i1 as f64).total_cmp(f2)),
+        (Value::Float(f1), Value::Int(i2)) => Ok(f1.total_cmp(&(*i2 as f64))),
+        _ => if std::mem::discriminant(a) == std::mem::discriminant(b) {
+            Ok(a.cmp(b))
+        } else {
+             Err(format!(
+                "Type mismatch or unsortable types: {} <-> {}",
+                get_type_name(a),
+                get_type_name(b)
+            ))
         }
-        (Value::Tuple(l), Value::Tuple(r)) => {
-            for (v1, v2) in l.iter().zip(r.iter()) {
-                let ord = compare_values(v1, v2)?;
-                if ord != Ordering::Equal {
-                    return Ok(ord);
-                }
-            }
-            Ok(l.len().cmp(&r.len()))
-        }
-        _ => Err(format!(
-            "Type mismatch or unsortable types: {} <-> {}",
-            get_type_name(a),
-            get_type_name(b)
-        )),
     }
 }

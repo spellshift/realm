@@ -795,6 +795,8 @@ fn to_iterable(_interp: &Interpreter, val: &Value, span: Span) -> Result<Vec<Val
     match val {
         Value::List(l) => Ok(l.borrow().clone()),
         Value::Tuple(t) => Ok(t.clone()),
+        Value::Set(s) => Ok(s.borrow().iter().cloned().collect()),
+        Value::Dictionary(d) => Ok(d.borrow().keys().map(|k| Value::String(k.clone())).collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
         _ => runtime_error(
             span,
@@ -813,7 +815,8 @@ fn apply_unary_op(
     match op {
         TokenKind::Minus => match val {
             Value::Int(i) => Ok(Value::Int(-i)),
-            _ => runtime_error(span, "Unary '-' only valid for integers"),
+            Value::Float(f) => Ok(Value::Float(-f)),
+            _ => runtime_error(span, "Unary '-' only valid for numbers"),
         },
         TokenKind::Not => Ok(Value::Bool(!is_truthy(&val))),
         TokenKind::BitNot => match val {
@@ -865,6 +868,10 @@ fn evaluate_in(_interp: &mut Interpreter, item: &Value, collection: &Value, span
             };
             Ok(Value::Bool(dict.contains_key(key)))
         }
+        Value::Set(s) => {
+            let set = s.borrow();
+            Ok(Value::Bool(set.contains(item)))
+        }
         Value::String(s) => {
             let sub = match item {
                 Value::String(ss) => ss,
@@ -896,6 +903,23 @@ fn apply_binary_op(
         (Value::Int(a), TokenKind::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
         (Value::Int(a), TokenKind::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
 
+        // FLOAT Comparisons
+        (Value::Float(a), TokenKind::Lt, Value::Float(b)) => Ok(Value::Bool(a < b)),
+        (Value::Float(a), TokenKind::Gt, Value::Float(b)) => Ok(Value::Bool(a > b)),
+        (Value::Float(a), TokenKind::LtEq, Value::Float(b)) => Ok(Value::Bool(a <= b)),
+        (Value::Float(a), TokenKind::GtEq, Value::Float(b)) => Ok(Value::Bool(a >= b)),
+
+        // MIXED Comparisons (Int vs Float)
+        (Value::Int(a), TokenKind::Lt, Value::Float(b)) => Ok(Value::Bool((a as f64) < b)),
+        (Value::Int(a), TokenKind::Gt, Value::Float(b)) => Ok(Value::Bool((a as f64) > b)),
+        (Value::Int(a), TokenKind::LtEq, Value::Float(b)) => Ok(Value::Bool((a as f64) <= b)),
+        (Value::Int(a), TokenKind::GtEq, Value::Float(b)) => Ok(Value::Bool((a as f64) >= b)),
+
+        (Value::Float(a), TokenKind::Lt, Value::Int(b)) => Ok(Value::Bool(a < (b as f64))),
+        (Value::Float(a), TokenKind::Gt, Value::Int(b)) => Ok(Value::Bool(a > (b as f64))),
+        (Value::Float(a), TokenKind::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= (b as f64))),
+        (Value::Float(a), TokenKind::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= (b as f64))),
+
         // STRING Comparisons
         (Value::String(a), TokenKind::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
         (Value::String(a), TokenKind::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
@@ -914,8 +938,49 @@ fn apply_binary_op(
                 return runtime_error(span, "divide by zero");
             }
             // Standard division (for integers, acts like floor in Rust, but behavior is technically floor div)
+            // Python's / operator returns float for integers.
+            // But EldritchV2 (per memory) might have different rules.
+            // If I look at the previous code: `Ok(Value::Int(a / b))`
+            // This implies integer division.
+            // If I introduce float, should `/` become float division?
+            // Python 3: / is float, // is floor.
+            // Python 2: / is int if operands are int.
+            // I will implement Python 3 behavior if possible, or stick to current behavior?
+            // Current behavior: `Ok(Value::Int(a / b))` implies integer division.
+            // If I want to support floats, I should probably promote to float if one operand is float.
+            // But for Int/Int, if I change to float, I break backward compatibility if users rely on Int return.
+            // The prompt doesn't specify changing `/` for Ints.
+            // However, `float` type is new.
+            // I will keep Int/Int as Int division for now to minimize breakage, unless I see reason otherwise.
+            // Wait, Python 3 `from __future__ import division` makes `/` float.
+            // I'll stick to: Int/Int -> Int (for now), Float involved -> Float.
             Ok(Value::Int(a / b))
         }
+
+        // Float Arithmetic
+        (Value::Float(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float(a + b)),
+        (Value::Float(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float(a - b)),
+        (Value::Float(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float(a * b)),
+        (Value::Float(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float(a / b)),
+        (Value::Float(a), TokenKind::SlashSlash, Value::Float(b)) => Ok(Value::Float(a.div_euclid(b))), // Floor div for float
+        (Value::Float(a), TokenKind::Percent, Value::Float(b)) => Ok(Value::Float(a.rem_euclid(b))),
+
+        // Mixed Arithmetic
+        (Value::Int(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float((a as f64) + b)),
+        (Value::Int(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float((a as f64) - b)),
+        (Value::Int(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float((a as f64) * b)),
+        (Value::Int(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float((a as f64) / b)),
+
+        (Value::Float(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Float(a + (b as f64))),
+        (Value::Float(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Float(a - (b as f64))),
+        (Value::Float(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Float(a * (b as f64))),
+        (Value::Float(a), TokenKind::Slash, Value::Int(b)) => Ok(Value::Float(a / (b as f64))),
+
+        (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => Ok(Value::Float((a as f64).div_euclid(b))),
+        (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => Ok(Value::Float(a.div_euclid(b as f64))),
+        (Value::Int(a), TokenKind::Percent, Value::Float(b)) => Ok(Value::Float((a as f64).rem_euclid(b))),
+        (Value::Float(a), TokenKind::Percent, Value::Int(b)) => Ok(Value::Float(a.rem_euclid(b as f64))),
+
         (Value::Int(a), TokenKind::SlashSlash, Value::Int(b)) => {
             if b == 0 {
                 return runtime_error(span, "divide by zero");
