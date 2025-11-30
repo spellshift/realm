@@ -10,6 +10,8 @@ crate-type = ["cdylib", "rlib"]
 eldritch-macros = { path = "../eldritch-macros" }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+sysinfo = { workspace = true, optional = true }
+listeners = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 crossterm = "0.27"
@@ -19,7 +21,7 @@ wasm-bindgen = "0.2"
 
 [features]
 default = ["std"]
-std = []
+std = ["dep:sysinfo", "dep:listeners"]
 fake_bindings = []
 
 [[bin]]

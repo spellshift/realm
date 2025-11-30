@@ -7,6 +7,9 @@ use alloc::collections::BTreeMap;
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
+#[cfg(feature = "std")]
+pub mod std;
+
 #[eldritch_library("process")]
 pub trait ProcessLibrary {
     #[eldritch_method]
