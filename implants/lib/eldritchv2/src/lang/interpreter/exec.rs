@@ -3,12 +3,15 @@ use super::error::{runtime_error, EldritchError};
 use super::eval::{apply_binary_op_pub, evaluate};
 use super::utils::{get_type_name, is_truthy};
 use super::super::ast::{
-    Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
+    Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
 use super::super::token::TokenKind;
+use alloc::collections::BTreeMap;
 use alloc::format;
+use alloc::rc::Rc;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use core::cell::RefCell;
 
 pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchError> {
     if interp.flow != Flow::Next {
@@ -83,25 +86,41 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
             };
 
             for item in items {
+                // Scope per iteration to prevent leaking variables
+                let parent_env = Rc::clone(&interp.env);
+                let new_env = Rc::new(RefCell::new(Environment {
+                    parent: Some(parent_env.clone()),
+                    values: BTreeMap::new(),
+                }));
+                interp.env = new_env;
+
+                // Use define_variable to force loop variables into the new scope
                 if idents.len() == 1 {
-                    interp.assign_variable(&idents[0], item);
+                    interp.define_variable(&idents[0], item);
                 } else {
                     let parts = match item {
                         Value::List(l) => l.borrow().clone(),
                         Value::Tuple(t) => t.clone(),
-                        _ => return runtime_error(stmt.span, "Cannot unpack non-iterable"),
+                        _ => {
+                            interp.env = parent_env;
+                            return runtime_error(stmt.span, "Cannot unpack non-iterable");
+                        }
                     };
 
                     if parts.len() != idents.len() {
+                        interp.env = parent_env;
                         return runtime_error(stmt.span, &format!("ValueError: too many/not enough values to unpack (expected {}, got {})", idents.len(), parts.len()));
                     }
 
                     for (var, val) in idents.iter().zip(parts.into_iter()) {
-                        interp.assign_variable(var, val);
+                        interp.define_variable(var, val);
                     }
                 }
 
-                execute_stmts(interp, body)?;
+                let result = execute_stmts(interp, body);
+                interp.env = parent_env;
+                result?;
+
                 match &interp.flow {
                     Flow::Break => {
                         interp.flow = Flow::Next;

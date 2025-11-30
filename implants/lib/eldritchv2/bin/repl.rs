@@ -11,14 +11,21 @@ use std::io::{self, Write};
 use std::time::Duration;
 
 #[cfg(feature = "stdlib")]
-use eldritchv2::bindings::file::std::StdFileLibrary;
+use eldritchv2::bindings::{
+  file::std::StdFileLibrary,
+  process:std::StdProcessLibrary,
+};
+
 #[cfg(feature = "fake_bindings")]
 use eldritchv2::bindings::file::fake::FileLibraryFake;
 
 fn main() -> io::Result<()> {
     // Register Libraries
     #[cfg(feature = "stdlib")]
-    register_lib(StdFileLibrary::default());
+    {
+      register_lib(StdFileLibrary::default());
+      register_lib(StdProcessLibrary::default());
+    }
 
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
     register_lib(FileLibraryFake::default());
