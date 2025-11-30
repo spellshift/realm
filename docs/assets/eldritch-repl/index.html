@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eldritch REPL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: monospace;
@@ -13,32 +16,40 @@
             margin: 0;
             overflow-y: scroll;
         }
+
         #terminal {
             white-space: pre-wrap;
             word-wrap: break-word;
             outline: none;
         }
+
         #current-line {
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+
         .prompt {
             color: #569cd6;
-            margin-right: 0px; /* Spacing handled by content */
+            margin-right: 0px;
+            /* Spacing handled by content */
         }
+
         .continuation {
             color: #569cd6;
         }
+
         .cursor {
             background-color: #d4d4d4;
             color: #1e1e1e;
         }
+
         /* Visual indicator when not focused */
         body.not-focused .cursor {
             background-color: transparent;
             border: 1px solid #d4d4d4;
             color: #d4d4d4;
         }
+
         body.not-focused {
             opacity: 0.8;
         }
@@ -52,8 +63,25 @@
         }
     </style>
 </head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZZ8G47GCT4"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-ZZ8G47GCT4');
+</script>
+
 <body>
-    <h1>Eldritch REPL (WASM + Shared Logic)</h1>
+    <h1>Eldritch v0.3 REPL (WASM)</h1>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1000">
+        <a href="https://github.com/spellshift/realm/issues/new?template=feedback.md&title=%5Bfeedback%5D%5Beldritchv0.3%5D%20Feedback%20Title"
+            target="_blank" class="btn btn-dark btn-lg shadow">
+            <i class="fab fa-github me-2"></i>Leave Feedback
+        </a>
+    </div>
+    <h2><a Leave Feedback</a>
+    </h2>
     <div id="terminal"></div>
     <div id="current-line"></div>
     <textarea id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
@@ -93,9 +121,9 @@
                 if (saved) {
                     repl.load_history(JSON.parse(saved));
                 }
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
 
-            printLine("Eldritch REPL initialized.\nType code and press Enter.\n");
+            printLine("stdlib fakes registered, enjoy our demo environment!");
             render();
 
             // Focus handling
@@ -202,17 +230,18 @@
         });
 
         inputEl.addEventListener('paste', (e) => {
-             e.preventDefault();
-             const text = (e.clipboardData || window.clipboardData).getData('text');
-             if (text) {
-                 const res = repl.handle_paste(text);
-                 if (res.echo) printLine(res.echo);
-                 if (res.output) printLine(res.output);
-                 render();
-             }
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            if (text) {
+                const res = repl.handle_paste(text);
+                if (res.echo) printLine(res.echo);
+                if (res.output) printLine(res.output);
+                render();
+            }
         });
 
         main();
     </script>
 </body>
+
 </html>

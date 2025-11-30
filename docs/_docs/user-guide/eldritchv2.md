@@ -1,22 +1,27 @@
 ---
 title: Eldritch V2 Language Guide
-permalink: /docs/user-guide/eldritchv2
+permalink: /user-guide/eldritchv2
 ---
 
-# Eldritch V2
-
 Eldritch V2 is a Starlark-like domain specific language used for scripting implant behaviors. It is designed to be familiar to Python users while remaining simple and safe.
+
+## Demo REPL
+
+Try the [interactive REPL demo](/assets/eldritch-repl/index.html).
 
 ## New Features
 
 ### Operators
 
-*   **Floor Division**: `//` operator performs floor division (rounds towards negative infinity).
+* **Floor Division**: `//` operator performs floor division (rounds towards negative infinity).
+
     ```python
     10 // 3  # 3
     -10 // 3 # -4
     ```
-*   **Augmented Assignment**: Supports `+=`, `-=`, `*=`, `/=`, `//=`, `%=`.
+
+* **Augmented Assignment**: Supports `+=`, `-=`, `*=`, `/=`, `//=`, `%=`.
+
     ```python
     x = 1
     x += 1
@@ -24,18 +29,22 @@ Eldritch V2 is a Starlark-like domain specific language used for scripting impla
 
 ### Expressions
 
-*   **Ternary If**: One-line conditional expression.
+* **Ternary If**: One-line conditional expression.
+
     ```python
     x = "yes" if condition else "no"
     ```
-*   **String Formatting**: Use `%` operator for simple string formatting.
+
+* **String Formatting**: Use `%` operator for simple string formatting.
+
     ```python
     "Hello %s" % "World"
     ```
 
 ### Assignments
 
-*   **Unpacking**: Assign multiple variables from a sequence.
+* **Unpacking**: Assign multiple variables from a sequence.
+
     ```python
     a, b = 1, 2
     x, y = [3, 4]
@@ -54,10 +63,10 @@ file.move("source.txt", "dest.txt")
 
 Eldritch V2 supports standard Python/Starlark features:
 
-*   **Types**: `None`, `bool`, `int`, `string`, `bytes`, `list`, `tuple`, `dict`.
-*   **Control Flow**: `if`, `elif`, `else`, `for`, `break`, `continue`, `pass`, `return`.
-*   **Functions**: `def` with positional, keyword, `*args`, `**kwargs`, and default values. `lambda` expressions.
-*   **Comprehensions**: List and Dictionary comprehensions.
+* **Types**: `None`, `bool`, `int`, `string`, `bytes`, `list`, `tuple`, `dict`.
+* **Control Flow**: `if`, `elif`, `else`, `for`, `break`, `continue`, `pass`, `return`.
+* **Functions**: `def` with positional, keyword, `*args`, `**kwargs`, and default values. `lambda` expressions.
+* **Comprehensions**: List and Dictionary comprehensions.
 
 ## API Integration
 
