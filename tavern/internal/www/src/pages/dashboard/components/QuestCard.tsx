@@ -4,7 +4,6 @@ import DashboardStatistic from "./DashboardStatistic";
 import TaskBarChart from "./QuestTaskBarChart";
 import SingleDropdownSelector from "../../../components/tavern-base-ui/SingleDropdownSelector";
 import TagBarChart from "./QuestTagBarChart";
-import TargetReccomendation from "./TargetRecommendation";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import TomeBarChart from "./QuestTomeBarChart";
 import { HostEdge } from "../../../utils/interfacesQuery";
@@ -52,15 +51,11 @@ const QuestCard = ({ formattedData, hosts, loading }: QuestCardProps) => {
                 );
             case "group":
                 return (
-                    <TagBarChart data={formattedData?.groupUsage || []} loading={loading} tagKind="group">
-                        <TargetReccomendation data={formattedData?.groupUsage || []} tagKind="group" hosts={hosts} />
-                    </TagBarChart>
+                    <TagBarChart data={formattedData?.groupUsage || []} loading={loading} tagKind="group" />
                 );
             case "service":
                 return (
-                    <TagBarChart data={formattedData?.serviceUsage || []} loading={loading} tagKind="service">
-                        <TargetReccomendation data={formattedData?.serviceUsage || []} tagKind="service" hosts={hosts} />
-                    </TagBarChart>
+                    <TagBarChart data={formattedData?.serviceUsage || []} loading={loading} tagKind="service" />
                 );
             case "tome":
                 return (

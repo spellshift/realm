@@ -37,6 +37,10 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
         updateHosts();
     },[updateHosts]);
 
+    useEffect(()=>{
+      setPage(1);
+    },[filters])
+
     return {
         data,
         loading,
