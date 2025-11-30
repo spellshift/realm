@@ -27,12 +27,8 @@ const TaskHostBeacon: FC<TaskHostBeaconType> = ({ beacon }) => {
                     {(principal && principal !== "") &&
                         <Badge>{principal}</Badge>
                     }
-                    {(host?.primaryIP && host?.primaryIP !== "") &&
-                        <Badge>Internal: {host?.primaryIP}</Badge>
-                    }
-                    {(host?.externalIP && host?.externalIP !== "") &&
-                        <Badge>External: {host?.externalIP}</Badge>
-                    }
+                    <Badge>Internal: {host?.primaryIP}</Badge>
+                    <Badge>External: {host?.externalIP}</Badge>
                     {host?.platform &&
                         <Badge>{host?.platform}</Badge>
                     }
