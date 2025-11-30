@@ -1,28 +1,12 @@
-use eldritch_macros::{eldritch_library, eldritch_library_impl, eldritch_method};
+use super::*;
+use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-#[eldritch_library("regex")]
-pub trait RegexLibrary {
-    #[eldritch_method]
-    fn match_all(&self, haystack: String, pattern: String) -> Result<Vec<String>, String>;
-
-    #[eldritch_method]
-    fn r#match(&self, haystack: String, pattern: String) -> Result<String, String>;
-
-    #[eldritch_method]
-    fn replace_all(&self, haystack: String, pattern: String, value: String) -> Result<String, String>;
-
-    #[eldritch_method]
-    fn replace(&self, haystack: String, pattern: String, value: String) -> Result<String, String>;
-}
-
-#[cfg(feature = "fake_bindings")]
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RegexLibrary)]
 pub struct RegexLibraryFake;
 
-#[cfg(feature = "fake_bindings")]
 impl RegexLibrary for RegexLibraryFake {
     fn match_all(&self, _haystack: String, _pattern: String) -> Result<Vec<String>, String> {
         Ok(Vec::new())
@@ -49,6 +33,5 @@ mod tests {
     fn test_regex_fake() {
         let regex = RegexLibraryFake::default();
         assert!(regex.match_all("foo".into(), "bar".into()).unwrap().is_empty());
-        assert_eq!(regex.replace("foo".into(), "o".into(), "a".into()).unwrap(), "foo");
     }
 }

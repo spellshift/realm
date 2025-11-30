@@ -1,72 +1,14 @@
-use eldritch_macros::{eldritch_library, eldritch_library_impl, eldritch_method};
+use super::*;
+use eldritch_macros::eldritch_library_impl;
 use crate::ast::Value;
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
 
-#[eldritch_library("sys")]
-pub trait SysLibrary {
-    #[eldritch_method]
-    fn dll_inject(&self, dll_path: String, pid: i64) -> Result<(), String>;
-
-    #[eldritch_method]
-    fn dll_reflect(&self, dll_bytes: Vec<u8>, pid: i64, function_name: String) -> Result<(), String>;
-
-    #[eldritch_method]
-    fn exec(&self, path: String, args: Vec<String>, disown: Option<bool>, env_vars: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String>;
-
-    #[eldritch_method]
-    fn get_env(&self) -> Result<BTreeMap<String, String>, String>;
-
-    #[eldritch_method]
-    fn get_ip(&self) -> Result<Vec<BTreeMap<String, String>>, String>;
-
-    #[eldritch_method]
-    fn get_os(&self) -> Result<BTreeMap<String, String>, String>;
-
-    #[eldritch_method]
-    fn get_pid(&self) -> Result<i64, String>;
-
-    #[eldritch_method]
-    fn get_reg(&self, reghive: String, regpath: String) -> Result<BTreeMap<String, String>, String>;
-
-    #[eldritch_method]
-    fn get_user(&self) -> Result<BTreeMap<String, Value>, String>;
-
-    #[eldritch_method]
-    fn hostname(&self) -> Result<String, String>;
-
-    #[eldritch_method]
-    fn is_bsd(&self) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn is_linux(&self) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn is_macos(&self) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn is_windows(&self) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String>;
-
-    #[eldritch_method]
-    fn write_reg_hex(&self, reghive: String, regpath: String, regname: String, regtype: String, regvalue: String) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn write_reg_int(&self, reghive: String, regpath: String, regname: String, regtype: String, regvalue: i64) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn write_reg_str(&self, reghive: String, regpath: String, regname: String, regtype: String, regvalue: String) -> Result<bool, String>;
-}
-
-#[cfg(feature = "fake_bindings")]
 #[derive(Default, Debug)]
 #[eldritch_library_impl(SysLibrary)]
 pub struct SysLibraryFake;
 
-#[cfg(feature = "fake_bindings")]
 impl SysLibrary for SysLibraryFake {
     fn dll_inject(&self, _dll_path: String, _pid: i64) -> Result<(), String> { Ok(()) }
 
@@ -77,16 +19,26 @@ impl SysLibrary for SysLibraryFake {
     }
 
     fn get_env(&self) -> Result<BTreeMap<String, String>, String> {
-        Ok(BTreeMap::new())
+        let mut map = BTreeMap::new();
+        map.insert("PATH".into(), "/usr/local/bin:/usr/bin:/bin".into());
+        map.insert("HOME".into(), "/home/user".into());
+        map.insert("USER".into(), "user".into());
+        map.insert("TERM".into(), "xterm-256color".into());
+        Ok(map)
     }
 
     fn get_ip(&self) -> Result<Vec<BTreeMap<String, String>>, String> {
-        Ok(Vec::new())
+        let mut iface = BTreeMap::new();
+        iface.insert("name".into(), "eth0".into());
+        iface.insert("ip".into(), "192.168.1.100".into());
+        Ok(vec![iface])
     }
 
     fn get_os(&self) -> Result<BTreeMap<String, String>, String> {
         let mut map = BTreeMap::new();
         map.insert("os".into(), "linux".into());
+        map.insert("arch".into(), "x86_64".into());
+        map.insert("version".into(), "5.4.0-generic".into());
         Ok(map)
     }
 
@@ -101,11 +53,13 @@ impl SysLibrary for SysLibraryFake {
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("username".into(), Value::String("root".into()));
+        map.insert("uid".into(), Value::Int(0));
+        map.insert("gid".into(), Value::Int(0));
         Ok(map)
     }
 
     fn hostname(&self) -> Result<String, String> {
-        Ok(String::from("localhost"))
+        Ok(String::from("eldritch-test-box"))
     }
 
     fn is_bsd(&self) -> Result<bool, String> { Ok(false) }
@@ -116,8 +70,12 @@ impl SysLibrary for SysLibraryFake {
 
     fn is_windows(&self) -> Result<bool, String> { Ok(false) }
 
-    fn shell(&self, _cmd: String) -> Result<BTreeMap<String, Value>, String> {
-        Ok(BTreeMap::new())
+    fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("stdout".into(), Value::String(format!("Executed: {}", cmd)));
+        map.insert("stderr".into(), Value::String("".into()));
+        map.insert("status".into(), Value::Int(0));
+        Ok(map)
     }
 
     fn write_reg_hex(&self, _reghive: String, _regpath: String, _regname: String, _regtype: String, _regvalue: String) -> Result<bool, String> { Ok(true) }
@@ -137,6 +95,7 @@ mod tests {
         assert_eq!(sys.get_pid().unwrap(), 1337);
         assert!(sys.is_linux().unwrap());
         assert!(!sys.is_windows().unwrap());
-        assert_eq!(sys.hostname().unwrap(), "localhost");
+        assert_eq!(sys.hostname().unwrap(), "eldritch-test-box");
+        assert!(sys.get_env().unwrap().contains_key("PATH"));
     }
 }

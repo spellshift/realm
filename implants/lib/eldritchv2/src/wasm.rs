@@ -7,6 +7,25 @@ use alloc::format;
 use alloc::vec::Vec;
 use std::cell::RefCell;
 
+#[cfg(feature = "fake_bindings")]
+use crate::bindings::{
+    file::fake::FileLibraryFake,
+    process::fake::ProcessLibraryFake,
+    sys::fake::SysLibraryFake,
+    http::fake::HttpLibraryFake,
+    crypto::fake::CryptoLibraryFake,
+    agent::fake::AgentLibraryFake,
+    assets::fake::AssetsLibraryFake,
+    pivot::fake::PivotLibraryFake,
+    random::fake::RandomLibraryFake,
+    regex::fake::RegexLibraryFake,
+    report::fake::ReportLibraryFake,
+    time::fake::TimeLibraryFake,
+};
+
+#[cfg(feature = "fake_bindings")]
+use crate::register_lib;
+
 #[wasm_bindgen]
 extern "C" {
     fn repl_print(s: &str);
@@ -82,6 +101,23 @@ impl WasmRepl {
     pub fn new() -> WasmRepl {
         let mut interp = Interpreter::new();
         interp.register_function("print", wasm_print);
+
+        #[cfg(feature = "fake_bindings")]
+        {
+            register_lib(FileLibraryFake::default());
+            register_lib(ProcessLibraryFake::default());
+            register_lib(SysLibraryFake::default());
+            register_lib(HttpLibraryFake::default());
+            register_lib(CryptoLibraryFake::default());
+            register_lib(AgentLibraryFake::default());
+            register_lib(AssetsLibraryFake::default());
+            register_lib(PivotLibraryFake::default());
+            register_lib(RandomLibraryFake::default());
+            register_lib(RegexLibraryFake::default());
+            register_lib(ReportLibraryFake::default());
+            register_lib(TimeLibraryFake::default());
+        }
+
         WasmRepl {
             interp,
             repl: Repl::new(),
