@@ -1,10 +1,10 @@
 import { gql, useMutation } from "@apollo/client";
 import { ApolloError } from "@apollo/client/errors";
 import { useState } from "react";
-import { RepositoryType } from "../../../utils/consts";
+import { RepositoryNode } from "../../../utils/interfacesQuery";
 import { GET_REPOSITORY_QUERY } from "../../../utils/queries";
 
-export const useCreateRepositoryLink = (setCurrStep: (arg: number)=>void, setNewRepository: (repository: RepositoryType) => void) => {
+export const useCreateRepositoryLink = (setCurrStep: (arg: number)=>void, setNewRepository: (repository: RepositoryNode) => void) => {
     const [error, setError] = useState("");
 
     const CREATE_REPOSITORY_LINK_MUTATION = gql`
@@ -36,8 +36,8 @@ export const useCreateRepositoryLink = (setCurrStep: (arg: number)=>void, setNew
 
 
     const [createRepositoryLinkMutation] = useMutation(CREATE_REPOSITORY_LINK_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_REPOSITORY_QUERY, // DocumentNode object parsed with gql
-        'GetRepository' // Query name
+        GET_REPOSITORY_QUERY,
+        'GetRepository'
     ]});
 
     const submitRepositoryLink = (props: {url: string}) => {

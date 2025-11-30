@@ -1,16 +1,16 @@
-import React, { useContext, useState } from "react";
+import { useState } from "react";
 import { ComputerDesktopIcon, MapPinIcon, TagIcon } from "@heroicons/react/20/solid";
-import { HostContext } from "../../../context/HostContext";
+import { useHost } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
 import TagModal from "./TagModal";
 import EditableTag from "./editable-tag/EditableTag";
 
 const HostDetailsSection = () => {
     const [isOpen, setOpen] = useState(false);
-    const { data: host } = useContext(HostContext);
+    const { data: host } = useHost();
 
-    const serviceTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "service")];
-    const groupTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "group")];
+    const serviceTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "service")]?.node;
+    const groupTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "group")]?.node;
 
     return (
         <div className="flex flex-col gap-4">

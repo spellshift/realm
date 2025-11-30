@@ -1,9 +1,8 @@
 
-import React, { useContext } from "react"
 import { BeaconFilterBar } from "./beacon-filter-bar";
-import { TagContext } from "../context/TagContext";
+import { useTags } from "../context/TagContext";
 import FreeTextSearch from "./tavern-base-ui/DebouncedFreeTextSearch";
-import { FilterBarOption } from "../utils/consts";
+import { FilterBarOption } from "../utils/interfacesUI";
 
 type Props = {
     searchPlaceholder?: string;
@@ -13,7 +12,7 @@ type Props = {
 }
 const FilterBar = (props: Props) => {
     const { searchPlaceholder, setSearch, setFiltersSelected, filtersSelected } = props;
-    const { data, isLoading, error } = useContext(TagContext);
+    const { data, isLoading, error } = useTags();
 
     return (
         <div>

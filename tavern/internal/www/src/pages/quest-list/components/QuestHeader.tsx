@@ -1,4 +1,3 @@
-import React from "react";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useNavigate } from "react-router-dom";

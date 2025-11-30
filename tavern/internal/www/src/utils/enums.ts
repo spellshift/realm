@@ -3,11 +3,6 @@ export enum StepStatus {
     Upcoming = "UPCOMING",
     Complete = "COMPLETE",
 }
-export enum TaskStatus {
-    inprogress = "IN-PROGRESS",
-    finished = "FINISHED",
-    queued = "QUEUED",
-}
 export enum PageNavItem {
     dashboard="Dashboard",
     quests='Quests',
