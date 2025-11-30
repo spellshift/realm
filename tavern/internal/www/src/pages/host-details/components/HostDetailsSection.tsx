@@ -27,11 +27,11 @@ const HostDetailsSection = () => {
                         <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center gap-1">
                             <div>
                                 <span className="font-medium">Internal: </span>
-                                {(host && host?.primaryIP) ? host?.primaryIP : '-'}
+                                {host?.primaryIP}
                             </div>
                             <div>
                                 <span className="font-medium">External: </span>
-                                {(host && host?.externalIP) ? host?.externalIP : '-'}
+                                {host?.externalIP}
                             </div>
                         </div>
                     </div>
