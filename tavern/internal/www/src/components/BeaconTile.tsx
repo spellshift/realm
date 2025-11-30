@@ -16,7 +16,8 @@ const BeaconTile = (props: Props) => {
                     <Badge>{beaconData.principal}</Badge>
                 }
                 <Badge>{beaconData?.host?.name}</Badge>
-                <Badge>{beaconData?.host?.primaryIP}</Badge>
+                {beaconData?.host?.primaryIP && <Badge>Internal: {beaconData?.host?.primaryIP}</Badge>}
+                {beaconData?.host?.externalIP && <Badge>External: {beaconData?.host?.externalIP}</Badge>}
                 <Badge>{beaconData?.host?.platform}</Badge>
                 {beaconData?.host?.tags && beaconData?.host?.tags?.edges.map((tag: TagEdge) => {
                     return <Badge key={tag.node.id}>{tag.node.name}</Badge>

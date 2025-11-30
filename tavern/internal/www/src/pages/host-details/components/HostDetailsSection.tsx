@@ -21,12 +21,17 @@ const HostDetailsSection = () => {
                         <div className="flex flex-row gap-2 items-center">
                             <MapPinIcon className="w-4 text-gray-700" />
                             <h4 className="text-gray-700">
-                                IP Address
+                                IP Addresses
                             </h4>
                         </div>
-                        <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center">
+                        <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center gap-1">
                             <div>
+                                <span className="font-medium">Internal: </span>
                                 {(host && host?.primaryIP) ? host?.primaryIP : '-'}
+                            </div>
+                            <div>
+                                <span className="font-medium">External: </span>
+                                {(host && host?.externalIP) ? host?.externalIP : '-'}
                             </div>
                         </div>
                     </div>
