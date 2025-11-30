@@ -92,6 +92,20 @@ impl Lexer {
         while self.peek().is_ascii_digit() {
             self.advance();
         }
+
+        if self.peek() == '.' && self.peek_next().is_ascii_digit() {
+            // Consume the "."
+            self.advance();
+
+            while self.peek().is_ascii_digit() {
+                self.advance();
+            }
+
+            let value: String = self.source[self.start..self.current].iter().collect();
+            let float_val: f64 = value.parse().unwrap_or(0.0);
+            return self.add_token(TokenKind::Float(float_val));
+        }
+
         let value: String = self.source[self.start..self.current].iter().collect();
         let number: i64 = value.parse().unwrap_or(0);
         self.add_token(TokenKind::Integer(number))
@@ -371,7 +385,20 @@ impl Lexer {
             }
             ',' => Ok(self.add_token(TokenKind::Comma)),
             ':' => Ok(self.add_token(TokenKind::Colon)),
-            '.' => Ok(self.add_token(TokenKind::Dot)),
+            '.' => {
+                // Check for leading dot float: .5
+                if self.peek().is_ascii_digit() {
+                    self.start = self.current - 1; // Include the dot
+                     while self.peek().is_ascii_digit() {
+                        self.advance();
+                    }
+                    let value: String = self.source[self.start..self.current].iter().collect();
+                    let float_val: f64 = value.parse().unwrap_or(0.0);
+                    Ok(self.add_token(TokenKind::Float(float_val)))
+                } else {
+                    Ok(self.add_token(TokenKind::Dot))
+                }
+            },
             ';' => Ok(self.add_token(TokenKind::Newline)),
             '+' => {
                 if self.match_char('=') {

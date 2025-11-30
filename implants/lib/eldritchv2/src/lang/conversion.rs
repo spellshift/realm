@@ -24,6 +24,16 @@ impl FromValue for i64 {
     }
 }
 
+impl FromValue for f64 {
+    fn from_value(v: &Value) -> Result<Self, String> {
+        match v {
+            Value::Float(f) => Ok(*f),
+            Value::Int(i) => Ok(*i as f64),
+            _ => Err(format!("Expected Float or Int, got {}", get_type_name(v))),
+        }
+    }
+}
+
 impl FromValue for String {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
@@ -69,6 +79,10 @@ impl<T: FromValue> FromValue for Vec<T> {
                 }
                 Ok(res)
             }
+            // Should we support Set -> Vec conversion automatically?
+            // Python typing sometimes allows Iterable[T].
+            // But strict Vec<T> mapping usually implies order.
+            // Let's stick to List/Tuple for now.
             _ => Err(format!("Expected List or Tuple, got {}", get_type_name(v))),
         }
     }
@@ -115,6 +129,12 @@ impl<T: FromValue> FromValue for Option<T> {
 impl ToValue for i64 {
     fn to_value(self) -> Value {
         Value::Int(self)
+    }
+}
+
+impl ToValue for f64 {
+    fn to_value(self) -> Value {
+        Value::Float(self)
     }
 }
 
@@ -211,11 +231,13 @@ fn get_type_name(v: &Value) -> &'static str {
         Value::None => "NoneType",
         Value::Bool(_) => "bool",
         Value::Int(_) => "int",
+        Value::Float(_) => "float",
         Value::String(_) => "str",
         Value::Bytes(_) => "bytes",
         Value::List(_) => "list",
         Value::Tuple(_) => "tuple",
         Value::Dictionary(_) => "dict",
+        Value::Set(_) => "set",
         Value::Function(_) => "function",
         Value::NativeFunction(_, _) => "native_function",
         Value::NativeFunctionWithKwargs(_, _) => "native_function_kwargs",

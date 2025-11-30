@@ -9,7 +9,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cell::RefCell;
 
-use super::builtins::get_all_builtins;
+use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs};
 use super::error::{runtime_error, EldritchError};
 use super::exec;
 use super::eval;
@@ -49,6 +49,15 @@ impl Interpreter {
 
     fn load_builtins(&mut self) {
         for (name, func) in get_all_builtins() {
+            self.register_function(name, func);
+        }
+        for (name, func) in get_all_builtins_with_kwargs() {
+            self.env.borrow_mut().values.insert(
+                name.to_string(),
+                Value::NativeFunctionWithKwargs(name.to_string(), func),
+            );
+        }
+        for (name, func) in get_stubs() {
             self.register_function(name, func);
         }
         // Hardcoded pass variable for now
