@@ -144,6 +144,15 @@ pub fn eldritch_method(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
+fn is_option_type(ty: &Type) -> bool {
+    if let Type::Path(type_path) = ty {
+        if let Some(segment) = type_path.path.segments.last() {
+             return segment.ident == "Option";
+        }
+    }
+    false
+}
+
 fn generate_args_parsing(sig: &Signature) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
     let mut parsing = Vec::new();
     let mut call_args = Vec::new();
@@ -176,13 +185,19 @@ fn generate_args_parsing(sig: &Signature) -> (proc_macro2::TokenStream, proc_mac
                     });
                     call_args.push(quote!(&#pat));
                 } else {
+                    let missing_handler = if is_option_type(ty) {
+                        quote! { Default::default() }
+                    } else {
+                        quote! { return Err(format!("Missing argument: {}", #arg_name_str)); }
+                    };
+
                     parsing.push(quote! {
                         let #pat: #ty = if #arg_idx < _eldritch_args.len() {
                             eldritchv2::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
                         } else if let Some(val) = _eldritch_kwargs.get(#arg_name_str) {
                             eldritchv2::conversion::FromValue::from_value(val)?
                         } else {
-                            return Err(format!("Missing argument: {}", #arg_name_str));
+                            #missing_handler
                         };
                     });
                     call_args.push(quote!(#pat));
