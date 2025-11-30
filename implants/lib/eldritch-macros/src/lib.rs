@@ -3,10 +3,17 @@ use quote::quote;
 use syn::{parse_macro_input, parse_quote, FnArg, ItemStruct, ItemTrait, Lit, Meta, NestedMeta, Signature, TraitItem, Type, TypeReference};
 
 #[proc_macro_attribute]
-pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut trait_def = parse_macro_input!(item as ItemTrait);
     let trait_name = &trait_def.ident;
-    let vis = &trait_def.vis;
+    let (impl_generics, ty_generics, where_clause) = trait_def.generics.split_for_impl();
+
+    let lib_name = parse_macro_input!(attr as Lit);
+    let lib_name_str = if let Lit::Str(lit) = lib_name {
+        lit.value()
+    } else {
+        panic!("Expected string literal for library name");
+    };
 
     // Inject supertraits
     trait_def.supertraits.push(parse_quote!(core::fmt::Debug));
@@ -22,8 +29,6 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
             let mut is_eldritch = false;
             let mut rename = None;
 
-            // Don't remove the attribute from method.attrs.
-            // Just iterate and check.
             for attr in &method.attrs {
                 if attr.path.is_ident("eldritch_method") {
                     is_eldritch = true;
@@ -52,39 +57,46 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
         }
     }
 
-    let shim_trait_name = syn::Ident::new(&format!("{}EldritchShim", trait_name), trait_name.span());
+    let adapter_name = syn::Ident::new(&format!("{}EldritchAdapter", trait_name), trait_name.span());
 
+    // Generate helper trait and its implementation for T: Trait
     let expanded = quote! {
         #trait_def
 
-        #vis trait #shim_trait_name {
-            fn dispatch_eldritch_method(
+        pub trait #adapter_name {
+            fn _eldritch_type_name(&self) -> &str;
+            fn _eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String>;
+            fn _eldritch_call_method(
                 &self,
                 name: &str,
                 args: &[eldritchv2::Value],
-                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>
+                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>,
             ) -> Result<eldritchv2::Value, String>;
-
-            fn get_eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String>;
         }
 
-        impl<T: #trait_name> #shim_trait_name for T {
-            fn dispatch_eldritch_method(
-                &self,
-                name: &str,
-                args: &[eldritchv2::Value],
-                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>
-            ) -> Result<eldritchv2::Value, String> {
-                match name {
-                    #(#method_dispatches)*
-                    _ => Err(format!("Method '{}' not found or not exposed", name)),
-                }
+        impl<T> #adapter_name for T
+        where T: #trait_name #ty_generics #where_clause
+        {
+             fn _eldritch_type_name(&self) -> &str {
+                #lib_name_str
             }
 
-            fn get_eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
+            fn _eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
                 let mut names = alloc::vec::Vec::new();
                 #(names.push(alloc::string::String::from(#method_names));)*
                 names
+            }
+
+            fn _eldritch_call_method(
+                &self,
+                name: &str,
+                args: &[eldritchv2::Value],
+                kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>,
+            ) -> Result<eldritchv2::Value, String> {
+                 match name {
+                    #(#method_dispatches)*
+                    _ => Err(format!("Method '{}' not found or not exposed", name)),
+                }
             }
         }
     };
@@ -93,33 +105,24 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
 }
 
 #[proc_macro_attribute]
-pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn eldritch_library_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
     let struct_def = parse_macro_input!(item as ItemStruct);
     let struct_name = &struct_def.ident;
-
-    let lib_name = parse_macro_input!(attr as Lit);
-    let lib_name_str = if let Lit::Str(lit) = lib_name {
-        lit.value()
-    } else {
-        panic!("Expected string literal for library name");
-    };
-
     let (impl_generics, ty_generics, where_clause) = struct_def.generics.split_for_impl();
 
-    let dispatch_call = quote! {
-        self.fs.dispatch_eldritch_method(name, args, kwargs)
-    };
+    let trait_ident = parse_macro_input!(attr as syn::Ident);
+    let adapter_name = syn::Ident::new(&format!("{}EldritchAdapter", trait_ident), trait_ident.span());
 
     let expanded = quote! {
         #struct_def
 
         impl #impl_generics eldritchv2::ast::ForeignValue for #struct_name #ty_generics #where_clause {
             fn type_name(&self) -> &str {
-                #lib_name_str
+                <Self as #adapter_name>::_eldritch_type_name(self)
             }
 
             fn method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
-                self.fs.get_eldritch_method_names()
+                <Self as #adapter_name>::_eldritch_method_names(self)
             }
 
             fn call_method(
@@ -128,7 +131,7 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
                 args: &[eldritchv2::Value],
                 kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>,
             ) -> Result<eldritchv2::Value, String> {
-                #dispatch_call
+                <Self as #adapter_name>::_eldritch_call_method(self, name, args, kwargs)
             }
         }
     };
