@@ -10,6 +10,14 @@ crate-type = ["cdylib", "rlib"]
 eldritch-macros = { path = "../eldritch-macros" }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
+tar = { workspace = true, optional = true }
+tera = { workspace = true, optional = true }
+tempfile = { workspace = true, optional = true }
+glob = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 sysinfo = { workspace = true, optional = true }
 listeners = { workspace = true, optional = true }
 
@@ -19,15 +27,19 @@ crossterm = "0.27"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 
+[dev-dependencies]
+# sha256 = { workspace = true }
+
 [features]
-default = ["std"]
-std = ["dep:sysinfo", "dep:listeners"]
+default = ["stdlib"]
+std = []
+stdlib = ["std", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json"]
 fake_bindings = []
 
 [[bin]]
 name = "eldritch"
 path = "bin/repl.rs"
-required-features = ["std"]
+required-features = ["stdlib"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

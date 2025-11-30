@@ -6,6 +6,8 @@ use alloc::collections::BTreeMap;
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
+#[cfg(feature = "stdlib")]
+pub mod std;
 
 #[eldritch_library("file")]
 pub trait FileLibrary {
