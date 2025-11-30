@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::{Interpreter, Value};
-use crate::repl::{Repl, Input, ReplAction};
+use super::{Repl, Input, ReplAction};
 #[cfg(feature = "fake_bindings")]
 use crate::register_lib;
 use alloc::string::ToString;
@@ -8,6 +8,8 @@ use alloc::string::String;
 use alloc::format;
 use alloc::vec::Vec;
 use std::cell::RefCell;
+use alloc::rc::Rc;
+use crate::lang::ast::Environment;
 
 #[cfg(feature = "fake_bindings")]
 use crate::bindings::{
@@ -34,7 +36,7 @@ thread_local! {
     static OUTPUT_BUFFER: RefCell<String> = RefCell::new(String::new());
 }
 
-fn wasm_print(args: &[Value]) -> Result<Value, String> {
+fn wasm_print(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let mut out = String::new();
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {

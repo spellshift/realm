@@ -7,9 +7,6 @@ mod lang;
 pub mod repl;
 pub mod bindings;
 
-#[cfg(target_arch = "wasm32")]
-pub mod wasm;
-
 // Re-export core types
 pub use lang::ast::Value;
 pub use lang::ast::ForeignValue;
