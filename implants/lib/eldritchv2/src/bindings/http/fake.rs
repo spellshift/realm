@@ -4,6 +4,8 @@ use crate::lang::ast::Value;
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
+use alloc::rc::Rc;
+use core::cell::RefCell;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(HttpLibrary)]
@@ -12,15 +14,32 @@ pub struct HttpLibraryFake;
 impl HttpLibrary for HttpLibraryFake {
     fn download(&self, _url: String, _path: String) -> Result<(), String> { Ok(()) }
 
-    fn request(&self, method: String, url: String, _headers: Option<BTreeMap<String, String>>, _body: Option<Vec<u8>>) -> Result<BTreeMap<String, Value>, String> {
+    fn get(&self, url: String, _headers: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("status_code".into(), Value::Int(200));
-        map.insert("body".into(), Value::Bytes(format!("Mock response for {} {}", method, url).into_bytes()));
-        map.insert("headers".into(), Value::None); // Simplified
+        map.insert("body".into(), Value::Bytes(format!("Mock GET response from {}", url).into_bytes()));
+
+        // Mock headers
+        let mut headers_map = BTreeMap::new();
+        headers_map.insert("Content-Type".into(), Value::String("text/plain".into()));
+        map.insert("headers".into(), Value::Dictionary(Rc::new(RefCell::new(headers_map))));
+
         Ok(map)
     }
 
-    fn upload(&self, _url: String, _path: String) -> Result<(), String> { Ok(()) }
+    fn post(&self, url: String, body: Option<Vec<u8>>, _headers: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("status_code".into(), Value::Int(201));
+        let body_len = body.map(|b| b.len()).unwrap_or(0);
+        map.insert("body".into(), Value::Bytes(format!("Mock POST response from {}, received {} bytes", url, body_len).into_bytes()));
+
+         // Mock headers
+        let mut headers_map = BTreeMap::new();
+        headers_map.insert("Content-Type".into(), Value::String("application/json".into()));
+        map.insert("headers".into(), Value::Dictionary(Rc::new(RefCell::new(headers_map))));
+
+        Ok(map)
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
@@ -28,9 +47,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_http_fake() {
+    fn test_http_fake_get() {
         let http = HttpLibraryFake::default();
-        let resp = http.request("GET".into(), "http://example.com".into(), None, None).unwrap();
+        let resp = http.get("http://example.com".into(), None).unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(200));
+        if let Value::Bytes(b) = resp.get("body").unwrap() {
+            assert_eq!(String::from_utf8(b.clone()).unwrap(), "Mock GET response from http://example.com");
+        } else {
+            panic!("Body should be bytes");
+        }
+    }
+
+    #[test]
+    fn test_http_fake_post() {
+        let http = HttpLibraryFake::default();
+        let resp = http.post("http://example.com".into(), Some(vec![1, 2, 3]), None).unwrap();
+        assert_eq!(resp.get("status_code").unwrap(), &Value::Int(201));
+        if let Value::Bytes(b) = resp.get("body").unwrap() {
+            assert!(String::from_utf8(b.clone()).unwrap().contains("received 3 bytes"));
+        } else {
+             panic!("Body should be bytes");
+        }
     }
 }
