@@ -1,11 +1,12 @@
 #[cfg(feature = "std")]
 mod tests {
+    extern crate alloc;
     use eldritchv2::{eldritch_interface, eldritch_library, eldritch_method, register_lib, Interpreter, Value};
     use std::sync::{Arc, Mutex};
 
     // Define the trait with the interface macro
     #[eldritch_interface]
-    pub trait RuntimeFS: std::fmt::Debug + Send + Sync {
+    pub trait RuntimeFS {
         #[eldritch_method]
         fn move_file(&self, src: &str, dst: &str) -> Result<(), String>;
 
@@ -73,6 +74,29 @@ mod tests {
             assert_eq!(i, 5);
         } else {
             panic!("Expected Int result, got {:?}", res);
+        }
+    }
+
+    #[test]
+    fn test_dir_introspection() {
+        let ops = Arc::new(Mutex::new(Vec::new()));
+        let mock = MockFS { ops: ops.clone() };
+        let lib = LibFS { fs: mock };
+
+        register_lib(lib);
+
+        let mut interp = Interpreter::new();
+        let code = "dir(file)";
+        let res = interp.interpret(code).unwrap();
+
+        if let Value::List(l) = res {
+            let list = l.borrow();
+            let mut strings: Vec<String> = list.iter().map(|v| v.to_string()).collect();
+            strings.sort();
+            assert!(strings.contains(&"move_file".to_string()));
+            assert!(strings.contains(&"write_str".to_string()));
+        } else {
+            panic!("Expected List, got {:?}", res);
         }
     }
 }

@@ -51,6 +51,7 @@ pub type BuiltinFnWithKwargs = fn(&[Value], &BTreeMap<String, Value>) -> Result<
 
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;
+    fn method_names(&self) -> Vec<String>;
     fn call_method(
         &self,
         name: &str,

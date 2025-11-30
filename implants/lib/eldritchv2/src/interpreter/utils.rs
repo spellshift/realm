@@ -72,6 +72,7 @@ pub fn get_dir_attributes(value: &Value) -> Vec<String> {
             "strip".to_string(),
             "upper".to_string(),
         ],
+        Value::Foreign(f) => f.method_names(),
         _ => Vec::new(),
     };
     attrs.sort();

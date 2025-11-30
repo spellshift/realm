@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Attribute, DeriveInput, FnArg, ImplItem, ItemImpl, ItemStruct, ItemTrait, Lit, Meta, NestedMeta, Pat, ReturnType, Signature, TraitItem, TraitItemMethod, Type, TypeReference};
+use syn::{parse_macro_input, parse_quote, FnArg, ItemStruct, ItemTrait, Lit, Meta, NestedMeta, Signature, TraitItem, Type, TypeReference};
 
 #[proc_macro_attribute]
 pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -8,7 +8,13 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
     let trait_name = &trait_def.ident;
     let vis = &trait_def.vis;
 
+    // Inject supertraits
+    trait_def.supertraits.push(parse_quote!(core::fmt::Debug));
+    trait_def.supertraits.push(parse_quote!(core::marker::Send));
+    trait_def.supertraits.push(parse_quote!(core::marker::Sync));
+
     let mut method_dispatches = Vec::new();
+    let mut method_names = Vec::new();
 
     for item in &mut trait_def.items {
         if let TraitItem::Method(method) = item {
@@ -41,6 +47,7 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
                         eldritchv2::conversion::IntoEldritchResult::into_eldritch_result(result)
                     }
                 });
+                method_names.push(bind_name);
             }
         }
     }
@@ -57,6 +64,8 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
                 args: &[eldritchv2::Value],
                 kwargs: &std::collections::BTreeMap<String, eldritchv2::Value>
             ) -> Result<eldritchv2::Value, String>;
+
+            fn get_eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String>;
         }
 
         impl<T: #trait_name> #shim_trait_name for T {
@@ -70,6 +79,12 @@ pub fn eldritch_interface(_attr: TokenStream, item: TokenStream) -> TokenStream 
                     #(#method_dispatches)*
                     _ => Err(format!("Method '{}' not found or not exposed", name)),
                 }
+            }
+
+            fn get_eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
+                let mut names = alloc::vec::Vec::new();
+                #(names.push(alloc::string::String::from(#method_names));)*
+                names
             }
         }
     };
@@ -101,6 +116,10 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl #impl_generics eldritchv2::ast::ForeignValue for #struct_name #ty_generics #where_clause {
             fn type_name(&self) -> &str {
                 #lib_name_str
+            }
+
+            fn method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
+                self.fs.get_eldritch_method_names()
             }
 
             fn call_method(
