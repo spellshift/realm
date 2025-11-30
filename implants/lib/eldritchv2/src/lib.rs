@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
+extern crate self as eldritchv2;
 
 pub mod ast;
 pub mod conversion;
@@ -9,6 +10,7 @@ pub mod lexer;
 pub mod parser;
 pub mod token;
 pub mod repl;
+pub mod bindings;
 
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;

@@ -20,6 +20,7 @@ wasm-bindgen = "0.2"
 [features]
 default = ["std"]
 std = []
+fake_bindings = []
 
 [[bin]]
 name = "eldritch"
