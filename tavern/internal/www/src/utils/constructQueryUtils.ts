@@ -1,5 +1,5 @@
 import { Filters } from "../context/FilterContext";
-import { FilterBarOption } from "./consts";
+import { FilterBarOption } from "./interfacesUI";
 import { getFilterNameByTypes } from "./utils";
 
 export function constructTagQueryFormat(

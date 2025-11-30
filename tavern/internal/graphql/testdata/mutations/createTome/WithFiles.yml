@@ -19,7 +19,11 @@ query: |
         author
         eldritch
         files {
-          id
+          edges {
+            node {
+              id
+            }
+          }
         }
     }
   }
@@ -40,5 +44,8 @@ expected:
     author: kcarretto
     eldritch: print("yay!")
     files:
-      - id: "3000"
-      - id: "3001"
+      edges:
+        - node:
+            id: "3000"
+        - node:
+            id: "3001"

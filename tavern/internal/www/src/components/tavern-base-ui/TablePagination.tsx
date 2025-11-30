@@ -1,15 +1,10 @@
+import { Cursor, QueryPageInfo } from "../../utils/interfacesQuery";
 import Button from "./button/Button";
 
-type PageInfo = {
-  hasNextPage: boolean,
-  hasPreviousPage: boolean,
-  startCursor: string,
-  endCursor: string
-}
 type Props = {
   totalCount: number;
-  pageInfo: PageInfo;
-  refetchTable: (endCursor: string | undefined, startCursor: string | undefined) => void;
+  pageInfo: QueryPageInfo;
+  refetchTable: (endCursor: Cursor, startCursor: Cursor) => void;
   page: number;
   setPage: any;
   rowLimit: number;
@@ -20,13 +15,13 @@ export default function TablePagination(props: Props) {
   function handlePreviousClick() {
     if (refetchTable && pageInfo.hasPreviousPage) {
       setPage((page: number) => page - 1);
-      refetchTable(undefined, pageInfo.startCursor);
+      refetchTable(null, pageInfo.startCursor);
     }
   }
   function handleNextClick() {
     if (refetchTable && pageInfo.hasNextPage) {
       setPage((page: number) => page + 1);
-      refetchTable(pageInfo.endCursor, undefined);
+      refetchTable(pageInfo.endCursor, null);
     }
   }
   const getPageCount = () => {

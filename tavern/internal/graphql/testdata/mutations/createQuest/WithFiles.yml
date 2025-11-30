@@ -25,7 +25,11 @@ query: |
         id
         name
         files {
-          id
+        	edges {
+            node {
+              id
+            }
+          }
         }
       }
       tasks {
@@ -59,8 +63,11 @@ expected:
       id: "2000"
       name: "Test Tome"
       files:
-        - id: "3000"
-        - id: "3001"
+        edges:
+          - node:
+              id: "3000"
+          - node:
+              id: "3001"
     tasks:
       edges:
         - node:

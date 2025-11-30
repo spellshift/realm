@@ -1,6 +1,5 @@
-import React from "react";
 import EmptyStateNoQuests from "../../components/empty-states/EmptyStateNoQuests";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
@@ -19,6 +18,8 @@ const Quests = () => {
         updateQuestList
     } = useQuests(true);
 
+    const hasQuests = data?.quests?.edges && data.quests.edges.length > 0;
+
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
             <QuestHeader />
@@ -31,18 +32,25 @@ const Quests = () => {
                         <FilterControls type={FilterPageType.QUEST} />
                     </div>
                 </div>
-                {(loading) ?
+                {loading ? (
                     <EmptyState type={EmptyStateType.loading} label="Loading quests..." />
-                    : error ?
-                        <EmptyState type={EmptyStateType.error} label="Error loading quests" />
-                        : data?.quests?.edges.length > 0 ?
-                            <div className="flex flex-col gap-1 w-full">
-                                <QuestTable quests={data?.quests?.edges} />
-                                <TablePagination totalCount={data?.quests?.totalCount} pageInfo={data?.quests?.pageInfo} refetchTable={updateQuestList} page={page} setPage={setPage} rowLimit={TableRowLimit.QuestRowLimit} />
-                            </div>
-                            :
-                            <EmptyStateNoQuests />
-                }
+                ) : error ? (
+                    <EmptyState type={EmptyStateType.error} label="Error loading quests" />
+                ) : hasQuests && data.quests ? (
+                    <div className="flex flex-col gap-1 w-full">
+                        <QuestTable quests={data.quests.edges} />
+                        <TablePagination
+                            totalCount={data.quests.totalCount}
+                            pageInfo={data.quests.pageInfo}
+                            refetchTable={updateQuestList}
+                            page={page}
+                            setPage={setPage}
+                            rowLimit={TableRowLimit.QuestRowLimit}
+                        />
+                    </div>
+                ) : (
+                    <EmptyStateNoQuests />
+                )}
             </div>
         </PageWrapper>
     );

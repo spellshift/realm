@@ -4,10 +4,10 @@ import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/E
 import TablePagination from "../../../components/tavern-base-ui/TablePagination";
 import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../../../utils/enums";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import TaskCard from "../../../features/task-card/TaskCard";
-import { Task } from "../../../utils/consts";
+import TaskCard from "../../../components/task-card/TaskCard";
 import FilterControls, { FilterPageType } from "../../../components/filter-controls";
 import { useTasks } from "../../../hooks/useTasks";
+import { TaskNode } from "../../../utils/interfacesQuery";
 
 const HostTaskTab = () => {
     const { hostId } = useParams();
@@ -37,7 +37,7 @@ const HostTaskTab = () => {
                     {data?.tasks?.edges.length > 0 ? (
                         <>
                             <div className=" w-full flex flex-col gap-2 my-4">
-                                {data.tasks.edges.map((task: { node: Task }) => {
+                                {data.tasks.edges.map((task: { node: TaskNode }) => {
                                     return (
                                         <TaskCard key={task.node.id} task={task.node} />
                                     )
