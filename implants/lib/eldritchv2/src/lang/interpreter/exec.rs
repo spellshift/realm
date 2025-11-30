@@ -2,10 +2,10 @@ use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
 use super::eval::{apply_binary_op_pub, evaluate};
 use super::utils::{get_type_name, is_truthy};
-use crate::ast::{
+use super::super::ast::{
     Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
-use crate::token::TokenKind;
+use super::super::token::TokenKind;
 use alloc::format;
 use alloc::string::ToString;
 use alloc::vec::Vec;

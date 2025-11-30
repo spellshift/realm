@@ -2,11 +2,11 @@ use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
 use super::methods::call_bound_method;
 use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
-use crate::ast::{
+use super::super::ast::{
     Argument, Environment, Expr, ExprKind, FStringSegment, Function, Param, RuntimeParam, Stmt,
     StmtKind, Value,
 };
-use crate::token::{Span, TokenKind};
+use super::super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
 use alloc::format;

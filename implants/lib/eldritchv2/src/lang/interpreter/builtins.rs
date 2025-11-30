@@ -1,6 +1,6 @@
 use super::utils::{get_dir_attributes, get_type_name, is_truthy};
-use crate::ast::{BuiltinFn, Value};
-use crate::get_global_libraries;
+use super::super::ast::{BuiltinFn, Value};
+use crate::lang::global_libs::get_global_libraries;
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};

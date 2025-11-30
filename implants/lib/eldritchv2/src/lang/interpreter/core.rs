@@ -1,7 +1,7 @@
-use crate::ast::{Environment, Value, BuiltinFn};
-use crate::lexer::Lexer;
-use crate::parser::Parser;
-use crate::token::Span;
+use super::super::ast::{Environment, Value, BuiltinFn};
+use super::super::lexer::Lexer;
+use super::super::parser::Parser;
+use super::super::token::Span;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::rc::Rc;
@@ -13,7 +13,7 @@ use super::builtins::get_all_builtins;
 use super::error::{runtime_error, EldritchError};
 use super::exec;
 use super::eval;
-use crate::get_global_libraries;
+use crate::lang::global_libs::get_global_libraries;
 
 #[derive(Clone, PartialEq)]
 pub enum Flow {
@@ -99,7 +99,7 @@ impl Interpreter {
             match &stmt.kind {
                 // Special case: if top-level statement is an expression, return its value
                 // This matches behavior of typical REPLs / starlark-like exec
-                crate::ast::StmtKind::Expression(expr) => {
+                super::super::ast::StmtKind::Expression(expr) => {
                     last_val = eval::evaluate(self, expr)
                         .map_err(|e| self.format_error(input, e))?;
                 }
