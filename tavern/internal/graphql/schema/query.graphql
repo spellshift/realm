@@ -1,5 +1,23 @@
 extend type Query {
-  files(where: FileWhereInput): [File!]! @requireRole(role: USER)
+  files(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Files returned from the connection."""
+    orderBy: [FileOrder!]
+
+    """Filtering options for Files returned from the connection."""
+    where: FileWhereInput
+  ): FileConnection! @requireRole(role: USER)
   quests(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -57,7 +75,25 @@ extend type Query {
     """Filtering options for Repositories returned from the connection."""
     where: RepositoryWhereInput
   ): RepositoryConnection! @requireRole(role: USER)
-  beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
+  beacons(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Beacons returned from the connection."""
+    orderBy: [BeaconOrder!]
+
+    """Filtering options for Beacons returned from the connection."""
+    where: BeaconWhereInput
+  ): BeaconConnection! @requireRole(role: USER)
   hosts(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -77,9 +113,63 @@ extend type Query {
     """Filtering options for Hosts returned from the connection."""
     where: HostWhereInput
   ): HostConnection! @requireRole(role: USER)
-  tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
-  tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
-  users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  tags(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [TagOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: TagWhereInput
+  ): TagConnection! @requireRole(role: USER)
+  tomes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tomes returned from the connection."""
+    orderBy: [TomeOrder!]
+
+    """Filtering options for Tomes returned from the connection."""
+    where: TomeWhereInput
+  ): TomeConnection! @requireRole(role: USER)
+  users(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Users returned from the connection."""
+    orderBy: [UserOrder!]
+
+    """Filtering options for Users returned from the connection."""
+    where: UserWhereInput
+  ): UserConnection! @requireRole(role: USER)
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

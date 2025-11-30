@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { FilterBarOption } from '../utils/consts'
+import { FilterBarOption } from '../utils/interfacesUI'
 
 const STORAGE_KEY = 'realm-filters-v1.0'
 

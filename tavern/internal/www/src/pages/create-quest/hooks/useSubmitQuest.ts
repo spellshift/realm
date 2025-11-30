@@ -2,9 +2,11 @@ import { gql, useMutation } from "@apollo/client"
 import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreateQuestProps } from "../../../utils/consts";
 import { GET_QUEST_QUERY } from "../../../utils/queries";
 import { useFilters } from "../../../context/FilterContext";
+import { QuestFormValues } from "../types";
+
+export type CreateQuestProps = QuestFormValues;
 
 export const useSubmitQuest = () => {
     const { updateFilters } = useFilters();
@@ -25,33 +27,28 @@ export const useSubmitQuest = () => {
         }
     }
 
-    const handleOnCompleted = (result: any) => {
+    const handleOnCompleted = (result: { createQuest: { id: string } }) => {
         updateFilters({'filtersEnabled': false});
-        navigate(`/tasks/${result?.createQuest?.id}`);
+        navigate(`/tasks/${result.createQuest.id}`);
     }
 
     const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_QUEST_QUERY, // DocumentNode object parsed with gql
-        'GetQuests' // Query name
+        GET_QUEST_QUERY,
+        'GetQuests'
       ]});
 
     const submitQuest = (props: CreateQuestProps) => {
-        var param_obj = {}
-        for (var param of props.params) {
-            var tmp_param = {
-                [param.name]: param.value
-            }
-            param_obj = {
-                ...tmp_param,
-                ...param_obj,
-            }
-        }
+        const param_obj = props.params.reduce((acc, param) => {
+            acc[param.name] = param.value;
+            return acc;
+        }, {} as Record<string, any>);
+
         const formatVariables = {
             "variables": {
                 "IDs": props.beacons,
                 "input": {
-                    "name": props?.name,
-                    "tomeID": props.tome?.id,
+                    "name": props.name,
+                    "tomeID": props.tome!.id,
                     "parameters": JSON.stringify(param_obj),
                 }
             }

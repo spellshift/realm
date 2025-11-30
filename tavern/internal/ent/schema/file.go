@@ -56,6 +56,10 @@ func (File) Fields() []ent.Field {
 func (File) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("tomes", Tome.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Ref("files"),
 	}
 }
@@ -63,6 +67,8 @@ func (File) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (File) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entsql.Annotation{
 			Collation: "utf8mb4_general_ci",
 		},

@@ -1,22 +1,49 @@
 import React from "react";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
-import HostTable from "./components/HostTable";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useHosts } from "./useHosts";
-import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import HostTable from "./HostTable";
+import TablePagination from "../../components/tavern-base-ui/TablePagination";
 
-const HostList = () => {
+const HostList: React.FC = () => {
     const { loading, error, data, updateHosts, page, setPage } = useHosts(true);
+
+    const renderHostContent = () => {
+        if (error) {
+            return <EmptyState type={EmptyStateType.error} label="Error loading hosts" />;
+        }
+        else if (loading || !data) {
+            return <EmptyState type={EmptyStateType.loading} label="Loading hosts..." />;
+        }
+        else if (data?.hosts.totalCount === 0) {
+            return <EmptyState type={EmptyStateType.noData} label="No hosts found" />;
+        }
+
+        return (
+            <div className="flex flex-col gap-1 w-full">
+                <HostTable data={data.hosts?.edges} />
+                <TablePagination
+                    totalCount={data.hosts.totalCount}
+                    pageInfo={data.hosts.pageInfo}
+                    refetchTable={updateHosts}
+                    page={page}
+                    setPage={setPage}
+                    rowLimit={TableRowLimit.HostRowLimit}
+                />
+            </div>
+        );
+    };
 
     return (
         <PageWrapper currNavItem={PageNavItem.hosts}>
-            <Breadcrumbs pages={[{
-                label: "Hosts",
-                link: "/hosts"
-            }]}
+            <Breadcrumbs
+                pages={[{
+                    label: "Hosts",
+                    link: "/hosts"
+                }]}
             />
             <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
                 <div className="flex-1 flex flex-col gap-2">
@@ -28,27 +55,15 @@ const HostList = () => {
                     </p>
                 </div>
                 <div className="flex flex-row justify-end">
-                    {/* Sorting not added yet */}
-                    {/* <Button leftIcon={<Bars3BottomLeftIcon className="w-4" />} buttonVariant="ghost" buttonStyle={{ color: 'gray', size: "md" }} onClick={() => console.log("hi")}>Sort</Button> */}
                     <FilterControls type={FilterPageType.HOST} />
                 </div>
             </div>
             <div className="flex flex-col justify-center items-center gap-6">
-                {error ? (
-                    <EmptyState type={EmptyStateType.error} label="Error hosts..." />
-                ) : !data.hasData || loading ? (
-                    <EmptyState type={EmptyStateType.loading} label="Loading hosts..." />
-                ) : data?.hosts?.length === 0 ? (
-                    <EmptyState type={EmptyStateType.noData} label="No hosts data found" />
-                )
-                    : (
-                        <div className="flex flex-col gap-1 w-full">
-                            <HostTable data={data?.hosts} />
-                            <TablePagination totalCount={data.totalCount} pageInfo={data.pageInfo} refetchTable={updateHosts} page={page} setPage={setPage} rowLimit={TableRowLimit.HostRowLimit} />
-                        </div>
-                    )}
+                {renderHostContent()}
             </div>
+
         </PageWrapper>
     );
-}
+};
+
 export default HostList;

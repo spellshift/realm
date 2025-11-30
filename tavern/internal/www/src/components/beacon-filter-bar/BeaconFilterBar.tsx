@@ -1,14 +1,14 @@
 import React from "react";
 import Select, { createFilter, } from "react-select"
-import { BeaconType, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
+import { BeaconNode, HostNode, TagNode } from "../../utils/interfacesQuery";
 
 type Props = {
     setFiltersSelected: (arg1: any) => void;
-    beacons: Array<BeaconType>;
-    groups: Array<TomeTag>;
-    services: Array<TomeTag>;
-    hosts: Array<HostType>;
+    beacons: Array<BeaconNode>;
+    groups: Array<TagNode>;
+    services: Array<TagNode>;
+    hosts: Array<HostNode>;
     filtersSelected?: any;
     initialFilters?: any;
     isDisabled?: boolean;
@@ -49,7 +49,7 @@ export const BeaconFilterBar = (props: Props) => {
     //     })
     // };
 
-    const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>, hosts: Array<HostType>) => {
+    const getFormattedOptions = (beacons: Array<BeaconNode>, groups: Array<TagNode>, services: Array<TagNode>, hosts: Array<HostNode>) => {
         return [
             {
                 label: "Platform",
@@ -64,7 +64,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Service",
-                options: services.map(function (service: TomeTag) {
+                options: services.map(function (service: TagNode) {
                     return {
                         ...service,
                         value: service?.id,
@@ -75,7 +75,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Group",
-                options: groups.map(function (group: TomeTag) {
+                options: groups.map(function (group: TagNode) {
                     return {
                         ...group,
                         value: group?.id,
@@ -86,7 +86,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Host",
-                options: hosts.map(function (host: HostType) {
+                options: hosts.map(function (host: HostNode) {
                     return {
                         ...host,
                         value: host?.id,
@@ -97,7 +97,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Beacon",
-                options: beacons.map(function (beacon: BeaconType) {
+                options: beacons.map(function (beacon: BeaconNode) {
                     return {
                         ...beacon,
                         value: beacon?.id,

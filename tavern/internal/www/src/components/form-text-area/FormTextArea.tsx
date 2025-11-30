@@ -1,15 +1,13 @@
 import { Textarea } from "@chakra-ui/react";
-import React, { useState } from "react";
-
-import { TomeParams } from "../../utils/consts";
+import { FieldInputParams } from "../../utils/interfacesUI";
 
 type Props = {
     index: number;
     formik: any;
-    field: TomeParams;
+    field: FieldInputParams;
 }
 export const FormTextArea = (props: Props) => {
-    const {index, formik, field} = props;
+    const { index, formik, field } = props;
 
     const handleChange = (event: any) => {
         const allFieldParams = formik?.values?.params;

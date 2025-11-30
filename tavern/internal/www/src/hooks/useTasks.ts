@@ -4,13 +4,14 @@ import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../utils/enums";
 import { GET_TASK_QUERY } from "../utils/queries";
 import { useFilters } from "../context/FilterContext";
 import { constructTaskFilterQuery } from "../utils/constructQueryUtils";
+import { Cursor } from "../utils/interfacesQuery";
 
 
 export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
     const [page, setPage] = useState<number>(1);
     const {filters} = useFilters();
 
-    const constructDefaultQuery = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
       const defaultRowLimit = TableRowLimit.TaskRowLimit;
       const filterQueryFields = (filters && filters.filtersEnabled) && constructTaskFilterQuery(filters);
 
@@ -40,10 +41,10 @@ export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
 
     const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
 
-    const updateTaskList = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+    const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
         refetch(query);
-    },[filters, constructDefaultQuery, refetch]);
+    },[constructDefaultQuery, refetch]);
 
 
     useEffect(()=> {

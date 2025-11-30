@@ -1,6 +1,5 @@
-import { useContext } from "react";
 import { useFilters } from "../../context/FilterContext";
-import { TagContext } from "../../context/TagContext";
+import { useTags } from "../../context/TagContext";
 import { BeaconFilterBar } from "../beacon-filter-bar";
 import FreeTextSearch from "../tavern-base-ui/FreeTextSearch";
 import { FilterControlWrapper } from "./FilterControlWrapper";
@@ -28,7 +27,7 @@ const filterConfig: Record<FilterPageType, FilterFieldType[]> = {
 
 export default function FilterControls({ type }: { type: FilterPageType }) {
     const { filters, updateFilters } = useFilters();
-    const { data } = useContext(TagContext);
+    const { data } = useTags();
     const fieldsToRender = filterConfig[type];
 
     const calculateFilterCount = (field: FilterFieldType): number => {

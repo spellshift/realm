@@ -1,5 +1,7 @@
 import { add } from "date-fns";
-import { BeaconType, FilterBarOption, QuestParam, TomeParams, TomeTag } from "./consts";
+import { BeaconEdge, BeaconNode } from "./interfacesQuery";
+import { PrincipalAdminTypes } from "./enums";
+import { FilterBarOption, OnlineOfflineStatus, FieldInputParams } from "./interfacesUI";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -7,9 +9,6 @@ export function classNames(...classes: string[]) {
 
 export const convertArrayToObject = (array: Array<any>) =>
     array.reduce((acc, curr) => (acc[curr] = curr, acc), {});
-
-export const convertArrayOfObjectsToObject = (array: Array<any>, key: string) =>
-    array.reduce((acc, curr) => (acc[curr[key]] = curr, acc), {});
 
 export const safelyJsonParse = (value: string) => {
     let error = false;
@@ -59,10 +58,26 @@ export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
         });
 };
 
-export const getOfflineOnlineStatus = (beacons: any) : {online: number, offline: number} => {
+export const getFormatForPrincipal = (beacons: BeaconEdge[]) => {
+    const uniqueListOFPrincipals = beacons.reduce((acc: any, curr: BeaconEdge) => (acc[curr.node["principal"]] = curr, acc), {});
+    const princialUserList = Object.values(PrincipalAdminTypes) as Array<string>;
+    const finalList = [] as Array<string>;
+    for (const property in uniqueListOFPrincipals) {
+        if(princialUserList.indexOf(property) !== -1){
+            finalList.unshift(property);
+        }
+        else{
+            finalList.push(property);
+        }
+    }
+    return finalList;
+};
+
+
+export const getOfflineOnlineStatus = (beacons: BeaconEdge[]) : OnlineOfflineStatus => {
     return beacons.reduce(
-        (accumulator: any, currentValue: any) => {
-            const beaconOffline = checkIfBeaconOffline(currentValue);
+        (accumulator: OnlineOfflineStatus, currentValue: BeaconEdge) => {
+            const beaconOffline = checkIfBeaconOffline(currentValue.node);
             if (beaconOffline) {
                 accumulator.offline += 1;
             }
@@ -78,9 +93,9 @@ export const getOfflineOnlineStatus = (beacons: any) : {online: number, offline:
     );
 };
 
-export function getOnlineBeacons(beacons: Array<BeaconType>): Array<BeaconType> {
+export function getOnlineBeacons(beacons: Array<BeaconNode>): Array<BeaconNode> {
     const currentDate = new Date();
-    return beacons.filter((beacon: BeaconType) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
+    return beacons.filter((beacon: BeaconNode) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
 }
 export function checkIfBeaconOffline(beacon: { lastSeenAt: string, interval: number }): boolean {
     const currentDate = new Date();
@@ -129,7 +144,7 @@ export function getTacticColor(tactic: string) {
             return "#4b5563";
     }
 }
-export function constructTomeParams(questParamamters?: string, tomeParameters?: string): Array<QuestParam> {
+export function constructTomeParams(questParamamters?: string | null, tomeParameters?: string | null): Array<FieldInputParams> {
     if (!questParamamters || !tomeParameters) {
         return [];
     }
@@ -137,7 +152,7 @@ export function constructTomeParams(questParamamters?: string, tomeParameters?: 
     const paramValues = JSON.parse(questParamamters) || {};
     const paramFields = JSON.parse(tomeParameters || "") || [];
 
-    const fieldWithValue = paramFields.map((field: TomeParams) => {
+    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
@@ -146,8 +161,8 @@ export function constructTomeParams(questParamamters?: string, tomeParameters?: 
 
     return fieldWithValue;
 }
-export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<TomeParams>): Array<QuestParam> {
-    const fieldWithValue = paramFields.map((field: TomeParams) => {
+export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<FieldInputParams>): Array<FieldInputParams> {
+    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
