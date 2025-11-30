@@ -1,5 +1,6 @@
 use super::utils::{get_dir_attributes, get_type_name, is_truthy};
 use crate::ast::{BuiltinFn, Value};
+use crate::get_global_libraries;
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -93,7 +94,7 @@ fn builtin_int(args: &[Value]) -> Result<Value, String> {
 fn builtin_dir(args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         // Return list of standard built-ins names
-        let builtins = vec![
+        let mut builtins = vec![
             "assert",
             "assert_eq",
             "bool",
@@ -110,6 +111,13 @@ fn builtin_dir(args: &[Value]) -> Result<Value, String> {
             "str",
             "type",
         ];
+
+        // Add registered libraries
+        let libs = get_global_libraries();
+        let mut lib_names: Vec<&str> = libs.keys().map(|s| s.as_str()).collect();
+        builtins.append(&mut lib_names);
+        builtins.sort();
+
         let val_attrs: Vec<Value> = builtins
             .into_iter()
             .map(|s| Value::String(s.to_string()))
