@@ -99,9 +99,6 @@ impl ExecutionResult {
 impl WasmRepl {
     #[wasm_bindgen(constructor)]
     pub fn new() -> WasmRepl {
-        let mut interp = Interpreter::new();
-        interp.register_function("print", wasm_print);
-
         #[cfg(feature = "fake_bindings")]
         {
             register_lib(FileLibraryFake::default());
@@ -117,6 +114,9 @@ impl WasmRepl {
             register_lib(ReportLibraryFake::default());
             register_lib(TimeLibraryFake::default());
         }
+
+        let mut interp = Interpreter::new();
+        interp.register_function("print", wasm_print);
 
         WasmRepl {
             interp,
