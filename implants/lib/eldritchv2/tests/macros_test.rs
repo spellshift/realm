@@ -17,6 +17,9 @@ mod tests {
 
         #[eldritch_method]
         fn complex_op(&self, ids: Vec<i64>, meta: BTreeMap<String, bool>) -> Result<bool, String>;
+
+        #[eldritch_method]
+        fn btree_ret(&self) -> Result<BTreeMap<String, i64>, String>;
     }
 
     // Mock implementation for LibFS
@@ -40,6 +43,13 @@ mod tests {
         fn complex_op(&self, ids: Vec<i64>, meta: BTreeMap<String, bool>) -> Result<bool, String> {
              self.ops.lock().unwrap().push(format!("complex ids={:?} meta={:?}", ids, meta));
              Ok(true)
+        }
+
+        fn btree_ret(&self) -> Result<BTreeMap<String, i64>, String> {
+            let mut m = BTreeMap::new();
+            m.insert("one".to_string(), 1);
+            m.insert("two".to_string(), 2);
+            Ok(m)
         }
     }
 
@@ -69,6 +79,10 @@ mod tests {
 
         fn complex_op(&self, _ids: Vec<i64>, _meta: BTreeMap<String, bool>) -> Result<bool, String> {
             Ok(false)
+        }
+
+        fn btree_ret(&self) -> Result<BTreeMap<String, i64>, String> {
+            Ok(BTreeMap::new())
         }
     }
 
@@ -194,7 +208,26 @@ mod tests {
             }
         }
 
-        // --- Test 5: Introspection ---
+        // --- Test 5: Return BTreeMap ---
+        {
+            let ops = Arc::new(Mutex::new(Vec::new()));
+            let mock = MockFS { ops: ops.clone() };
+            register_lib(mock);
+
+            let mut interp = Interpreter::new();
+            let code = "file.btree_ret()";
+            let res = interp.interpret(code).unwrap();
+
+            if let Value::Dictionary(d) = res {
+                 let dict = d.borrow();
+                 assert_eq!(dict.get("one").unwrap(), &Value::Int(1));
+                 assert_eq!(dict.get("two").unwrap(), &Value::Int(2));
+            } else {
+                panic!("Expected Dictionary, got {:?}", res);
+            }
+        }
+
+        // --- Test 6: Introspection ---
         {
             // MockFS is registered
             let mut interp = Interpreter::new();
@@ -207,6 +240,7 @@ mod tests {
                 strings.sort();
                 assert!(strings.contains(&"move_file".to_string()));
                 assert!(strings.contains(&"write_str".to_string()));
+                assert!(strings.contains(&"btree_ret".to_string()));
             } else {
                 panic!("Expected List, got {:?}", res);
             }
