@@ -118,21 +118,17 @@ pub fn adjust_slice_indices(
             } else {
                 s
             }
-        } else {
-            if s < 0 {
-                0
-            } else if s > length {
-                length
-            } else {
-                s
-            }
-        }
-    } else {
-        if step < 0 {
-            length - 1
-        } else {
+        } else if s < 0 {
             0
+        } else if s > length {
+            length
+        } else {
+            s
         }
+    } else if step < 0 {
+        length - 1
+    } else {
+        0
     };
 
     let stop_val = if let Some(s) = stop {
@@ -148,21 +144,17 @@ pub fn adjust_slice_indices(
             } else {
                 s
             }
-        } else {
-            if s < 0 {
-                0
-            } else if s > length {
-                length
-            } else {
-                s
-            }
-        }
-    } else {
-        if step < 0 {
-            -1
-        } else {
+        } else if s < 0 {
+            0
+        } else if s > length {
             length
+        } else {
+            s
         }
+    } else if step < 0 {
+        -1
+    } else {
+        length
     };
 
     (start_val, stop_val)

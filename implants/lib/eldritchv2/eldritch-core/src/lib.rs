@@ -1,4 +1,4 @@
-#![cfg_attr(no_std, no_std)]
+#![cfg_attr(feature = "no_std", no_std)]
 
 extern crate alloc;
 extern crate self as eldritch_core;

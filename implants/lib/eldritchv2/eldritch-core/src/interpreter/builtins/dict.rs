@@ -21,7 +21,7 @@ pub fn builtin_dict(
     let mut map = BTreeMap::new();
 
     // 1. Process positional argument (iterable of pairs)
-    if let Some(iterable) = args.get(0) {
+    if let Some(iterable) = args.first() {
         match iterable {
             Value::Dictionary(d) => {
                 // Copy other dict
