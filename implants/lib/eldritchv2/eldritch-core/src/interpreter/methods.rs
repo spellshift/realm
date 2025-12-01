@@ -112,7 +112,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             Ok(Value::List(Rc::new(RefCell::new(items))))
         }
         (Value::Dictionary(d), "get") => {
-            if args.len() < 1 || args.len() > 2 {
+            if args.is_empty() || args.len() > 2 {
                 return Err("get() takes 1 or 2 arguments".into());
             }
             let key = match &args[0] {
@@ -154,7 +154,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
         }
 
         (Value::String(s), "split") => {
-            let delim = if args.len() > 0 {
+            let delim = if !args.is_empty() {
                 args[0].to_string()
             } else {
                 " ".to_string()
@@ -166,7 +166,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             Ok(Value::List(Rc::new(RefCell::new(parts))))
         }
         (Value::String(s), "splitlines") => {
-            let keepends = if args.len() > 0 {
+            let keepends = if !args.is_empty() {
                 is_truthy(&args[0])
             } else {
                 false
@@ -391,7 +391,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::String(s), "rsplit") => {
-            let delim = if args.len() > 0 {
+            let delim = if !args.is_empty() {
                 args[0].to_string()
             } else {
                 " ".to_string()

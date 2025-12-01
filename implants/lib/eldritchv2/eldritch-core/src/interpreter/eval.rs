@@ -669,7 +669,7 @@ fn builtin_map(
     let mut results = Vec::new();
 
     for item in items {
-        let res = call_value(interp, &func_val, &[item], span)?;
+        let res = call_value(interp, &func_val, std::slice::from_ref(&item), span)?;
         results.push(res);
     }
 
@@ -693,7 +693,7 @@ fn builtin_filter(
         let keep = if let Value::None = func_val {
             is_truthy(&item)
         } else {
-            let res = call_value(interp, &func_val, &[item.clone()], span)?;
+            let res = call_value(interp, &func_val, std::slice::from_ref(&item), span)?;
             is_truthy(&res)
         };
         if keep {
@@ -1003,27 +1003,27 @@ fn apply_binary_op(
         (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => {
             #[cfg(feature = "std")]
             {
-                Ok(Value::Float((a.clone() as f64).div_euclid(b.clone())))
+                Ok(Value::Float((a as f64).div_euclid(b)))
             }
             #[cfg(not(feature = "std"))]
             {
-                Ok(Value::Float(libm::floor(a.clone() as f64 / b.clone())))
+                Ok(Value::Float(libm::floor(a as f64 / b)))
             }
         }
         (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => {
             #[cfg(feature = "std")]
             {
-                Ok(Value::Float(a.div_euclid(b.clone() as f64)))
+                Ok(Value::Float(a.div_euclid(b as f64)))
             }
             #[cfg(not(feature = "std"))]
             {
-                Ok(Value::Float(libm::floor(a.clone() / b.clone() as f64)))
+                Ok(Value::Float(libm::floor(a / b as f64)))
             }
         }
         (Value::Float(a), TokenKind::Percent, Value::Float(b)) => {
             #[cfg(feature = "std")]
             {
-                Ok(Value::Float(a.rem_euclid(b.clone())))
+                Ok(Value::Float(a.rem_euclid(b)))
             }
             #[cfg(not(feature = "std"))]
             {
@@ -1034,12 +1034,11 @@ fn apply_binary_op(
         (Value::Int(a), TokenKind::Percent, Value::Float(b)) => {
             #[cfg(feature = "std")]
             {
-                Ok(Value::Float((a.clone() as f64).rem_euclid(b.clone())))
+                Ok(Value::Float((a as f64).rem_euclid(b)))
             }
             #[cfg(not(feature = "std"))]
             {
-                let a = a.clone() as f64;
-                let b = b.clone();
+                let a = a as f64;
                 let div = libm::floor(a / b);
                 Ok(Value::Float(a - b * div))
             }
@@ -1047,12 +1046,11 @@ fn apply_binary_op(
         (Value::Float(a), TokenKind::Percent, Value::Int(b)) => {
             #[cfg(feature = "std")]
             {
-                Ok(Value::Float(a.rem_euclid(b.clone() as f64)))
+                Ok(Value::Float(a.rem_euclid(b as f64)))
             }
             #[cfg(not(feature = "std"))]
             {
-                let a = a.clone();
-                let b = b.clone() as f64;
+                let b = b as f64;
                 let div = libm::floor(a / b);
                 Ok(Value::Float(a - b * div))
             }
@@ -1094,7 +1092,7 @@ fn apply_binary_op(
             // String formatting
             string_modulo_format(interp, &a, &b_val, span)
         }
-        _ => runtime_error(span, &format!("Unsupported binary op")),
+        _ => runtime_error(span, "Unsupported binary op"),
     }
 }
 

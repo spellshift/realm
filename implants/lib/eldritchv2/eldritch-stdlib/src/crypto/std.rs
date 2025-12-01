@@ -6,7 +6,7 @@ use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt, KeyIn
 use aes::Aes128;
 use sha1::{Digest, Sha1};
 use sha2::{Sha256};
-use super::{CryptoLibrary, CryptoLibraryEldritchAdapter};
+use super::CryptoLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(CryptoLibrary)]

@@ -1,0 +1,4 @@
+   Compiling eldritch-macros v0.3.0 (/app/implants/lib/eldritchv2/eldritch-macros)
+    Checking eldritch-core v0.3.0 (/app/implants/lib/eldritchv2/eldritch-core)
+    Checking eldritch-stdlib v0.3.0 (/app/implants/lib/eldritchv2/eldritch-stdlib)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.55s

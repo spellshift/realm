@@ -29,6 +29,12 @@ pub struct Interpreter {
     pub depth: usize,
 }
 
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
         let env = Rc::new(RefCell::new(Environment {

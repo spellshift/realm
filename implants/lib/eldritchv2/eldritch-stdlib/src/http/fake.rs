@@ -6,7 +6,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use eldritch_macros::eldritch_library_impl;
-use super::{HttpLibrary, HttpLibraryEldritchAdapter};
+use super::HttpLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(HttpLibrary)]

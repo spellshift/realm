@@ -8,7 +8,7 @@ use ::std::fs::{self, File, OpenOptions};
 use ::std::io::{Read, Write};
 use ::std::path::Path;
 use anyhow::{Context, Result as AnyhowResult};
-use super::{FileLibrary, FileLibraryEldritchAdapter};
+use super::FileLibrary;
 
 #[cfg(feature = "stdlib")]
 use flate2::Compression;

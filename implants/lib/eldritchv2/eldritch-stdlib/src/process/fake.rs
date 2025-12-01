@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
 use spin::Mutex;
-use super::{ProcessLibrary, ProcessLibraryEldritchAdapter};
+use super::ProcessLibrary;
 
 #[derive(Clone, Debug)]
 struct ProcessInfo {

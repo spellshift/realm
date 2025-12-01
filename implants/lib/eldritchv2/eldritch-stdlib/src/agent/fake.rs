@@ -3,7 +3,7 @@ use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use eldritch_macros::eldritch_library_impl;
-use super::{AgentLibrary, AgentLibraryEldritchAdapter};
+use super::AgentLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(AgentLibrary)]

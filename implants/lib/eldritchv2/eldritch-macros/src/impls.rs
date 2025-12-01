@@ -14,6 +14,7 @@ use syn::{
 ///    - `_eldritch_type_name`: Returns the library name.
 ///    - `_eldritch_method_names`: Returns a list of exposed method names.
 ///    - `_eldritch_call_method`: Dispatches calls to the actual methods.
+#[allow(clippy::collapsible_if)]
 pub fn expand_eldritch_library(
     attr: TokenStream,
     item: TokenStream,
@@ -25,7 +26,6 @@ pub fn expand_eldritch_library(
     let lib_name_str = if let Ok(Lit::Str(lit)) = syn::parse2::<Lit>(attr) {
         lit.value()
     } else {
-        use syn::spanned::Spanned;
         return Err(syn::Error::new(
             trait_name.span(),
             "Expected string literal for library name",
@@ -144,6 +144,7 @@ pub fn expand_eldritch_library_impl(
     })
 }
 
+#[allow(clippy::collapsible_if)]
 fn is_option_type(ty: &Type) -> bool {
     if let Type::Path(type_path) = ty {
         if let Some(segment) = type_path.path.segments.last() {

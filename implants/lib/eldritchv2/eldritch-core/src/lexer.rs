@@ -143,15 +143,14 @@ impl Lexer {
 
             if c == quote_char {
                 if is_triple {
-                    if self.peek_next() == quote_char {
-                        if self.current + 2 < self.source.len()
-                            && self.source[self.current + 2] == quote_char
-                        {
-                            self.advance();
-                            self.advance();
-                            self.advance();
-                            break;
-                        }
+                    if self.peek_next() == quote_char
+                        && self.current + 2 < self.source.len()
+                        && self.source[self.current + 2] == quote_char
+                    {
+                        self.advance();
+                        self.advance();
+                        self.advance();
+                        break;
                     }
                 } else {
                     self.advance();

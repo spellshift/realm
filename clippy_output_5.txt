@@ -1,0 +1,79 @@
+    Checking eldritch-core v0.3.0 (/app/implants/lib/eldritchv2/eldritch-core)
+   Compiling eldritch-macros v0.3.0 (/app/implants/lib/eldritchv2/eldritch-macros)
+    Checking eldritch-stdlib v0.3.0 (/app/implants/lib/eldritchv2/eldritch-stdlib)
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/agent/mod.rs:2:5
+  |
+2 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/assets/mod.rs:1:5
+  |
+1 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/crypto/mod.rs:1:5
+  |
+1 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/file/mod.rs:3:5
+  |
+3 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/http/mod.rs:3:5
+  |
+3 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/pivot/mod.rs:3:5
+  |
+3 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/process/mod.rs:3:5
+  |
+3 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/random/mod.rs:1:5
+  |
+1 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/regex/mod.rs:1:5
+  |
+1 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/report/mod.rs:3:5
+  |
+3 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/sys/mod.rs:3:5
+  |
+3 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: unused import: `alloc::format`
+ --> lib/eldritchv2/eldritch-stdlib/src/time/mod.rs:1:5
+  |
+1 | use alloc::format;
+  |     ^^^^^^^^^^^^^
+
+error: could not compile `eldritch-stdlib` (lib) due to 12 previous errors

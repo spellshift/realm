@@ -13,7 +13,7 @@ use reqwest::{
     blocking::Client,
     header::{HeaderMap, HeaderName, HeaderValue}
 };
-use super::{HttpLibrary, HttpLibraryEldritchAdapter};
+use super::HttpLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(HttpLibrary)]

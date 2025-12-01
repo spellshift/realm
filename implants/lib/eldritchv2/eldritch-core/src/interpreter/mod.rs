@@ -6,5 +6,4 @@ mod exec;
 mod methods;
 mod utils;
 
-pub use self::core::{Flow, Interpreter};
-pub use error::EldritchError;
+pub use self::core::Interpreter;

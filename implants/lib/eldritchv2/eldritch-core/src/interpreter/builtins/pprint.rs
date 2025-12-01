@@ -50,7 +50,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                     pretty_format(item, next_indent, indent_width)
                 ));
                 if i < list.len() - 1 {
-                    s.push_str(",");
+                    s.push(',');
                 }
                 s.push('\n');
             }
@@ -71,7 +71,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                 s.push_str(": ");
                 s.push_str(&pretty_format(value, next_indent, indent_width));
                 if i < dict.len() - 1 {
-                    s.push_str(",");
+                    s.push(',');
                 }
                 s.push('\n');
             }
@@ -92,10 +92,8 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                     next_indent_str,
                     pretty_format(item, next_indent, indent_width)
                 ));
-                if i < t.len() - 1 {
-                    s.push_str(",");
-                } else if t.len() == 1 {
-                    s.push_str(",");
+                if i < t.len() - 1 || t.len() == 1 {
+                    s.push(',');
                 }
                 s.push('\n');
             }
@@ -118,7 +116,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                     pretty_format(item, next_indent, indent_width)
                 ));
                 if i < set.len() - 1 {
-                    s.push_str(",");
+                    s.push(',');
                 }
                 s.push('\n');
             }

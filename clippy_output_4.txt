@@ -1,0 +1,79 @@
+    Checking eldritch-core v0.3.0 (/app/implants/lib/eldritchv2/eldritch-core)
+   Compiling eldritch-macros v0.3.0 (/app/implants/lib/eldritchv2/eldritch-macros)
+    Checking hex-literal v0.4.1
+    Checking glob v0.3.3
+error: unexpected `cfg` condition name: `no_std`
+ --> lib/eldritchv2/eldritch-core/src/lib.rs:1:13
+  |
+1 | #![cfg_attr(no_std, no_std)]
+  |             ^^^^^^ help: found config with similar value: `feature = "no_std"`
+  |
+  = help: expected names are: `docsrs`, `feature`, and `test` and 31 more
+  = help: consider using a Cargo feature instead
+  = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+           [lints.rust]
+           unexpected_cfgs = { level = "warn", check-cfg = ['cfg(no_std)'] }
+  = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(no_std)");` to the top of the `build.rs`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `-D unexpected-cfgs` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unexpected_cfgs)]`
+
+error: unused import: `Flow`
+ --> lib/eldritchv2/eldritch-core/src/interpreter/mod.rs:9:22
+  |
+9 | pub use self::core::{Flow, Interpreter};
+  |                      ^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `error::EldritchError`
+  --> lib/eldritchv2/eldritch-core/src/interpreter/mod.rs:10:9
+   |
+10 | pub use error::EldritchError;
+   |         ^^^^^^^^^^^^^^^^^^^^
+
+error: mutable key type
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/set.rs:39:5
+   |
+39 |     let mut set = BTreeSet::new();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ... because it contains `Value`, which has interior mutability
+   = note: ... because it contains `Rc<RefCell<Vec<Value>>>`, which has interior mutability
+   = note: ... because it contains `RefCell<Vec<Value>>`, which has interior mutability
+   = note: ... because it contains `Cell<isize>`, which has interior mutability
+   = note: ... because it contains `UnsafeCell<isize>`, which has interior mutability
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#mutable_key_type
+   = note: `-D clippy::mutable-key-type` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::mutable_key_type)]`
+
+error: redundant redefinition of a binding `b`
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1042:17
+     |
+1042 |                 let b = b;
+     |                 ^^^^^^^^^^
+     |
+help: `b` is initially defined here
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1034:58
+     |
+1034 |         (Value::Int(a), TokenKind::Percent, Value::Float(b)) => {
+     |                                                          ^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#redundant_locals
+     = note: `-D clippy::redundant-locals` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::redundant_locals)]`
+
+error: redundant redefinition of a binding `a`
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1054:17
+     |
+1054 |                 let a = a;
+     |                 ^^^^^^^^^^
+     |
+help: `a` is initially defined here
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1047:23
+     |
+1047 |         (Value::Float(a), TokenKind::Percent, Value::Int(b)) => {
+     |                       ^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#redundant_locals
+
+error: could not compile `eldritch-core` (lib) due to 6 previous errors
