@@ -980,10 +980,15 @@ fn apply_binary_op(
         (Value::Float(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float(a * b)),
         (Value::Float(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float(a / b)),
         (Value::Float(a), TokenKind::SlashSlash, Value::Float(b)) => {
-            Ok(Value::Float(a.div_euclid(b)))
+            #[cfg(feature = "std")]
+            {
+                Ok(Value::Float(a.div_euclid(b)))
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                Ok(Value::Float(libm::floor(a / b)))
+            }
         } // Floor div for float
-        (Value::Float(a), TokenKind::Percent, Value::Float(b)) => Ok(Value::Float(a.rem_euclid(b))),
-
         // Mixed Arithmetic
         (Value::Int(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float((a as f64) + b)),
         (Value::Int(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float((a as f64) - b)),
@@ -996,16 +1001,61 @@ fn apply_binary_op(
         (Value::Float(a), TokenKind::Slash, Value::Int(b)) => Ok(Value::Float(a / (b as f64))),
 
         (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => {
-            Ok(Value::Float((a as f64).div_euclid(b)))
+            #[cfg(feature = "std")]
+            {
+                Ok(Value::Float((a.clone() as f64).div_euclid(b.clone())))
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                Ok(Value::Float(libm::floor(a.clone() as f64 / b.clone())))
+            }
         }
         (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => {
-            Ok(Value::Float(a.div_euclid(b as f64)))
+            #[cfg(feature = "std")]
+            {
+                Ok(Value::Float(a.div_euclid(b.clone() as f64)))
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                Ok(Value::Float(libm::floor(a.clone() / b.clone() as f64)))
+            }
+        }
+        (Value::Float(a), TokenKind::Percent, Value::Float(b)) => {
+            #[cfg(feature = "std")]
+            {
+                Ok(Value::Float(a.rem_euclid(b.clone())))
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                let div = libm::floor(a / b);
+                Ok(Value::Float(a - b * div))
+            }
         }
         (Value::Int(a), TokenKind::Percent, Value::Float(b)) => {
-            Ok(Value::Float((a as f64).rem_euclid(b)))
+            #[cfg(feature = "std")]
+            {
+                Ok(Value::Float((a.clone() as f64).rem_euclid(b.clone())))
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                let a = a.clone() as f64;
+                let b = b.clone();
+                let div = libm::floor(a / b);
+                Ok(Value::Float(a - b * div))
+            }
         }
         (Value::Float(a), TokenKind::Percent, Value::Int(b)) => {
-            Ok(Value::Float(a.rem_euclid(b as f64)))
+            #[cfg(feature = "std")]
+            {
+                Ok(Value::Float(a.rem_euclid(b.clone() as f64)))
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                let a = a.clone();
+                let b = b.clone() as f64;
+                let div = libm::floor(a / b);
+                Ok(Value::Float(a - b * div))
+            }
         }
 
         (Value::Int(a), TokenKind::SlashSlash, Value::Int(b)) => {

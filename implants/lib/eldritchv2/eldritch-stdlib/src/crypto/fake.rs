@@ -1,4 +1,4 @@
-use super::*;
+
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
@@ -39,7 +39,7 @@ impl CryptoLibrary for CryptoLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_crypto_fake() {

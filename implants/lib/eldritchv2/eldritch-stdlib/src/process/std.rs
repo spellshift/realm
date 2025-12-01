@@ -1,6 +1,6 @@
-use super::*;
+
 use eldritch_macros::eldritch_library_impl;
-use crate::lang::ast::Value;
+use eldritch_core::Value;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
@@ -154,7 +154,7 @@ impl ProcessLibrary for StdProcessLibrary {
 
 #[cfg(all(test, feature = "std"))]
 mod tests {
-    use super::*;
+
     use ::std::process::Command;
 
     #[test]

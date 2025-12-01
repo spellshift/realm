@@ -1,5 +1,5 @@
-use crate::lang::ast::{Environment, Value};
-use crate::lang::interpreter::utils::is_truthy;
+use crate::ast::{Environment, Value};
+use crate::interpreter::utils::is_truthy;
 use alloc::rc::Rc;
 use alloc::string::String;
 use core::cell::RefCell;

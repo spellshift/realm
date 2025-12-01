@@ -1,4 +1,4 @@
-use super::*;
+
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
@@ -37,7 +37,7 @@ impl RegexLibrary for RegexLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_regex_fake() {

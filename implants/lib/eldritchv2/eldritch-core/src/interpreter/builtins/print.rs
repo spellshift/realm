@@ -1,4 +1,4 @@
-use crate::lang::ast::{Environment, Value};
+use crate::ast::{Environment, Value};
 use alloc::rc::Rc;
 use alloc::string::String;
 use core::cell::RefCell;

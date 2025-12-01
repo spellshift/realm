@@ -1,4 +1,4 @@
-use super::*;
+
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
@@ -19,7 +19,7 @@ impl AssetsLibrary for AssetsLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_assets_fake() {

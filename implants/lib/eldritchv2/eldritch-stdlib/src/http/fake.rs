@@ -1,5 +1,5 @@
-use super::*;
-use crate::lang::ast::Value;
+
+use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::rc::Rc;
 use alloc::string::String;
@@ -76,7 +76,7 @@ impl HttpLibrary for HttpLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_http_fake_get() {

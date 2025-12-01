@@ -1,7 +1,7 @@
 [package]
 name = "eldritch-core"
 version = "0.3.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -9,6 +9,16 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = []
 std = []
+
+[dependencies]
+lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+eldritch-macros = { path = "../eldritch-macros", optional = true }
+libm = "0.2.15"
+
+[dev-dependencies]
+eldritch-macros = { path = "../eldritch-macros" }
+criterion = "0.5"
 
 [[bench]]
 name = "interpreter"

@@ -1,5 +1,5 @@
-use crate::lang::ast::{Environment, Value};
-use crate::lang::global_libs::get_global_libraries;
+use crate::ast::{Environment, Value};
+use crate::global_libs::get_global_libraries;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

@@ -1,3 +1,4 @@
+extern crate alloc;
 pub mod agent;
 pub mod assets;
 pub mod crypto;

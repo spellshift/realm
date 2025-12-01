@@ -1,5 +1,5 @@
-use super::*;
-use crate::lang::ast::Value;
+
+use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -37,7 +37,7 @@ impl AgentLibrary for AgentLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_agent_fake() {

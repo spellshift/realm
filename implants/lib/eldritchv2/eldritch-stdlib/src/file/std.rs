@@ -1,8 +1,8 @@
 #![cfg(feature = "stdlib")]
 
-use super::*;
+
 use eldritch_macros::eldritch_library_impl;
-use crate::lang::ast::Value;
+use eldritch_core::Value;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
@@ -472,7 +472,7 @@ fn check_path(
 // Tests
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     // use sha256::try_digest; // Removed per error
     use ::std::io::Write;
 

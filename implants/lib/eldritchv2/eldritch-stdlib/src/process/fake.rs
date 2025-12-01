@@ -1,5 +1,5 @@
-use super::*;
-use crate::lang::ast::Value;
+
+use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
@@ -149,7 +149,7 @@ impl ProcessLibrary for ProcessLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_process_fake() {

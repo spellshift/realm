@@ -1,4 +1,4 @@
-use super::*;
+
 use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -105,7 +105,7 @@ impl CryptoLibrary for StdCryptoLibrary {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     use hex_literal::hex;
 
     #[test]

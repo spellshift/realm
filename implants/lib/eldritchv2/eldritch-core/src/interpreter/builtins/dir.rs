@@ -1,5 +1,5 @@
-use crate::lang::ast::{Environment, Value};
-use crate::lang::interpreter::utils::get_dir_attributes;
+use crate::ast::{Environment, Value};
+use crate::interpreter::utils::get_dir_attributes;
 use alloc::collections::BTreeSet;
 use alloc::rc::Rc;
 use alloc::string::String;
