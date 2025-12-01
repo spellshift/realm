@@ -37,6 +37,7 @@ pub fn builtin_set(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Va
         }
     };
 
+    #[allow(clippy::mutable_key_type)]
     let mut set = BTreeSet::new();
     for item in items {
         // Here we rely on Value implementing Ord.
