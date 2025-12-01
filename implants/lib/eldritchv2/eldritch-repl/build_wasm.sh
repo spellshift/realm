@@ -20,8 +20,8 @@ else
 fi
 
 # Deploy to docs
-# Assuming the script runs from implants/lib/eldritchv2/
-TARGET_DIR="../../../docs/assets/eldritch-repl"
+# Assuming the script runs from implants/lib/eldritchv2/eldritch-repl/
+TARGET_DIR="../../../../docs/assets/eldritch-repl"
 echo "Deploying to $TARGET_DIR..."
 
 mkdir -p "$TARGET_DIR"

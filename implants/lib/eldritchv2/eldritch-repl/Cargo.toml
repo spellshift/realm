@@ -1,0 +1,22 @@
+[package]
+name = "eldritch-repl"
+version = "0.3.0"
+edition = "2024"
+
+[features]
+
+[[bin]]
+name = "eldritch"
+path = "bin/repl.rs"
+required-features = ["stdlib"]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+crossterm = "0.27"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+
+[dependencies]

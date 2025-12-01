@@ -1,14 +1,48 @@
 [package]
-name = "eldritchv2"
-version = "0.1.0"
-edition = "2021"
+name = "eldritch-stdlib"
+version = "0.3.0"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = ["stdlib"]
+fake_bindings = []
+std = []
+stdlib = [
+    "std",
+    "dep:futures",
+    "dep:flate2",
+    "dep:tar",
+    "dep:tera",
+    "dep:tempfile",
+    "dep:glob",
+    "dep:regex",
+    "dep:anyhow",
+    "dep:serde_json",
+    "dep:reqwest",
+    "dep:tokio",
+    "dep:rand",
+    "dep:rand_chacha",
+    "dep:uuid",
+    "dep:sysinfo",
+    "dep:listeners",
+    "dep:aes",
+    "dep:md5",
+    "dep:sha1",
+    "dep:sha2",
+    "dep:hex-literal",
+]
+
+
 [dependencies]
 futures = { version = "0.3", optional = true }
-reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls", "stream"], optional = true }
+reqwest = { version = "0.11", default-features = false, features = [
+    "blocking",
+    "rustls-tls",
+    "stream",
+], optional = true }
 tokio = { version = "1", features = ["rt", "macros"], optional = true }
 eldritch-macros = { path = "../eldritch-macros" }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
@@ -32,38 +66,5 @@ sha1 = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 hex-literal = { workspace = true, optional = true }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-crossterm = "0.27"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
 httptest = "0.16"
-# sha256 = { workspace = true }
-
-[features]
-default = ["stdlib"]
-std = []
-stdlib = ["std", "dep:futures", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json", "dep:reqwest", "dep:tokio", "dep:rand", "dep:rand_chacha", "dep:uuid", "dep:sysinfo", "dep:listeners", "dep:aes", "dep:md5", "dep:sha1", "dep:sha2", "dep:hex-literal"]
-fake_bindings = []
-
-[[bin]]
-name = "eldritch"
-path = "bin/repl.rs"
-required-features = ["stdlib"]
-
-[[bench]]
-name = "interpreter"
-harness = false
-
-[[bench]]
-name = "builtins"
-harness = false
-
-[profile.bench]
-panic = "abort"
-
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = false
