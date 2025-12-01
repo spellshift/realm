@@ -75,6 +75,12 @@ pub struct Repl {
     search_state: Option<SearchState>,
 }
 
+impl Default for Repl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Repl {
     pub fn new() -> Self {
         Repl {
@@ -449,10 +455,8 @@ impl Repl {
         };
 
         if should_submit {
-            if !full_code.trim().is_empty() {
-                if self.history.last() != Some(&full_code) {
-                    self.history.push(full_code.clone());
-                }
+            if !full_code.trim().is_empty() && self.history.last() != Some(&full_code) {
+                self.history.push(full_code.clone());
             }
 
             self.buffer.clear();

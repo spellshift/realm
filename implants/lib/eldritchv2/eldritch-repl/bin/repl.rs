@@ -5,41 +5,33 @@ use crossterm::{
     terminal::{self, ClearType},
     ExecutableCommand, QueueableCommand,
 };
-use eldritchv2::{Interpreter, Repl, Value, register_lib};
-use eldritchv2::repl::{Input, ReplAction};
-use eldritchv2::{Interpreter, Repl, Value};
+use eldritch_core::{Interpreter, Value, register_lib};
+use eldritch_repl::{Input, Repl, ReplAction};
 use std::io::{self, Write};
 use std::time::Duration;
 
 #[cfg(feature = "stdlib")]
-use eldritchv2::bindings::{
-  file::std::StdFileLibrary,
-  http::std::StdHttpLibrary,
-  process::std::StdProcessLibrary,
-  regex::std::StdRegexLibrary,
-  random::std::StdRandomLibrary,
-  crypto::std::StdCryptoLibrary,
+use eldritch_stdlib::{
+    crypto::std::StdCryptoLibrary, file::std::StdFileLibrary, http::std::StdHttpLibrary,
+    process::std::StdProcessLibrary, random::std::StdRandomLibrary, regex::std::StdRegexLibrary,
 };
 
 #[cfg(feature = "fake_bindings")]
-use eldritchv2::bindings::{
-  file::fake::FileLibraryFake,
-  http::fake::HttpLibraryFake,
-  regex::fake::RegexLibraryFake,
-  crypto::fake::CryptoLibraryFake,
+use eldritch_stdlib::{
+    crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
+    regex::fake::RegexLibraryFake,
 };
-
 
 fn main() -> io::Result<()> {
     // Register Libraries
     #[cfg(feature = "stdlib")]
     {
-      register_lib(StdFileLibrary::default());
-      register_lib(StdHttpLibrary::default());
-      register_lib(StdProcessLibrary::default());
-      register_lib(StdRegexLibrary::default());
-      register_lib(StdRandomLibrary::default());
-      register_lib(StdCryptoLibrary::default());
+        register_lib(StdFileLibrary);
+        register_lib(StdHttpLibrary);
+        register_lib(StdProcessLibrary);
+        register_lib(StdRegexLibrary);
+        register_lib(StdRandomLibrary);
+        register_lib(StdCryptoLibrary);
     }
 
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
@@ -59,7 +51,7 @@ fn main() -> io::Result<()> {
             if i > 0 {
                 print!(" ");
             }
-            print!("{}", arg.to_string());
+            print!("{arg}");
         }
         println!();
         Ok(Value::None)
@@ -70,7 +62,7 @@ fn main() -> io::Result<()> {
         let mut input = String::new();
         let res = match std::io::stdin().read_line(&mut input) {
             Ok(_) => Ok(Value::String(input.trim().to_string())),
-            Err(e) => Err(format!("Input error: {}", e)),
+            Err(e) => Err(format!("Input error: {e}")),
         };
         terminal::enable_raw_mode().unwrap();
         res
@@ -92,50 +84,47 @@ fn main() -> io::Result<()> {
 
     loop {
         if event::poll(Duration::from_millis(100))? {
-            match event::read()? {
-                Event::Key(key) => {
-                    let input = map_key(key);
-                    if let Some(input) = input {
-                        match repl.handle_input(input) {
-                            ReplAction::Quit => break,
-                            ReplAction::Submit {
-                                code,
-                                last_line: _,
-                                prompt: _,
-                            } => {
-                                // Clear current line visual and move down
-                                stdout.execute(cursor::MoveToNextLine(1))?;
+            if let Event::Key(key) = event::read()? {
+                let input = map_key(key);
+                if let Some(input) = input {
+                    match repl.handle_input(input) {
+                        ReplAction::Quit => break,
+                        ReplAction::Submit {
+                            code,
+                            last_line: _,
+                            prompt: _,
+                        } => {
+                            // Clear current line visual and move down
+                            stdout.execute(cursor::MoveToNextLine(1))?;
 
-                                terminal::disable_raw_mode()?;
-                                match interpreter.interpret(&code) {
-                                    Ok(v) => {
-                                        if !matches!(v, Value::None) {
-                                            println!("{:?}", v);
-                                        }
+                            terminal::disable_raw_mode()?;
+                            match interpreter.interpret(&code) {
+                                Ok(v) => {
+                                    if !matches!(v, Value::None) {
+                                        println!("{v:?}");
                                     }
-                                    Err(e) => println!("Error: {}", e),
                                 }
-                                terminal::enable_raw_mode()?;
+                                Err(e) => println!("Error: {e}"),
+                            }
+                            terminal::enable_raw_mode()?;
 
-                                render(&mut stdout, &repl)?;
-                            }
-                            ReplAction::AcceptLine { line: _, prompt: _ } => {
-                                stdout.execute(cursor::MoveToNextLine(1))?;
-                                render(&mut stdout, &repl)?;
-                            }
-                            ReplAction::Render => {
-                                render(&mut stdout, &repl)?;
-                            }
-                            ReplAction::ClearScreen => {
-                                stdout.execute(terminal::Clear(ClearType::All))?;
-                                stdout.execute(cursor::MoveTo(0, 0))?;
-                                render(&mut stdout, &repl)?;
-                            }
-                            ReplAction::None => {}
+                            render(&mut stdout, &repl)?;
                         }
+                        ReplAction::AcceptLine { line: _, prompt: _ } => {
+                            stdout.execute(cursor::MoveToNextLine(1))?;
+                            render(&mut stdout, &repl)?;
+                        }
+                        ReplAction::Render => {
+                            render(&mut stdout, &repl)?;
+                        }
+                        ReplAction::ClearScreen => {
+                            stdout.execute(terminal::Clear(ClearType::All))?;
+                            stdout.execute(cursor::MoveTo(0, 0))?;
+                            render(&mut stdout, &repl)?;
+                        }
+                        ReplAction::None => {}
                     }
                 }
-                _ => {}
             }
         }
     }

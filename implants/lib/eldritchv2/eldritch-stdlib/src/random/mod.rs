@@ -6,7 +6,7 @@ use eldritch_macros::{eldritch_library, eldritch_method};
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "stdlib")]
 pub mod std;
 
 #[eldritch_library("random")]

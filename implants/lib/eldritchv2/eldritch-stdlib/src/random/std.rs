@@ -1,4 +1,5 @@
 
+use super::{RandomLibrary, RandomLibraryEldritchAdapter};
 use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
