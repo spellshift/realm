@@ -1,4 +1,5 @@
 
+use super::{ProcessLibrary, ProcessLibraryEldritchAdapter};
 use eldritch_macros::eldritch_library_impl;
 use eldritch_core::Value;
 use alloc::string::{String, ToString};

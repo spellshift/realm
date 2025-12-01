@@ -85,7 +85,7 @@ fn test_repl_multiline() {
             // The prompt used for this line was the default one
             assert!(prompt.contains(">>>"));
         }
-        _ => panic!("Expected AcceptLine, got {:?}", action),
+        _ => panic!("Expected AcceptLine, got {action:?}"),
     }
 
     // Verify next prompt is continuation
@@ -101,10 +101,7 @@ fn test_repl_multiline() {
             assert_eq!(line, "}");
             assert!(prompt.contains("..."));
         }
-        _ => panic!(
-            "Expected AcceptLine (waiting for empty line), got {:?}",
-            action
-        ),
+        _ => panic!("Expected AcceptLine (waiting for empty line), got {action:?}"),
     }
 
     // Enter (empty line) -> Should Submit
@@ -117,7 +114,7 @@ fn test_repl_multiline() {
             assert!(code.contains("if true {"));
             assert!(code.contains("}"));
         }
-        _ => panic!("Expected Submit, got {:?}", action),
+        _ => panic!("Expected Submit, got {action:?}"),
     }
 }
 
