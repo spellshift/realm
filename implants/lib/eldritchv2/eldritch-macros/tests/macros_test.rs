@@ -1,4 +1,3 @@
-#[cfg(feature = "std")]
 mod tests {
     extern crate alloc;
     use eldritch_macros::{

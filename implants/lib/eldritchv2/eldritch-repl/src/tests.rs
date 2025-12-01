@@ -1,4 +1,6 @@
 use crate::lang::ast::{Environment, Value};
+extern crate alloc;
+
 #[cfg(test)]
 use crate::repl::{Input, Repl, ReplAction};
 use crate::Interpreter;

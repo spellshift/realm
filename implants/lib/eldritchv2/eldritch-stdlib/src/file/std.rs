@@ -12,6 +12,7 @@ use ::std::io::{Read, Write};
 use ::std::path::{Path, PathBuf};
 use ::std::time;
 use anyhow::{Context, Result as AnyhowResult};
+use super::{FileLibrary, FileLibraryEldritchAdapter};
 
 #[cfg(feature = "stdlib")]
 use flate2::Compression;
@@ -474,7 +475,12 @@ fn check_path(
 mod tests {
 
     // use sha256::try_digest; // Removed per error
+    use super::*;
     use ::std::io::Write;
+    use std::fs;
+    use eldritch_core::Value;
+    use alloc::collections::BTreeMap;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_file_ops_basic() -> AnyhowResult<()> {

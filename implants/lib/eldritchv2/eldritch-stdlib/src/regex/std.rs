@@ -3,6 +3,7 @@ use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
 use regex::{Regex, NoExpand};
+use super::{RegexLibrary, RegexLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RegexLibrary)]
@@ -60,7 +61,7 @@ impl RegexLibrary for StdRegexLibrary {
 
 #[cfg(test)]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_match_all_one_match() {

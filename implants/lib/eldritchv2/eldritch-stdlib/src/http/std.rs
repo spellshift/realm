@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::io::Write;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use super::{HttpLibrary, HttpLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(HttpLibrary)]
@@ -127,7 +128,7 @@ impl HttpLibrary for StdHttpLibrary {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use httptest::{matchers::*, responders::*, Expectation, Server};
+    use httptest::{Expectation, Server, matchers::{request, all_of}, responders::status_code};
     use tempfile::NamedTempFile;
     use std::fs::read_to_string;
 

@@ -1,5 +1,5 @@
-use crate::lang::lexer::Lexer;
-use crate::lang::token::TokenKind;
+use eldritch_core::lexer::Lexer;
+use eldritch_core::token::TokenKind;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 

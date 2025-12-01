@@ -7,3 +7,5 @@ pub mod wasm;
 mod tests;
 
 pub use self::core::*;
+
+extern crate alloc;
