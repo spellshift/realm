@@ -5,6 +5,9 @@ use alloc::vec::Vec;
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
+#[cfg(feature = "stdlib")]
+pub mod std;
+
 #[eldritch_library("crypto")]
 pub trait CryptoLibrary {
     #[eldritch_method]

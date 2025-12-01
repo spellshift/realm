@@ -23,6 +23,14 @@ anyhow = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 sysinfo = { workspace = true, optional = true }
 listeners = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
+aes = { workspace = true, optional = true }
+md5 = { workspace = true, optional = true }
+sha1 = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+hex-literal = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 crossterm = "0.27"
@@ -37,7 +45,7 @@ httptest = "0.16"
 [features]
 default = ["stdlib"]
 std = []
-stdlib = ["std", "dep:futures", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json", "dep:reqwest", "dep:tokio", "dep:sysinfo", "dep:listeners"]
+stdlib = ["std", "dep:futures", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json", "dep:reqwest", "dep:tokio", "dep:rand", "dep:rand_chacha", "dep:uuid", "dep:sysinfo", "dep:listeners", "dep:aes", "dep:md5", "dep:sha1", "dep:sha2", "dep:hex-literal"]
 fake_bindings = []
 
 [[bin]]
