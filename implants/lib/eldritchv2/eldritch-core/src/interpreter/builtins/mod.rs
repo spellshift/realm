@@ -37,42 +37,39 @@ mod tuple;
 mod zip;
 
 pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
-    let mut builtins = Vec::new();
-
-    // Existing
-    builtins.push(("print", print::builtin_print as BuiltinFn));
-    builtins.push(("pprint", pprint::builtin_pprint as BuiltinFn));
-    builtins.push(("len", len::builtin_len as BuiltinFn));
-    builtins.push(("range", range::builtin_range as BuiltinFn));
-    builtins.push(("type", type_::builtin_type as BuiltinFn));
-    builtins.push(("bool", bool::builtin_bool as BuiltinFn));
-    builtins.push(("str", str::builtin_str as BuiltinFn));
-    builtins.push(("int", int::builtin_int as BuiltinFn));
-    builtins.push(("dir", dir::builtin_dir as BuiltinFn));
-    builtins.push(("assert", assert::builtin_assert as BuiltinFn));
-    builtins.push(("assert_eq", assert_eq::builtin_assert_eq as BuiltinFn));
-    builtins.push(("fail", fail::builtin_fail as BuiltinFn));
-    builtins.push(("enumerate", enumerate::builtin_enumerate as BuiltinFn));
-    builtins.push(("libs", libs::builtin_libs as BuiltinFn));
-    builtins.push(("builtins", builtins_fn::builtin_builtins as BuiltinFn));
-    builtins.push(("bytes", bytes::builtin_bytes as BuiltinFn));
-
-    // New
-    builtins.push(("abs", abs::builtin_abs as BuiltinFn));
-    builtins.push(("any", any::builtin_any as BuiltinFn));
-    builtins.push(("all", all::builtin_all as BuiltinFn));
-    builtins.push(("float", float::builtin_float as BuiltinFn));
-    builtins.push(("list", list::builtin_list as BuiltinFn));
-    builtins.push(("max", max::builtin_max as BuiltinFn));
-    builtins.push(("min", min::builtin_min as BuiltinFn));
-    builtins.push(("repr", repr::builtin_repr as BuiltinFn));
-    builtins.push(("reversed", reversed::builtin_reversed as BuiltinFn));
-    builtins.push(("set", set::builtin_set as BuiltinFn));
-    builtins.push(("sorted", sorted::builtin_sorted as BuiltinFn));
-    builtins.push(("tuple", tuple::builtin_tuple as BuiltinFn));
-    builtins.push(("zip", zip::builtin_zip as BuiltinFn));
-
-    builtins
+    vec![
+        // Existing
+        ("print", print::builtin_print as BuiltinFn),
+        ("pprint", pprint::builtin_pprint as BuiltinFn),
+        ("len", len::builtin_len as BuiltinFn),
+        ("range", range::builtin_range as BuiltinFn),
+        ("type", type_::builtin_type as BuiltinFn),
+        ("bool", bool::builtin_bool as BuiltinFn),
+        ("str", str::builtin_str as BuiltinFn),
+        ("int", int::builtin_int as BuiltinFn),
+        ("dir", dir::builtin_dir as BuiltinFn),
+        ("assert", assert::builtin_assert as BuiltinFn),
+        ("assert_eq", assert_eq::builtin_assert_eq as BuiltinFn),
+        ("fail", fail::builtin_fail as BuiltinFn),
+        ("enumerate", enumerate::builtin_enumerate as BuiltinFn),
+        ("libs", libs::builtin_libs as BuiltinFn),
+        ("builtins", builtins_fn::builtin_builtins as BuiltinFn),
+        ("bytes", bytes::builtin_bytes as BuiltinFn),
+        // New
+        ("abs", abs::builtin_abs as BuiltinFn),
+        ("any", any::builtin_any as BuiltinFn),
+        ("all", all::builtin_all as BuiltinFn),
+        ("float", float::builtin_float as BuiltinFn),
+        ("list", list::builtin_list as BuiltinFn),
+        ("max", max::builtin_max as BuiltinFn),
+        ("min", min::builtin_min as BuiltinFn),
+        ("repr", repr::builtin_repr as BuiltinFn),
+        ("reversed", reversed::builtin_reversed as BuiltinFn),
+        ("set", set::builtin_set as BuiltinFn),
+        ("sorted", sorted::builtin_sorted as BuiltinFn),
+        ("tuple", tuple::builtin_tuple as BuiltinFn),
+        ("zip", zip::builtin_zip as BuiltinFn),
+    ]
 }
 
 // Separate function for kwargs builtins

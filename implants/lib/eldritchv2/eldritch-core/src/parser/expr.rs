@@ -344,10 +344,8 @@ impl Parser {
                     if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::RBracket) {
                         stop = Some(Box::new(self.expression()?));
                     }
-                    if self.match_token(&[TokenKind::Colon]) {
-                        if !self.check(&TokenKind::RBracket) {
-                            step = Some(Box::new(self.expression()?));
-                        }
+                    if self.match_token(&[TokenKind::Colon]) && !self.check(&TokenKind::RBracket) {
+                        step = Some(Box::new(self.expression()?));
                     }
                 } else {
                     start = Some(Box::new(self.expression()?));
@@ -356,10 +354,8 @@ impl Parser {
                         if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::RBracket) {
                             stop = Some(Box::new(self.expression()?));
                         }
-                        if self.match_token(&[TokenKind::Colon]) {
-                            if !self.check(&TokenKind::RBracket) {
-                                step = Some(Box::new(self.expression()?));
-                            }
+                        if self.match_token(&[TokenKind::Colon]) && !self.check(&TokenKind::RBracket) {
+                            step = Some(Box::new(self.expression()?));
                         }
                     }
                 }
@@ -581,13 +577,11 @@ impl Parser {
             }
 
             let mut elements = vec![first_expr];
-            if self.match_token(&[TokenKind::Comma]) {
-                if !self.check(&TokenKind::RBracket) {
-                    loop {
-                        elements.push(self.expression()?);
-                        if !self.match_token(&[TokenKind::Comma]) {
-                            break;
-                        }
+            if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBracket) {
+                loop {
+                    elements.push(self.expression()?);
+                    if !self.match_token(&[TokenKind::Comma]) {
+                        break;
                     }
                 }
             }
@@ -648,16 +642,14 @@ impl Parser {
             }
 
             let mut entries = vec![(key_expr, val_expr)];
-            if self.match_token(&[TokenKind::Comma]) {
-                if !self.check(&TokenKind::RBrace) {
-                    loop {
-                        let k = self.expression()?;
-                        self.consume(|t| matches!(t, TokenKind::Colon), "Expected ':'.")?;
-                        let v = self.expression()?;
-                        entries.push((k, v));
-                        if !self.match_token(&[TokenKind::Comma]) {
-                            break;
-                        }
+            if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBrace) {
+                loop {
+                    let k = self.expression()?;
+                    self.consume(|t| matches!(t, TokenKind::Colon), "Expected ':'.")?;
+                    let v = self.expression()?;
+                    entries.push((k, v));
+                    if !self.match_token(&[TokenKind::Comma]) {
+                        break;
                     }
                 }
             }
