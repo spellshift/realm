@@ -7,6 +7,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+futures = { version = "0.3", optional = true }
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls", "stream"], optional = true }
+tokio = { version = "1", features = ["rt", "macros"], optional = true }
 eldritch-macros = { path = "../eldritch-macros" }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
@@ -28,12 +31,13 @@ crossterm = "0.27"
 wasm-bindgen = "0.2"
 
 [dev-dependencies]
+httptest = "0.16"
 # sha256 = { workspace = true }
 
 [features]
 default = ["stdlib"]
 std = []
-stdlib = ["std", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json"]
+stdlib = ["std", "dep:futures", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json", "dep:reqwest", "dep:tokio", "dep:sysinfo", "dep:listeners"]
 fake_bindings = []
 
 [[bin]]
