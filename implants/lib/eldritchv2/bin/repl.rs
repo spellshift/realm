@@ -14,6 +14,7 @@ use std::time::Duration;
 use eldritchv2::bindings::{
   file::std::StdFileLibrary,
   process::std::StdProcessLibrary,
+  random::std::StdRandomLibrary,
   crypto::std::StdCryptoLibrary,
 };
 
@@ -29,6 +30,7 @@ fn main() -> io::Result<()> {
     {
       register_lib(StdFileLibrary::default());
       register_lib(StdProcessLibrary::default());
+      register_lib(StdRandomLibrary::default());
       register_lib(StdCryptoLibrary::default());
     }
 
