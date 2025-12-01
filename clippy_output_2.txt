@@ -1,0 +1,534 @@
+    Checking eldritch-core v0.3.0 (/app/implants/lib/eldritchv2/eldritch-core)
+   Compiling eldritch-macros v0.3.0 (/app/implants/lib/eldritchv2/eldritch-macros)
+    Checking glob v0.3.3
+    Checking hex-literal v0.4.1
+error: unused import: `syn::spanned::Spanned`
+  --> lib/eldritchv2/eldritch-macros/src/impls.rs:28:13
+   |
+28 |         use syn::spanned::Spanned;
+   |             ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `-D unused-imports` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: this `if` statement can be collapsed
+  --> lib/eldritchv2/eldritch-macros/src/impls.rs:52:21
+   |
+52 | /                     if let Ok(Meta::List(meta)) = attr.parse_meta() {
+53 | |                         if let Some(NestedMeta::Lit(Lit::Str(lit))) = meta.nested.first() {
+54 | |                             rename = Some(lit.value());
+55 | |                         }
+56 | |                     }
+   | |_____________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+   = note: `-D clippy::collapsible-if` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+   |
+52 ~                     if let Ok(Meta::List(meta)) = attr.parse_meta()
+53 ~                         && let Some(NestedMeta::Lit(Lit::Str(lit))) = meta.nested.first() {
+54 |                             rename = Some(lit.value());
+55 ~                         }
+   |
+
+error: unexpected `cfg` condition name: `no_std`
+ --> lib/eldritchv2/eldritch-core/src/lib.rs:1:13
+  |
+1 | #![cfg_attr(no_std, no_std)]
+  |             ^^^^^^ help: found config with similar value: `feature = "no_std"`
+  |
+  = help: expected names are: `docsrs`, `feature`, and `test` and 31 more
+  = help: consider using a Cargo feature instead
+  = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+           [lints.rust]
+           unexpected_cfgs = { level = "warn", check-cfg = ['cfg(no_std)'] }
+  = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(no_std)");` to the top of the `build.rs`
+  = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+  = note: `-D unexpected-cfgs` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unexpected_cfgs)]`
+
+error: this `if` statement can be collapsed
+   --> lib/eldritchv2/eldritch-macros/src/impls.rs:148:5
+    |
+148 | /     if let Type::Path(type_path) = ty {
+149 | |         if let Some(segment) = type_path.path.segments.last() {
+150 | |             return segment.ident == "Option";
+151 | |         }
+152 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+148 ~     if let Type::Path(type_path) = ty
+149 ~         && let Some(segment) = type_path.path.segments.last() {
+150 |             return segment.ident == "Option";
+151 ~         }
+    |
+
+error: unused import: `Flow`
+ --> lib/eldritchv2/eldritch-core/src/interpreter/mod.rs:9:22
+  |
+9 | pub use self::core::{Flow, Interpreter};
+  |                      ^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `error::EldritchError`
+  --> lib/eldritchv2/eldritch-core/src/interpreter/mod.rs:10:9
+   |
+10 | pub use error::EldritchError;
+   |         ^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `eldritch-macros` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: calling `push_str()` using a single-character string literal
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:53:21
+   |
+53 |                     s.push_str(",");
+   |                     ^^^^^^^^^^^^^^^ help: consider using `push` with a character literal: `s.push(',')`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_char_add_str
+   = note: `-D clippy::single-char-add-str` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::single_char_add_str)]`
+
+error: calling `push_str()` using a single-character string literal
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:74:21
+   |
+74 |                     s.push_str(",");
+   |                     ^^^^^^^^^^^^^^^ help: consider using `push` with a character literal: `s.push(',')`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_char_add_str
+
+error: this `if` has identical blocks
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:95:36
+   |
+95 |                   if i < t.len() - 1 {
+   |  ____________________________________^
+96 | |                     s.push_str(",");
+97 | |                 } else if t.len() == 1 {
+   | |_________________^
+   |
+note: same as this
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:97:40
+   |
+97 |                   } else if t.len() == 1 {
+   |  ________________________________________^
+98 | |                     s.push_str(",");
+99 | |                 }
+   | |_________________^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#if_same_then_else
+   = note: `-D clippy::if-same-then-else` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::if_same_then_else)]`
+
+error: calling `push_str()` using a single-character string literal
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:96:21
+   |
+96 |                     s.push_str(",");
+   |                     ^^^^^^^^^^^^^^^ help: consider using `push` with a character literal: `s.push(',')`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_char_add_str
+
+error: calling `push_str()` using a single-character string literal
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:98:21
+   |
+98 |                     s.push_str(",");
+   |                     ^^^^^^^^^^^^^^^ help: consider using `push` with a character literal: `s.push(',')`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_char_add_str
+
+error: calling `push_str()` using a single-character string literal
+   --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/pprint.rs:121:21
+    |
+121 |                     s.push_str(",");
+    |                     ^^^^^^^^^^^^^^^ help: consider using `push` with a character literal: `s.push(',')`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#single_char_add_str
+
+error: accessing first element with `args.get(0)`
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/dict.rs:24:29
+   |
+24 |     if let Some(iterable) = args.get(0) {
+   |                             ^^^^^^^^^^^ help: try: `args.first()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#get_first
+   = note: `-D clippy::get-first` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::get_first)]`
+
+error: mutable key type
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/set.rs:39:5
+   |
+39 |     let mut set = BTreeSet::new();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ... because it contains `Value`, which has interior mutability
+   = note: ... because it contains `Rc<RefCell<Vec<Value>>>`, which has interior mutability
+   = note: ... because it contains `RefCell<Vec<Value>>`, which has interior mutability
+   = note: ... because it contains `Cell<isize>`, which has interior mutability
+   = note: ... because it contains `UnsafeCell<isize>`, which has interior mutability
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#mutable_key_type
+   = note: `-D clippy::mutable-key-type` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::mutable_key_type)]`
+
+error: calls to `push` immediately after creation
+  --> lib/eldritchv2/eldritch-core/src/interpreter/builtins/mod.rs:40:5
+   |
+40 | /     let mut builtins = Vec::new();
+41 | |
+42 | |     // Existing
+43 | |     builtins.push(("print", print::builtin_print as BuiltinFn));
+...  |
+72 | |     builtins.push(("tuple", tuple::builtin_tuple as BuiltinFn));
+73 | |     builtins.push(("zip", zip::builtin_zip as BuiltinFn));
+   | |__________________________________________________________^ help: consider using the `vec![]` macro: `let builtins = vec![..];`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#vec_init_then_push
+   = note: `-D clippy::vec-init-then-push` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::vec_init_then_push)]`
+
+error: you should consider adding a `Default` implementation for `Interpreter`
+  --> lib/eldritchv2/eldritch-core/src/interpreter/core.rs:33:5
+   |
+33 | /     pub fn new() -> Self {
+34 | |         let env = Rc::new(RefCell::new(Environment {
+35 | |             parent: None,
+36 | |             values: BTreeMap::new(),
+...  |
+47 | |         interpreter
+48 | |     }
+   | |_____^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#new_without_default
+   = note: `-D clippy::new-without-default` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::new_without_default)]`
+help: try adding this
+   |
+32 + impl Default for Interpreter {
+33 +     fn default() -> Self {
+34 +         Self::new()
+35 +     }
+36 + }
+   |
+
+error: this call to `clone` can be replaced with `std::slice::from_ref`
+   --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:696:53
+    |
+696 |             let res = call_value(interp, &func_val, &[item.clone()], span)?;
+    |                                                     ^^^^^^^^^^^^^^^ help: try: `std::slice::from_ref(&item)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#cloned_ref_to_slice_refs
+    = note: `-D clippy::cloned-ref-to-slice-refs` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::cloned_ref_to_slice_refs)]`
+
+error: using `clone` on type `i64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1010:45
+     |
+1010 |                 Ok(Value::Float(libm::floor(a.clone() as f64 / b.clone())))
+     |                                             ^^^^^^^^^ help: try removing the `clone` call: `a`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+     = note: `-D clippy::clone-on-copy` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::clone_on_copy)]`
+
+error: using `clone` on type `f64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1010:64
+     |
+1010 |                 Ok(Value::Float(libm::floor(a.clone() as f64 / b.clone())))
+     |                                                                ^^^^^^^^^ help: try removing the `clone` call: `b`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: using `clone` on type `f64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1020:45
+     |
+1020 |                 Ok(Value::Float(libm::floor(a.clone() / b.clone() as f64)))
+     |                                             ^^^^^^^^^ help: try removing the `clone` call: `a`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: using `clone` on type `i64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1020:57
+     |
+1020 |                 Ok(Value::Float(libm::floor(a.clone() / b.clone() as f64)))
+     |                                                         ^^^^^^^^^ help: try removing the `clone` call: `b`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: using `clone` on type `i64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1041:25
+     |
+1041 |                 let a = a.clone() as f64;
+     |                         ^^^^^^^^^ help: try removing the `clone` call: `a`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: using `clone` on type `f64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1042:25
+     |
+1042 |                 let b = b.clone();
+     |                         ^^^^^^^^^ help: try removing the `clone` call: `b`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: using `clone` on type `f64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1054:25
+     |
+1054 |                 let a = a.clone();
+     |                         ^^^^^^^^^ help: try removing the `clone` call: `a`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: using `clone` on type `i64` which implements the `Copy` trait
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1055:25
+     |
+1055 |                 let b = b.clone() as f64;
+     |                         ^^^^^^^^^ help: try removing the `clone` call: `b`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#clone_on_copy
+
+error: useless use of `format!`
+    --> lib/eldritchv2/eldritch-core/src/interpreter/eval.rs:1097:35
+     |
+1097 |         _ => runtime_error(span, &format!("Unsupported binary op")),
+     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using `.to_string()`: `"Unsupported binary op".to_string()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#useless_format
+     = note: `-D clippy::useless-format` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::useless_format)]`
+
+error: length comparison to one
+   --> lib/eldritchv2/eldritch-core/src/interpreter/methods.rs:115:16
+    |
+115 |             if args.len() < 1 || args.len() > 2 {
+    |                ^^^^^^^^^^^^^^ help: using `is_empty` is clearer and more explicit: `args.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#len_zero
+    = note: `-D clippy::len-zero` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::len_zero)]`
+
+error: length comparison to zero
+   --> lib/eldritchv2/eldritch-core/src/interpreter/methods.rs:157:28
+    |
+157 |             let delim = if args.len() > 0 {
+    |                            ^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!args.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#len_zero
+
+error: length comparison to zero
+   --> lib/eldritchv2/eldritch-core/src/interpreter/methods.rs:169:31
+    |
+169 |             let keepends = if args.len() > 0 {
+    |                               ^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!args.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#len_zero
+
+error: length comparison to zero
+   --> lib/eldritchv2/eldritch-core/src/interpreter/methods.rs:394:28
+    |
+394 |             let delim = if args.len() > 0 {
+    |                            ^^^^^^^^^^^^^^ help: using `!is_empty` is clearer and more explicit: `!args.is_empty()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#len_zero
+
+error: this `else { if .. }` block can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/interpreter/utils.rs:130:12
+    |
+130 |       } else {
+    |  ____________^
+131 | |         if step < 0 {
+132 | |             length - 1
+133 | |         } else {
+...   |
+136 | |     };
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_else_if
+    = note: `-D clippy::collapsible-else-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_else_if)]`
+help: collapse nested if block
+    |
+130 ~     } else if step < 0 {
+131 +         length - 1
+132 +     } else {
+133 +         0
+134 ~     };
+    |
+
+error: this `else { if .. }` block can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/interpreter/utils.rs:121:16
+    |
+121 |           } else {
+    |  ________________^
+122 | |             if s < 0 {
+123 | |                 0
+124 | |             } else if s > length {
+...   |
+129 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_else_if
+help: collapse nested if block
+    |
+121 ~         } else if s < 0 {
+122 +             0
+123 +         } else if s > length {
+124 +             length
+125 +         } else {
+126 +             s
+127 +         }
+    |
+
+error: this `else { if .. }` block can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/interpreter/utils.rs:160:12
+    |
+160 |       } else {
+    |  ____________^
+161 | |         if step < 0 {
+162 | |             -1
+163 | |         } else {
+...   |
+166 | |     };
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_else_if
+help: collapse nested if block
+    |
+160 ~     } else if step < 0 {
+161 +         -1
+162 +     } else {
+163 +         length
+164 ~     };
+    |
+
+error: this `else { if .. }` block can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/interpreter/utils.rs:151:16
+    |
+151 |           } else {
+    |  ________________^
+152 | |             if s < 0 {
+153 | |                 0
+154 | |             } else if s > length {
+...   |
+159 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_else_if
+help: collapse nested if block
+    |
+151 ~         } else if s < 0 {
+152 +             0
+153 +         } else if s > length {
+154 +             length
+155 +         } else {
+156 +             s
+157 +         }
+    |
+
+error: this `if` statement can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/lexer.rs:146:21
+    |
+146 | /                     if self.peek_next() == quote_char {
+147 | |                         if self.current + 2 < self.source.len()
+148 | |                             && self.source[self.current + 2] == quote_char
+...   |
+155 | |                     }
+    | |_____________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+146 ~                     if self.peek_next() == quote_char
+147 ~                         && self.current + 2 < self.source.len()
+148 |                             && self.source[self.current + 2] == quote_char
+...
+153 |                             break;
+154 ~                         }
+    |
+
+error: this `if` statement can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/parser/expr.rs:347:21
+    |
+347 | /                     if self.match_token(&[TokenKind::Colon]) {
+348 | |                         if !self.check(&TokenKind::RBracket) {
+349 | |                             step = Some(Box::new(self.expression()?));
+350 | |                         }
+351 | |                     }
+    | |_____________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+347 ~                     if self.match_token(&[TokenKind::Colon])
+348 ~                         && !self.check(&TokenKind::RBracket) {
+349 |                             step = Some(Box::new(self.expression()?));
+350 ~                         }
+    |
+
+error: this `if` statement can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/parser/expr.rs:359:25
+    |
+359 | /                         if self.match_token(&[TokenKind::Colon]) {
+360 | |                             if !self.check(&TokenKind::RBracket) {
+361 | |                                 step = Some(Box::new(self.expression()?));
+362 | |                             }
+363 | |                         }
+    | |_________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+359 ~                         if self.match_token(&[TokenKind::Colon])
+360 ~                             && !self.check(&TokenKind::RBracket) {
+361 |                                 step = Some(Box::new(self.expression()?));
+362 ~                             }
+    |
+
+error: this `if` statement can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/parser/expr.rs:584:13
+    |
+584 | /             if self.match_token(&[TokenKind::Comma]) {
+585 | |                 if !self.check(&TokenKind::RBracket) {
+586 | |                     loop {
+587 | |                         elements.push(self.expression()?);
+...   |
+593 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+584 ~             if self.match_token(&[TokenKind::Comma])
+585 ~                 && !self.check(&TokenKind::RBracket) {
+586 |                     loop {
+...
+591 |                     }
+592 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+   --> lib/eldritchv2/eldritch-core/src/parser/expr.rs:651:13
+    |
+651 | /             if self.match_token(&[TokenKind::Comma]) {
+652 | |                 if !self.check(&TokenKind::RBrace) {
+653 | |                     loop {
+654 | |                         let k = self.expression()?;
+...   |
+663 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+651 ~             if self.match_token(&[TokenKind::Comma])
+652 ~                 && !self.check(&TokenKind::RBrace) {
+653 |                     loop {
+...
+661 |                     }
+662 ~                 }
+    |
+
+error: could not compile `eldritch-core` (lib) due to 36 previous errors

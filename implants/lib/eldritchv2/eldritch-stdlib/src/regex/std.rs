@@ -3,7 +3,7 @@ use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
 use regex::{Regex, NoExpand};
-use super::{RegexLibrary, RegexLibraryEldritchAdapter};
+use super::RegexLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RegexLibrary)]

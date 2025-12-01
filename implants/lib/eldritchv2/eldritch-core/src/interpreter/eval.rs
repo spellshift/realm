@@ -669,7 +669,7 @@ fn builtin_map(
     let mut results = Vec::new();
 
     for item in items {
-        let res = call_value(interp, &func_val, core::slice::from_ref(&item), span)?;
+        let res = call_value(interp, &func_val, std::slice::from_ref(&item), span)?;
         results.push(res);
     }
 
@@ -693,7 +693,7 @@ fn builtin_filter(
         let keep = if let Value::None = func_val {
             is_truthy(&item)
         } else {
-            let res = call_value(interp, &func_val, core::slice::from_ref(&item), span)?;
+            let res = call_value(interp, &func_val, std::slice::from_ref(&item), span)?;
             is_truthy(&res)
         };
         if keep {
@@ -1039,7 +1039,6 @@ fn apply_binary_op(
             #[cfg(not(feature = "std"))]
             {
                 let a = a as f64;
-                // b is already b
                 let div = libm::floor(a / b);
                 Ok(Value::Float(a - b * div))
             }
@@ -1051,7 +1050,6 @@ fn apply_binary_op(
             }
             #[cfg(not(feature = "std"))]
             {
-                // a is already a
                 let b = b as f64;
                 let div = libm::floor(a / b);
                 Ok(Value::Float(a - b * div))

@@ -4,7 +4,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
-use super::{PivotLibrary, PivotLibraryEldritchAdapter};
+use super::PivotLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(PivotLibrary)]

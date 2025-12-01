@@ -7,6 +7,7 @@ use alloc::string::String;
 use alloc::string::ToString;
 use core::cell::RefCell;
 
+#[allow(clippy::mutable_key_type)]
 pub fn builtin_set(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Set(Rc::new(RefCell::new(BTreeSet::new()))));
