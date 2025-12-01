@@ -8,7 +8,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
-std = []
+no_std = []
 
 [dependencies]
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }

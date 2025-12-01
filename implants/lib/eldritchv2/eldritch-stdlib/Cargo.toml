@@ -9,9 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = ["stdlib"]
 fake_bindings = []
-std = ["eldritch-core/std"]
 stdlib = [
-    "std",
     "dep:futures",
     "dep:flate2",
     "dep:tar",
@@ -68,4 +66,3 @@ hex-literal = { workspace = true, optional = true }
 
 [dev-dependencies]
 httptest = "0.16"
-eldritch-core = { path = "../eldritch-core", features = ["std"] }
