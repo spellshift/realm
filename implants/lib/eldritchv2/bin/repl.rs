@@ -13,6 +13,7 @@ use std::time::Duration;
 #[cfg(feature = "stdlib")]
 use eldritchv2::bindings::{
   file::std::StdFileLibrary,
+  http::std::StdHttpLibrary,
   process::std::StdProcessLibrary,
   regex::std::StdRegexLibrary,
   random::std::StdRandomLibrary,
@@ -22,6 +23,7 @@ use eldritchv2::bindings::{
 #[cfg(feature = "fake_bindings")]
 use eldritchv2::bindings::{
   file::fake::FileLibraryFake,
+  http::fake::HttpLibraryFake,
   regex::fake::RegexLibraryFake,
   crypto::fake::CryptoLibraryFake,
 };
@@ -32,6 +34,7 @@ fn main() -> io::Result<()> {
     #[cfg(feature = "stdlib")]
     {
       register_lib(StdFileLibrary::default());
+      register_lib(StdHttpLibrary::default());
       register_lib(StdProcessLibrary::default());
       register_lib(StdRegexLibrary::default());
       register_lib(StdRandomLibrary::default());
@@ -41,6 +44,7 @@ fn main() -> io::Result<()> {
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
     {
         register_lib(FileLibraryFake::default());
+        register_lib(HttpLibraryFake::default());
         register_lib(RegexLibraryFake::default());
         register_lib(CryptoLibraryFake::default());
     }
