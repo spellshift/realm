@@ -13,11 +13,15 @@ use std::time::Duration;
 #[cfg(feature = "stdlib")]
 use eldritchv2::bindings::{
   file::std::StdFileLibrary,
-  process:std::StdProcessLibrary,
+  process::std::StdProcessLibrary,
+  crypto::std::StdCryptoLibrary,
 };
 
 #[cfg(feature = "fake_bindings")]
 use eldritchv2::bindings::file::fake::FileLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use eldritchv2::bindings::crypto::fake::CryptoLibraryFake;
+
 
 fn main() -> io::Result<()> {
     // Register Libraries
@@ -25,10 +29,14 @@ fn main() -> io::Result<()> {
     {
       register_lib(StdFileLibrary::default());
       register_lib(StdProcessLibrary::default());
+      register_lib(StdCryptoLibrary::default());
     }
 
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
-    register_lib(FileLibraryFake::default());
+    {
+        register_lib(FileLibraryFake::default());
+        register_lib(CryptoLibraryFake::default());
+    }
 
     let mut interpreter = Interpreter::new();
     let mut repl = Repl::new();
