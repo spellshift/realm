@@ -44,7 +44,7 @@ impl CryptoLibrary for StdCryptoLibrary {
         if key.len() != 16 {
             return Err("Key size must be 16 bytes (characters)".into());
         }
-        if data.len() % 16 != 0 {
+        if !data.len().is_multiple_of(16) {
              return Err("Data size must be a multiple of 16 bytes".into());
         }
 
@@ -107,7 +107,6 @@ impl CryptoLibrary for StdCryptoLibrary {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hex_literal::hex;
 
     #[test]
     fn test_aes_roundtrip() {

@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use rand::Rng;
 use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
 use rand_chacha::rand_core::SeedableRng;
+use super::{RandomLibrary, RandomLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RandomLibrary)]
@@ -66,7 +67,7 @@ impl RandomLibrary for StdRandomLibrary {
 
 #[cfg(test)]
 mod tests {
-
+    use super::*;
 
     const NUM_ITERATION: i32 = 1000;
 
