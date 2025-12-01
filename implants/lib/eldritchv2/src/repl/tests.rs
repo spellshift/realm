@@ -1,12 +1,12 @@
+use crate::lang::ast::{Environment, Value};
 #[cfg(test)]
-use crate::repl::{Repl, Input, ReplAction};
+use crate::repl::{Input, Repl, ReplAction};
+use crate::Interpreter;
+use alloc::rc::Rc;
+use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec;
-use alloc::rc::Rc;
 use core::cell::RefCell;
-use crate::lang::ast::{Value, Environment};
-use alloc::string::String;
-use crate::Interpreter;
 
 #[test]
 fn test_repl_basic_input() {
@@ -83,7 +83,7 @@ fn test_repl_multiline() {
             assert_eq!(line, "if true {");
             // The prompt used for this line was the default one
             assert!(prompt.contains(">>>"));
-        },
+        }
         _ => panic!("Expected AcceptLine, got {:?}", action),
     }
 
@@ -99,8 +99,11 @@ fn test_repl_multiline() {
         ReplAction::AcceptLine { line, prompt } => {
             assert_eq!(line, "}");
             assert!(prompt.contains("..."));
-        },
-        _ => panic!("Expected AcceptLine (waiting for empty line), got {:?}", action),
+        }
+        _ => panic!(
+            "Expected AcceptLine (waiting for empty line), got {:?}",
+            action
+        ),
     }
 
     // Enter (empty line) -> Should Submit
@@ -112,7 +115,7 @@ fn test_repl_multiline() {
             // Let's just check it contains the parts.
             assert!(code.contains("if true {"));
             assert!(code.contains("}"));
-        },
+        }
         _ => panic!("Expected Submit, got {:?}", action),
     }
 }

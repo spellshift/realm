@@ -39,6 +39,7 @@ crossterm = "0.27"
 wasm-bindgen = "0.2"
 
 [dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
 httptest = "0.16"
 # sha256 = { workspace = true }
 
@@ -52,6 +53,17 @@ fake_bindings = []
 name = "eldritch"
 path = "bin/repl.rs"
 required-features = ["stdlib"]
+
+[[bench]]
+name = "interpreter"
+harness = false
+
+[[bench]]
+name = "builtins"
+harness = false
+
+[profile.bench]
+panic = "abort"
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

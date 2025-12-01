@@ -1,5 +1,5 @@
-use super::utils::{compare_values, get_type_name, is_truthy};
 use super::super::ast::Value;
+use super::utils::{compare_values, get_type_name, is_truthy};
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -173,13 +173,11 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             };
             let lines: Vec<Value> = if keepends {
                 // Not perfectly matching python's splitlines(keepends=True) split behavior on all boundaries, but roughly
-                 s.split_inclusive('\n')
-                .map(|p| Value::String(p.to_string()))
-                .collect()
+                s.split_inclusive('\n')
+                    .map(|p| Value::String(p.to_string()))
+                    .collect()
             } else {
-                 s.lines()
-                .map(|p| Value::String(p.to_string()))
-                .collect()
+                s.lines().map(|p| Value::String(p.to_string())).collect()
             };
             Ok(Value::List(Rc::new(RefCell::new(lines))))
         }
@@ -189,34 +187,34 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
         (Value::String(s), "lower") => Ok(Value::String(s.to_lowercase())),
         (Value::String(s), "upper") => Ok(Value::String(s.to_uppercase())),
         (Value::String(s), "capitalize") => {
-             let mut c = s.chars();
-             match c.next() {
-                 None => Ok(Value::String(String::new())),
-                 Some(f) => {
-                     let res = f.to_uppercase().collect::<String>() + &c.as_str().to_lowercase();
-                     Ok(Value::String(res))
-                 }
-             }
+            let mut c = s.chars();
+            match c.next() {
+                None => Ok(Value::String(String::new())),
+                Some(f) => {
+                    let res = f.to_uppercase().collect::<String>() + &c.as_str().to_lowercase();
+                    Ok(Value::String(res))
+                }
+            }
         }
         (Value::String(s), "title") => {
             // Simplified title case: capitalize first letter of each word
             // We removed the unused _res variable
-             let mut result = String::new();
-             let mut cap_next = true;
-             for c in s.chars() {
-                 if c.is_alphabetic() {
-                     if cap_next {
-                         result.extend(c.to_uppercase());
-                         cap_next = false;
-                     } else {
-                         result.extend(c.to_lowercase());
-                     }
-                 } else {
-                     result.push(c);
-                     cap_next = true;
-                 }
-             }
-             Ok(Value::String(result))
+            let mut result = String::new();
+            let mut cap_next = true;
+            for c in s.chars() {
+                if c.is_alphabetic() {
+                    if cap_next {
+                        result.extend(c.to_uppercase());
+                        cap_next = false;
+                    } else {
+                        result.extend(c.to_lowercase());
+                    }
+                } else {
+                    result.push(c);
+                    cap_next = true;
+                }
+            }
+            Ok(Value::String(result))
         }
         (Value::String(s), "startswith") => {
             if args.len() != 1 {
@@ -233,7 +231,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             Ok(Value::Bool(s.ends_with(&suffix)))
         }
         (Value::String(s), "removeprefix") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("removeprefix() takes 1 argument".into());
             }
             let prefix = args[0].to_string();
@@ -244,12 +242,12 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::String(s), "removesuffix") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("removesuffix() takes 1 argument".into());
             }
             let suffix = args[0].to_string();
             if s.ends_with(&suffix) {
-                Ok(Value::String(s[..s.len()-suffix.len()].to_string()))
+                Ok(Value::String(s[..s.len() - suffix.len()].to_string()))
             } else {
                 Ok(Value::String(s.clone()))
             }
@@ -265,7 +263,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::String(s), "index") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("index() takes 1 argument".into());
             }
             let sub = args[0].to_string();
@@ -275,7 +273,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::String(s), "rfind") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("rfind() takes 1 argument".into());
             }
             let sub = args[0].to_string();
@@ -285,7 +283,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::String(s), "rindex") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("rindex() takes 1 argument".into());
             }
             let sub = args[0].to_string();
@@ -295,12 +293,12 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::String(s), "count") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("count() takes 1 argument".into());
             }
             let sub = args[0].to_string();
             if sub.is_empty() {
-                 return Ok(Value::Int((s.len() + 1) as i64));
+                return Ok(Value::Int((s.len() + 1) as i64));
             }
             let count = s.matches(&sub).count();
             Ok(Value::Int(count as i64))
@@ -353,7 +351,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             Ok(Value::String(result))
         }
         (Value::String(s), "partition") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("partition() takes 1 argument".into());
             }
             let sep = args[0].to_string();
@@ -362,18 +360,18 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 Ok(Value::Tuple(vec![
                     Value::String(s[..idx].to_string()),
                     Value::String(sep),
-                    Value::String(s[idx+sep_len..].to_string())
+                    Value::String(s[idx + sep_len..].to_string()),
                 ]))
             } else {
-                 Ok(Value::Tuple(vec![
+                Ok(Value::Tuple(vec![
                     Value::String(s.clone()),
                     Value::String("".to_string()),
-                    Value::String("".to_string())
+                    Value::String("".to_string()),
                 ]))
             }
         }
         (Value::String(s), "rpartition") => {
-             if args.len() != 1 {
+            if args.len() != 1 {
                 return Err("rpartition() takes 1 argument".into());
             }
             let sep = args[0].to_string();
@@ -382,13 +380,13 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 Ok(Value::Tuple(vec![
                     Value::String(s[..idx].to_string()),
                     Value::String(sep),
-                    Value::String(s[idx+sep_len..].to_string())
+                    Value::String(s[idx + sep_len..].to_string()),
                 ]))
             } else {
-                 Ok(Value::Tuple(vec![
+                Ok(Value::Tuple(vec![
                     Value::String("".to_string()),
                     Value::String("".to_string()),
-                    Value::String(s.clone())
+                    Value::String(s.clone()),
                 ]))
             }
         }
@@ -408,38 +406,56 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             Ok(Value::List(Rc::new(RefCell::new(parts))))
         }
         (Value::String(s), "codepoints") => {
-             let points: Vec<Value> = s.chars().map(|c| Value::Int(c as i64)).collect();
-             Ok(Value::List(Rc::new(RefCell::new(points))))
+            let points: Vec<Value> = s.chars().map(|c| Value::Int(c as i64)).collect();
+            Ok(Value::List(Rc::new(RefCell::new(points))))
         }
         (Value::String(s), "elems") => {
-             let chars: Vec<Value> = s.chars().map(|c| Value::String(c.to_string())).collect();
-             Ok(Value::List(Rc::new(RefCell::new(chars))))
+            let chars: Vec<Value> = s.chars().map(|c| Value::String(c.to_string())).collect();
+            Ok(Value::List(Rc::new(RefCell::new(chars))))
         }
-        (Value::String(s), "isalnum") => Ok(Value::Bool(!s.is_empty() && s.chars().all(|c| c.is_alphanumeric()))),
-        (Value::String(s), "isalpha") => Ok(Value::Bool(!s.is_empty() && s.chars().all(|c| c.is_alphabetic()))),
-        (Value::String(s), "isdigit") => Ok(Value::Bool(!s.is_empty() && s.chars().all(|c| c.is_ascii_digit()))), // Python isdigit is unicode digits, but ascii is safer bet for now
-        (Value::String(s), "islower") => Ok(Value::Bool(!s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == &s.to_lowercase())),
-        (Value::String(s), "isupper") => Ok(Value::Bool(!s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == &s.to_uppercase())),
-        (Value::String(s), "isspace") => Ok(Value::Bool(!s.is_empty() && s.chars().all(|c| c.is_whitespace()))),
+        (Value::String(s), "isalnum") => Ok(Value::Bool(
+            !s.is_empty() && s.chars().all(|c| c.is_alphanumeric()),
+        )),
+        (Value::String(s), "isalpha") => Ok(Value::Bool(
+            !s.is_empty() && s.chars().all(|c| c.is_alphabetic()),
+        )),
+        (Value::String(s), "isdigit") => Ok(Value::Bool(
+            !s.is_empty() && s.chars().all(|c| c.is_ascii_digit()),
+        )), // Python isdigit is unicode digits, but ascii is safer bet for now
+        (Value::String(s), "islower") => Ok(Value::Bool(
+            !s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == &s.to_lowercase(),
+        )),
+        (Value::String(s), "isupper") => Ok(Value::Bool(
+            !s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == &s.to_uppercase(),
+        )),
+        (Value::String(s), "isspace") => Ok(Value::Bool(
+            !s.is_empty() && s.chars().all(|c| c.is_whitespace()),
+        )),
         (Value::String(s), "istitle") => {
-            if s.is_empty() { return Ok(Value::Bool(false)); }
+            if s.is_empty() {
+                return Ok(Value::Bool(false));
+            }
             let mut cased = false;
             let mut _prev_cased = false;
             let mut expected_upper = true;
             for c in s.chars() {
-                 if c.is_uppercase() {
-                     if !expected_upper { return Ok(Value::Bool(false)); }
-                     expected_upper = false;
-                     cased = true;
-                     _prev_cased = true;
-                 } else if c.is_lowercase() {
-                     if expected_upper { return Ok(Value::Bool(false)); }
-                     cased = true;
-                     _prev_cased = true;
-                 } else {
-                     expected_upper = true;
-                     _prev_cased = false;
-                 }
+                if c.is_uppercase() {
+                    if !expected_upper {
+                        return Ok(Value::Bool(false));
+                    }
+                    expected_upper = false;
+                    cased = true;
+                    _prev_cased = true;
+                } else if c.is_lowercase() {
+                    if expected_upper {
+                        return Ok(Value::Bool(false));
+                    }
+                    cased = true;
+                    _prev_cased = true;
+                } else {
+                    expected_upper = true;
+                    _prev_cased = false;
+                }
             }
             Ok(Value::Bool(cased))
         }

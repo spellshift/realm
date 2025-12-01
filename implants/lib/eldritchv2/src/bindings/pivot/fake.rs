@@ -1,9 +1,9 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use crate::lang::ast::Value;
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(PivotLibrary)]
@@ -18,7 +18,9 @@ impl PivotLibrary for PivotLibraryFake {
         Ok(String::from("pivot-id"))
     }
 
-    fn stop(&self, _id: String) -> Result<(), String> { Ok(()) }
+    fn stop(&self, _id: String) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

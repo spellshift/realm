@@ -1,11 +1,11 @@
-use super::core::{Flow, Interpreter};
-use super::error::{runtime_error, EldritchError};
-use super::eval::{apply_binary_op_pub, evaluate};
-use super::utils::{get_type_name, is_truthy};
 use super::super::ast::{
     Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
 use super::super::token::TokenKind;
+use super::core::{Flow, Interpreter};
+use super::error::{runtime_error, EldritchError};
+use super::eval::{apply_binary_op_pub, evaluate};
+use super::utils::{get_type_name, is_truthy};
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::rc::Rc;
@@ -49,9 +49,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 match param {
                     Param::Normal(n) => runtime_params.push(RuntimeParam::Normal(n.clone())),
                     Param::Star(n) => runtime_params.push(RuntimeParam::Star(n.clone())),
-                    Param::StarStar(n) => {
-                        runtime_params.push(RuntimeParam::StarStar(n.clone()))
-                    }
+                    Param::StarStar(n) => runtime_params.push(RuntimeParam::StarStar(n.clone())),
                     Param::WithDefault(n, default_expr) => {
                         let val = evaluate(interp, default_expr)?;
                         runtime_params.push(RuntimeParam::WithDefault(n.clone(), val));
@@ -194,10 +192,12 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                 Value::List(l) => {
                     let idx_int = match index {
                         Value::Int(i) => i,
-                        _ => return runtime_error(index_expr.span, "List indices must be integers"),
+                        _ => {
+                            return runtime_error(index_expr.span, "List indices must be integers")
+                        }
                     };
                     let mut list = l.borrow_mut();
-                        let true_idx = if idx_int < 0 {
+                    let true_idx = if idx_int < 0 {
                         list.len() as i64 + idx_int
                     } else {
                         idx_int
@@ -209,9 +209,14 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                     Ok(())
                 }
                 Value::Dictionary(d) => {
-                        let key_str = match index {
+                    let key_str = match index {
                         Value::String(s) => s,
-                        _ => return runtime_error(index_expr.span, "Dictionary keys must be strings"),
+                        _ => {
+                            return runtime_error(
+                                index_expr.span,
+                                "Dictionary keys must be strings",
+                            )
+                        }
                     };
                     d.borrow_mut().insert(key_str, value);
                     Ok(())
@@ -247,28 +252,36 @@ fn execute_augmented_assignment(
             };
 
             // Construct dummy expressions for apply_binary_op call to reuse logic
-            let left_expr = Expr { kind: ExprKind::Literal(left), span };
-            let right_expr = Expr { kind: ExprKind::Literal(right), span };
+            let left_expr = Expr {
+                kind: ExprKind::Literal(left),
+                span,
+            };
+            let right_expr = Expr {
+                kind: ExprKind::Literal(right),
+                span,
+            };
 
             let new_val = apply_binary_op_pub(interp, &left_expr, &bin_op, &right_expr, span)?;
             interp.assign_variable(name, new_val);
             Ok(())
         }
         ExprKind::Index(obj_expr, index_expr) => {
-                let obj = evaluate(interp, obj_expr)?;
-                let index = evaluate(interp, index_expr)?;
+            let obj = evaluate(interp, obj_expr)?;
+            let index = evaluate(interp, index_expr)?;
 
-                // This is tricky: we need to get the item, op it, and set it back.
-                // For mutable objects (List, Dict), we can modify in place or set item.
+            // This is tricky: we need to get the item, op it, and set it back.
+            // For mutable objects (List, Dict), we can modify in place or set item.
 
-                let current_val = match &obj {
+            let current_val = match &obj {
                 Value::List(l) => {
                     let idx_int = match index {
                         Value::Int(i) => i,
-                        _ => return runtime_error(index_expr.span, "List indices must be integers"),
+                        _ => {
+                            return runtime_error(index_expr.span, "List indices must be integers")
+                        }
                     };
                     let list = l.borrow();
-                        let true_idx = if idx_int < 0 {
+                    let true_idx = if idx_int < 0 {
                         list.len() as i64 + idx_int
                     } else {
                         idx_int
@@ -279,9 +292,14 @@ fn execute_augmented_assignment(
                     list[true_idx as usize].clone()
                 }
                 Value::Dictionary(d) => {
-                        let key_str = match &index {
+                    let key_str = match &index {
                         Value::String(s) => s,
-                        _ => return runtime_error(index_expr.span, "Dictionary keys must be strings"),
+                        _ => {
+                            return runtime_error(
+                                index_expr.span,
+                                "Dictionary keys must be strings",
+                            )
+                        }
                     };
                     let dict = d.borrow();
                     match dict.get(key_str) {
@@ -290,7 +308,7 @@ fn execute_augmented_assignment(
                     }
                 }
                 _ => return runtime_error(span, "Object does not support item assignment"),
-                };
+            };
 
             let bin_op = match op {
                 TokenKind::PlusAssign => TokenKind::Plus,
@@ -302,20 +320,26 @@ fn execute_augmented_assignment(
                 _ => return runtime_error(span, "Unknown augmented assignment operator"),
             };
 
-                let left_expr = Expr { kind: ExprKind::Literal(current_val), span };
-                let right_expr = Expr { kind: ExprKind::Literal(right), span };
-                let new_val = apply_binary_op_pub(interp, &left_expr, &bin_op, &right_expr, span)?;
+            let left_expr = Expr {
+                kind: ExprKind::Literal(current_val),
+                span,
+            };
+            let right_expr = Expr {
+                kind: ExprKind::Literal(right),
+                span,
+            };
+            let new_val = apply_binary_op_pub(interp, &left_expr, &bin_op, &right_expr, span)?;
 
-                // Set back
-                match obj {
+            // Set back
+            match obj {
                 Value::List(l) => {
                     // Need to re-calculate index as borrow ends
                     let idx_int = match index {
                         Value::Int(i) => i,
                         _ => unreachable!(),
                     };
-                        let mut list = l.borrow_mut();
-                        let true_idx = if idx_int < 0 {
+                    let mut list = l.borrow_mut();
+                    let true_idx = if idx_int < 0 {
                         list.len() as i64 + idx_int
                     } else {
                         idx_int
@@ -324,7 +348,7 @@ fn execute_augmented_assignment(
                     Ok(())
                 }
                 Value::Dictionary(d) => {
-                        let key_str = match index {
+                    let key_str = match index {
                         Value::String(s) => s,
                         _ => unreachable!(),
                     };
@@ -332,8 +356,7 @@ fn execute_augmented_assignment(
                     Ok(())
                 }
                 _ => unreachable!(),
-                }
-
+            }
         }
         _ => runtime_error(span, "Illegal target for augmented assignment"),
     }

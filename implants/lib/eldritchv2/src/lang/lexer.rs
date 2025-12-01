@@ -389,7 +389,7 @@ impl Lexer {
                 // Check for leading dot float: .5
                 if self.peek().is_ascii_digit() {
                     self.start = self.current - 1; // Include the dot
-                     while self.peek().is_ascii_digit() {
+                    while self.peek().is_ascii_digit() {
                         self.advance();
                     }
                     let value: String = self.source[self.start..self.current].iter().collect();
@@ -398,7 +398,7 @@ impl Lexer {
                 } else {
                     Ok(self.add_token(TokenKind::Dot))
                 }
-            },
+            }
             ';' => Ok(self.add_token(TokenKind::Newline)),
             '+' => {
                 if self.match_char('=') {

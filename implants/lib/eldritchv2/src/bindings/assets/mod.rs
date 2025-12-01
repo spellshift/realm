@@ -1,6 +1,7 @@
-use eldritch_macros::{eldritch_library, eldritch_method};
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;

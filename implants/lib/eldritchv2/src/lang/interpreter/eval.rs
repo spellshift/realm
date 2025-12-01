@@ -1,12 +1,12 @@
-use super::core::{Flow, Interpreter};
-use super::error::{runtime_error, EldritchError};
-use super::methods::call_bound_method;
-use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
 use super::super::ast::{
     Argument, Environment, Expr, ExprKind, FStringSegment, Function, Param, RuntimeParam, Stmt,
     StmtKind, Value,
 };
 use super::super::token::{Span, TokenKind};
+use super::core::{Flow, Interpreter};
+use super::error::{runtime_error, EldritchError};
+use super::methods::call_bound_method;
+use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
 use alloc::format;
@@ -183,7 +183,10 @@ fn evaluate_dict_comp(
     Ok(Value::Dictionary(Rc::new(RefCell::new(results))))
 }
 
-fn evaluate_list_literal(interp: &mut Interpreter, elements: &[Expr]) -> Result<Value, EldritchError> {
+fn evaluate_list_literal(
+    interp: &mut Interpreter,
+    elements: &[Expr],
+) -> Result<Value, EldritchError> {
     let mut vals = Vec::new();
     for expr in elements {
         vals.push(evaluate(interp, expr)?);
@@ -191,7 +194,10 @@ fn evaluate_list_literal(interp: &mut Interpreter, elements: &[Expr]) -> Result<
     Ok(Value::List(Rc::new(RefCell::new(vals))))
 }
 
-fn evaluate_tuple_literal(interp: &mut Interpreter, elements: &[Expr]) -> Result<Value, EldritchError> {
+fn evaluate_tuple_literal(
+    interp: &mut Interpreter,
+    elements: &[Expr],
+) -> Result<Value, EldritchError> {
     let mut vals = Vec::new();
     for expr in elements {
         vals.push(evaluate(interp, expr)?);
@@ -502,10 +508,7 @@ fn call_function(
             f(&interp.env, args_slice).map_err(|e| EldritchError { message: e, span })
         }
         Value::NativeFunctionWithKwargs(_, f) => {
-            f(&interp.env, args_slice, &kw_args_val).map_err(|e| EldritchError {
-                message: e,
-                span,
-            })
+            f(&interp.env, args_slice, &kw_args_val).map_err(|e| EldritchError { message: e, span })
         }
         Value::Function(Function {
             name,
@@ -581,8 +584,7 @@ fn call_function(
                         }
                         RuntimeParam::StarStar(param_name) => {
                             let mut dict = BTreeMap::new();
-                            let keys_to_move: Vec<String> =
-                                kw_args_val.keys().cloned().collect();
+                            let keys_to_move: Vec<String> = kw_args_val.keys().cloned().collect();
                             for k in keys_to_move {
                                 if let Some(v) = kw_args_val.remove(&k) {
                                     dict.insert(k, v);
@@ -634,7 +636,8 @@ fn call_function(
         Value::BoundMethod(receiver, method_name) => {
             // Check if receiver is Foreign
             if let Value::Foreign(foreign) = receiver.as_ref() {
-                 foreign.call_method(&method_name, args_slice, &kw_args_val)
+                foreign
+                    .call_method(&method_name, args_slice, &kw_args_val)
                     .map_err(|e| EldritchError { message: e, span })
             } else {
                 if !kw_args_val.is_empty() {
@@ -717,9 +720,7 @@ fn builtin_reduce(
     } else {
         match items.next() {
             Some(v) => v,
-            None => {
-                return runtime_error(span, "reduce() of empty sequence with no initial value")
-            }
+            None => return runtime_error(span, "reduce() of empty sequence with no initial value"),
         }
     };
 
@@ -736,10 +737,9 @@ fn call_value(
     span: Span,
 ) -> Result<Value, EldritchError> {
     match func {
-        Value::NativeFunction(_, f) => f(&interp.env, args).map_err(|e| EldritchError {
-            message: e,
-            span,
-        }),
+        Value::NativeFunction(_, f) => {
+            f(&interp.env, args).map_err(|e| EldritchError { message: e, span })
+        }
         Value::Function(Function {
             name: _,
             params: _,
@@ -771,10 +771,8 @@ fn call_value(
             interp.depth -= 1;
             res
         }
-        Value::BoundMethod(receiver, method_name) => {
-            call_bound_method(receiver, method_name, args)
-                .map_err(|e| EldritchError { message: e, span })
-        }
+        Value::BoundMethod(receiver, method_name) => call_bound_method(receiver, method_name, args)
+            .map_err(|e| EldritchError { message: e, span }),
         _ => runtime_error(span, "not callable"),
     }
 }
@@ -791,12 +789,20 @@ fn evaluate_arg(interp: &mut Interpreter, arg: &Argument) -> Result<Value, Eldri
     }
 }
 
-fn to_iterable(_interp: &Interpreter, val: &Value, span: Span) -> Result<Vec<Value>, EldritchError> {
+fn to_iterable(
+    _interp: &Interpreter,
+    val: &Value,
+    span: Span,
+) -> Result<Vec<Value>, EldritchError> {
     match val {
         Value::List(l) => Ok(l.borrow().clone()),
         Value::Tuple(t) => Ok(t.clone()),
         Value::Set(s) => Ok(s.borrow().iter().cloned().collect()),
-        Value::Dictionary(d) => Ok(d.borrow().keys().map(|k| Value::String(k.clone())).collect()),
+        Value::Dictionary(d) => Ok(d
+            .borrow()
+            .keys()
+            .map(|k| Value::String(k.clone()))
+            .collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
         _ => runtime_error(
             span,
@@ -852,7 +858,12 @@ fn apply_logical_op(
     }
 }
 
-fn evaluate_in(_interp: &mut Interpreter, item: &Value, collection: &Value, span: Span) -> Result<Value, EldritchError> {
+fn evaluate_in(
+    _interp: &mut Interpreter,
+    item: &Value,
+    collection: &Value,
+    span: Span,
+) -> Result<Value, EldritchError> {
     match collection {
         Value::List(l) => {
             let list = l.borrow();
@@ -879,7 +890,13 @@ fn evaluate_in(_interp: &mut Interpreter, item: &Value, collection: &Value, span
             };
             Ok(Value::Bool(s.contains(sub)))
         }
-        _ => runtime_error(span, &format!("argument of type '{}' is not iterable", get_type_name(collection))),
+        _ => runtime_error(
+            span,
+            &format!(
+                "argument of type '{}' is not iterable",
+                get_type_name(collection)
+            ),
+        ),
     }
 }
 
@@ -962,7 +979,9 @@ fn apply_binary_op(
         (Value::Float(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float(a - b)),
         (Value::Float(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float(a * b)),
         (Value::Float(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float(a / b)),
-        (Value::Float(a), TokenKind::SlashSlash, Value::Float(b)) => Ok(Value::Float(a.div_euclid(b))), // Floor div for float
+        (Value::Float(a), TokenKind::SlashSlash, Value::Float(b)) => {
+            Ok(Value::Float(a.div_euclid(b)))
+        } // Floor div for float
         (Value::Float(a), TokenKind::Percent, Value::Float(b)) => Ok(Value::Float(a.rem_euclid(b))),
 
         // Mixed Arithmetic
@@ -976,10 +995,18 @@ fn apply_binary_op(
         (Value::Float(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Float(a * (b as f64))),
         (Value::Float(a), TokenKind::Slash, Value::Int(b)) => Ok(Value::Float(a / (b as f64))),
 
-        (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => Ok(Value::Float((a as f64).div_euclid(b))),
-        (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => Ok(Value::Float(a.div_euclid(b as f64))),
-        (Value::Int(a), TokenKind::Percent, Value::Float(b)) => Ok(Value::Float((a as f64).rem_euclid(b))),
-        (Value::Float(a), TokenKind::Percent, Value::Int(b)) => Ok(Value::Float(a.rem_euclid(b as f64))),
+        (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => {
+            Ok(Value::Float((a as f64).div_euclid(b)))
+        }
+        (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => {
+            Ok(Value::Float(a.div_euclid(b as f64)))
+        }
+        (Value::Int(a), TokenKind::Percent, Value::Float(b)) => {
+            Ok(Value::Float((a as f64).rem_euclid(b)))
+        }
+        (Value::Float(a), TokenKind::Percent, Value::Int(b)) => {
+            Ok(Value::Float(a.rem_euclid(b as f64)))
+        }
 
         (Value::Int(a), TokenKind::SlashSlash, Value::Int(b)) => {
             if b == 0 {

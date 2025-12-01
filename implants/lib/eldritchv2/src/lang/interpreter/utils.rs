@@ -183,14 +183,16 @@ pub fn compare_values(a: &Value, b: &Value) -> Result<Ordering, String> {
     match (a, b) {
         (Value::Int(i1), Value::Float(f2)) => Ok((*i1 as f64).total_cmp(f2)),
         (Value::Float(f1), Value::Int(i2)) => Ok(f1.total_cmp(&(*i2 as f64))),
-        _ => if std::mem::discriminant(a) == std::mem::discriminant(b) {
-            Ok(a.cmp(b))
-        } else {
-             Err(format!(
-                "Type mismatch or unsortable types: {} <-> {}",
-                get_type_name(a),
-                get_type_name(b)
-            ))
+        _ => {
+            if core::mem::discriminant(a) == core::mem::discriminant(b) {
+                Ok(a.cmp(b))
+            } else {
+                Err(format!(
+                    "Type mismatch or unsortable types: {} <-> {}",
+                    get_type_name(a),
+                    get_type_name(b)
+                ))
+            }
         }
     }
 }

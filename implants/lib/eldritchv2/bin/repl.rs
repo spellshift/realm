@@ -7,6 +7,7 @@ use crossterm::{
 };
 use eldritchv2::{Interpreter, Repl, Value, register_lib};
 use eldritchv2::repl::{Input, ReplAction};
+use eldritchv2::{Interpreter, Repl, Value};
 use std::io::{self, Write};
 use std::time::Duration;
 
@@ -97,7 +98,11 @@ fn main() -> io::Result<()> {
                     if let Some(input) = input {
                         match repl.handle_input(input) {
                             ReplAction::Quit => break,
-                            ReplAction::Submit { code, last_line: _, prompt: _ } => {
+                            ReplAction::Submit {
+                                code,
+                                last_line: _,
+                                prompt: _,
+                            } => {
                                 // Clear current line visual and move down
                                 stdout.execute(cursor::MoveToNextLine(1))?;
 
@@ -113,20 +118,20 @@ fn main() -> io::Result<()> {
                                 terminal::enable_raw_mode()?;
 
                                 render(&mut stdout, &repl)?;
-                            },
+                            }
                             ReplAction::AcceptLine { line: _, prompt: _ } => {
                                 stdout.execute(cursor::MoveToNextLine(1))?;
                                 render(&mut stdout, &repl)?;
-                            },
+                            }
                             ReplAction::Render => {
                                 render(&mut stdout, &repl)?;
-                            },
+                            }
                             ReplAction::ClearScreen => {
                                 stdout.execute(terminal::Clear(ClearType::All))?;
                                 stdout.execute(cursor::MoveTo(0, 0))?;
                                 render(&mut stdout, &repl)?;
-                            },
-                            ReplAction::None => {},
+                            }
+                            ReplAction::None => {}
                         }
                     }
                 }
@@ -147,12 +152,22 @@ fn main() -> io::Result<()> {
 fn map_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::Cancel),
-        KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::ClearScreen),
+        KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(Input::ClearScreen)
+        }
         KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::EOF),
-        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::KillLine),
-        KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::KillToEnd),
-        KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::WordBackspace),
-        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::HistorySearch),
+        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(Input::KillLine)
+        }
+        KeyCode::Char('k') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(Input::KillToEnd)
+        }
+        KeyCode::Char('w') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(Input::WordBackspace)
+        }
+        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(Input::HistorySearch)
+        }
         KeyCode::Char(c) => Some(Input::Char(c)),
         KeyCode::Enter => Some(Input::Enter),
         KeyCode::Backspace => Some(Input::Backspace),

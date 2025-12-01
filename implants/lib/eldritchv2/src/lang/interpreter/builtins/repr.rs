@@ -1,12 +1,15 @@
-use alloc::string::String;
-use alloc::rc::Rc;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::String;
+use core::cell::RefCell;
 
 pub fn builtin_repr(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
-        return Err(format!("repr() takes exactly one argument ({} given)", args.len()));
+        return Err(format!(
+            "repr() takes exactly one argument ({} given)",
+            args.len()
+        ));
     }
 
     // Default formatting uses Debug for now, or display for strings differently?

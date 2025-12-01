@@ -1,22 +1,15 @@
 #[cfg(all(test, feature = "fake_bindings"))]
 mod integration {
     extern crate alloc;
-    use eldritchv2::{Interpreter, register_lib};
-    use eldritchv2::bindings::{
-        agent::fake::AgentLibraryFake,
-        assets::fake::AssetsLibraryFake,
-        crypto::fake::CryptoLibraryFake,
-        file::fake::FileLibraryFake,
-        http::fake::HttpLibraryFake,
-        pivot::fake::PivotLibraryFake,
-        process::fake::ProcessLibraryFake,
-        random::fake::RandomLibraryFake,
-        regex::fake::RegexLibraryFake,
-        report::fake::ReportLibraryFake,
-        sys::fake::SysLibraryFake,
-        time::fake::TimeLibraryFake,
-    };
     use alloc::string::ToString;
+    use eldritchv2::bindings::{
+        agent::fake::AgentLibraryFake, assets::fake::AssetsLibraryFake,
+        crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
+        pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
+        random::fake::RandomLibraryFake, regex::fake::RegexLibraryFake,
+        report::fake::ReportLibraryFake, sys::fake::SysLibraryFake, time::fake::TimeLibraryFake,
+    };
+    use eldritchv2::{register_lib, Interpreter};
 
     fn register_all_fakes() {
         register_lib(AgentLibraryFake::default());

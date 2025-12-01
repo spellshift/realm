@@ -1,7 +1,7 @@
 use super::ast::ForeignValue;
 use alloc::collections::BTreeMap;
-use alloc::sync::Arc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use spin::Mutex;
 
 lazy_static::lazy_static! {

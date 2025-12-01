@@ -1,8 +1,8 @@
-use alloc::string::{String, ToString};
-use alloc::rc::Rc;
-use alloc::format;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
+use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::{String, ToString};
+use core::cell::RefCell;
 
 pub fn builtin_str(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {

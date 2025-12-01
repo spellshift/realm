@@ -1,8 +1,9 @@
-use eldritch_macros::{eldritch_library, eldritch_method};
 use crate::lang::ast::Value;
+use alloc::collections::BTreeMap;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
+use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;

@@ -1,7 +1,7 @@
+use super::ast::Stmt;
 use super::token::{Token, TokenKind};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use super::ast::Stmt;
 
 pub mod expr;
 pub mod stmt;

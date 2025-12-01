@@ -33,9 +33,9 @@ fdiv = b // 2
 
         let fdiv = interp.interpret("fdiv").unwrap();
         if let Value::Float(f) = fdiv {
-             assert_eq!(f, 1.0);
+            assert_eq!(f, 1.0);
         } else {
-             panic!("Expected float for floor div of float, got {:?}", fdiv);
+            panic!("Expected float for floor div of float, got {:?}", fdiv);
         }
     }
 
@@ -48,7 +48,7 @@ fdiv = b // 2
         if let Value::Float(f) = val {
             assert_eq!(f, 5.5);
         } else {
-             panic!("Expected float, got {:?}", val);
+            panic!("Expected float, got {:?}", val);
         }
     }
 
@@ -56,13 +56,25 @@ fdiv = b // 2
     fn test_any_all() {
         let mut interp = Interpreter::new();
         // Any
-        assert_eq!(interp.interpret("any([0, False, None])").unwrap(), Value::Bool(false));
-        assert_eq!(interp.interpret("any([0, 1, None])").unwrap(), Value::Bool(true));
+        assert_eq!(
+            interp.interpret("any([0, False, None])").unwrap(),
+            Value::Bool(false)
+        );
+        assert_eq!(
+            interp.interpret("any([0, 1, None])").unwrap(),
+            Value::Bool(true)
+        );
         assert_eq!(interp.interpret("any([])").unwrap(), Value::Bool(false));
 
         // All
-        assert_eq!(interp.interpret("all([1, True, 's'])").unwrap(), Value::Bool(true));
-        assert_eq!(interp.interpret("all([1, False, 's'])").unwrap(), Value::Bool(false));
+        assert_eq!(
+            interp.interpret("all([1, True, 's'])").unwrap(),
+            Value::Bool(true)
+        );
+        assert_eq!(
+            interp.interpret("all([1, False, 's'])").unwrap(),
+            Value::Bool(false)
+        );
         assert_eq!(interp.interpret("all([])").unwrap(), Value::Bool(true));
     }
 
@@ -128,7 +140,7 @@ fdiv = b // 2
             assert_eq!(list[1], Value::Int(2));
             assert_eq!(list[2], Value::Int(3));
         } else {
-             panic!("Expected list");
+            panic!("Expected list");
         }
     }
 
@@ -156,20 +168,20 @@ fdiv = b // 2
                 panic!("Expected tuple in zip result");
             }
         } else {
-             panic!("Expected list");
+            panic!("Expected list");
         }
     }
 
     #[test]
     fn test_reversed() {
-         let mut interp = Interpreter::new();
-         let val = interp.interpret("reversed([1, 2, 3])").unwrap();
-         if let Value::List(l) = val {
-             let list = l.borrow();
-             assert_eq!(list[0], Value::Int(3));
-         } else {
-             panic!("Expected list");
-         }
+        let mut interp = Interpreter::new();
+        let val = interp.interpret("reversed([1, 2, 3])").unwrap();
+        if let Value::List(l) = val {
+            let list = l.borrow();
+            assert_eq!(list[0], Value::Int(3));
+        } else {
+            panic!("Expected list");
+        }
     }
 
     #[test]

@@ -1,12 +1,12 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use crate::lang::ast::Value;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
-use alloc::sync::Arc;
-use spin::Mutex;
 use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use eldritch_macros::eldritch_library_impl;
+use spin::Mutex;
 
 #[derive(Debug, Clone)]
 enum FsEntry {
@@ -29,7 +29,10 @@ impl Default for FileLibraryFake {
 
         // /home/user
         let mut user_map = BTreeMap::new();
-        user_map.insert("notes.txt".to_string(), FsEntry::File(b"secret plans".to_vec()));
+        user_map.insert(
+            "notes.txt".to_string(),
+            FsEntry::File(b"secret plans".to_vec()),
+        );
         user_map.insert("todo.txt".to_string(), FsEntry::File(b"buy milk".to_vec()));
 
         let mut home_map = BTreeMap::new();
@@ -39,7 +42,10 @@ impl Default for FileLibraryFake {
 
         // /etc
         let mut etc_map = BTreeMap::new();
-        etc_map.insert("passwd".to_string(), FsEntry::File(b"root:x:0:0:root:/root:/bin/bash\n".to_vec()));
+        etc_map.insert(
+            "passwd".to_string(),
+            FsEntry::File(b"root:x:0:0:root:/root:/bin/bash\n".to_vec()),
+        );
         root_map.insert("etc".to_string(), FsEntry::Dir(etc_map));
 
         Self {
@@ -95,7 +101,9 @@ impl FileLibrary for FileLibraryFake {
         Err("Path not found".to_string())
     }
 
-    fn compress(&self, _src: String, _dst: String) -> Result<(), String> { Ok(()) }
+    fn compress(&self, _src: String, _dst: String) -> Result<(), String> {
+        Ok(())
+    }
 
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
         let mut root = self.root.lock();
@@ -109,7 +117,9 @@ impl FileLibrary for FileLibraryFake {
             return Err("Source not found".to_string());
         };
 
-        if dst_parts.is_empty() { return Err("Invalid destination".to_string()); }
+        if dst_parts.is_empty() {
+            return Err("Invalid destination".to_string());
+        }
         let (parent_parts, file_name) = dst_parts.split_at(dst_parts.len() - 1);
         let file_name = &file_name[0];
 
@@ -123,7 +133,9 @@ impl FileLibrary for FileLibraryFake {
         Err("Destination path not found".to_string())
     }
 
-    fn decompress(&self, _src: String, _dst: String) -> Result<(), String> { Ok(()) }
+    fn decompress(&self, _src: String, _dst: String) -> Result<(), String> {
+        Ok(())
+    }
 
     fn exists(&self, path: String) -> Result<bool, String> {
         let mut root = self.root.lock();
@@ -131,7 +143,9 @@ impl FileLibrary for FileLibraryFake {
         Ok(Self::traverse(&mut root, &parts).is_some())
     }
 
-    fn follow(&self, _path: String, _fn_val: Value) -> Result<(), String> { Ok(()) }
+    fn follow(&self, _path: String, _fn_val: Value) -> Result<(), String> {
+        Ok(())
+    }
 
     fn is_dir(&self, path: String) -> Result<bool, String> {
         let mut root = self.root.lock();
@@ -162,11 +176,17 @@ impl FileLibrary for FileLibraryFake {
             for (name, entry) in map.iter() {
                 let mut info = BTreeMap::new();
                 info.insert("file_name".to_string(), Value::String(name.clone()));
-                info.insert("is_dir".to_string(), Value::Bool(matches!(entry, FsEntry::Dir(_))));
-                info.insert("size".to_string(), Value::Int(match entry {
-                    FsEntry::File(d) => d.len() as i64,
-                    FsEntry::Dir(_) => 4096,
-                }));
+                info.insert(
+                    "is_dir".to_string(),
+                    Value::Bool(matches!(entry, FsEntry::Dir(_))),
+                );
+                info.insert(
+                    "size".to_string(),
+                    Value::Int(match entry {
+                        FsEntry::File(d) => d.len() as i64,
+                        FsEntry::Dir(_) => 4096,
+                    }),
+                );
                 result.push(info);
             }
             Ok(result)
@@ -178,7 +198,9 @@ impl FileLibrary for FileLibraryFake {
     fn mkdir(&self, path: String, _parent: Option<bool>) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
-        if parts.is_empty() { return Ok(()); }
+        if parts.is_empty() {
+            return Ok(());
+        }
 
         let (parent_parts, dir_name) = parts.split_at(parts.len() - 1);
         let dir_name = &dir_name[0];
@@ -201,8 +223,10 @@ impl FileLibrary for FileLibraryFake {
 
     fn parent_dir(&self, path: String) -> Result<String, String> {
         let parts = Self::normalize_path(&path);
-        if parts.is_empty() { return Ok("/".to_string()); }
-        let parent = &parts[0..parts.len()-1];
+        if parts.is_empty() {
+            return Ok("/".to_string());
+        }
+        let parent = &parts[0..parts.len() - 1];
         Ok(format!("/{}", parent.join("/")))
     }
 
@@ -211,7 +235,7 @@ impl FileLibrary for FileLibraryFake {
         let parts = Self::normalize_path(&path);
 
         if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-             Ok(String::from_utf8_lossy(data).into_owned())
+            Ok(String::from_utf8_lossy(data).into_owned())
         } else {
             Err("File not found".to_string())
         }
@@ -222,7 +246,7 @@ impl FileLibrary for FileLibraryFake {
         let parts = Self::normalize_path(&path);
 
         if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-             Ok(data.clone())
+            Ok(data.clone())
         } else {
             Err("File not found".to_string())
         }
@@ -231,7 +255,9 @@ impl FileLibrary for FileLibraryFake {
     fn remove(&self, path: String) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
-        if parts.is_empty() { return Err("Cannot remove root".to_string()); }
+        if parts.is_empty() {
+            return Err("Cannot remove root".to_string());
+        }
 
         let (parent_parts, name) = parts.split_at(parts.len() - 1);
         let name = &name[0];
@@ -245,23 +271,39 @@ impl FileLibrary for FileLibraryFake {
         Err("Parent not found".to_string())
     }
 
-    fn replace(&self, _path: String, _pattern: String, _value: String) -> Result<(), String> { Ok(()) }
+    fn replace(&self, _path: String, _pattern: String, _value: String) -> Result<(), String> {
+        Ok(())
+    }
 
-    fn replace_all(&self, _path: String, _pattern: String, _value: String) -> Result<(), String> { Ok(()) }
+    fn replace_all(&self, _path: String, _pattern: String, _value: String) -> Result<(), String> {
+        Ok(())
+    }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
         let name = name.unwrap_or_else(|| "random".to_string());
         Ok(format!("/tmp/{}", name))
     }
 
-    fn template(&self, _template_path: String, _dst: String, _args: BTreeMap<String, Value>, _autoescape: bool) -> Result<(), String> { Ok(()) }
+    fn template(
+        &self,
+        _template_path: String,
+        _dst: String,
+        _args: BTreeMap<String, Value>,
+        _autoescape: bool,
+    ) -> Result<(), String> {
+        Ok(())
+    }
 
-    fn timestomp(&self, _src: String, _dst: String) -> Result<(), String> { Ok(()) }
+    fn timestomp(&self, _src: String, _dst: String) -> Result<(), String> {
+        Ok(())
+    }
 
     fn write(&self, path: String, content: String) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
-        if parts.is_empty() { return Err("Invalid path".to_string()); }
+        if parts.is_empty() {
+            return Err("Invalid path".to_string());
+        }
 
         let (parent_parts, name) = parts.split_at(parts.len() - 1);
         let name = &name[0];
@@ -276,7 +318,15 @@ impl FileLibrary for FileLibraryFake {
         Err("Parent path not found".to_string())
     }
 
-    fn find(&self, _path: String, _name: Option<String>, _file_type: Option<String>, _permissions: Option<i64>, _modified_time: Option<i64>, _create_time: Option<i64>) -> Result<Vec<String>, String> {
+    fn find(
+        &self,
+        _path: String,
+        _name: Option<String>,
+        _file_type: Option<String>,
+        _permissions: Option<i64>,
+        _modified_time: Option<i64>,
+        _create_time: Option<i64>,
+    ) -> Result<Vec<String>, String> {
         // Simple BFS/DFS to find all files
         Ok(Vec::new())
     }
@@ -295,7 +345,10 @@ mod tests {
         assert!(!file.exists("/home/user/missing.txt".into()).unwrap());
 
         // Read
-        assert_eq!(file.read("/home/user/notes.txt".into()).unwrap(), "secret plans");
+        assert_eq!(
+            file.read("/home/user/notes.txt".into()).unwrap(),
+            "secret plans"
+        );
 
         // Write
         file.write("/tmp/test.txt".into(), "hello".into()).unwrap();
@@ -303,15 +356,24 @@ mod tests {
 
         // List
         let items = file.list("/home/user".into()).unwrap();
-        assert!(items.iter().any(|x| x.get("file_name").unwrap().to_string() == "notes.txt"));
+        assert!(items
+            .iter()
+            .any(|x| x.get("file_name").unwrap().to_string() == "notes.txt"));
 
         // Mkdir
         file.mkdir("/home/user/docs".into(), None).unwrap();
         assert!(file.is_dir("/home/user/docs".into()).unwrap());
 
         // Copy
-        file.copy("/home/user/notes.txt".into(), "/tmp/notes_backup.txt".into()).unwrap();
-        assert_eq!(file.read("/tmp/notes_backup.txt".into()).unwrap(), "secret plans");
+        file.copy(
+            "/home/user/notes.txt".into(),
+            "/tmp/notes_backup.txt".into(),
+        )
+        .unwrap();
+        assert_eq!(
+            file.read("/tmp/notes_backup.txt".into()).unwrap(),
+            "secret plans"
+        );
 
         // Remove
         file.remove("/tmp/notes_backup.txt".into()).unwrap();

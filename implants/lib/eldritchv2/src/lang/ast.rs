@@ -2,8 +2,8 @@ use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::rc::Rc;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::cmp::Ordering;
@@ -48,11 +48,8 @@ pub enum Argument {
 }
 
 pub type BuiltinFn = fn(&Rc<RefCell<Environment>>, &[Value]) -> Result<Value, String>;
-pub type BuiltinFnWithKwargs = fn(
-    &Rc<RefCell<Environment>>,
-    &[Value],
-    &BTreeMap<String, Value>,
-) -> Result<Value, String>;
+pub type BuiltinFnWithKwargs =
+    fn(&Rc<RefCell<Environment>>, &[Value], &BTreeMap<String, Value>) -> Result<Value, String>;
 
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;
@@ -100,8 +97,12 @@ impl fmt::Debug for Value {
             Value::Set(s) => write!(f, "Set({:?})", s),
             Value::Function(func) => write!(f, "Function({:?})", func),
             Value::NativeFunction(name, _) => write!(f, "NativeFunction({})", name),
-            Value::NativeFunctionWithKwargs(name, _) => write!(f, "NativeFunctionWithKwargs({})", name),
-            Value::BoundMethod(receiver, name) => write!(f, "BoundMethod({:?}, {})", receiver, name),
+            Value::NativeFunctionWithKwargs(name, _) => {
+                write!(f, "NativeFunctionWithKwargs({})", name)
+            }
+            Value::BoundMethod(receiver, name) => {
+                write!(f, "BoundMethod({:?}, {})", receiver, name)
+            }
             Value::Foreign(obj) => write!(f, "Foreign({:?})", obj),
         }
     }
@@ -137,7 +138,9 @@ impl PartialEq for Value {
             (Value::Tuple(a), Value::Tuple(b)) => a == b,
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a == b,
-            (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => a == b,
+            (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => {
+                a == b
+            }
             (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => r1 == r2 && n1 == n2,
             (Value::Foreign(a), Value::Foreign(b)) => Arc::ptr_eq(a, b),
             _ => false,
@@ -179,14 +182,14 @@ impl Ord for Value {
             }
             (Value::Tuple(a), Value::Tuple(b)) => a.cmp(b),
             (Value::Dictionary(a), Value::Dictionary(b)) => {
-                 if Rc::ptr_eq(a, b) {
+                if Rc::ptr_eq(a, b) {
                     return Ordering::Equal;
                 }
                 // BTreeMap implements Ord
                 a.borrow().cmp(&*b.borrow())
             }
-             (Value::Set(a), Value::Set(b)) => {
-                 if Rc::ptr_eq(a, b) {
+            (Value::Set(a), Value::Set(b)) => {
+                if Rc::ptr_eq(a, b) {
                     return Ordering::Equal;
                 }
                 // BTreeSet implements Ord
@@ -196,13 +199,13 @@ impl Ord for Value {
             // This is primarily to satisfy BTreeSet requirement, not for user-facing logical ordering necessarily.
             (Value::Function(a), Value::Function(b)) => a.name.cmp(&b.name),
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a.cmp(b),
-            (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => a.cmp(b),
-            (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => {
-                match r1.cmp(r2) {
-                    Ordering::Equal => n1.cmp(n2),
-                    ord => ord,
-                }
+            (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => {
+                a.cmp(b)
             }
+            (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => match r1.cmp(r2) {
+                Ordering::Equal => n1.cmp(n2),
+                ord => ord,
+            },
             (Value::Foreign(a), Value::Foreign(b)) => {
                 let p1 = Arc::as_ptr(a) as *const ();
                 let p2 = Arc::as_ptr(b) as *const ();

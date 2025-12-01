@@ -1,10 +1,10 @@
 use super::ast::Value;
+use alloc::collections::BTreeMap;
 use alloc::format;
+use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
 use core::cell::RefCell;
-use alloc::rc::Rc;
 
 pub trait FromValue: Sized {
     fn from_value(v: &Value) -> Result<Self, String>;
@@ -71,7 +71,7 @@ impl<T: FromValue> FromValue for Vec<T> {
                     res.push(T::from_value(item)?);
                 }
                 Ok(res)
-            },
+            }
             Value::Tuple(t) => {
                 let mut res = Vec::with_capacity(t.len());
                 for item in t.iter() {

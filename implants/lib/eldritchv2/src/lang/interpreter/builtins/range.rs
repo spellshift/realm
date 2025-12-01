@@ -1,8 +1,8 @@
-use alloc::string::{String, ToString};
+use crate::lang::ast::{Environment, Value};
 use alloc::rc::Rc;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cell::RefCell;
-use crate::lang::ast::{Environment, Value};
 
 pub fn builtin_range(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let (start, end, step) = match args {

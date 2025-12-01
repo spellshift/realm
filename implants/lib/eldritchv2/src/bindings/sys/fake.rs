@@ -1,20 +1,35 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use crate::lang::ast::Value;
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(SysLibrary)]
 pub struct SysLibraryFake;
 
 impl SysLibrary for SysLibraryFake {
-    fn dll_inject(&self, _dll_path: String, _pid: i64) -> Result<(), String> { Ok(()) }
+    fn dll_inject(&self, _dll_path: String, _pid: i64) -> Result<(), String> {
+        Ok(())
+    }
 
-    fn dll_reflect(&self, _dll_bytes: Vec<u8>, _pid: i64, _function_name: String) -> Result<(), String> { Ok(()) }
+    fn dll_reflect(
+        &self,
+        _dll_bytes: Vec<u8>,
+        _pid: i64,
+        _function_name: String,
+    ) -> Result<(), String> {
+        Ok(())
+    }
 
-    fn exec(&self, _path: String, _args: Vec<String>, _disown: Option<bool>, _env_vars: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String> {
+    fn exec(
+        &self,
+        _path: String,
+        _args: Vec<String>,
+        _disown: Option<bool>,
+        _env_vars: Option<BTreeMap<String, String>>,
+    ) -> Result<BTreeMap<String, Value>, String> {
         Ok(BTreeMap::new())
     }
 
@@ -46,7 +61,11 @@ impl SysLibrary for SysLibraryFake {
         Ok(1337)
     }
 
-    fn get_reg(&self, _reghive: String, _regpath: String) -> Result<BTreeMap<String, String>, String> {
+    fn get_reg(
+        &self,
+        _reghive: String,
+        _regpath: String,
+    ) -> Result<BTreeMap<String, String>, String> {
         Ok(BTreeMap::new())
     }
 
@@ -62,13 +81,21 @@ impl SysLibrary for SysLibraryFake {
         Ok(String::from("eldritch-test-box"))
     }
 
-    fn is_bsd(&self) -> Result<bool, String> { Ok(false) }
+    fn is_bsd(&self) -> Result<bool, String> {
+        Ok(false)
+    }
 
-    fn is_linux(&self) -> Result<bool, String> { Ok(true) }
+    fn is_linux(&self) -> Result<bool, String> {
+        Ok(true)
+    }
 
-    fn is_macos(&self) -> Result<bool, String> { Ok(false) }
+    fn is_macos(&self) -> Result<bool, String> {
+        Ok(false)
+    }
 
-    fn is_windows(&self) -> Result<bool, String> { Ok(false) }
+    fn is_windows(&self) -> Result<bool, String> {
+        Ok(false)
+    }
 
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
@@ -78,11 +105,38 @@ impl SysLibrary for SysLibraryFake {
         Ok(map)
     }
 
-    fn write_reg_hex(&self, _reghive: String, _regpath: String, _regname: String, _regtype: String, _regvalue: String) -> Result<bool, String> { Ok(true) }
+    fn write_reg_hex(
+        &self,
+        _reghive: String,
+        _regpath: String,
+        _regname: String,
+        _regtype: String,
+        _regvalue: String,
+    ) -> Result<bool, String> {
+        Ok(true)
+    }
 
-    fn write_reg_int(&self, _reghive: String, _regpath: String, _regname: String, _regtype: String, _regvalue: i64) -> Result<bool, String> { Ok(true) }
+    fn write_reg_int(
+        &self,
+        _reghive: String,
+        _regpath: String,
+        _regname: String,
+        _regtype: String,
+        _regvalue: i64,
+    ) -> Result<bool, String> {
+        Ok(true)
+    }
 
-    fn write_reg_str(&self, _reghive: String, _regpath: String, _regname: String, _regtype: String, _regvalue: String) -> Result<bool, String> { Ok(true) }
+    fn write_reg_str(
+        &self,
+        _reghive: String,
+        _regpath: String,
+        _regname: String,
+        _regtype: String,
+        _regvalue: String,
+    ) -> Result<bool, String> {
+        Ok(true)
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

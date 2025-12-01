@@ -1,11 +1,11 @@
-use alloc::string::{String, ToString};
-use alloc::rc::Rc;
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use crate::lang::interpreter::utils::get_type_name;
+use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use core::cell::RefCell;
 
 pub fn builtin_enumerate(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let iterable = &args[0];

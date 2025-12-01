@@ -232,7 +232,10 @@ impl Parser {
             let mut elements = vec![expr];
 
             // Allow trailing comma if next is Assign or Newline
-            if !self.check(&TokenKind::Assign) && !self.check(&TokenKind::Newline) && !self.check(&TokenKind::Dedent) {
+            if !self.check(&TokenKind::Assign)
+                && !self.check(&TokenKind::Newline)
+                && !self.check(&TokenKind::Dedent)
+            {
                 loop {
                     elements.push(self.expression()?);
                     if !self.match_token(&[TokenKind::Comma]) {
@@ -308,11 +311,7 @@ impl Parser {
                     "Expected newline after augmented assignment.",
                 )?;
             }
-            return Ok(self.make_stmt(
-                StmtKind::AugmentedAssignment(expr, op, value),
-                start,
-                end,
-            ));
+            return Ok(self.make_stmt(StmtKind::AugmentedAssignment(expr, op, value), start, end));
         }
 
         if !self.is_at_end() && !matches!(self.peek().kind, TokenKind::Dedent) {

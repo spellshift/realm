@@ -1,9 +1,9 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use crate::lang::ast::Value;
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(AgentLibrary)]
@@ -22,11 +22,17 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(String::from("linux"))
     }
 
-    fn kill(&self) -> Result<(), String> { Ok(()) }
+    fn kill(&self) -> Result<(), String> {
+        Ok(())
+    }
 
-    fn set_config(&self, _config: BTreeMap<String, Value>) -> Result<(), String> { Ok(()) }
+    fn set_config(&self, _config: BTreeMap<String, Value>) -> Result<(), String> {
+        Ok(())
+    }
 
-    fn sleep(&self, _secs: i64) -> Result<(), String> { Ok(()) }
+    fn sleep(&self, _secs: i64) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
