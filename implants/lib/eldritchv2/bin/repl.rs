@@ -15,13 +15,17 @@ use eldritchv2::bindings::{
   file::std::StdFileLibrary,
   process::std::StdProcessLibrary,
   regex::std::StdRegexLibrary,
+  random::std::StdRandomLibrary,
+  crypto::std::StdCryptoLibrary,
 };
 
 #[cfg(feature = "fake_bindings")]
 use eldritchv2::bindings::{
-    file::fake::FileLibraryFake,
-    regex::fake::RegexLibraryFake,
+  file::fake::FileLibraryFake,
+  regex::fake::RegexLibraryFake,
+  crypto::fake::CryptoLibraryFake,
 };
+
 
 fn main() -> io::Result<()> {
     // Register Libraries
@@ -30,12 +34,15 @@ fn main() -> io::Result<()> {
       register_lib(StdFileLibrary::default());
       register_lib(StdProcessLibrary::default());
       register_lib(StdRegexLibrary::default());
+      register_lib(StdRandomLibrary::default());
+      register_lib(StdCryptoLibrary::default());
     }
 
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
     {
         register_lib(FileLibraryFake::default());
         register_lib(RegexLibraryFake::default());
+        register_lib(CryptoLibraryFake::default());
     }
 
     let mut interpreter = Interpreter::new();

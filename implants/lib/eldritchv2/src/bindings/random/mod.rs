@@ -5,6 +5,9 @@ use alloc::vec::Vec;
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
+#[cfg(feature = "std")]
+pub mod std;
+
 #[eldritch_library("random")]
 pub trait RandomLibrary {
     #[eldritch_method]
