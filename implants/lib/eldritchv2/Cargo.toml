@@ -33,7 +33,7 @@ wasm-bindgen = "0.2"
 [features]
 default = ["stdlib"]
 std = []
-stdlib = ["std", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json"]
+stdlib = ["std", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json", "dep:sysinfo", "dep:listeners"]
 fake_bindings = []
 
 [[bin]]
