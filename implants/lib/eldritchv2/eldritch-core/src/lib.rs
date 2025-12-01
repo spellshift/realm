@@ -12,7 +12,9 @@ mod token;
 mod global_libs;
 
 // Re-export core types
-pub use ast::{Value, ForeignValue};
+pub use token::TokenKind;
+pub use ast::{Value, ForeignValue, Environment};
+pub use lexer::Lexer;
 pub use interpreter::Interpreter;
 
 // Public API exports

@@ -2,6 +2,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
+use super::{RandomLibrary, RandomLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RandomLibrary)]

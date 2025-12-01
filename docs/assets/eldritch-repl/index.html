@@ -61,6 +61,22 @@
             top: 0;
             left: -9999px;
         }
+
+        #realm-logo {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px; /* Adjust size as needed, 150px seems reasonable for a 250px source */
+            opacity: 0.8;
+            pointer-events: none; /* Let clicks pass through if it overlaps something */
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px), (max-height: 600px) {
+            #realm-logo {
+                display: none;
+            }
+        }
     </style>
 </head>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZZ8G47GCT4"></script>
@@ -85,6 +101,8 @@
     <div id="terminal"></div>
     <div id="current-line"></div>
     <textarea id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+
+    <img id="realm-logo" src="https://raw.githubusercontent.com/spellshift/realm/main/docs/assets/img/realm_250px.png" alt="Realm Logo">
 
     <script type="module">
         import init, { WasmRepl } from './pkg/eldritchv2.js';
@@ -199,6 +217,8 @@
             }
             if (e.key === 'c' && e.ctrlKey) e.preventDefault();
             if (e.key === 'l' && e.ctrlKey) e.preventDefault();
+            if (e.key === 'a' && e.ctrlKey) e.preventDefault();
+            if (e.key === 'e' && e.ctrlKey) e.preventDefault();
 
             // Handle Key via Rust
             let key = e.key;

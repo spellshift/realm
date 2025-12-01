@@ -1,8 +1,6 @@
 use super::{Input, Repl, ReplAction};
-use crate::lang::ast::Environment;
 #[cfg(feature = "fake_bindings")]
-use crate::register_lib;
-use crate::{Interpreter, Value};
+use eldritch_core::{register_lib, Interpreter, Value, Environment};
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::String;
@@ -12,7 +10,7 @@ use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
-use crate::bindings::{
+use eldritch_stdlib::{
     agent::fake::AgentLibraryFake, assets::fake::AssetsLibraryFake,
     crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
     pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,

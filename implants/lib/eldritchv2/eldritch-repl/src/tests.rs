@@ -1,9 +1,8 @@
-use crate::lang::ast::{Environment, Value};
 extern crate alloc;
 
 #[cfg(test)]
-use crate::repl::{Input, Repl, ReplAction};
-use crate::Interpreter;
+use crate::{Input, Repl, ReplAction};
+use eldritch_core::{Interpreter, Value, Environment};
 use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::string::ToString;

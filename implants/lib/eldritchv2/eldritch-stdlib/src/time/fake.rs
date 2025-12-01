@@ -1,6 +1,7 @@
 
 use alloc::string::String;
 use eldritch_macros::eldritch_library_impl;
+use super::{TimeLibrary, TimeLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(TimeLibrary)]

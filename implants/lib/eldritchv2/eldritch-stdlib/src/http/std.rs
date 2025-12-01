@@ -9,7 +9,10 @@ use core::cell::RefCell;
 use std::path::PathBuf;
 use std::fs::File;
 use std::io::Write;
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use reqwest::{
+    blocking::Client,
+    header::{HeaderMap, HeaderName, HeaderValue}
+};
 use super::{HttpLibrary, HttpLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
@@ -52,7 +55,7 @@ impl HttpLibrary for StdHttpLibrary {
     }
 
     fn get(&self, url: String, headers: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String> {
-        let client = reqwest::blocking::Client::builder()
+        let client = Client::builder()
             .build()
             .map_err(|e| format!("Failed to build client: {}", e))?;
 
