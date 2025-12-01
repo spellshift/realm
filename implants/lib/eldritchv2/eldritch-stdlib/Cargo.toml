@@ -1,7 +1,7 @@
 [package]
 name = "eldritch-stdlib"
 version = "0.3.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = ["stdlib"]
 fake_bindings = []
-std = []
+std = ["eldritch-core/std"]
 stdlib = [
     "std",
     "dep:futures",
@@ -35,8 +35,9 @@ stdlib = [
     "dep:hex-literal",
 ]
 
-
 [dependencies]
+eldritch-core = { path = "../eldritch-core" }
+eldritch-macros = { path = "../eldritch-macros" }
 futures = { version = "0.3", optional = true }
 reqwest = { version = "0.11", default-features = false, features = [
     "blocking",
@@ -44,7 +45,6 @@ reqwest = { version = "0.11", default-features = false, features = [
     "stream",
 ], optional = true }
 tokio = { version = "1", features = ["rt", "macros"], optional = true }
-eldritch-macros = { path = "../eldritch-macros" }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
@@ -68,3 +68,4 @@ hex-literal = { workspace = true, optional = true }
 
 [dev-dependencies]
 httptest = "0.16"
+eldritch-core = { path = "../eldritch-core", features = ["std"] }

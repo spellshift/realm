@@ -1,4 +1,4 @@
-use super::*;
+
 use alloc::string::String;
 use eldritch_macros::eldritch_library_impl;
 
@@ -26,7 +26,7 @@ impl TimeLibrary for TimeLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_time_fake() {

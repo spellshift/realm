@@ -1,5 +1,5 @@
-use super::*;
-use crate::lang::ast::Value;
+
+use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -334,7 +334,7 @@ impl FileLibrary for FileLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_file_fake() {

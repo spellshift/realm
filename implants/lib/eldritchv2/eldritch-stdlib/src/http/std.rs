@@ -1,6 +1,6 @@
-use super::*;
+
 use eldritch_macros::eldritch_library_impl;
-use crate::lang::ast::Value;
+use eldritch_core::Value;
 use alloc::string::String;
 use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
@@ -33,7 +33,7 @@ impl HttpLibrary for StdHttpLibrary {
                 .build()
                 .map_err(|e| format!("Failed to build client: {}", e))?;
 
-            use tokio_stream::StreamExt;
+            use futures::StreamExt;
 
             let resp = client.get(&url).send().await
                  .map_err(|e| format!("Failed to send request: {}", e))?;

@@ -1,4 +1,4 @@
-use crate::lang::ast::{BuiltinFn, BuiltinFnWithKwargs, Value};
+use crate::ast::{BuiltinFn, BuiltinFnWithKwargs, Value};
 use alloc::string::ToString;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -82,7 +82,7 @@ pub fn get_all_builtins_with_kwargs() -> Vec<(&'static str, BuiltinFnWithKwargs)
 
 // I need to handle stubs.
 pub fn builtin_stub(
-    _env: &alloc::rc::Rc<core::cell::RefCell<crate::lang::ast::Environment>>,
+    _env: &alloc::rc::Rc<core::cell::RefCell<crate::ast::Environment>>,
     _args: &[Value],
 ) -> Result<Value, alloc::string::String> {
     Err("internal error: this function should be handled by interpreter".to_string())

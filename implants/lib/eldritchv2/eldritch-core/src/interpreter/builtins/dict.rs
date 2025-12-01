@@ -1,5 +1,5 @@
-use crate::lang::ast::{Environment, Value};
-use crate::lang::interpreter::utils::get_type_name;
+use crate::ast::{Environment, Value};
+use crate::interpreter::utils::get_type_name;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::rc::Rc;

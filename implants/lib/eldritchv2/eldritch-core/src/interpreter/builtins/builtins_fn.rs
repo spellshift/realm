@@ -1,5 +1,5 @@
 use super::get_all_builtins;
-use crate::lang::ast::{Environment, Value};
+use crate::ast::{Environment, Value};
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

@@ -1,4 +1,4 @@
-use super::*;
+
 use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -66,7 +66,7 @@ impl RandomLibrary for StdRandomLibrary {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
 
     const NUM_ITERATION: i32 = 1000;
 

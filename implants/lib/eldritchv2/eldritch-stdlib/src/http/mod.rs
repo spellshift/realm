@@ -1,4 +1,4 @@
-use crate::lang::ast::Value;
+use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::String;

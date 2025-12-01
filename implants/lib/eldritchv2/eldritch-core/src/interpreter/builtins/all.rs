@@ -1,5 +1,5 @@
-use crate::lang::ast::{Environment, Value};
-use crate::lang::interpreter::utils::{get_type_name, is_truthy};
+use crate::ast::{Environment, Value};
+use crate::interpreter::utils::{get_type_name, is_truthy};
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::String;

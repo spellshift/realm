@@ -49,7 +49,7 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
                     #bind_name => {
                         #args_parsing
                         let result = self.#method_name(#arg_names);
-                        eldritchv2::conversion::IntoEldritchResult::into_eldritch_result(result)
+                        eldritch_core::conversion::IntoEldritchResult::into_eldritch_result(result)
                     }
                 });
                 method_names.push(bind_name);
@@ -69,9 +69,9 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
             fn _eldritch_call_method(
                 &self,
                 name: &str,
-                _eldritch_args: &[eldritchv2::Value],
-                _eldritch_kwargs: &alloc::collections::BTreeMap<String, eldritchv2::Value>,
-            ) -> Result<eldritchv2::Value, String>;
+                _eldritch_args: &[eldritch_core::Value],
+                _eldritch_kwargs: &alloc::collections::BTreeMap<String, eldritch_core::Value>,
+            ) -> Result<eldritch_core::Value, String>;
         }
 
         impl<T> #adapter_name for T
@@ -90,9 +90,9 @@ pub fn eldritch_library(attr: TokenStream, item: TokenStream) -> TokenStream {
             fn _eldritch_call_method(
                 &self,
                 name: &str,
-                _eldritch_args: &[eldritchv2::Value],
-                _eldritch_kwargs: &alloc::collections::BTreeMap<String, eldritchv2::Value>,
-            ) -> Result<eldritchv2::Value, String> {
+                _eldritch_args: &[eldritch_core::Value],
+                _eldritch_kwargs: &alloc::collections::BTreeMap<String, eldritch_core::Value>,
+            ) -> Result<eldritch_core::Value, String> {
                  match name {
                     #(#method_dispatches)*
                     _ => Err(format!("Method '{}' not found or not exposed", name)),
@@ -116,7 +116,7 @@ pub fn eldritch_library_impl(attr: TokenStream, item: TokenStream) -> TokenStrea
     let expanded = quote! {
         #struct_def
 
-        impl #impl_generics eldritchv2::ForeignValue for #struct_name #ty_generics #where_clause {
+        impl #impl_generics eldritch_core::ForeignValue for #struct_name #ty_generics #where_clause {
             fn type_name(&self) -> &str {
                 <Self as #adapter_name>::_eldritch_type_name(self)
             }
@@ -128,9 +128,9 @@ pub fn eldritch_library_impl(attr: TokenStream, item: TokenStream) -> TokenStrea
             fn call_method(
                 &self,
                 name: &str,
-                args: &[eldritchv2::Value],
-                kwargs: &alloc::collections::BTreeMap<String, eldritchv2::Value>,
-            ) -> Result<eldritchv2::Value, String> {
+                args: &[eldritch_core::Value],
+                kwargs: &alloc::collections::BTreeMap<String, eldritch_core::Value>,
+            ) -> Result<eldritch_core::Value, String> {
                 <Self as #adapter_name>::_eldritch_call_method(self, name, args, kwargs)
             }
         }
@@ -176,9 +176,9 @@ fn generate_args_parsing(sig: &Signature) -> (proc_macro2::TokenStream, proc_mac
                 if is_str_ref {
                     parsing.push(quote! {
                         let #pat: String = if #arg_idx < _eldritch_args.len() {
-                            eldritchv2::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
+                            eldritch_core::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
                         } else if let Some(val) = _eldritch_kwargs.get(#arg_name_str) {
-                            eldritchv2::conversion::FromValue::from_value(val)?
+                            eldritch_core::conversion::FromValue::from_value(val)?
                         } else {
                             return Err(format!("Missing argument: {}", #arg_name_str));
                         };
@@ -193,9 +193,9 @@ fn generate_args_parsing(sig: &Signature) -> (proc_macro2::TokenStream, proc_mac
 
                     parsing.push(quote! {
                         let #pat: #ty = if #arg_idx < _eldritch_args.len() {
-                            eldritchv2::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
+                            eldritch_core::conversion::FromValue::from_value(&_eldritch_args[#arg_idx])?
                         } else if let Some(val) = _eldritch_kwargs.get(#arg_name_str) {
-                            eldritchv2::conversion::FromValue::from_value(val)?
+                            eldritch_core::conversion::FromValue::from_value(val)?
                         } else {
                             #missing_handler
                         };

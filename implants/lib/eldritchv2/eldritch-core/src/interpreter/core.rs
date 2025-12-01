@@ -13,7 +13,7 @@ use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs}
 use super::error::{runtime_error, EldritchError};
 use super::eval;
 use super::exec;
-use crate::lang::global_libs::get_global_libraries;
+use crate::global_libs::get_global_libraries;
 
 #[derive(Clone, PartialEq)]
 pub enum Flow {
