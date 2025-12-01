@@ -1,4 +1,5 @@
 
+use super::{ProcessLibrary, ProcessLibraryEldritchAdapter};
 use eldritch_macros::eldritch_library_impl;
 use eldritch_core::Value;
 use alloc::string::{String, ToString};
@@ -6,6 +7,7 @@ use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt, UserExt, Signal};
+use super::{ProcessLibrary, ProcessLibraryEldritchAdapter};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(ProcessLibrary)]
@@ -152,10 +154,12 @@ impl ProcessLibrary for StdProcessLibrary {
     }
 }
 
-#[cfg(all(test, feature = "std"))]
+#[cfg(all(test, feature = "stdlib"))]
 mod tests {
 
+    use super::*;
     use ::std::process::Command;
+    use eldritch_core::Value;
 
     #[test]
     fn test_std_process_list() {
