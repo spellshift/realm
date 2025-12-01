@@ -1,16 +1,19 @@
-use alloc::string::String;
-use alloc::rc::Rc;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use crate::lang::interpreter::utils::get_type_name;
 use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::String;
+use core::cell::RefCell;
 
 pub fn builtin_float(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Float(0.0));
     }
     if args.len() != 1 {
-        return Err(format!("float() takes at most 1 argument ({} given)", args.len()));
+        return Err(format!(
+            "float() takes at most 1 argument ({} given)",
+            args.len()
+        ));
     }
 
     match &args[0] {
@@ -34,13 +37,13 @@ pub fn builtin_float(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
             match s_trimmed.parse::<f64>() {
                 Ok(f) => {
                     if f.is_infinite() {
-                         // Check if literal denoted value too large (if standard parser returns inf for large value)
-                         // Prompt says: "The call fails if the literal denotes a value too large to represent as a finite float."
-                         // Rust's parse returns inf for overflow.
-                         // But for "inf" string it is valid.
-                         // Distinguishing overflow from explicit "inf" is handled by above checks.
-                         // So if we reach here and get infinity, it was overflow.
-                         return Err(format!("float() literal too large: {}", s));
+                        // Check if literal denoted value too large (if standard parser returns inf for large value)
+                        // Prompt says: "The call fails if the literal denotes a value too large to represent as a finite float."
+                        // Rust's parse returns inf for overflow.
+                        // But for "inf" string it is valid.
+                        // Distinguishing overflow from explicit "inf" is handled by above checks.
+                        // So if we reach here and get infinity, it was overflow.
+                        return Err(format!("float() literal too large: {}", s));
                     }
                     Ok(Value::Float(f))
                 }

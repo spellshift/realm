@@ -1,8 +1,9 @@
-use eldritch_macros::{eldritch_library, eldritch_method};
 use crate::lang::ast::Value;
+use alloc::collections::BTreeMap;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
+use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -13,10 +14,21 @@ pub trait SysLibrary {
     fn dll_inject(&self, dll_path: String, pid: i64) -> Result<(), String>;
 
     #[eldritch_method]
-    fn dll_reflect(&self, dll_bytes: Vec<u8>, pid: i64, function_name: String) -> Result<(), String>;
+    fn dll_reflect(
+        &self,
+        dll_bytes: Vec<u8>,
+        pid: i64,
+        function_name: String,
+    ) -> Result<(), String>;
 
     #[eldritch_method]
-    fn exec(&self, path: String, args: Vec<String>, disown: Option<bool>, env_vars: Option<BTreeMap<String, String>>) -> Result<BTreeMap<String, Value>, String>;
+    fn exec(
+        &self,
+        path: String,
+        args: Vec<String>,
+        disown: Option<bool>,
+        env_vars: Option<BTreeMap<String, String>>,
+    ) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
     fn get_env(&self) -> Result<BTreeMap<String, String>, String>;
@@ -31,7 +43,8 @@ pub trait SysLibrary {
     fn get_pid(&self) -> Result<i64, String>;
 
     #[eldritch_method]
-    fn get_reg(&self, reghive: String, regpath: String) -> Result<BTreeMap<String, String>, String>;
+    fn get_reg(&self, reghive: String, regpath: String)
+        -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String>;
@@ -55,11 +68,32 @@ pub trait SysLibrary {
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
-    fn write_reg_hex(&self, reghive: String, regpath: String, regname: String, regtype: String, regvalue: String) -> Result<bool, String>;
+    fn write_reg_hex(
+        &self,
+        reghive: String,
+        regpath: String,
+        regname: String,
+        regtype: String,
+        regvalue: String,
+    ) -> Result<bool, String>;
 
     #[eldritch_method]
-    fn write_reg_int(&self, reghive: String, regpath: String, regname: String, regtype: String, regvalue: i64) -> Result<bool, String>;
+    fn write_reg_int(
+        &self,
+        reghive: String,
+        regpath: String,
+        regname: String,
+        regtype: String,
+        regvalue: i64,
+    ) -> Result<bool, String>;
 
     #[eldritch_method]
-    fn write_reg_str(&self, reghive: String, regpath: String, regname: String, regtype: String, regvalue: String) -> Result<bool, String>;
+    fn write_reg_str(
+        &self,
+        reghive: String,
+        regpath: String,
+        regname: String,
+        regtype: String,
+        regvalue: String,
+    ) -> Result<bool, String>;
 }

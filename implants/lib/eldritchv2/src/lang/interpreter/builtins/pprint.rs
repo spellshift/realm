@@ -1,8 +1,8 @@
-use alloc::string::{String, ToString};
-use alloc::rc::Rc;
-use alloc::format;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
+use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::{String, ToString};
+use core::cell::RefCell;
 
 pub fn builtin_pprint(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let indent_width = if args.len() > 1 {
@@ -44,7 +44,11 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
             let next_indent_str = " ".repeat(next_indent);
 
             for (i, item) in list.iter().enumerate() {
-                s.push_str(&format!("{}{}", next_indent_str, pretty_format(item, next_indent, indent_width)));
+                s.push_str(&format!(
+                    "{}{}",
+                    next_indent_str,
+                    pretty_format(item, next_indent, indent_width)
+                ));
                 if i < list.len() - 1 {
                     s.push_str(",");
                 }
@@ -83,35 +87,43 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
             let next_indent_str = " ".repeat(next_indent);
 
             for (i, item) in t.iter().enumerate() {
-                 s.push_str(&format!("{}{}", next_indent_str, pretty_format(item, next_indent, indent_width)));
-                 if i < t.len() - 1 {
-                     s.push_str(",");
-                 } else if t.len() == 1 {
-                     s.push_str(",");
-                 }
-                 s.push('\n');
+                s.push_str(&format!(
+                    "{}{}",
+                    next_indent_str,
+                    pretty_format(item, next_indent, indent_width)
+                ));
+                if i < t.len() - 1 {
+                    s.push_str(",");
+                } else if t.len() == 1 {
+                    s.push_str(",");
+                }
+                s.push('\n');
             }
             s.push_str(&format!("{})", indent_str));
             s
         }
         Value::Set(s_val) => {
-             let set = s_val.borrow();
-             if set.is_empty() {
-                 return "set()".to_string(); // Python style
-             }
-             let mut s = "{\n".to_string();
-             let next_indent = current_indent + indent_width;
-             let next_indent_str = " ".repeat(next_indent);
+            let set = s_val.borrow();
+            if set.is_empty() {
+                return "set()".to_string(); // Python style
+            }
+            let mut s = "{\n".to_string();
+            let next_indent = current_indent + indent_width;
+            let next_indent_str = " ".repeat(next_indent);
 
-             for (i, item) in set.iter().enumerate() {
-                  s.push_str(&format!("{}{}", next_indent_str, pretty_format(item, next_indent, indent_width)));
-                  if i < set.len() - 1 {
-                      s.push_str(",");
-                  }
-                  s.push('\n');
-             }
-             s.push_str(&format!("{}}}", indent_str));
-             s
+            for (i, item) in set.iter().enumerate() {
+                s.push_str(&format!(
+                    "{}{}",
+                    next_indent_str,
+                    pretty_format(item, next_indent, indent_width)
+                ));
+                if i < set.len() - 1 {
+                    s.push_str(",");
+                }
+                s.push('\n');
+            }
+            s.push_str(&format!("{}}}", indent_str));
+            s
         }
         _ => format!("{}", val),
     }

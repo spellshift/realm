@@ -1,9 +1,10 @@
-use alloc::string::String;
-use alloc::rc::Rc;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use crate::lang::interpreter::utils::get_type_name;
 use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::string::ToString;
+use core::cell::RefCell;
 
 pub fn builtin_sorted(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
@@ -19,8 +20,17 @@ pub fn builtin_sorted(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result
         Value::Tuple(t) => t.clone(),
         Value::Set(s) => s.borrow().iter().cloned().collect(),
         Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
-        Value::Dictionary(d) => d.borrow().keys().map(|k| Value::String(k.clone())).collect(),
-        _ => return Err(format!("'{}' object is not iterable", get_type_name(&args[0]))),
+        Value::Dictionary(d) => d
+            .borrow()
+            .keys()
+            .map(|k| Value::String(k.clone()))
+            .collect(),
+        _ => {
+            return Err(format!(
+                "'{}' object is not iterable",
+                get_type_name(&args[0])
+            ))
+        }
     };
 
     items.sort(); // uses Ord implementation on Value

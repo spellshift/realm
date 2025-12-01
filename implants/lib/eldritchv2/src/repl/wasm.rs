@@ -1,30 +1,23 @@
-use wasm_bindgen::prelude::*;
-use crate::{Interpreter, Value};
-use super::{Repl, Input, ReplAction};
+use super::{Input, Repl, ReplAction};
+use crate::lang::ast::Environment;
 #[cfg(feature = "fake_bindings")]
 use crate::register_lib;
-use alloc::string::ToString;
-use alloc::string::String;
+use crate::{Interpreter, Value};
 use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use std::cell::RefCell;
-use alloc::rc::Rc;
-use crate::lang::ast::Environment;
+use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
 use crate::bindings::{
-    file::fake::FileLibraryFake,
-    process::fake::ProcessLibraryFake,
-    sys::fake::SysLibraryFake,
-    http::fake::HttpLibraryFake,
-    crypto::fake::CryptoLibraryFake,
-    agent::fake::AgentLibraryFake,
-    assets::fake::AssetsLibraryFake,
-    pivot::fake::PivotLibraryFake,
-    random::fake::RandomLibraryFake,
-    regex::fake::RegexLibraryFake,
-    report::fake::ReportLibraryFake,
-    time::fake::TimeLibraryFake,
+    agent::fake::AgentLibraryFake, assets::fake::AssetsLibraryFake,
+    crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
+    pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
+    random::fake::RandomLibraryFake, regex::fake::RegexLibraryFake,
+    report::fake::ReportLibraryFake, sys::fake::SysLibraryFake, time::fake::TimeLibraryFake,
 };
 
 #[wasm_bindgen]
@@ -48,7 +41,7 @@ fn wasm_print(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, 
     OUTPUT_BUFFER.with(|b| {
         let mut buf = b.borrow_mut();
         if !buf.is_empty() {
-             buf.push('\n');
+            buf.push('\n');
         }
         buf.push_str(&out);
     });
@@ -72,11 +65,17 @@ pub struct RenderState {
 #[wasm_bindgen]
 impl RenderState {
     #[wasm_bindgen(getter)]
-    pub fn prompt(&self) -> String { self.prompt.clone() }
+    pub fn prompt(&self) -> String {
+        self.prompt.clone()
+    }
     #[wasm_bindgen(getter)]
-    pub fn buffer(&self) -> String { self.buffer.clone() }
+    pub fn buffer(&self) -> String {
+        self.buffer.clone()
+    }
     #[wasm_bindgen(getter)]
-    pub fn cursor(&self) -> usize { self.cursor }
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
 }
 
 #[wasm_bindgen]
@@ -89,11 +88,17 @@ pub struct ExecutionResult {
 #[wasm_bindgen]
 impl ExecutionResult {
     #[wasm_bindgen(getter)]
-    pub fn output(&self) -> Option<String> { self.output.clone() }
+    pub fn output(&self) -> Option<String> {
+        self.output.clone()
+    }
     #[wasm_bindgen(getter)]
-    pub fn echo(&self) -> Option<String> { self.echo.clone() }
+    pub fn echo(&self) -> Option<String> {
+        self.echo.clone()
+    }
     #[wasm_bindgen(getter)]
-    pub fn clear(&self) -> bool { self.clear }
+    pub fn clear(&self) -> bool {
+        self.clear
+    }
 }
 
 #[wasm_bindgen]
@@ -131,7 +136,11 @@ impl WasmRepl {
     }
 
     pub fn get_history(&self) -> Vec<JsValue> {
-        self.repl.get_history().iter().map(|s| JsValue::from_str(s)).collect()
+        self.repl
+            .get_history()
+            .iter()
+            .map(|s| JsValue::from_str(s))
+            .collect()
     }
 
     pub fn get_state(&self) -> RenderState {
@@ -143,9 +152,22 @@ impl WasmRepl {
         }
     }
 
-    pub fn handle_key(&mut self, key: &str, ctrl: bool, _alt: bool, meta: bool, shift: bool) -> ExecutionResult {
+    pub fn handle_key(
+        &mut self,
+        key: &str,
+        ctrl: bool,
+        _alt: bool,
+        meta: bool,
+        shift: bool,
+    ) -> ExecutionResult {
         let input = match key {
-            "Enter" => if shift { Input::ForceEnter } else { Input::Enter },
+            "Enter" => {
+                if shift {
+                    Input::ForceEnter
+                } else {
+                    Input::Enter
+                }
+            }
             "Backspace" => Input::Backspace,
             "Delete" => Input::Delete,
             "ArrowLeft" => Input::Left,
@@ -170,10 +192,18 @@ impl WasmRepl {
                 if key.len() == 1 && !ctrl && !meta {
                     Input::Char(key.chars().next().unwrap())
                 } else if key.len() == 1 && (ctrl || meta) {
-                     // For search, we might need ctrl chars later, but for now strict mapping
-                     return ExecutionResult { output: None, echo: None, clear: false };
+                    // For search, we might need ctrl chars later, but for now strict mapping
+                    return ExecutionResult {
+                        output: None,
+                        echo: None,
+                        clear: false,
+                    };
                 } else {
-                    return ExecutionResult { output: None, echo: None, clear: false };
+                    return ExecutionResult {
+                        output: None,
+                        echo: None,
+                        clear: false,
+                    };
                 }
             }
         };
@@ -182,7 +212,11 @@ impl WasmRepl {
     }
 
     pub fn handle_paste(&mut self, text: &str) -> ExecutionResult {
-        let mut final_res = ExecutionResult { output: None, echo: None, clear: false };
+        let mut final_res = ExecutionResult {
+            output: None,
+            echo: None,
+            clear: false,
+        };
         let mut echo_acc = String::new();
         let mut output_acc = String::new();
 
@@ -194,46 +228,76 @@ impl WasmRepl {
         }
 
         for c in text.chars() {
-            let input = if c == '\n' { Input::Enter } else { Input::Char(c) };
+            let input = if c == '\n' {
+                Input::Enter
+            } else {
+                Input::Char(c)
+            };
             let res = self.process_input(input);
 
             if let Some(e) = res.echo {
-                if !echo_acc.is_empty() { echo_acc.push('\n'); }
+                if !echo_acc.is_empty() {
+                    echo_acc.push('\n');
+                }
                 echo_acc.push_str(&e);
             }
             if let Some(o) = res.output {
-                if !output_acc.is_empty() { output_acc.push('\n'); }
+                if !output_acc.is_empty() {
+                    output_acc.push('\n');
+                }
                 output_acc.push_str(&o);
             }
         }
 
-        if !echo_acc.is_empty() { final_res.echo = Some(echo_acc); }
-        if !output_acc.is_empty() { final_res.output = Some(output_acc); }
+        if !echo_acc.is_empty() {
+            final_res.echo = Some(echo_acc);
+        }
+        if !output_acc.is_empty() {
+            final_res.output = Some(output_acc);
+        }
         final_res
     }
 
     fn process_input(&mut self, input: Input) -> ExecutionResult {
         match self.repl.handle_input(input) {
-            ReplAction::Submit { code, last_line, prompt } => {
+            ReplAction::Submit {
+                code,
+                last_line,
+                prompt,
+            } => {
                 let echo = format!("{}{}", prompt, last_line);
                 let res = self.execute(&code);
                 ExecutionResult {
                     echo: Some(echo),
                     output: res.output,
-                    clear: false
+                    clear: false,
                 }
+            }
+            ReplAction::AcceptLine { line, prompt } => ExecutionResult {
+                output: None,
+                echo: Some(format!("{}{}", prompt, line)),
+                clear: false,
             },
-            ReplAction::AcceptLine { line, prompt } => {
-                ExecutionResult {
-                    output: None,
-                    echo: Some(format!("{}{}", prompt, line)),
-                    clear: false
-                }
+            ReplAction::Render => ExecutionResult {
+                output: None,
+                echo: None,
+                clear: false,
             },
-            ReplAction::Render => ExecutionResult { output: None, echo: None, clear: false },
-            ReplAction::ClearScreen => ExecutionResult { output: None, echo: None, clear: true },
-            ReplAction::None => ExecutionResult { output: None, echo: None, clear: false },
-            ReplAction::Quit => ExecutionResult { output: Some("Use 'exit' or close tab.".to_string()), echo: None, clear: false },
+            ReplAction::ClearScreen => ExecutionResult {
+                output: None,
+                echo: None,
+                clear: true,
+            },
+            ReplAction::None => ExecutionResult {
+                output: None,
+                echo: None,
+                clear: false,
+            },
+            ReplAction::Quit => ExecutionResult {
+                output: Some("Use 'exit' or close tab.".to_string()),
+                echo: None,
+                clear: false,
+            },
         }
     }
 
@@ -249,25 +313,37 @@ impl WasmRepl {
                     // Do not print None
                 } else {
                     if !out.is_empty() {
-                         out.push('\n');
+                        out.push('\n');
                     }
                     out.push_str(&v.to_string());
                 }
 
                 if out.is_empty() {
-                    ExecutionResult { output: None, echo: None, clear: false }
+                    ExecutionResult {
+                        output: None,
+                        echo: None,
+                        clear: false,
+                    }
                 } else {
-                    ExecutionResult { output: Some(out), echo: None, clear: false }
+                    ExecutionResult {
+                        output: Some(out),
+                        echo: None,
+                        clear: false,
+                    }
                 }
-            },
+            }
             Err(e) => {
                 let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
                 if !out.is_empty() {
                     out.push('\n');
                 }
                 out.push_str(&format!("Error: {}", e));
-                ExecutionResult { output: Some(out), echo: None, clear: false }
-            },
+                ExecutionResult {
+                    output: Some(out),
+                    echo: None,
+                    clear: false,
+                }
+            }
         }
     }
 }

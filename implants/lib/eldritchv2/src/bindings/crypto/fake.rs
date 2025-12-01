@@ -1,7 +1,7 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(CryptoLibrary)]
@@ -31,7 +31,9 @@ impl CryptoLibrary for CryptoLibraryFake {
     }
 
     fn sha256(&self, _data: Vec<u8>) -> Result<String, String> {
-        Ok(String::from("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")) // Empty sha256
+        Ok(String::from(
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        )) // Empty sha256
     }
 }
 

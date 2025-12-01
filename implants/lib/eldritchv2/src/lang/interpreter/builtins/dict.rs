@@ -1,10 +1,10 @@
-use alloc::string::String;
-use alloc::rc::Rc;
-use alloc::collections::BTreeMap;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use crate::lang::interpreter::utils::get_type_name;
+use alloc::collections::BTreeMap;
 use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::{String, ToString};
+use core::cell::RefCell;
 
 pub fn builtin_dict(
     _env: &Rc<RefCell<Environment>>,
@@ -12,7 +12,10 @@ pub fn builtin_dict(
     kwargs: &BTreeMap<String, Value>,
 ) -> Result<Value, String> {
     if args.len() > 1 {
-        return Err(format!("dict expected at most 1 arguments, got {}", args.len()));
+        return Err(format!(
+            "dict expected at most 1 arguments, got {}",
+            args.len()
+        ));
     }
 
     let mut map = BTreeMap::new();
@@ -41,7 +44,12 @@ pub fn builtin_dict(
                     process_pair(&mut map, item, i)?;
                 }
             }
-            _ => return Err(format!("'{}' object is not iterable", get_type_name(iterable))),
+            _ => {
+                return Err(format!(
+                    "'{}' object is not iterable",
+                    get_type_name(iterable)
+                ))
+            }
         }
     }
 
@@ -53,12 +61,20 @@ pub fn builtin_dict(
     Ok(Value::Dictionary(Rc::new(RefCell::new(map))))
 }
 
-fn process_pair(map: &mut BTreeMap<String, Value>, item: &Value, index: usize) -> Result<(), String> {
+fn process_pair(
+    map: &mut BTreeMap<String, Value>,
+    item: &Value,
+    index: usize,
+) -> Result<(), String> {
     match item {
         Value::List(l) => {
             let list = l.borrow();
             if list.len() != 2 {
-                return Err(format!("dictionary update sequence element #{} has length {}; 2 is required", index, list.len()));
+                return Err(format!(
+                    "dictionary update sequence element #{} has length {}; 2 is required",
+                    index,
+                    list.len()
+                ));
             }
             let key = match &list[0] {
                 Value::String(s) => s.clone(),
@@ -68,7 +84,11 @@ fn process_pair(map: &mut BTreeMap<String, Value>, item: &Value, index: usize) -
         }
         Value::Tuple(t) => {
             if t.len() != 2 {
-                return Err(format!("dictionary update sequence element #{} has length {}; 2 is required", index, t.len()));
+                return Err(format!(
+                    "dictionary update sequence element #{} has length {}; 2 is required",
+                    index,
+                    t.len()
+                ));
             }
             let key = match &t[0] {
                 Value::String(s) => s.clone(),
@@ -76,7 +96,12 @@ fn process_pair(map: &mut BTreeMap<String, Value>, item: &Value, index: usize) -
             };
             map.insert(key, t[1].clone());
         }
-        _ => return Err(format!("cannot convert dictionary update sequence element #{} to a sequence", index)),
+        _ => {
+            return Err(format!(
+                "cannot convert dictionary update sequence element #{} to a sequence",
+                index
+            ))
+        }
     }
     Ok(())
 }

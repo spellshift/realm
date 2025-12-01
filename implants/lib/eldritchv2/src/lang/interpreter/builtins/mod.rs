@@ -1,27 +1,29 @@
+use crate::lang::ast::{BuiltinFn, BuiltinFnWithKwargs, Value};
+use alloc::string::ToString;
+use alloc::vec;
 use alloc::vec::Vec;
-use crate::lang::ast::{BuiltinFn, Value, BuiltinFnWithKwargs};
 
-mod print;
-mod pprint;
-mod len;
-mod range;
-mod type_;
-mod bool;
-mod str;
-mod int;
-mod bytes;
-mod dir;
 mod assert;
 mod assert_eq;
-mod fail;
-mod enumerate;
+mod bool;
 mod builtins_fn;
+mod bytes;
+mod dir;
+mod enumerate;
+mod fail;
+mod int;
+mod len;
 mod libs;
+mod pprint;
+mod print;
+mod range;
+mod str;
+mod type_;
 
 // New builtins
 mod abs;
-mod any;
 mod all;
+mod any;
 mod dict;
 mod float;
 mod list;
@@ -75,15 +77,13 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
 
 // Separate function for kwargs builtins
 pub fn get_all_builtins_with_kwargs() -> Vec<(&'static str, BuiltinFnWithKwargs)> {
-    vec![
-        ("dict", dict::builtin_dict as BuiltinFnWithKwargs),
-    ]
+    vec![("dict", dict::builtin_dict as BuiltinFnWithKwargs)]
 }
 
 // I need to handle stubs.
 pub fn builtin_stub(
     _env: &alloc::rc::Rc<core::cell::RefCell<crate::lang::ast::Environment>>,
-    _args: &[Value]
+    _args: &[Value],
 ) -> Result<Value, alloc::string::String> {
     Err("internal error: this function should be handled by interpreter".to_string())
 }

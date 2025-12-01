@@ -1,8 +1,9 @@
-use eldritch_macros::{eldritch_library, eldritch_method};
 use crate::lang::ast::Value;
+use alloc::collections::BTreeMap;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
+use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -64,7 +65,13 @@ pub trait FileLibrary {
     fn temp_file(&self, name: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
-    fn template(&self, template_path: String, dst: String, args: BTreeMap<String, Value>, autoescape: bool) -> Result<(), String>;
+    fn template(
+        &self,
+        template_path: String,
+        dst: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
+    ) -> Result<(), String>;
 
     #[eldritch_method]
     fn timestomp(&self, src: String, dst: String) -> Result<(), String>;
@@ -73,5 +80,13 @@ pub trait FileLibrary {
     fn write(&self, path: String, content: String) -> Result<(), String>;
 
     #[eldritch_method]
-    fn find(&self, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<i64>, modified_time: Option<i64>, create_time: Option<i64>) -> Result<Vec<String>, String>;
+    fn find(
+        &self,
+        path: String,
+        name: Option<String>,
+        file_type: Option<String>,
+        permissions: Option<i64>,
+        modified_time: Option<i64>,
+        create_time: Option<i64>,
+    ) -> Result<Vec<String>, String>;
 }

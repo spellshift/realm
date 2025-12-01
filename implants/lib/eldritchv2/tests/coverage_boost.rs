@@ -27,7 +27,7 @@ fn test_coverage_utils() {
         assert(bool(f) == True)
         assert(bool(len) == True)
         assert(bool("".strip) == True)
-    "#
+    "#,
     );
 
     assert::pass(
@@ -50,7 +50,7 @@ fn test_coverage_utils() {
 
         # fallback
         assert(dir(1) == [])
-    "#
+    "#,
     );
 }
 
@@ -69,7 +69,7 @@ fn test_coverage_builtins() {
         assert(len([1, 2]) == 2)
         assert(len({"a": 1}) == 1)
         assert(len((1, 2, 3)) == 3)
-    "#
+    "#,
     );
     assert::fail("len(1)", "is not defined for type");
 
@@ -79,7 +79,7 @@ fn test_coverage_builtins() {
         assert(l == [(0, "a"), (1, "b")])
         l = enumerate(["a", "b"], 10)
         assert(l == [(10, "a"), (11, "b")])
-    "#
+    "#,
     );
     assert::fail("enumerate(1)", "is not iterable");
     assert::fail("enumerate([], 'a')", "start must be an integer");
@@ -93,7 +93,7 @@ fn test_coverage_methods() {
         l = [1]
         l.append(2)
         assert(l == [1, 2])
-    "#
+    "#,
     );
     assert::fail("l = []; l.append()", "takes exactly one argument");
 
@@ -102,7 +102,7 @@ fn test_coverage_methods() {
         l = [1]
         l.extend([2])
         assert(l == [1, 2])
-    "#
+    "#,
     );
     assert::fail("l = []; l.extend()", "takes exactly one argument");
     assert::fail("l = []; l.extend(1)", "expects an iterable");
@@ -118,7 +118,7 @@ fn test_coverage_methods() {
         assert(l == [0, 1, 2, 3, 4])
         l.insert(-100, -1)
         assert(l == [-1, 0, 1, 2, 3, 4])
-    "#
+    "#,
     );
     assert::fail("l = []; l.insert(1)", "takes exactly two arguments");
     assert::fail("l = []; l.insert('a', 1)", "index must be an integer");
@@ -153,7 +153,7 @@ fn test_coverage_methods() {
         r#"
         assert("{}".format(1) == "1")
         assert("{} {}".format(1, 2) == "1 2")
-    "#
+    "#,
     );
     assert::fail("'{}'.format()", "tuple index out of range");
 
@@ -177,13 +177,15 @@ fn test_coverage_interpreter_edge_cases() {
     assert::fail("{}[ 1 ]", "Dictionary keys must be strings");
 
     // Dot access tests
-    assert::pass(r#"
+    assert::pass(
+        r#"
         d = {"a": 1}
         assert(d.a == 1)
         # Calling non-method
         d = {}
         # d.a is BoundMethod(d, "a"). Calling it should fail as "a" is not a method.
-    "#);
+    "#,
+    );
     assert::fail("{}.a()", "has no method 'a'");
 
     // Augmented assignment errors
@@ -195,7 +197,8 @@ fn test_coverage_interpreter_edge_cases() {
 #[test]
 fn test_ast_display() {
     // Cover Display impl for Value
-    assert::pass(r#"
+    assert::pass(
+        r#"
         assert(str(None) == "None")
         assert(str(True) == "True")
         assert(str(False) == "False")
@@ -209,13 +212,15 @@ fn test_ast_display() {
 
         def f(): pass
         assert("<function f>" in str(f))
-    "#);
+    "#,
+    );
 }
 
 #[test]
 fn test_utils_compare() {
     // Cover recursive compare_values
-    assert::pass(r#"
+    assert::pass(
+        r#"
         l = [[1, 2], [1, 1], [2, 0]]
         l.sort()
         assert(l == [[1, 1], [1, 2], [2, 0]])
@@ -232,5 +237,6 @@ fn test_utils_compare() {
         l.sort()
         # Expected behavior: 1 and "a" are equal? Stable sort?
         # This covers the Err branch in compare_values being mapped to Equal.
-    "#);
+    "#,
+    );
 }

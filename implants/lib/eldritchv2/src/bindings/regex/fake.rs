@@ -1,7 +1,7 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RegexLibrary)]
@@ -16,11 +16,21 @@ impl RegexLibrary for RegexLibraryFake {
         Ok(String::new())
     }
 
-    fn replace_all(&self, haystack: String, _pattern: String, _value: String) -> Result<String, String> {
+    fn replace_all(
+        &self,
+        haystack: String,
+        _pattern: String,
+        _value: String,
+    ) -> Result<String, String> {
         Ok(haystack) // No-op replacement
     }
 
-    fn replace(&self, haystack: String, _pattern: String, _value: String) -> Result<String, String> {
+    fn replace(
+        &self,
+        haystack: String,
+        _pattern: String,
+        _value: String,
+    ) -> Result<String, String> {
         Ok(haystack)
     }
 }
@@ -32,6 +42,9 @@ mod tests {
     #[test]
     fn test_regex_fake() {
         let regex = RegexLibraryFake::default();
-        assert!(regex.match_all("foo".into(), "bar".into()).unwrap().is_empty());
+        assert!(regex
+            .match_all("foo".into(), "bar".into())
+            .unwrap()
+            .is_empty());
     }
 }

@@ -1,4 +1,4 @@
-use super::super::ast::{Environment, Value, BuiltinFn};
+use super::super::ast::{BuiltinFn, Environment, Value};
 use super::super::lexer::Lexer;
 use super::super::parser::Parser;
 use super::super::token::Span;
@@ -11,8 +11,8 @@ use core::cell::RefCell;
 
 use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs};
 use super::error::{runtime_error, EldritchError};
-use super::exec;
 use super::eval;
+use super::exec;
 use crate::lang::global_libs::get_global_libraries;
 
 #[derive(Clone, PartialEq)]
@@ -70,7 +70,10 @@ impl Interpreter {
     fn load_libraries(&mut self) {
         let libs = get_global_libraries();
         for (name, val) in libs {
-            self.env.borrow_mut().values.insert(name, Value::Foreign(val));
+            self.env
+                .borrow_mut()
+                .values
+                .insert(name, Value::Foreign(val));
         }
     }
 
@@ -109,12 +112,11 @@ impl Interpreter {
                 // Special case: if top-level statement is an expression, return its value
                 // This matches behavior of typical REPLs / starlark-like exec
                 super::super::ast::StmtKind::Expression(expr) => {
-                    last_val = eval::evaluate(self, expr)
-                        .map_err(|e| self.format_error(input, e))?;
+                    last_val =
+                        eval::evaluate(self, expr).map_err(|e| self.format_error(input, e))?;
                 }
                 _ => {
-                    exec::execute(self, &stmt)
-                        .map_err(|e| self.format_error(input, e))?;
+                    exec::execute(self, &stmt).map_err(|e| self.format_error(input, e))?;
                     if let Flow::Return(v) = &self.flow {
                         let ret = v.clone();
                         self.flow = Flow::Next;

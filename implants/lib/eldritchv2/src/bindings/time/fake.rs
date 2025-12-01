@@ -1,6 +1,6 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(TimeLibrary)]
@@ -19,7 +19,9 @@ impl TimeLibrary for TimeLibraryFake {
         Ok(1600000000)
     }
 
-    fn sleep(&self, _secs: i64) -> Result<(), String> { Ok(()) }
+    fn sleep(&self, _secs: i64) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

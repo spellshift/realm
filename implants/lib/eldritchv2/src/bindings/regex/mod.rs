@@ -1,6 +1,7 @@
-use eldritch_macros::{eldritch_library, eldritch_method};
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -14,7 +15,12 @@ pub trait RegexLibrary {
     fn r#match(&self, haystack: String, pattern: String) -> Result<String, String>;
 
     #[eldritch_method]
-    fn replace_all(&self, haystack: String, pattern: String, value: String) -> Result<String, String>;
+    fn replace_all(
+        &self,
+        haystack: String,
+        pattern: String,
+        value: String,
+    ) -> Result<String, String>;
 
     #[eldritch_method]
     fn replace(&self, haystack: String, pattern: String, value: String) -> Result<String, String>;

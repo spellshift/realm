@@ -72,7 +72,10 @@ impl Parser {
     }
 
     // Helper to parse params for both def and lambda
-    pub(crate) fn parse_function_params(&mut self, terminator: TokenKind) -> Result<Vec<Param>, String> {
+    pub(crate) fn parse_function_params(
+        &mut self,
+        terminator: TokenKind,
+    ) -> Result<Vec<Param>, String> {
         let mut params = Vec::new();
         if !self.check(&terminator) {
             loop {

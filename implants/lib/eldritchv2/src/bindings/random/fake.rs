@@ -1,14 +1,16 @@
 use super::*;
-use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RandomLibrary)]
 pub struct RandomLibraryFake;
 
 impl RandomLibrary for RandomLibraryFake {
-    fn bool(&self) -> Result<bool, String> { Ok(true) }
+    fn bool(&self) -> Result<bool, String> {
+        Ok(true)
+    }
 
     fn bytes(&self, len: i64) -> Result<Vec<u8>, String> {
         Ok(vec![0; len as usize])

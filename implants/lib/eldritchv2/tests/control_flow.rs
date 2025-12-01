@@ -81,7 +81,6 @@ fn test_loops() {
         assert_eq(count, 4)
     "#,
     );
-
 }
 
 #[test]

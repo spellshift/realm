@@ -1,9 +1,11 @@
 #[cfg(feature = "std")]
 mod tests {
     extern crate alloc;
-    use eldritchv2::{eldritch_library, eldritch_library_impl, eldritch_method, register_lib, Interpreter, Value};
-    use std::sync::{Arc, Mutex};
+    use eldritchv2::{
+        eldritch_library, eldritch_library_impl, eldritch_method, register_lib, Interpreter, Value,
+    };
     use std::collections::BTreeMap;
+    use std::sync::{Arc, Mutex};
 
     // --- Library 1: File System ---
 
@@ -31,18 +33,27 @@ mod tests {
 
     impl LibFS for MockFS {
         fn move_file(&self, src: &str, dst: &str) -> Result<(), String> {
-            self.ops.lock().unwrap().push(format!("move {} -> {}", src, dst));
+            self.ops
+                .lock()
+                .unwrap()
+                .push(format!("move {} -> {}", src, dst));
             Ok(())
         }
 
         fn write_string(&self, dst: &str, content: &str) -> Result<i64, String> {
-            self.ops.lock().unwrap().push(format!("write {} len={}", dst, content.len()));
+            self.ops
+                .lock()
+                .unwrap()
+                .push(format!("write {} len={}", dst, content.len()));
             Ok(content.len() as i64)
         }
 
         fn complex_op(&self, ids: Vec<i64>, meta: BTreeMap<String, bool>) -> Result<bool, String> {
-             self.ops.lock().unwrap().push(format!("complex ids={:?} meta={:?}", ids, meta));
-             Ok(true)
+            self.ops
+                .lock()
+                .unwrap()
+                .push(format!("complex ids={:?} meta={:?}", ids, meta));
+            Ok(true)
         }
 
         fn btree_ret(&self) -> Result<BTreeMap<String, i64>, String> {
@@ -77,7 +88,11 @@ mod tests {
             Ok(content.len() as i64)
         }
 
-        fn complex_op(&self, _ids: Vec<i64>, _meta: BTreeMap<String, bool>) -> Result<bool, String> {
+        fn complex_op(
+            &self,
+            _ids: Vec<i64>,
+            _meta: BTreeMap<String, bool>,
+        ) -> Result<bool, String> {
             Ok(false)
         }
 
@@ -105,7 +120,10 @@ mod tests {
 
     impl LibNet for MockNet {
         fn connect(&self, host: &str, port: i64) -> Result<bool, String> {
-            self.log.lock().unwrap().push(format!("connect {}:{}", host, port));
+            self.log
+                .lock()
+                .unwrap()
+                .push(format!("connect {}:{}", host, port));
             Ok(true)
         }
 
@@ -114,7 +132,6 @@ mod tests {
             Ok(data.len() as i64)
         }
     }
-
 
     #[test]
     fn test_macros_integration() {
@@ -139,13 +156,16 @@ mod tests {
         // --- Test 2: DiskFS (Overwrites file lib) ---
         {
             let files = Arc::new(Mutex::new(BTreeMap::new()));
-            let fs = DiskFS { files: files.clone() };
+            let fs = DiskFS {
+                files: files.clone(),
+            };
 
             // Re-register 'file' library
             register_lib(fs);
 
             let mut interp = Interpreter::new();
-            let code = "file.write_str(\"/a.txt\", \"data\")\nfile.move_file(\"/a.txt\", \"/b.txt\")";
+            let code =
+                "file.write_str(\"/a.txt\", \"data\")\nfile.move_file(\"/a.txt\", \"/b.txt\")";
 
             interp.interpret(code).unwrap();
 
@@ -157,10 +177,14 @@ mod tests {
         // --- Test 3: Multiple Libraries (MockFS + MockNet) ---
         {
             let fs_ops = Arc::new(Mutex::new(Vec::new()));
-            let mock_fs = MockFS { ops: fs_ops.clone() };
+            let mock_fs = MockFS {
+                ops: fs_ops.clone(),
+            };
 
             let net_log = Arc::new(Mutex::new(Vec::new()));
-            let mock_net = MockNet { log: net_log.clone() };
+            let mock_net = MockNet {
+                log: net_log.clone(),
+            };
 
             // Re-register 'file' to be MockFS
             register_lib(mock_fs);
@@ -201,10 +225,10 @@ mod tests {
             }
 
             {
-                 let ops = ops.lock().unwrap();
-                 let last_op = ops.last().unwrap();
-                 assert!(last_op.contains("complex ids=[1, 2, 3]"));
-                 assert!(last_op.contains("meta={"));
+                let ops = ops.lock().unwrap();
+                let last_op = ops.last().unwrap();
+                assert!(last_op.contains("complex ids=[1, 2, 3]"));
+                assert!(last_op.contains("meta={"));
             }
         }
 
@@ -219,9 +243,9 @@ mod tests {
             let res = interp.interpret(code).unwrap();
 
             if let Value::Dictionary(d) = res {
-                 let dict = d.borrow();
-                 assert_eq!(dict.get("one").unwrap(), &Value::Int(1));
-                 assert_eq!(dict.get("two").unwrap(), &Value::Int(2));
+                let dict = d.borrow();
+                assert_eq!(dict.get("one").unwrap(), &Value::Int(1));
+                assert_eq!(dict.get("two").unwrap(), &Value::Int(2));
             } else {
                 panic!("Expected Dictionary, got {:?}", res);
             }

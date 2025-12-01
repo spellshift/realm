@@ -1,11 +1,11 @@
-use alloc::string::{String, ToString};
-use alloc::rc::Rc;
-use alloc::vec;
-use alloc::vec::Vec;
-use alloc::format;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use crate::lang::interpreter::utils::get_type_name;
+use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
+use core::cell::RefCell;
 
 pub fn builtin_bytes(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
@@ -24,11 +24,19 @@ pub fn builtin_bytes(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
                 match item {
                     Value::Int(i) => {
                         if *i < 0 || *i > 255 {
-                            return Err(format!("bytes() list items must be integers in range 0-255, got {}", i));
+                            return Err(format!(
+                                "bytes() list items must be integers in range 0-255, got {}",
+                                i
+                            ));
                         }
                         bytes.push(*i as u8);
                     }
-                    _ => return Err(format!("bytes() list items must be integers, got {}", get_type_name(item))),
+                    _ => {
+                        return Err(format!(
+                            "bytes() list items must be integers, got {}",
+                            get_type_name(item)
+                        ))
+                    }
                 }
             }
             Ok(Value::Bytes(bytes))

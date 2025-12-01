@@ -1,10 +1,10 @@
-use alloc::string::String;
-use alloc::rc::Rc;
-use alloc::collections::BTreeSet;
-use alloc::vec::Vec;
-use core::cell::RefCell;
 use crate::lang::ast::{Environment, Value};
 use crate::lang::interpreter::utils::get_dir_attributes;
+use alloc::collections::BTreeSet;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::cell::RefCell;
 
 pub fn builtin_dir(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
@@ -20,10 +20,7 @@ pub fn builtin_dir(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Val
             current_env = env_ref.parent.clone();
         }
 
-        let val_attrs: Vec<Value> = symbols
-            .into_iter()
-            .map(Value::String)
-            .collect();
+        let val_attrs: Vec<Value> = symbols.into_iter().map(Value::String).collect();
         return Ok(Value::List(Rc::new(RefCell::new(val_attrs))));
     }
 

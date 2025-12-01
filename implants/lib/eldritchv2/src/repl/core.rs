@@ -1,7 +1,7 @@
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use crate::lang::lexer::Lexer;
 use crate::lang::token::TokenKind;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Input {
@@ -17,22 +17,29 @@ pub enum Input {
     Home,
     End,
     Tab,
-    KillToEnd,       // Ctrl+K
-    KillLine,        // Ctrl+U
-    WordBackspace,   // Ctrl+W
-    ClearScreen,     // Ctrl+L
-    Cancel,          // Ctrl+C
-    EOF,             // Ctrl+D
-    HistorySearch,   // Ctrl+R
+    KillToEnd,     // Ctrl+K
+    KillLine,      // Ctrl+U
+    WordBackspace, // Ctrl+W
+    ClearScreen,   // Ctrl+L
+    Cancel,        // Ctrl+C
+    EOF,           // Ctrl+D
+    HistorySearch, // Ctrl+R
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ReplAction {
     None,
-    Render, // State changed, need redraw
+    Render,      // State changed, need redraw
     ClearScreen, // Clear screen request
-    Submit { code: String, last_line: String, prompt: String }, // Command block ready to execute
-    AcceptLine { line: String, prompt: String }, // Intermediate line accepted (for multi-line)
+    Submit {
+        code: String,
+        last_line: String,
+        prompt: String,
+    }, // Command block ready to execute
+    AcceptLine {
+        line: String,
+        prompt: String,
+    }, // Intermediate line accepted (for multi-line)
     Quit,
 }
 
@@ -62,7 +69,7 @@ pub struct Repl {
     // History
     history: Vec<String>,
     history_idx: Option<usize>, // None = editing new line
-    saved_buffer: String, // Buffer content before history navigation
+    saved_buffer: String,       // Buffer content before history navigation
 
     // State
     is_multiline: bool,
@@ -95,7 +102,11 @@ impl Repl {
         if let Some(ref search) = self.search_state {
             return alloc::format!("(reverse-i-search)`{}': ", search.query);
         }
-        if self.pending_block.is_empty() { ">>> ".to_string() } else { "... ".to_string() }
+        if self.pending_block.is_empty() {
+            ">>> ".to_string()
+        } else {
+            "... ".to_string()
+        }
     }
 
     pub fn get_render_state(&self) -> RenderState {
@@ -162,7 +173,7 @@ impl Repl {
                 // For simplicity, just accept the search result and let user navigate next.
                 // Or we could re-dispatch. Let's just accept.
                 ReplAction::Render
-            },
+            }
             _ => ReplAction::None,
         }
     }
@@ -171,7 +182,7 @@ impl Repl {
         // Find next match backwards
         let state = self.search_state.as_ref().unwrap();
         if state.query.is_empty() {
-             return ReplAction::None;
+            return ReplAction::None;
         }
 
         let start_idx = state.match_index.unwrap_or(self.history.len());
@@ -250,7 +261,7 @@ impl Repl {
 
         // No match
         self.buffer.clear(); // Or keep previous match? Standard is usually showing failing search
-        // We'll clear for now to indicate no match found
+                             // We'll clear for now to indicate no match found
         self.cursor = 0;
         ReplAction::Render
     }
@@ -259,12 +270,12 @@ impl Repl {
         let saved = self.search_state.as_ref().unwrap().saved_buffer.clone();
 
         if accept {
-             // Keep current buffer (the match)
-             // Restore saved buffer if no match was found (buffer empty)?
-             // If buffer is empty (no match), maybe restore saved.
-             if self.buffer.is_empty() {
-                 self.buffer = saved;
-             }
+            // Keep current buffer (the match)
+            // Restore saved buffer if no match was found (buffer empty)?
+            // If buffer is empty (no match), maybe restore saved.
+            if self.buffer.is_empty() {
+                self.buffer = saved;
+            }
         } else {
             // Restore original buffer
             self.buffer = saved;
@@ -454,7 +465,7 @@ impl Repl {
             ReplAction::Submit {
                 code: full_code,
                 last_line,
-                prompt: current_prompt
+                prompt: current_prompt,
             }
         } else {
             self.pending_block = full_code;
@@ -465,7 +476,7 @@ impl Repl {
 
             ReplAction::AcceptLine {
                 line: last_line,
-                prompt: current_prompt
+                prompt: current_prompt,
             }
         }
     }
@@ -487,16 +498,18 @@ impl Repl {
                     match t.kind {
                         TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => balance += 1,
                         TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                            if balance > 0 { balance -= 1; }
+                            if balance > 0 {
+                                balance -= 1;
+                            }
                         }
                         _ => {}
                     }
                 }
             }
             Err(e) => {
-                 if e.contains("Unterminated string literal") && !e.contains("(newline)") {
-                     is_incomplete_string = true;
-                 }
+                if e.contains("Unterminated string literal") && !e.contains("(newline)") {
+                    is_incomplete_string = true;
+                }
             }
         }
 
