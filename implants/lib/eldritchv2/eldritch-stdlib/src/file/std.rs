@@ -1,6 +1,3 @@
-#![cfg(feature = "stdlib")]
-
-
 use eldritch_macros::eldritch_library_impl;
 use eldritch_core::Value;
 use alloc::string::{String, ToString};
@@ -9,8 +6,7 @@ use alloc::collections::BTreeMap;
 use alloc::format;
 use ::std::fs::{self, File, OpenOptions};
 use ::std::io::{Read, Write};
-use ::std::path::{Path, PathBuf};
-use ::std::time;
+use ::std::path::Path;
 use anyhow::{Context, Result as AnyhowResult};
 use super::{FileLibrary, FileLibraryEldritchAdapter};
 
@@ -30,13 +26,6 @@ use tera::{Context as TeraContext, Tera};
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
 pub struct StdFileLibrary;
-
-impl StdFileLibrary {
-    fn normalize_path(path: &str) -> String {
-        // Simple normalization if needed, but std::fs handles most
-        path.to_string()
-    }
-}
 
 impl FileLibrary for StdFileLibrary {
     fn append(&self, path: String, content: String) -> Result<(), String> {
@@ -224,7 +213,7 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
 
     // Try as tar
     // Create a temp dir to verify if it is a tar
-    if let Ok(_) = Archive::new(decoded_data.as_slice()).entries() {
+    if Archive::new(decoded_data.as_slice()).entries().is_ok() {
         // It's likely a tar
 
         let dst_path = Path::new(&dst);
@@ -242,7 +231,7 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
                 }
 
                 // Keep the temp dir content by moving it
-                let path = tmp_dir.into_path();
+                let path = tmp_dir.keep();
                 fs::rename(&path, &dst)?;
                 Ok(())
             },
@@ -394,19 +383,17 @@ fn find_impl(path: String, name: Option<String>, file_type: Option<String>, perm
 
 fn find_recursive(dir: &Path, out: &mut Vec<String>, name: &Option<String>, file_type: &Option<String>, permissions: Option<i64>, modified_time: Option<i64>, create_time: Option<i64>) -> AnyhowResult<()> {
     if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_dir() {
-                    find_recursive(&path, out, name, file_type, permissions, modified_time, create_time)?;
-                }
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                find_recursive(&path, out, name, file_type, permissions, modified_time, create_time)?;
+            }
 
-                if check_path(&path, name, file_type, permissions, modified_time, create_time)? {
-                    if let Ok(p) = path.canonicalize() {
-                        out.push(p.to_string_lossy().to_string());
-                    } else {
-                         out.push(path.to_string_lossy().to_string());
-                    }
+            if check_path(&path, name, file_type, permissions, modified_time, create_time)? {
+                if let Ok(p) = path.canonicalize() {
+                    out.push(p.to_string_lossy().to_string());
+                } else {
+                        out.push(path.to_string_lossy().to_string());
                 }
             }
         }
@@ -476,7 +463,6 @@ mod tests {
 
     // use sha256::try_digest; // Removed per error
     use super::*;
-    use ::std::io::Write;
     use std::fs;
     use eldritch_core::Value;
     use alloc::collections::BTreeMap;

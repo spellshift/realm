@@ -264,11 +264,9 @@ impl FileLibrary for FileLibraryFake {
         let (parent_parts, name) = parts.split_at(parts.len() - 1);
         let name = &name[0];
 
-        if let Some(parent) = Self::traverse(&mut root, parent_parts) {
-            if let FsEntry::Dir(map) = parent {
-                map.remove(name);
-                return Ok(());
-            }
+        if let Some(FsEntry::Dir(map)) = Self::traverse(&mut root, parent_parts) {
+            map.remove(name);
+            return Ok(());
         }
         Err("Parent not found".to_string())
     }
