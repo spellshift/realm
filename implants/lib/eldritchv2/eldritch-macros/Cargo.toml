@@ -3,6 +3,9 @@ name = "eldritch-macros"
 version = "0.3.0"
 edition = "2024"
 
+[features]
+std = []
+
 [lib]
 proc-macro = true
 
@@ -10,3 +13,7 @@ proc-macro = true
 syn = { version = "1.0", features = ["full", "extra-traits"] }
 quote = "1.0"
 proc-macro2 = "1.0"
+eldritch-core = { path = "../eldritch-core" }
+
+[dev-dependencies]
+eldritch-core = { path = "../eldritch-core", features = ["std"] }

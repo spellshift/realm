@@ -13,11 +13,9 @@ std = []
 [dependencies]
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
-eldritch-macros = { path = "../eldritch-macros", optional = true }
 libm = "0.2.15"
 
 [dev-dependencies]
-eldritch-macros = { path = "../eldritch-macros" }
 criterion = "0.5"
 
 [[bench]]

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use eldritchv2::Interpreter;
-    use eldritchv2::Value;
+    use eldritch_core::Interpreter;
+    use eldritch_core::Value;
 
     #[test]
     fn test_float_arithmetic() {

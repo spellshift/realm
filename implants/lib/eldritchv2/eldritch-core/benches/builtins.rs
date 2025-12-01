@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use eldritchv2::Interpreter;
+use eldritch_core::Interpreter;
 
 // Helper to benchmark a specific builtin call
 fn bench_builtin(c: &mut Criterion, name: &str, code: &str) {

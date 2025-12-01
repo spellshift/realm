@@ -85,7 +85,7 @@ fn test_loops() {
 
 #[test]
 fn test_loop_scoping_rust() {
-    use eldritchv2::{Interpreter, Value};
+    use eldritch_core::{Interpreter, Value};
 
     // Test 1: Leakage of loop variable
     {

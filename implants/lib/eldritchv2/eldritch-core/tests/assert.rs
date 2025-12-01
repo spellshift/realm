@@ -1,4 +1,4 @@
-use eldritchv2::Interpreter;
+use eldritch_core::Interpreter;
 
 // Helper to remove common leading whitespace from raw strings in tests
 fn dedent(code: &str) -> String {

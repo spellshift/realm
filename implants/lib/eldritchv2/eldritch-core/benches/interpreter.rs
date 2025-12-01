@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use eldritchv2::Interpreter;
+use eldritch_core::Interpreter;
 
 fn bench_arithmetic(c: &mut Criterion) {
     c.bench_function("interpreter_arithmetic", |b| {

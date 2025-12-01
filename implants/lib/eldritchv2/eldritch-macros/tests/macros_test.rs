@@ -1,9 +1,10 @@
 #[cfg(feature = "std")]
 mod tests {
     extern crate alloc;
-    use eldritchv2::{
-        eldritch_library, eldritch_library_impl, eldritch_method, register_lib, Interpreter, Value,
+    use eldritch_macros::{
+        eldritch_library, eldritch_library_impl, eldritch_method
     };
+    use eldritch_core::{Interpreter, Value, register_lib};
     use std::collections::BTreeMap;
     use std::sync::{Arc, Mutex};
 
