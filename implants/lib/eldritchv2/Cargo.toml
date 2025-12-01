@@ -20,6 +20,11 @@ anyhow = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 sysinfo = { workspace = true, optional = true }
 listeners = { workspace = true, optional = true }
+aes = { workspace = true, optional = true }
+md5 = { workspace = true, optional = true }
+sha1 = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+hex-literal = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 crossterm = "0.27"
@@ -33,7 +38,7 @@ wasm-bindgen = "0.2"
 [features]
 default = ["stdlib"]
 std = []
-stdlib = ["std", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json"]
+stdlib = ["std", "dep:flate2", "dep:tar", "dep:tera", "dep:tempfile", "dep:glob", "dep:regex", "dep:anyhow", "dep:serde_json", "dep:sysinfo", "dep:listeners", "dep:aes", "dep:md5", "dep:sha1", "dep:sha2", "dep:hex-literal"]
 fake_bindings = []
 
 [[bin]]
