@@ -8,6 +8,9 @@ use eldritch_macros::{eldritch_library, eldritch_method};
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
+#[cfg(feature = "std")]
+pub mod std;
+
 #[eldritch_library("process")]
 pub trait ProcessLibrary {
     #[eldritch_method]

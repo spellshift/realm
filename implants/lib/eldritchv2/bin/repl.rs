@@ -5,12 +5,51 @@ use crossterm::{
     terminal::{self, ClearType},
     ExecutableCommand, QueueableCommand,
 };
+use eldritchv2::{Interpreter, Repl, Value, register_lib};
 use eldritchv2::repl::{Input, ReplAction};
 use eldritchv2::{Interpreter, Repl, Value};
 use std::io::{self, Write};
 use std::time::Duration;
 
+#[cfg(feature = "stdlib")]
+use eldritchv2::bindings::{
+  file::std::StdFileLibrary,
+  http::std::StdHttpLibrary,
+  process::std::StdProcessLibrary,
+  regex::std::StdRegexLibrary,
+  random::std::StdRandomLibrary,
+  crypto::std::StdCryptoLibrary,
+};
+
+#[cfg(feature = "fake_bindings")]
+use eldritchv2::bindings::{
+  file::fake::FileLibraryFake,
+  http::fake::HttpLibraryFake,
+  regex::fake::RegexLibraryFake,
+  crypto::fake::CryptoLibraryFake,
+};
+
+
 fn main() -> io::Result<()> {
+    // Register Libraries
+    #[cfg(feature = "stdlib")]
+    {
+      register_lib(StdFileLibrary::default());
+      register_lib(StdHttpLibrary::default());
+      register_lib(StdProcessLibrary::default());
+      register_lib(StdRegexLibrary::default());
+      register_lib(StdRandomLibrary::default());
+      register_lib(StdCryptoLibrary::default());
+    }
+
+    #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
+    {
+        register_lib(FileLibraryFake::default());
+        register_lib(HttpLibraryFake::default());
+        register_lib(RegexLibraryFake::default());
+        register_lib(CryptoLibraryFake::default());
+    }
+
     let mut interpreter = Interpreter::new();
     let mut repl = Repl::new();
 
@@ -65,15 +104,6 @@ fn main() -> io::Result<()> {
                                 prompt: _,
                             } => {
                                 // Clear current line visual and move down
-                                // We don't need to manually print the last line because it's already on screen?
-                                // Wait, `repl.handle_input` cleared the buffer.
-                                // If we just move down, the *old* buffer is still on the screen.
-                                // BUT `render()` will be called next? No.
-                                // We are submitting.
-                                // The user typed "print(1)" [Enter].
-                                // Screen shows ">>> print(1)". Cursor at end.
-                                // We receive Submit.
-                                // We just need to MoveToNextLine.
                                 stdout.execute(cursor::MoveToNextLine(1))?;
 
                                 terminal::disable_raw_mode()?;
@@ -90,9 +120,6 @@ fn main() -> io::Result<()> {
                                 render(&mut stdout, &repl)?;
                             }
                             ReplAction::AcceptLine { line: _, prompt: _ } => {
-                                // User hit Enter for multi-line.
-                                // Screen shows ">>> if True:". Cursor at end.
-                                // We just need to move to next line.
                                 stdout.execute(cursor::MoveToNextLine(1))?;
                                 render(&mut stdout, &repl)?;
                             }
@@ -159,8 +186,6 @@ fn map_key(key: KeyEvent) -> Option<Input> {
 fn render(stdout: &mut io::Stdout, repl: &Repl) -> io::Result<()> {
     let state = repl.get_render_state();
 
-    // We are on the "current line".
-    // Clear it first.
     stdout.queue(terminal::Clear(ClearType::CurrentLine))?;
     stdout.queue(cursor::MoveToColumn(0))?;
 
