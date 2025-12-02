@@ -1,4 +1,5 @@
 use crate::ast::{Environment, Value};
+use crate::token::Span;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use core::cell::RefCell;
@@ -23,7 +24,10 @@ pub fn builtin_pprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
         return Err("pprint(): failed to format output".to_string());
     }
 
-    env.borrow().printer.print(&output);
+    // TODO: Pass actual span
+    env.borrow()
+        .printer
+        .print_out(&Span::new(0, 0, 0), &output);
 
     Ok(Value::None)
 }

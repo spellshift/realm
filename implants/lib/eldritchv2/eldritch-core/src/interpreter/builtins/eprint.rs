@@ -4,7 +4,7 @@ use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use core::cell::RefCell;
 
-pub fn builtin_print(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_eprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let mut out = String::new();
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {
@@ -16,6 +16,6 @@ pub fn builtin_print(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<V
     // TODO: Pass actual span
     env.borrow()
         .printer
-        .print_out(&Span::new(0, 0, 0), &out);
+        .print_err(&Span::new(0, 0, 0), &out);
     Ok(Value::None)
 }
