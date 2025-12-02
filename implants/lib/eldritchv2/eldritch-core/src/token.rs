@@ -82,6 +82,7 @@ pub enum TokenKind {
     Return,
     For,
     In,
+    NotIn,
     True,
     False,
     None,
