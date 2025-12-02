@@ -232,9 +232,12 @@
             // Handle suggestions
             if (state.suggestions && state.suggestions.length > 0) {
                 suggestionsEl.innerHTML = '';
-                state.suggestions.forEach(s => {
+                state.suggestions.forEach((s, idx) => {
                     const div = document.createElement('div');
                     div.className = 'suggestion-item';
+                    if (state.suggestion_idx !== undefined && state.suggestion_idx === idx) {
+                        div.classList.add('selected');
+                    }
                     div.innerText = s;
                     div.addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent hidden input focus steal causing blur?
