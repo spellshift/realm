@@ -38,20 +38,20 @@ stdlib = [
 ]
 
 [dependencies]
-eldritch-core = { path = "../eldritch-core" }
-eldritch-macros = { path = "../eldritch-macros" }
-eldritch-libagent = { path = "../stdlib/eldritch-libagent" }
-eldritch-libassets = { path = "../stdlib/eldritch-libassets" }
-eldritch-libcrypto = { path = "../stdlib/eldritch-libcrypto" }
-eldritch-libfile = { path = "../stdlib/eldritch-libfile" }
-eldritch-libhttp = { path = "../stdlib/eldritch-libhttp" }
-eldritch-libpivot = { path = "../stdlib/eldritch-libpivot" }
-eldritch-libprocess = { path = "../stdlib/eldritch-libprocess" }
-eldritch-librandom = { path = "../stdlib/eldritch-librandom" }
-eldritch-libregex = { path = "../stdlib/eldritch-libregex" }
-eldritch-libreport = { path = "../stdlib/eldritch-libreport" }
-eldritch-libsys = { path = "../stdlib/eldritch-libsys" }
-eldritch-libtime = { path = "../stdlib/eldritch-libtime" }
+eldritch-core = { path = "../../eldritch-core" }
+eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-libagent = { path = "../eldritch-libagent" }
+eldritch-libassets = { path = "../eldritch-libassets" }
+eldritch-libcrypto = { path = "../eldritch-libcrypto" }
+eldritch-libfile = { path = "../eldritch-libfile" }
+eldritch-libhttp = { path = "../eldritch-libhttp" }
+eldritch-libpivot = { path = "../eldritch-libpivot" }
+eldritch-libprocess = { path = "../eldritch-libprocess" }
+eldritch-librandom = { path = "../eldritch-librandom" }
+eldritch-libregex = { path = "../eldritch-libregex" }
+eldritch-libreport = { path = "../eldritch-libreport" }
+eldritch-libsys = { path = "../eldritch-libsys" }
+eldritch-libtime = { path = "../eldritch-libtime" }
 
 [dev-dependencies]
 httptest = "0.16"

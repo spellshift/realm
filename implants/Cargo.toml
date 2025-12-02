@@ -9,7 +9,7 @@ members = [
     "lib/eldritchv2/eldritch-core",
     "lib/eldritchv2/eldritch-macros",
     "lib/eldritchv2/eldritch-repl",
-    "lib/eldritchv2/eldritch-stdlib",
+    "lib/eldritchv2/stdlib/eldritch-stdlib",
     "lib/eldritchv2/stdlib/eldritch-libagent",
     "lib/eldritchv2/stdlib/eldritch-libassets",
     "lib/eldritchv2/stdlib/eldritch-libcrypto",
