@@ -109,11 +109,7 @@ impl Repl {
     }
 
     pub fn set_suggestions(&mut self, suggestions: Vec<String>) {
-        if suggestions.is_empty() {
-            self.suggestions = None;
-        } else {
-            self.suggestions = Some(suggestions);
-        }
+        self.suggestions = Some(suggestions);
     }
 
     pub fn clear_suggestions(&mut self) {

@@ -214,7 +214,7 @@ impl Interpreter {
         // Try to find the token we are on.
         // We can scan the whole string, but we really care about the last token(s).
         let mut lexer = Lexer::new(line_up_to_cursor.to_string());
-        let tokens = match lexer.scan_tokens() {
+        let mut tokens = match lexer.scan_tokens() {
             Ok(t) => t,
             // If scanning fails (e.g. open string), we might still want to try?
             // For now, if lexer fails, we fallback to simple word splitting or empty.
@@ -235,6 +235,13 @@ impl Interpreter {
 
         // Determine context from tokens
         let mut target_val: Option<Value> = None;
+
+        // Filter out EOF token if present
+        if let Some(last) = tokens.last() {
+            if last.kind == TokenKind::Eof {
+                tokens.pop();
+            }
+        }
 
         if !tokens.is_empty() {
             let last_token = &tokens[tokens.len() - 1];

@@ -6,7 +6,7 @@ echo "Building WASM..."
 # Check if wasm-pack is available
 if command -v wasm-pack &> /dev/null; then
     # Enable fake_bindings feature for the WASM build
-    wasm-pack build --target web --out-dir www/pkg --no-typescript -- --features fake_bindings
+    wasm-pack build --target web --out-dir www/pkg --out-name eldritchv2 --no-typescript -- --features fake_bindings
 else
     echo "wasm-pack not found. Attempting to install..."
     cargo install wasm-pack

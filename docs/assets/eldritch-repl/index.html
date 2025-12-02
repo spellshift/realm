@@ -225,19 +225,28 @@
             currentLineEl.innerHTML = promptSpan + inputHtml;
 
             // Handle suggestions
-            if (state.suggestions && state.suggestions.length > 0) {
+            if (state.suggestions) {
                 suggestionsEl.innerHTML = '';
-                state.suggestions.forEach(s => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.innerText = s;
-                    div.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent hidden input focus steal causing blur?
-                        insertSuggestion(s);
-                        inputEl.focus();
+
+                if (state.suggestions.length > 0) {
+                    state.suggestions.forEach(s => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.innerText = s;
+                        div.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Prevent hidden input focus steal causing blur?
+                            insertSuggestion(s);
+                            inputEl.focus();
+                        });
+                        suggestionsEl.appendChild(div);
                     });
-                    suggestionsEl.appendChild(div);
-                });
+                } else {
+                     const div = document.createElement('div');
+                     div.className = 'suggestion-item';
+                     div.style.fontStyle = 'italic';
+                     div.innerText = 'No suggestions available';
+                     suggestionsEl.appendChild(div);
+                }
 
                 suggestionsEl.style.display = 'block';
 
