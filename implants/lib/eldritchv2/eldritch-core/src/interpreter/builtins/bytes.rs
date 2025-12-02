@@ -25,8 +25,7 @@ pub fn builtin_bytes(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
                     Value::Int(i) => {
                         if *i < 0 || *i > 255 {
                             return Err(format!(
-                                "bytes() list items must be integers in range 0-255, got {}",
-                                i
+                                "bytes() list items must be integers in range 0-255, got {i}"
                             ));
                         }
                         bytes.push(*i as u8);

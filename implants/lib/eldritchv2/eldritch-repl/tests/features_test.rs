@@ -1,22 +1,19 @@
 extern crate alloc;
 
 #[cfg(feature = "stdlib")]
+use eldritch_core::Interpreter;
+#[cfg(feature = "stdlib")]
 use eldritch_stdlib::{
-    file::std::StdFileLibrary,
-    http::std::StdHttpLibrary,
-    process::std::StdProcessLibrary,
-    random::std::StdRandomLibrary,
-    regex::std::StdRegexLibrary,
+    file::std::StdFileLibrary, http::std::StdHttpLibrary, process::std::StdProcessLibrary,
+    random::std::StdRandomLibrary, regex::std::StdRegexLibrary,
 };
 
 #[cfg(feature = "fake_bindings")]
+use eldritch_core::Interpreter;
+#[cfg(feature = "fake_bindings")]
 use eldritch_stdlib::{
-    file::fake::FileLibraryFake,
-    http::fake::HttpLibraryFake,
-    regex::fake::RegexLibraryFake,
+    file::fake::FileLibraryFake, http::fake::HttpLibraryFake, regex::fake::RegexLibraryFake,
 };
-
-use eldritch_core::{Interpreter, Value, register_lib};
 
 // Note: This test mimics the registration logic in `bin/repl.rs`
 // and asserts that registered libraries are actually callable.
@@ -34,7 +31,8 @@ fn test_integration_features() {
     }
 
     #[cfg(feature = "fake_bindings")]
-    #[cfg(not(feature = "stdlib"))] // Only run if stdlib is NOT enabled, to test fake mode specifically
+    #[cfg(not(feature = "stdlib"))]
+    // Only run if stdlib is NOT enabled, to test fake mode specifically
     {
         // Register fake libraries
         register_lib(FileLibraryFake::default());
@@ -42,10 +40,10 @@ fn test_integration_features() {
         register_lib(RegexLibraryFake::default());
     }
 
-    let mut interp = Interpreter::new();
-
     #[cfg(feature = "stdlib")]
     {
+        let mut interp = Interpreter::new();
+
         // Verify `random.int` (stdlib specific)
         let script = "random.int(0, 100)";
         match interp.interpret(script) {
@@ -64,8 +62,11 @@ fn test_integration_features() {
     }
 
     #[cfg(feature = "fake_bindings")]
-    #[cfg(not(feature = "stdlib"))] // Only run if stdlib is NOT enabled, to test fake mode specifically
+    #[cfg(not(feature = "stdlib"))]
+    // Only run if stdlib is NOT enabled, to test fake mode specifically
     {
+        let mut interp = Interpreter::new();
+
         // Verify `file.read` (fake binding has pre-populated /home/user/notes.txt)
         let script = "file.read('/home/user/notes.txt')";
         match interp.interpret(script) {

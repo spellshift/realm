@@ -1,25 +1,25 @@
-use eldritch_macros::eldritch_library_impl;
-use eldritch_core::Value;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
-use alloc::format;
+use super::FileLibrary;
 use ::std::fs::{self, File, OpenOptions};
 use ::std::io::{Read, Write};
 use ::std::path::Path;
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use anyhow::{Context, Result as AnyhowResult};
-use super::FileLibrary;
+use eldritch_core::Value;
+use eldritch_macros::eldritch_library_impl;
 
 #[cfg(feature = "stdlib")]
 use flate2::Compression;
 #[cfg(feature = "stdlib")]
-use tar::{Builder, HeaderMode, Archive};
-#[cfg(feature = "stdlib")]
-use tempfile::NamedTempFile;
-#[cfg(feature = "stdlib")]
 use glob::glob;
 #[cfg(feature = "stdlib")]
 use regex::bytes::{NoExpand, Regex};
+#[cfg(feature = "stdlib")]
+use tar::{Archive, Builder, HeaderMode};
+#[cfg(feature = "stdlib")]
+use tempfile::NamedTempFile;
 #[cfg(feature = "stdlib")]
 use tera::{Context as TeraContext, Tera};
 
@@ -33,10 +33,10 @@ impl FileLibrary for StdFileLibrary {
             .create(true)
             .append(true)
             .open(&path)
-            .map_err(|e| format!("Failed to open file {}: {}", path, e))?;
+            .map_err(|e| format!("Failed to open file {path}: {e}"))?;
 
         file.write_all(content.as_bytes())
-            .map_err(|e| format!("Failed to write to file {}: {}", path, e))?;
+            .map_err(|e| format!("Failed to write to file {path}: {e}"))?;
 
         Ok(())
     }
@@ -46,8 +46,7 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
-        fs::copy(&src, &dst)
-            .map_err(|e| format!("Failed to copy {} to {}: {}", src, dst, e))?;
+        fs::copy(&src, &dst).map_err(|e| format!("Failed to copy {src} to {dst}: {e}"))?;
         Ok(())
     }
 
@@ -81,32 +80,31 @@ impl FileLibrary for StdFileLibrary {
         } else {
             fs::create_dir(&path)
         }
-        .map_err(|e| format!("Failed to create directory {}: {}", path, e))
+        .map_err(|e| format!("Failed to create directory {path}: {e}"))
     }
 
     fn moveto(&self, src: String, dst: String) -> Result<(), String> {
-        fs::rename(&src, &dst)
-            .map_err(|e| format!("Failed to move {} to {}: {}", src, dst, e))
+        fs::rename(&src, &dst).map_err(|e| format!("Failed to move {src} to {dst}: {e}"))
     }
 
     fn parent_dir(&self, path: String) -> Result<String, String> {
         let path = Path::new(&path);
-        let parent = path.parent()
+        let parent = path
+            .parent()
             .ok_or_else(|| "Failed to get parent directory".to_string())?;
 
-        parent.to_str()
+        parent
+            .to_str()
             .map(|s| s.to_string())
             .ok_or_else(|| "Failed to convert path to string".to_string())
     }
 
     fn read(&self, path: String) -> Result<String, String> {
-        fs::read_to_string(&path)
-            .map_err(|e| format!("Failed to read file {}: {}", path, e))
+        fs::read_to_string(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
     }
 
     fn read_binary(&self, path: String) -> Result<Vec<u8>, String> {
-        fs::read(&path)
-            .map_err(|e| format!("Failed to read file {}: {}", path, e))
+        fs::read(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
     }
 
     fn remove(&self, path: String) -> Result<(), String> {
@@ -116,7 +114,7 @@ impl FileLibrary for StdFileLibrary {
         } else {
             fs::remove_file(p)
         }
-        .map_err(|e| format!("Failed to remove {}: {}", path, e))
+        .map_err(|e| format!("Failed to remove {path}: {e}"))
     }
 
     fn replace(&self, path: String, pattern: String, value: String) -> Result<(), String> {
@@ -124,22 +122,34 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn replace_all(&self, path: String, pattern: String, value: String) -> Result<(), String> {
-         replace_impl(path, pattern, value, true).map_err(|e| e.to_string())
+        replace_impl(path, pattern, value, true).map_err(|e| e.to_string())
     }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
-         let temp_dir = ::std::env::temp_dir();
-         let file_name = name.unwrap_or_else(|| {
-             // Simple random name generation if None
-             format!("eldritch_{}", ::std::time::SystemTime::now().duration_since(::std::time::UNIX_EPOCH).unwrap().as_nanos())
-         });
-         let path = temp_dir.join(file_name);
-         path.to_str()
+        let temp_dir = ::std::env::temp_dir();
+        let file_name = name.unwrap_or_else(|| {
+            // Simple random name generation if None
+            format!(
+                "eldritch_{}",
+                ::std::time::SystemTime::now()
+                    .duration_since(::std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            )
+        });
+        let path = temp_dir.join(file_name);
+        path.to_str()
             .map(|s| s.to_string())
             .ok_or_else(|| "Failed to convert temp path to string".to_string())
     }
 
-    fn template(&self, template_path: String, dst: String, args: BTreeMap<String, Value>, autoescape: bool) -> Result<(), String> {
+    fn template(
+        &self,
+        template_path: String,
+        dst: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
+    ) -> Result<(), String> {
         template_impl(template_path, dst, args, autoescape).map_err(|e| e.to_string())
     }
 
@@ -148,13 +158,27 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn write(&self, path: String, content: String) -> Result<(), String> {
-        fs::write(&path, content)
-            .map_err(|e| format!("Failed to write to file {}: {}", path, e))
+        fs::write(&path, content).map_err(|e| format!("Failed to write to file {path}: {e}"))
     }
 
-    fn find(&self, path: String, name: Option<String>, file_type: Option<String>, permissions: Option<i64>, modified_time: Option<i64>, create_time: Option<i64>) -> Result<Vec<String>, String> {
-        find_impl(path, name, file_type, permissions, modified_time, create_time)
-            .map_err(|e| e.to_string())
+    fn find(
+        &self,
+        path: String,
+        name: Option<String>,
+        file_type: Option<String>,
+        permissions: Option<i64>,
+        modified_time: Option<i64>,
+        create_time: Option<i64>,
+    ) -> Result<Vec<String>, String> {
+        find_impl(
+            path,
+            name,
+            file_type,
+            permissions,
+            modified_time,
+            create_time,
+        )
+        .map_err(|e| e.to_string())
     }
 }
 
@@ -196,8 +220,7 @@ fn tar_dir(src: &str, dst: &str) -> AnyhowResult<()> {
     let mut tar_builder = Builder::new(file);
     tar_builder.mode(HeaderMode::Deterministic);
 
-    let src_name = src_path.file_name()
-        .context("Failed to get file name")?;
+    let src_name = src_path.file_name().context("Failed to get file name")?;
 
     tar_builder.append_dir_all(src_name, src_path)?;
     tar_builder.finish()?;
@@ -218,7 +241,7 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
 
         let dst_path = Path::new(&dst);
         if !dst_path.exists() {
-             fs::create_dir_all(dst_path)?;
+            fs::create_dir_all(dst_path)?;
         }
 
         let mut archive = Archive::new(decoded_data.as_slice());
@@ -234,11 +257,11 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
                 let path = tmp_dir.keep();
                 fs::rename(&path, &dst)?;
                 Ok(())
-            },
+            }
             Err(_) => {
                 // Not a tar or unpack failed. Write raw bytes.
                 if dst_path.exists() && dst_path.is_dir() {
-                     fs::remove_dir_all(dst_path)?;
+                    fs::remove_dir_all(dst_path)?;
                 }
                 fs::write(&dst, decoded_data)?;
                 Ok(())
@@ -246,8 +269,8 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
         }
     } else {
         // Not a tar
-         fs::write(&dst, decoded_data)?;
-         Ok(())
+        fs::write(&dst, decoded_data)?;
+        Ok(())
     }
 }
 
@@ -265,10 +288,10 @@ fn list_impl(path: String) -> AnyhowResult<Vec<BTreeMap<String, Value>>> {
                         final_res.push(create_dict_from_file(&entry.path())?);
                     }
                 } else {
-                     final_res.push(create_dict_from_file(&path_buf)?);
+                    final_res.push(create_dict_from_file(&path_buf)?);
                 }
-            },
-            Err(e) => eprintln!("Glob error: {:?}", e),
+            }
+            Err(e) => eprintln!("Glob error: {e:?}"),
         }
     }
     Ok(final_res)
@@ -278,7 +301,8 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     let metadata = fs::metadata(path)?;
     let mut dict = BTreeMap::new();
 
-    let name = path.file_name()
+    let name = path
+        .file_name()
         .unwrap_or_default()
         .to_string_lossy()
         .to_string();
@@ -299,14 +323,22 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     #[cfg(unix)]
     let perms = format!("{:o}", metadata.permissions().mode());
     #[cfg(not(unix))]
-    let perms = if metadata.permissions().readonly() { "r" } else { "rw" }.to_string();
+    let perms = if metadata.permissions().readonly() {
+        "r"
+    } else {
+        "rw"
+    }
+    .to_string();
 
     dict.insert("permissions".to_string(), Value::String(perms));
 
     // Times
     if let Ok(m) = metadata.modified() {
         if let Ok(d) = m.duration_since(::std::time::UNIX_EPOCH) {
-            dict.insert("modified".to_string(), Value::String(d.as_secs().to_string()));
+            dict.insert(
+                "modified".to_string(),
+                Value::String(d.as_secs().to_string()),
+            );
         }
     }
 
@@ -327,7 +359,12 @@ fn replace_impl(path: String, pattern: String, value: String, all: bool) -> Anyh
     Ok(())
 }
 
-fn template_impl(template_path: String, dst: String, args: BTreeMap<String, Value>, autoescape: bool) -> AnyhowResult<()> {
+fn template_impl(
+    template_path: String,
+    dst: String,
+    args: BTreeMap<String, Value>,
+    autoescape: bool,
+) -> AnyhowResult<()> {
     let mut context = TeraContext::new();
     for (k, v) in args {
         // Convert Value to serde_json::Value
@@ -349,26 +386,35 @@ fn value_to_json(v: Value) -> serde_json::Value {
         Value::None => JsonValue::Null,
         Value::Bool(b) => JsonValue::Bool(b),
         Value::Int(i) => JsonValue::Number(serde_json::Number::from(i)),
-        Value::Float(f) => serde_json::Number::from_f64(f).map(JsonValue::Number).unwrap_or(JsonValue::Null),
+        Value::Float(f) => serde_json::Number::from_f64(f)
+            .map(JsonValue::Number)
+            .unwrap_or(JsonValue::Null),
         Value::String(s) => JsonValue::String(s),
         Value::List(l) => {
             let list = l.borrow();
             let vec: Vec<JsonValue> = list.iter().map(|v| value_to_json(v.clone())).collect();
             JsonValue::Array(vec)
-        },
+        }
         Value::Dictionary(d) => {
-             let dict = d.borrow();
-             let mut map = serde_json::Map::new();
-             for (k, v) in dict.iter() {
-                 map.insert(k.clone(), value_to_json(v.clone()));
-             }
-             JsonValue::Object(map)
-        },
-        _ => JsonValue::String(format!("{}", v)), // Fallback for types not easily mappable
+            let dict = d.borrow();
+            let mut map = serde_json::Map::new();
+            for (k, v) in dict.iter() {
+                map.insert(k.clone(), value_to_json(v.clone()));
+            }
+            JsonValue::Object(map)
+        }
+        _ => JsonValue::String(format!("{v}")), // Fallback for types not easily mappable
     }
 }
 
-fn find_impl(path: String, name: Option<String>, file_type: Option<String>, permissions: Option<i64>, modified_time: Option<i64>, create_time: Option<i64>) -> AnyhowResult<Vec<String>> {
+fn find_impl(
+    path: String,
+    name: Option<String>,
+    file_type: Option<String>,
+    permissions: Option<i64>,
+    modified_time: Option<i64>,
+    create_time: Option<i64>,
+) -> AnyhowResult<Vec<String>> {
     let mut out = Vec::new();
     let root = Path::new(&path);
     if !root.is_dir() {
@@ -376,24 +422,55 @@ fn find_impl(path: String, name: Option<String>, file_type: Option<String>, perm
     }
 
     // Recursive search
-    find_recursive(root, &mut out, &name, &file_type, permissions, modified_time, create_time)?;
+    find_recursive(
+        root,
+        &mut out,
+        &name,
+        &file_type,
+        permissions,
+        modified_time,
+        create_time,
+    )?;
 
     Ok(out)
 }
 
-fn find_recursive(dir: &Path, out: &mut Vec<String>, name: &Option<String>, file_type: &Option<String>, permissions: Option<i64>, modified_time: Option<i64>, create_time: Option<i64>) -> AnyhowResult<()> {
+fn find_recursive(
+    dir: &Path,
+    out: &mut Vec<String>,
+    name: &Option<String>,
+    file_type: &Option<String>,
+    permissions: Option<i64>,
+    modified_time: Option<i64>,
+    create_time: Option<i64>,
+) -> AnyhowResult<()> {
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                find_recursive(&path, out, name, file_type, permissions, modified_time, create_time)?;
+                find_recursive(
+                    &path,
+                    out,
+                    name,
+                    file_type,
+                    permissions,
+                    modified_time,
+                    create_time,
+                )?;
             }
 
-            if check_path(&path, name, file_type, permissions, modified_time, create_time)? {
+            if check_path(
+                &path,
+                name,
+                file_type,
+                permissions,
+                modified_time,
+                create_time,
+            )? {
                 if let Ok(p) = path.canonicalize() {
                     out.push(p.to_string_lossy().to_string());
                 } else {
-                        out.push(path.to_string_lossy().to_string());
+                    out.push(path.to_string_lossy().to_string());
                 }
             }
         }
@@ -411,46 +488,50 @@ fn check_path(
 ) -> AnyhowResult<bool> {
     if let Some(n) = name {
         if let Some(fname) = path.file_name() {
-             if !fname.to_string_lossy().contains(n) {
-                 return Ok(false);
-             }
+            if !fname.to_string_lossy().contains(n) {
+                return Ok(false);
+            }
         } else {
             return Ok(false);
         }
     }
 
     if let Some(ft) = file_type {
-        if ft == "file" && !path.is_file() { return Ok(false); }
-        if ft == "dir" && !path.is_dir() { return Ok(false); }
+        if ft == "file" && !path.is_file() {
+            return Ok(false);
+        }
+        if ft == "dir" && !path.is_dir() {
+            return Ok(false);
+        }
     }
 
     // Note: Permissions check on V1 was strict (==).
     if let Some(p) = permissions {
-         #[cfg(unix)]
-         {
-             use ::std::os::unix::fs::PermissionsExt;
-             let meta = path.metadata()?;
-             if (meta.permissions().mode() & 0o777) as i64 != p {
-                 return Ok(false);
-             }
-         }
+        #[cfg(unix)]
+        {
+            use ::std::os::unix::fs::PermissionsExt;
+            let meta = path.metadata()?;
+            if (meta.permissions().mode() & 0o777) as i64 != p {
+                return Ok(false);
+            }
+        }
     }
 
     if let Some(mt) = modified_time {
         let meta = path.metadata()?;
         if let Ok(t) = meta.modified() {
-             if t.duration_since(::std::time::UNIX_EPOCH)?.as_secs() as i64 != mt {
-                 return Ok(false);
-             }
+            if t.duration_since(::std::time::UNIX_EPOCH)?.as_secs() as i64 != mt {
+                return Ok(false);
+            }
         }
     }
 
     if let Some(ct) = create_time {
         let meta = path.metadata()?;
         if let Ok(t) = meta.created() {
-             if t.duration_since(::std::time::UNIX_EPOCH)?.as_secs() as i64 != ct {
-                 return Ok(false);
-             }
+            if t.duration_since(::std::time::UNIX_EPOCH)?.as_secs() as i64 != ct {
+                return Ok(false);
+            }
         }
     }
 
@@ -463,14 +544,14 @@ mod tests {
 
     // use sha256::try_digest; // Removed per error
     use super::*;
-    use std::fs;
-    use eldritch_core::Value;
     use alloc::collections::BTreeMap;
+    use eldritch_core::Value;
+    use std::fs;
     use tempfile::NamedTempFile;
 
     #[test]
     fn test_file_ops_basic() -> AnyhowResult<()> {
-        let lib = StdFileLibrary::default();
+        let lib = StdFileLibrary;
         let tmp = NamedTempFile::new()?;
         let path = tmp.path().to_string_lossy().to_string();
 
@@ -495,7 +576,7 @@ mod tests {
 
     #[test]
     fn test_compress_decompress() -> AnyhowResult<()> {
-        let lib = StdFileLibrary::default();
+        let lib = StdFileLibrary;
         let content = "Compression Test";
 
         let tmp_src = NamedTempFile::new()?;
@@ -520,7 +601,7 @@ mod tests {
 
     #[test]
     fn test_template() -> AnyhowResult<()> {
-        let lib = StdFileLibrary::default();
+        let lib = StdFileLibrary;
         let tmp_tmpl = NamedTempFile::new()?;
         let tmpl_path = tmp_tmpl.path().to_string_lossy().to_string();
 
@@ -532,7 +613,8 @@ mod tests {
         let mut args = BTreeMap::new();
         args.insert("name".to_string(), Value::String("World".to_string()));
 
-        lib.template(tmpl_path, out_path.clone(), args, true).unwrap();
+        lib.template(tmpl_path, out_path.clone(), args, true)
+            .unwrap();
 
         assert_eq!(fs::read_to_string(&out_path)?, "Hello World");
 

@@ -1,12 +1,11 @@
-
 use super::ProcessLibrary;
-use eldritch_macros::eldritch_library_impl;
-use eldritch_core::Value;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use alloc::collections::BTreeMap;
 use alloc::format;
-use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt, UserExt, Signal};
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use eldritch_core::Value;
+use eldritch_macros::eldritch_library_impl;
+use sysinfo::{Pid, PidExt, ProcessExt, Signal, System, SystemExt, UserExt};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(ProcessLibrary)]
@@ -18,30 +17,62 @@ impl ProcessLibrary for StdProcessLibrary {
         sys.refresh_processes();
         sys.refresh_users_list();
 
-        let target_pid = pid.map(|p| p as usize).unwrap_or_else(|| ::std::process::id() as usize);
+        let target_pid = pid
+            .map(|p| p as usize)
+            .unwrap_or_else(|| ::std::process::id() as usize);
         let pid_struct = Pid::from(target_pid);
 
         if let Some(process) = sys.process(pid_struct) {
             let mut map = BTreeMap::new();
             map.insert("pid".to_string(), Value::Int(target_pid as i64));
-            map.insert("name".to_string(), Value::String(process.name().to_string()));
+            map.insert(
+                "name".to_string(),
+                Value::String(process.name().to_string()),
+            );
             map.insert("cmd".to_string(), Value::String(process.cmd().join(" ")));
-            map.insert("exe".to_string(), Value::String(process.exe().display().to_string()));
-            map.insert("environ".to_string(), Value::String(process.environ().join(",")));
-            map.insert("cwd".to_string(), Value::String(process.cwd().display().to_string()));
-            map.insert("root".to_string(), Value::String(process.root().display().to_string()));
-            map.insert("memory_usage".to_string(), Value::Int(process.memory() as i64));
-            map.insert("virtual_memory_usage".to_string(), Value::Int(process.virtual_memory() as i64));
+            map.insert(
+                "exe".to_string(),
+                Value::String(process.exe().display().to_string()),
+            );
+            map.insert(
+                "environ".to_string(),
+                Value::String(process.environ().join(",")),
+            );
+            map.insert(
+                "cwd".to_string(),
+                Value::String(process.cwd().display().to_string()),
+            );
+            map.insert(
+                "root".to_string(),
+                Value::String(process.root().display().to_string()),
+            );
+            map.insert(
+                "memory_usage".to_string(),
+                Value::Int(process.memory() as i64),
+            );
+            map.insert(
+                "virtual_memory_usage".to_string(),
+                Value::Int(process.virtual_memory() as i64),
+            );
 
             if let Some(ppid) = process.parent() {
-                 map.insert("ppid".to_string(), Value::Int(ppid.as_u32() as i64));
+                map.insert("ppid".to_string(), Value::Int(ppid.as_u32() as i64));
             } else {
-                 map.insert("ppid".to_string(), Value::None);
+                map.insert("ppid".to_string(), Value::None);
             }
 
-            map.insert("status".to_string(), Value::String(process.status().to_string()));
-            map.insert("start_time".to_string(), Value::Int(process.start_time() as i64));
-            map.insert("run_time".to_string(), Value::Int(process.run_time() as i64));
+            map.insert(
+                "status".to_string(),
+                Value::String(process.status().to_string()),
+            );
+            map.insert(
+                "start_time".to_string(),
+                Value::Int(process.start_time() as i64),
+            );
+            map.insert(
+                "run_time".to_string(),
+                Value::Int(process.run_time() as i64),
+            );
 
             #[cfg(not(windows))]
             {
@@ -49,38 +80,38 @@ impl ProcessLibrary for StdProcessLibrary {
                     map.insert("gid".to_string(), Value::Int(*gid as i64));
                 }
                 if let Some(uid) = process.user_id() {
-                     map.insert("uid".to_string(), Value::Int(**uid as i64));
+                    map.insert("uid".to_string(), Value::Int(**uid as i64));
                 }
             }
 
             Ok(map)
         } else {
-            Err(format!("Process {} not found", target_pid))
+            Err(format!("Process {target_pid} not found"))
         }
     }
 
     fn kill(&self, pid: i64) -> Result<(), String> {
         if !System::IS_SUPPORTED {
-             return Err("System not supported".to_string());
+            return Err("System not supported".to_string());
         }
 
         let mut sys = System::new();
         sys.refresh_processes();
 
         if let Some(process) = sys.process(Pid::from(pid as usize)) {
-             if process.kill_with(Signal::Kill).unwrap_or(false) {
-                 Ok(())
-             } else {
-                 Err(format!("Failed to kill process {}", pid))
-             }
+            if process.kill_with(Signal::Kill).unwrap_or(false) {
+                Ok(())
+            } else {
+                Err(format!("Failed to kill process {pid}"))
+            }
         } else {
-            Err(format!("Process {} not found", pid))
+            Err(format!("Process {pid} not found"))
         }
     }
 
     fn list(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
         if !System::IS_SUPPORTED {
-             return Err("System not supported".to_string());
+            return Err("System not supported".to_string());
         }
 
         let mut sys = System::new();
@@ -92,25 +123,44 @@ impl ProcessLibrary for StdProcessLibrary {
             let mut map = BTreeMap::new();
             map.insert("pid".to_string(), Value::Int(pid.as_u32() as i64));
 
-             if let Some(ppid) = process.parent() {
-                 map.insert("ppid".to_string(), Value::Int(ppid.as_u32() as i64));
+            if let Some(ppid) = process.parent() {
+                map.insert("ppid".to_string(), Value::Int(ppid.as_u32() as i64));
             } else {
-                 map.insert("ppid".to_string(), Value::Int(0));
+                map.insert("ppid".to_string(), Value::Int(0));
             }
 
-            map.insert("status".to_string(), Value::String(process.status().to_string()));
+            map.insert(
+                "status".to_string(),
+                Value::String(process.status().to_string()),
+            );
 
-            let user_name = process.user_id()
+            let user_name = process
+                .user_id()
                 .and_then(|uid| sys.get_user_by_id(uid))
                 .map(|u| u.name())
                 .unwrap_or("???");
             map.insert("username".to_string(), Value::String(user_name.to_string()));
 
-            map.insert("path".to_string(), Value::String(process.exe().to_string_lossy().into_owned()));
-            map.insert("command".to_string(), Value::String(process.cmd().join(" ")));
-            map.insert("cwd".to_string(), Value::String(process.cwd().to_string_lossy().into_owned()));
-            map.insert("environ".to_string(), Value::String(process.environ().join(" ")));
-            map.insert("name".to_string(), Value::String(process.name().to_string()));
+            map.insert(
+                "path".to_string(),
+                Value::String(process.exe().to_string_lossy().into_owned()),
+            );
+            map.insert(
+                "command".to_string(),
+                Value::String(process.cmd().join(" ")),
+            );
+            map.insert(
+                "cwd".to_string(),
+                Value::String(process.cwd().to_string_lossy().into_owned()),
+            );
+            map.insert(
+                "environ".to_string(),
+                Value::String(process.environ().join(" ")),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(process.name().to_string()),
+            );
 
             list.push(map);
         }
@@ -119,7 +169,7 @@ impl ProcessLibrary for StdProcessLibrary {
 
     fn name(&self, pid: i64) -> Result<String, String> {
         if !System::IS_SUPPORTED {
-             return Err("System not supported".to_string());
+            return Err("System not supported".to_string());
         }
         let mut sys = System::new();
         sys.refresh_processes();
@@ -127,7 +177,7 @@ impl ProcessLibrary for StdProcessLibrary {
         if let Some(process) = sys.process(Pid::from(pid as usize)) {
             Ok(process.name().to_string())
         } else {
-             Err(format!("Process {} not found", pid))
+            Err(format!("Process {pid} not found"))
         }
     }
 
@@ -143,7 +193,10 @@ impl ProcessLibrary for StdProcessLibrary {
             for l in listeners {
                 let mut map = BTreeMap::new();
                 map.insert("socket_type".to_string(), Value::String("TCP".to_string()));
-                map.insert("local_address".to_string(), Value::String(l.socket.ip().to_string()));
+                map.insert(
+                    "local_address".to_string(),
+                    Value::String(l.socket.ip().to_string()),
+                );
                 map.insert("local_port".to_string(), Value::Int(l.socket.port() as i64));
                 map.insert("pid".to_string(), Value::Int(l.process.pid as i64));
                 out.push(map);
@@ -162,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_std_process_list() {
-        let lib = StdProcessLibrary::default();
+        let lib = StdProcessLibrary;
         let list = lib.list().unwrap();
         assert!(!list.is_empty());
 
@@ -180,7 +233,7 @@ mod tests {
 
     #[test]
     fn test_std_process_info_and_name() {
-        let lib = StdProcessLibrary::default();
+        let lib = StdProcessLibrary;
         let my_pid = ::std::process::id() as i64;
 
         let info = lib.info(Some(my_pid)).unwrap();
@@ -212,7 +265,7 @@ mod tests {
 
         if let Ok(mut child) = cmd.spawn() {
             let pid = child.id() as i64;
-            let lib = StdProcessLibrary::default();
+            let lib = StdProcessLibrary;
 
             // Wait a bit for process to start?
             ::std::thread::sleep(::std::time::Duration::from_millis(100));

@@ -103,12 +103,12 @@ impl Interpreter {
         let mut lexer = Lexer::new(input.to_string());
         let tokens = match lexer.scan_tokens() {
             Ok(t) => t,
-            Err(e) => return Err(format!("Lexer Error: {}", e)),
+            Err(e) => return Err(format!("Lexer Error: {e}")),
         };
         let mut parser = Parser::new(tokens);
         let stmts = match parser.parse() {
             Ok(s) => s,
-            Err(e) => return Err(format!("Parser Error: {}", e)),
+            Err(e) => return Err(format!("Parser Error: {e}")),
         };
 
         let mut last_val = Value::None;
@@ -181,6 +181,6 @@ impl Interpreter {
             }
             current_env = env_ref.parent.clone();
         }
-        runtime_error(span, &format!("Undefined variable: '{}'", name))
+        runtime_error(span, &format!("Undefined variable: '{name}'"))
     }
 }

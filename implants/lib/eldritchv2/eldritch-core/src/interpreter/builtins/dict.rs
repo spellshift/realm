@@ -98,8 +98,7 @@ fn process_pair(
         }
         _ => {
             return Err(format!(
-                "cannot convert dictionary update sequence element #{} to a sequence",
-                index
+                "cannot convert dictionary update sequence element #{index} to a sequence"
             ))
         }
     }

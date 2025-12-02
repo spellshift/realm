@@ -1,10 +1,9 @@
-
 use super::RandomLibrary;
-use eldritch_macros::eldritch_library_impl;
 use alloc::string::String;
 use alloc::vec::Vec;
-use rand::Rng;
+use eldritch_macros::eldritch_library_impl;
 use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
+use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 
 #[derive(Default, Debug)]
@@ -73,13 +72,13 @@ mod tests {
 
     #[test]
     fn test_bool() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         assert!(lib.bool().is_ok());
     }
 
     #[test]
     fn test_bool_uniform() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         let mut num_true = 0;
         for _ in 0..NUM_ITERATION {
             let b = lib.bool().unwrap();
@@ -94,44 +93,41 @@ mod tests {
         let low_enough = upper_bound > num_true as f64;
         assert!(
             high_enough && low_enough,
-            "{} was not between the acceptable bounds of ({},{})",
-            num_true,
-            lower_bound,
-            upper_bound
+            "{num_true} was not between the acceptable bounds of ({lower_bound},{upper_bound})"
         );
     }
 
     #[test]
     fn test_bytes() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         let b = lib.bytes(10).unwrap();
         assert_eq!(b.len(), 10);
     }
 
     #[test]
     fn test_int() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         let val = lib.int(0, 10).unwrap();
-        assert!(val >= 0 && val < 10);
+        assert!((0..10).contains(&val));
     }
 
     #[test]
     fn test_string() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         let s = lib.string(10, None).unwrap();
         assert_eq!(s.len(), 10);
     }
 
     #[test]
     fn test_string_charset() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         let s = lib.string(5, Some("a".to_string())).unwrap();
         assert_eq!(s, "aaaaa");
     }
 
     #[test]
     fn test_uuid() {
-        let lib = StdRandomLibrary::default();
+        let lib = StdRandomLibrary;
         let u = lib.uuid().unwrap();
         assert!(uuid::Uuid::parse_str(&u).is_ok());
     }

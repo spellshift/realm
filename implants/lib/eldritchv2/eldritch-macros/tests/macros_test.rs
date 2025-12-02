@@ -1,9 +1,7 @@
 mod tests {
     extern crate alloc;
-    use eldritch_macros::{
-        eldritch_library, eldritch_library_impl, eldritch_method
-    };
     use eldritch_core::{Interpreter, Value, register_lib};
+    use eldritch_macros::{eldritch_library, eldritch_library_impl, eldritch_method};
     use std::collections::BTreeMap;
     use std::sync::{Arc, Mutex};
 
@@ -36,7 +34,7 @@ mod tests {
             self.ops
                 .lock()
                 .unwrap()
-                .push(format!("move {} -> {}", src, dst));
+                .push(format!("move {src} -> {dst}"));
             Ok(())
         }
 
@@ -52,7 +50,7 @@ mod tests {
             self.ops
                 .lock()
                 .unwrap()
-                .push(format!("complex ids={:?} meta={:?}", ids, meta));
+                .push(format!("complex ids={ids:?} meta={meta:?}"));
             Ok(true)
         }
 
@@ -123,12 +121,12 @@ mod tests {
             self.log
                 .lock()
                 .unwrap()
-                .push(format!("connect {}:{}", host, port));
+                .push(format!("connect {host}:{port}"));
             Ok(true)
         }
 
         fn send(&self, data: &str) -> Result<i64, String> {
-            self.log.lock().unwrap().push(format!("send {}", data));
+            self.log.lock().unwrap().push(format!("send {data}"));
             Ok(data.len() as i64)
         }
     }
@@ -221,7 +219,7 @@ mod tests {
             if let Value::Bool(b) = res {
                 assert!(b);
             } else {
-                panic!("Expected Bool result, got {:?}", res);
+                panic!("Expected Bool result, got {res:?}");
             }
 
             {
@@ -247,7 +245,7 @@ mod tests {
                 assert_eq!(dict.get("one").unwrap(), &Value::Int(1));
                 assert_eq!(dict.get("two").unwrap(), &Value::Int(2));
             } else {
-                panic!("Expected Dictionary, got {:?}", res);
+                panic!("Expected Dictionary, got {res:?}");
             }
         }
 
@@ -266,7 +264,7 @@ mod tests {
                 assert!(strings.contains(&"write_str".to_string()));
                 assert!(strings.contains(&"btree_ret".to_string()));
             } else {
-                panic!("Expected List, got {:?}", res);
+                panic!("Expected List, got {res:?}");
             }
         }
     }

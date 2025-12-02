@@ -11,7 +11,7 @@ pub fn builtin_str(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Va
     if let Value::Bytes(b) = &args[0] {
         match String::from_utf8(b.clone()) {
             Ok(s) => Ok(Value::String(s)),
-            Err(_) => Ok(Value::String(format!("{:?}", b))), // Fallback
+            Err(_) => Ok(Value::String(format!("{b:?}"))), // Fallback
         }
     } else {
         Ok(Value::String(args[0].to_string()))

@@ -16,7 +16,7 @@ pub fn builtin_int(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Va
         Value::String(s) => s
             .parse::<i64>()
             .map(Value::Int)
-            .map_err(|_| format!("invalid literal for int(): '{}'", s)),
+            .map_err(|_| format!("invalid literal for int(): '{s}'")),
         _ => Err(format!(
             "int() argument must be a string, bytes or number, not '{}'",
             get_type_name(&args[0])

@@ -43,11 +43,11 @@ pub fn builtin_float(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
                         // But for "inf" string it is valid.
                         // Distinguishing overflow from explicit "inf" is handled by above checks.
                         // So if we reach here and get infinity, it was overflow.
-                        return Err(format!("float() literal too large: {}", s));
+                        return Err(format!("float() literal too large: {s}"));
                     }
                     Ok(Value::Float(f))
                 }
-                Err(_) => Err(format!("could not convert string to float: '{}'", s)),
+                Err(_) => Err(format!("could not convert string to float: '{s}'")),
             }
         }
         _ => Err(format!(

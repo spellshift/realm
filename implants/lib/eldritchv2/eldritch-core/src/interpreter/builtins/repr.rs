@@ -24,7 +24,7 @@ pub fn builtin_repr(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<V
     // But `Value::String` logic:
 
     match &args[0] {
-        Value::String(s) => Ok(Value::String(format!("{:?}", s))),
+        Value::String(s) => Ok(Value::String(format!("{s:?}"))),
         _ => Ok(Value::String(format!("{:?}", args[0]))),
     }
 }

@@ -1,9 +1,8 @@
-
-use eldritch_macros::eldritch_library_impl;
+use super::RegexLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
-use regex::{Regex, NoExpand};
-use super::RegexLibrary;
+use eldritch_macros::eldritch_library_impl;
+use regex::{NoExpand, Regex};
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RegexLibrary)]
@@ -16,8 +15,7 @@ impl RegexLibrary for StdRegexLibrary {
         let num_capture_groups = re.capture_locations().len().saturating_sub(1);
         if num_capture_groups != 1 {
             return Err(format!(
-                "only 1 capture group is supported but {} given",
-                num_capture_groups
+                "only 1 capture group is supported but {num_capture_groups} given"
             ));
         }
         let mut matches = Vec::new();
@@ -34,19 +32,23 @@ impl RegexLibrary for StdRegexLibrary {
         let num_capture_groups = re.capture_locations().len().saturating_sub(1);
         if num_capture_groups != 1 {
             return Err(format!(
-                "only 1 capture group is supported but {} given",
-                num_capture_groups
+                "only 1 capture group is supported but {num_capture_groups} given",
             ));
         }
         if let Some(captures) = re.captures(&haystack) {
-             if let Some(m) = captures.get(1) {
+            if let Some(m) = captures.get(1) {
                 return Ok(String::from(m.as_str()));
             }
         }
         Ok(String::new())
     }
 
-    fn replace_all(&self, haystack: String, pattern: String, value: String) -> Result<String, String> {
+    fn replace_all(
+        &self,
+        haystack: String,
+        pattern: String,
+        value: String,
+    ) -> Result<String, String> {
         let re = Regex::new(&pattern).map_err(|e| e.to_string())?;
         let result = re.replace_all(&haystack, NoExpand(&value));
         Ok(String::from(result))
@@ -65,7 +67,7 @@ mod tests {
 
     #[test]
     fn test_match_all_one_match() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -86,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_match_all_multi_match() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -108,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_match_all_no_match() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -128,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_match_found() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -148,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_match_not_found() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -168,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_replace_all() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -183,7 +185,9 @@ mod tests {
         );
         let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
         let test_value = String::from("That cannot soar.");
-        let m = lib.replace_all(test_haystack, test_pattern, test_value).unwrap();
+        let m = lib
+            .replace_all(test_haystack, test_pattern, test_value)
+            .unwrap();
         assert!(!m.contains("That cannot fly."));
         assert!(!m.contains("Frozen with snow."));
         assert!(m.contains("That cannot soar."));
@@ -191,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_replace_all_not_found() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -206,13 +210,15 @@ mod tests {
         );
         let test_pattern = String::from(r"(?m)^\s*(That we may believe)$");
         let test_value = String::from("That cannot soar.");
-        let m = lib.replace_all(test_haystack.clone(), test_pattern, test_value).unwrap();
+        let m = lib
+            .replace_all(test_haystack.clone(), test_pattern, test_value)
+            .unwrap();
         assert_eq!(test_haystack, m);
     }
 
     #[test]
     fn test_replace() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_haystack = String::from(
             r#"
             Hold fast to dreams
@@ -227,7 +233,9 @@ mod tests {
         );
         let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
         let test_value = String::from("That cannot soar.");
-        let m = lib.replace(test_haystack, test_pattern, test_value).unwrap();
+        let m = lib
+            .replace(test_haystack, test_pattern, test_value)
+            .unwrap();
         assert!(!m.contains("That cannot fly."));
         assert!(m.contains("Frozen with snow."));
         assert!(m.contains("That cannot soar."));
@@ -235,14 +243,20 @@ mod tests {
 
     #[test]
     fn test_invalid_capture_groups() {
-        let lib = StdRegexLibrary::default();
+        let lib = StdRegexLibrary;
         let test_pattern = String::from(r"(foo)(bar)");
         let res = lib.match_all("foobar".into(), test_pattern.clone());
         assert!(res.is_err());
-        assert_eq!(res.err().unwrap(), "only 1 capture group is supported but 2 given");
+        assert_eq!(
+            res.err().unwrap(),
+            "only 1 capture group is supported but 2 given"
+        );
 
         let res = lib.r#match("foobar".into(), test_pattern);
         assert!(res.is_err());
-        assert_eq!(res.err().unwrap(), "only 1 capture group is supported but 2 given");
+        assert_eq!(
+            res.err().unwrap(),
+            "only 1 capture group is supported but 2 given"
+        );
     }
 }

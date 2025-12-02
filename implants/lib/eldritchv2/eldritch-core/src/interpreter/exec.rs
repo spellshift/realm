@@ -72,15 +72,12 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 Value::Tuple(t) => t.clone(),
                 Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
                 Value::Bytes(b) => b.iter().map(|&byte| Value::Int(byte as i64)).collect(),
-                _ => {
-                    return runtime_error(
-                        iterable.span,
-                        &format!(
-                            "'for' loop can only iterate over lists/iterables. Found {:?}",
-                            iterable_val
-                        ),
-                    )
-                }
+                _ => return runtime_error(
+                    iterable.span,
+                    &format!(
+                        "'for' loop can only iterate over lists/iterables. Found {iterable_val:?}"
+                    ),
+                ),
             };
 
             for item in items {

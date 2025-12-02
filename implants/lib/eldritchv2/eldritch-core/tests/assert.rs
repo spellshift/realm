@@ -39,7 +39,7 @@ pub fn code(code: &str) -> Value {
     let mut i = Interpreter::new();
     match i.interpret(&cleaned) {
         Ok(v) => v,
-        Err(e) => panic!("Interpreter error in code '{}': {}", code, e),
+        Err(e) => panic!("Interpreter error in code '{code}': {e}"),
     }
 }
 
@@ -47,7 +47,7 @@ pub fn pass(code: &str) {
     let cleaned = clean_code(code);
     let mut i = Interpreter::new();
     if let Err(e) = i.interpret(&cleaned) {
-        panic!("Interpreter error in code '{}': {}", code, e);
+        panic!("Interpreter error in code '{code}': {e}");
     }
 }
 
@@ -67,15 +67,15 @@ pub fn all_true(code: &str) {
             Ok(v) => match v {
                 Value::Bool(b) => {
                     if !b {
-                        panic!("Assertion failed for line: {}", line);
+                        panic!("Assertion failed for line: {line}");
                     }
                 }
                 Value::None => {
                     // Ignore None results (assignments, etc)
                 }
-                _ => panic!("Expected boolean for line '{}', got {:?}", line, v),
+                _ => panic!("Expected boolean for line '{line}', got {v:?}"),
             },
-            Err(e) => panic!("Interpreter error in line '{}': {}", line, e),
+            Err(e) => panic!("Interpreter error in line '{line}': {e}"),
         }
     }
 }
@@ -84,13 +84,10 @@ pub fn fail(code: &str, msg_part: &str) {
     let cleaned = clean_code(code);
     let mut i = Interpreter::new();
     match i.interpret(&cleaned) {
-        Ok(v) => panic!("Expected error containing '{}', but got value: {:?}", msg_part, v),
+        Ok(v) => panic!("Expected error containing '{msg_part}', but got value: {v:?}"),
         Err(e) => {
             if !e.contains(msg_part) {
-                panic!(
-                    "Expected error containing '{}', but got: '{}' for code: '{}'",
-                    msg_part, e, code
-                );
+                panic!("Expected error containing '{msg_part}', but got: '{e}' for code: '{code}'");
             }
         }
     }

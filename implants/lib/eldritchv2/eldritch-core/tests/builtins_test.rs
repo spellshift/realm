@@ -21,21 +21,21 @@ fdiv = b // 2
         if let Value::Float(f) = sum {
             assert_eq!(f, 4.0);
         } else {
-            panic!("Expected float, got {:?}", sum);
+            panic!("Expected float, got {sum:?}");
         }
 
         let prod = interp.interpret("prod").unwrap();
         if let Value::Float(f) = prod {
             assert_eq!(f, 3.0);
         } else {
-            panic!("Expected float, got {:?}", prod);
+            panic!("Expected float, got {prod:?}");
         }
 
         let fdiv = interp.interpret("fdiv").unwrap();
         if let Value::Float(f) = fdiv {
             assert_eq!(f, 1.0);
         } else {
-            panic!("Expected float for floor div of float, got {:?}", fdiv);
+            panic!("Expected float for floor div of float, got {fdiv:?}");
         }
     }
 
@@ -48,7 +48,7 @@ fdiv = b // 2
         if let Value::Float(f) = val {
             assert_eq!(f, 5.5);
         } else {
-            panic!("Expected float, got {:?}", val);
+            panic!("Expected float, got {val:?}");
         }
     }
 
@@ -95,11 +95,11 @@ fdiv = b // 2
         let mut interp = Interpreter::new();
         match interp.interpret("float('1.5')").unwrap() {
             Value::Float(f) => assert_eq!(f, 1.5),
-            v => panic!("Expected float, got {:?}", v),
+            v => panic!("Expected float, got {v:?}"),
         }
         match interp.interpret("float(1)").unwrap() {
             Value::Float(f) => assert_eq!(f, 1.0),
-            v => panic!("Expected float, got {:?}", v),
+            v => panic!("Expected float, got {v:?}"),
         }
     }
 
@@ -189,7 +189,7 @@ fdiv = b // 2
         let mut interp = Interpreter::new();
         match interp.interpret("repr('foo')").unwrap() {
             Value::String(s) => assert_eq!(s, "\"foo\""),
-            v => panic!("Expected string, got {:?}", v),
+            v => panic!("Expected string, got {v:?}"),
         }
     }
 }

@@ -3,7 +3,7 @@ use eldritch_core::Interpreter;
 
 // Helper to benchmark a specific builtin call
 fn bench_builtin(c: &mut Criterion, name: &str, code: &str) {
-    c.bench_function(&format!("builtin_{}", name), |b| {
+    c.bench_function(&format!("builtin_{name}"), |b| {
         b.iter(|| {
             let mut interpreter = Interpreter::new();
             interpreter.interpret(code).unwrap();

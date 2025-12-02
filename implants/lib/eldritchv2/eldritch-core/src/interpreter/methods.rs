@@ -117,7 +117,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             let key = match &args[0] {
                 Value::String(s) => s,
-                v => return Err(format!("Dict keys must be strings, got {}", v)),
+                v => return Err(format!("Dict keys must be strings, got {v}")),
             };
             let default = if args.len() == 2 {
                 args[1].clone()

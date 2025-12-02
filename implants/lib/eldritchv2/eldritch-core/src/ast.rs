@@ -86,24 +86,24 @@ impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::None => write!(f, "None"),
-            Value::Bool(b) => write!(f, "Bool({})", b),
-            Value::Int(i) => write!(f, "Int({})", i),
-            Value::Float(fl) => write!(f, "Float({})", fl),
-            Value::String(s) => write!(f, "String({:?})", s),
-            Value::Bytes(b) => write!(f, "Bytes({:?})", b),
-            Value::List(l) => write!(f, "List({:?})", l),
-            Value::Tuple(t) => write!(f, "Tuple({:?})", t),
-            Value::Dictionary(d) => write!(f, "Dictionary({:?})", d),
-            Value::Set(s) => write!(f, "Set({:?})", s),
-            Value::Function(func) => write!(f, "Function({:?})", func),
-            Value::NativeFunction(name, _) => write!(f, "NativeFunction({})", name),
+            Value::Bool(b) => write!(f, "Bool({b})"),
+            Value::Int(i) => write!(f, "Int({i})"),
+            Value::Float(fl) => write!(f, "Float({fl})"),
+            Value::String(s) => write!(f, "String({s:?})"),
+            Value::Bytes(b) => write!(f, "Bytes({b:?})"),
+            Value::List(l) => write!(f, "List({l:?})"),
+            Value::Tuple(t) => write!(f, "Tuple({t:?})"),
+            Value::Dictionary(d) => write!(f, "Dictionary({d:?})"),
+            Value::Set(s) => write!(f, "Set({s:?})"),
+            Value::Function(func) => write!(f, "Function({func:?})"),
+            Value::NativeFunction(name, _) => write!(f, "NativeFunction({name})"),
             Value::NativeFunctionWithKwargs(name, _) => {
-                write!(f, "NativeFunctionWithKwargs({})", name)
+                write!(f, "NativeFunctionWithKwargs({name})")
             }
             Value::BoundMethod(receiver, name) => {
-                write!(f, "BoundMethod({:?}, {})", receiver, name)
+                write!(f, "BoundMethod({receiver:?}, {name})")
             }
-            Value::Foreign(obj) => write!(f, "Foreign({:?})", obj),
+            Value::Foreign(obj) => write!(f, "Foreign({obj:?})"),
         }
     }
 }
@@ -244,10 +244,10 @@ impl fmt::Display for Value {
         match self {
             Value::None => write!(f, "None"),
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
-            Value::Int(i) => write!(f, "{}", i),
-            Value::Float(fl) => write!(f, "{:?}", fl), // Use Debug for floats to get decent formatting (1.0 etc)
-            Value::String(s) => write!(f, "{}", s),
-            Value::Bytes(b) => write!(f, "{:?}", b),
+            Value::Int(i) => write!(f, "{i}"),
+            Value::Float(fl) => write!(f, "{fl:?}"), // Use Debug for floats to get decent formatting (1.0 etc)
+            Value::String(s) => write!(f, "{s}"),
+            Value::Bytes(b) => write!(f, "{b:?}"),
             Value::List(l) => {
                 write!(f, "[")?;
                 let list = l.borrow();
@@ -255,7 +255,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", v)?;
+                    write!(f, "{v}")?;
                 }
                 write!(f, "]")
             }
@@ -265,7 +265,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", v)?;
+                    write!(f, "{v}")?;
                 }
                 if t.len() == 1 {
                     write!(f, ",")?;
@@ -279,7 +279,7 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}: {}", k, v)?;
+                    write!(f, "{k}: {v}")?;
                 }
                 write!(f, "}}")
             }
@@ -290,14 +290,14 @@ impl fmt::Display for Value {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", v)?;
+                    write!(f, "{v}")?;
                 }
                 write!(f, "}}")
             }
             Value::Function(func) => write!(f, "<function {}>", func.name),
-            Value::NativeFunction(name, _) => write!(f, "<native function {}>", name),
-            Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {}>", name),
-            Value::BoundMethod(_, name) => write!(f, "<bound method {}>", name),
+            Value::NativeFunction(name, _) => write!(f, "<native function {name}>"),
+            Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {name}>"),
+            Value::BoundMethod(_, name) => write!(f, "<bound method {name}>"),
             Value::Foreign(obj) => write!(f, "<{}>", obj.type_name()),
         }
     }

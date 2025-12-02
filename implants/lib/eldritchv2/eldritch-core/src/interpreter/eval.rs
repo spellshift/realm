@@ -271,10 +271,10 @@ fn evaluate_index(
             let dict = d.borrow();
             match dict.get(&key_str) {
                 Some(v) => Ok(v.clone()),
-                None => runtime_error(span, &format!("KeyError: '{}'", key_str)),
+                None => runtime_error(span, &format!("KeyError: '{key_str}'")),
             }
         }
-        _ => runtime_error(obj.span, &format!("Type not subscriptable: {:?}", obj_val)),
+        _ => runtime_error(obj.span, &format!("Type not subscriptable: {obj_val:?}")),
     }
 }
 
@@ -390,7 +390,7 @@ fn evaluate_slice(
             }
             Ok(Value::String(result_chars.into_iter().collect()))
         }
-        _ => runtime_error(obj.span, &format!("Type not sliceable: {:?}", obj_val)),
+        _ => runtime_error(obj.span, &format!("Type not sliceable: {obj_val:?}")),
     }
 }
 
@@ -547,7 +547,7 @@ fn call_function(
                             } else {
                                 return runtime_error(
                                     span,
-                                    &format!("Missing required argument: '{}'", param_name),
+                                    &format!("Missing required argument: '{param_name}'"),
                                 );
                             }
                         }
@@ -607,10 +607,7 @@ fn call_function(
                     keys.sort();
                     return runtime_error(
                         span,
-                        &format!(
-                            "Function '{}' got unexpected keyword arguments: {:?}",
-                            name, keys
-                        ),
+                        &format!("Function '{name}' got unexpected keyword arguments: {keys:?}"),
                     );
                 }
 
@@ -647,10 +644,7 @@ fn call_function(
                     .map_err(|e| EldritchError { message: e, span })
             }
         }
-        _ => runtime_error(
-            span,
-            &format!("Cannot call value of type: {:?}", callee_val),
-        ),
+        _ => runtime_error(span, &format!("Cannot call value of type: {callee_val:?}")),
     }
 }
 
@@ -1126,10 +1120,7 @@ fn string_modulo_format(
                     result.push('%');
                 } else {
                     // For now only support %s and %%
-                    return runtime_error(
-                        span,
-                        &format!("Unsupported format specifier: %{}", next),
-                    );
+                    return runtime_error(span, &format!("Unsupported format specifier: %{next}"));
                 }
             } else {
                 return runtime_error(span, "incomplete format");

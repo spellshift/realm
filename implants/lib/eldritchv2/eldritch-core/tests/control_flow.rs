@@ -124,8 +124,8 @@ for i in range(3):
         let result = interp.interpret("i");
         match result {
             Ok(Value::Int(val)) => assert_eq!(val, 999, "Outer 'i' should be preserved"),
-            Ok(v) => panic!("Expected Int(999), got {:?}", v),
-            Err(e) => panic!("Outer 'i' should exist: {}", e),
+            Ok(v) => panic!("Expected Int(999), got {v:?}"),
+            Err(e) => panic!("Outer 'i' should exist: {e}"),
         }
     }
 }

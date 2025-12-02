@@ -54,7 +54,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                 }
                 s.push('\n');
             }
-            s.push_str(&format!("{}]", indent_str));
+            s.push_str(&format!("{indent_str}]"));
             s
         }
         Value::Dictionary(d) => {
@@ -67,7 +67,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
             let next_indent_str = " ".repeat(next_indent);
 
             for (i, (key, value)) in dict.iter().enumerate() {
-                s.push_str(&format!("{}: {}", next_indent_str, key));
+                s.push_str(&format!("{next_indent_str}: {key}"));
                 s.push_str(": ");
                 s.push_str(&pretty_format(value, next_indent, indent_width));
                 if i < dict.len() - 1 {
@@ -75,7 +75,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                 }
                 s.push('\n');
             }
-            s.push_str(&format!("{}}}", indent_str));
+            s.push_str(&format!("{indent_str}}}"));
             s
         }
         Value::Tuple(t) => {
@@ -97,7 +97,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                 }
                 s.push('\n');
             }
-            s.push_str(&format!("{})", indent_str));
+            s.push_str(&format!("{indent_str})"));
             s
         }
         Value::Set(s_val) => {
@@ -120,9 +120,9 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize) -> Str
                 }
                 s.push('\n');
             }
-            s.push_str(&format!("{}}}", indent_str));
+            s.push_str(&format!("{indent_str}}}"));
             s
         }
-        _ => format!("{}", val),
+        _ => format!("{val}"),
     }
 }

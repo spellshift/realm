@@ -1,12 +1,11 @@
-
-use eldritch_macros::eldritch_library_impl;
-use alloc::string::String;
-use alloc::vec::Vec;
+use super::CryptoLibrary;
 use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes128;
+use alloc::string::String;
+use alloc::vec::Vec;
+use eldritch_macros::eldritch_library_impl;
 use sha1::{Digest, Sha1};
-use sha2::{Sha256};
-use super::CryptoLibrary;
+use sha2::Sha256;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(CryptoLibrary)]
@@ -45,7 +44,7 @@ impl CryptoLibrary for StdCryptoLibrary {
             return Err("Key size must be 16 bytes (characters)".into());
         }
         if !data.len().is_multiple_of(16) {
-             return Err("Data size must be a multiple of 16 bytes".into());
+            return Err("Data size must be a multiple of 16 bytes".into());
         }
 
         let key_bytes: [u8; 16] = key.as_slice().try_into().map_err(|_| "Key size mismatch")?;
@@ -64,24 +63,25 @@ impl CryptoLibrary for StdCryptoLibrary {
 
         // Unpad (PKCS#7) manually to match v1 logic
         if let Some(&last_byte) = output.last() {
-             if last_byte <= 16 && last_byte > 0 {
-                 let len = output.len();
-                 let start_padding = len - (last_byte as usize);
-                 if start_padding < len { // Check bound
-                     let suspected_padding = &output[start_padding..];
-                     let mut valid_padding = true;
-                     for &byte in suspected_padding {
-                         if byte != last_byte {
-                             valid_padding = false;
-                             break;
-                         }
-                     }
+            if last_byte <= 16 && last_byte > 0 {
+                let len = output.len();
+                let start_padding = len - (last_byte as usize);
+                if start_padding < len {
+                    // Check bound
+                    let suspected_padding = &output[start_padding..];
+                    let mut valid_padding = true;
+                    for &byte in suspected_padding {
+                        if byte != last_byte {
+                            valid_padding = false;
+                            break;
+                        }
+                    }
 
-                     if valid_padding {
-                         output.truncate(start_padding);
-                     }
-                 }
-             }
+                    if valid_padding {
+                        output.truncate(start_padding);
+                    }
+                }
+            }
         }
 
         Ok(output)
@@ -110,22 +110,26 @@ mod tests {
 
     #[test]
     fn test_aes_roundtrip() {
-        let lib = StdCryptoLibrary::default();
+        let lib = StdCryptoLibrary;
         let key = b"TESTINGPASSWORD!".to_vec();
         let iv = vec![0u8; 16]; // Ignored
         let data = b"Hello World!".to_vec();
 
-        let encrypted = lib.aes_encrypt(key.clone(), iv.clone(), data.clone()).expect("encrypt failed");
+        let encrypted = lib
+            .aes_encrypt(key.clone(), iv.clone(), data.clone())
+            .expect("encrypt failed");
         assert_ne!(encrypted, data);
         assert_eq!(encrypted.len() % 16, 0);
 
-        let decrypted = lib.aes_decrypt(key.clone(), iv.clone(), encrypted).expect("decrypt failed");
+        let decrypted = lib
+            .aes_decrypt(key.clone(), iv.clone(), encrypted)
+            .expect("decrypt failed");
         assert_eq!(decrypted, data);
     }
 
     #[test]
     fn test_aes_padding_logic() {
-        let lib = StdCryptoLibrary::default();
+        let lib = StdCryptoLibrary;
         let key = b"TESTINGPASSWORD!".to_vec();
         // Exact block size
         let data = b"1234567890123456".to_vec();
@@ -144,7 +148,7 @@ mod tests {
         // "Lorem ipsum..." (truncated for brevity)
         let data = b"Lorem ipsum dolor sit amet".to_vec();
         let key = b"TESTINGPASSWORD!".to_vec();
-        let lib = StdCryptoLibrary::default();
+        let lib = StdCryptoLibrary;
 
         let encrypted = lib.aes_encrypt(key.clone(), vec![], data.clone()).unwrap();
         let decrypted = lib.aes_decrypt(key.clone(), vec![], encrypted).unwrap();
@@ -154,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_md5() {
-        let lib = StdCryptoLibrary::default();
+        let lib = StdCryptoLibrary;
         let data = b"hello world".to_vec();
         let hash = lib.md5(data).unwrap();
         assert_eq!(hash, "5eb63bbbe01eeed093cb22bb8f5acdc3");
@@ -162,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_sha1() {
-        let lib = StdCryptoLibrary::default();
+        let lib = StdCryptoLibrary;
         let data = b"hello world".to_vec();
         let hash = lib.sha1(data).unwrap();
         assert_eq!(hash, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
@@ -170,9 +174,12 @@ mod tests {
 
     #[test]
     fn test_sha256() {
-        let lib = StdCryptoLibrary::default();
+        let lib = StdCryptoLibrary;
         let data = b"hello world".to_vec();
         let hash = lib.sha256(data).unwrap();
-        assert_eq!(hash, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9");
+        assert_eq!(
+            hash,
+            "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+        );
     }
 }
