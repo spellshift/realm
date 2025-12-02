@@ -82,4 +82,21 @@ impl Parser {
         }
         Ok(statements)
     }
+
+    pub(crate) fn validate_assignment_target(&self, expr: &super::ast::Expr) -> Result<(), String> {
+        use super::ast::ExprKind;
+        match &expr.kind {
+            ExprKind::Identifier(_) => Ok(()),
+            ExprKind::GetAttr(obj, _) => self.validate_assignment_target(obj),
+            ExprKind::Index(obj, _) => self.validate_assignment_target(obj),
+            ExprKind::Slice(obj, _, _, _) => self.validate_assignment_target(obj),
+            ExprKind::Tuple(elements) | ExprKind::List(elements) => {
+                for elem in elements {
+                    self.validate_assignment_target(elem)?;
+                }
+                Ok(())
+            }
+            _ => Err("Invalid assignment target".to_string()),
+        }
+    }
 }

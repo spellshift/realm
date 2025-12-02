@@ -112,6 +112,23 @@ impl Parser {
                         let default_val = self.expression()?;
                         params.push(Param::WithDefault(param_name, default_val));
                     } else {
+                        // Check if a normal parameter follows a default parameter
+                        let has_default = params
+                            .iter()
+                            .any(|p| matches!(p, Param::WithDefault(_, _)));
+                        let has_star = params
+                            .iter()
+                            .any(|p| matches!(p, Param::Star(_)) || matches!(p, Param::StarStar(_)));
+
+                        // Only an error if we haven't seen *args yet.
+                        // Python: def f(a=1, b): Error.
+                        // Python: def f(a=1, *args, b): Error? No, b is kw-only.
+                        // But here, we are PARSING.
+                        // If we see `b` (Normal) and we haven't seen `*` or `**`, and we HAVE seen a default...
+                        if has_default && !has_star {
+                            return Err("Non-default argument follows default argument.".to_string());
+                        }
+
                         params.push(Param::Normal(param_name));
                     }
                 }

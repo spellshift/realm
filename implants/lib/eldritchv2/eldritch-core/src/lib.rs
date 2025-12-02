@@ -20,3 +20,9 @@ pub use token::{Span, TokenKind};
 // Public API exports
 pub use global_libs::register_lib;
 pub mod conversion;
+
+// Expose Parser for tests (restricted visibility not strictly enforced by test crate unless we re-export it)
+// Tests integration via `tests/` directory sees `eldritch_core` as an external crate.
+// So we must `pub use` it here for tests to see it.
+// The `Lexer` and `TokenKind` are already re-exported.
+pub use parser::Parser;
