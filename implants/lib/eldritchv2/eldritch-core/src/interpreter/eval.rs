@@ -721,7 +721,7 @@ fn builtin_map(
     let mut results = Vec::new();
 
     for item in items {
-        let res = call_value(interp, &func_val, std::slice::from_ref(&item), span)?;
+        let res = call_value(interp, &func_val, core::slice::from_ref(&item), span)?;
         results.push(res);
     }
 
@@ -745,7 +745,7 @@ fn builtin_filter(
         let keep = if let Value::None = func_val {
             is_truthy(&item)
         } else {
-            let res = call_value(interp, &func_val, std::slice::from_ref(&item), span)?;
+            let res = call_value(interp, &func_val, core::slice::from_ref(&item), span)?;
             is_truthy(&res)
         };
         if keep {
