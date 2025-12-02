@@ -38,20 +38,20 @@ stdlib = [
 ]
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
-eldritch-macros = { path = "../../eldritch-macros" }
-eldritch-libagent = { path = "../eldritch-libagent" }
-eldritch-libassets = { path = "../eldritch-libassets" }
-eldritch-libcrypto = { path = "../eldritch-libcrypto" }
-eldritch-libfile = { path = "../eldritch-libfile" }
-eldritch-libhttp = { path = "../eldritch-libhttp" }
-eldritch-libpivot = { path = "../eldritch-libpivot" }
-eldritch-libprocess = { path = "../eldritch-libprocess" }
-eldritch-librandom = { path = "../eldritch-librandom" }
-eldritch-libregex = { path = "../eldritch-libregex" }
-eldritch-libreport = { path = "../eldritch-libreport" }
-eldritch-libsys = { path = "../eldritch-libsys" }
-eldritch-libtime = { path = "../eldritch-libtime" }
+eldritch-macros = { path = "../../eldritch-macros", default-features = false }
+eldritch-core = { path = "../../eldritch-core", default-features = false }
+eldritch-libagent = { path = "../eldritch-libagent", default-features = false }
+eldritch-libassets = { path = "../eldritch-libassets", default-features = false }
+eldritch-libcrypto = { path = "../eldritch-libcrypto", default-features = false }
+eldritch-libfile = { path = "../eldritch-libfile", default-features = false }
+eldritch-libhttp = { path = "../eldritch-libhttp", default-features = false }
+eldritch-libpivot = { path = "../eldritch-libpivot", default-features = false }
+eldritch-libprocess = { path = "../eldritch-libprocess", default-features = false }
+eldritch-librandom = { path = "../eldritch-librandom", default-features = false }
+eldritch-libregex = { path = "../eldritch-libregex", default-features = false }
+eldritch-libreport = { path = "../eldritch-libreport", default-features = false }
+eldritch-libsys = { path = "../eldritch-libsys", default-features = false }
+eldritch-libtime = { path = "../eldritch-libtime", default-features = false }
 
 [dev-dependencies]
 httptest = "0.16"
