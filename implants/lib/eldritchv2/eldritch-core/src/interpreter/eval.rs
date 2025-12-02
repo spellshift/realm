@@ -1151,6 +1151,24 @@ fn apply_binary_op(
             // String formatting
             string_modulo_format(interp, &a, &b_val, span)
         }
+
+        // List Concatenation
+        (Value::List(a), TokenKind::Plus, Value::List(b)) => {
+            let mut new_list = a.borrow().clone();
+            new_list.extend(b.borrow().iter().cloned());
+            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+        }
+
+        // Set Union
+        (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let mut new_set = a.borrow().clone();
+            for item in b.borrow().iter() {
+                new_set.insert(item.clone());
+            }
+            Ok(Value::Set(Rc::new(RefCell::new(new_set))))
+        }
+
         _ => runtime_error(span, "Unsupported binary op"),
     }
 }
