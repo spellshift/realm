@@ -8,7 +8,7 @@ use super::error::{runtime_error, EldritchError};
 use super::methods::call_bound_method;
 use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
 use alloc::boxed::Box;
-use alloc::collections::BTreeMap;
+use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -32,6 +32,7 @@ pub fn evaluate(interp: &mut Interpreter, expr: &Expr) -> Result<Value, Eldritch
         ExprKind::List(elements) => evaluate_list_literal(interp, elements),
         ExprKind::Tuple(elements) => evaluate_tuple_literal(interp, elements),
         ExprKind::Dictionary(entries) => evaluate_dict_literal(interp, entries),
+        ExprKind::Set(elements) => evaluate_set_literal(interp, elements),
         ExprKind::Index(obj, index) => evaluate_index(interp, obj, index, span),
         ExprKind::GetAttr(obj, name) => evaluate_getattr(interp, obj, name.to_string()),
         ExprKind::Slice(obj, start, stop, step) => {
@@ -51,6 +52,12 @@ pub fn evaluate(interp: &mut Interpreter, expr: &Expr) -> Result<Value, Eldritch
             iterable,
             cond,
         } => evaluate_dict_comp(interp, key, value, var, iterable, cond),
+        ExprKind::SetComp {
+            body,
+            var,
+            iterable,
+            cond,
+        } => evaluate_set_comp(interp, body, var, iterable, cond),
         ExprKind::Lambda { params, body } => evaluate_lambda(interp, params, body),
         ExprKind::If {
             cond,
@@ -106,16 +113,8 @@ fn evaluate_list_comp(
     cond: &Option<Box<Expr>>,
 ) -> Result<Value, EldritchError> {
     let iterable_val = evaluate(interp, iterable)?;
-    let items = match iterable_val {
-        Value::List(l) => l.borrow().clone(),
-        Value::Tuple(t) => t.clone(),
-        _ => {
-            return runtime_error(
-                iterable.span,
-                &format!("Type '{:?}' is not iterable", get_type_name(&iterable_val)),
-            )
-        }
-    };
+    let items = to_iterable(interp, &iterable_val, iterable.span)?;
+
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
@@ -220,6 +219,59 @@ fn evaluate_dict_literal(
         map.insert(key_str, value_val);
     }
     Ok(Value::Dictionary(Rc::new(RefCell::new(map))))
+}
+
+fn evaluate_set_comp(
+    interp: &mut Interpreter,
+    body: &Expr,
+    var: &str,
+    iterable: &Expr,
+    cond: &Option<Box<Expr>>,
+) -> Result<Value, EldritchError> {
+    let iterable_val = evaluate(interp, iterable)?;
+    let items = match iterable_val {
+        Value::List(l) => l.borrow().clone(),
+        Value::Tuple(t) => t.clone(),
+        _ => {
+            return runtime_error(
+                iterable.span,
+                &format!("Type '{:?}' is not iterable", get_type_name(&iterable_val)),
+            )
+        }
+    };
+    let comp_env = Rc::new(RefCell::new(Environment {
+        parent: Some(Rc::clone(&interp.env)),
+        values: BTreeMap::new(),
+    }));
+    let original_env = Rc::clone(&interp.env);
+    interp.env = comp_env;
+    #[allow(clippy::mutable_key_type)]
+    let mut results = BTreeSet::new();
+    for item in items {
+        interp.define_variable(var, item);
+        let include = match cond {
+            Some(c) => is_truthy(&evaluate(interp, c)?),
+            None => true,
+        };
+        if include {
+            results.insert(evaluate(interp, body)?);
+        }
+    }
+    interp.env = original_env;
+    Ok(Value::Set(Rc::new(RefCell::new(results))))
+}
+
+fn evaluate_set_literal(
+    interp: &mut Interpreter,
+    elements: &[Expr],
+) -> Result<Value, EldritchError> {
+    #[allow(clippy::mutable_key_type)]
+    let mut set = BTreeSet::new();
+    for expr in elements {
+        let val = evaluate(interp, expr)?;
+        set.insert(val);
+    }
+    Ok(Value::Set(Rc::new(RefCell::new(set))))
 }
 
 fn evaluate_index(
@@ -939,6 +991,13 @@ fn apply_binary_op(
 
         // IN Operator
         (item, TokenKind::In, collection) => evaluate_in(interp, &item, &collection, span),
+        (item, TokenKind::NotIn, collection) => {
+            let res = evaluate_in(interp, &item, &collection, span)?;
+            match res {
+                Value::Bool(b) => Ok(Value::Bool(!b)),
+                _ => unreachable!("evaluate_in always returns boolean or error"),
+            }
+        }
 
         // Arithmetic
         (Value::Int(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
