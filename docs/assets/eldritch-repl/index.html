@@ -66,13 +66,16 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 150px; /* Adjust size as needed, 150px seems reasonable for a 250px source */
+            width: 150px;
+            /* Adjust size as needed, 150px seems reasonable for a 250px source */
             opacity: 0.8;
-            pointer-events: none; /* Let clicks pass through if it overlaps something */
+            pointer-events: none;
+            /* Let clicks pass through if it overlaps something */
             z-index: 1000;
         }
 
-        @media (max-width: 768px), (max-height: 600px) {
+        @media (max-width: 768px),
+        (max-height: 600px) {
             #realm-logo {
                 display: none;
             }
@@ -97,7 +100,8 @@
             color: #d4d4d4;
         }
 
-        .suggestion-item:hover, .suggestion-item.selected {
+        .suggestion-item:hover,
+        .suggestion-item.selected {
             background-color: #04395e;
             color: #ffffff;
         }
@@ -127,10 +131,11 @@
     <div id="suggestions"></div>
     <textarea id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 
-    <img id="realm-logo" src="https://raw.githubusercontent.com/spellshift/realm/main/docs/assets/img/realm_250px.png" alt="Realm Logo">
+    <img id="realm-logo" src="https://raw.githubusercontent.com/spellshift/realm/main/docs/assets/img/realm_250px.png"
+        alt="Realm Logo">
 
     <script type="module">
-        import init, { WasmRepl } from './pkg/eldritchv2.js';
+        import init, { WasmRepl } from './pkg/eldritch_repl.js';
 
         let repl;
         const termEl = document.getElementById('terminal');
@@ -249,14 +254,14 @@
                 // Let's try to find the cursor span we just injected
                 const cursorSpan = currentLineEl.querySelector('.cursor');
                 if (cursorSpan) {
-                     const rect = cursorSpan.getBoundingClientRect();
-                     suggestionsEl.style.top = (window.scrollY + rect.bottom) + 'px';
-                     suggestionsEl.style.left = rect.left + 'px';
+                    const rect = cursorSpan.getBoundingClientRect();
+                    suggestionsEl.style.top = (window.scrollY + rect.bottom) + 'px';
+                    suggestionsEl.style.left = rect.left + 'px';
                 } else {
-                     // Fallback
-                     const rect = currentLineEl.getBoundingClientRect();
-                     suggestionsEl.style.top = (window.scrollY + rect.bottom) + 'px';
-                     suggestionsEl.style.left = (rect.left + 40) + 'px'; // approximate prompt width
+                    // Fallback
+                    const rect = currentLineEl.getBoundingClientRect();
+                    suggestionsEl.style.top = (window.scrollY + rect.bottom) + 'px';
+                    suggestionsEl.style.left = (rect.left + 40) + 'px'; // approximate prompt width
                 }
 
             } else {
