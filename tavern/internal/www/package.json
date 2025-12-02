@@ -68,7 +68,6 @@
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
-    "@playwright/test": "^1.57.0",
     "@types/react-virtualized": "^9.21.21",
     "tailwindcss": "^3.2.7"
   }
