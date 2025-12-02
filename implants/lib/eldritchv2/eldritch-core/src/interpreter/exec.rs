@@ -1,7 +1,7 @@
 use super::super::ast::{
     Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
-use super::super::token::{Span, TokenKind};
+use super::super::token::TokenKind;
 use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
 use super::eval::{apply_binary_op_pub, evaluate};

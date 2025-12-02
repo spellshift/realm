@@ -1013,24 +1013,8 @@ fn apply_binary_op(
             if b == 0 {
                 return runtime_error(span, "divide by zero");
             }
-            // Standard division (for integers, acts like floor in Rust, but behavior is technically floor div)
-            // Python's / operator returns float for integers.
-            // But EldritchV2 (per memory) might have different rules.
-            // If I look at the previous code: `Ok(Value::Int(a / b))`
-            // This implies integer division.
-            // If I introduce float, should `/` become float division?
-            // Python 3: / is float, // is floor.
-            // Python 2: / is int if operands are int.
-            // I will implement Python 3 behavior if possible, or stick to current behavior?
-            // Current behavior: `Ok(Value::Int(a / b))` implies integer division.
-            // If I want to support floats, I should probably promote to float if one operand is float.
-            // But for Int/Int, if I change to float, I break backward compatibility if users rely on Int return.
-            // The prompt doesn't specify changing `/` for Ints.
-            // However, `float` type is new.
-            // I will keep Int/Int as Int division for now to minimize breakage, unless I see reason otherwise.
-            // Wait, Python 3 `from __future__ import division` makes `/` float.
-            // I'll stick to: Int/Int -> Int (for now), Float involved -> Float.
-            Ok(Value::Int(a / b))
+            // User requirement: / for integers returns float
+            Ok(Value::Float((a as f64) / (b as f64)))
         }
 
         // Float Arithmetic
@@ -1146,10 +1130,66 @@ fn apply_binary_op(
         (Value::Int(a), TokenKind::LShift, Value::Int(b)) => Ok(Value::Int(a << b)),
         (Value::Int(a), TokenKind::RShift, Value::Int(b)) => Ok(Value::Int(a >> b)),
 
+        // Set Bitwise operations
+        (Value::Set(a), TokenKind::BitAnd, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let intersection: BTreeSet<Value> =
+                a.borrow().intersection(&b.borrow()).cloned().collect();
+            Ok(Value::Set(Rc::new(RefCell::new(intersection))))
+        }
+        (Value::Set(a), TokenKind::BitOr, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let union: BTreeSet<Value> = a.borrow().union(&b.borrow()).cloned().collect();
+            Ok(Value::Set(Rc::new(RefCell::new(union))))
+        }
+        (Value::Set(a), TokenKind::BitXor, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let symmetric_difference: BTreeSet<Value> = a
+                .borrow()
+                .symmetric_difference(&b.borrow())
+                .cloned()
+                .collect();
+            Ok(Value::Set(Rc::new(RefCell::new(symmetric_difference))))
+        }
+        (Value::Set(a), TokenKind::Minus, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let difference: BTreeSet<Value> = a.borrow().difference(&b.borrow()).cloned().collect();
+            Ok(Value::Set(Rc::new(RefCell::new(difference))))
+        }
+
         (Value::String(a), TokenKind::Plus, Value::String(b)) => Ok(Value::String(a + &b)),
         (Value::String(a), TokenKind::Percent, b_val) => {
             // String formatting
             string_modulo_format(interp, &a, &b_val, span)
+        }
+
+        (Value::Bytes(a), TokenKind::Plus, Value::Bytes(b)) => {
+            let mut new_bytes = a.clone();
+            new_bytes.extend(b.iter());
+            Ok(Value::Bytes(new_bytes))
+        }
+
+        (Value::Bytes(a), TokenKind::Star, Value::Int(n)) => {
+            if n <= 0 {
+                Ok(Value::Bytes(Vec::new()))
+            } else {
+                let mut new_bytes = Vec::with_capacity(a.len() * (n as usize));
+                for _ in 0..n {
+                    new_bytes.extend(a.iter());
+                }
+                Ok(Value::Bytes(new_bytes))
+            }
+        }
+        (Value::Int(n), TokenKind::Star, Value::Bytes(a)) => {
+            if n <= 0 {
+                Ok(Value::Bytes(Vec::new()))
+            } else {
+                let mut new_bytes = Vec::with_capacity(a.len() * (n as usize));
+                for _ in 0..n {
+                    new_bytes.extend(a.iter());
+                }
+                Ok(Value::Bytes(new_bytes))
+            }
         }
 
         // List concatenation (new list)
@@ -1233,7 +1273,8 @@ fn apply_binary_op(
         (Value::Tuple(a), op, Value::Tuple(b)) => compare_sequences(&a, &b, op, span),
 
         // Dict merge (new dict)
-        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b)) => {
+        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b))
+        | (Value::Dictionary(a), TokenKind::BitOr, Value::Dictionary(b)) => {
             let mut new_dict = a.borrow().clone();
             for (k, v) in b.borrow().iter() {
                 new_dict.insert(k.clone(), v.clone());
@@ -1241,7 +1282,7 @@ fn apply_binary_op(
             Ok(Value::Dictionary(Rc::new(RefCell::new(new_dict))))
         }
 
-        // Set union (new set)
+        // Set union (new set) - Plus is deprecated for sets in favor of |
         (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
             let mut new_set = a.borrow().clone();
@@ -1281,22 +1322,244 @@ fn string_modulo_format(
                         result.push_str(&vals[val_idx].to_string());
                         val_idx += 1;
                     }
-                    'd' | 'i' => {
+                    'd' | 'i' | 'u' => {
                         chars.next();
                         if val_idx >= vals.len() {
                             return runtime_error(span, "not enough arguments for format string");
                         }
-                        match &vals[val_idx] {
-                            Value::Int(i) => result.push_str(&i.to_string()),
-                            Value::Float(f) => result.push_str(&(*f as i64).to_string()),
-                            Value::Bool(b) => result.push_str(if *b { "1" } else { "0" }),
+                        let v = &vals[val_idx];
+                        let i_val = match v {
+                            Value::Int(i) => *i,
+                            Value::Float(f) => *f as i64,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1
+                                } else {
+                                    0
+                                }
+                            }
                             _ => {
                                 return runtime_error(
                                     span,
-                                    "%d format: a number is required, not something else",
+                                    &format!(
+                                        "%{} format: a number is required, not {:?}",
+                                        next,
+                                        get_type_name(v)
+                                    ),
                                 )
                             }
+                        };
+                        result.push_str(&format!("{}", i_val));
+                        val_idx += 1;
+                    }
+                    'o' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
                         }
+                        let v = &vals[val_idx];
+                        let i_val = match v {
+                            Value::Int(i) => *i,
+                            Value::Float(f) => *f as i64,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1
+                                } else {
+                                    0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%o format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        result.push_str(&format!("{:o}", i_val));
+                        val_idx += 1;
+                    }
+                    'x' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        let v = &vals[val_idx];
+                        let i_val = match v {
+                            Value::Int(i) => *i,
+                            Value::Float(f) => *f as i64,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1
+                                } else {
+                                    0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%x format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        result.push_str(&format!("{:x}", i_val));
+                        val_idx += 1;
+                    }
+                    'X' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        let v = &vals[val_idx];
+                        let i_val = match v {
+                            Value::Int(i) => *i,
+                            Value::Float(f) => *f as i64,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1
+                                } else {
+                                    0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%X format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        result.push_str(&format!("{:X}", i_val));
+                        val_idx += 1;
+                    }
+                    'e' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        let v = &vals[val_idx];
+                        let f_val = match v {
+                            Value::Int(i) => *i as f64,
+                            Value::Float(f) => *f,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1.0
+                                } else {
+                                    0.0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%e format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        result.push_str(&format!("{:e}", f_val));
+                        val_idx += 1;
+                    }
+                    'E' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        let v = &vals[val_idx];
+                        let f_val = match v {
+                            Value::Int(i) => *i as f64,
+                            Value::Float(f) => *f,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1.0
+                                } else {
+                                    0.0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%E format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        result.push_str(&format!("{:E}", f_val));
+                        val_idx += 1;
+                    }
+                    'f' | 'F' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        let v = &vals[val_idx];
+                        let f_val = match v {
+                            Value::Int(i) => *i as f64,
+                            Value::Float(f) => *f,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1.0
+                                } else {
+                                    0.0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%f format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        // Python defaults to 6 decimal places for %f
+                        result.push_str(&format!("{:.6}", f_val));
+                        val_idx += 1;
+                    }
+                    'g' | 'G' => {
+                        // Rust doesn't have direct %g support in std::fmt (general format)
+                        // It uses Debug or Display which are usually compact.
+                        // However, %g implies trying to keep it short.
+                        // {:?} (Debug) for f64 often does a good job.
+                        // Or we can just use Display {} which is usually what we want.
+                        // Python's %g logic is complex. We will approximate with {:?} to ensure floats look like floats
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        let v = &vals[val_idx];
+                        let f_val = match v {
+                            Value::Int(i) => *i as f64,
+                            Value::Float(f) => *f,
+                            Value::Bool(b) => {
+                                if *b {
+                                    1.0
+                                } else {
+                                    0.0
+                                }
+                            }
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    &format!(
+                                        "%g format: a number is required, not {:?}",
+                                        get_type_name(v)
+                                    ),
+                                )
+                            }
+                        };
+                        result.push_str(&format!("{:?}", f_val));
                         val_idx += 1;
                     }
                     'r' => {
@@ -1304,11 +1567,6 @@ fn string_modulo_format(
                         if val_idx >= vals.len() {
                             return runtime_error(span, "not enough arguments for format string");
                         }
-                        // Use repr() equivalent?
-                        // Currently Value::to_string gives a representation that is usually correct for printing.
-                        // But for strings, to_string() gives the content, not the quoted repr.
-                        // We might need a separate repr helper.
-                        // For now, let's just quote strings manually if needed, or rely on debug fmt if available.
                         match &vals[val_idx] {
                             Value::String(s) => result.push_str(&format!("\"{}\"", s)), // Simple repr
                             v => result.push_str(&v.to_string()),
@@ -1320,7 +1578,6 @@ fn string_modulo_format(
                         result.push('%');
                     }
                     _ => {
-                        // For now only support %s, %d, %r and %%
                         return runtime_error(span, &format!("Unsupported format specifier: %{next}"));
                     }
                 }
