@@ -6,6 +6,7 @@ use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 
@@ -13,6 +14,7 @@ use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs}
 use super::error::{runtime_error, EldritchError};
 use super::eval;
 use super::exec;
+use super::printer::{Printer, StdoutPrinter};
 use crate::global_libs::get_global_libraries;
 
 #[derive(Clone, PartialEq)]
@@ -37,9 +39,14 @@ impl Default for Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
+        Self::new_with_printer(Arc::new(StdoutPrinter))
+    }
+
+    pub fn new_with_printer(printer: Arc<dyn Printer + Send + Sync>) -> Self {
         let env = Rc::new(RefCell::new(Environment {
             parent: None,
             values: BTreeMap::new(),
+            printer,
         }));
 
         let mut interpreter = Interpreter {

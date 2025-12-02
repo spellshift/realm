@@ -4,7 +4,7 @@ use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use core::cell::RefCell;
 
-pub fn builtin_pprint(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_pprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
     let indent_width = if args.len() > 1 {
         match args[1] {
             Value::Int(i) => i.max(0) as usize,
@@ -19,13 +19,7 @@ pub fn builtin_pprint(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result
     }
 
     let output = pretty_format(&args[0], 0, indent_width);
-
-    #[cfg(feature = "std")]
-    {
-        println!("{}", output);
-    }
-    #[cfg(not(feature = "std"))]
-    let _ = output;
+    env.borrow().printer.print(&output);
 
     Ok(Value::None)
 }

@@ -1,3 +1,4 @@
+use super::interpreter::Printer;
 use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -13,6 +14,7 @@ use core::fmt;
 pub struct Environment {
     pub parent: Option<Rc<RefCell<Environment>>>,
     pub values: BTreeMap<String, Value>,
+    pub printer: Arc<dyn Printer + Send + Sync>,
 }
 
 #[derive(Debug, Clone)]
