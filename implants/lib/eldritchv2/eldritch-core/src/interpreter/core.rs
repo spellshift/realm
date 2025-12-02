@@ -200,11 +200,18 @@ impl Interpreter {
         // If the code has syntax errors (which is likely during typing), the lexer might fail.
         // We'll try to extract the relevant part near the cursor.
         // Simple approach: look at the line up to cursor.
-        let line_up_to_cursor = if cursor <= code.len() {
-            &code[..cursor]
+        let safe_cursor = if cursor <= code.len() {
+            // Ensure cursor is at a char boundary. If not, floor it.
+            let mut c = cursor;
+            while c > 0 && !code.is_char_boundary(c) {
+                c -= 1;
+            }
+            c
         } else {
-            code
+            code.len()
         };
+
+        let line_up_to_cursor = &code[..safe_cursor];
 
         // If empty, return nothing
         if line_up_to_cursor.trim().is_empty() {
