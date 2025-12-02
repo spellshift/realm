@@ -10,6 +10,7 @@ mod builtins_fn;
 mod bytes;
 mod dir;
 mod enumerate;
+mod eprint;
 mod fail;
 mod int;
 mod len;
@@ -40,6 +41,7 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
     vec![
         // Existing
         ("print", print::builtin_print as BuiltinFn),
+        ("eprint", eprint::builtin_eprint as BuiltinFn),
         ("pprint", pprint::builtin_pprint as BuiltinFn),
         ("len", len::builtin_len as BuiltinFn),
         ("range", range::builtin_range as BuiltinFn),
