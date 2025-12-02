@@ -1,8 +1,8 @@
 use super::super::ast::{BuiltinFn, Environment, Value};
 use super::super::lexer::Lexer;
 use super::super::parser::Parser;
-use super::super::token::Span;
-use alloc::collections::BTreeMap;
+use super::super::token::{Span, TokenKind};
+use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -14,6 +14,7 @@ use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs}
 use super::error::{runtime_error, EldritchError};
 use super::eval;
 use super::exec;
+use super::methods::get_native_methods;
 use super::printer::{Printer, StdoutPrinter};
 use crate::global_libs::get_global_libraries;
 
@@ -189,5 +190,177 @@ impl Interpreter {
             current_env = env_ref.parent.clone();
         }
         runtime_error(span, &format!("Undefined variable: '{name}'"))
+    }
+
+    pub fn complete(&self, code: &str, cursor: usize) -> Vec<String> {
+        let mut candidates = BTreeSet::new();
+        let mut prefix = String::new();
+
+        // 1. Tokenize the input string up to cursor to understand context
+        // If the code has syntax errors (which is likely during typing), the lexer might fail.
+        // We'll try to extract the relevant part near the cursor.
+        // Simple approach: look at the line up to cursor.
+        let line_up_to_cursor = if cursor <= code.len() {
+            &code[..cursor]
+        } else {
+            code
+        };
+
+        // If empty, return nothing
+        if line_up_to_cursor.trim().is_empty() {
+            return Vec::new();
+        }
+
+        // Try to find the token we are on.
+        // We can scan the whole string, but we really care about the last token(s).
+        let mut lexer = Lexer::new(line_up_to_cursor.to_string());
+        let tokens = match lexer.scan_tokens() {
+            Ok(t) => t,
+            // If scanning fails (e.g. open string), we might still want to try?
+            // For now, if lexer fails, we fallback to simple word splitting or empty.
+            Err(_) => {
+                // Fallback: Check if we are typing a simple identifier at end
+                let last_word = line_up_to_cursor
+                    .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
+                    .last()
+                    .unwrap_or("");
+                if !last_word.is_empty() {
+                    prefix = last_word.to_string();
+                } else {
+                    return Vec::new();
+                }
+                Vec::new() // Actually let's just use the prefix matching below if tokens fail
+            }
+        };
+
+        // Determine context from tokens
+        let mut target_val: Option<Value> = None;
+
+        if !tokens.is_empty() {
+            let last_token = &tokens[tokens.len() - 1];
+
+            // Case 1: Cursor is after a Dot (object property access)
+            // e.g. "foo."
+            if last_token.kind == TokenKind::Dot {
+                // Look at the token before dot
+                if tokens.len() >= 2 {
+                    let obj_token = &tokens[tokens.len() - 2];
+                    match &obj_token.kind {
+                        TokenKind::Identifier(name) => {
+                            // Resolve variable
+                            if let Ok(val) = self.lookup_variable(
+                                name,
+                                Span::new(0, 0, 0), // Dummy span
+                            ) {
+                                target_val = Some(val);
+                            }
+                        }
+                        TokenKind::String(s) => {
+                            target_val = Some(Value::String(s.clone()));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            // Case 2: Cursor is at an Identifier (completing current word)
+            // e.g. "fo" or "foo.b"
+            else if let TokenKind::Identifier(name) = &last_token.kind {
+                prefix = name.clone();
+
+                // Check if the previous token was a Dot
+                if tokens.len() >= 2 && tokens[tokens.len() - 2].kind == TokenKind::Dot {
+                    // Object property completion
+                    if tokens.len() >= 3 {
+                        let obj_token = &tokens[tokens.len() - 3];
+                        match &obj_token.kind {
+                            TokenKind::Identifier(obj_name) => {
+                                if let Ok(val) = self.lookup_variable(
+                                    obj_name,
+                                    Span::new(0, 0, 0),
+                                ) {
+                                    target_val = Some(val);
+                                }
+                            }
+                            TokenKind::String(s) => {
+                                target_val = Some(Value::String(s.clone()));
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        } else if !prefix.is_empty() {
+            // Lexer failed but we extracted a prefix manually
+        }
+
+        if let Some(val) = target_val {
+            // Suggest methods/properties of val
+            match &val {
+                Value::Foreign(obj) => {
+                    for m in obj.method_names() {
+                        candidates.insert(m);
+                    }
+                }
+                Value::Dictionary(_) => {
+                    // Keys as suggestions?
+                    // Usually dict keys are accessed via [], not dot.
+                    // But maybe we want to suggest methods like .keys(), .items()?
+                    // Python dicts have methods.
+                    for m in get_native_methods(&val) {
+                        candidates.insert(m);
+                    }
+                    // If the user wants keys, they'd type d["..."]
+                }
+                _ => {
+                    for m in get_native_methods(&val) {
+                        candidates.insert(m);
+                    }
+                }
+            }
+        } else {
+            // Global completion (variables, builtins, keywords)
+            // Only do this if we are NOT in a property access context (target_val is None)
+            // And also check we didn't fail to find target_val when we should have (e.g. undefined var).
+            // If tokens said "obj.prop", and we couldn't resolve obj, target_val is None.
+            // In that case, we shouldn't suggest globals.
+            let mut is_dot_access = false;
+            if !tokens.is_empty() {
+                let last = &tokens[tokens.len() - 1];
+                if last.kind == TokenKind::Dot {
+                    is_dot_access = true;
+                } else if let TokenKind::Identifier(_) = last.kind {
+                    if tokens.len() >= 2 && tokens[tokens.len() - 2].kind == TokenKind::Dot {
+                        is_dot_access = true;
+                    }
+                }
+            }
+
+            if !is_dot_access {
+                // 1. Keywords
+                let keywords = vec![
+                    "def", "if", "elif", "else", "return", "for", "in", "True", "False", "None",
+                    "and", "or", "not", "break", "continue", "pass", "lambda",
+                ];
+                for kw in keywords {
+                    candidates.insert(kw.to_string());
+                }
+
+                // 2. Builtins & Variables (walk up the environment chain)
+                let mut current_env = Some(Rc::clone(&self.env));
+                while let Some(env_rc) = current_env {
+                    let env_ref = env_rc.borrow();
+                    for key in env_ref.values.keys() {
+                        candidates.insert(key.clone());
+                    }
+                    current_env = env_ref.parent.clone();
+                }
+            }
+        }
+
+        // Filter by prefix
+        candidates
+            .into_iter()
+            .filter(|c| c.starts_with(&prefix) && *c != prefix)
+            .collect()
     }
 }

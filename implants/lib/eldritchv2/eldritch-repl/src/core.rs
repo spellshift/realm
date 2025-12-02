@@ -30,6 +30,7 @@ pub enum ReplAction {
     None,
     Render,      // State changed, need redraw
     ClearScreen, // Clear screen request
+    Complete,    // Request completion
     Submit {
         code: String,
         last_line: String,
@@ -47,6 +48,7 @@ pub struct RenderState {
     pub prompt: String,
     pub buffer: String,
     pub cursor: usize,
+    pub suggestions: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
@@ -73,6 +75,7 @@ pub struct Repl {
     // State
     is_multiline: bool,
     search_state: Option<SearchState>,
+    suggestions: Option<Vec<String>>,
 }
 
 impl Default for Repl {
@@ -92,6 +95,7 @@ impl Repl {
             saved_buffer: String::new(),
             is_multiline: false,
             search_state: None,
+            suggestions: None,
         }
     }
 
@@ -101,6 +105,18 @@ impl Repl {
 
     pub fn get_history(&self) -> &Vec<String> {
         &self.history
+    }
+
+    pub fn set_suggestions(&mut self, suggestions: Vec<String>) {
+        if suggestions.is_empty() {
+            self.suggestions = None;
+        } else {
+            self.suggestions = Some(suggestions);
+        }
+    }
+
+    pub fn clear_suggestions(&mut self) {
+        self.suggestions = None;
     }
 
     fn current_prompt(&self) -> String {
@@ -119,6 +135,7 @@ impl Repl {
             prompt: self.current_prompt(),
             buffer: self.buffer.clone(),
             cursor: self.cursor,
+            suggestions: self.suggestions.clone(),
         }
     }
 
@@ -127,9 +144,15 @@ impl Repl {
             return self.handle_search_input(input);
         }
 
+        // Clear suggestions on any input except Tab (if re-triggering?) or maybe navigation?
+        // Usually any modification clears suggestions. Navigation might keep them but for simplicity let's clear.
+        if !matches!(input, Input::Tab) {
+            self.clear_suggestions();
+        }
+
         match input {
             Input::Char(c) => self.insert_char(c),
-            Input::Tab => self.insert_str("    "),
+            Input::Tab => self.handle_tab(),
             Input::Enter => self.handle_enter(false),
             Input::ForceEnter => self.handle_enter(true),
             Input::Backspace => self.backspace(),
@@ -289,6 +312,21 @@ impl Repl {
         self.cursor = self.buffer.len(); // Move cursor to end
         self.search_state = None;
         ReplAction::Render
+    }
+
+    fn handle_tab(&mut self) -> ReplAction {
+        // Trigger completion if:
+        // 1. Cursor is not at start
+        // 2. Character before cursor is not whitespace or opening delimiter (maybe?)
+        // Actually, user wants: "only trigger if there is text preceeding the cursor and it's not a closing brace }, ), or comma ,"
+        if self.cursor > 0 {
+            let prev_char = self.buffer.chars().nth(self.cursor - 1).unwrap();
+            let is_closing = matches!(prev_char, '}' | ')' | ',');
+            if !prev_char.is_whitespace() && !is_closing {
+                return ReplAction::Complete;
+            }
+        }
+        self.insert_str("    ")
     }
 
     fn insert_char(&mut self, c: char) -> ReplAction {

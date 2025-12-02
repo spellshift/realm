@@ -111,6 +111,12 @@ fn main() -> io::Result<()> {
                             stdout.execute(cursor::MoveTo(0, 0))?;
                             render(&mut stdout, &repl)?;
                         }
+                        ReplAction::Complete => {
+                            let state = repl.get_render_state();
+                            let completions = interpreter.complete(&state.buffer, state.cursor);
+                            repl.set_suggestions(completions);
+                            render(&mut stdout, &repl)?;
+                        }
                         ReplAction::None => {}
                     }
                 }
@@ -164,11 +170,42 @@ fn map_key(key: KeyEvent) -> Option<Input> {
 fn render(stdout: &mut io::Stdout, repl: &Repl) -> io::Result<()> {
     let state = repl.get_render_state();
 
+    // Clear everything below the current line to clear old suggestions
+    stdout.queue(terminal::Clear(ClearType::FromCursorDown))?;
+
     stdout.queue(terminal::Clear(ClearType::CurrentLine))?;
     stdout.queue(cursor::MoveToColumn(0))?;
 
     let full_line = format!("{}{}", state.prompt.as_str().blue(), state.buffer);
     stdout.write_all(full_line.as_bytes())?;
+
+    // Render suggestions if any
+    if let Some(suggestions) = &state.suggestions {
+        // Save cursor position
+        stdout.queue(cursor::SavePosition)?;
+        stdout.queue(cursor::MoveToNextLine(1))?;
+        stdout.queue(cursor::MoveToColumn(0))?;
+
+        // Print suggestions
+        // Simple list for now
+        if suggestions.is_empty() {
+             // Do nothing
+        } else {
+             // Maybe limit?
+             for (i, s) in suggestions.iter().take(10).enumerate() {
+                 if i > 0 {
+                    stdout.write_all(b"  ")?;
+                 }
+                 stdout.write_all(s.as_bytes())?;
+             }
+             if suggestions.len() > 10 {
+                 stdout.write_all(b" ...")?;
+             }
+        }
+
+        // Restore cursor
+        stdout.queue(cursor::RestorePosition)?;
+    }
 
     let cursor_col = state.prompt.len() as u16 + state.cursor as u16;
     stdout.queue(cursor::MoveToColumn(cursor_col))?;

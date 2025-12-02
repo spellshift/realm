@@ -8,6 +8,64 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::cmp::Ordering;
 
+pub fn get_native_methods(value: &Value) -> Vec<String> {
+    match value {
+        Value::List(_) => vec![
+            "append".to_string(),
+            "extend".to_string(),
+            "insert".to_string(),
+            "remove".to_string(),
+            "index".to_string(),
+            "pop".to_string(),
+            "sort".to_string(),
+        ],
+        Value::Dictionary(_) => vec![
+            "keys".to_string(),
+            "values".to_string(),
+            "items".to_string(),
+            "get".to_string(),
+            "update".to_string(),
+            "popitem".to_string(),
+        ],
+        Value::String(_) => vec![
+            "split".to_string(),
+            "splitlines".to_string(),
+            "strip".to_string(),
+            "lstrip".to_string(),
+            "rstrip".to_string(),
+            "lower".to_string(),
+            "upper".to_string(),
+            "capitalize".to_string(),
+            "title".to_string(),
+            "startswith".to_string(),
+            "endswith".to_string(),
+            "removeprefix".to_string(),
+            "removesuffix".to_string(),
+            "find".to_string(),
+            "index".to_string(),
+            "rfind".to_string(),
+            "rindex".to_string(),
+            "count".to_string(),
+            "replace".to_string(),
+            "join".to_string(),
+            "format".to_string(),
+            "partition".to_string(),
+            "rpartition".to_string(),
+            "rsplit".to_string(),
+            "codepoints".to_string(),
+            "elems".to_string(),
+            "isalnum".to_string(),
+            "isalpha".to_string(),
+            "isdigit".to_string(),
+            "islower".to_string(),
+            "isupper".to_string(),
+            "isspace".to_string(),
+            "istitle".to_string(),
+        ],
+        _ => Vec::new(),
+    }
+}
+
 pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Result<Value, String> {
     match (receiver, method) {
         (Value::List(l), "append") => {
