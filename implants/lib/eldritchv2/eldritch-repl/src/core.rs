@@ -16,6 +16,7 @@ pub enum Input {
     Home,
     End,
     Tab,
+    ForceComplete, // Ctrl+Space
     KillToEnd,     // Ctrl+K
     KillLine,      // Ctrl+U
     WordBackspace, // Ctrl+W
@@ -153,6 +154,7 @@ impl Repl {
         match input {
             Input::Char(c) => self.insert_char(c),
             Input::Tab => self.handle_tab(),
+            Input::ForceComplete => ReplAction::Complete,
             Input::Enter => self.handle_enter(false),
             Input::ForceEnter => self.handle_enter(true),
             Input::Backspace => self.backspace(),

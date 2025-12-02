@@ -160,6 +160,25 @@ fn test_repl_completion_trigger() {
 }
 
 #[test]
+fn test_repl_force_completion() {
+    let mut repl = Repl::new();
+
+    // ForceComplete should work on empty buffer
+    let action = repl.handle_input(Input::ForceComplete);
+    assert_eq!(action, ReplAction::Complete);
+
+    // ForceComplete should work after whitespace (where Tab would indent)
+    repl.handle_input(Input::Char(' '));
+    let action = repl.handle_input(Input::ForceComplete);
+    assert_eq!(action, ReplAction::Complete);
+
+    // ForceComplete should work in normal context
+    repl.handle_input(Input::Char('a'));
+    let action = repl.handle_input(Input::ForceComplete);
+    assert_eq!(action, ReplAction::Complete);
+}
+
+#[test]
 fn test_repl_suggestions_state() {
     let mut repl = Repl::new();
     repl.set_suggestions(vec!["foo".to_string(), "bar".to_string()]);

@@ -168,6 +168,7 @@ impl WasmRepl {
             "k" if ctrl => Input::KillToEnd,
             "w" if ctrl => Input::WordBackspace,
             "r" if ctrl => Input::HistorySearch,
+            " " if ctrl => Input::ForceComplete,
             _ => {
                 // If ctrl is pressed but not matched above, we might still want to pass it through if it's a char?
                 // But generally ctrl+char are commands.

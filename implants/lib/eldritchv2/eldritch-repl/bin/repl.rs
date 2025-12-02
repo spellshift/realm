@@ -152,6 +152,9 @@ fn map_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
             Some(Input::HistorySearch)
         }
+        KeyCode::Char(' ') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(Input::ForceComplete)
+        }
         KeyCode::Char(c) => Some(Input::Char(c)),
         KeyCode::Enter => Some(Input::Enter),
         KeyCode::Backspace => Some(Input::Backspace),
