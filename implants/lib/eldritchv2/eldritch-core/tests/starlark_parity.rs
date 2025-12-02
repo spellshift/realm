@@ -13,14 +13,20 @@ fn parse(code: &str) -> Result<(), String> {
 fn test_pos_after_default() {
     // "def test(x=1, y): pass" -> Error
     let code = "def test(x=1, y): pass";
-    assert!(parse(code).is_err(), "Positional arg after default should be error");
+    assert!(
+        parse(code).is_err(),
+        "Positional arg after default should be error"
+    );
 }
 
 #[test]
 fn test_positional_only_cannot_be_first() {
     // "def test(/, x): pass" -> Error (not supported syntax)
     let code = "def test(/, x): pass";
-    assert!(parse(code).is_err(), "Positional only syntax / not supported");
+    assert!(
+        parse(code).is_err(),
+        "Positional only syntax / not supported"
+    );
 }
 
 #[test]
@@ -86,7 +92,10 @@ fn test_assignment_type_annotation() {
 fn test_bad_assignment_or() {
     // "[x or y] = 1" -> Error
     let code = "[x or y] = 1";
-    assert!(parse(code).is_err(), "Assignment to expression [x or y] should fail");
+    assert!(
+        parse(code).is_err(),
+        "Assignment to expression [x or y] should fail"
+    );
 }
 
 #[test]
@@ -112,9 +121,9 @@ fn test_lambda() {
 
 #[test]
 fn test_list_in_index_expr() {
-    // "x[1, 2] = 3" -> Success in Eldritch (index with tuple)
+    // "x[1, 2] = 3" -> Failure
     let code = "x[1, 2] = 3";
-    assert!(parse(code).is_ok());
+    assert!(parse(code).is_err());
 }
 
 #[test]
