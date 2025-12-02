@@ -1006,6 +1006,19 @@ fn apply_binary_op(
         }
 
         // Arithmetic
+        (Value::List(a), TokenKind::Plus, Value::List(b)) => {
+            let mut new_list = a.borrow().clone();
+            new_list.extend(b.borrow().iter().cloned());
+            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+        }
+        (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let mut new_set = a.borrow().clone();
+            for item in b.borrow().iter() {
+                new_set.insert(item.clone());
+            }
+            Ok(Value::Set(Rc::new(RefCell::new(new_set))))
+        }
         (Value::Int(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
         (Value::Int(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
         (Value::Int(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
