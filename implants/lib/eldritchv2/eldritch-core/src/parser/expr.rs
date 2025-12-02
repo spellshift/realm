@@ -189,14 +189,34 @@ impl Parser {
 
     fn comparison(&mut self) -> Result<Expr, String> {
         let mut expr = self.bitwise_or()?;
-        while self.match_token(&[
-            TokenKind::Lt,
-            TokenKind::Gt,
-            TokenKind::LtEq,
-            TokenKind::GtEq,
-            TokenKind::In,
-        ]) {
-            let operator = self.tokens[self.current - 1].clone();
+
+        loop {
+            let operator = if self.match_token(&[
+                TokenKind::Lt,
+                TokenKind::Gt,
+                TokenKind::LtEq,
+                TokenKind::GtEq,
+                TokenKind::In,
+            ]) {
+                self.tokens[self.current - 1].clone()
+            } else if self.check(&TokenKind::Not) {
+                // Check if it's 'not in'. We need to peek ahead.
+                // check() only checks current token. We need to check next token manually.
+                // Or use peek_next()
+                if matches!(self.peek_next().kind, TokenKind::In) {
+                    self.advance(); // consume 'not'
+                    self.advance(); // consume 'in'
+                    // Create synthetic 'NotIn' token
+                    let mut tok = self.tokens[self.current - 2].clone();
+                    tok.kind = TokenKind::NotIn;
+                    tok
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            };
+
             let right = self.bitwise_or()?;
             let start = expr.span;
             let end = right.span;
@@ -597,69 +617,126 @@ impl Parser {
         if self.match_token(&[TokenKind::LBrace]) {
             if self.match_token(&[TokenKind::RBrace]) {
                 let end = self.tokens[self.current - 1].span;
+                // Empty braces {} usually mean empty dictionary in Python-like syntax
                 return Ok(self.make_expr(ExprKind::Dictionary(Vec::new()), span, end));
             }
 
-            let key_expr = self.expression()?;
-            self.consume(|t| matches!(t, TokenKind::Colon), "Expected ':' after key.")?;
-            let val_expr = self.expression()?;
+            let first_expr = self.expression()?;
 
-            if self.match_token(&[TokenKind::For]) {
-                let (var, _) = {
-                    let t = self.consume(
-                        |t| matches!(t, TokenKind::Identifier(_)),
-                        "Expected iteration variable.",
-                    )?;
-                    let v = if let TokenKind::Identifier(s) = &t.kind {
-                        s.clone()
-                    } else {
-                        unreachable!()
+            if self.match_token(&[TokenKind::Colon]) {
+                // Dictionary or DictComp
+                let val_expr = self.expression()?;
+
+                if self.match_token(&[TokenKind::For]) {
+                    let (var, _) = {
+                        let t = self.consume(
+                            |t| matches!(t, TokenKind::Identifier(_)),
+                            "Expected iteration variable.",
+                        )?;
+                        let v = if let TokenKind::Identifier(s) = &t.kind {
+                            s.clone()
+                        } else {
+                            unreachable!()
+                        };
+                        (v, t.span)
                     };
-                    (v, t.span)
-                };
 
-                self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
-                // Use logic_or to avoid consuming the 'if' of the comprehension
-                let iterable = self.logic_or()?;
-                let mut cond = None;
-                if self.match_token(&[TokenKind::If]) {
-                    cond = Some(Box::new(self.expression()?));
+                    self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
+                    // Use logic_or to avoid consuming the 'if' of the comprehension
+                    let iterable = self.logic_or()?;
+                    let mut cond = None;
+                    if self.match_token(&[TokenKind::If]) {
+                        cond = Some(Box::new(self.expression()?));
+                    }
+                    let end = self
+                        .consume(|t| matches!(t, TokenKind::RBrace), "Expected '}'.")?
+                        .span;
+                    return Ok(self.make_expr(
+                        ExprKind::DictComp {
+                            key: Box::new(first_expr),
+                            value: Box::new(val_expr),
+                            var,
+                            iterable: Box::new(iterable),
+                            cond,
+                        },
+                        span,
+                        end,
+                    ));
                 }
-                let end = self
-                    .consume(|t| matches!(t, TokenKind::RBrace), "Expected '}'.")?
-                    .span;
-                return Ok(self.make_expr(
-                    ExprKind::DictComp {
-                        key: Box::new(key_expr),
-                        value: Box::new(val_expr),
-                        var,
-                        iterable: Box::new(iterable),
-                        cond,
-                    },
-                    span,
-                    end,
-                ));
-            }
 
-            let mut entries = vec![(key_expr, val_expr)];
-            if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBrace) {
-                loop {
-                    let k = self.expression()?;
-                    self.consume(|t| matches!(t, TokenKind::Colon), "Expected ':'.")?;
-                    let v = self.expression()?;
-                    entries.push((k, v));
-                    if !self.match_token(&[TokenKind::Comma]) {
-                        break;
+                let mut entries = vec![(first_expr, val_expr)];
+                if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBrace) {
+                    loop {
+                        let k = self.expression()?;
+                        self.consume(|t| matches!(t, TokenKind::Colon), "Expected ':'.")?;
+                        let v = self.expression()?;
+                        entries.push((k, v));
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
                     }
                 }
+                let end = self
+                    .consume(
+                        |t| matches!(t, TokenKind::RBrace),
+                        "Expected '}' after dictionary definition.",
+                    )?
+                    .span;
+                return Ok(self.make_expr(ExprKind::Dictionary(entries), span, end));
+            } else {
+                // Set or SetComp
+                if self.match_token(&[TokenKind::For]) {
+                    let (var, _) = {
+                        let t = self.consume(
+                            |t| matches!(t, TokenKind::Identifier(_)),
+                            "Expected iteration variable.",
+                        )?;
+                        let v = if let TokenKind::Identifier(s) = &t.kind {
+                            s.clone()
+                        } else {
+                            unreachable!()
+                        };
+                        (v, t.span)
+                    };
+
+                    self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
+                    let iterable = self.logic_or()?;
+                    let mut cond = None;
+                    if self.match_token(&[TokenKind::If]) {
+                        cond = Some(Box::new(self.expression()?));
+                    }
+                    let end = self
+                        .consume(|t| matches!(t, TokenKind::RBrace), "Expected '}'.")?
+                        .span;
+                    return Ok(self.make_expr(
+                        ExprKind::SetComp {
+                            body: Box::new(first_expr),
+                            var,
+                            iterable: Box::new(iterable),
+                            cond,
+                        },
+                        span,
+                        end,
+                    ));
+                }
+
+                let mut elements = vec![first_expr];
+                if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBrace) {
+                    loop {
+                        elements.push(self.expression()?);
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
+                    }
+                }
+                let end = self
+                    .consume(
+                        |t| matches!(t, TokenKind::RBrace),
+                        "Expected '}' after set definition.",
+                    )?
+                    .span;
+                return Ok(self.make_expr(ExprKind::Set(elements), span, end));
             }
-            let end = self
-                .consume(
-                    |t| matches!(t, TokenKind::RBrace),
-                    "Expected '}' after dictionary definition.",
-                )?
-                .span;
-            return Ok(self.make_expr(ExprKind::Dictionary(entries), span, end));
         }
 
         Err(format!("Expect expression. Found {:?}", self.peek()))

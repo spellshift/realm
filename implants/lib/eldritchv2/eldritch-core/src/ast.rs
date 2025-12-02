@@ -326,6 +326,7 @@ pub enum ExprKind {
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
     Dictionary(Vec<(Expr, Expr)>),
+    Set(Vec<Expr>),
     Index(Box<Expr>, Box<Expr>),
     GetAttr(Box<Expr>, String),
     Slice(
@@ -344,6 +345,12 @@ pub enum ExprKind {
     DictComp {
         key: Box<Expr>,
         value: Box<Expr>,
+        var: String,
+        iterable: Box<Expr>,
+        cond: Option<Box<Expr>>,
+    },
+    SetComp {
+        body: Box<Expr>,
         var: String,
         iterable: Box<Expr>,
         cond: Option<Box<Expr>>,
