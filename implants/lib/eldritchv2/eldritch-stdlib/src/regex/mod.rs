@@ -13,7 +13,7 @@ pub trait RegexLibrary {
     #[eldritch_method]
     fn match_all(&self, haystack: String, pattern: String) -> Result<Vec<String>, String>;
 
-    #[eldritch_method]
+    #[eldritch_method("match")]
     fn r#match(&self, haystack: String, pattern: String) -> Result<String, String>;
 
     #[eldritch_method]
