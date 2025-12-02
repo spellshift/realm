@@ -1,5 +1,6 @@
 use super::super::ast::Value;
 use super::utils::{compare_values, get_type_name, is_truthy};
+use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::rc::Rc;
 use alloc::string::{String, ToString};
@@ -26,6 +27,22 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
             "get".to_string(),
             "update".to_string(),
             "popitem".to_string(),
+        ],
+        Value::Set(_) => vec![
+            "add".to_string(),
+            "clear".to_string(),
+            "contains".to_string(),
+            "difference".to_string(),
+            "discard".to_string(),
+            "intersection".to_string(),
+            "isdisjoint".to_string(),
+            "issubset".to_string(),
+            "issuperset".to_string(),
+            "pop".to_string(),
+            "remove".to_string(),
+            "symmetric_difference".to_string(),
+            "union".to_string(),
+            "update".to_string(),
         ],
         Value::String(_) => vec![
             "split".to_string(),
@@ -63,6 +80,22 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
             "istitle".to_string(),
         ],
         _ => Vec::new(),
+    }
+}
+
+// Helper to convert any iterable Value into a BTreeSet<Value> for set operations.
+fn get_set_elements(v: &Value) -> Result<BTreeSet<Value>, String> {
+    match v {
+        Value::Set(s) => Ok(s.borrow().clone()),
+        Value::List(l) => Ok(l.borrow().iter().cloned().collect()),
+        Value::Tuple(t) => Ok(t.iter().cloned().collect()),
+        Value::Dictionary(d) => Ok(d
+            .borrow()
+            .keys()
+            .map(|k| Value::String(k.clone()))
+            .collect()),
+        Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
+        _ => Err(format!("'{}' object is not iterable", get_type_name(v))),
     }
 }
 
@@ -209,6 +242,121 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             } else {
                 Err("popitem(): dictionary is empty".into())
             }
+        }
+
+        (Value::Set(s), "add") => {
+            if args.len() != 1 {
+                return Err("add() takes exactly one argument".into());
+            }
+            s.borrow_mut().insert(args[0].clone());
+            Ok(Value::None)
+        }
+        (Value::Set(s), "clear") => {
+            s.borrow_mut().clear();
+            Ok(Value::None)
+        }
+        (Value::Set(s), "contains") => {
+            if args.len() != 1 {
+                return Err("contains() takes exactly one argument".into());
+            }
+            Ok(Value::Bool(s.borrow().contains(&args[0])))
+        }
+        (Value::Set(s), "difference") => {
+            if args.len() != 1 {
+                return Err("difference() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            let diff: BTreeSet<Value> = s.borrow().difference(&other_set).cloned().collect();
+            Ok(Value::Set(Rc::new(RefCell::new(diff))))
+        }
+        (Value::Set(s), "discard") => {
+            if args.len() != 1 {
+                return Err("discard() takes exactly one argument".into());
+            }
+            s.borrow_mut().remove(&args[0]);
+            Ok(Value::None)
+        }
+        (Value::Set(s), "intersection") => {
+            if args.len() != 1 {
+                return Err("intersection() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            let inter: BTreeSet<Value> = s.borrow().intersection(&other_set).cloned().collect();
+            Ok(Value::Set(Rc::new(RefCell::new(inter))))
+        }
+        (Value::Set(s), "isdisjoint") => {
+            if args.len() != 1 {
+                return Err("isdisjoint() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            Ok(Value::Bool(s.borrow().is_disjoint(&other_set)))
+        }
+        (Value::Set(s), "issubset") => {
+            if args.len() != 1 {
+                return Err("issubset() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            Ok(Value::Bool(s.borrow().is_subset(&other_set)))
+        }
+        (Value::Set(s), "issuperset") => {
+            if args.len() != 1 {
+                return Err("issuperset() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            Ok(Value::Bool(s.borrow().is_superset(&other_set)))
+        }
+        (Value::Set(s), "pop") => {
+            // Remove the LAST element, per user request (and consistent with list.pop())
+            // BTreeSet is ordered, so this removes the largest element.
+            let mut set = s.borrow_mut();
+            if set.is_empty() {
+                return Err("pop from empty set".into());
+            }
+            // Use iterator to get last element without nightly features
+            let last = set.iter().next_back().cloned();
+            if let Some(v) = last {
+                set.remove(&v);
+                Ok(v)
+            } else {
+                Err("pop from empty set".into())
+            }
+        }
+        (Value::Set(s), "remove") => {
+            if args.len() != 1 {
+                return Err("remove() takes exactly one argument".into());
+            }
+            if !s.borrow_mut().remove(&args[0]) {
+                return Err(format!("KeyError: {}", args[0]));
+            }
+            Ok(Value::None)
+        }
+        (Value::Set(s), "symmetric_difference") => {
+            if args.len() != 1 {
+                return Err("symmetric_difference() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            let sym: BTreeSet<Value> = s
+                .borrow()
+                .symmetric_difference(&other_set)
+                .cloned()
+                .collect();
+            Ok(Value::Set(Rc::new(RefCell::new(sym))))
+        }
+        (Value::Set(s), "union") => {
+            if args.len() != 1 {
+                return Err("union() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            let u: BTreeSet<Value> = s.borrow().union(&other_set).cloned().collect();
+            Ok(Value::Set(Rc::new(RefCell::new(u))))
+        }
+        (Value::Set(s), "update") => {
+            if args.len() != 1 {
+                return Err("update() takes exactly one argument".into());
+            }
+            let other_set = get_set_elements(&args[0])?;
+            s.borrow_mut().extend(other_set);
+            Ok(Value::None)
         }
 
         (Value::String(s), "split") => {
