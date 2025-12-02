@@ -57,7 +57,7 @@ pub fn ssh_exec(
     key: Option<String>,
     key_password: Option<String>,
     timeout: Option<u32>,
-) -> Result<Dict> {
+) -> Result<Dict<'_>> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;

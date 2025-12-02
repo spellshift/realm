@@ -3,6 +3,8 @@ mod environment;
 pub mod eprint_impl;
 mod eval;
 pub mod messages;
+#[cfg(test)]
+mod parity_tests;
 
 pub(crate) use environment::Environment;
 pub use eval::{start, Runtime};
@@ -205,6 +207,16 @@ mod tests {
                 file_names: Vec::new(),
             },
             want_text: format!("{}\n", r#"["eval", "set_callback_interval", "set_callback_uri"]"#),
+            want_error: None,
+        },
+        test_standard: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(min(1, 2)); print(max(1, 2))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n{}\n", "1", "2"),
             want_error: None,
         },
     }
