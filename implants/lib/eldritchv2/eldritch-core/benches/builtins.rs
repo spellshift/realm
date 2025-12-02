@@ -28,7 +28,7 @@ fn bench_builtins(c: &mut Criterion) {
 
     // Math
     bench_builtin(c, "abs", "abs(-100)");
-    bench_builtin(c, "max", "max([1, 2, 3, 10, 5[)");
+    bench_builtin(c, "max", "max([1, 2, 3, 10, 5])");
     bench_builtin(c, "min", "min([1, 2, 3, 10, 5])");
 
     // Logic
