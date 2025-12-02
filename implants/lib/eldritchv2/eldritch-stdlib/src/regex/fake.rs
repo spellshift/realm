@@ -38,7 +38,8 @@ impl RegexLibrary for RegexLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::{RegexLibraryFake, RegexLibrary};
+    use eldritch_core::ForeignValue;
 
     #[test]
     fn test_regex_fake() {
@@ -47,5 +48,13 @@ mod tests {
             .match_all("foo".into(), "bar".into())
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn test_method_names() {
+        let regex = RegexLibraryFake::default();
+        let methods = regex.method_names();
+        assert!(methods.contains(&"match".to_string()));
+        assert!(!methods.contains(&"r#match".to_string()));
     }
 }
