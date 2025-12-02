@@ -1,7 +1,7 @@
 use super::super::ast::{
     Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
-use super::super::token::TokenKind;
+use super::super::token::{Span, TokenKind};
 use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
 use super::eval::{apply_binary_op_pub, evaluate};
@@ -240,6 +240,13 @@ fn execute_augmented_assignment(
     match &target.kind {
         ExprKind::Identifier(name) => {
             let left = interp.lookup_variable(name, span)?;
+
+            if let TokenKind::PlusAssign = op {
+                if try_inplace_add(&left, &right) {
+                    return Ok(());
+                }
+            }
+
             let bin_op = match op {
                 TokenKind::PlusAssign => TokenKind::Plus,
                 TokenKind::MinusAssign => TokenKind::Minus,
@@ -309,6 +316,12 @@ fn execute_augmented_assignment(
                 _ => return runtime_error(span, "Object does not support item assignment"),
             };
 
+            if let TokenKind::PlusAssign = op {
+                if try_inplace_add(&current_val, &right) {
+                    return Ok(());
+                }
+            }
+
             let bin_op = match op {
                 TokenKind::PlusAssign => TokenKind::Plus,
                 TokenKind::MinusAssign => TokenKind::Minus,
@@ -358,5 +371,41 @@ fn execute_augmented_assignment(
             }
         }
         _ => runtime_error(span, "Illegal target for augmented assignment"),
+    }
+}
+
+fn try_inplace_add(left: &Value, right: &Value) -> bool {
+    match (left, right) {
+        (Value::List(l), Value::List(r)) => {
+            // Must clone right first to avoid double borrow panic if l == r
+            let items = r.borrow().clone();
+            l.borrow_mut().extend(items);
+            true
+        }
+        (Value::Dictionary(d), Value::Dictionary(r)) => {
+            // Must clone keys/values first
+            let items: Vec<_> = r
+                .borrow()
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            let mut db = d.borrow_mut();
+            for (k, v) in items {
+                db.insert(k, v);
+            }
+            true
+        }
+        (Value::Set(s), Value::Set(r)) => {
+            #[allow(clippy::mutable_key_type)]
+            // Must clone items first
+            let items: Vec<_> = r.borrow().iter().cloned().collect();
+            #[allow(clippy::mutable_key_type)]
+            let mut sb = s.borrow_mut();
+            for item in items {
+                sb.insert(item);
+            }
+            true
+        }
+        _ => false,
     }
 }
