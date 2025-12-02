@@ -1,0 +1,23 @@
+[package]
+name = "eldritch-librandom"
+version = "0.3.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eldritch-core = { path = "../../eldritch-core" }
+eldritch-macros = { path = "../../eldritch-macros" }
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:rand",
+    "dep:rand_chacha",
+    "dep:uuid",
+]
+fake_bindings = []

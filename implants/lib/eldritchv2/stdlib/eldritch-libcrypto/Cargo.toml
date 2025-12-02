@@ -1,0 +1,27 @@
+[package]
+name = "eldritch-libcrypto"
+version = "0.3.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eldritch-core = { path = "../../eldritch-core" }
+eldritch-macros = { path = "../../eldritch-macros" }
+aes = { workspace = true, optional = true }
+md5 = { workspace = true, optional = true }
+sha1 = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+hex-literal = { workspace = true, optional = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:aes",
+    "dep:md5",
+    "dep:sha1",
+    "dep:sha2",
+    "dep:hex-literal",
+]
+fake_bindings = []
