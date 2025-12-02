@@ -256,6 +256,7 @@ impl Parser {
 
         // Normal assignment
         if self.match_token(&[TokenKind::Assign]) {
+            self.validate_assignment_target(&expr)?;
             let value = self.expression()?;
 
             // Allow explicit tuple on RHS too: a, b = 1, 2
@@ -300,6 +301,9 @@ impl Parser {
             // Augmented assignment does not support tuple unpacking
             if let ExprKind::Tuple(_) = expr.kind {
                 return Err("Augmented assignment does not support tuple unpacking".to_string());
+            }
+            if let ExprKind::List(_) = expr.kind {
+                return Err("Augmented assignment does not support list unpacking".to_string());
             }
 
             let op = self.tokens[self.current - 1].kind.clone();
