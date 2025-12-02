@@ -15,7 +15,7 @@ mod token;
 pub use ast::{Environment, ForeignValue, Value};
 pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
-pub use token::TokenKind;
+pub use token::{Span, TokenKind};
 
 // Public API exports
 pub use global_libs::register_lib;
