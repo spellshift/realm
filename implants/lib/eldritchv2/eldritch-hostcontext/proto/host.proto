@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package host;
+
+// Filesystem
+
+message FileEntry {
+    string path = 1;
+    string name = 2;
+    uint64 size = 3;
+    bool is_dir = 4;
+    uint64 created = 5;
+    uint64 modified = 6;
+    uint64 accessed = 7;
+    // Unix permissions or Windows attributes
+    uint32 mode = 8;
+}
+
+message ListDirRequest {
+    string path = 1;
+}
+
+message ListDirResponse {
+    repeated FileEntry entries = 1;
+}
+
+message FileReadRequest {
+    string path = 1;
+    uint64 offset = 2;
+    uint64 limit = 3;
+}
+
+message FileReadResponse {
+    bytes data = 1;
+    bool eof = 2;
+}
+
+message FileWriteRequest {
+    string path = 1;
+    bytes data = 2;
+    bool append = 3;
+}
+
+message FileWriteResponse {
+    uint64 bytes_written = 1;
+}
+
+message FileRemoveRequest {
+    string path = 1;
+}
+
+message FileRemoveResponse {
+    bool success = 1;
+}
+
+// Process
+
+message ProcessInfo {
+    uint32 pid = 1;
+    uint32 ppid = 2;
+    string name = 3;
+    string exe = 4;
+    string cmdline = 5;
+    string user = 6;
+    uint64 start_time = 7;
+    uint64 cpu_usage = 8;
+    uint64 memory_usage = 9;
+}
+
+message ProcessListRequest {}
+
+message ProcessListResponse {
+    repeated ProcessInfo processes = 1;
+}
+
+message ProcessKillRequest {
+    uint32 pid = 1;
+}
+
+message ProcessKillResponse {
+    bool success = 1;
+}
+
+message ExecRequest {
+    string path = 1;
+    repeated string args = 2;
+    repeated string env = 3;
+    string cwd = 4;
+    bool background = 5;
+}
+
+message ExecResponse {
+    uint32 pid = 1;
+    bytes stdout = 2;
+    bytes stderr = 3;
+    int32 exit_code = 4;
+}
+
+// System Info
+
+message SysInfoRequest {}
+
+message SysInfoResponse {
+    string hostname = 1;
+    string os = 2;
+    string os_version = 3;
+    string kernel_version = 4;
+    string arch = 5;
+    uint32 num_cpus = 6;
+    uint64 total_memory = 7;
+    repeated string ip_addresses = 8;
+    string username = 9;
+}
+
+// Environment
+
+message EnvGetRequest {
+    string key = 1;
+}
+
+message EnvGetResponse {
+    string value = 1;
+    bool found = 2;
+}
+
+message EnvSetRequest {
+    string key = 1;
+    string value = 2;
+}
+
+message EnvSetResponse {
+    bool success = 1;
+}

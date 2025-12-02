@@ -9,12 +9,14 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::cmp::Ordering;
 use core::fmt;
+use eldritch_hostcontext::HostContext;
 
 #[derive(Debug)]
 pub struct Environment {
     pub parent: Option<Rc<RefCell<Environment>>>,
     pub values: BTreeMap<String, Value>,
     pub printer: Arc<dyn Printer + Send + Sync>,
+    pub host: Arc<dyn HostContext>,
 }
 
 #[derive(Debug, Clone)]

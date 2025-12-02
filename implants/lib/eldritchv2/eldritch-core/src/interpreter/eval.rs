@@ -115,10 +115,12 @@ fn evaluate_list_comp(
     let iterable_val = evaluate(interp, iterable)?;
     let items = to_iterable(interp, &iterable_val, iterable.span)?;
     let printer = interp.env.borrow().printer.clone();
+    let host = interp.env.borrow().host.clone();
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
         printer,
+        host,
     }));
     let original_env = Rc::clone(&interp.env);
     interp.env = comp_env;
@@ -157,10 +159,12 @@ fn evaluate_dict_comp(
         }
     };
     let printer = interp.env.borrow().printer.clone();
+    let host = interp.env.borrow().host.clone();
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
         printer,
+        host,
     }));
     let original_env = Rc::clone(&interp.env);
     interp.env = comp_env;
@@ -242,10 +246,13 @@ fn evaluate_set_comp(
             )
         }
     };
+    let printer = interp.env.borrow().printer.clone();
+    let host = interp.env.borrow().host.clone();
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
-        printer: interp.env.borrow().printer.clone(),
+        printer,
+        host,
     }));
     let original_env = Rc::clone(&interp.env);
     interp.env = comp_env;
@@ -582,10 +589,12 @@ fn call_function(
 
             let result = (|| {
                 let printer = interp.env.borrow().printer.clone();
+                let host = interp.env.borrow().host.clone();
                 let function_env = Rc::new(RefCell::new(Environment {
                     parent: Some(closure),
                     values: BTreeMap::new(),
                     printer,
+                    host,
                 }));
                 let mut pos_idx = 0;
                 for param in params {
@@ -1018,11 +1027,6 @@ fn apply_binary_op(
             // But EldritchV2 (per memory) might have different rules.
             // If I look at the previous code: `Ok(Value::Int(a / b))`
             // This implies integer division.
-            // If I introduce float, should `/` become float division?
-            // Python 3: / is float, // is floor.
-            // Python 2: / is int if operands are int.
-            // I will implement Python 3 behavior if possible, or stick to current behavior?
-            // Current behavior: `Ok(Value::Int(a / b))` implies integer division.
             // If I want to support floats, I should probably promote to float if one operand is float.
             // But for Int/Int, if I change to float, I break backward compatibility if users rely on Int return.
             // The prompt doesn't specify changing `/` for Ints.

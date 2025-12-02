@@ -20,3 +20,7 @@ pub use token::TokenKind;
 // Public API exports
 pub use global_libs::register_lib;
 pub mod conversion;
+pub mod host_conversion;
+
+// Re-export hostcontext so consumers/tests don't need to depend on it directly
+pub use eldritch_hostcontext;

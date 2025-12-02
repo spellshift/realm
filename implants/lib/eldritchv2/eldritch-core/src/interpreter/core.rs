@@ -9,6 +9,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::cell::RefCell;
+use eldritch_hostcontext::*;
 
 use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs};
 use super::error::{runtime_error, EldritchError};
@@ -38,16 +39,37 @@ impl Default for Interpreter {
     }
 }
 
+// Dummy Host Implementation for Default
+#[derive(Debug)]
+struct DefaultHost;
+impl HostContext for DefaultHost {
+    fn list_dir(&self, _req: ListDirRequest) -> Result<ListDirResponse, String> { Err("Not implemented".to_string()) }
+    fn file_read(&self, _req: FileReadRequest) -> Result<FileReadResponse, String> { Err("Not implemented".to_string()) }
+    fn file_write(&self, _req: FileWriteRequest) -> Result<FileWriteResponse, String> { Err("Not implemented".to_string()) }
+    fn file_remove(&self, _req: FileRemoveRequest) -> Result<FileRemoveResponse, String> { Err("Not implemented".to_string()) }
+    fn process_list(&self, _req: ProcessListRequest) -> Result<ProcessListResponse, String> { Err("Not implemented".to_string()) }
+    fn process_kill(&self, _req: ProcessKillRequest) -> Result<ProcessKillResponse, String> { Err("Not implemented".to_string()) }
+    fn exec(&self, _req: ExecRequest) -> Result<ExecResponse, String> { Err("Not implemented".to_string()) }
+    fn sys_info(&self, _req: SysInfoRequest) -> Result<SysInfoResponse, String> { Err("Not implemented".to_string()) }
+    fn env_get(&self, _req: EnvGetRequest) -> Result<EnvGetResponse, String> { Err("Not implemented".to_string()) }
+    fn env_set(&self, _req: EnvSetRequest) -> Result<EnvSetResponse, String> { Err("Not implemented".to_string()) }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
         Self::new_with_printer(Arc::new(StdoutPrinter))
     }
 
     pub fn new_with_printer(printer: Arc<dyn Printer + Send + Sync>) -> Self {
+        Self::new_with_host(printer, Arc::new(DefaultHost))
+    }
+
+    pub fn new_with_host(printer: Arc<dyn Printer + Send + Sync>, host: Arc<dyn HostContext>) -> Self {
         let env = Rc::new(RefCell::new(Environment {
             parent: None,
             values: BTreeMap::new(),
             printer,
+            host,
         }));
 
         let mut interpreter = Interpreter {

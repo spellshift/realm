@@ -7,6 +7,7 @@ members = [
     "lib/pb",
     "lib/host_unique",
     "lib/eldritchv2/eldritch-core",
+    "lib/eldritchv2/eldritch-hostcontext",
     "lib/eldritchv2/eldritch-macros",
     "lib/eldritchv2/eldritch-repl",
     "lib/eldritchv2/eldritch-stdlib",
