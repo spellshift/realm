@@ -1,6 +1,8 @@
 #![deny(warnings)]
 
 pub mod agent;
+mod actions;
+mod eldritch;
 mod install;
 mod run;
 mod task;

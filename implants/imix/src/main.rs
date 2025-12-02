@@ -11,6 +11,8 @@ extern crate windows_service;
 mod win_service;
 
 mod agent;
+mod actions;
+mod eldritch;
 mod install;
 mod run;
 mod task;

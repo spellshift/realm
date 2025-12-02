@@ -1,11 +1,10 @@
 use anyhow::Result;
-use eldritch::runtime::{
-    messages::{AsyncDispatcher, AsyncMessage, ReportErrorMessage, SyncDispatcher},
-    Message,
-};
 use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
-
+use tokio::sync::mpsc;
+use eldritch_core::Interpreter;
+use crate::actions::ImixAction;
+use crate::eldritch::{ACTION_SENDER, TASK_ID};
 use crate::run::Config;
 
 /*
@@ -13,17 +12,54 @@ use crate::run::Config;
  */
 pub struct TaskHandle {
     id: i64,
-    runtime: eldritch::Runtime,
+    rx: mpsc::UnboundedReceiver<ImixAction>,
     pool: tokio::task::JoinSet<()>,
+    interpreter_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl TaskHandle {
-    // Track a new task handle.
-    pub fn new(id: i64, runtime: eldritch::Runtime) -> TaskHandle {
+    // Track a new task handle and start execution.
+    pub fn new(id: i64, tome: String) -> TaskHandle {
+        let (tx, rx) = mpsc::unbounded_channel();
+        let pool = tokio::task::JoinSet::new();
+
+        // Spawn interpreter in a blocking task
+        let interpreter_handle = tokio::task::spawn_blocking(move || {
+            // Set task local context
+            let _ = ACTION_SENDER.scope(tx, async move {
+                let _ = TASK_ID.scope(id, async move {
+                    // Create and run interpreter
+                    let mut interpreter = Interpreter::new();
+
+                    // We need to ensure global libraries are registered already.
+                    // Assuming they are registered at startup.
+
+                    // Execute tome
+                    match interpreter.interpret(&tome) {
+                        Ok(val) => {
+                             #[cfg(debug_assertions)]
+                             log::info!("Task {} finished with value: {:?}", id, val);
+                             // We could report the return value as text if needed
+                        }
+                        Err(e) => {
+                             #[cfg(debug_assertions)]
+                             log::error!("Task {} failed: {}", id, e);
+
+                             let action = ImixAction::ReportError(id, e);
+                             let _ = ACTION_SENDER.try_with(|sender| {
+                                 let _ = sender.send(action);
+                             });
+                        }
+                    }
+                }).await;
+            });
+        });
+
         TaskHandle {
             id,
-            runtime,
-            pool: tokio::task::JoinSet::new(),
+            rx,
+            pool,
+            interpreter_handle: Some(interpreter_handle),
         }
     }
 
@@ -34,8 +70,12 @@ impl TaskHandle {
             return false;
         }
 
-        // Check Tome Evaluation
-        self.runtime.is_finished()
+        // Check Interpreter
+        if let Some(handle) = &self.interpreter_handle {
+             return handle.is_finished();
+        }
+
+        true
     }
 
     // Report any available task output.
@@ -45,117 +85,70 @@ impl TaskHandle {
         tavern: &mut (impl Transport + 'static),
         cfg: Config,
     ) -> Result<Config> {
-        let mut messages = self.runtime.collect();
         let mut ret_cfg = cfg.clone();
-        let mut idx = 0;
-        while idx < messages.len() {
-            let msg = messages[idx].clone();
-            // Copy values for logging
+
+        // Drain channel
+        while let Ok(msg) = self.rx.try_recv() {
             let id = self.id;
-            let msg_str = msg.to_string();
+            let msg_debug = format!("{:?}", msg);
 
-            // Each message is dispatched in it's own tokio task, managed by this task handle's pool.
+            // Dispatch in task pool
             let mut t = tavern.clone();
+            let action = msg;
+            let current_cfg = ret_cfg.clone(); // Clone for async block if needed
 
-            // Handle SyncMessages and AsyncMessages differently.
-            match msg {
-                Message::Sync(sm) => {
-                    let sm_str = sm.to_string();
-                    ret_cfg = match sm.dispatch(&mut t, ret_cfg.clone()) {
-                        Ok(r) => {
-                            #[cfg(debug_assertions)]
-                            log::info!(
-                                "message success (task_id={},msg={}-{})",
-                                id,
-                                msg_str,
-                                sm_str
-                            );
+            // For now, let's run dispatch in the pool to mimic v1 async behavior.
+            // But some actions might update config (Sync in v1).
+            // ImixAction::SetConfig needs to be handled synchronously here to update `ret_cfg`.
 
-                            r
-                        }
-                        Err(err) => {
-                            #[cfg(debug_assertions)]
-                            log::error!(
-                                "message failed (task_id={},msg={}-{}): {}",
-                                id,
-                                msg_str.clone(),
-                                sm_str.clone(),
-                                err
-                            );
-
-                            // if an individual sync message errors then just add an
-                            // ReportErrorMessage to the queue and continue on.
-                            messages.push(
-                                AsyncMessage::from(ReportErrorMessage {
-                                    id,
-                                    error: format!(
-                                        "dispatch error ({}-{}): {:#?}",
-                                        msg_str, sm_str, err
-                                    ),
-                                })
-                                .into(),
-                            );
-                            ret_cfg
-                        }
-                    };
+            match action {
+                ImixAction::SetConfig(new_cfg) => {
+                    ret_cfg = new_cfg;
+                    continue;
                 }
-                Message::Async(am) => {
-                    let am_str = am.to_string();
-                    let async_conf = ret_cfg.clone(); // needed due to the move
-                    self.pool.spawn(async move {
-                        match am.dispatch(&mut t, async_conf).await {
+                _ => {
+                     // Async dispatch
+                     self.pool.spawn(async move {
+                        match action.dispatch(&mut t, current_cfg).await {
                             Ok(_) => {
                                 #[cfg(debug_assertions)]
                                 log::info!(
-                                    "message success (task_id={},msg={}-{})",
+                                    "message success (task_id={},msg={})",
                                     id,
-                                    msg_str,
-                                    am_str
+                                    msg_debug
                                 );
                             }
                             Err(err) => {
                                 #[cfg(debug_assertions)]
                                 log::error!(
-                                    "message failed (task_id={},msg={}-{}): {}",
+                                    "message failed (task_id={},msg={}): {}",
                                     id,
-                                    msg_str.clone(),
-                                    am_str.clone(),
+                                    msg_debug,
                                     err
                                 );
 
-                                // Attempt to report this dispatch error to the server
-                                // This will help in cases where one transport method is failing but we can
-                                // still report errors.
-                                match t
-                                    .report_task_output(ReportTaskOutputRequest {
-                                        output: Some(TaskOutput {
-                                            id,
-                                            output: String::new(),
-                                            error: Some(TaskError {
-                                                msg: format!(
-                                                    "dispatch error ({}-{}): {:#?}",
-                                                    msg_str, am_str, err
-                                                ),
-                                            }),
-                                            exec_started_at: None,
-                                            exec_finished_at: None,
+                                // Report dispatch error
+                                let _ = t.report_task_output(ReportTaskOutputRequest {
+                                    output: Some(TaskOutput {
+                                        id,
+                                        output: String::new(),
+                                        error: Some(TaskError {
+                                            msg: format!(
+                                                "dispatch error ({}): {:#?}",
+                                                msg_debug, err
+                                            ),
                                         }),
-                                    })
-                                    .await
-                                {
-                                    Ok(_) => {}
-                                    Err(_err) => {
-                                        #[cfg(debug_assertions)]
-                                        log::error!("failed to report dispatch error: {}", _err);
-                                    }
-                                };
+                                        exec_started_at: None,
+                                        exec_finished_at: None,
+                                    }),
+                                }).await;
                             }
                         }
-                    });
+                     });
                 }
-            };
-            idx += 1;
+            }
         }
+
         Ok(ret_cfg)
     }
 }

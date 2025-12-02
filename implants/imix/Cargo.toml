@@ -14,7 +14,10 @@ http1 = ["transport/http1"]
 transport-grpc-doh = ["transport/grpc-doh"]
 
 [dependencies]
-eldritch = { workspace = true, features = ["imix"] }
+eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
+eldritch-stdlib = { path = "../lib/eldritchv2/eldritch-stdlib", features = ["stdlib"] }
+eldritch-macros = { path = "../lib/eldritchv2/eldritch-macros" }
+eldritchv2 = { path = "../lib/eldritchv2/eldritchv2" }
 
 pb = { workspace = true, features = ["imix"]}
 transport = { workspace = true }
@@ -23,6 +26,10 @@ clap = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 pretty_env_logger = { workspace = true }
+# futures is not in workspace, specify version
+futures = "0.3"
+rust-embed = { workspace = true }
+async-trait = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = "0.6.0"
