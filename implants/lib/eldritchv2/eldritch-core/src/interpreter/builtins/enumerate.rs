@@ -8,6 +8,9 @@ use alloc::vec::Vec;
 use core::cell::RefCell;
 
 pub fn builtin_enumerate(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    if args.is_empty() {
+        return Err("enumerate() takes at least one argument".to_string());
+    }
     let iterable = &args[0];
     let start = if args.len() > 1 {
         match args[1] {

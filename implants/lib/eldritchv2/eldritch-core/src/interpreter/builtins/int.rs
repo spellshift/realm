@@ -9,6 +9,12 @@ pub fn builtin_int(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Va
     if args.is_empty() {
         return Ok(Value::Int(0));
     }
+    if args.len() != 1 {
+        return Err(format!(
+            "int() takes at most 1 argument ({} given)",
+            args.len()
+        ));
+    }
     match &args[0] {
         Value::Int(i) => Ok(Value::Int(*i)),
         Value::Float(f) => Ok(Value::Int(*f as i64)), // Truncate
