@@ -192,7 +192,7 @@ impl Interpreter {
         runtime_error(span, &format!("Undefined variable: '{name}'"))
     }
 
-    pub fn complete(&self, code: &str, cursor: usize) -> Vec<String> {
+    pub fn complete(&self, code: &str, cursor: usize) -> (usize, Vec<String>) {
         let mut candidates = BTreeSet::new();
         let mut prefix = String::new();
 
@@ -208,7 +208,7 @@ impl Interpreter {
 
         // If empty, return nothing
         if line_up_to_cursor.trim().is_empty() {
-            return Vec::new();
+            return (cursor, Vec::new());
         }
 
         // Try to find the token we are on.
@@ -226,57 +226,42 @@ impl Interpreter {
                     .unwrap_or("");
                 if !last_word.is_empty() {
                     prefix = last_word.to_string();
-                } else {
-                    return Vec::new();
                 }
-                Vec::new() // Actually let's just use the prefix matching below if tokens fail
+                // If we can't tokenize, we assume we can't do dot-access analysis safely.
+                // But we can still try to suggest globals matching the prefix.
+                // We return empty tokens list, but allow execution to proceed to prefix filtering.
+                Vec::new()
             }
         };
 
         // Determine context from tokens
         let mut target_val: Option<Value> = None;
+        let meaningful_tokens: Vec<&super::super::token::Token> = tokens
+            .iter()
+            .filter(|t| t.kind != TokenKind::Eof && t.kind != TokenKind::Newline)
+            .collect();
 
-        if !tokens.is_empty() {
-            let last_token = &tokens[tokens.len() - 1];
+        if !meaningful_tokens.is_empty() {
+            let last_token = meaningful_tokens[meaningful_tokens.len() - 1];
 
-            // Case 1: Cursor is after a Dot (object property access)
-            // e.g. "foo."
-            if last_token.kind == TokenKind::Dot {
-                // Look at the token before dot
-                if tokens.len() >= 2 {
-                    let obj_token = &tokens[tokens.len() - 2];
-                    match &obj_token.kind {
-                        TokenKind::Identifier(name) => {
-                            // Resolve variable
-                            if let Ok(val) = self.lookup_variable(
-                                name,
-                                Span::new(0, 0, 0), // Dummy span
-                            ) {
-                                target_val = Some(val);
-                            }
-                        }
-                        TokenKind::String(s) => {
-                            target_val = Some(Value::String(s.clone()));
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            // Case 2: Cursor is at an Identifier (completing current word)
-            // e.g. "fo" or "foo.b"
-            else if let TokenKind::Identifier(name) = &last_token.kind {
-                prefix = name.clone();
+            // Only consider the token if the cursor is at the end of it, or if it's a Dot
+            // If there is whitespace after the token (cursor > end), we treat it as empty prefix
+            // unless it is a Dot which implies property access continuation.
+            let is_touching = last_token.span.end == cursor;
 
-                // Check if the previous token was a Dot
-                if tokens.len() >= 2 && tokens[tokens.len() - 2].kind == TokenKind::Dot {
-                    // Object property completion
-                    if tokens.len() >= 3 {
-                        let obj_token = &tokens[tokens.len() - 3];
+            if is_touching || last_token.kind == TokenKind::Dot {
+                 // Case 1: Cursor is after a Dot (object property access)
+                // e.g. "foo."
+                if last_token.kind == TokenKind::Dot {
+                    // Look at the token before dot
+                    if meaningful_tokens.len() >= 2 {
+                        let obj_token = meaningful_tokens[meaningful_tokens.len() - 2];
                         match &obj_token.kind {
-                            TokenKind::Identifier(obj_name) => {
+                            TokenKind::Identifier(name) => {
+                                // Resolve variable
                                 if let Ok(val) = self.lookup_variable(
-                                    obj_name,
-                                    Span::new(0, 0, 0),
+                                    name,
+                                    Span::new(0, 0, 0), // Dummy span
                                 ) {
                                     target_val = Some(val);
                                 }
@@ -285,6 +270,35 @@ impl Interpreter {
                                 target_val = Some(Value::String(s.clone()));
                             }
                             _ => {}
+                        }
+                    }
+                }
+                // Case 2: Cursor is at an Identifier (completing current word)
+                // e.g. "fo" or "foo.b"
+                else if let TokenKind::Identifier(name) = &last_token.kind {
+                    if is_touching {
+                        prefix = name.clone();
+
+                        // Check if the previous token was a Dot
+                        if meaningful_tokens.len() >= 2 && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot {
+                            // Object property completion
+                            if meaningful_tokens.len() >= 3 {
+                                let obj_token = meaningful_tokens[meaningful_tokens.len() - 3];
+                                match &obj_token.kind {
+                                    TokenKind::Identifier(obj_name) => {
+                                        if let Ok(val) = self.lookup_variable(
+                                            obj_name,
+                                            Span::new(0, 0, 0),
+                                        ) {
+                                            target_val = Some(val);
+                                        }
+                                    }
+                                    TokenKind::String(s) => {
+                                        target_val = Some(Value::String(s.clone()));
+                                    }
+                                    _ => {}
+                                }
+                            }
                         }
                     }
                 }
@@ -323,13 +337,20 @@ impl Interpreter {
             // And also check we didn't fail to find target_val when we should have (e.g. undefined var).
             // If tokens said "obj.prop", and we couldn't resolve obj, target_val is None.
             // In that case, we shouldn't suggest globals.
+
+            // We only suggest globals if we couldn't resolve a target value AND
+            // we are not in a dot context that failed to resolve.
+            // If tokens said "obj.prop" but target_val is None, it means "obj" is invalid/undefined.
+            // In that case, we should probably return empty, OR if prefix matches globals, return globals?
+            // "abc.d" -> if abc is undefined, we shouldn't suggest globals starting with d.
+
             let mut is_dot_access = false;
-            if !tokens.is_empty() {
-                let last = &tokens[tokens.len() - 1];
+            if !meaningful_tokens.is_empty() {
+                let last = meaningful_tokens[meaningful_tokens.len() - 1];
                 if last.kind == TokenKind::Dot {
                     is_dot_access = true;
                 } else if let TokenKind::Identifier(_) = last.kind {
-                    if tokens.len() >= 2 && tokens[tokens.len() - 2].kind == TokenKind::Dot {
+                    if meaningful_tokens.len() >= 2 && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot {
                         is_dot_access = true;
                     }
                 }
@@ -358,9 +379,19 @@ impl Interpreter {
         }
 
         // Filter by prefix
-        candidates
+        let results: Vec<String> = candidates
             .into_iter()
             .filter(|c| c.starts_with(&prefix) && *c != prefix)
-            .collect()
+            .collect();
+
+        // Calculate start index for completion replacement
+        // Typically cursor - prefix.len()
+        let start_index = if cursor >= prefix.len() {
+            cursor - prefix.len()
+        } else {
+            0
+        };
+
+        (start_index, results)
     }
 }

@@ -35,6 +35,7 @@ pub struct RenderState {
     buffer: String,
     cursor: usize,
     suggestions: Option<Vec<String>>,
+    suggestion_idx: Option<usize>,
 }
 
 #[wasm_bindgen]
@@ -56,6 +57,10 @@ impl RenderState {
         self.suggestions
             .as_ref()
             .map(|v| v.iter().map(|s| JsValue::from_str(s)).collect())
+    }
+    #[wasm_bindgen(getter)]
+    pub fn suggestion_idx(&self) -> Option<usize> {
+        self.suggestion_idx
     }
 }
 
@@ -132,6 +137,7 @@ impl WasmRepl {
             buffer: s.buffer,
             cursor: s.cursor,
             suggestions: s.suggestions,
+            suggestion_idx: s.suggestion_idx,
         }
     }
 
@@ -274,8 +280,8 @@ impl WasmRepl {
             },
             ReplAction::Complete => {
                 let s = self.repl.get_render_state();
-                let completions = self.interp.complete(&s.buffer, s.cursor);
-                self.repl.set_suggestions(completions);
+                let (start, completions) = self.interp.complete(&s.buffer, s.cursor);
+                self.repl.set_suggestions(completions, start);
                 ExecutionResult {
                     output: None,
                     echo: None,

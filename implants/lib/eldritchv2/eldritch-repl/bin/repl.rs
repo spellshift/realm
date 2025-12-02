@@ -113,8 +113,8 @@ fn main() -> io::Result<()> {
                         }
                         ReplAction::Complete => {
                             let state = repl.get_render_state();
-                            let completions = interpreter.complete(&state.buffer, state.cursor);
-                            repl.set_suggestions(completions);
+                            let (start, completions) = interpreter.complete(&state.buffer, state.cursor);
+                            repl.set_suggestions(completions, start);
                             render(&mut stdout, &repl)?;
                         }
                         ReplAction::None => {}
@@ -199,7 +199,12 @@ fn render(stdout: &mut io::Stdout, repl: &Repl) -> io::Result<()> {
                  if i > 0 {
                     stdout.write_all(b"  ")?;
                  }
-                 stdout.write_all(s.as_bytes())?;
+                 if Some(i) == state.suggestion_idx {
+                    // Highlight selected
+                     stdout.write_all(format!("{}", s.as_str().black().on_white()).as_bytes())?;
+                 } else {
+                     stdout.write_all(s.as_bytes())?;
+                 }
              }
              if suggestions.len() > 10 {
                  stdout.write_all(b" ...")?;

@@ -50,6 +50,8 @@ pub struct RenderState {
     pub buffer: String,
     pub cursor: usize,
     pub suggestions: Option<Vec<String>>,
+    pub suggestion_idx: Option<usize>,
+    pub completion_start: Option<usize>,
 }
 
 #[derive(Debug, Clone)]
@@ -77,6 +79,8 @@ pub struct Repl {
     is_multiline: bool,
     search_state: Option<SearchState>,
     suggestions: Option<Vec<String>>,
+    suggestion_idx: Option<usize>,
+    completion_start: Option<usize>,
 }
 
 impl Default for Repl {
@@ -97,6 +101,8 @@ impl Repl {
             is_multiline: false,
             search_state: None,
             suggestions: None,
+            suggestion_idx: None,
+            completion_start: None,
         }
     }
 
@@ -108,16 +114,30 @@ impl Repl {
         &self.history
     }
 
-    pub fn set_suggestions(&mut self, suggestions: Vec<String>) {
+    pub fn set_suggestions(&mut self, suggestions: Vec<String>, start_index: usize) {
         if suggestions.is_empty() {
             self.suggestions = None;
+            self.suggestion_idx = None;
+            self.completion_start = None;
         } else {
+            // Auto-accept if single match?
+            // "easier to cycle" implies showing matches.
+            // If user typed 'process.li' and there is only 'list', maybe we just want to accept?
+            // But if user pressed Tab on 'p', and 'print' is the only option, maybe they want to see it?
+            // Standard shell: Tab once -> show partial completion (longest common prefix). Tab twice -> show list.
+            // Here we just show list.
+            // Let's stick to showing list.
             self.suggestions = Some(suggestions);
+            self.suggestion_idx = Some(0); // Select first by default? Or None?
+            // If we select first, Enter will accept it.
+            self.completion_start = Some(start_index);
         }
     }
 
     pub fn clear_suggestions(&mut self) {
         self.suggestions = None;
+        self.suggestion_idx = None;
+        self.completion_start = None;
     }
 
     fn current_prompt(&self) -> String {
@@ -137,6 +157,8 @@ impl Repl {
             buffer: self.buffer.clone(),
             cursor: self.cursor,
             suggestions: self.suggestions.clone(),
+            suggestion_idx: self.suggestion_idx,
+            completion_start: self.completion_start,
         }
     }
 
@@ -145,10 +167,32 @@ impl Repl {
             return self.handle_search_input(input);
         }
 
-        // Clear suggestions on any input except Tab (if re-triggering?) or maybe navigation?
-        // Usually any modification clears suggestions. Navigation might keep them but for simplicity let's clear.
-        if !matches!(input, Input::Tab) {
-            self.clear_suggestions();
+        // Check for suggestion cycling
+        if self.suggestions.is_some() {
+            match input {
+                Input::Down | Input::Tab => {
+                    self.cycle_suggestion(1);
+                    return ReplAction::Render;
+                }
+                Input::Up => {
+                    self.cycle_suggestion(-1);
+                    return ReplAction::Render;
+                }
+                Input::Enter => {
+                    if let Some(idx) = self.suggestion_idx {
+                        self.accept_suggestion(idx);
+                        return ReplAction::Render;
+                    }
+                }
+                Input::Cancel => {
+                    self.clear_suggestions();
+                    return ReplAction::Render;
+                }
+                _ => {
+                    // Any other input clears suggestions and processes normally
+                    self.clear_suggestions();
+                }
+            }
         }
 
         match input {
@@ -173,6 +217,34 @@ impl Repl {
             Input::EOF => ReplAction::Quit,
             Input::HistorySearch => self.start_search(),
         }
+    }
+
+    fn cycle_suggestion(&mut self, direction: isize) {
+        if let Some(suggestions) = &self.suggestions {
+            let count = suggestions.len();
+            if count == 0 {
+                return;
+            }
+            let current = self.suggestion_idx.unwrap_or(0) as isize;
+            let next = (current + direction).rem_euclid(count as isize);
+            self.suggestion_idx = Some(next as usize);
+        }
+    }
+
+    fn accept_suggestion(&mut self, idx: usize) {
+        if let Some(suggestions) = &self.suggestions {
+            if idx < suggestions.len() {
+                let suggestion = &suggestions[idx];
+                if let Some(start) = self.completion_start {
+                    // Replace from start to cursor with suggestion
+                    if start <= self.cursor && start <= self.buffer.len() {
+                        self.buffer.replace_range(start..self.cursor, suggestion);
+                        self.cursor = start + suggestion.len();
+                    }
+                }
+            }
+        }
+        self.clear_suggestions();
     }
 
     fn start_search(&mut self) -> ReplAction {
@@ -317,18 +389,15 @@ impl Repl {
     }
 
     fn handle_tab(&mut self) -> ReplAction {
-        // Trigger completion if:
-        // 1. Cursor is not at start
-        // 2. Character before cursor is not whitespace or opening delimiter (maybe?)
-        // Actually, user wants: "only trigger if there is text preceeding the cursor and it's not a closing brace }, ), or comma ,"
-        if self.cursor > 0 {
-            let prev_char = self.buffer.chars().nth(self.cursor - 1).unwrap();
-            let is_closing = matches!(prev_char, '}' | ')' | ',');
-            if !prev_char.is_whitespace() && !is_closing {
-                return ReplAction::Complete;
-            }
+        // Trigger completion more easily.
+        // If the line up to the cursor is just whitespace, we indent.
+        // Otherwise, we trigger completion.
+        let line_up_to_cursor: String = self.buffer.chars().take(self.cursor).collect();
+        if line_up_to_cursor.trim().is_empty() {
+            self.insert_str("    ")
+        } else {
+            ReplAction::Complete
         }
-        self.insert_str("    ")
     }
 
     fn insert_char(&mut self, c: char) -> ReplAction {

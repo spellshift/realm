@@ -135,28 +135,18 @@ fn test_repl_completion_trigger() {
     let action = repl.handle_input(Input::Tab);
     assert_eq!(action, ReplAction::Complete);
 
-    // "abc " + Tab -> Indent (whitespace before cursor)
+    // "abc " + Tab -> Complete (because line is not empty/whitespace-only)
     repl.handle_input(Input::Char(' '));
     let action = repl.handle_input(Input::Tab);
-    assert_eq!(action, ReplAction::Render);
-    assert_eq!(repl.get_render_state().buffer, "abc     ");
+    assert_eq!(action, ReplAction::Complete);
 
-    // "func(" + Tab -> Complete (not closing)
+    // "func(" + Tab -> Complete
     repl = Repl::new();
     for c in "func(".chars() {
         repl.handle_input(Input::Char(c));
     }
     let action = repl.handle_input(Input::Tab);
     assert_eq!(action, ReplAction::Complete);
-
-    // "func)" + Tab -> Indent (closing)
-    repl = Repl::new();
-    for c in "func)".chars() {
-        repl.handle_input(Input::Char(c));
-    }
-    let action = repl.handle_input(Input::Tab);
-    assert_eq!(action, ReplAction::Render);
-    assert!(repl.get_render_state().buffer.ends_with("    "));
 }
 
 #[test]
@@ -181,7 +171,7 @@ fn test_repl_force_completion() {
 #[test]
 fn test_repl_suggestions_state() {
     let mut repl = Repl::new();
-    repl.set_suggestions(vec!["foo".to_string(), "bar".to_string()]);
+    repl.set_suggestions(vec!["foo".to_string(), "bar".to_string()], 0);
 
     let state = repl.get_render_state();
     assert!(state.suggestions.is_some());
