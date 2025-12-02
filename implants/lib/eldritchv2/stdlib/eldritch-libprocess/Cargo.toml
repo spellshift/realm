@@ -1,0 +1,22 @@
+[package]
+name = "eldritch-libprocess"
+version = "0.3.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eldritch-core = { path = "../../eldritch-core" }
+eldritch-macros = { path = "../../eldritch-macros" }
+sysinfo = { workspace = true, optional = true }
+listeners = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:sysinfo",
+    "dep:listeners",
+]
+fake_bindings = []

@@ -10,6 +10,18 @@ members = [
     "lib/eldritchv2/eldritch-macros",
     "lib/eldritchv2/eldritch-repl",
     "lib/eldritchv2/eldritch-stdlib",
+    "lib/eldritchv2/stdlib/eldritch-libagent",
+    "lib/eldritchv2/stdlib/eldritch-libassets",
+    "lib/eldritchv2/stdlib/eldritch-libcrypto",
+    "lib/eldritchv2/stdlib/eldritch-libfile",
+    "lib/eldritchv2/stdlib/eldritch-libhttp",
+    "lib/eldritchv2/stdlib/eldritch-libpivot",
+    "lib/eldritchv2/stdlib/eldritch-libprocess",
+    "lib/eldritchv2/stdlib/eldritch-librandom",
+    "lib/eldritchv2/stdlib/eldritch-libregex",
+    "lib/eldritchv2/stdlib/eldritch-libreport",
+    "lib/eldritchv2/stdlib/eldritch-libsys",
+    "lib/eldritchv2/stdlib/eldritch-libtime",
     "lib/eldritchv2/eldritchv2",
 ]
 resolver = "2"
