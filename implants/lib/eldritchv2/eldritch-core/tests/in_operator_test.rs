@@ -5,8 +5,8 @@ mod tests {
     fn check_script(source: &str) {
         let mut interpreter = Interpreter::new();
         match interpreter.interpret(source) {
-            Ok(_) => {},
-            Err(e) => panic!("Script execution failed: {}", e),
+            Ok(_) => {}
+            Err(e) => panic!("Script execution failed: {e}"),
         }
     }
 

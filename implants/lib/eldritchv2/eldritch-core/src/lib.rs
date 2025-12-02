@@ -4,18 +4,18 @@ extern crate alloc;
 extern crate self as eldritch_core;
 
 // Internal
-mod interpreter;
 mod ast;
+mod global_libs;
+mod interpreter;
 mod lexer;
 mod parser;
 mod token;
-mod global_libs;
 
 // Re-export core types
-pub use token::TokenKind;
-pub use ast::{Value, ForeignValue, Environment};
+pub use ast::{Environment, ForeignValue, Value};
+pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
-pub use interpreter::Interpreter;
+pub use token::TokenKind;
 
 // Public API exports
 pub use global_libs::register_lib;

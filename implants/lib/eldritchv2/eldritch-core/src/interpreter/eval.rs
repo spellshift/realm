@@ -245,6 +245,7 @@ fn evaluate_set_comp(
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
+        printer: interp.env.borrow().printer.clone(),
     }));
     let original_env = Rc::clone(&interp.env);
     interp.env = comp_env;
