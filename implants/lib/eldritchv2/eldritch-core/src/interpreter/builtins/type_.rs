@@ -5,5 +5,8 @@ use alloc::string::String;
 use core::cell::RefCell;
 
 pub fn builtin_type(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+    if args.len() != 1 {
+        return Err(String::from("type() expects exactly one argument"));
+    }
     Ok(Value::String(get_type_name(&args[0])))
 }
