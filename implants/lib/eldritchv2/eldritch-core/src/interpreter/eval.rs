@@ -1159,12 +1159,78 @@ fn apply_binary_op(
             Ok(Value::List(Rc::new(RefCell::new(new_list))))
         }
 
+        // List repetition (Multiplication)
+        (Value::List(a), TokenKind::Star, Value::Int(n)) => {
+            let mut new_list = Vec::new();
+            if n > 0 {
+                let list_ref = a.borrow();
+                for _ in 0..n {
+                    new_list.extend(list_ref.clone());
+                }
+            }
+            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+        }
+        (Value::Int(n), TokenKind::Star, Value::List(a)) => {
+            let mut new_list = Vec::new();
+            if n > 0 {
+                let list_ref = a.borrow();
+                for _ in 0..n {
+                    new_list.extend(list_ref.clone());
+                }
+            }
+            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+        }
+
         // Tuple concatenation (new tuple)
         (Value::Tuple(a), TokenKind::Plus, Value::Tuple(b)) => {
             let mut new_tuple = a.clone();
             new_tuple.extend(b.clone());
             Ok(Value::Tuple(new_tuple))
         }
+
+        // Tuple repetition
+        (Value::Tuple(a), TokenKind::Star, Value::Int(n)) => {
+            let mut new_tuple = Vec::new();
+            if n > 0 {
+                for _ in 0..n {
+                    new_tuple.extend(a.clone());
+                }
+            }
+            Ok(Value::Tuple(new_tuple))
+        }
+        (Value::Int(n), TokenKind::Star, Value::Tuple(a)) => {
+            let mut new_tuple = Vec::new();
+            if n > 0 {
+                for _ in 0..n {
+                    new_tuple.extend(a.clone());
+                }
+            }
+            Ok(Value::Tuple(new_tuple))
+        }
+
+        // String repetition
+        (Value::String(s), TokenKind::Star, Value::Int(n)) => {
+            if n <= 0 {
+                Ok(Value::String(String::new()))
+            } else {
+                Ok(Value::String(s.repeat(n as usize)))
+            }
+        }
+        (Value::Int(n), TokenKind::Star, Value::String(s)) => {
+            if n <= 0 {
+                Ok(Value::String(String::new()))
+            } else {
+                Ok(Value::String(s.repeat(n as usize)))
+            }
+        }
+
+        // Sequence Comparisons
+        (Value::List(a), op, Value::List(b)) => {
+            let list_a = a.borrow();
+            let list_b = b.borrow();
+            compare_sequences(&list_a, &list_b, op, span)
+        }
+        (Value::Tuple(a), op, Value::Tuple(b)) => compare_sequences(&a, &b, op, span),
 
         // Dict merge (new dict)
         (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b)) => {
@@ -1195,7 +1261,6 @@ fn string_modulo_format(
     val: &Value,
     span: Span,
 ) -> Result<Value, EldritchError> {
-    // Simple implementation of %s formatting
     let mut result = String::new();
     let mut chars = fmt_str.chars().peekable();
     let mut val_idx = 0;
@@ -1207,19 +1272,57 @@ fn string_modulo_format(
     while let Some(c) = chars.next() {
         if c == '%' {
             if let Some(&next) = chars.peek() {
-                if next == 's' {
-                    chars.next();
-                    if val_idx >= vals.len() {
-                        return runtime_error(span, "not enough arguments for format string");
+                match next {
+                    's' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        result.push_str(&vals[val_idx].to_string());
+                        val_idx += 1;
                     }
-                    result.push_str(&vals[val_idx].to_string());
-                    val_idx += 1;
-                } else if next == '%' {
-                    chars.next();
-                    result.push('%');
-                } else {
-                    // For now only support %s and %%
-                    return runtime_error(span, &format!("Unsupported format specifier: %{next}"));
+                    'd' | 'i' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        match &vals[val_idx] {
+                            Value::Int(i) => result.push_str(&i.to_string()),
+                            Value::Float(f) => result.push_str(&(*f as i64).to_string()),
+                            Value::Bool(b) => result.push_str(if *b { "1" } else { "0" }),
+                            _ => {
+                                return runtime_error(
+                                    span,
+                                    "%d format: a number is required, not something else",
+                                )
+                            }
+                        }
+                        val_idx += 1;
+                    }
+                    'r' => {
+                        chars.next();
+                        if val_idx >= vals.len() {
+                            return runtime_error(span, "not enough arguments for format string");
+                        }
+                        // Use repr() equivalent?
+                        // Currently Value::to_string gives a representation that is usually correct for printing.
+                        // But for strings, to_string() gives the content, not the quoted repr.
+                        // We might need a separate repr helper.
+                        // For now, let's just quote strings manually if needed, or rely on debug fmt if available.
+                        match &vals[val_idx] {
+                            Value::String(s) => result.push_str(&format!("\"{}\"", s)), // Simple repr
+                            v => result.push_str(&v.to_string()),
+                        }
+                        val_idx += 1;
+                    }
+                    '%' => {
+                        chars.next();
+                        result.push('%');
+                    }
+                    _ => {
+                        // For now only support %s, %d, %r and %%
+                        return runtime_error(span, &format!("Unsupported format specifier: %{next}"));
+                    }
                 }
             } else {
                 return runtime_error(span, "incomplete format");
@@ -1230,12 +1333,74 @@ fn string_modulo_format(
     }
 
     if val_idx < vals.len() {
-        // It is okay if we have extra args if they were not consumed?
-        // Python raises TypeError: not all arguments converted during string formatting
+        // Python raises TypeError
         return runtime_error(span, "not all arguments converted during string formatting");
     }
 
     Ok(Value::String(result))
+}
+
+fn compare_sequences(
+    seq_a: &[Value],
+    seq_b: &[Value],
+    op: TokenKind,
+    span: Span,
+) -> Result<Value, EldritchError> {
+    // Lexicographical comparison
+    let len_a = seq_a.len();
+    let len_b = seq_b.len();
+    let len = len_a.min(len_b);
+
+    for i in 0..len {
+        let val_a = &seq_a[i];
+        let val_b = &seq_b[i];
+
+        if val_a != val_b {
+            // Need recursive comparison logic or reuse binary op?
+            // Reusing apply_binary_op requires mutable interp which we don't have easily here in this helper unless passed.
+            // But we have values. Let's do simple comparison if types match and are orderable.
+            // For full correctness, we should recurse.
+            // BUT, `apply_binary_op` takes `&Expr`. We have `Value`.
+            // We need `compare_values` helper.
+            return match op {
+                TokenKind::Eq => Ok(Value::Bool(false)),
+                TokenKind::NotEq => Ok(Value::Bool(true)),
+                TokenKind::Lt => {
+                    // Check if a < b
+                    Ok(Value::Bool(super::utils::compare_values(val_a, val_b).map_or(
+                        false,
+                        |ord| matches!(ord, core::cmp::Ordering::Less),
+                    )))
+                }
+                TokenKind::Gt => Ok(Value::Bool(super::utils::compare_values(val_a, val_b).map_or(
+                    false,
+                    |ord| matches!(ord, core::cmp::Ordering::Greater),
+                ))),
+                TokenKind::LtEq => Ok(Value::Bool(super::utils::compare_values(val_a, val_b)
+                    .map_or(false, |ord| matches!(
+                        ord,
+                        core::cmp::Ordering::Less | core::cmp::Ordering::Equal
+                    )))),
+                TokenKind::GtEq => Ok(Value::Bool(super::utils::compare_values(val_a, val_b)
+                    .map_or(false, |ord| matches!(
+                        ord,
+                        core::cmp::Ordering::Greater | core::cmp::Ordering::Equal
+                    )))),
+                _ => runtime_error(span, "Invalid comparison operator for sequences"),
+            };
+        }
+    }
+
+    // If prefix matches, compare lengths
+    match op {
+        TokenKind::Eq => Ok(Value::Bool(len_a == len_b)),
+        TokenKind::NotEq => Ok(Value::Bool(len_a != len_b)),
+        TokenKind::Lt => Ok(Value::Bool(len_a < len_b)),
+        TokenKind::Gt => Ok(Value::Bool(len_a > len_b)),
+        TokenKind::LtEq => Ok(Value::Bool(len_a <= len_b)),
+        TokenKind::GtEq => Ok(Value::Bool(len_a >= len_b)),
+        _ => runtime_error(span, "Invalid comparison operator for sequences"),
+    }
 }
 
 pub(crate) fn apply_binary_op_pub(
