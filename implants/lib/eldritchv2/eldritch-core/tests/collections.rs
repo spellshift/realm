@@ -137,3 +137,40 @@ fn test_comprehensions() {
     "#,
     );
 }
+
+#[test]
+fn test_list_addition() {
+    assert::pass(
+        r#"
+        l1 = [1, 2]
+        l2 = [3, 4]
+        l3 = l1 + l2
+        assert_eq(l3, [1, 2, 3, 4])
+        assert_eq(l1, [1, 2]) # Originals unchanged
+        assert_eq(l2, [3, 4])
+
+        l1 += [5]
+        assert_eq(l1, [1, 2, 5])
+    "#,
+    );
+}
+
+#[test]
+fn test_set_addition() {
+    assert::pass(
+        r#"
+        s1 = {1, 2}
+        s2 = {2, 3}
+        s3 = s1 + s2
+        assert_eq(s3, {1, 2, 3})
+
+        # Order shouldn't matter for sets, but equality check handles it.
+        # Ensure originals are unchanged
+        assert_eq(s1, {1, 2})
+        assert_eq(s2, {2, 3})
+
+        s1 += {4}
+        assert_eq(s1, {1, 2, 4})
+    "#,
+    );
+}
