@@ -113,6 +113,113 @@ fn test_dict_methods() {
 }
 
 #[test]
+fn test_sets() {
+    assert::pass(
+        r#"
+        myset = {1, 2}
+        assert_eq(len(myset), 2)
+        assert(1 in myset)
+        assert(2 in myset)
+
+        myset.add(3)
+        assert_eq(len(myset), 3)
+        assert(3 in myset)
+        myset.add(3) # Duplicate
+        assert_eq(len(myset), 3)
+
+        myset.clear()
+        assert_eq(len(myset), 0)
+
+        myset = {1, 2}
+        assert(myset.contains(1))
+        assert(not myset.contains(3))
+
+        myset.discard(1)
+        assert_eq(len(myset), 1)
+        myset.discard(3) # Should not raise error
+        assert_eq(len(myset), 1)
+    "#,
+    );
+}
+
+#[test]
+fn test_set_operations() {
+    assert::pass(
+        r#"
+        s1 = {1, 2, 3}
+        s2 = {2, 3, 4}
+
+        # Difference
+        diff = s1.difference(s2)
+        assert_eq(len(diff), 1)
+        assert(1 in diff)
+
+        # Intersection
+        inter = s1.intersection(s2)
+        assert_eq(len(inter), 2)
+        assert(2 in inter)
+        assert(3 in inter)
+
+        # Is disjoint
+        assert(not s1.isdisjoint(s2))
+        assert({1}.isdisjoint({2}))
+
+        # Subset/Superset
+        assert({1}.issubset(s1))
+        assert(s1.issuperset({1}))
+
+        # Symmetric Difference
+        sym = s1.symmetric_difference(s2)
+        assert_eq(len(sym), 2)
+        assert(1 in sym)
+        assert(4 in sym)
+
+        # Union
+        u = s1.union(s2)
+        assert_eq(len(u), 4)
+
+        # Update
+        s1.update(s2)
+        assert_eq(len(s1), 4)
+    "#,
+    );
+}
+
+#[test]
+fn test_set_iterable_args() {
+    assert::pass(
+        r#"
+        s = {1}
+        s.update([2])
+        assert_eq(len(s), 2)
+
+        assert_eq(len(s.union([3])), 3)
+        assert_eq(len(s.intersection([1, 5])), 1)
+        assert_eq(len(s.difference([2])), 1)
+    "#,
+    );
+}
+
+#[test]
+fn test_set_pop_remove() {
+    assert::pass(
+        r#"
+        myset = {1, 2}
+        # Sets are ordered in Eldritch (BTreeSet), so pop (last) should return 2
+        val = myset.pop()
+        assert_eq(val, 2)
+        assert_eq(len(myset), 1)
+        assert(1 in myset)
+
+        myset.remove(1)
+        assert_eq(len(myset), 0)
+    "#,
+    );
+    assert::fail("s = {1}; s.remove(2)", "KeyError");
+    assert::fail("s = set(); s.pop()", "empty");
+}
+
+#[test]
 fn test_comprehensions() {
     assert::pass(
         r#"
