@@ -1152,14 +1152,30 @@ fn apply_binary_op(
             string_modulo_format(interp, &a, &b_val, span)
         }
 
-        // List Concatenation
+        // List concatenation (new list)
         (Value::List(a), TokenKind::Plus, Value::List(b)) => {
             let mut new_list = a.borrow().clone();
-            new_list.extend(b.borrow().iter().cloned());
+            new_list.extend(b.borrow().clone());
             Ok(Value::List(Rc::new(RefCell::new(new_list))))
         }
 
-        // Set Union
+        // Tuple concatenation (new tuple)
+        (Value::Tuple(a), TokenKind::Plus, Value::Tuple(b)) => {
+            let mut new_tuple = a.clone();
+            new_tuple.extend(b.clone());
+            Ok(Value::Tuple(new_tuple))
+        }
+
+        // Dict merge (new dict)
+        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b)) => {
+            let mut new_dict = a.borrow().clone();
+            for (k, v) in b.borrow().iter() {
+                new_dict.insert(k.clone(), v.clone());
+            }
+            Ok(Value::Dictionary(Rc::new(RefCell::new(new_dict))))
+        }
+
+        // Set union (new set)
         (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
             let mut new_set = a.borrow().clone();
