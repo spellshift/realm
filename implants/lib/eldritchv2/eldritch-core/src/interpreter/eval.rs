@@ -1151,6 +1151,40 @@ fn apply_binary_op(
             // String formatting
             string_modulo_format(interp, &a, &b_val, span)
         }
+
+        // List concatenation (new list)
+        (Value::List(a), TokenKind::Plus, Value::List(b)) => {
+            let mut new_list = a.borrow().clone();
+            new_list.extend(b.borrow().clone());
+            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+        }
+
+        // Tuple concatenation (new tuple)
+        (Value::Tuple(a), TokenKind::Plus, Value::Tuple(b)) => {
+            let mut new_tuple = a.clone();
+            new_tuple.extend(b.clone());
+            Ok(Value::Tuple(new_tuple))
+        }
+
+        // Dict merge (new dict)
+        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b)) => {
+            let mut new_dict = a.borrow().clone();
+            for (k, v) in b.borrow().iter() {
+                new_dict.insert(k.clone(), v.clone());
+            }
+            Ok(Value::Dictionary(Rc::new(RefCell::new(new_dict))))
+        }
+
+        // Set union (new set)
+        (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
+            #[allow(clippy::mutable_key_type)]
+            let mut new_set = a.borrow().clone();
+            for item in b.borrow().iter() {
+                new_set.insert(item.clone());
+            }
+            Ok(Value::Set(Rc::new(RefCell::new(new_set))))
+        }
+
         _ => runtime_error(span, "Unsupported binary op"),
     }
 }
