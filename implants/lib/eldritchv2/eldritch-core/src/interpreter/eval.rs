@@ -114,10 +114,11 @@ fn evaluate_list_comp(
 ) -> Result<Value, EldritchError> {
     let iterable_val = evaluate(interp, iterable)?;
     let items = to_iterable(interp, &iterable_val, iterable.span)?;
-
+    let printer = interp.env.borrow().printer.clone();
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
+        printer,
     }));
     let original_env = Rc::clone(&interp.env);
     interp.env = comp_env;
@@ -155,9 +156,11 @@ fn evaluate_dict_comp(
             )
         }
     };
+    let printer = interp.env.borrow().printer.clone();
     let comp_env = Rc::new(RefCell::new(Environment {
         parent: Some(Rc::clone(&interp.env)),
         values: BTreeMap::new(),
+        printer,
     }));
     let original_env = Rc::clone(&interp.env);
     interp.env = comp_env;
@@ -577,9 +580,11 @@ fn call_function(
             interp.depth += 1;
 
             let result = (|| {
+                let printer = interp.env.borrow().printer.clone();
                 let function_env = Rc::new(RefCell::new(Environment {
                     parent: Some(closure),
                     values: BTreeMap::new(),
+                    printer,
                 }));
                 let mut pos_idx = 0;
                 for param in params {

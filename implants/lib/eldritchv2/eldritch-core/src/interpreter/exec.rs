@@ -83,9 +83,11 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
             for item in items {
                 // Scope per iteration to prevent leaking variables
                 let parent_env = Rc::clone(&interp.env);
+                let printer = parent_env.borrow().printer.clone();
                 let new_env = Rc::new(RefCell::new(Environment {
                     parent: Some(parent_env.clone()),
                     values: BTreeMap::new(),
+                    printer,
                 }));
                 interp.env = new_env;
 

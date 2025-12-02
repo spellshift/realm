@@ -1,12 +1,11 @@
 use super::{Input, Repl, ReplAction};
 #[cfg(feature = "fake_bindings")]
-use eldritch_core::{register_lib, Interpreter, Value, Environment};
+use eldritch_core::{register_lib, BufferPrinter, Interpreter, Value};
 use alloc::format;
-use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::string::ToString;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
@@ -23,34 +22,11 @@ extern "C" {
     fn repl_print(s: &str);
 }
 
-thread_local! {
-    static OUTPUT_BUFFER: RefCell<String> = RefCell::new(String::new());
-}
-
-fn wasm_print(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
-    let mut out = String::new();
-    for (i, arg) in args.iter().enumerate() {
-        if i > 0 {
-            out.push(' ');
-        }
-        out.push_str(&arg.to_string());
-    }
-
-    OUTPUT_BUFFER.with(|b| {
-        let mut buf = b.borrow_mut();
-        if !buf.is_empty() {
-            buf.push('\n');
-        }
-        buf.push_str(&out);
-    });
-
-    Ok(Value::None)
-}
-
 #[wasm_bindgen]
 pub struct WasmRepl {
     interp: Interpreter,
     repl: Repl,
+    printer: Arc<BufferPrinter>,
 }
 
 #[wasm_bindgen]
@@ -119,12 +95,13 @@ impl WasmRepl {
             register_lib(TimeLibraryFake::default());
         }
 
-        let mut interp = Interpreter::new();
-        interp.register_function("print", wasm_print);
+        let printer = Arc::new(BufferPrinter::new());
+        let interp = Interpreter::new_with_printer(printer.clone());
 
         WasmRepl {
             interp,
             repl: Repl::new(),
+            printer,
         }
     }
 
@@ -300,12 +277,11 @@ impl WasmRepl {
     }
 
     fn execute(&mut self, code: &str) -> ExecutionResult {
-        // Clear buffer
-        OUTPUT_BUFFER.with(|b| b.borrow_mut().clear());
+        self.printer.clear();
 
         match self.interp.interpret(code) {
             Ok(v) => {
-                let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
+                let mut out = self.printer.read();
 
                 if let Value::None = v {
                     // Do not print None
@@ -331,7 +307,7 @@ impl WasmRepl {
                 }
             }
             Err(e) => {
-                let mut out = OUTPUT_BUFFER.with(|b| b.borrow().clone());
+                let mut out = self.printer.read();
                 if !out.is_empty() {
                     out.push('\n');
                 }
