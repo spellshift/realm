@@ -159,3 +159,12 @@ fn test_bytes_builtin() {
     assert::fail("bytes([256])", "range");
     assert::fail("bytes(['a'])", "integers");
 }
+
+#[test]
+fn test_type_regression() {
+    assert::pass(r#"
+        assert(type(1) == "int")
+    "#);
+    assert::fail("type()", "expects exactly one argument");
+    assert::fail("type(1, 2)", "expects exactly one argument");
+}
