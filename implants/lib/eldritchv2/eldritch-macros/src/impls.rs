@@ -38,13 +38,14 @@ pub fn expand_eldritch_library(
     trait_def.supertraits.push(parse_quote!(core::marker::Sync));
 
     let mut method_dispatches = Vec::new();
-    let mut method_names = Vec::new();
+    let mut method_registrations = Vec::new();
 
     for item in &mut trait_def.items {
         if let TraitItem::Method(method) = item {
             // Check for eldritch_method attribute
             let mut is_eldritch = false;
             let mut rename = None;
+            let mut cfg_attrs = Vec::new();
 
             for attr in &method.attrs {
                 if attr.path.is_ident("eldritch_method") {
@@ -54,6 +55,8 @@ pub fn expand_eldritch_library(
                             rename = Some(lit.value());
                         }
                     }
+                } else if attr.path.is_ident("cfg") {
+                    cfg_attrs.push(attr.clone());
                 }
             }
 
@@ -63,13 +66,18 @@ pub fn expand_eldritch_library(
                 let (args_parsing, arg_names) = generate_args_parsing(&method.sig)?;
 
                 method_dispatches.push(quote! {
+                    #(#cfg_attrs)*
                     #bind_name => {
                         #args_parsing
                         let result = self.#method_name(#arg_names);
                         eldritch_core::conversion::IntoEldritchResult::into_eldritch_result(result)
                     }
                 });
-                method_names.push(bind_name);
+
+                method_registrations.push(quote! {
+                    #(#cfg_attrs)*
+                    names.push(alloc::string::String::from(#bind_name));
+                });
             }
         }
     }
@@ -84,7 +92,7 @@ pub fn expand_eldritch_library(
     trait_def.items.push(parse_quote! {
         fn _eldritch_method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
             let mut names = alloc::vec::Vec::new();
-            #(names.push(alloc::string::String::from(#method_names));)*
+            #(#method_registrations)*
             names
         }
     });
