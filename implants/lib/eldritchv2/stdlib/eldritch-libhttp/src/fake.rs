@@ -1,10 +1,10 @@
 
 use eldritch_core::Value;
 use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 use eldritch_macros::eldritch_library_impl;
 use super::HttpLibrary;
 
@@ -34,7 +34,7 @@ impl HttpLibrary for HttpLibraryFake {
         headers_map.insert("Content-Type".into(), Value::String("text/plain".into()));
         map.insert(
             "headers".into(),
-            Value::Dictionary(Rc::new(RefCell::new(headers_map))),
+            Value::Dictionary(Arc::new(RwLock::new(headers_map))),
         );
 
         Ok(map)
@@ -68,7 +68,7 @@ impl HttpLibrary for HttpLibraryFake {
         );
         map.insert(
             "headers".into(),
-            Value::Dictionary(Rc::new(RefCell::new(headers_map))),
+            Value::Dictionary(Arc::new(RwLock::new(headers_map))),
         );
 
         Ok(map)
@@ -77,7 +77,7 @@ impl HttpLibrary for HttpLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_http_fake_get() {

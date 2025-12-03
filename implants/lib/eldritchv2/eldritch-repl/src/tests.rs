@@ -3,11 +3,11 @@ extern crate alloc;
 #[cfg(test)]
 use crate::{Input, Repl, ReplAction};
 use eldritch_core::{Interpreter, Value, Environment};
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
 #[test]
 fn test_repl_basic_input() {
@@ -183,7 +183,7 @@ fn test_repl_suggestions_state() {
 }
 
 // Helper to match BuiltinFn signature
-fn mock_function(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+fn mock_function(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Bool(true));
     }

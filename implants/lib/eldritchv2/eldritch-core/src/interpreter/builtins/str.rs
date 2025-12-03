@@ -1,10 +1,10 @@
 use crate::ast::{Environment, Value};
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_str(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_str(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::String(String::new()));
     }

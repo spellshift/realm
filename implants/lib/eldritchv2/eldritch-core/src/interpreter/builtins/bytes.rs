@@ -1,13 +1,13 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::utils::get_type_name;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_bytes(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_bytes(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Bytes(Vec::new()));
     }
@@ -18,7 +18,7 @@ pub fn builtin_bytes(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
     match &args[0] {
         Value::String(s) => Ok(Value::Bytes(s.as_bytes().to_vec())),
         Value::List(l) => {
-            let list = l.borrow();
+            let list = l.read();
             let mut bytes = Vec::with_capacity(list.len());
             for item in list.iter() {
                 match item {

@@ -10,11 +10,11 @@ use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
-use alloc::rc::Rc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
 use super::exec::execute_stmts;
 
@@ -114,13 +114,13 @@ fn evaluate_list_comp(
 ) -> Result<Value, EldritchError> {
     let iterable_val = evaluate(interp, iterable)?;
     let items = to_iterable(interp, &iterable_val, iterable.span)?;
-    let printer = interp.env.borrow().printer.clone();
-    let comp_env = Rc::new(RefCell::new(Environment {
-        parent: Some(Rc::clone(&interp.env)),
+    let printer = interp.env.read().printer.clone();
+    let comp_env = Arc::new(RwLock::new(Environment {
+        parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
         printer,
     }));
-    let original_env = Rc::clone(&interp.env);
+    let original_env = interp.env.clone();
     interp.env = comp_env;
     let mut results = Vec::new();
     for item in items {
@@ -134,7 +134,7 @@ fn evaluate_list_comp(
         }
     }
     interp.env = original_env;
-    Ok(Value::List(Rc::new(RefCell::new(results))))
+    Ok(Value::List(Arc::new(RwLock::new(results))))
 }
 
 fn evaluate_dict_comp(
@@ -147,7 +147,7 @@ fn evaluate_dict_comp(
 ) -> Result<Value, EldritchError> {
     let iterable_val = evaluate(interp, iterable)?;
     let items = match iterable_val {
-        Value::List(l) => l.borrow().clone(),
+        Value::List(l) => l.read().clone(),
         Value::Tuple(t) => t.clone(),
         _ => {
             return runtime_error(
@@ -156,13 +156,13 @@ fn evaluate_dict_comp(
             )
         }
     };
-    let printer = interp.env.borrow().printer.clone();
-    let comp_env = Rc::new(RefCell::new(Environment {
-        parent: Some(Rc::clone(&interp.env)),
+    let printer = interp.env.read().printer.clone();
+    let comp_env = Arc::new(RwLock::new(Environment {
+        parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
         printer,
     }));
-    let original_env = Rc::clone(&interp.env);
+    let original_env = interp.env.clone();
     interp.env = comp_env;
     let mut results = BTreeMap::new();
     for item in items {
@@ -182,7 +182,7 @@ fn evaluate_dict_comp(
         }
     }
     interp.env = original_env;
-    Ok(Value::Dictionary(Rc::new(RefCell::new(results))))
+    Ok(Value::Dictionary(Arc::new(RwLock::new(results))))
 }
 
 fn evaluate_list_literal(
@@ -193,7 +193,7 @@ fn evaluate_list_literal(
     for expr in elements {
         vals.push(evaluate(interp, expr)?);
     }
-    Ok(Value::List(Rc::new(RefCell::new(vals))))
+    Ok(Value::List(Arc::new(RwLock::new(vals))))
 }
 
 fn evaluate_tuple_literal(
@@ -221,7 +221,7 @@ fn evaluate_dict_literal(
         };
         map.insert(key_str, value_val);
     }
-    Ok(Value::Dictionary(Rc::new(RefCell::new(map))))
+    Ok(Value::Dictionary(Arc::new(RwLock::new(map))))
 }
 
 fn evaluate_set_comp(
@@ -233,7 +233,7 @@ fn evaluate_set_comp(
 ) -> Result<Value, EldritchError> {
     let iterable_val = evaluate(interp, iterable)?;
     let items = match iterable_val {
-        Value::List(l) => l.borrow().clone(),
+        Value::List(l) => l.read().clone(),
         Value::Tuple(t) => t.clone(),
         _ => {
             return runtime_error(
@@ -242,12 +242,13 @@ fn evaluate_set_comp(
             )
         }
     };
-    let comp_env = Rc::new(RefCell::new(Environment {
-        parent: Some(Rc::clone(&interp.env)),
+    let printer = interp.env.read().printer.clone();
+    let comp_env = Arc::new(RwLock::new(Environment {
+        parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
-        printer: interp.env.borrow().printer.clone(),
+        printer,
     }));
-    let original_env = Rc::clone(&interp.env);
+    let original_env = interp.env.clone();
     interp.env = comp_env;
     #[allow(clippy::mutable_key_type)]
     let mut results = BTreeSet::new();
@@ -262,7 +263,7 @@ fn evaluate_set_comp(
         }
     }
     interp.env = original_env;
-    Ok(Value::Set(Rc::new(RefCell::new(results))))
+    Ok(Value::Set(Arc::new(RwLock::new(results))))
 }
 
 fn evaluate_set_literal(
@@ -275,7 +276,7 @@ fn evaluate_set_literal(
         let val = evaluate(interp, expr)?;
         set.insert(val);
     }
-    Ok(Value::Set(Rc::new(RefCell::new(set))))
+    Ok(Value::Set(Arc::new(RwLock::new(set))))
 }
 
 fn evaluate_index(
@@ -293,7 +294,7 @@ fn evaluate_index(
                 Value::Int(i) => i,
                 _ => return runtime_error(index.span, "List indices must be integers"),
             };
-            let list = l.borrow();
+            let list = l.read();
             let true_idx = if idx_int < 0 {
                 list.len() as i64 + idx_int
             } else {
@@ -324,7 +325,7 @@ fn evaluate_index(
                 Value::String(s) => s,
                 _ => return runtime_error(index.span, "Dictionary keys must be strings"),
             };
-            let dict = d.borrow();
+            let dict = d.read();
             match dict.get(&key_str) {
                 Some(v) => Ok(v.clone()),
                 None => runtime_error(span, &format!("KeyError: '{key_str}'")),
@@ -377,7 +378,7 @@ fn evaluate_slice(
 
     match obj_val {
         Value::List(l) => {
-            let list = l.borrow();
+            let list = l.read();
             let len = list.len() as i64;
             let (i, j) = adjust_slice_indices(len, &start_val_opt, &stop_val_opt, step_val);
 
@@ -399,7 +400,7 @@ fn evaluate_slice(
                     curr += step_val;
                 }
             }
-            Ok(Value::List(Rc::new(RefCell::new(result))))
+            Ok(Value::List(Arc::new(RwLock::new(result))))
         }
         Value::Tuple(t) => {
             let len = t.len() as i64;
@@ -459,7 +460,7 @@ fn evaluate_getattr(
 
     // Support dot access for dictionary keys (useful for modules)
     if let Value::Dictionary(d) = &obj_val {
-        if let Some(val) = d.borrow().get(&name) {
+        if let Some(val) = d.read().get(&name) {
             return Ok(val.clone());
         }
     }
@@ -523,7 +524,7 @@ fn call_function(
             Argument::StarArgs(expr) => {
                 let val = evaluate(interp, expr)?;
                 match val {
-                    Value::List(l) => pos_args_val.extend(l.borrow().clone()),
+                    Value::List(l) => pos_args_val.extend(l.read().clone()),
                     Value::Tuple(t) => pos_args_val.extend(t.clone()),
                     _ => {
                         return runtime_error(
@@ -539,7 +540,7 @@ fn call_function(
             Argument::KwArgs(expr) => {
                 let val = evaluate(interp, expr)?;
                 match val {
-                    Value::Dictionary(d) => kw_args_val.extend(d.borrow().clone()),
+                    Value::Dictionary(d) => kw_args_val.extend(d.read().clone()),
                     _ => {
                         return runtime_error(
                             expr.span,
@@ -581,8 +582,8 @@ fn call_function(
             interp.depth += 1;
 
             let result = (|| {
-                let printer = interp.env.borrow().printer.clone();
-                let function_env = Rc::new(RefCell::new(Environment {
+                let printer = interp.env.read().printer.clone();
+                let function_env = Arc::new(RwLock::new(Environment {
                     parent: Some(closure),
                     values: BTreeMap::new(),
                     printer,
@@ -593,13 +594,13 @@ fn call_function(
                         RuntimeParam::Normal(param_name) => {
                             if pos_idx < pos_args_val.len() {
                                 function_env
-                                    .borrow_mut()
+                                    .write()
                                     .values
                                     .insert(param_name.clone(), pos_args_val[pos_idx].clone());
                                 pos_idx += 1;
                             } else if let Some(val) = kw_args_val.remove(&param_name) {
                                 function_env
-                                    .borrow_mut()
+                                    .write()
                                     .values
                                     .insert(param_name.clone(), val);
                             } else {
@@ -612,18 +613,18 @@ fn call_function(
                         RuntimeParam::WithDefault(param_name, default_val) => {
                             if pos_idx < pos_args_val.len() {
                                 function_env
-                                    .borrow_mut()
+                                    .write()
                                     .values
                                     .insert(param_name.clone(), pos_args_val[pos_idx].clone());
                                 pos_idx += 1;
                             } else if let Some(val) = kw_args_val.remove(&param_name) {
                                 function_env
-                                    .borrow_mut()
+                                    .write()
                                     .values
                                     .insert(param_name.clone(), val);
                             } else {
                                 function_env
-                                    .borrow_mut()
+                                    .write()
                                     .values
                                     .insert(param_name.clone(), default_val.clone());
                             }
@@ -636,7 +637,7 @@ fn call_function(
                             };
                             pos_idx = pos_args_val.len();
                             function_env
-                                .borrow_mut()
+                                .write()
                                 .values
                                 .insert(param_name.clone(), Value::Tuple(remaining));
                         }
@@ -648,9 +649,9 @@ fn call_function(
                                     dict.insert(k, v);
                                 }
                             }
-                            function_env.borrow_mut().values.insert(
+                            function_env.write().values.insert(
                                 param_name.clone(),
-                                Value::Dictionary(Rc::new(RefCell::new(dict))),
+                                Value::Dictionary(Arc::new(RwLock::new(dict))),
                             );
                         }
                     }
@@ -669,7 +670,7 @@ fn call_function(
                     );
                 }
 
-                let original_env = Rc::clone(&interp.env);
+                let original_env = interp.env.clone();
                 interp.env = function_env;
                 let old_flow = interp.flow.clone();
                 interp.flow = Flow::Next;
@@ -725,7 +726,7 @@ fn builtin_map(
         results.push(res);
     }
 
-    Ok(Value::List(Rc::new(RefCell::new(results))))
+    Ok(Value::List(Arc::new(RwLock::new(results))))
 }
 
 fn builtin_filter(
@@ -752,7 +753,7 @@ fn builtin_filter(
             results.push(item);
         }
     }
-    Ok(Value::List(Rc::new(RefCell::new(results))))
+    Ok(Value::List(Arc::new(RwLock::new(results))))
 }
 
 fn builtin_reduce(
@@ -847,11 +848,11 @@ fn to_iterable(
     span: Span,
 ) -> Result<Vec<Value>, EldritchError> {
     match val {
-        Value::List(l) => Ok(l.borrow().clone()),
+        Value::List(l) => Ok(l.read().clone()),
         Value::Tuple(t) => Ok(t.clone()),
-        Value::Set(s) => Ok(s.borrow().iter().cloned().collect()),
+        Value::Set(s) => Ok(s.read().iter().cloned().collect()),
         Value::Dictionary(d) => Ok(d
-            .borrow()
+            .read()
             .keys()
             .map(|k| Value::String(k.clone()))
             .collect()),
@@ -918,12 +919,12 @@ fn evaluate_in(
 ) -> Result<Value, EldritchError> {
     match collection {
         Value::List(l) => {
-            let list = l.borrow();
+            let list = l.read();
             Ok(Value::Bool(list.contains(item)))
         }
         Value::Tuple(t) => Ok(Value::Bool(t.contains(item))),
         Value::Dictionary(d) => {
-            let dict = d.borrow();
+            let dict = d.read();
             // Check keys
             let key = match item {
                 Value::String(s) => s,
@@ -932,7 +933,7 @@ fn evaluate_in(
             Ok(Value::Bool(dict.contains_key(key)))
         }
         Value::Set(s) => {
-            let set = s.borrow();
+            let set = s.read();
             Ok(Value::Bool(set.contains(item)))
         }
         Value::String(s) => {
@@ -963,6 +964,12 @@ fn apply_binary_op(
     let b = evaluate(interp, right)?;
 
     match (a, op.clone(), b) {
+        // Mixed arithmetic equality
+        (Value::Int(a), TokenKind::Eq, Value::Float(b)) => Ok(Value::Bool(a as f64 == b)),
+        (Value::Float(a), TokenKind::Eq, Value::Int(b)) => Ok(Value::Bool(a == b as f64)),
+        (Value::Int(a), TokenKind::NotEq, Value::Float(b)) => Ok(Value::Bool(a as f64 != b)),
+        (Value::Float(a), TokenKind::NotEq, Value::Int(b)) => Ok(Value::Bool(a != b as f64)),
+
         (a, TokenKind::Eq, b) => Ok(Value::Bool(a == b)),
         (a, TokenKind::NotEq, b) => Ok(Value::Bool(a != b)),
 
@@ -1134,27 +1141,27 @@ fn apply_binary_op(
         (Value::Set(a), TokenKind::BitAnd, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
             let intersection: BTreeSet<Value> =
-                a.borrow().intersection(&b.borrow()).cloned().collect();
-            Ok(Value::Set(Rc::new(RefCell::new(intersection))))
+                a.read().intersection(&b.read()).cloned().collect();
+            Ok(Value::Set(Arc::new(RwLock::new(intersection))))
         }
         (Value::Set(a), TokenKind::BitOr, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
-            let union: BTreeSet<Value> = a.borrow().union(&b.borrow()).cloned().collect();
-            Ok(Value::Set(Rc::new(RefCell::new(union))))
+            let union: BTreeSet<Value> = a.read().union(&b.read()).cloned().collect();
+            Ok(Value::Set(Arc::new(RwLock::new(union))))
         }
         (Value::Set(a), TokenKind::BitXor, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
             let symmetric_difference: BTreeSet<Value> = a
-                .borrow()
-                .symmetric_difference(&b.borrow())
+                .read()
+                .symmetric_difference(&b.read())
                 .cloned()
                 .collect();
-            Ok(Value::Set(Rc::new(RefCell::new(symmetric_difference))))
+            Ok(Value::Set(Arc::new(RwLock::new(symmetric_difference))))
         }
         (Value::Set(a), TokenKind::Minus, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
-            let difference: BTreeSet<Value> = a.borrow().difference(&b.borrow()).cloned().collect();
-            Ok(Value::Set(Rc::new(RefCell::new(difference))))
+            let difference: BTreeSet<Value> = a.read().difference(&b.read()).cloned().collect();
+            Ok(Value::Set(Arc::new(RwLock::new(difference))))
         }
 
         (Value::String(a), TokenKind::Plus, Value::String(b)) => Ok(Value::String(a + &b)),
@@ -1194,31 +1201,31 @@ fn apply_binary_op(
 
         // List concatenation (new list)
         (Value::List(a), TokenKind::Plus, Value::List(b)) => {
-            let mut new_list = a.borrow().clone();
-            new_list.extend(b.borrow().clone());
-            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+            let mut new_list = a.read().clone();
+            new_list.extend(b.read().clone());
+            Ok(Value::List(Arc::new(RwLock::new(new_list))))
         }
 
         // List repetition (Multiplication)
         (Value::List(a), TokenKind::Star, Value::Int(n)) => {
             let mut new_list = Vec::new();
             if n > 0 {
-                let list_ref = a.borrow();
+                let list_ref = a.read();
                 for _ in 0..n {
                     new_list.extend(list_ref.clone());
                 }
             }
-            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+            Ok(Value::List(Arc::new(RwLock::new(new_list))))
         }
         (Value::Int(n), TokenKind::Star, Value::List(a)) => {
             let mut new_list = Vec::new();
             if n > 0 {
-                let list_ref = a.borrow();
+                let list_ref = a.read();
                 for _ in 0..n {
                     new_list.extend(list_ref.clone());
                 }
             }
-            Ok(Value::List(Rc::new(RefCell::new(new_list))))
+            Ok(Value::List(Arc::new(RwLock::new(new_list))))
         }
 
         // Tuple concatenation (new tuple)
@@ -1266,8 +1273,8 @@ fn apply_binary_op(
 
         // Sequence Comparisons
         (Value::List(a), op, Value::List(b)) => {
-            let list_a = a.borrow();
-            let list_b = b.borrow();
+            let list_a = a.read();
+            let list_b = b.read();
             compare_sequences(&list_a, &list_b, op, span)
         }
         (Value::Tuple(a), op, Value::Tuple(b)) => compare_sequences(&a, &b, op, span),
@@ -1275,21 +1282,21 @@ fn apply_binary_op(
         // Dict merge (new dict)
         (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b))
         | (Value::Dictionary(a), TokenKind::BitOr, Value::Dictionary(b)) => {
-            let mut new_dict = a.borrow().clone();
-            for (k, v) in b.borrow().iter() {
+            let mut new_dict = a.read().clone();
+            for (k, v) in b.read().iter() {
                 new_dict.insert(k.clone(), v.clone());
             }
-            Ok(Value::Dictionary(Rc::new(RefCell::new(new_dict))))
+            Ok(Value::Dictionary(Arc::new(RwLock::new(new_dict))))
         }
 
         // Set union (new set) - Plus is deprecated for sets in favor of |
         (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
-            let mut new_set = a.borrow().clone();
-            for item in b.borrow().iter() {
+            let mut new_set = a.read().clone();
+            for item in b.read().iter() {
                 new_set.insert(item.clone());
             }
-            Ok(Value::Set(Rc::new(RefCell::new(new_set))))
+            Ok(Value::Set(Arc::new(RwLock::new(new_set))))
         }
 
         _ => runtime_error(span, "Unsupported binary op"),

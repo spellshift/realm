@@ -82,7 +82,7 @@ pub fn get_all_builtins_with_kwargs() -> Vec<(&'static str, BuiltinFnWithKwargs)
 
 // I need to handle stubs.
 pub fn builtin_stub(
-    _env: &alloc::rc::Rc<core::cell::RefCell<crate::ast::Environment>>,
+    _env: &alloc::sync::Arc<spin::RwLock<crate::ast::Environment>>,
     _args: &[Value],
 ) -> Result<Value, alloc::string::String> {
     Err("internal error: this function should be handled by interpreter".to_string())

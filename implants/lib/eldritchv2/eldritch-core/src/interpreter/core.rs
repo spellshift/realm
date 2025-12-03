@@ -4,11 +4,10 @@ use super::super::parser::Parser;
 use super::super::token::{Span, TokenKind};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
-use alloc::rc::Rc;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
 use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs};
 use super::error::{runtime_error, EldritchError};
@@ -27,7 +26,7 @@ pub enum Flow {
 }
 
 pub struct Interpreter {
-    pub env: Rc<RefCell<Environment>>,
+    pub env: Arc<RwLock<Environment>>,
     pub flow: Flow,
     pub depth: usize,
 }
@@ -44,7 +43,7 @@ impl Interpreter {
     }
 
     pub fn new_with_printer(printer: Arc<dyn Printer + Send + Sync>) -> Self {
-        let env = Rc::new(RefCell::new(Environment {
+        let env = Arc::new(RwLock::new(Environment {
             parent: None,
             values: BTreeMap::new(),
             printer,
@@ -66,7 +65,7 @@ impl Interpreter {
             self.register_function(name, func);
         }
         for (name, func) in get_all_builtins_with_kwargs() {
-            self.env.borrow_mut().values.insert(
+            self.env.write().values.insert(
                 name.to_string(),
                 Value::NativeFunctionWithKwargs(name.to_string(), func),
             );
@@ -76,7 +75,7 @@ impl Interpreter {
         }
         // Hardcoded pass variable for now
         self.env
-            .borrow_mut()
+            .write()
             .values
             .insert("pass".to_string(), Value::None);
     }
@@ -85,14 +84,14 @@ impl Interpreter {
         let libs = get_global_libraries();
         for (name, val) in libs {
             self.env
-                .borrow_mut()
+                .write()
                 .values
                 .insert(name, Value::Foreign(val));
         }
     }
 
     pub fn register_function(&mut self, name: &str, func: BuiltinFn) {
-        self.env.borrow_mut().values.insert(
+        self.env.write().values.insert(
             name.to_string(),
             Value::NativeFunction(name.to_string(), func),
         );
@@ -102,7 +101,7 @@ impl Interpreter {
         // Ensure the value is actually a dictionary or structurally appropriate for a module
         // We accept any Value, but practically it should be a Dictionary of functions
         self.env
-            .borrow_mut()
+            .write()
             .values
             .insert(name.to_string(), module);
     }
@@ -160,30 +159,30 @@ impl Interpreter {
     }
 
     pub(crate) fn assign_variable(&mut self, name: &str, value: Value) {
-        let mut env_opt = Some(Rc::clone(&self.env));
+        let mut env_opt = Some(self.env.clone());
         let mut target_env = None;
         while let Some(env) = env_opt {
-            if env.borrow().values.contains_key(name) {
+            if env.read().values.contains_key(name) {
                 target_env = Some(env.clone());
                 break;
             }
-            env_opt = env.borrow().parent.clone();
+            env_opt = env.read().parent.clone();
         }
         if let Some(env) = target_env {
-            env.borrow_mut().values.insert(name.to_string(), value);
+            env.write().values.insert(name.to_string(), value);
         } else {
-            self.env.borrow_mut().values.insert(name.to_string(), value);
+            self.env.write().values.insert(name.to_string(), value);
         }
     }
 
     pub(crate) fn define_variable(&mut self, name: &str, value: Value) {
-        self.env.borrow_mut().values.insert(name.to_string(), value);
+        self.env.write().values.insert(name.to_string(), value);
     }
 
     pub(crate) fn lookup_variable(&self, name: &str, span: Span) -> Result<Value, EldritchError> {
-        let mut current_env = Some(Rc::clone(&self.env));
-        while let Some(env_rc) = current_env {
-            let env_ref = env_rc.borrow();
+        let mut current_env = Some(self.env.clone());
+        while let Some(env_arc) = current_env {
+            let env_ref = env_arc.read();
             if let Some(value) = env_ref.values.get(name) {
                 return Ok(value.clone());
             }
@@ -374,9 +373,9 @@ impl Interpreter {
                 }
 
                 // 2. Builtins & Variables (walk up the environment chain)
-                let mut current_env = Some(Rc::clone(&self.env));
-                while let Some(env_rc) = current_env {
-                    let env_ref = env_rc.borrow();
+                let mut current_env = Some(self.env.clone());
+                while let Some(env_arc) = current_env {
+                    let env_ref = env_arc.read();
                     for key in env_ref.values.keys() {
                         candidates.insert(key.clone());
                     }

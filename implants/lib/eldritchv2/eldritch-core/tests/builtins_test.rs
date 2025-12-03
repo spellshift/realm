@@ -108,7 +108,7 @@ fdiv = b // 2
         let mut interp = Interpreter::new();
         let val = interp.interpret("list((1, 2))").unwrap(); // Tuple to list
         if let Value::List(l) = val {
-            assert_eq!(l.borrow().len(), 2);
+            assert_eq!(l.read().len(), 2);
         } else {
             panic!("Expected list");
         }
@@ -135,7 +135,7 @@ fdiv = b // 2
         let mut interp = Interpreter::new();
         let val = interp.interpret("sorted([3, 1, 2])").unwrap();
         if let Value::List(l) = val {
-            let list = l.borrow();
+            let list = l.read();
             assert_eq!(list[0], Value::Int(1));
             assert_eq!(list[1], Value::Int(2));
             assert_eq!(list[2], Value::Int(3));
@@ -159,7 +159,7 @@ fdiv = b // 2
         let mut interp = Interpreter::new();
         let val = interp.interpret("zip([1, 2], [3, 4])").unwrap();
         if let Value::List(l) = val {
-            let list = l.borrow();
+            let list = l.read();
             assert_eq!(list.len(), 2);
             if let Value::Tuple(t) = &list[0] {
                 assert_eq!(t[0], Value::Int(1));
@@ -177,7 +177,7 @@ fdiv = b // 2
         let mut interp = Interpreter::new();
         let val = interp.interpret("reversed([1, 2, 3])").unwrap();
         if let Value::List(l) = val {
-            let list = l.borrow();
+            let list = l.read();
             assert_eq!(list[0], Value::Int(3));
         } else {
             panic!("Expected list");

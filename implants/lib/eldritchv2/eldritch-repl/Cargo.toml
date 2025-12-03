@@ -34,3 +34,4 @@ eldritch-stdlib = { path = "../stdlib/eldritch-stdlib", default-features = false
 
 [dependencies]
 eldritch-core = { path = "../eldritch-core" }
+spin = { version = "0.10.0", features = ["rwlock"] }
