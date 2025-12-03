@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
                 }
             }
             Err(e) => {
-                log::error!("Callback failed: {}", e);
+                log::error!("Callback failed: {:#}", e);
             }
         }
 
