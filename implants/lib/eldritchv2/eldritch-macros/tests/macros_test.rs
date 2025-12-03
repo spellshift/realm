@@ -241,7 +241,7 @@ mod tests {
             let res = interp.interpret(code).unwrap();
 
             if let Value::Dictionary(d) = res {
-                let dict = d.borrow();
+                let dict = d.read();
                 assert_eq!(dict.get("one").unwrap(), &Value::Int(1));
                 assert_eq!(dict.get("two").unwrap(), &Value::Int(2));
             } else {
@@ -257,7 +257,7 @@ mod tests {
             let res = interp.interpret(code).unwrap();
 
             if let Value::List(l) = res {
-                let list = l.borrow();
+                let list = l.read();
                 let mut strings: Vec<String> = list.iter().map(|v| v.to_string()).collect();
                 strings.sort();
                 assert!(strings.contains(&"move_file".to_string()));
