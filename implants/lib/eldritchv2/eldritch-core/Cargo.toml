@@ -13,7 +13,7 @@ std = []
 
 [dependencies]
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
-spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
 libm = "0.2.15"
 
 [dev-dependencies]

@@ -2,12 +2,12 @@ use super::super::ast::Value;
 use super::utils::{compare_values, get_type_name, is_truthy};
 use alloc::collections::BTreeSet;
 use alloc::format;
-use alloc::rc::Rc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::RefCell;
 use core::cmp::Ordering;
+use spin::RwLock;
 
 pub fn get_native_methods(value: &Value) -> Vec<String> {
     match value {
@@ -86,11 +86,11 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
 // Helper to convert any iterable Value into a BTreeSet<Value> for set operations.
 fn get_set_elements(v: &Value) -> Result<BTreeSet<Value>, String> {
     match v {
-        Value::Set(s) => Ok(s.borrow().clone()),
-        Value::List(l) => Ok(l.borrow().iter().cloned().collect()),
+        Value::Set(s) => Ok(s.read().clone()),
+        Value::List(l) => Ok(l.read().iter().cloned().collect()),
         Value::Tuple(t) => Ok(t.iter().cloned().collect()),
         Value::Dictionary(d) => Ok(d
-            .borrow()
+            .read()
             .keys()
             .map(|k| Value::String(k.clone()))
             .collect()),
@@ -105,7 +105,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             if args.len() != 1 {
                 return Err("append() takes exactly one argument".into());
             }
-            l.borrow_mut().push(args[0].clone());
+            l.write().push(args[0].clone());
             Ok(Value::None)
         }
         (Value::List(l), "extend") => {
@@ -114,8 +114,8 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             let iterable = &args[0];
             match iterable {
-                Value::List(other) => l.borrow_mut().extend(other.borrow().clone()),
-                Value::Tuple(other) => l.borrow_mut().extend(other.clone()),
+                Value::List(other) => l.write().extend(other.read().clone()),
+                Value::Tuple(other) => l.write().extend(other.clone()),
                 _ => {
                     return Err(format!(
                         "extend() expects an iterable, got {}",
@@ -134,7 +134,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 _ => return Err("insert() index must be an integer".into()),
             };
             let val = args[1].clone();
-            let mut vec = l.borrow_mut();
+            let mut vec = l.write();
             let len = vec.len() as i64;
             let index = if idx < 0 {
                 (len + idx).max(0) as usize
@@ -149,7 +149,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 return Err("remove() takes exactly one argument".into());
             }
             let target = &args[0];
-            let mut vec = l.borrow_mut();
+            let mut vec = l.write();
             if let Some(pos) = vec.iter().position(|x| x == target) {
                 vec.remove(pos);
                 Ok(Value::None)
@@ -162,7 +162,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 return Err("index() takes exactly one argument".into());
             }
             let target = &args[0];
-            let vec = l.borrow();
+            let vec = l.read();
             if let Some(pos) = vec.iter().position(|x| x == target) {
                 Ok(Value::Int(pos as i64))
             } else {
@@ -170,37 +170,37 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
         }
         (Value::List(l), "pop") => {
-            if let Some(v) = l.borrow_mut().pop() {
+            if let Some(v) = l.write().pop() {
                 Ok(v)
             } else {
                 Err("pop from empty list".into())
             }
         }
         (Value::List(l), "sort") => {
-            let mut vec = l.borrow_mut();
+            let mut vec = l.write();
             vec.sort_by(|a, b| compare_values(a, b).unwrap_or(Ordering::Equal));
             Ok(Value::None)
         }
 
         (Value::Dictionary(d), "keys") => {
             let keys: Vec<Value> = d
-                .borrow()
+                .read()
                 .keys()
                 .map(|k| Value::String(k.clone()))
                 .collect();
-            Ok(Value::List(Rc::new(RefCell::new(keys))))
+            Ok(Value::List(Arc::new(RwLock::new(keys))))
         }
         (Value::Dictionary(d), "values") => {
-            let values: Vec<Value> = d.borrow().values().cloned().collect();
-            Ok(Value::List(Rc::new(RefCell::new(values))))
+            let values: Vec<Value> = d.read().values().cloned().collect();
+            Ok(Value::List(Arc::new(RwLock::new(values))))
         }
         (Value::Dictionary(d), "items") => {
             let items: Vec<Value> = d
-                .borrow()
+                .read()
                 .iter()
                 .map(|(k, v)| Value::Tuple(vec![Value::String(k.clone()), v.clone()]))
                 .collect();
-            Ok(Value::List(Rc::new(RefCell::new(items))))
+            Ok(Value::List(Arc::new(RwLock::new(items))))
         }
         (Value::Dictionary(d), "get") => {
             if args.is_empty() || args.len() > 2 {
@@ -215,7 +215,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             } else {
                 Value::None
             };
-            match d.borrow().get(key) {
+            match d.read().get(key) {
                 Some(v) => Ok(v.clone()),
                 None => Ok(default),
             }
@@ -226,15 +226,15 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             match &args[0] {
                 Value::Dictionary(other) => {
-                    let other_map = other.borrow().clone();
-                    d.borrow_mut().extend(other_map);
+                    let other_map = other.read().clone();
+                    d.write().extend(other_map);
                     Ok(Value::None)
                 }
                 _ => Err("update() requires a dictionary".into()),
             }
         }
         (Value::Dictionary(d), "popitem") => {
-            let mut map = d.borrow_mut();
+            let mut map = d.write();
             let last_key = map.keys().next_back().cloned();
             if let Some(k) = last_key {
                 let v = map.remove(&k).unwrap();
@@ -248,32 +248,32 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             if args.len() != 1 {
                 return Err("add() takes exactly one argument".into());
             }
-            s.borrow_mut().insert(args[0].clone());
+            s.write().insert(args[0].clone());
             Ok(Value::None)
         }
         (Value::Set(s), "clear") => {
-            s.borrow_mut().clear();
+            s.write().clear();
             Ok(Value::None)
         }
         (Value::Set(s), "contains") => {
             if args.len() != 1 {
                 return Err("contains() takes exactly one argument".into());
             }
-            Ok(Value::Bool(s.borrow().contains(&args[0])))
+            Ok(Value::Bool(s.read().contains(&args[0])))
         }
         (Value::Set(s), "difference") => {
             if args.len() != 1 {
                 return Err("difference() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            let diff: BTreeSet<Value> = s.borrow().difference(&other_set).cloned().collect();
-            Ok(Value::Set(Rc::new(RefCell::new(diff))))
+            let diff: BTreeSet<Value> = s.read().difference(&other_set).cloned().collect();
+            Ok(Value::Set(Arc::new(RwLock::new(diff))))
         }
         (Value::Set(s), "discard") => {
             if args.len() != 1 {
                 return Err("discard() takes exactly one argument".into());
             }
-            s.borrow_mut().remove(&args[0]);
+            s.write().remove(&args[0]);
             Ok(Value::None)
         }
         (Value::Set(s), "intersection") => {
@@ -281,34 +281,34 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 return Err("intersection() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            let inter: BTreeSet<Value> = s.borrow().intersection(&other_set).cloned().collect();
-            Ok(Value::Set(Rc::new(RefCell::new(inter))))
+            let inter: BTreeSet<Value> = s.read().intersection(&other_set).cloned().collect();
+            Ok(Value::Set(Arc::new(RwLock::new(inter))))
         }
         (Value::Set(s), "isdisjoint") => {
             if args.len() != 1 {
                 return Err("isdisjoint() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            Ok(Value::Bool(s.borrow().is_disjoint(&other_set)))
+            Ok(Value::Bool(s.read().is_disjoint(&other_set)))
         }
         (Value::Set(s), "issubset") => {
             if args.len() != 1 {
                 return Err("issubset() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            Ok(Value::Bool(s.borrow().is_subset(&other_set)))
+            Ok(Value::Bool(s.read().is_subset(&other_set)))
         }
         (Value::Set(s), "issuperset") => {
             if args.len() != 1 {
                 return Err("issuperset() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            Ok(Value::Bool(s.borrow().is_superset(&other_set)))
+            Ok(Value::Bool(s.read().is_superset(&other_set)))
         }
         (Value::Set(s), "pop") => {
             // Remove the LAST element, per user request (and consistent with list.pop())
             // BTreeSet is ordered, so this removes the largest element.
-            let mut set = s.borrow_mut();
+            let mut set = s.write();
             if set.is_empty() {
                 return Err("pop from empty set".into());
             }
@@ -325,7 +325,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             if args.len() != 1 {
                 return Err("remove() takes exactly one argument".into());
             }
-            if !s.borrow_mut().remove(&args[0]) {
+            if !s.write().remove(&args[0]) {
                 return Err(format!("KeyError: {}", args[0]));
             }
             Ok(Value::None)
@@ -336,26 +336,26 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             let other_set = get_set_elements(&args[0])?;
             let sym: BTreeSet<Value> = s
-                .borrow()
+                .read()
                 .symmetric_difference(&other_set)
                 .cloned()
                 .collect();
-            Ok(Value::Set(Rc::new(RefCell::new(sym))))
+            Ok(Value::Set(Arc::new(RwLock::new(sym))))
         }
         (Value::Set(s), "union") => {
             if args.len() != 1 {
                 return Err("union() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            let u: BTreeSet<Value> = s.borrow().union(&other_set).cloned().collect();
-            Ok(Value::Set(Rc::new(RefCell::new(u))))
+            let u: BTreeSet<Value> = s.read().union(&other_set).cloned().collect();
+            Ok(Value::Set(Arc::new(RwLock::new(u))))
         }
         (Value::Set(s), "update") => {
             if args.len() != 1 {
                 return Err("update() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            s.borrow_mut().extend(other_set);
+            s.write().extend(other_set);
             Ok(Value::None)
         }
 
@@ -369,7 +369,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 .split(&delim)
                 .map(|p| Value::String(p.to_string()))
                 .collect();
-            Ok(Value::List(Rc::new(RefCell::new(parts))))
+            Ok(Value::List(Arc::new(RwLock::new(parts))))
         }
         (Value::String(s), "splitlines") => {
             let keepends = if !args.is_empty() {
@@ -385,7 +385,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             } else {
                 s.lines().map(|p| Value::String(p.to_string())).collect()
             };
-            Ok(Value::List(Rc::new(RefCell::new(lines))))
+            Ok(Value::List(Arc::new(RwLock::new(lines))))
         }
         (Value::String(s), "strip") => Ok(Value::String(s.trim().to_string())),
         (Value::String(s), "lstrip") => Ok(Value::String(s.trim_start().to_string())),
@@ -523,7 +523,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             match &args[0] {
                 Value::List(l) => {
-                    let list = l.borrow();
+                    let list = l.read();
                     let strs: Result<Vec<String>, _> = list
                         .iter()
                         .map(|v| match v {
@@ -609,15 +609,15 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 .map(|p| Value::String(p.to_string()))
                 .collect();
             parts.reverse();
-            Ok(Value::List(Rc::new(RefCell::new(parts))))
+            Ok(Value::List(Arc::new(RwLock::new(parts))))
         }
         (Value::String(s), "codepoints") => {
             let points: Vec<Value> = s.chars().map(|c| Value::Int(c as i64)).collect();
-            Ok(Value::List(Rc::new(RefCell::new(points))))
+            Ok(Value::List(Arc::new(RwLock::new(points))))
         }
         (Value::String(s), "elems") => {
             let chars: Vec<Value> = s.chars().map(|c| Value::String(c.to_string())).collect();
-            Ok(Value::List(Rc::new(RefCell::new(chars))))
+            Ok(Value::List(Arc::new(RwLock::new(chars))))
         }
         (Value::String(s), "isalnum") => Ok(Value::Bool(
             !s.is_empty() && s.chars().all(|c| c.is_alphanumeric()),

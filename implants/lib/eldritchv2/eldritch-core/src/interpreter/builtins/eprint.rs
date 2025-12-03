@@ -1,10 +1,10 @@
 use crate::ast::{Environment, Value};
 use crate::token::Span;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_eprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_eprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     let mut out = String::new();
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {
@@ -14,7 +14,7 @@ pub fn builtin_eprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
     }
 
     // TODO: Pass actual span
-    env.borrow()
+    env.read()
         .printer
         .print_err(&Span::new(0, 0, 0), &out);
     Ok(Value::None)

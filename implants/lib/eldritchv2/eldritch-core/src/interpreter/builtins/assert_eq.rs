@@ -1,10 +1,10 @@
 use crate::ast::{Environment, Value};
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::String;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_assert_eq(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_assert_eq(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 2 {
         return Err(format!(
             "assert_eq() takes exactly two arguments ({} given)",

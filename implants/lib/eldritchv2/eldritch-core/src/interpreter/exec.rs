@@ -8,10 +8,10 @@ use super::eval::{apply_binary_op_pub, evaluate};
 use super::utils::{get_type_name, is_truthy};
 use alloc::collections::BTreeMap;
 use alloc::format;
-use alloc::rc::Rc;
 use alloc::string::ToString;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
 pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchError> {
     if interp.flow != Flow::Next {
@@ -63,12 +63,12 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 body: body.clone(),
                 closure: interp.env.clone(),
             });
-            interp.env.borrow_mut().values.insert(name.clone(), func);
+            interp.env.write().values.insert(name.clone(), func);
         }
         StmtKind::For(idents, iterable, body) => {
             let iterable_val = evaluate(interp, iterable)?;
             let items: Vec<Value> = match iterable_val {
-                Value::List(l) => l.borrow().clone(),
+                Value::List(l) => l.read().clone(),
                 Value::Tuple(t) => t.clone(),
                 Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
                 Value::Bytes(b) => b.iter().map(|&byte| Value::Int(byte as i64)).collect(),
@@ -82,9 +82,9 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
 
             for item in items {
                 // Scope per iteration to prevent leaking variables
-                let parent_env = Rc::clone(&interp.env);
-                let printer = parent_env.borrow().printer.clone();
-                let new_env = Rc::new(RefCell::new(Environment {
+                let parent_env = interp.env.clone();
+                let printer = parent_env.read().printer.clone();
+                let new_env = Arc::new(RwLock::new(Environment {
                     parent: Some(parent_env.clone()),
                     values: BTreeMap::new(),
                     printer,
@@ -96,7 +96,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                     interp.define_variable(&idents[0], item);
                 } else {
                     let parts = match item {
-                        Value::List(l) => l.borrow().clone(),
+                        Value::List(l) => l.read().clone(),
                         Value::Tuple(t) => t.clone(),
                         _ => {
                             interp.env = parent_env;
@@ -158,7 +158,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
         ExprKind::List(elements) | ExprKind::Tuple(elements) => {
             // Unpacking
             let values = match value {
-                Value::List(l) => l.borrow().clone(),
+                Value::List(l) => l.read().clone(),
                 Value::Tuple(t) => t.clone(),
                 _ => {
                     return runtime_error(
@@ -195,7 +195,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                             return runtime_error(index_expr.span, "List indices must be integers")
                         }
                     };
-                    let mut list = l.borrow_mut();
+                    let mut list = l.write();
                     let true_idx = if idx_int < 0 {
                         list.len() as i64 + idx_int
                     } else {
@@ -217,7 +217,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                             )
                         }
                     };
-                    d.borrow_mut().insert(key_str, value);
+                    d.write().insert(key_str, value);
                     Ok(())
                 }
                 _ => runtime_error(target.span, "Object does not support item assignment"),
@@ -286,7 +286,7 @@ fn execute_augmented_assignment(
                             return runtime_error(index_expr.span, "List indices must be integers")
                         }
                     };
-                    let list = l.borrow();
+                    let list = l.read();
                     let true_idx = if idx_int < 0 {
                         list.len() as i64 + idx_int
                     } else {
@@ -307,7 +307,7 @@ fn execute_augmented_assignment(
                             )
                         }
                     };
-                    let dict = d.borrow();
+                    let dict = d.read();
                     match dict.get(key_str) {
                         Some(v) => v.clone(),
                         None => return runtime_error(span, "KeyError"),
@@ -350,7 +350,7 @@ fn execute_augmented_assignment(
                         Value::Int(i) => i,
                         _ => unreachable!(),
                     };
-                    let mut list = l.borrow_mut();
+                    let mut list = l.write();
                     let true_idx = if idx_int < 0 {
                         list.len() as i64 + idx_int
                     } else {
@@ -364,7 +364,7 @@ fn execute_augmented_assignment(
                         Value::String(s) => s,
                         _ => unreachable!(),
                     };
-                    d.borrow_mut().insert(key_str, new_val);
+                    d.write().insert(key_str, new_val);
                     Ok(())
                 }
                 _ => unreachable!(),
@@ -378,31 +378,63 @@ fn try_inplace_add(left: &Value, right: &Value) -> bool {
     match (left, right) {
         (Value::List(l), Value::List(r)) => {
             // Must clone right first to avoid double borrow panic if l == r
-            let items = r.borrow().clone();
-            l.borrow_mut().extend(items);
+            // With RwLock, if l == r, read() followed by write() would deadlock?
+            // If l and r point to same lock.
+            // Check identity
+            if Arc::ptr_eq(l, r) {
+                 // Self append.
+                 // We need to clone data first, then append.
+                 // But we can't hold read lock while getting write lock.
+                 // So we read, clone, drop read, write.
+                 let items = l.read().clone();
+                 l.write().extend(items);
+            } else {
+                 let items = r.read().clone();
+                 l.write().extend(items);
+            }
             true
         }
         (Value::Dictionary(d), Value::Dictionary(r)) => {
-            // Must clone keys/values first
-            let items: Vec<_> = r
-                .borrow()
-                .iter()
-                .map(|(k, v)| (k.clone(), v.clone()))
-                .collect();
-            let mut db = d.borrow_mut();
-            for (k, v) in items {
-                db.insert(k, v);
+            if Arc::ptr_eq(d, r) {
+                 // Self merge? Dicts can't really self-merge meaningfully in a way that changes them (idempotent),
+                 // but let's follow logic.
+                 let items: Vec<_> = d
+                    .read()
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
+                 let mut db = d.write();
+                 for (k, v) in items {
+                    db.insert(k, v);
+                 }
+            } else {
+                let items: Vec<_> = r
+                    .read()
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
+                let mut db = d.write();
+                for (k, v) in items {
+                    db.insert(k, v);
+                }
             }
             true
         }
         (Value::Set(s), Value::Set(r)) => {
-            #[allow(clippy::mutable_key_type)]
-            // Must clone items first
-            let items: Vec<_> = r.borrow().iter().cloned().collect();
-            #[allow(clippy::mutable_key_type)]
-            let mut sb = s.borrow_mut();
-            for item in items {
-                sb.insert(item);
+            if Arc::ptr_eq(s, r) {
+                 // Union with self is no-op.
+                 // But logic:
+                 // let items: Vec<_> = s.read().iter().cloned().collect();
+                 // s.write()...
+                 // It's a no-op, so we can skip.
+            } else {
+                #[allow(clippy::mutable_key_type)]
+                let items: Vec<_> = r.read().iter().cloned().collect();
+                #[allow(clippy::mutable_key_type)]
+                let mut sb = s.write();
+                for item in items {
+                    sb.insert(item);
+                }
             }
             true
         }

@@ -391,12 +391,12 @@ fn value_to_json(v: Value) -> serde_json::Value {
             .unwrap_or(JsonValue::Null),
         Value::String(s) => JsonValue::String(s),
         Value::List(l) => {
-            let list = l.borrow();
+            let list = l.read();
             let vec: Vec<JsonValue> = list.iter().map(|v| value_to_json(v.clone())).collect();
             JsonValue::Array(vec)
         }
         Value::Dictionary(d) => {
-            let dict = d.borrow();
+            let dict = d.read();
             let mut map = serde_json::Map::new();
             for (k, v) in dict.iter() {
                 map.insert(k.clone(), value_to_json(v.clone()));

@@ -1,11 +1,11 @@
 use crate::ast::{Environment, Value};
 use crate::token::Span;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_pprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     let indent_width = if args.len() > 1 {
         match args[1] {
             Value::Int(i) => i.max(0) as usize,
@@ -23,7 +23,7 @@ pub fn builtin_pprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
     pretty_format(&args[0], 0, indent_width, &mut output);
 
     // TODO: Pass actual span
-    env.borrow()
+    env.read()
         .printer
         .print_out(&Span::new(0, 0, 0), &output);
 
@@ -33,7 +33,7 @@ pub fn builtin_pprint(env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
 fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &mut String) {
     match val {
         Value::List(l) => {
-            let list = l.borrow();
+            let list = l.read();
             if list.is_empty() {
                 buf.push_str("[]");
                 return;
@@ -56,7 +56,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
             buf.push_str("]");
         }
         Value::Dictionary(d) => {
-            let dict = d.borrow();
+            let dict = d.read();
             if dict.is_empty() {
                 buf.push_str("{}");
                 return;
@@ -102,7 +102,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
             buf.push_str(")");
         }
         Value::Set(s_val) => {
-            let set = s_val.borrow();
+            let set = s_val.read();
             if set.is_empty() {
                 buf.push_str("set()");
                 return;

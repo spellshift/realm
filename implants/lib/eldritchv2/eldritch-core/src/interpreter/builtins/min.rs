@@ -1,12 +1,12 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::utils::get_type_name;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::string::ToString;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_min(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_min(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Err("min expected 1 argument, got 0".to_string());
     }
@@ -15,12 +15,12 @@ pub fn builtin_min(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Va
     }
 
     let items = match &args[0] {
-        Value::List(l) => l.borrow().clone(),
+        Value::List(l) => l.read().clone(),
         Value::Tuple(t) => t.clone(),
-        Value::Set(s) => s.borrow().iter().cloned().collect(),
+        Value::Set(s) => s.read().iter().cloned().collect(),
         Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
         Value::Dictionary(d) => d
-            .borrow()
+            .read()
             .keys()
             .map(|k| Value::String(k.clone()))
             .collect(),

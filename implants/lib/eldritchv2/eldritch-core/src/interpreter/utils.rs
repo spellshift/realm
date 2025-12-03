@@ -13,9 +13,9 @@ pub fn is_truthy(value: &Value) -> bool {
         Value::Float(f) => *f != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Bytes(b) => !b.is_empty(),
-        Value::List(l) => !l.borrow().is_empty(),
-        Value::Dictionary(d) => !d.borrow().is_empty(),
-        Value::Set(s) => !s.borrow().is_empty(),
+        Value::List(l) => !l.read().is_empty(),
+        Value::Dictionary(d) => !d.read().is_empty(),
+        Value::Set(s) => !s.read().is_empty(),
         Value::Tuple(t) => !t.is_empty(),
         Value::Function(_)
         | Value::NativeFunction(_, _)

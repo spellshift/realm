@@ -1,15 +1,15 @@
 use super::HttpLibrary;
 use alloc::collections::BTreeMap;
-use alloc::rc::Rc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use reqwest::{
     blocking::Client,
     header::{HeaderMap, HeaderName, HeaderValue},
 };
+use spin::RwLock;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -98,7 +98,7 @@ impl HttpLibrary for StdHttpLibrary {
         }
         map.insert(
             "headers".into(),
-            Value::Dictionary(Rc::new(RefCell::new(headers_map))),
+            Value::Dictionary(Arc::new(RwLock::new(headers_map))),
         );
 
         // We use bytes for body to be safe, consistent with fake implementation returning bytes
@@ -155,7 +155,7 @@ impl HttpLibrary for StdHttpLibrary {
         }
         map.insert(
             "headers".into(),
-            Value::Dictionary(Rc::new(RefCell::new(headers_map))),
+            Value::Dictionary(Arc::new(RwLock::new(headers_map))),
         );
 
         let bytes = resp
@@ -227,7 +227,7 @@ mod tests {
         }
 
         if let Value::Dictionary(d) = res.get("headers").unwrap() {
-            let dict = d.borrow();
+            let dict = d.read();
             assert_eq!(
                 dict.get("x-test").or(dict.get("X-Test")).unwrap(),
                 &Value::String("Value".into())

@@ -2,17 +2,16 @@ use super::interpreter::Printer;
 use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
-use alloc::rc::Rc;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
 use core::cmp::Ordering;
 use core::fmt;
+use spin::RwLock;
 
 #[derive(Debug)]
 pub struct Environment {
-    pub parent: Option<Rc<RefCell<Environment>>>,
+    pub parent: Option<Arc<RwLock<Environment>>>,
     pub values: BTreeMap<String, Value>,
     pub printer: Arc<dyn Printer + Send + Sync>,
 }
@@ -30,7 +29,7 @@ pub struct Function {
     pub name: String,
     pub params: Vec<RuntimeParam>,
     pub body: Vec<Stmt>,
-    pub closure: Rc<RefCell<Environment>>,
+    pub closure: Arc<RwLock<Environment>>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,9 +48,9 @@ pub enum Argument {
     KwArgs(Expr),
 }
 
-pub type BuiltinFn = fn(&Rc<RefCell<Environment>>, &[Value]) -> Result<Value, String>;
+pub type BuiltinFn = fn(&Arc<RwLock<Environment>>, &[Value]) -> Result<Value, String>;
 pub type BuiltinFnWithKwargs =
-    fn(&Rc<RefCell<Environment>>, &[Value], &BTreeMap<String, Value>) -> Result<Value, String>;
+    fn(&Arc<RwLock<Environment>>, &[Value], &BTreeMap<String, Value>) -> Result<Value, String>;
 
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;
@@ -72,10 +71,10 @@ pub enum Value {
     Float(f64),
     String(String),
     Bytes(Vec<u8>),
-    List(Rc<RefCell<Vec<Value>>>),
+    List(Arc<RwLock<Vec<Value>>>),
     Tuple(Vec<Value>),
-    Dictionary(Rc<RefCell<BTreeMap<String, Value>>>),
-    Set(Rc<RefCell<BTreeSet<Value>>>),
+    Dictionary(Arc<RwLock<BTreeMap<String, Value>>>),
+    Set(Arc<RwLock<BTreeSet<Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),
     NativeFunctionWithKwargs(String, BuiltinFnWithKwargs),
@@ -120,22 +119,22 @@ impl PartialEq for Value {
             (Value::String(a), Value::String(b)) => a == b,
             (Value::Bytes(a), Value::Bytes(b)) => a == b,
             (Value::List(a), Value::List(b)) => {
-                if Rc::ptr_eq(a, b) {
+                if Arc::ptr_eq(a, b) {
                     return true;
                 }
-                a.borrow().eq(&*b.borrow())
+                a.read().eq(&*b.read())
             }
             (Value::Dictionary(a), Value::Dictionary(b)) => {
-                if Rc::ptr_eq(a, b) {
+                if Arc::ptr_eq(a, b) {
                     return true;
                 }
-                a.borrow().eq(&*b.borrow())
+                a.read().eq(&*b.read())
             }
             (Value::Set(a), Value::Set(b)) => {
-                if Rc::ptr_eq(a, b) {
+                if Arc::ptr_eq(a, b) {
                     return true;
                 }
-                a.borrow().eq(&*b.borrow())
+                a.read().eq(&*b.read())
             }
             (Value::Tuple(a), Value::Tuple(b)) => a == b,
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
@@ -177,25 +176,25 @@ impl Ord for Value {
             (Value::String(a), Value::String(b)) => a.cmp(b),
             (Value::Bytes(a), Value::Bytes(b)) => a.cmp(b),
             (Value::List(a), Value::List(b)) => {
-                if Rc::ptr_eq(a, b) {
+                if Arc::ptr_eq(a, b) {
                     return Ordering::Equal;
                 }
-                a.borrow().cmp(&*b.borrow())
+                a.read().cmp(&*b.read())
             }
             (Value::Tuple(a), Value::Tuple(b)) => a.cmp(b),
             (Value::Dictionary(a), Value::Dictionary(b)) => {
-                if Rc::ptr_eq(a, b) {
+                if Arc::ptr_eq(a, b) {
                     return Ordering::Equal;
                 }
                 // BTreeMap implements Ord
-                a.borrow().cmp(&*b.borrow())
+                a.read().cmp(&*b.read())
             }
             (Value::Set(a), Value::Set(b)) => {
-                if Rc::ptr_eq(a, b) {
+                if Arc::ptr_eq(a, b) {
                     return Ordering::Equal;
                 }
                 // BTreeSet implements Ord
-                a.borrow().cmp(&*b.borrow())
+                a.read().cmp(&*b.read())
             }
             // For functions and others, we just compare pointers or names as best effort
             // This is primarily to satisfy BTreeSet requirement, not for user-facing logical ordering necessarily.
@@ -252,7 +251,7 @@ impl fmt::Display for Value {
             Value::Bytes(b) => write!(f, "{b:?}"),
             Value::List(l) => {
                 write!(f, "[")?;
-                let list = l.borrow();
+                let list = l.read();
                 for (i, v) in list.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
@@ -276,7 +275,7 @@ impl fmt::Display for Value {
             }
             Value::Dictionary(d) => {
                 write!(f, "{{")?;
-                let dict = d.borrow();
+                let dict = d.read();
                 for (i, (k, v)) in dict.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
@@ -287,7 +286,7 @@ impl fmt::Display for Value {
             }
             Value::Set(s) => {
                 write!(f, "{{")?;
-                let set = s.borrow();
+                let set = s.read();
                 for (i, v) in set.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;

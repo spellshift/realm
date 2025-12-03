@@ -1,12 +1,12 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::utils::get_type_name;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::string::ToString;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_reversed(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_reversed(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(
             "reversed() takes exactly one argument ({} given)",
@@ -15,7 +15,7 @@ pub fn builtin_reversed(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Resu
     }
 
     let items = match &args[0] {
-        Value::List(l) => l.borrow().clone(),
+        Value::List(l) => l.read().clone(),
         Value::Tuple(t) => t.clone(),
         Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
         // Dictionary and Set are not reversible in Python (TypeError)
@@ -31,5 +31,5 @@ pub fn builtin_reversed(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Resu
     rev_items.reverse();
 
     // Python reversed() returns an iterator. Here we return a List (per prompt: "returns a new list").
-    Ok(Value::List(Rc::new(RefCell::new(rev_items))))
+    Ok(Value::List(Arc::new(RwLock::new(rev_items))))
 }
