@@ -1,3 +1,5 @@
+extern crate alloc;
+
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use std::time::Duration;

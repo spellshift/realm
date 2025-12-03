@@ -1,12 +1,12 @@
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
 use eldritch_core::{BufferPrinter, Interpreter, Value};
+use eldritch_core::conversion::ToValue;
 use eldritch_libagent::agent::Agent;
 use eldritch_libagent::std::StdAgentLibrary;
-use eldritch_stdlib::process::std::StdProcessLibrary;
 use pb::c2::Task;
 
 lazy_static::lazy_static! {
@@ -46,15 +46,22 @@ impl TaskRegistry {
 
         thread::spawn(move || {
             if let Some(tome) = tome {
+                // Register standard libraries globally (idempotent-ish)
+                eldritch_stdlib::register_all();
+
                 // Setup Interpreter
-                eldritch_core::register_lib(StdProcessLibrary);
                 let printer = Arc::new(BufferPrinter::new());
                 let mut interp = Interpreter::new_with_printer(printer.clone());
 
                 // Register Agent Library
                 let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
                 interp.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
-                // TODO: Register other Standard Libraries (File, etc.)
+
+                // Inject input_params
+                // tome.parameters is converted to a BTreeMap which ToValue supports
+                let params_map: BTreeMap<String, String> = tome.parameters.into_iter().collect();
+                let params_val = params_map.to_value();
+                interp.define_variable("input_params", params_val);
 
                 // Run
                 let code = tome.eldritch;
