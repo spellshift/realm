@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "imix",
+    "imixv2",
     "golem",
     "lib/eldritch",
     "lib/transport",
