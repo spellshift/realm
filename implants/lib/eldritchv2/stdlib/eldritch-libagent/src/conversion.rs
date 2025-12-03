@@ -7,6 +7,10 @@ use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
 use alloc::collections::BTreeMap;
 #[cfg(feature = "stdlib")]
+use alloc::sync::Arc;
+#[cfg(feature = "stdlib")]
+use spin::RwLock;
+#[cfg(feature = "stdlib")]
 use eldritch_core::Value;
 #[cfg(feature = "stdlib")]
 use eldritch_core::conversion::{FromValue, ToValue};
@@ -61,7 +65,7 @@ impl ToValue for TaskWrapper {
         // Tome is complex, let's represent it as a dict or None for now
         // For strict correctness we might want a TomeWrapper, but often scripts just need the ID.
         // If needed, we can expand Tome.
-        Value::Dictionary(alloc::rc::Rc::new(core::cell::RefCell::new(map)))
+        Value::Dictionary(Arc::new(RwLock::new(map)))
     }
 }
 
@@ -75,7 +79,7 @@ impl FromValue for CredentialWrapper {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
             Value::Dictionary(d) => {
-                let dict = d.borrow();
+                let dict = d.read();
                 // pb::eldritch::Credential fields: principal, secret, kind
                 let principal = dict.get("principal")
                     .or_else(|| dict.get("user")) // alias
@@ -104,7 +108,7 @@ impl FromValue for FileWrapper {
     fn from_value(v: &Value) -> Result<Self, String> {
          match v {
             Value::Dictionary(d) => {
-                let dict = d.borrow();
+                let dict = d.read();
                 let path = dict.get("path").map(|v| v.to_string()).unwrap_or_default();
                 let chunk = if let Some(Value::Bytes(b)) = dict.get("content") {
                     b.clone()
@@ -135,12 +139,12 @@ impl FromValue for ProcessListWrapper {
          // ProcessList has `repeated Process list`.
          match v {
              Value::List(l) => {
-                 let list_val = l.borrow();
+                 let list_val = l.read();
                  let mut processes = Vec::new();
                  for item in list_val.iter() {
                      // Assume item is a dict representing a Process
                      if let Value::Dictionary(d) = item {
-                         let d = d.borrow();
+                         let d = d.read();
                          let pid = d.get("pid").and_then(|v| match v { Value::Int(i) => Some(*i as u64), _ => None }).unwrap_or(0);
                          let name = d.get("name").map(|v| v.to_string()).unwrap_or_default();
                          // ... other fields
