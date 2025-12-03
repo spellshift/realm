@@ -13,6 +13,8 @@ pub mod fake;
 pub mod conversion;
 #[cfg(feature = "stdlib")]
 pub mod agent;
+#[cfg(feature = "stdlib")]
+pub mod std;
 
 #[cfg(feature = "stdlib")]
 use conversion::*;
