@@ -82,6 +82,8 @@ func (Beacon) Edges() []ent.Edge {
 		edge.From("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
 			).
 			Ref("beacon").
 			Comment("Tasks that have been assigned to the beacon."),
@@ -99,6 +101,8 @@ func (Beacon) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Beacon) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),

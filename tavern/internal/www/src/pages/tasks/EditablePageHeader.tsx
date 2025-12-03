@@ -1,21 +1,29 @@
 import { FC } from "react";
-import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useParams } from "react-router-dom";
-import { GET_QUEST_BY_ID_QUERY } from "../../utils/queries";
+import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
+import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
+import { QuestQueryTopLevel, TaskQueryResponse } from "../../utils/interfacesQuery";
 
-export const EditablePageHeader: FC = () => {
+interface EditablePageHeaderProps {
+    tasks?: TaskQueryResponse;
+}
+
+export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ tasks }) => {
     const { questId } = useParams();
-    const { data } = useQuery(GET_QUEST_BY_ID_QUERY, {
+
+    const { data } = useQuery<QuestQueryTopLevel>(GET_QUEST_QUERY, {
         variables: {
-            "where": {
-                "id": questId
-            }
-        }
+            where: {
+                id: questId
+            },
+            first: 1
+        },
+        skip: !questId
     });
 
-    const questsName = data?.quests?.edges[0]?.node?.name || questId;
+    const questData = data?.quests?.edges?.[0]?.node;
 
     const BreadcrumbsList = [
         {
@@ -23,7 +31,7 @@ export const EditablePageHeader: FC = () => {
             link: "/quests"
         },
         {
-            label: questsName,
+            label: questData?.name || "Quest",
             link: `/tasks/${questId}`
         }
     ]
@@ -32,15 +40,15 @@ export const EditablePageHeader: FC = () => {
         <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-row justify-between w-full items-center">
                 <Breadcrumbs pages={BreadcrumbsList} />
-                {(questId && data?.quests?.edges && data.quests?.edges.length > 0) &&
+                {questData && tasks && (
                     <CreateQuestDropdown
                         showLabel={true}
-                        name={data?.quests?.edges[0]?.node?.name}
-                        originalParms={data?.quests?.edges[0]?.node?.parameters}
-                        tome={data?.quests?.edges[0]?.node?.tome}
-                        tasks={data?.quests?.edges[0]?.node?.tasksTotal}
+                        name={questData.name}
+                        originalParms={questData.parameters || ""}
+                        tome={questData.tome}
+                        tasks={tasks}
                     />
-                }
+                )}
             </div>
         </div>
     );
