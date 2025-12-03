@@ -3,9 +3,10 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
-use eldritch_core::{Interpreter, Value};
-use eldritch_libagent::std::StdAgentLibrary;
+use eldritch_core::{BufferPrinter, Interpreter, Value};
 use eldritch_libagent::agent::Agent;
+use eldritch_libagent::std::StdAgentLibrary;
+use eldritch_stdlib::process::std::StdProcessLibrary;
 use pb::c2::Task;
 
 lazy_static::lazy_static! {
@@ -34,47 +35,63 @@ impl TaskRegistry {
                 // Already running
                 return;
             }
-            tasks.insert(task_id, TaskHandle {
-                start_time: SystemTime::now(),
-                quest: task.quest_name.clone(),
-            });
+            tasks.insert(
+                task_id,
+                TaskHandle {
+                    start_time: SystemTime::now(),
+                    quest: task.quest_name.clone(),
+                },
+            );
         }
 
         thread::spawn(move || {
             if let Some(tome) = tome {
                 // Setup Interpreter
-                let mut interp = Interpreter::new();
+                eldritch_core::register_lib(StdProcessLibrary);
+                let printer = Arc::new(BufferPrinter::new());
+                let mut interp = Interpreter::new_with_printer(printer.clone());
 
                 // Register Agent Library
                 let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
                 interp.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
-
                 // TODO: Register other Standard Libraries (File, etc.)
 
                 // Run
                 let code = tome.eldritch;
                 match interp.interpret(&code) {
-                    Ok(_) => {
+                    Ok(v) => {
+                        let out = printer.read();
+                        log::info!("Task Success: {v} {out}");
                         // Success - implicit reporting via agent lib calls
+                        let _ = agent.report_task_output(pb::c2::ReportTaskOutputRequest {
+                            output: Some(pb::c2::TaskOutput {
+                                id: task_id,
+                                output: out,
+                                error: None,
+                                exec_started_at: None,
+                                exec_finished_at: None,
+                            }),
+                        });
                     }
                     Err(e) => {
-                         // Report error
-                         let _ = agent.report_task_output(pb::c2::ReportTaskOutputRequest {
-                             output: Some(pb::c2::TaskOutput {
-                                 id: task_id,
-                                 output: String::new(),
-                                 error: Some(pb::c2::TaskError { msg: e }),
-                                 exec_started_at: None,
-                                 exec_finished_at: None,
-                             })
-                         });
+                        // Report error
+                        let _ = agent.report_task_output(pb::c2::ReportTaskOutputRequest {
+                            output: Some(pb::c2::TaskOutput {
+                                id: task_id,
+                                output: String::new(),
+                                error: Some(pb::c2::TaskError { msg: e }),
+                                exec_started_at: None,
+                                exec_finished_at: None,
+                            }),
+                        });
                     }
                 }
             } else {
-                 log::warn!("Task {} has no tome", task_id);
+                log::warn!("Task {task_id} has no tome");
             }
 
             // Cleanup
+            log::info!("Completed Task: {task_id}");
             let mut tasks = TASKS.lock().unwrap();
             tasks.remove(&task_id);
         });
@@ -82,13 +99,14 @@ impl TaskRegistry {
 
     pub fn list() -> Vec<Task> {
         let tasks = TASKS.lock().unwrap();
-        tasks.iter().map(|(id, handle)| {
-            Task {
+        tasks
+            .iter()
+            .map(|(id, handle)| Task {
                 id: *id,
                 tome: None,
                 quest_name: handle.quest.clone(),
-            }
-        }).collect()
+            })
+            .collect()
     }
 
     pub fn stop(task_id: i64) {
