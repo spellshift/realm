@@ -1,13 +1,13 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::utils::get_type_name;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_enumerate(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_enumerate(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Err("enumerate() takes at least one argument".to_string());
     }
@@ -21,9 +21,9 @@ pub fn builtin_enumerate(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Res
         0
     };
     let items = match iterable {
-        Value::List(l) => l.borrow().clone(),
+        Value::List(l) => l.read().clone(),
         Value::Tuple(t) => t.clone(),
-        Value::Set(s) => s.borrow().iter().cloned().collect(),
+        Value::Set(s) => s.read().iter().cloned().collect(),
         Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
         _ => {
             return Err(format!(
@@ -36,5 +36,5 @@ pub fn builtin_enumerate(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Res
     for (i, item) in items.into_iter().enumerate() {
         pairs.push(Value::Tuple(vec![Value::Int(i as i64 + start), item]));
     }
-    Ok(Value::List(Rc::new(RefCell::new(pairs))))
+    Ok(Value::List(Arc::new(RwLock::new(pairs))))
 }

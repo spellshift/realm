@@ -1,10 +1,10 @@
 use super::ast::Value;
 use alloc::collections::BTreeMap;
 use alloc::format;
-use alloc::rc::Rc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
 pub trait FromValue: Sized {
     fn from_value(v: &Value) -> Result<Self, String>;
@@ -65,7 +65,7 @@ impl<T: FromValue> FromValue for Vec<T> {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
             Value::List(l) => {
-                let list = l.borrow();
+                let list = l.read();
                 let mut res = Vec::with_capacity(list.len());
                 for item in list.iter() {
                     res.push(T::from_value(item)?);
@@ -92,7 +92,7 @@ impl<K: FromValue + Ord, V: FromValue> FromValue for BTreeMap<K, V> {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
             Value::Dictionary(d) => {
-                let dict = d.borrow();
+                let dict = d.read();
                 let mut res = BTreeMap::new();
                 for (key_str, val) in dict.iter() {
                     // Keys in Eldritch dicts are currently Strings.
@@ -165,7 +165,7 @@ impl ToValue for Vec<u8> {
 impl<T: ToValue> ToValue for Vec<T> {
     fn to_value(self) -> Value {
         let list: Vec<Value> = self.into_iter().map(|i| i.to_value()).collect();
-        Value::List(Rc::new(RefCell::new(list)))
+        Value::List(Arc::new(RwLock::new(list)))
     }
 }
 
@@ -178,7 +178,7 @@ impl<K: ToValue + ToString, V: ToValue> ToValue for BTreeMap<K, V> {
             // but for symmetry we might expect it. However, the internal BTreeMap is <String, Value>.
             map.insert(k.to_string(), v.to_value());
         }
-        Value::Dictionary(Rc::new(RefCell::new(map)))
+        Value::Dictionary(Arc::new(RwLock::new(map)))
     }
 }
 

@@ -1,10 +1,10 @@
 use crate::ast::{Environment, Value};
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_range(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_range(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     let (start, end, step) = match args {
         [Value::Int(end)] => (0, *end, 1),
         [Value::Int(start), Value::Int(end)] => (*start, *end, 1),
@@ -28,5 +28,5 @@ pub fn builtin_range(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<
             curr += step;
         }
     }
-    Ok(Value::List(Rc::new(RefCell::new(list))))
+    Ok(Value::List(Arc::new(RwLock::new(list))))
 }

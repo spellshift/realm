@@ -2,12 +2,12 @@ use crate::ast::{Environment, Value};
 use crate::interpreter::utils::get_type_name;
 use alloc::collections::BTreeMap;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::{String, ToString};
-use core::cell::RefCell;
+use spin::RwLock;
 
 pub fn builtin_dict(
-    _env: &Rc<RefCell<Environment>>,
+    _env: &Arc<RwLock<Environment>>,
     args: &[Value],
     kwargs: &BTreeMap<String, Value>,
 ) -> Result<Value, String> {
@@ -25,10 +25,10 @@ pub fn builtin_dict(
         match iterable {
             Value::Dictionary(d) => {
                 // Copy other dict
-                map = d.borrow().clone();
+                map = d.read().clone();
             }
             Value::List(l) => {
-                let list = l.borrow();
+                let list = l.read();
                 for (i, item) in list.iter().enumerate() {
                     process_pair(&mut map, item, i)?;
                 }
@@ -39,7 +39,7 @@ pub fn builtin_dict(
                 }
             }
             Value::Set(s) => {
-                let set = s.borrow();
+                let set = s.read();
                 for (i, item) in set.iter().enumerate() {
                     process_pair(&mut map, item, i)?;
                 }
@@ -58,7 +58,7 @@ pub fn builtin_dict(
         map.insert(k.clone(), v.clone());
     }
 
-    Ok(Value::Dictionary(Rc::new(RefCell::new(map))))
+    Ok(Value::Dictionary(Arc::new(RwLock::new(map))))
 }
 
 fn process_pair(
@@ -68,7 +68,7 @@ fn process_pair(
 ) -> Result<(), String> {
     match item {
         Value::List(l) => {
-            let list = l.borrow();
+            let list = l.read();
             if list.len() != 2 {
                 return Err(format!(
                     "dictionary update sequence element #{} has length {}; 2 is required",

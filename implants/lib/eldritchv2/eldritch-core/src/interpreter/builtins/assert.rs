@@ -1,11 +1,11 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::utils::is_truthy;
 use alloc::format;
-use alloc::rc::Rc;
+use alloc::sync::Arc;
 use alloc::string::String;
-use core::cell::RefCell;
+use spin::RwLock;
 
-pub fn builtin_assert(_env: &Rc<RefCell<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_assert(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(
             "assert() takes exactly one argument ({} given)",
