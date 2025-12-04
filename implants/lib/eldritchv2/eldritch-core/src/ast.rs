@@ -34,10 +34,10 @@ pub struct Function {
 
 #[derive(Debug, Clone)]
 pub enum Param {
-    Normal(String),
-    WithDefault(String, Expr),
-    Star(String),
-    StarStar(String),
+    Normal(String, Option<Box<Expr>>),
+    WithDefault(String, Option<Box<Expr>>, Expr),
+    Star(String, Option<Box<Expr>>),
+    StarStar(String, Option<Box<Expr>>),
 }
 
 #[derive(Debug, Clone)]
@@ -376,11 +376,11 @@ pub struct Stmt {
 #[derive(Debug, Clone)]
 pub enum StmtKind {
     Expression(Expr),
-    Assignment(Expr, Expr),
+    Assignment(Expr, Option<Box<Expr>>, Expr),
     AugmentedAssignment(Expr, TokenKind, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
-    Def(String, Vec<Param>, Vec<Stmt>),
+    Def(String, Vec<Param>, Option<Box<Expr>>, Vec<Stmt>),
     For(Vec<String>, Expr, Vec<Stmt>),
     Break,
     Continue,

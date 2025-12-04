@@ -22,7 +22,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
         StmtKind::Expression(expr) => {
             evaluate(interp, expr)?;
         }
-        StmtKind::Assignment(target_expr, value_expr) => {
+        StmtKind::Assignment(target_expr, _annotation, value_expr) => {
             let value = evaluate(interp, value_expr)?;
             assign(interp, target_expr, value)?;
         }
@@ -43,14 +43,14 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 .map_or(Ok(Value::None), |e| evaluate(interp, e))?;
             interp.flow = Flow::Return(val);
         }
-        StmtKind::Def(name, params, body) => {
+        StmtKind::Def(name, params, _return_annotation, body) => {
             let mut runtime_params = Vec::new();
             for param in params {
                 match param {
-                    Param::Normal(n) => runtime_params.push(RuntimeParam::Normal(n.clone())),
-                    Param::Star(n) => runtime_params.push(RuntimeParam::Star(n.clone())),
-                    Param::StarStar(n) => runtime_params.push(RuntimeParam::StarStar(n.clone())),
-                    Param::WithDefault(n, default_expr) => {
+                    Param::Normal(n, _type) => runtime_params.push(RuntimeParam::Normal(n.clone())),
+                    Param::Star(n, _type) => runtime_params.push(RuntimeParam::Star(n.clone())),
+                    Param::StarStar(n, _type) => runtime_params.push(RuntimeParam::StarStar(n.clone())),
+                    Param::WithDefault(n, _type, default_expr) => {
                         let val = evaluate(interp, default_expr)?;
                         runtime_params.push(RuntimeParam::WithDefault(n.clone(), val));
                     }
