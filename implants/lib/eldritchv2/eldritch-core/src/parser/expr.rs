@@ -54,7 +54,9 @@ impl Parser {
 
     pub(crate) fn lambda_expression(&mut self) -> Result<Expr, String> {
         let start_span = self.tokens[self.current - 1].span;
-        let params = self.parse_function_params(TokenKind::Colon)?;
+        // Lambda params do not support type annotations in Python (and usually in dynamic languages)
+        // because the colon is used to separate params from body.
+        let params = self.parse_function_params(TokenKind::Colon, false)?;
         self.consume(
             |t| matches!(t, TokenKind::Colon),
             "Expected ':' after lambda params.",
@@ -75,6 +77,7 @@ impl Parser {
     pub(crate) fn parse_function_params(
         &mut self,
         terminator: TokenKind,
+        allow_annotations: bool,
     ) -> Result<Vec<Param>, String> {
         let mut params = Vec::new();
         if !self.check(&terminator) {
@@ -84,17 +87,39 @@ impl Parser {
                         |t| matches!(t, TokenKind::Identifier(_)),
                         "Expected name after *.",
                     )?;
-                    if let TokenKind::Identifier(param_name) = &param_token.kind {
-                        params.push(Param::Star(param_name.clone()));
-                    }
+                    let param_name = if let TokenKind::Identifier(param_name) = &param_token.kind {
+                        param_name.clone()
+                    } else {
+                        unreachable!()
+                    };
+
+                    // Handle type annotation for *args: *args: type
+                    let annotation = if allow_annotations && self.match_token(&[TokenKind::Colon]) {
+                        Some(Box::new(self.expression()?))
+                    } else {
+                        None
+                    };
+
+                    params.push(Param::Star(param_name, annotation));
                 } else if self.match_token(&[TokenKind::StarStar]) {
                     let param_token = self.consume(
                         |t| matches!(t, TokenKind::Identifier(_)),
                         "Expected name after **.",
                     )?;
-                    if let TokenKind::Identifier(param_name) = &param_token.kind {
-                        params.push(Param::StarStar(param_name.clone()));
-                    }
+                    let param_name = if let TokenKind::Identifier(param_name) = &param_token.kind {
+                        param_name.clone()
+                    } else {
+                        unreachable!()
+                    };
+
+                    // Handle type annotation for **kwargs: **kwargs: type
+                    let annotation = if allow_annotations && self.match_token(&[TokenKind::Colon]) {
+                        Some(Box::new(self.expression()?))
+                    } else {
+                        None
+                    };
+
+                    params.push(Param::StarStar(param_name, annotation));
                 } else {
                     let param_name = {
                         let token = self.consume(
@@ -108,28 +133,31 @@ impl Parser {
                         }
                     };
 
+                    // Parse optional type annotation
+                    let annotation = if allow_annotations && self.match_token(&[TokenKind::Colon]) {
+                        Some(Box::new(self.expression()?))
+                    } else {
+                        None
+                    };
+
                     if self.match_token(&[TokenKind::Assign]) {
                         let default_val = self.expression()?;
-                        params.push(Param::WithDefault(param_name, default_val));
+                        params.push(Param::WithDefault(param_name, annotation, default_val));
                     } else {
                         // Check if a normal parameter follows a default parameter
-                        let has_default = params
-                            .iter()
-                            .any(|p| matches!(p, Param::WithDefault(_, _)));
+                        let has_default = params.iter().any(|p| matches!(p, Param::WithDefault(..)));
                         let has_star = params
                             .iter()
-                            .any(|p| matches!(p, Param::Star(_)) || matches!(p, Param::StarStar(_)));
+                            .any(|p| matches!(p, Param::Star(..)) || matches!(p, Param::StarStar(..)));
 
                         // Only an error if we haven't seen *args yet.
-                        // Python: def f(a=1, b): Error.
-                        // Python: def f(a=1, *args, b): Error? No, b is kw-only.
-                        // But here, we are PARSING.
-                        // If we see `b` (Normal) and we haven't seen `*` or `**`, and we HAVE seen a default...
                         if has_default && !has_star {
-                            return Err("Non-default argument follows default argument.".to_string());
+                            return Err(
+                                "Non-default argument follows default argument.".to_string()
+                            );
                         }
 
-                        params.push(Param::Normal(param_name));
+                        params.push(Param::Normal(param_name, annotation));
                     }
                 }
 
@@ -385,14 +413,35 @@ impl Parser {
                         step = Some(Box::new(self.expression()?));
                     }
                 } else {
-                    start = Some(Box::new(self.expression()?));
-                    if self.match_token(&[TokenKind::Colon]) {
-                        is_slice = true;
-                        if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::RBracket) {
-                            stop = Some(Box::new(self.expression()?));
+                    let first_expr = self.expression()?;
+
+                    // Check for tuple indexing: a[1, 2]
+                    if self.match_token(&[TokenKind::Comma]) {
+                        let mut elements = vec![first_expr];
+                        // Only continue if not immediately closed by RBracket (allow trailing comma if supported, or error if not expr)
+                        loop {
+                            if self.check(&TokenKind::RBracket) {
+                                break;
+                            }
+                            elements.push(self.expression()?);
+                            if !self.match_token(&[TokenKind::Comma]) {
+                                break;
+                            }
                         }
-                        if self.match_token(&[TokenKind::Colon]) && !self.check(&TokenKind::RBracket) {
-                            step = Some(Box::new(self.expression()?));
+                        // Create a tuple expression for the index
+                        let tuple_start = elements[0].span;
+                        let tuple_end = elements.last().unwrap().span;
+                        start = Some(Box::new(self.make_expr(ExprKind::Tuple(elements), tuple_start, tuple_end)));
+                    } else {
+                        start = Some(Box::new(first_expr));
+                        if self.match_token(&[TokenKind::Colon]) {
+                            is_slice = true;
+                            if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::RBracket) {
+                                stop = Some(Box::new(self.expression()?));
+                            }
+                            if self.match_token(&[TokenKind::Colon]) && !self.check(&TokenKind::RBracket) {
+                                step = Some(Box::new(self.expression()?));
+                            }
                         }
                     }
                 }
