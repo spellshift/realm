@@ -16,6 +16,7 @@ pub fn register_all() {
     eldritch_core::register_lib(crypto::std::StdCryptoLibrary);
     eldritch_core::register_lib(file::std::StdFileLibrary);
     eldritch_core::register_lib(http::std::StdHttpLibrary);
+    eldritch_core::register_lib(pivot::std::StdPivotLibrary::default());
     eldritch_core::register_lib(process::std::StdProcessLibrary);
     eldritch_core::register_lib(random::std::StdRandomLibrary);
     eldritch_core::register_lib(regex::std::StdRegexLibrary);
