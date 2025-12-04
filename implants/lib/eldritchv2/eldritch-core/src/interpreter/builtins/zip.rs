@@ -22,7 +22,7 @@ pub fn builtin_zip(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             Value::Dictionary(d) => d
                 .read()
                 .keys()
-                .map(|k| Value::String(k.clone()))
+                .cloned()
                 .collect(),
             _ => return Err(format!("'{}' object is not iterable", get_type_name(arg))),
         };

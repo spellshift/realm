@@ -92,7 +92,7 @@ fn get_set_elements(v: &Value) -> Result<BTreeSet<Value>, String> {
         Value::Dictionary(d) => Ok(d
             .read()
             .keys()
-            .map(|k| Value::String(k.clone()))
+            .cloned()
             .collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
         _ => Err(format!("'{}' object is not iterable", get_type_name(v))),
@@ -186,7 +186,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             let keys: Vec<Value> = d
                 .read()
                 .keys()
-                .map(|k| Value::String(k.clone()))
+                .cloned()
                 .collect();
             Ok(Value::List(Arc::new(RwLock::new(keys))))
         }
@@ -198,7 +198,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             let items: Vec<Value> = d
                 .read()
                 .iter()
-                .map(|(k, v)| Value::Tuple(vec![Value::String(k.clone()), v.clone()]))
+                .map(|(k, v)| Value::Tuple(vec![k.clone(), v.clone()]))
                 .collect();
             Ok(Value::List(Arc::new(RwLock::new(items))))
         }
@@ -206,10 +206,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             if args.is_empty() || args.len() > 2 {
                 return Err("get() takes 1 or 2 arguments".into());
             }
-            let key = match &args[0] {
-                Value::String(s) => s,
-                v => return Err(format!("Dict keys must be strings, got {v}")),
-            };
+            let key = &args[0];
             let default = if args.len() == 2 {
                 args[1].clone()
             } else {
@@ -238,7 +235,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             let last_key = map.keys().next_back().cloned();
             if let Some(k) = last_key {
                 let v = map.remove(&k).unwrap();
-                Ok(Value::Tuple(vec![Value::String(k), v]))
+                Ok(Value::Tuple(vec![k, v]))
             } else {
                 Err("popitem(): dictionary is empty".into())
             }

@@ -21,7 +21,7 @@ pub fn builtin_max(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             Value::Dictionary(d) => d
                 .read()
                 .keys()
-                .map(|k| Value::String(k.clone()))
+                .cloned()
                 .collect(),
             _ => {
                 return Err(format!(

@@ -174,11 +174,7 @@ fn evaluate_dict_comp(
         if include {
             let k = evaluate(interp, key_expr)?;
             let v = evaluate(interp, val_expr)?;
-            let k_str = match k {
-                Value::String(s) => s,
-                _ => return runtime_error(key_expr.span, "Dict keys must be strings"),
-            };
-            results.insert(k_str, v);
+            results.insert(k, v);
         }
     }
     interp.env = original_env;
@@ -215,11 +211,7 @@ fn evaluate_dict_literal(
     for (key_expr, value_expr) in entries {
         let key_val = evaluate(interp, key_expr)?;
         let value_val = evaluate(interp, value_expr)?;
-        let key_str = match key_val {
-            Value::String(s) => s,
-            _ => return runtime_error(key_expr.span, "Dictionary keys must be strings."),
-        };
-        map.insert(key_str, value_val);
+        map.insert(key_val, value_val);
     }
     Ok(Value::Dictionary(Arc::new(RwLock::new(map))))
 }
@@ -321,14 +313,10 @@ fn evaluate_index(
             Ok(t[true_idx as usize].clone())
         }
         Value::Dictionary(d) => {
-            let key_str = match idx_val {
-                Value::String(s) => s,
-                _ => return runtime_error(index.span, "Dictionary keys must be strings"),
-            };
             let dict = d.read();
-            match dict.get(&key_str) {
+            match dict.get(&idx_val) {
                 Some(v) => Ok(v.clone()),
-                None => runtime_error(span, &format!("KeyError: '{key_str}'")),
+                None => runtime_error(span, &format!("KeyError: '{idx_val}'")),
             }
         }
         _ => runtime_error(obj.span, &format!("Type not subscriptable: {obj_val:?}")),
@@ -460,7 +448,7 @@ fn evaluate_getattr(
 
     // Support dot access for dictionary keys (useful for modules)
     if let Value::Dictionary(d) = &obj_val {
-        if let Some(val) = d.read().get(&name) {
+        if let Some(val) = d.read().get(&Value::String(name.clone())) {
             return Ok(val.clone());
         }
     }
@@ -540,7 +528,22 @@ fn call_function(
             Argument::KwArgs(expr) => {
                 let val = evaluate(interp, expr)?;
                 match val {
-                    Value::Dictionary(d) => kw_args_val.extend(d.read().clone()),
+                    Value::Dictionary(d) => {
+                        let dict = d.read();
+                        for (k, v) in dict.iter() {
+                            match k {
+                                Value::String(s) => {
+                                    kw_args_val.insert(s.clone(), v.clone());
+                                }
+                                _ => {
+                                    return runtime_error(
+                                        expr.span,
+                                        "Keywords must be strings",
+                                    )
+                                }
+                            }
+                        }
+                    }
                     _ => {
                         return runtime_error(
                             expr.span,
@@ -646,7 +649,7 @@ fn call_function(
                             let keys_to_move: Vec<String> = kw_args_val.keys().cloned().collect();
                             for k in keys_to_move {
                                 if let Some(v) = kw_args_val.remove(&k) {
-                                    dict.insert(k, v);
+                                    dict.insert(Value::String(k), v);
                                 }
                             }
                             function_env.write().values.insert(
@@ -854,7 +857,7 @@ fn to_iterable(
         Value::Dictionary(d) => Ok(d
             .read()
             .keys()
-            .map(|k| Value::String(k.clone()))
+            .cloned()
             .collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
         _ => runtime_error(
@@ -926,11 +929,7 @@ fn evaluate_in(
         Value::Dictionary(d) => {
             let dict = d.read();
             // Check keys
-            let key = match item {
-                Value::String(s) => s,
-                _ => return Ok(Value::Bool(false)), // Only strings are keys
-            };
-            Ok(Value::Bool(dict.contains_key(key)))
+            Ok(Value::Bool(dict.contains_key(item)))
         }
         Value::Set(s) => {
             let set = s.read();
