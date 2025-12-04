@@ -20,4 +20,6 @@ pub fn register_all() {
     eldritch_core::register_lib(process::std::StdProcessLibrary);
     eldritch_core::register_lib(random::std::StdRandomLibrary);
     eldritch_core::register_lib(regex::std::StdRegexLibrary);
+    eldritch_core::register_lib(sys::std::StdSysLibrary);
+    eldritch_core::register_lib(time::std::StdTimeLibrary);
 }

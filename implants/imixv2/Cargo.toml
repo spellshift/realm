@@ -4,17 +4,24 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.0", features = ["full"] }
-anyhow = "1.0"
-log = "0.4"
-pretty_env_logger = "0.4"
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
+log = { workspace = true }
+pretty_env_logger = { workspace = true }
 clap = { version = "4.0", features = ["derive"] }
 futures = "0.3"
 lazy_static = "1.4.0"
 
 # Workspace dependencies
 eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
-eldritch-stdlib = { path = "../lib/eldritchv2/stdlib/eldritch-stdlib", features = ["stdlib"] }
-eldritch-libagent = { path = "../lib/eldritchv2/stdlib/eldritch-libagent", features = ["stdlib"] }
+eldritch-stdlib = { path = "../lib/eldritchv2/stdlib/eldritch-stdlib", features = [
+    "stdlib",
+] }
+eldritch-libagent = { path = "../lib/eldritchv2/stdlib/eldritch-libagent", features = [
+    "stdlib",
+] }
+eldritch-libassets = { path = "../lib/eldritchv2/stdlib/eldritch-libassets", features = [
+    "stdlib",
+] }
 transport = { path = "../lib/transport", features = ["grpc"] }
 pb = { path = "../lib/pb", features = ["imix"] }
