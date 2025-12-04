@@ -42,12 +42,19 @@ impl Parser {
             "Expected '(' after function name.",
         )?;
 
-        let params = self.parse_function_params(TokenKind::RParen)?;
+        let params = self.parse_function_params(TokenKind::RParen, true)?;
 
         self.consume(
             |t| matches!(t, TokenKind::RParen),
             "Expected ')' after parameters.",
         )?;
+
+        let return_annotation = if self.match_token(&[TokenKind::Arrow]) {
+            Some(Box::new(self.expression()?))
+        } else {
+            None
+        };
+
         self.consume(
             |t| matches!(t, TokenKind::Colon),
             "Expected ':' before function body.",
@@ -60,7 +67,7 @@ impl Parser {
             start_span
         };
 
-        Ok(self.make_stmt(StmtKind::Def(name, params, body), start_span, end_span))
+        Ok(self.make_stmt(StmtKind::Def(name, params, return_annotation, body), start_span, end_span))
     }
 
     pub(crate) fn parse_block_or_statement(&mut self) -> Result<Vec<Stmt>, String> {
@@ -254,6 +261,18 @@ impl Parser {
 
         let mut end = expr.span;
 
+        // Check for annotated assignment: x: int = 5
+        // Note: We only support annotated assignment if it is followed by '='
+        // x: int by itself is a valid statement in Python but the user said "no" to `x: int`, only `x: int = 10`.
+        // Wait, the user said `x: int` is NOT valid. `x: int = 10` IS valid.
+        // So I must enforce '=' if I see ':'.
+
+        let annotation = if self.match_token(&[TokenKind::Colon]) {
+            Some(Box::new(self.expression()?))
+        } else {
+            None
+        };
+
         // Normal assignment
         if self.match_token(&[TokenKind::Assign]) {
             self.validate_assignment_target(&expr)?;
@@ -286,7 +305,9 @@ impl Parser {
                     "Expected newline after assignment.",
                 )?;
             }
-            return Ok(self.make_stmt(StmtKind::Assignment(expr, final_value), start, end));
+            return Ok(self.make_stmt(StmtKind::Assignment(expr, annotation, final_value), start, end));
+        } else if annotation.is_some() {
+             return Err("Annotated variable must be assigned a value.".to_string());
         }
 
         // Augmented assignment

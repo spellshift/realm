@@ -58,6 +58,9 @@ pub enum TokenKind {
     PercentAssign,
     SlashSlashAssign,
 
+    // Arrows
+    Arrow,
+
     // One or two character tokens
     Eq,
     NotEq,

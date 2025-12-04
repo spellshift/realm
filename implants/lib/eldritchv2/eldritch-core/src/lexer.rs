@@ -409,6 +409,8 @@ impl Lexer {
             '-' => {
                 if self.match_char('=') {
                     Ok(self.add_token(TokenKind::MinusAssign))
+                } else if self.match_char('>') {
+                    Ok(self.add_token(TokenKind::Arrow))
                 } else {
                     Ok(self.add_token(TokenKind::Minus))
                 }
