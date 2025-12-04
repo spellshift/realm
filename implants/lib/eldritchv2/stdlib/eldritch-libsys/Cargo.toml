@@ -43,3 +43,6 @@ stdlib = [
     "dep:hex",
 ]
 fake_bindings = []
+
+[dev-dependencies]
+tempfile = { workspace = true }
