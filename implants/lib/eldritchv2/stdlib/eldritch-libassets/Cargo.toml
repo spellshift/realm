@@ -9,8 +9,14 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eldritch-core = { path = "../../eldritch-core" }
 eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-libagent = { path = "../eldritch-libagent", optional = true }
+rust-embed = "8.5.0"
+anyhow = { workspace = true }
+spin = { version = "0.10.0", features = ["rwlock"] }
+pb = { path = "../../../pb", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = []
+stdlib = ["dep:eldritch-libagent", "dep:pb"]
 fake_bindings = []
+imix = []
