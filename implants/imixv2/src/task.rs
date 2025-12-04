@@ -7,6 +7,7 @@ use eldritch_core::{BufferPrinter, Interpreter, Value};
 use eldritch_core::conversion::ToValue;
 use eldritch_libagent::agent::Agent;
 use eldritch_libagent::std::StdAgentLibrary;
+use eldritch_libassets::std::StdAssetsLibrary;
 use pb::c2::Task;
 
 lazy_static::lazy_static! {
@@ -56,6 +57,11 @@ impl TaskRegistry {
                 // Register Agent Library
                 let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
                 interp.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
+
+                // Register Assets Library
+                let remote_assets = tome.file_names.clone();
+                let assets_lib = StdAssetsLibrary::new(agent.clone(), remote_assets);
+                interp.register_module("assets", Value::Foreign(Arc::new(assets_lib)));
 
                 // Inject input_params
                 // tome.parameters is converted to a BTreeMap which ToValue supports
