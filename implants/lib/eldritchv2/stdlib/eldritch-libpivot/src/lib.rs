@@ -22,8 +22,6 @@ pub mod port_forward_impl;
 #[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
 pub mod port_scan_impl;
 #[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
-pub mod reverse_shell_pty_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
 pub mod smb_exec_impl;
 #[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
 pub mod ssh_copy_impl;

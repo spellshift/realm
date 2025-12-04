@@ -9,7 +9,6 @@ use crate::bind_proxy_impl;
 use crate::ncat_impl;
 use crate::port_forward_impl;
 use crate::port_scan_impl;
-use crate::reverse_shell_pty_impl;
 use crate::smb_exec_impl;
 use crate::ssh_copy_impl;
 use crate::ssh_exec_impl;
@@ -23,13 +22,37 @@ use std::sync::Arc;
 use alloc::string::ToString;
 use eldritch_macros::eldritch_library_impl;
 
-#[derive(Default, Debug)]
+#[cfg(feature = "stdlib")]
+use eldritch_libagent::agent::Agent;
+
+#[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
-pub struct StdPivotLibrary;
+pub struct StdPivotLibrary {
+    // Agent is optional to allow default registration, but required for some methods
+    pub agent: Option<Arc<dyn Agent>>,
+}
+
+impl core::fmt::Debug for StdPivotLibrary {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("StdPivotLibrary")
+         .field("agent", &if self.agent.is_some() { "Some(Agent)" } else { "None" })
+         .finish()
+    }
+}
+
+impl StdPivotLibrary {
+    pub fn new(agent: Arc<dyn Agent>) -> Self {
+        Self { agent: Some(agent) }
+    }
+}
 
 impl PivotLibrary for StdPivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
-        reverse_shell_pty_impl::reverse_shell_pty(cmd).map_err(|e| e.to_string())
+        if let Some(agent) = &self.agent {
+            agent.reverse_shell(cmd)
+        } else {
+            Err("Agent not available for reverse_shell_pty".to_string())
+        }
     }
 
     fn ssh_exec(

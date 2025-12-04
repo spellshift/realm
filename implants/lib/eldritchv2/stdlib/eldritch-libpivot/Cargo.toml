@@ -9,6 +9,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eldritch-core = { path = "../../eldritch-core" }
 eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-libagent = { path = "../eldritch-libagent", optional = true }
+pb = { path = "../../../pb", optional = true }
 
 anyhow = { workspace = true, optional = true }
 async-recursion = { workspace = true, optional = true }
@@ -29,5 +31,5 @@ tempfile = { workspace = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["anyhow", "async-recursion", "async-trait", "ipnetwork", "log", "russh", "russh-sftp", "russh-keys", "tokio", "pnet"]
+stdlib = ["anyhow", "async-recursion", "async-trait", "ipnetwork", "log", "russh", "russh-sftp", "russh-keys", "tokio", "pnet", "eldritch-libagent", "pb", "eldritch-libagent/stdlib"]
 fake_bindings = []

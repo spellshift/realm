@@ -20,6 +20,9 @@ eldritch-stdlib = { path = "../lib/eldritchv2/stdlib/eldritch-stdlib", features 
 eldritch-libagent = { path = "../lib/eldritchv2/stdlib/eldritch-libagent", features = [
     "stdlib",
 ] }
+eldritch-libpivot = { path = "../lib/eldritchv2/stdlib/eldritch-libpivot", features = [
+    "stdlib",
+] }
 eldritch-libassets = { path = "../lib/eldritchv2/stdlib/eldritch-libassets", features = [
     "stdlib",
 ] }

@@ -108,7 +108,7 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn reverse_shell(&self) -> Result<(), String> {
-        self.agent.reverse_shell()
+        self.agent.reverse_shell(None)
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {

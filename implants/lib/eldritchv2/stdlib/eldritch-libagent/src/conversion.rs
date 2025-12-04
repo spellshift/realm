@@ -60,8 +60,8 @@ impl ToValue for TaskWrapper {
     fn to_value(self) -> Value {
         let task = self.0;
         let mut map = BTreeMap::new();
-        map.insert("id".to_string(), Value::Int(task.id));
-        map.insert("quest_name".to_string(), Value::String(task.quest_name));
+        map.insert(Value::String("id".to_string()), Value::Int(task.id));
+        map.insert(Value::String("quest_name".to_string()), Value::String(task.quest_name));
         // Tome is complex, let's represent it as a dict or None for now
         // For strict correctness we might want a TomeWrapper, but often scripts just need the ID.
         // If needed, we can expand Tome.
@@ -81,12 +81,12 @@ impl FromValue for CredentialWrapper {
             Value::Dictionary(d) => {
                 let dict = d.read();
                 // pb::eldritch::Credential fields: principal, secret, kind
-                let principal = dict.get("principal")
-                    .or_else(|| dict.get("user")) // alias
+                let principal = dict.get(&Value::String("principal".to_string()))
+                    .or_else(|| dict.get(&Value::String("user".to_string()))) // alias
                     .map(|v| v.to_string())
                     .unwrap_or_default();
-                let secret = dict.get("secret")
-                    .or_else(|| dict.get("password")) // alias
+                let secret = dict.get(&Value::String("secret".to_string()))
+                    .or_else(|| dict.get(&Value::String("password".to_string()))) // alias
                     .map(|v| v.to_string())
                     .unwrap_or_default();
 
@@ -109,8 +109,8 @@ impl FromValue for FileWrapper {
          match v {
             Value::Dictionary(d) => {
                 let dict = d.read();
-                let path = dict.get("path").map(|v| v.to_string()).unwrap_or_default();
-                let chunk = if let Some(Value::Bytes(b)) = dict.get("content") {
+                let path = dict.get(&Value::String("path".to_string())).map(|v| v.to_string()).unwrap_or_default();
+                let chunk = if let Some(Value::Bytes(b)) = dict.get(&Value::String("content".to_string())) {
                     b.clone()
                 } else {
                     Vec::new()
@@ -145,8 +145,8 @@ impl FromValue for ProcessListWrapper {
                      // Assume item is a dict representing a Process
                      if let Value::Dictionary(d) = item {
                          let d = d.read();
-                         let pid = d.get("pid").and_then(|v| match v { Value::Int(i) => Some(*i as u64), _ => None }).unwrap_or(0);
-                         let name = d.get("name").map(|v| v.to_string()).unwrap_or_default();
+                         let pid = d.get(&Value::String("pid".to_string())).and_then(|v| match v { Value::Int(i) => Some(*i as u64), _ => None }).unwrap_or(0);
+                         let name = d.get(&Value::String("name".to_string())).map(|v| v.to_string()).unwrap_or_default();
                          // ... other fields
                          processes.push(eldritch::Process {
                              pid,

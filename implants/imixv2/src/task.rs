@@ -58,6 +58,11 @@ impl TaskRegistry {
                 let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
                 interp.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
 
+                // Register Pivot Library (with agent context)
+                use eldritch_libpivot::std::StdPivotLibrary;
+                let pivot_lib = StdPivotLibrary::new(agent.clone());
+                interp.register_module("pivot", Value::Foreign(Arc::new(pivot_lib)));
+
                 // Register Assets Library
                 let remote_assets = tome.file_names.clone();
                 let assets_lib = StdAssetsLibrary::new(agent.clone(), remote_assets);

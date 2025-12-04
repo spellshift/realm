@@ -92,7 +92,7 @@ impl HttpLibrary for StdHttpLibrary {
         let mut headers_map = BTreeMap::new();
         for (k, v) in resp.headers() {
             headers_map.insert(
-                k.to_string(),
+                Value::String(k.to_string()),
                 Value::String(v.to_str().unwrap_or("").to_string()),
             );
         }
@@ -149,7 +149,7 @@ impl HttpLibrary for StdHttpLibrary {
         let mut headers_map = BTreeMap::new();
         for (k, v) in resp.headers() {
             headers_map.insert(
-                k.to_string(),
+                Value::String(k.to_string()),
                 Value::String(v.to_str().unwrap_or("").to_string()),
             );
         }

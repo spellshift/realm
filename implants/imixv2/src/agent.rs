@@ -113,7 +113,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         })
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
+    fn reverse_shell(&self, _cmd: Option<String>) -> Result<(), String> {
          Err("Reverse shell not implemented in imixv2 agent yet".to_string())
     }
 
