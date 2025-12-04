@@ -3,6 +3,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use eldritch_core::Value;
+use eldritch_macros::eldritch_library_impl;
 
 mod dll_inject_impl;
 mod dll_reflect_impl;
@@ -24,6 +25,7 @@ mod write_reg_int_impl;
 mod write_reg_str_impl;
 
 #[derive(Debug)]
+#[eldritch_library_impl(SysLibrary)]
 pub struct StdSysLibrary;
 
 impl SysLibrary for StdSysLibrary {
