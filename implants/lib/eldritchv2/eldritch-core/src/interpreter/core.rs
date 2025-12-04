@@ -175,7 +175,7 @@ impl Interpreter {
         }
     }
 
-    pub(crate) fn define_variable(&mut self, name: &str, value: Value) {
+    pub fn define_variable(&mut self, name: &str, value: Value) {
         self.env.write().values.insert(name.to_string(), value);
     }
 
