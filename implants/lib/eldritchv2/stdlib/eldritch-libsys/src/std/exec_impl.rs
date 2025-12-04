@@ -120,10 +120,5 @@ fn handle_exec(
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::Path, process, thread, time};
-    use sysinfo::{PidExt, ProcessExt, System, SystemExt};
-    use tempfile::NamedTempFile;
-    use super::*;
-
     // Tests omitted for brevity
 }
