@@ -13,13 +13,6 @@ pub use eldritch_libtime as time;
 
 #[cfg(feature = "stdlib")]
 pub fn register_all() {
-    eldritch_core::register_lib(crypto::std::StdCryptoLibrary);
-    eldritch_core::register_lib(file::std::StdFileLibrary);
-    eldritch_core::register_lib(http::std::StdHttpLibrary);
-    eldritch_core::register_lib(pivot::std::StdPivotLibrary::default());
-    eldritch_core::register_lib(process::std::StdProcessLibrary);
-    eldritch_core::register_lib(random::std::StdRandomLibrary);
-    eldritch_core::register_lib(regex::std::StdRegexLibrary);
-    eldritch_core::register_lib(sys::std::StdSysLibrary);
-    eldritch_core::register_lib(time::std::StdTimeLibrary);
+    // Deprecated: usage of global registration is discouraged.
+    // Use eldritchv2::Interpreter::with_default_libs() instead.
 }

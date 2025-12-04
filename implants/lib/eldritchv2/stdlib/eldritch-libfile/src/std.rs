@@ -399,7 +399,11 @@ fn value_to_json(v: Value) -> serde_json::Value {
             let dict = d.read();
             let mut map = serde_json::Map::new();
             for (k, v) in dict.iter() {
-                map.insert(k.clone(), value_to_json(v.clone()));
+                if let Value::String(key) = k {
+                    map.insert(key.clone(), value_to_json(v.clone()));
+                } else {
+                    map.insert(k.to_string(), value_to_json(v.clone()));
+                }
             }
             JsonValue::Object(map)
         }

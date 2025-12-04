@@ -5,7 +5,8 @@ use crossterm::{
     terminal::{self, ClearType},
     ExecutableCommand, QueueableCommand,
 };
-use eldritch_core::{Interpreter, Value, register_lib};
+use eldritch_core::Value;
+use eldritchv2::Interpreter;
 use eldritch_repl::{Input, Repl, ReplAction};
 use std::io::{self, Write};
 use std::time::Duration;
@@ -23,30 +24,49 @@ use eldritch_stdlib::{
 };
 
 fn main() -> io::Result<()> {
-    // Register Libraries
+    // Register Libraries logic is now handled by Interpreter builder
+
+    let mut interpreter = Interpreter::new();
+
     #[cfg(feature = "stdlib")]
     {
-        register_lib(StdFileLibrary);
-        register_lib(StdHttpLibrary);
-        register_lib(StdProcessLibrary);
-        register_lib(StdRegexLibrary);
-        register_lib(StdRandomLibrary);
-        register_lib(StdCryptoLibrary);
+        interpreter = interpreter.with_default_libs();
     }
+
+    // For fake bindings, we might need a separate builder method or manual registration.
+    // Since eldritchv2::Interpreter::with_default_libs uses "real" stdlibs,
+    // for fake bindings we should probably just register them manually or
+    // improve the builder to handle it.
+    // Given the task is about standardizing, I will assume for now we can just manual register if needed,
+    // or add a .with_fake_libs() later.
+    // But wait, the task says "Register all unit struct libraries available in stdlib" for with_default_libs.
+    // If fake_bindings feature is on, `eldritch-stdlib` might expose fake libs?
+    // Looking at eldritch-stdlib, it exposes fake libs in `fake` module.
+    // For now, I'll stick to manual registration for fake bindings to match previous behavior if stdlib is off.
 
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
     {
+        // Manual registration since with_default_libs uses the real ones (or I need to update it).
+        // Since eldritchv2 facade depends on stdlib feature, `with_default_libs` is likely tailored for that.
+        // I will leave fake bindings manual here for now, or just not support them via the builder yet.
+        // Actually, the previous code had:
+        /*
         register_lib(FileLibraryFake::default());
-        register_lib(HttpLibraryFake::default());
-        register_lib(RegexLibraryFake::default());
-        register_lib(CryptoLibraryFake::default());
+        ...
+        */
+        // I will do:
+        use std::sync::Arc;
+        interpreter.register_module("file", Value::Foreign(Arc::new(FileLibraryFake::default())));
+        interpreter.register_module("http", Value::Foreign(Arc::new(HttpLibraryFake::default())));
+        interpreter.register_module("regex", Value::Foreign(Arc::new(RegexLibraryFake::default())));
+        interpreter.register_module("crypto", Value::Foreign(Arc::new(CryptoLibraryFake::default())));
     }
 
-    let mut interpreter = Interpreter::new();
+
     let mut repl = Repl::new();
 
     // Register STD-dependent builtins
-    interpreter.register_function("input", |_env, _| {
+    interpreter.register_module("input", Value::NativeFunction("input".to_string(), |_env, _| {
         terminal::disable_raw_mode().unwrap();
         let mut input = String::new();
         let res = match std::io::stdin().read_line(&mut input) {
@@ -55,7 +75,19 @@ fn main() -> io::Result<()> {
         };
         terminal::enable_raw_mode().unwrap();
         res
-    });
+    }));
+    // Note: register_function became register_module? No, eldritchv2 wrapped register_module but not register_function directly?
+    // Let me check my implementation of eldritchv2::Interpreter.
+    // I did NOT expose register_function. I exposed register_module.
+    // But wait, `interpreter.inner.register_function` exists.
+    // In `eldritchv2/src/lib.rs`, I didn't verify if I exposed `register_function`.
+    // I checked: I implemented `register_module`. I did NOT implement `register_function`.
+    // The previous code used `register_function` for "input".
+    // I should fix `eldritchv2/src/lib.rs` to expose `register_function` or use `register_module` with a dict or just native function value.
+    // `Interpreter::register_function` in core does: `self.env.write().values.insert(name, Value::NativeFunction(...))`.
+    // `Interpreter::register_module` does: `self.env.write().values.insert(name, module)`.
+    // So `register_module` can take a `Value::NativeFunction` and it works the same (inserts into env).
+    // So `interpreter.register_module("input", Value::NativeFunction(...))` works.
 
     println!("Eldritch REPL (Rust + Crossterm)");
     println!("Type 'exit' to quit. End blocks with an empty line.");

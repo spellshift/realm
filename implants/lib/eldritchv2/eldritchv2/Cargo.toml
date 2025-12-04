@@ -4,3 +4,14 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+eldritch-core = { path = "../eldritch-core" }
+eldritch-stdlib = { path = "../stdlib/eldritch-stdlib", features = ["stdlib"] }
+eldritch-libagent = { path = "../stdlib/eldritch-libagent", features = ["stdlib"] }
+eldritch-libreport = { path = "../stdlib/eldritch-libreport", features = ["stdlib"] }
+eldritch-libpivot = { path = "../stdlib/eldritch-libpivot", features = ["stdlib"] }
+eldritch-libassets = { path = "../stdlib/eldritch-libassets", features = ["stdlib"] }
+spin = "0.9"
+
+[features]
+default = ["std"]
+std = ["eldritch-core/std"]
