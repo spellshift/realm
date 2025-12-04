@@ -92,7 +92,7 @@ impl HttpLibrary for StdHttpLibrary {
         let mut headers_map = BTreeMap::new();
         for (k, v) in resp.headers() {
             headers_map.insert(
-                k.to_string(),
+                Value::String(k.to_string()),
                 Value::String(v.to_str().unwrap_or("").to_string()),
             );
         }
@@ -149,7 +149,7 @@ impl HttpLibrary for StdHttpLibrary {
         let mut headers_map = BTreeMap::new();
         for (k, v) in resp.headers() {
             headers_map.insert(
-                k.to_string(),
+                Value::String(k.to_string()),
                 Value::String(v.to_str().unwrap_or("").to_string()),
             );
         }
@@ -229,7 +229,7 @@ mod tests {
         if let Value::Dictionary(d) = res.get("headers").unwrap() {
             let dict = d.read();
             assert_eq!(
-                dict.get("x-test").or(dict.get("X-Test")).unwrap(),
+                dict.get(&Value::String("x-test".to_string())).or(dict.get(&Value::String("X-Test".to_string()))).unwrap(),
                 &Value::String("Value".into())
             );
         } else {

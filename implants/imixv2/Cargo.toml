@@ -14,6 +14,7 @@ lazy_static = "1.4.0"
 
 # Workspace dependencies
 eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
+eldritchv2 = { path = "../lib/eldritchv2/eldritchv2", features = ["std"] }
 eldritch-stdlib = { path = "../lib/eldritchv2/stdlib/eldritch-stdlib", features = [
     "stdlib",
 ] }

@@ -4,7 +4,7 @@ version = "0.3.0"
 edition = "2024"
 
 [features]
-stdlib = ["eldritch-stdlib/stdlib"]
+stdlib = ["eldritch-stdlib/stdlib", "eldritchv2/std"]
 fake_bindings = ["eldritch-stdlib/fake_bindings"]
 
 [[bin]]
@@ -23,6 +23,7 @@ crossterm = "0.27"
 eldritch-stdlib = { path = "../stdlib/eldritch-stdlib", default-features = false, features = [
     "stdlib",
 ] }
+eldritchv2 = { path = "../eldritchv2", default-features = false, features = ["std"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
