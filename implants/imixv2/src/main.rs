@@ -17,13 +17,16 @@ use crate::version::VERSION;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    pretty_env_logger::init();
+    #[cfg(debug_assertions)]
+    pretty_env_logger::formatted_timed_builder()
+        .filter_level(log::LevelFilter::Info)
+        .parse_env("IMIX_LOG")
+        .init();
+
     log::info!("Starting imixv2 agent");
 
     // Load config / defaults
-    let mut config = Config::default_with_imix_verison(VERSION);
-    config.callback_uri = "http://localhost:8000".to_string(); // Default for testing
-                                                               // Note: IMIX_SERVER_PUBKEY is handled by pb crate env var or default
+    let config = Config::default_with_imix_verison(VERSION);
 
     let transport = ActiveTransport::new(config.callback_uri.clone(), None)
         .context("Failed to initialize transport")?;
