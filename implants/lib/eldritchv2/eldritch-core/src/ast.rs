@@ -73,7 +73,7 @@ pub enum Value {
     Bytes(Vec<u8>),
     List(Arc<RwLock<Vec<Value>>>),
     Tuple(Vec<Value>),
-    Dictionary(Arc<RwLock<BTreeMap<String, Value>>>),
+    Dictionary(Arc<RwLock<BTreeMap<Value, Value>>>),
     Set(Arc<RwLock<BTreeSet<Value>>>),
     Function(Function),
     NativeFunction(String, BuiltinFn),

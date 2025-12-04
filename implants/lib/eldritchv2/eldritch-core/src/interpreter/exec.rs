@@ -208,16 +208,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                     Ok(())
                 }
                 Value::Dictionary(d) => {
-                    let key_str = match index {
-                        Value::String(s) => s,
-                        _ => {
-                            return runtime_error(
-                                index_expr.span,
-                                "Dictionary keys must be strings",
-                            )
-                        }
-                    };
-                    d.write().insert(key_str, value);
+                    d.write().insert(index, value);
                     Ok(())
                 }
                 _ => runtime_error(target.span, "Object does not support item assignment"),
@@ -298,17 +289,8 @@ fn execute_augmented_assignment(
                     list[true_idx as usize].clone()
                 }
                 Value::Dictionary(d) => {
-                    let key_str = match &index {
-                        Value::String(s) => s,
-                        _ => {
-                            return runtime_error(
-                                index_expr.span,
-                                "Dictionary keys must be strings",
-                            )
-                        }
-                    };
                     let dict = d.read();
-                    match dict.get(key_str) {
+                    match dict.get(&index) {
                         Some(v) => v.clone(),
                         None => return runtime_error(span, "KeyError"),
                     }
@@ -360,11 +342,7 @@ fn execute_augmented_assignment(
                     Ok(())
                 }
                 Value::Dictionary(d) => {
-                    let key_str = match index {
-                        Value::String(s) => s,
-                        _ => unreachable!(),
-                    };
-                    d.write().insert(key_str, new_val);
+                    d.write().insert(index, new_val);
                     Ok(())
                 }
                 _ => unreachable!(),

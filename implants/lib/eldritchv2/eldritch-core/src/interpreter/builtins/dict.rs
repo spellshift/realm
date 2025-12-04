@@ -55,14 +55,14 @@ pub fn builtin_dict(
 
     // 2. Process kwargs
     for (k, v) in kwargs {
-        map.insert(k.clone(), v.clone());
+        map.insert(Value::String(k.clone()), v.clone());
     }
 
     Ok(Value::Dictionary(Arc::new(RwLock::new(map))))
 }
 
 fn process_pair(
-    map: &mut BTreeMap<String, Value>,
+    map: &mut BTreeMap<Value, Value>,
     item: &Value,
     index: usize,
 ) -> Result<(), String> {
@@ -76,10 +76,7 @@ fn process_pair(
                     list.len()
                 ));
             }
-            let key = match &list[0] {
-                Value::String(s) => s.clone(),
-                _ => return Err("dict keys must be strings".to_string()),
-            };
+            let key = list[0].clone();
             map.insert(key, list[1].clone());
         }
         Value::Tuple(t) => {
@@ -90,10 +87,7 @@ fn process_pair(
                     t.len()
                 ));
             }
-            let key = match &t[0] {
-                Value::String(s) => s.clone(),
-                _ => return Err("dict keys must be strings".to_string()),
-            };
+            let key = t[0].clone();
             map.insert(key, t[1].clone());
         }
         _ => {

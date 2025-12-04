@@ -94,12 +94,8 @@ impl<K: FromValue + Ord, V: FromValue> FromValue for BTreeMap<K, V> {
             Value::Dictionary(d) => {
                 let dict = d.read();
                 let mut res = BTreeMap::new();
-                for (key_str, val) in dict.iter() {
-                    // Keys in Eldritch dicts are currently Strings.
-                    // If K is not String, we might have issues if we strictly rely on K::from_value(Value::String).
-                    // But let's assume K can parse from String Value.
-                    let key_val = Value::String(key_str.clone());
-                    let k = K::from_value(&key_val)?;
+                for (key_val, val) in dict.iter() {
+                    let k = K::from_value(key_val)?;
                     let v = V::from_value(val)?;
                     res.insert(k, v);
                 }
@@ -169,14 +165,11 @@ impl<T: ToValue> ToValue for Vec<T> {
     }
 }
 
-impl<K: ToValue + ToString, V: ToValue> ToValue for BTreeMap<K, V> {
+impl<K: ToValue + Ord, V: ToValue> ToValue for BTreeMap<K, V> {
     fn to_value(self) -> Value {
         let mut map = BTreeMap::new();
         for (k, v) in self {
-            // Eldritch dict keys are strings. We use ToString.
-            // Note: K: ToValue isn't strictly needed for the key if we just use ToString,
-            // but for symmetry we might expect it. However, the internal BTreeMap is <String, Value>.
-            map.insert(k.to_string(), v.to_value());
+            map.insert(k.to_value(), v.to_value());
         }
         Value::Dictionary(Arc::new(RwLock::new(map)))
     }
