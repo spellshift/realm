@@ -8,14 +8,108 @@ use eldritch_macros::{eldritch_library, eldritch_method};
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod std;
+
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod arp_scan_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod bind_proxy_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod ncat_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod port_forward_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod port_scan_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod reverse_shell_pty_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod smb_exec_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod ssh_copy_impl;
+#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+pub mod ssh_exec_impl;
+
 #[eldritch_library("pivot")]
 pub trait PivotLibrary {
     #[eldritch_method]
-    fn list(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+    fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String>;
 
     #[eldritch_method]
-    fn start_tcp(&self, bind_addr: String) -> Result<String, String>;
+    fn ssh_exec(
+        &self,
+        target: String,
+        port: i64,
+        command: String,
+        username: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<String>,
+        timeout: Option<i64>,
+    ) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
-    fn stop(&self, id: String) -> Result<(), String>;
+    fn ssh_copy(
+        &self,
+        target: String,
+        port: i64,
+        src: String,
+        dst: String,
+        username: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<String>,
+        timeout: Option<i64>,
+    ) -> Result<String, String>;
+
+    #[eldritch_method]
+    fn smb_exec(
+        &self,
+        target: String,
+        port: i64,
+        username: String,
+        password: String,
+        hash: String,
+        command: String,
+    ) -> Result<String, String>;
+
+    #[eldritch_method]
+    fn port_scan(
+        &self,
+        target_cidrs: Vec<String>,
+        ports: Vec<i64>,
+        protocol: String,
+        timeout: i64,
+    ) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    fn port_forward(
+        &self,
+        listen_address: String,
+        listen_port: i64,
+        forward_address: String,
+        forward_port: i64,
+        protocol: String,
+    ) -> Result<(), String>;
+
+    #[eldritch_method]
+    fn ncat(
+        &self,
+        address: String,
+        port: i64,
+        data: String,
+        protocol: String,
+    ) -> Result<String, String>;
+
+    #[eldritch_method]
+    fn bind_proxy(
+        &self,
+        listen_address: String,
+        listen_port: i64,
+        username: String,
+        password: String,
+    ) -> Result<(), String>;
 }
