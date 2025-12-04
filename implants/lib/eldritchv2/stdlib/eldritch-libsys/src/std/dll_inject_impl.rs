@@ -18,6 +18,11 @@ use windows_sys::Win32::{
 };
 
 pub fn dll_inject(dll_path: String, pid: u32) -> Result<()> {
+    #[allow(unused_variables)]
+    let dll_path = dll_path;
+    #[allow(unused_variables)]
+    let pid = pid;
+
     if false {
         // println!("Ignore unused vars dll_path: {}, pid: {}", dll_path, pid);
     }
