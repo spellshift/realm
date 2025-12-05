@@ -23,3 +23,6 @@ eldritch-libassets = { path = "../lib/eldritchv2/stdlib/eldritch-libassets", fea
 ] }
 transport = { path = "../lib/transport", features = ["grpc"] }
 pb = { path = "../lib/pb", features = ["imix"] }
+
+[dev-dependencies]
+transport = { path = "../lib/transport", features = ["mock", "grpc"] }
