@@ -57,6 +57,14 @@ impl PivotLibrary for StdPivotLibrary {
         reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, cmd).map_err(|e| e.to_string())
     }
 
+    fn reverse_shell_repl(&self) -> Result<(), String> {
+        let agent = self.agent.as_ref().ok_or_else(|| "No agent available".to_string())?;
+        let task_id = self.task_id.ok_or_else(|| "No task_id available".to_string())?;
+        agent
+            .start_repl_reverse_shell(task_id)
+            .map_err(|e| e.to_string())
+    }
+
     fn ssh_exec(
         &self,
         target: String,

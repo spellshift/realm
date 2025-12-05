@@ -11,10 +11,12 @@ pretty_env_logger = { workspace = true }
 clap = { version = "4.0", features = ["derive"] }
 futures = "0.3"
 lazy_static = "1.4.0"
+crossterm = "0.27"
 
 # Workspace dependencies
 eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
 eldritchv2 = { path = "../lib/eldritchv2/eldritchv2", features = ["std", "stdlib"] }
+eldritch-repl = { path = "../lib/eldritchv2/eldritch-repl" }
 eldritch-libagent = { path = "../lib/eldritchv2/stdlib/eldritch-libagent", features = [
     "stdlib",
 ] }

