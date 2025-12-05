@@ -1,15 +1,23 @@
 use anyhow::{Result, Context};
 use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use transport::Transport;
 use eldritch_libagent::agent::Agent;
+use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec::Vec;
+use std::sync::{Arc, Mutex};
+use eldritch_core::Value;
+use std::time::Duration;
 
 use crate::task::TaskRegistry;
 
 pub struct ImixAgent<T: Transport> {
     config: RwLock<Config>,
     transport: RwLock<T>,
+    subtasks: Mutex<BTreeMap<i64, JoinHandle<()>>>,
 }
 
 impl<T: Transport + 'static> ImixAgent<T> {
@@ -17,6 +25,7 @@ impl<T: Transport + 'static> ImixAgent<T> {
         Self {
             config: RwLock::new(config),
             transport: RwLock::new(transport),
+            subtasks: Mutex::new(BTreeMap::new()),
         }
     }
 
@@ -113,8 +122,45 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         })
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
-         Err("Reverse shell not implemented in imixv2 agent yet".to_string())
+    fn reverse_shell(&self, host: String, port: i64) -> Result<i64, String> {
+        // Generate a random task ID
+        let subtask_id: i64 = rand::random::<i64>().abs();
+
+        let handle = tokio::spawn(async move {
+            log::info!("Starting reverse shell subtask {} connecting to {}:{}", subtask_id, host, port);
+            // Mock implementation: Sleep and keep "alive"
+            // In a real implementation, this would connect to host:port and spawn a shell.
+            loop {
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                log::info!("Reverse shell subtask {} is alive...", subtask_id);
+            }
+        });
+
+        self.subtasks.lock().unwrap().insert(subtask_id, handle);
+        Ok(subtask_id)
+    }
+
+    fn list_subtasks(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let tasks = self.subtasks.lock().unwrap();
+        let mut result = Vec::new();
+        for (id, _handle) in tasks.iter() {
+            let mut map = BTreeMap::new();
+            map.insert("id".to_string(), Value::Int(*id));
+            map.insert("type".to_string(), Value::String("reverse_shell".to_string()));
+            result.push(map);
+        }
+        Ok(result)
+    }
+
+    fn stop_subtask(&self, task_id: i64) -> Result<(), String> {
+        let mut tasks = self.subtasks.lock().unwrap();
+        if let Some(handle) = tasks.remove(&task_id) {
+            handle.abort();
+            log::info!("Stopped subtask {}", task_id);
+            Ok(())
+        } else {
+            Err(format!("Subtask {} not found", task_id))
+        }
     }
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {

@@ -1,3 +1,4 @@
+use core::sync::atomic::{AtomicBool, Ordering};
 use super::super::ast::{BuiltinFn, Environment, Value};
 use super::super::lexer::Lexer;
 use super::super::parser::Parser;
@@ -29,6 +30,7 @@ pub struct Interpreter {
     pub env: Arc<RwLock<Environment>>,
     pub flow: Flow,
     pub depth: usize,
+    pub interrupt_flag: Option<Arc<AtomicBool>>,
 }
 
 impl Default for Interpreter {
@@ -54,10 +56,28 @@ impl Interpreter {
             env,
             flow: Flow::Next,
             depth: 0,
+            interrupt_flag: None,
         };
 
         interpreter.load_builtins();
         interpreter
+    }
+
+    pub fn with_interrupt(mut self, flag: Arc<AtomicBool>) -> Self {
+        self.interrupt_flag = Some(flag);
+        self
+    }
+
+    pub fn check_interrupt(&self) -> Result<(), EldritchError> {
+        if let Some(flag) = &self.interrupt_flag {
+            if flag.load(Ordering::Relaxed) {
+                return Err(EldritchError {
+                    message: "Execution interrupted".to_string(),
+                    span: Span::new(0, 0, 0),
+                });
+            }
+        }
+        Ok(())
     }
 
     fn load_builtins(&mut self) {
@@ -120,6 +140,7 @@ impl Interpreter {
         let mut last_val = Value::None;
 
         for stmt in stmts {
+            self.check_interrupt().map_err(|e| e.message)?;
             match &stmt.kind {
                 // Special case: if top-level statement is an expression, return its value
                 // This matches behavior of typical REPLs / starlark-like exec

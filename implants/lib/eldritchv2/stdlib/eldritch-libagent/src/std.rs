@@ -108,7 +108,7 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn reverse_shell(&self) -> Result<(), String> {
-        self.agent.reverse_shell()
+        Err("Use pivot.start_reverse_shell_pty(host, port) instead.".to_string())
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
@@ -117,6 +117,15 @@ impl AgentLibrary for StdAgentLibrary {
         };
         let resp = self.agent.claim_tasks(req)?;
         Ok(resp.tasks.into_iter().map(TaskWrapper).collect())
+    }
+
+    // Subtask Management (New)
+    fn list_subtasks(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        self.agent.list_subtasks()
+    }
+
+    fn stop_subtask(&self, task_id: i64) -> Result<(), String> {
+        self.agent.stop_subtask(task_id)
     }
 
     // Agent Configuration

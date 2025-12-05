@@ -70,6 +70,15 @@ pub trait AgentLibrary {
     #[eldritch_method]
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String>;
 
+    // Subtask Management (New)
+    #[cfg(feature = "stdlib")]
+    #[eldritch_method]
+    fn list_subtasks(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[cfg(feature = "stdlib")]
+    #[eldritch_method]
+    fn stop_subtask(&self, task_id: i64) -> Result<(), String>;
+
     // Agent Configuration
     #[cfg(feature = "stdlib")]
     #[eldritch_method]

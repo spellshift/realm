@@ -1,9 +1,13 @@
 #[cfg(feature = "stdlib")]
+use alloc::collections::BTreeMap;
+#[cfg(feature = "stdlib")]
 use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
 use pb::c2;
+#[cfg(feature = "stdlib")]
+use eldritch_core::Value;
 
 #[cfg(feature = "stdlib")]
 pub trait Agent: Send + Sync {
@@ -13,8 +17,12 @@ pub trait Agent: Send + Sync {
     fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(&self, req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String>;
     fn report_task_output(&self, req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse, String>;
-    fn reverse_shell(&self) -> Result<(), String>;
+    fn reverse_shell(&self, host: String, port: i64) -> Result<i64, String>;
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String>;
+
+    // Subtask Management
+    fn list_subtasks(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+    fn stop_subtask(&self, task_id: i64) -> Result<(), String>;
 
     // Agent Configuration
     fn get_transport(&self) -> Result<String, String>;

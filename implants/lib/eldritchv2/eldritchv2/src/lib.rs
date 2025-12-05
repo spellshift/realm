@@ -39,6 +39,15 @@ use crate::agent::{agent::Agent, std::StdAgentLibrary};
 use crate::report::std::StdReportLibrary;
 use crate::assets::std::StdAssetsLibrary;
 
+// Tuple struct to wrap inner interpreter.
+// Note: We use tuple access in imix task.rs (interp.0) so this field must remain accessible or public.
+// But Rust tuple structs have public fields by index if the struct is public.
+// However, typically we prefer named fields.
+// To avoid breaking imix code I just wrote which accesses .0 (wait, I wrote interp.0.with_interrupt in the plan/code?),
+// I should make it a tuple struct or named struct with public inner.
+// My previous read showed: pub struct Interpreter { pub inner: CoreInterpreter }
+// So I should stick to named field `inner` and fix my `task.rs` implementation to use `.inner`.
+
 pub struct Interpreter {
     pub inner: CoreInterpreter,
 }
@@ -66,7 +75,7 @@ impl Interpreter {
         self.inner.register_lib(StdCryptoLibrary);
         self.inner.register_lib(StdFileLibrary);
         self.inner.register_lib(StdHttpLibrary);
-        self.inner.register_lib(StdPivotLibrary);
+        self.inner.register_lib(StdPivotLibrary::default());
         self.inner.register_lib(StdProcessLibrary);
         self.inner.register_lib(StdRandomLibrary);
         self.inner.register_lib(StdRegexLibrary);

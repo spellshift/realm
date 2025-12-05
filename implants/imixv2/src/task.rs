@@ -1,7 +1,7 @@
 use alloc::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::time::SystemTime;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 use eldritchv2::Interpreter;
 use eldritch_core::{BufferPrinter, Value};
@@ -9,7 +9,9 @@ use eldritch_core::conversion::ToValue;
 use eldritch_libagent::agent::Agent;
 use eldritch_libagent::std::StdAgentLibrary;
 use eldritch_libassets::std::StdAssetsLibrary;
+use eldritch_libpivot::std::StdPivotLibrary;
 use pb::c2::Task;
+use tokio::task::JoinHandle;
 
 lazy_static::lazy_static! {
     static ref TASKS: Mutex<BTreeMap<i64, TaskHandle>> = Mutex::new(BTreeMap::new());
@@ -19,9 +21,8 @@ struct TaskHandle {
     #[allow(dead_code)] // Keep for future use/tracking
     start_time: SystemTime,
     quest: String,
-    // Add a flag for cooperative cancellation if we can inject it into the Interpreter or StdAgentLibrary
-    // Currently StdAgentLibrary doesn't check it, but we can add it later.
-    // For now, we just track existence.
+    interrupt_flag: Arc<AtomicBool>,
+    handle: JoinHandle<()>,
 }
 
 pub struct TaskRegistry;
@@ -31,57 +32,34 @@ impl TaskRegistry {
         let task_id = task.id;
         let tome = task.tome.clone();
 
-        {
-            let mut tasks = TASKS.lock().unwrap();
-            if tasks.contains_key(&task_id) {
-                // Already running
-                return;
-            }
-            tasks.insert(
-                task_id,
-                TaskHandle {
-                    start_time: SystemTime::now(),
-                    quest: task.quest_name.clone(),
-                },
-            );
-        }
+        let interrupt_flag = Arc::new(AtomicBool::new(false));
+        let flag_for_thread = interrupt_flag.clone();
+        let quest_name = task.quest_name.clone();
 
-        thread::spawn(move || {
+        let handle = tokio::task::spawn_blocking(move || {
             if let Some(tome) = tome {
-                // Removed global registration call
-
                 // Setup Interpreter
                 let printer = Arc::new(BufferPrinter::new());
                 let mut interp = Interpreter::new_with_printer(printer.clone())
                     .with_default_libs();
 
+                // Inject interruption capability
+                interp.inner = interp.inner.with_interrupt(flag_for_thread);
+
                 // Register Agent Library
-                // We manually register here because we need task_id context which with_agent doesn't support yet (it uses 0)
-                // However, the instructions say "use builder methods".
-                // If I use with_agent(agent), it registers agent/report/assets with task_id=0.
-                // But imix needs task_id.
-                // So I will stick to manual registration for agent lib to be correct,
-                // OR I should update `with_agent` to take task_id.
-                // But `Interpreter` is generic.
-                // I will assume for now I should use `with_agent` if possible, but since I need correctness,
-                // I will manually overwrite the "agent" module after `with_default_libs` (if it was there, but it's not default).
-                // Actually, I can just register the task-specific one.
-
-                // Let's see if I can use `with_agent`? No, because I can't pass task_id.
-                // So I will just manually register agent-related libs as before, BUT using the new Interpreter wrapper.
-                // The wrapper exposes `register_module`.
-
                 let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
                 interp.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
 
                 // Register Assets Library
-                // Same issue, assets lib takes remote_assets list. `with_agent` passes empty list.
                 let remote_assets = tome.file_names.clone();
                 let assets_lib = StdAssetsLibrary::new(agent.clone(), remote_assets);
                 interp.register_module("assets", Value::Foreign(Arc::new(assets_lib)));
 
+                // Inject Pivot Library with Agent context (override default)
+                let pivot_lib = StdPivotLibrary::new(Some(agent.clone()));
+                interp.inner.register_lib(pivot_lib);
+
                 // Inject input_params
-                // tome.parameters is converted to a BTreeMap which ToValue supports
                 let params_map: BTreeMap<String, String> = tome.parameters.into_iter().collect();
                 let params_val = params_map.to_value();
                 interp.define_variable("input_params", params_val);
@@ -92,7 +70,6 @@ impl TaskRegistry {
                     Ok(v) => {
                         let out = printer.read();
                         log::info!("Task Success: {v} {out}");
-                        // Success - implicit reporting via agent lib calls
                         let _ = agent.report_task_output(pb::c2::ReportTaskOutputRequest {
                             output: Some(pb::c2::TaskOutput {
                                 id: task_id,
@@ -125,6 +102,17 @@ impl TaskRegistry {
             let mut tasks = TASKS.lock().unwrap();
             tasks.remove(&task_id);
         });
+
+        let mut tasks = TASKS.lock().unwrap();
+        tasks.insert(
+            task_id,
+            TaskHandle {
+                start_time: SystemTime::now(),
+                quest: quest_name,
+                interrupt_flag,
+                handle,
+            },
+        );
     }
 
     pub fn list() -> Vec<Task> {
@@ -141,8 +129,10 @@ impl TaskRegistry {
 
     pub fn stop(task_id: i64) {
         let mut tasks = TASKS.lock().unwrap();
-        if tasks.remove(&task_id).is_some() {
-            log::info!("Task {} stop requested (thread may persist)", task_id);
+        if let Some(handle) = tasks.remove(&task_id) {
+            log::info!("Task {} stop requested", task_id);
+            handle.interrupt_flag.store(true, Ordering::Relaxed);
+            handle.handle.abort();
         }
     }
 }

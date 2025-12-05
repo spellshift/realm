@@ -14,6 +14,7 @@ use alloc::vec::Vec;
 use spin::RwLock;
 
 pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchError> {
+    interp.check_interrupt()?;
     if interp.flow != Flow::Next {
         return Ok(());
     }
@@ -81,6 +82,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
             };
 
             for item in items {
+                interp.check_interrupt()?;
                 // Scope per iteration to prevent leaking variables
                 let parent_env = interp.env.clone();
                 let printer = parent_env.read().printer.clone();
