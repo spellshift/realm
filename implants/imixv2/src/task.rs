@@ -3,12 +3,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
-use eldritchv2::Interpreter;
-use eldritch_core::{BufferPrinter, Value};
-use eldritch_core::conversion::ToValue;
+use eldritchv2::{conversion::ToValue, BufferPrinter, Interpreter};
 use eldritch_libagent::agent::Agent;
-use eldritch_libagent::std::StdAgentLibrary;
-use eldritch_libassets::std::StdAssetsLibrary;
 use pb::c2::Task;
 
 lazy_static::lazy_static! {
@@ -19,9 +15,6 @@ struct TaskHandle {
     #[allow(dead_code)] // Keep for future use/tracking
     start_time: SystemTime,
     quest: String,
-    // Add a flag for cooperative cancellation if we can inject it into the Interpreter or StdAgentLibrary
-    // Currently StdAgentLibrary doesn't check it, but we can add it later.
-    // For now, we just track existence.
 }
 
 pub struct TaskRegistry;
@@ -48,37 +41,13 @@ impl TaskRegistry {
 
         thread::spawn(move || {
             if let Some(tome) = tome {
-                // Removed global registration call
-
                 // Setup Interpreter
                 let printer = Arc::new(BufferPrinter::new());
-                let mut interp = Interpreter::new_with_printer(printer.clone())
-                    .with_default_libs();
+                let mut interp = Interpreter::new_with_printer(printer.clone()).with_default_libs();
 
-                // Register Agent Library
-                // We manually register here because we need task_id context which with_agent doesn't support yet (it uses 0)
-                // However, the instructions say "use builder methods".
-                // If I use with_agent(agent), it registers agent/report/assets with task_id=0.
-                // But imix needs task_id.
-                // So I will stick to manual registration for agent lib to be correct,
-                // OR I should update `with_agent` to take task_id.
-                // But `Interpreter` is generic.
-                // I will assume for now I should use `with_agent` if possible, but since I need correctness,
-                // I will manually overwrite the "agent" module after `with_default_libs` (if it was there, but it's not default).
-                // Actually, I can just register the task-specific one.
-
-                // Let's see if I can use `with_agent`? No, because I can't pass task_id.
-                // So I will just manually register agent-related libs as before, BUT using the new Interpreter wrapper.
-                // The wrapper exposes `register_module`.
-
-                let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
-                interp.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
-
-                // Register Assets Library
-                // Same issue, assets lib takes remote_assets list. `with_agent` passes empty list.
+                // Register Task Context (Agent, Report, Assets) using the new helper
                 let remote_assets = tome.file_names.clone();
-                let assets_lib = StdAssetsLibrary::new(agent.clone(), remote_assets);
-                interp.register_module("assets", Value::Foreign(Arc::new(assets_lib)));
+                interp = interp.with_task_context(agent.clone(), task_id, remote_assets);
 
                 // Inject input_params
                 // tome.parameters is converted to a BTreeMap which ToValue supports

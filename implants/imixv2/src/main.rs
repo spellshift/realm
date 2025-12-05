@@ -31,7 +31,8 @@ async fn main() -> Result<()> {
     let transport = ActiveTransport::new(config.callback_uri.clone(), None)
         .context("Failed to initialize transport")?;
 
-    let agent = Arc::new(ImixAgent::new(config, transport));
+    let handle = tokio::runtime::Handle::current();
+    let agent = Arc::new(ImixAgent::new(config, transport, handle));
 
     loop {
         match agent.fetch_tasks().await {
