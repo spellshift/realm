@@ -42,7 +42,7 @@ async fn main() -> Result<()> {
                 }
                 for task in tasks {
                     log::info!("Claimed task: {}", task.id);
-                    TaskRegistry::spawn(task, agent.clone());
+                    task_registry.spawn(task, agent.clone());
                 }
             }
             Err(e) => {
