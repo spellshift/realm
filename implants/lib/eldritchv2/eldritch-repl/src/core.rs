@@ -232,15 +232,15 @@ impl Repl {
     }
 
     fn accept_suggestion(&mut self, idx: usize) {
-        if let Some(suggestions) = &self.suggestions {
-            if idx < suggestions.len() {
-                let suggestion = &suggestions[idx];
-                if let Some(start) = self.completion_start {
-                    // Replace from start to cursor with suggestion
-                    if start <= self.cursor && start <= self.buffer.len() {
-                        self.buffer.replace_range(start..self.cursor, suggestion);
-                        self.cursor = start + suggestion.len();
-                    }
+        if let Some(suggestions) = &self.suggestions
+            && idx < suggestions.len()
+        {
+            let suggestion = &suggestions[idx];
+            if let Some(start) = self.completion_start {
+                // Replace from start to cursor with suggestion
+                if start <= self.cursor && start <= self.buffer.len() {
+                    self.buffer.replace_range(start..self.cursor, suggestion);
+                    self.cursor = start + suggestion.len();
                 }
             }
         }
@@ -330,11 +330,11 @@ impl Repl {
     }
 
     fn search_backspace(&mut self) -> ReplAction {
-        if let Some(state) = self.search_state.as_mut() {
-            if !state.query.is_empty() {
-                state.query.pop();
-                state.match_index = None;
-            }
+        if let Some(state) = self.search_state.as_mut()
+            && !state.query.is_empty()
+        {
+            state.query.pop();
+            state.match_index = None;
         }
         self.perform_search()
     }

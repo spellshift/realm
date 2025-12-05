@@ -227,7 +227,7 @@ impl Interpreter {
                 // Fallback: Check if we are typing a simple identifier at end
                 let last_word = line_up_to_cursor
                     .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
-                    .last()
+                    .next_back()
                     .unwrap_or("");
                 if !last_word.is_empty() {
                     prefix = last_word.to_string();
