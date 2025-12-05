@@ -20,12 +20,17 @@ pub use eldritch_libsys as sys;
 pub use eldritch_libtime as time;
 
 // Re-export core types
-pub use eldritch_core::{Interpreter as CoreInterpreter, Printer, Value, ForeignValue, BufferPrinter, StdoutPrinter, Environment, Span, TokenKind};
+pub use eldritch_core::{
+    conversion, BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer,
+    Span, StdoutPrinter, TokenKind, Value,
+};
 
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 
+use crate::agent::{agent::Agent, std::StdAgentLibrary};
+use crate::assets::std::StdAssetsLibrary;
 use crate::crypto::std::StdCryptoLibrary;
 use crate::file::std::StdFileLibrary;
 use crate::http::std::StdHttpLibrary;
@@ -33,11 +38,9 @@ use crate::pivot::std::StdPivotLibrary;
 use crate::process::std::StdProcessLibrary;
 use crate::random::std::StdRandomLibrary;
 use crate::regex::std::StdRegexLibrary;
+use crate::report::std::StdReportLibrary;
 use crate::sys::std::StdSysLibrary;
 use crate::time::std::StdTimeLibrary;
-use crate::agent::{agent::Agent, std::StdAgentLibrary};
-use crate::report::std::StdReportLibrary;
-use crate::assets::std::StdAssetsLibrary;
 
 pub struct Interpreter {
     pub inner: CoreInterpreter,
@@ -86,6 +89,24 @@ impl Interpreter {
 
         // Assets library
         let assets_lib = StdAssetsLibrary::new(agent.clone(), Vec::new());
+        self.inner.register_lib(assets_lib);
+
+        self
+    }
+
+    pub fn with_task_context(
+        mut self,
+        agent: Arc<dyn Agent>,
+        task_id: i64,
+        assets: Vec<String>,
+    ) -> Self {
+        let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
+        self.inner.register_lib(agent_lib);
+
+        let report_lib = StdReportLibrary::new(agent.clone(), task_id);
+        self.inner.register_lib(report_lib);
+
+        let assets_lib = StdAssetsLibrary::new(agent, assets);
         self.inner.register_lib(assets_lib);
 
         self
