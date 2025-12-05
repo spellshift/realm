@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use alloc::string::String;
+use eldritch_core::Value;
 
 #[cfg(target_os = "windows")]
 use {
@@ -20,10 +21,6 @@ use {
         },
     },
 };
-
-// ... macros and helpers from v1 ...
-// Omitting full copy for brevity in plan, but I will include them in actual file write.
-// Since I can't selectively omit in `create_file_with_block`, I will copy the helpers.
 
 #[cfg(all(host_family = "windows", target_os = "windows"))]
 macro_rules! win_target {
@@ -51,23 +48,6 @@ macro_rules! sep {
         r#"\"#
     };
 }
-
-// NOTE: This include_bytes path is relative to the source file.
-// In v1 it was `implants/lib/eldritch/src/sys/dll_reflect_impl.rs`
-// Now it is `implants/lib/eldritchv2/stdlib/eldritch-libsys/src/dll_reflect_impl.rs`
-// The relative path in v1 was `../../../../../../../bin/...` (7 ups)
-// Here: `eldritch-libsys/src` -> `eldritch-libsys` -> `stdlib` -> `eldritchv2` -> `lib` -> `implants` -> `root` (6 ups)
-// Wait, v1 path: `eldritch/src/sys` -> `src` -> `eldritch` -> `lib` -> `implants` -> `root` (5 ups?)
-// Let's count properly.
-// V1 file: `implants/lib/eldritch/src/sys/dll_reflect_impl.rs`
-// `..` (sys) -> `..` (src) -> `..` (eldritch) -> `..` (lib) -> `..` (implants) -> `..` (root) -> `bin`.
-// 6 `..`s?
-// The v1 code had: `concat!("..", sep!(), "..", sep!(), "..", sep!(), "..", sep!(), "..", sep!(), "bin", ...)` which is 5 `..`.
-// `implants/lib/eldritch/src/sys` -> `implants/lib/eldritch/src` -> `implants/lib/eldritch` -> `implants/lib` -> `implants` -> `root`. Correct (5 steps).
-
-// V2 file: `implants/lib/eldritchv2/stdlib/eldritch-libsys/src/dll_reflect_impl.rs`
-// `..` (src) -> `..` (eldritch-libsys) -> `..` (stdlib) -> `..` (eldritchv2) -> `..` (lib) -> `..` (implants) -> `..` (root).
-// 7 `..`s needed.
 
 #[cfg(target_os = "windows")]
 const LOADER_BYTES: &[u8] = include_bytes!(concat!(
@@ -358,4 +338,23 @@ pub fn dll_reflect(
     // V1 converted Vec<u32> to Vec<u8>. V2 takes Vec<u8> directly.
     handle_dll_reflect(dll_bytes, pid, function_name.as_str())?;
     Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+mod tests {
+    use super::*;
+    use alloc::vec::Vec;
+    use alloc::string::ToString;
+
+    #[test]
+    fn test_dll_reflect_non_windows_test() -> anyhow::Result<()> {
+        let res = dll_reflect(Vec::new(), 0, "Garbage".to_string());
+        match res {
+            Ok(_) => return Err(anyhow::anyhow!("dll_reflect should have errored out.")),
+            Err(local_err) => assert!(local_err
+                .to_string()
+                .contains("This OS isn't supported by the dll_reflect")),
+        }
+        Ok(())
+    }
 }

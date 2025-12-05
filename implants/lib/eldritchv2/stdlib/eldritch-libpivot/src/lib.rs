@@ -8,26 +8,26 @@ use eldritch_macros::{eldritch_library, eldritch_method};
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
 
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(feature = "stdlib")]
 pub mod std;
 
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod arp_scan_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod bind_proxy_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod ncat_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod port_forward_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod port_scan_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod reverse_shell_pty_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod smb_exec_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod ssh_copy_impl;
-#[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
+#[cfg(any(feature = "stdlib", feature = "fake_bindings"))]
 pub mod ssh_exec_impl;
 
 #[cfg(test)]

@@ -15,6 +15,10 @@ impl PivotLibrary for PivotLibraryFake {
         Ok(())
     }
 
+    fn reverse_shell_repl(&self) -> Result<(), String> {
+        Ok(())
+    }
+
     fn ssh_exec(
         &self,
         _target: String,

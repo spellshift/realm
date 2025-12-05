@@ -1,22 +1,22 @@
 [package]
 name = "eldritch-libassets"
 version = "0.3.0"
-edition = "2021"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
+edition = "2024"
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
+eldritch-core = { path = "../../eldritch-core", default-features = false }
 eldritch-macros = { path = "../../eldritch-macros" }
-eldritch-libagent = { path = "../eldritch-libagent", optional = true }
-rust-embed = "8.5.0"
-anyhow = { workspace = true }
-spin = { version = "0.10.0", features = ["rwlock"] }
+eldritch-libagent = { path = "../eldritch-libagent", optional = true, default-features = false }
 pb = { path = "../../../pb", optional = true }
+anyhow = { version = "1.0", optional = true }
+rust-embed = { version = "8.0", optional = true }
 
 [features]
-default = ["stdlib"]
-stdlib = ["dep:eldritch-libagent", "dep:pb"]
+default = ["std", "stdlib"]
+std = ["eldritch-core/std"]
 fake_bindings = []
-imix = []
+stdlib = ["dep:eldritch-libagent", "dep:pb", "dep:anyhow", "dep:rust-embed", "eldritch-libagent/stdlib"]
+
+[dev-dependencies]
+tempfile = "3.3"
+eldritch-libagent = { path = "../eldritch-libagent", features = ["fake_bindings", "stdlib"] }
