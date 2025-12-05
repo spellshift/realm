@@ -54,6 +54,9 @@ impl Agent for MockAgent {
     fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
         Ok(())
     }
+    fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
     fn claim_tasks(
         &self,
         _req: c2::ClaimTasksRequest,

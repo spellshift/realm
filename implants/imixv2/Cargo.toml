@@ -4,14 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { workspace = true, features = ["full"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
 anyhow = { workspace = true }
 log = { workspace = true }
-pretty_env_logger = { workspace = true }
-clap = { version = "4.0", features = ["derive"] }
-futures = "0.3"
-lazy_static = "1.4.0"
-crossterm = "0.27"
+futures = { workspace = true }
+lazy_static = { workspace = true }
+crossterm = { workspace = true }
 
 # Workspace dependencies
 eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
@@ -29,3 +27,4 @@ portable-pty.workspace = true
 
 [dev-dependencies]
 transport = { path = "../lib/transport", features = ["mock", "grpc"] }
+pretty_env_logger = { workspace = true }
