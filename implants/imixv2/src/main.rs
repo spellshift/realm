@@ -20,12 +20,6 @@ use crate::version::VERSION;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    #[cfg(debug_assertions)]
-    pretty_env_logger::formatted_timed_builder()
-        .filter_level(log::LevelFilter::Info)
-        .parse_env("IMIX_LOG")
-        .init();
-
     log::info!("Starting imixv2 agent");
 
     // Load config / defaults
