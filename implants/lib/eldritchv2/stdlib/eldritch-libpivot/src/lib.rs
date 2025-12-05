@@ -38,6 +38,9 @@ pub trait PivotLibrary {
     #[eldritch_method]
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String>;
 
+    #[eldritch_method]
+    fn reverse_shell_repl(&self) -> Result<(), String>;
+
     #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
     fn ssh_exec(
