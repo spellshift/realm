@@ -239,15 +239,12 @@ fn execute_augmented_assignment(
                 }
             }
 
-            let bin_op = match op {
-                TokenKind::PlusAssign => TokenKind::Plus,
-                TokenKind::MinusAssign => TokenKind::Minus,
-                TokenKind::StarAssign => TokenKind::Star,
-                TokenKind::SlashAssign => TokenKind::Slash,
-                TokenKind::SlashSlashAssign => TokenKind::SlashSlash,
-                TokenKind::PercentAssign => TokenKind::Percent,
-                _ => return runtime_error(span, "Unknown augmented assignment operator"),
-            };
+            let bin_op = augmented_op_to_binary(op).ok_or_else(|| {
+                EldritchError {
+                    span,
+                    message: "Unknown augmented assignment operator".to_string(),
+                }
+            })?;
 
             // Construct dummy expressions for apply_binary_op call to reuse logic
             let left_expr = Expr {
@@ -305,15 +302,12 @@ fn execute_augmented_assignment(
                 }
             }
 
-            let bin_op = match op {
-                TokenKind::PlusAssign => TokenKind::Plus,
-                TokenKind::MinusAssign => TokenKind::Minus,
-                TokenKind::StarAssign => TokenKind::Star,
-                TokenKind::SlashAssign => TokenKind::Slash,
-                TokenKind::SlashSlashAssign => TokenKind::SlashSlash,
-                TokenKind::PercentAssign => TokenKind::Percent,
-                _ => return runtime_error(span, "Unknown augmented assignment operator"),
-            };
+            let bin_op = augmented_op_to_binary(op).ok_or_else(|| {
+                EldritchError {
+                    span,
+                    message: "Unknown augmented assignment operator".to_string(),
+                }
+            })?;
 
             let left_expr = Expr {
                 kind: ExprKind::Literal(current_val),
@@ -353,39 +347,35 @@ fn execute_augmented_assignment(
     }
 }
 
+fn augmented_op_to_binary(op: &TokenKind) -> Option<TokenKind> {
+    match op {
+        TokenKind::PlusAssign => Some(TokenKind::Plus),
+        TokenKind::MinusAssign => Some(TokenKind::Minus),
+        TokenKind::StarAssign => Some(TokenKind::Star),
+        TokenKind::SlashAssign => Some(TokenKind::Slash),
+        TokenKind::SlashSlashAssign => Some(TokenKind::SlashSlash),
+        TokenKind::PercentAssign => Some(TokenKind::Percent),
+        _ => None,
+    }
+}
+
 fn try_inplace_add(left: &Value, right: &Value) -> bool {
     match (left, right) {
         (Value::List(l), Value::List(r)) => {
             // Must clone right first to avoid double borrow panic if l == r
-            // With RwLock, if l == r, read() followed by write() would deadlock?
-            // If l and r point to same lock.
-            // Check identity
             if Arc::ptr_eq(l, r) {
-                 // Self append.
-                 // We need to clone data first, then append.
-                 // But we can't hold read lock while getting write lock.
-                 // So we read, clone, drop read, write.
-                 let items = l.read().clone();
-                 l.write().extend(items);
+                // Self append.
+                let items = l.read().clone();
+                l.write().extend(items);
             } else {
-                 let items = r.read().clone();
-                 l.write().extend(items);
+                let items = r.read().clone();
+                l.write().extend(items);
             }
             true
         }
         (Value::Dictionary(d), Value::Dictionary(r)) => {
             if Arc::ptr_eq(d, r) {
-                 // Self merge? Dicts can't really self-merge meaningfully in a way that changes them (idempotent),
-                 // but let's follow logic.
-                 let items: Vec<_> = d
-                    .read()
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .collect();
-                 let mut db = d.write();
-                 for (k, v) in items {
-                    db.insert(k, v);
-                 }
+                // Self merge is a no-op for dicts (keys overlap 100%).
             } else {
                 let items: Vec<_> = r
                     .read()
@@ -401,11 +391,7 @@ fn try_inplace_add(left: &Value, right: &Value) -> bool {
         }
         (Value::Set(s), Value::Set(r)) => {
             if Arc::ptr_eq(s, r) {
-                 // Union with self is no-op.
-                 // But logic:
-                 // let items: Vec<_> = s.read().iter().cloned().collect();
-                 // s.write()...
-                 // It's a no-op, so we can skip.
+                // Union with self is no-op.
             } else {
                 #[allow(clippy::mutable_key_type)]
                 let items: Vec<_> = r.read().iter().cloned().collect();
