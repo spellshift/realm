@@ -12,6 +12,8 @@ pub use transport::{ActiveTransport, Transport};
 
 mod agent;
 mod task;
+#[cfg(test)]
+mod tests;
 mod version;
 use crate::version::VERSION;
 
