@@ -1,5 +1,5 @@
 use crate::ast::{Environment, Value};
-use crate::interpreter::utils::{get_type_name, is_truthy};
+use crate::interpreter::introspection::{get_type_name, is_truthy};
 use alloc::format;
 use alloc::sync::Arc;
 use alloc::string::String;
