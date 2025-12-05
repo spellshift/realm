@@ -23,13 +23,38 @@ use std::sync::Arc;
 use alloc::string::ToString;
 use eldritch_macros::eldritch_library_impl;
 
-#[derive(Default, Debug)]
+// Deps for Agent
+use eldritch_libagent::agent::Agent;
+
+#[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
-pub struct StdPivotLibrary;
+pub struct StdPivotLibrary {
+    pub agent: Option<Arc<dyn Agent>>,
+    pub task_id: Option<i64>,
+}
+
+impl core::fmt::Debug for StdPivotLibrary {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("StdPivotLibrary")
+         .field("task_id", &self.task_id)
+         .finish()
+    }
+}
+
+impl StdPivotLibrary {
+    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
+        Self {
+            agent: Some(agent),
+            task_id: Some(task_id),
+        }
+    }
+}
 
 impl PivotLibrary for StdPivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
-        reverse_shell_pty_impl::reverse_shell_pty(cmd).map_err(|e| e.to_string())
+        let agent = self.agent.as_ref().ok_or_else(|| "No agent available".to_string())?;
+        let task_id = self.task_id.ok_or_else(|| "No task_id available".to_string())?;
+        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, cmd).map_err(|e| e.to_string())
     }
 
     fn ssh_exec(

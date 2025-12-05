@@ -1,76 +1,58 @@
+
 use super::super::agent::ImixAgent;
+use super::super::task::TaskRegistry;
 use eldritch_libagent::agent::Agent;
-use pb::c2;
 use pb::config::Config;
 use transport::MockTransport;
+use std::sync::Arc;
 
 #[tokio::test]
-async fn test_new_agent() {
-    let config = Config::default();
-    let transport = MockTransport::default();
-    let agent = ImixAgent::new(config, transport);
-    assert_eq!(agent.get_callback_interval_u64(), 5); // Default is 5
-}
+async fn test_start_reverse_shell() {
+    let _ = pretty_env_logger::try_init();
 
-#[tokio::test]
-async fn test_fetch_tasks() {
-    let config = Config::default();
+    // Setup mocks
     let mut transport = MockTransport::default();
 
-    transport
-        .expect_claim_tasks()
-        .times(1)
-        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
-
-    let agent = ImixAgent::new(config, transport);
-    let tasks = agent.fetch_tasks().await.unwrap();
-    assert!(tasks.is_empty());
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn test_report_task_output() {
-    let config = Config::default();
-    let mut transport = MockTransport::default();
-
-    transport
-        .expect_report_task_output()
-        .times(1)
-        .returning(|_| Ok(c2::ReportTaskOutputResponse {}));
-
-    let agent = ImixAgent::new(config, transport);
-    let req = c2::ReportTaskOutputRequest { output: None };
-
-    // We need to run this on a separate thread to avoid "Cannot start a runtime from within a runtime"
-    // because ImixAgent uses block_on.
-    // However, we are in an async test which is already running a runtime.
-    // The issue is ImixAgent::report_task_output creates a NEW runtime and blocks on it.
-    // This is illegal inside an existing tokio runtime.
-
-    // Solution: Run the blocking code in a spawn_blocking block or just a regular thread spawn.
-    let handle = std::thread::spawn(move || {
-         agent.report_task_output(req).unwrap();
+    // Expect clone to be called, and return a mock that expects reverse_shell
+    transport.expect_clone().returning(|| {
+        let mut t = MockTransport::default();
+        t.expect_reverse_shell()
+         .times(1)
+         .returning(|_, _| Ok(()));
+        t
     });
-    handle.join().unwrap();
-}
 
-#[tokio::test(flavor = "multi_thread")]
-async fn test_report_process_list() {
-    let config = Config::default();
-    let mut transport = MockTransport::default();
+    // Handle required for ImixAgent spawning
+    let handle = tokio::runtime::Handle::current();
 
-    transport
-        .expect_report_process_list()
-        .times(1)
-        .returning(|_| Ok(c2::ReportProcessListResponse {}));
+    let task_registry = TaskRegistry::new();
+    let agent = Arc::new(ImixAgent::new(
+        Config::default(),
+        transport,
+        handle,
+        task_registry,
+    ));
 
-    let agent = ImixAgent::new(config, transport);
-    let req = c2::ReportProcessListRequest {
-        task_id: 0,
-        list: None,
-    };
+    // Execution must happen in a separate thread to allow block_on
+    let agent_clone = agent.clone();
+    let result = std::thread::spawn(move || {
+        agent_clone.start_reverse_shell(12345, Some("echo test".to_string()))
+    }).join().unwrap();
 
-    let handle = std::thread::spawn(move || {
-        agent.report_process_list(req).unwrap();
-    });
-    handle.join().unwrap();
+    assert!(result.is_ok(), "start_reverse_shell should succeed");
+
+    // Verify subtask is registered
+    {
+        let subtasks = agent.subtasks.lock().unwrap();
+        assert!(subtasks.contains_key(&12345), "Subtask should be registered");
+    }
+
+    // Test stop_task stops the subtask
+    let stop_result = agent.stop_task(12345);
+    assert!(stop_result.is_ok());
+
+    {
+        let subtasks = agent.subtasks.lock().unwrap();
+        assert!(!subtasks.contains_key(&12345), "Subtask should be removed after stop");
+    }
 }

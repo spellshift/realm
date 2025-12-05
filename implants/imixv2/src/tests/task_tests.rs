@@ -51,6 +51,9 @@ impl Agent for MockAgent {
     fn reverse_shell(&self) -> Result<(), String> {
         Ok(())
     }
+    fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
+        Ok(())
+    }
     fn claim_tasks(
         &self,
         _req: c2::ClaimTasksRequest,
@@ -96,7 +99,8 @@ fn test_task_registry_spawn() {
         quest_name: "test_quest".to_string(),
     };
 
-    TaskRegistry::spawn(task, agent.clone());
+    let registry = TaskRegistry::new();
+    registry.spawn(task, agent.clone());
 
     // Give it a moment to start
     std::thread::sleep(Duration::from_millis(100));
@@ -124,12 +128,13 @@ fn test_task_registry_list_and_stop() {
         quest_name: "long_quest".to_string(),
     };
 
-    TaskRegistry::spawn(task, agent.clone());
+    let registry = TaskRegistry::new();
+    registry.spawn(task, agent.clone());
 
     // Check repeatedly if the task is running to avoid race conditions
     let mut running = false;
     for _ in 0..10 {
-        if TaskRegistry::list().iter().any(|t| t.id == task_id) {
+        if registry.list().iter().any(|t| t.id == task_id) {
             running = true;
             break;
         }
@@ -137,7 +142,7 @@ fn test_task_registry_list_and_stop() {
     }
     assert!(running, "Task should be in list");
 
-    TaskRegistry::stop(task_id);
-    let tasks_after = TaskRegistry::list();
+    registry.stop(task_id);
+    let tasks_after = registry.list();
     assert!(!tasks_after.iter().any(|t| t.id == task_id), "Task should be removed from list");
 }

@@ -30,6 +30,9 @@ pub mod ssh_copy_impl;
 #[cfg(all(feature = "stdlib", not(feature = "fake_bindings")))]
 pub mod ssh_exec_impl;
 
+#[cfg(test)]
+mod tests;
+
 #[eldritch_library("pivot")]
 pub trait PivotLibrary {
     #[eldritch_method]

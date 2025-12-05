@@ -34,7 +34,8 @@ async fn main() -> Result<()> {
         .context("Failed to initialize transport")?;
 
     let handle = tokio::runtime::Handle::current();
-    let agent = Arc::new(ImixAgent::new(config, transport, handle));
+    let task_registry = TaskRegistry::new();
+    let agent = Arc::new(ImixAgent::new(config, transport, handle, task_registry.clone()));
 
     loop {
         match agent.fetch_tasks().await {
