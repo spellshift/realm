@@ -83,6 +83,7 @@ impl Parser {
         Ok(statements)
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     pub(crate) fn validate_assignment_target(&self, expr: &super::ast::Expr) -> Result<(), String> {
         use super::ast::ExprKind;
         match &expr.kind {

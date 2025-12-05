@@ -1,4 +1,7 @@
+#![allow(clippy::mutable_key_type)]
+#![allow(unexpected_cfgs)]
 extern crate alloc;
+
 use eldritch_core::Value;
 use alloc::collections::BTreeMap;
 use alloc::string::String;

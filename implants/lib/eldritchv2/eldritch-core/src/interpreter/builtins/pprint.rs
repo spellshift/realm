@@ -47,13 +47,13 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
                 buf.push_str(&next_indent_str);
                 pretty_format(item, next_indent, indent_width, buf);
                 if i < list.len() - 1 {
-                    buf.push_str(",");
+                    buf.push(',');
                 }
-                buf.push_str("\n");
+                buf.push('\n');
             }
             let indent_str = " ".repeat(current_indent);
             buf.push_str(&indent_str);
-            buf.push_str("]");
+            buf.push(']');
         }
         Value::Dictionary(d) => {
             let dict = d.read();
@@ -71,13 +71,13 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
                 buf.push_str(&format!("{:?}: ", key));
                 pretty_format(value, next_indent, indent_width, buf);
                 if i < dict.len() - 1 {
-                    buf.push_str(",");
+                    buf.push(',');
                 }
-                buf.push_str("\n");
+                buf.push('\n');
             }
             let indent_str = " ".repeat(current_indent);
             buf.push_str(&indent_str);
-            buf.push_str("}");
+            buf.push('}');
         }
         Value::Tuple(t) => {
             if t.is_empty() {
@@ -93,13 +93,13 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
                 buf.push_str(&next_indent_str);
                 pretty_format(item, next_indent, indent_width, buf);
                 if i < t.len() - 1 || t.len() == 1 {
-                    buf.push_str(",");
+                    buf.push(',');
                 }
-                buf.push_str("\n");
+                buf.push('\n');
             }
             let indent_str = " ".repeat(current_indent);
             buf.push_str(&indent_str);
-            buf.push_str(")");
+            buf.push(')');
         }
         Value::Set(s_val) => {
             let set = s_val.read();
@@ -116,13 +116,13 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
                 buf.push_str(&next_indent_str);
                 pretty_format(item, next_indent, indent_width, buf);
                 if i < set.len() - 1 {
-                    buf.push_str(",");
+                    buf.push(',');
                 }
-                buf.push_str("\n");
+                buf.push('\n');
             }
             let indent_str = " ".repeat(current_indent);
             buf.push_str(&indent_str);
-            buf.push_str("}");
+            buf.push('}');
         }
         Value::String(s) => buf.push_str(&format!("{:?}", s)),
         _ => buf.push_str(&format!("{}", val)),

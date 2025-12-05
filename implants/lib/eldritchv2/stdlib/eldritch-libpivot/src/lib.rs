@@ -35,6 +35,7 @@ pub trait PivotLibrary {
     #[eldritch_method]
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String>;
 
+    #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
     fn ssh_exec(
         &self,
@@ -48,6 +49,7 @@ pub trait PivotLibrary {
         timeout: Option<i64>,
     ) -> Result<BTreeMap<String, Value>, String>;
 
+    #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
     fn ssh_copy(
         &self,

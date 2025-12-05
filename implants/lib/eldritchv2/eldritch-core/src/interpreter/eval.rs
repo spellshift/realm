@@ -1634,22 +1634,20 @@ fn compare_sequences(
                 TokenKind::NotEq => Ok(Value::Bool(true)),
                 TokenKind::Lt => {
                     // Check if a < b
-                    Ok(Value::Bool(super::utils::compare_values(val_a, val_b).map_or(
-                        false,
+                    Ok(Value::Bool(super::utils::compare_values(val_a, val_b).is_ok_and(
                         |ord| matches!(ord, core::cmp::Ordering::Less),
                     )))
                 }
-                TokenKind::Gt => Ok(Value::Bool(super::utils::compare_values(val_a, val_b).map_or(
-                    false,
+                TokenKind::Gt => Ok(Value::Bool(super::utils::compare_values(val_a, val_b).is_ok_and(
                     |ord| matches!(ord, core::cmp::Ordering::Greater),
                 ))),
                 TokenKind::LtEq => Ok(Value::Bool(super::utils::compare_values(val_a, val_b)
-                    .map_or(false, |ord| matches!(
+                    .is_ok_and(|ord| matches!(
                         ord,
                         core::cmp::Ordering::Less | core::cmp::Ordering::Equal
                     )))),
                 TokenKind::GtEq => Ok(Value::Bool(super::utils::compare_values(val_a, val_b)
-                    .map_or(false, |ord| matches!(
+                    .is_ok_and(|ord| matches!(
                         ord,
                         core::cmp::Ordering::Greater | core::cmp::Ordering::Equal
                     )))),
