@@ -4,25 +4,39 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+// Re-exports from eldritch-stdlib
+pub use eldritch_libagent as agent;
+pub use eldritch_libassets as assets;
+pub use eldritch_libcrypto as crypto;
+pub use eldritch_libfile as file;
+pub use eldritch_libhttp as http;
+pub use eldritch_libpivot as pivot;
+pub use eldritch_libprocess as process;
+pub use eldritch_librandom as random;
+pub use eldritch_libregex as regex;
+pub use eldritch_libreport as report;
+pub use eldritch_libsys as sys;
+pub use eldritch_libtime as time;
+
+// Re-export core types
+pub use eldritch_core::{Interpreter as CoreInterpreter, Printer, Value, ForeignValue, BufferPrinter, StdoutPrinter, Environment, Span, TokenKind};
+
 use alloc::sync::Arc;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec::Vec;
-use alloc::collections::BTreeMap;
-use eldritch_core::{Interpreter as CoreInterpreter, Printer, Value};
-use eldritch_stdlib::{
-    crypto::std::StdCryptoLibrary,
-    file::std::StdFileLibrary,
-    http::std::StdHttpLibrary,
-    pivot::std::StdPivotLibrary,
-    process::std::StdProcessLibrary,
-    random::std::StdRandomLibrary,
-    regex::std::StdRegexLibrary,
-    sys::std::StdSysLibrary,
-    time::std::StdTimeLibrary,
-};
-use eldritch_libagent::{agent::Agent, std::StdAgentLibrary};
-use eldritch_libreport::std::StdReportLibrary;
-use eldritch_libassets::std::StdAssetsLibrary;
+
+use crate::crypto::std::StdCryptoLibrary;
+use crate::file::std::StdFileLibrary;
+use crate::http::std::StdHttpLibrary;
+use crate::pivot::std::StdPivotLibrary;
+use crate::process::std::StdProcessLibrary;
+use crate::random::std::StdRandomLibrary;
+use crate::regex::std::StdRegexLibrary;
+use crate::sys::std::StdSysLibrary;
+use crate::time::std::StdTimeLibrary;
+use crate::agent::{agent::Agent, std::StdAgentLibrary};
+use crate::report::std::StdReportLibrary;
+use crate::assets::std::StdAssetsLibrary;
 
 pub struct Interpreter {
     pub inner: CoreInterpreter,
@@ -48,17 +62,15 @@ impl Interpreter {
     }
 
     pub fn with_default_libs(mut self) -> Self {
-        self.register_module("crypto", Value::Foreign(Arc::new(StdCryptoLibrary)));
-        self.register_module("file", Value::Foreign(Arc::new(StdFileLibrary)));
-        self.register_module("http", Value::Foreign(Arc::new(StdHttpLibrary)));
-        // StdPivotLibrary is a unit struct that delegates implementation.
-        // It doesn't hold state (like an Agent), so it's safe to register as a default lib.
-        self.register_module("pivot", Value::Foreign(Arc::new(StdPivotLibrary)));
-        self.register_module("process", Value::Foreign(Arc::new(StdProcessLibrary)));
-        self.register_module("random", Value::Foreign(Arc::new(StdRandomLibrary)));
-        self.register_module("regex", Value::Foreign(Arc::new(StdRegexLibrary)));
-        self.register_module("sys", Value::Foreign(Arc::new(StdSysLibrary)));
-        self.register_module("time", Value::Foreign(Arc::new(StdTimeLibrary)));
+        self.inner.register_lib(StdCryptoLibrary);
+        self.inner.register_lib(StdFileLibrary);
+        self.inner.register_lib(StdHttpLibrary);
+        self.inner.register_lib(StdPivotLibrary);
+        self.inner.register_lib(StdProcessLibrary);
+        self.inner.register_lib(StdRandomLibrary);
+        self.inner.register_lib(StdRegexLibrary);
+        self.inner.register_lib(StdSysLibrary);
+        self.inner.register_lib(StdTimeLibrary);
         self
     }
 
@@ -66,19 +78,19 @@ impl Interpreter {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
         let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
-        self.register_module("agent", Value::Foreign(Arc::new(agent_lib)));
+        self.inner.register_lib(agent_lib);
 
         let report_lib = StdReportLibrary::new(agent.clone(), 0);
-        self.register_module("report", Value::Foreign(Arc::new(report_lib)));
+        self.inner.register_lib(report_lib);
 
         // Assets library
         let assets_lib = StdAssetsLibrary::new(agent.clone(), Vec::new());
-        self.register_module("assets", Value::Foreign(Arc::new(assets_lib)));
+        self.inner.register_lib(assets_lib);
 
         self
     }
 
-    pub fn with_printer(mut self, printer: Arc<dyn Printer + Send + Sync>) -> Self {
+    pub fn with_printer(self, printer: Arc<dyn Printer + Send + Sync>) -> Self {
         self.inner.env.write().printer = printer;
         self
     }

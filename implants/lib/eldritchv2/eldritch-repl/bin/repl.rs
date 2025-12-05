@@ -11,14 +11,8 @@ use eldritch_repl::{Input, Repl, ReplAction};
 use std::io::{self, Write};
 use std::time::Duration;
 
-#[cfg(feature = "stdlib")]
-use eldritch_stdlib::{
-    crypto::std::StdCryptoLibrary, file::std::StdFileLibrary, http::std::StdHttpLibrary,
-    process::std::StdProcessLibrary, random::std::StdRandomLibrary, regex::std::StdRegexLibrary,
-};
-
 #[cfg(feature = "fake_bindings")]
-use eldritch_stdlib::{
+use eldritchv2::{
     crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
     regex::fake::RegexLibraryFake,
 };
@@ -33,33 +27,13 @@ fn main() -> io::Result<()> {
         interpreter = interpreter.with_default_libs();
     }
 
-    // For fake bindings, we might need a separate builder method or manual registration.
-    // Since eldritchv2::Interpreter::with_default_libs uses "real" stdlibs,
-    // for fake bindings we should probably just register them manually or
-    // improve the builder to handle it.
-    // Given the task is about standardizing, I will assume for now we can just manual register if needed,
-    // or add a .with_fake_libs() later.
-    // But wait, the task says "Register all unit struct libraries available in stdlib" for with_default_libs.
-    // If fake_bindings feature is on, `eldritch-stdlib` might expose fake libs?
-    // Looking at eldritch-stdlib, it exposes fake libs in `fake` module.
-    // For now, I'll stick to manual registration for fake bindings to match previous behavior if stdlib is off.
-
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
     {
-        // Manual registration since with_default_libs uses the real ones (or I need to update it).
-        // Since eldritchv2 facade depends on stdlib feature, `with_default_libs` is likely tailored for that.
-        // I will leave fake bindings manual here for now, or just not support them via the builder yet.
-        // Actually, the previous code had:
-        /*
-        register_lib(FileLibraryFake::default());
-        ...
-        */
-        // I will do:
         use std::sync::Arc;
-        interpreter.register_module("file", Value::Foreign(Arc::new(FileLibraryFake::default())));
-        interpreter.register_module("http", Value::Foreign(Arc::new(HttpLibraryFake::default())));
-        interpreter.register_module("regex", Value::Foreign(Arc::new(RegexLibraryFake::default())));
-        interpreter.register_module("crypto", Value::Foreign(Arc::new(CryptoLibraryFake::default())));
+        interpreter.inner.register_lib(FileLibraryFake::default());
+        interpreter.inner.register_lib(HttpLibraryFake::default());
+        interpreter.inner.register_lib(RegexLibraryFake::default());
+        interpreter.inner.register_lib(CryptoLibraryFake::default());
     }
 
 

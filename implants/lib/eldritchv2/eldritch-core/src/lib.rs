@@ -5,7 +5,6 @@ extern crate self as eldritch_core;
 
 // Internal
 mod ast;
-mod global_libs;
 mod interpreter;
 mod lexer;
 mod parser;
@@ -18,7 +17,6 @@ pub use lexer::Lexer;
 pub use token::{Span, TokenKind};
 
 // Public API exports
-pub use global_libs::register_lib;
 pub mod conversion;
 
 // Expose Parser for tests (restricted visibility not strictly enforced by test crate unless we re-export it)

@@ -4,8 +4,8 @@ version = "0.3.0"
 edition = "2024"
 
 [features]
-stdlib = ["eldritch-stdlib/stdlib", "eldritchv2/std"]
-fake_bindings = ["eldritch-stdlib/fake_bindings"]
+stdlib = ["eldritchv2/stdlib", "eldritchv2/std"]
+fake_bindings = ["eldritchv2/fake_bindings"]
 
 [[bin]]
 name = "eldritch"
@@ -20,18 +20,13 @@ wasm-opt = false
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 crossterm = "0.27"
-eldritch-stdlib = { path = "../stdlib/eldritch-stdlib", default-features = false, features = [
-    "stdlib",
-] }
-eldritchv2 = { path = "../eldritchv2", default-features = false, features = ["std"] }
+eldritchv2 = { path = "../eldritchv2", default-features = false, features = ["std", "stdlib"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
 getrandom = { version = "0.2", features = ["js"] }
 uuid = { version = "1.18", features = ["js"] }
-eldritch-stdlib = { path = "../stdlib/eldritch-stdlib", default-features = false, features = [
-    "fake_bindings",
-] }
+eldritchv2 = { path = "../eldritchv2", default-features = false, features = ["fake_bindings"] }
 
 [dependencies]
 eldritch-core = { path = "../eldritch-core" }

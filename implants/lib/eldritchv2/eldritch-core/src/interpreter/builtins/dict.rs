@@ -2,8 +2,8 @@ use crate::ast::{Environment, Value};
 use crate::interpreter::utils::get_type_name;
 use alloc::collections::BTreeMap;
 use alloc::format;
+use alloc::string::String;
 use alloc::sync::Arc;
-use alloc::string::{String, ToString};
 use spin::RwLock;
 
 pub fn builtin_dict(

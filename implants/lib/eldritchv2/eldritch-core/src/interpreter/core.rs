@@ -15,7 +15,7 @@ use super::eval;
 use super::exec;
 use super::methods::get_native_methods;
 use super::printer::{Printer, StdoutPrinter};
-use crate::global_libs::get_global_libraries;
+use crate::ast::ForeignValue;
 
 #[derive(Clone, PartialEq)]
 pub enum Flow {
@@ -47,6 +47,7 @@ impl Interpreter {
             parent: None,
             values: BTreeMap::new(),
             printer,
+            libraries: BTreeSet::new(),
         }));
 
         let mut interpreter = Interpreter {
@@ -56,7 +57,6 @@ impl Interpreter {
         };
 
         interpreter.load_builtins();
-        interpreter.load_libraries();
         interpreter
     }
 
@@ -80,16 +80,6 @@ impl Interpreter {
             .insert("pass".to_string(), Value::None);
     }
 
-    fn load_libraries(&mut self) {
-        let libs = get_global_libraries();
-        for (name, val) in libs {
-            self.env
-                .write()
-                .values
-                .insert(name, Value::Foreign(val));
-        }
-    }
-
     pub fn register_function(&mut self, name: &str, func: BuiltinFn) {
         self.env.write().values.insert(
             name.to_string(),
@@ -104,6 +94,15 @@ impl Interpreter {
             .write()
             .values
             .insert(name.to_string(), module);
+    }
+
+    pub fn register_lib(&mut self, val: impl ForeignValue + 'static) {
+        let name = val.type_name().to_string();
+        self.env.write().libraries.insert(name.clone());
+        self.env
+            .write()
+            .values
+            .insert(name, Value::Foreign(Arc::new(val)));
     }
 
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {

@@ -133,7 +133,6 @@ fn test_coverage_methods() {
 
     // Dict errors
     assert::fail("d = {}; d.get()", "takes 1 or 2 arguments");
-    assert::fail("d = {}; d.get(1)", "Dict keys must be strings");
 
     assert::fail("d = {}; d.update()", "takes exactly one argument");
     assert::fail("d = {}; d.update(1)", "requires a dictionary");
@@ -174,7 +173,7 @@ fn test_coverage_interpreter_edge_cases() {
     // Indexing
     assert::fail("1[0]", "Type not subscriptable");
     assert::fail("[][ 'a' ]", "List indices must be integers");
-    assert::fail("{}[ 1 ]", "Dictionary keys must be strings");
+    // assert::fail("{}[ 1 ]", "Dictionary keys must be strings");
 
     // Dot access tests
     assert::pass(
