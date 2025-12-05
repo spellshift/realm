@@ -1,5 +1,6 @@
 use super::super::ast::Value;
-use super::utils::{compare_values, get_type_name, is_truthy};
+use super::introspection::{get_type_name, is_truthy};
+use super::operations::compare_values;
 use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::string::{String, ToString};

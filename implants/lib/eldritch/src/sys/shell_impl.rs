@@ -18,7 +18,7 @@ use {
 
 use super::CommandOutput;
 
-pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
+pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict<'_>> {
     let cmd_res = handle_shell(cmd)?;
 
     let res = SmallMap::new();

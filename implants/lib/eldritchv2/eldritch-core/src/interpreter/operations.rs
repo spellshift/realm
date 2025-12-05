@@ -3,11 +3,103 @@ use super::super::token::{Span, TokenKind};
 use super::core::Interpreter;
 use super::error::{runtime_error, EldritchError};
 use super::eval::evaluate;
-use super::utils::{get_type_name, is_truthy};
+use super::introspection::{get_type_name, is_truthy};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::format;
 use alloc::sync::Arc;
+use core::cmp::Ordering;
 use spin::RwLock;
+
+pub fn adjust_slice_indices(
+    length: i64,
+    start: &Option<i64>,
+    stop: &Option<i64>,
+    step: i64,
+) -> (i64, i64) {
+    let start_val = if let Some(s) = start {
+        let mut s = *s;
+        if s < 0 {
+            s += length;
+        }
+        if step < 0 {
+            if s >= length {
+                length - 1
+            } else if s < 0 {
+                -1
+            } else {
+                s
+            }
+        } else if s < 0 {
+            0
+        } else if s > length {
+            length
+        } else {
+            s
+        }
+    } else if step < 0 {
+        length - 1
+    } else {
+        0
+    };
+
+    let stop_val = if let Some(s) = stop {
+        let mut s = *s;
+        if s < 0 {
+            s += length;
+        }
+        if step < 0 {
+            if s < -1 {
+                -1
+            } else if s >= length {
+                length - 1
+            } else {
+                s
+            }
+        } else if s < 0 {
+            0
+        } else if s > length {
+            length
+        } else {
+            s
+        }
+    } else if step < 0 {
+        -1
+    } else {
+        length
+    };
+
+    (start_val, stop_val)
+}
+
+pub fn compare_values(a: &Value, b: &Value) -> Result<Ordering, String> {
+    // This function is kept for backward compatibility or explicit usage,
+    // but Value now implements Ord so we can just use a.cmp(b) if types match
+    // or return error if types mismatch (Python-like behavior for < >).
+    // The previous implementation enforced type matching.
+
+    // We should maintain the behavior that mismatched types are not comparable
+    // for < > except for numbers? Python 3 raises TypeError.
+    // The Ord implementation on Value defines a total order for ALL types.
+    // However, the runtime behavior for < > typically wants TypeError for incompatible types.
+    // But `compare_values` was used by `sorted` and comparisons.
+
+    match (a, b) {
+        (Value::Int(i1), Value::Float(f2)) => Ok((*i1 as f64).total_cmp(f2)),
+        (Value::Float(f1), Value::Int(i2)) => Ok(f1.total_cmp(&(*i2 as f64))),
+        _ => {
+            if core::mem::discriminant(a) == core::mem::discriminant(b) {
+                Ok(a.cmp(b))
+            } else {
+                Err(format!(
+                    "Type mismatch or unsortable types: {} <-> {}",
+                    get_type_name(a),
+                    get_type_name(b)
+                ))
+            }
+        }
+    }
+}
 
 pub(crate) fn evaluate_comprehension_generic<F>(
     interp: &mut Interpreter,

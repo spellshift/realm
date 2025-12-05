@@ -43,7 +43,7 @@ use crate::sys::std::StdSysLibrary;
 use crate::time::std::StdTimeLibrary;
 
 pub struct Interpreter {
-    pub inner: CoreInterpreter,
+    inner: CoreInterpreter,
 }
 
 impl Default for Interpreter {

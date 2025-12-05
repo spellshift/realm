@@ -5,11 +5,12 @@ use super::super::ast::{
 use super::super::token::{Span, TokenKind};
 use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
-use super::eval_helpers::{
-    apply_arithmetic_op, apply_bitwise_op, apply_comparison_op, evaluate_comprehension_generic,
-};
+use super::introspection::{get_type_name, is_truthy};
 use super::methods::call_bound_method;
-use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
+use super::operations::{
+    adjust_slice_indices, apply_arithmetic_op, apply_bitwise_op, apply_comparison_op,
+    evaluate_comprehension_generic,
+};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
@@ -1011,10 +1012,17 @@ fn apply_binary_op(
         }
 
         // List concatenation (new list)
-        (Value::List(a), TokenKind::Plus, Value::List(b)) => {
-            let mut new_list = a.read().clone();
-            new_list.extend(b.read().clone());
-            Ok(Value::List(Arc::new(RwLock::new(new_list))))
+        (Value::List(mut a), TokenKind::Plus, Value::List(b)) => {
+            // Optimization: If `a` is a temporary (unique), mutate in place
+            if let Some(rw_lock) = Arc::get_mut(&mut a) {
+                let list = rw_lock.get_mut();
+                list.extend(b.read().clone());
+                Ok(Value::List(a))
+            } else {
+                let mut new_list = a.read().clone();
+                new_list.extend(b.read().clone());
+                Ok(Value::List(Arc::new(RwLock::new(new_list))))
+            }
         }
 
         // List repetition (Multiplication)
@@ -1083,22 +1091,39 @@ fn apply_binary_op(
         }
 
         // Dict merge (new dict)
-        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b)) => {
-            let mut new_dict = a.read().clone();
-            for (k, v) in b.read().iter() {
-                new_dict.insert(k.clone(), v.clone());
+        (Value::Dictionary(mut a), TokenKind::Plus, Value::Dictionary(b)) => {
+            if let Some(rw_lock) = Arc::get_mut(&mut a) {
+                let dict = rw_lock.get_mut();
+                for (k, v) in b.read().iter() {
+                    dict.insert(k.clone(), v.clone());
+                }
+                Ok(Value::Dictionary(a))
+            } else {
+                let mut new_dict = a.read().clone();
+                for (k, v) in b.read().iter() {
+                    new_dict.insert(k.clone(), v.clone());
+                }
+                Ok(Value::Dictionary(Arc::new(RwLock::new(new_dict))))
             }
-            Ok(Value::Dictionary(Arc::new(RwLock::new(new_dict))))
         }
 
         // Set union (new set) - Plus is deprecated for sets in favor of |
-        (Value::Set(a), TokenKind::Plus, Value::Set(b)) => {
-            #[allow(clippy::mutable_key_type)]
-            let mut new_set = a.read().clone();
-            for item in b.read().iter() {
-                new_set.insert(item.clone());
+        (Value::Set(mut a), TokenKind::Plus, Value::Set(b)) => {
+            if let Some(rw_lock) = Arc::get_mut(&mut a) {
+                #[allow(clippy::mutable_key_type)]
+                let set = rw_lock.get_mut();
+                for item in b.read().iter() {
+                    set.insert(item.clone());
+                }
+                Ok(Value::Set(a))
+            } else {
+                #[allow(clippy::mutable_key_type)]
+                let mut new_set = a.read().clone();
+                for item in b.read().iter() {
+                    new_set.insert(item.clone());
+                }
+                Ok(Value::Set(Arc::new(RwLock::new(new_set))))
             }
-            Ok(Value::Set(Arc::new(RwLock::new(new_set))))
         }
 
         _ => runtime_error(span, "Unsupported binary op"),
@@ -1259,19 +1284,19 @@ fn compare_sequences(
                 TokenKind::NotEq => Ok(Value::Bool(true)),
                 TokenKind::Lt => {
                     // Check if a < b
-                    Ok(Value::Bool(super::utils::compare_values(val_a, val_b).is_ok_and(
+                    Ok(Value::Bool(super::operations::compare_values(val_a, val_b).is_ok_and(
                         |ord| matches!(ord, core::cmp::Ordering::Less),
                     )))
                 }
-                TokenKind::Gt => Ok(Value::Bool(super::utils::compare_values(val_a, val_b).is_ok_and(
+                TokenKind::Gt => Ok(Value::Bool(super::operations::compare_values(val_a, val_b).is_ok_and(
                     |ord| matches!(ord, core::cmp::Ordering::Greater),
                 ))),
-                TokenKind::LtEq => Ok(Value::Bool(super::utils::compare_values(val_a, val_b)
+                TokenKind::LtEq => Ok(Value::Bool(super::operations::compare_values(val_a, val_b)
                     .is_ok_and(|ord| matches!(
                         ord,
                         core::cmp::Ordering::Less | core::cmp::Ordering::Equal
                     )))),
-                TokenKind::GtEq => Ok(Value::Bool(super::utils::compare_values(val_a, val_b)
+                TokenKind::GtEq => Ok(Value::Bool(super::operations::compare_values(val_a, val_b)
                     .is_ok_and(|ord| matches!(
                         ord,
                         core::cmp::Ordering::Greater | core::cmp::Ordering::Equal

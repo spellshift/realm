@@ -5,7 +5,7 @@ use super::super::token::TokenKind;
 use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
 use super::eval::{apply_binary_op_pub, evaluate};
-use super::utils::{get_type_name, is_truthy};
+use super::introspection::{get_type_name, is_truthy};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::ToString;
