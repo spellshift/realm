@@ -25,14 +25,16 @@ const (
 	dnsHeaderSize  = 12 // Standard DNS header size
 	maxLabelLength = 63 // Maximum bytes in a DNS label
 	txtRecordType  = 16 // TXT record QTYPE
+	aRecordType    = 1  // A record QTYPE
+	aaaaRecordType = 28 // AAAA record QTYPE
 	dnsClassIN     = 1  // Internet class
 	defaultUDPPort = "53"
 	convTimeout    = 15 * time.Minute // Conversation expiration
 
 	// Protocol field sizes (base36 encoding)
-	typeSize   = 1   // Packet type: i/d/e/f
-	seqSize    = 5   // Sequence: 36^5 = 60,466,176 max chunks
-	convIDSize = 12  // Conversation ID length
+	typeSize   = 1  // Packet type: i/d/e/f
+	seqSize    = 5  // Sequence: 36^5 = 60,466,176 max chunks
+	convIDSize = 12 // Conversation ID length
 	headerSize = typeSize + seqSize + convIDSize
 
 	// Packet types
@@ -69,25 +71,53 @@ type Redirector struct {
 	baseDomains   []string // Accepted base domains for queries
 }
 
+// GetConversation retrieves a conversation by ID (for testing)
+func (r *Redirector) GetConversation(convID string) (*Conversation, bool) {
+	val, ok := r.conversations.Load(convID)
+	if !ok {
+		return nil, false
+	}
+	return val.(*Conversation), true
+}
+
+// StoreConversation stores a conversation (for testing)
+func (r *Redirector) StoreConversation(convID string, conv *Conversation) {
+	r.conversations.Store(convID, conv)
+}
+
+// CleanupConversationsOnce runs cleanup logic once (for testing)
+func (r *Redirector) CleanupConversationsOnce(timeout time.Duration) {
+	now := time.Now()
+	r.conversations.Range(func(key, value interface{}) bool {
+		conv := value.(*Conversation)
+		conv.mu.Lock()
+		if now.Sub(conv.LastActivity) > timeout {
+			r.conversations.Delete(key)
+		}
+		conv.mu.Unlock()
+		return true
+	})
+}
+
 // Conversation tracks state for a request-response exchange
 type Conversation struct {
 	mu           sync.Mutex
-	id           string
-	methodPath   string         // gRPC method path
-	totalChunks  int            // Expected number of request chunks
-	expectedCRC  uint16         // CRC16 of complete request data
-	chunks       map[int][]byte // Received request chunks
-	lastActivity time.Time
+	ID           string         // Exported for testing
+	MethodPath   string         // gRPC method path (exported for testing)
+	TotalChunks  int            // Expected number of request chunks (exported for testing)
+	ExpectedCRC  uint16         // CRC16 of complete request data (exported for testing)
+	Chunks       map[int][]byte // Received request chunks (exported for testing)
+	LastActivity time.Time      // Exported for testing
 
 	// Response chunking (for large responses)
-	responseData     []byte
-	responseChunks   []string // Base32 encoded (TXT) or raw binary (A/AAAA)
-	responseCRC      uint16
-	isBinaryChunking bool // true for A/AAAA, false for TXT
+	ResponseData     []byte   // Exported for testing
+	ResponseChunks   []string // Base32 encoded (TXT) or raw binary (A/AAAA) (exported for testing)
+	ResponseCRC      uint16   // Exported for testing
+	IsBinaryChunking bool     // true for A/AAAA, false for TXT (exported for testing)
 }
 
 func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
-	listenAddr, domains, err := parseListenAddr(listenOn)
+	listenAddr, domains, err := ParseListenAddr(listenOn)
 	if err != nil {
 		return fmt.Errorf("failed to parse listen address: %w", err)
 	}
@@ -135,9 +165,9 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 }
 
-// parseListenAddr extracts address and domain parameters from listenOn string
+// ParseListenAddr extracts address and domain parameters from listenOn string
 // Format: "addr:port?domain=example.com&domain=other.com"
-func parseListenAddr(listenOn string) (string, []string, error) {
+func ParseListenAddr(listenOn string) (string, []string, error) {
 	parts := strings.SplitN(listenOn, "?", 2)
 	addr := parts[0]
 
@@ -186,9 +216,9 @@ func (r *Redirector) cleanupConversations(ctx context.Context) {
 			r.conversations.Range(func(key, value interface{}) bool {
 				conv := value.(*Conversation)
 				conv.mu.Lock()
-				if now.Sub(conv.lastActivity) > convTimeout {
+				if now.Sub(conv.LastActivity) > convTimeout {
 					r.conversations.Delete(key)
-					slog.Debug("conversation expired", "conv_id", conv.id)
+					slog.Debug("conversation expired", "conv_id", conv.ID)
 				}
 				conv.mu.Unlock()
 				return true
@@ -287,13 +317,13 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	var responseData []byte
 	switch pktType {
 	case typeInit:
-		responseData, err = r.handleInitPacket(convID, string(data))
+		responseData, err = r.HandleInitPacket(convID, string(data))
 	case typeData:
-		responseData, err = r.handleDataPacket(convID, seq, data)
+		responseData, err = r.HandleDataPacket(convID, seq, data)
 	case typeEnd:
-		responseData, err = r.handleEndPacket(ctx, upstream, convID, seq, queryType)
+		responseData, err = r.HandleEndPacket(ctx, upstream, convID, seq, queryType)
 	case typeFetch:
-		responseData, err = r.handleFetchPacket(convID, seq)
+		responseData, err = r.HandleFetchPacket(convID, seq)
 	default:
 		err = fmt.Errorf("unknown packet type: %c", pktType)
 	}
@@ -309,9 +339,9 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	switch queryType {
 	case txtRecordType:
 		maxCapacity = maxDNSResponseSize
-	case 1:
+	case aRecordType:
 		maxCapacity = 4
-	case 28:
+	case aaaaRecordType:
 		maxCapacity = 16
 	default:
 		maxCapacity = maxDNSResponseSize
@@ -327,11 +357,11 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		if pktType == typeInit {
 			actualConvID = convID
 			conv = &Conversation{
-				id:               actualConvID,
-				lastActivity:     time.Now(),
-				responseData:     responseData,
-				responseCRC:      calculateCRC16(responseData),
-				isBinaryChunking: true,
+				ID:               actualConvID,
+				LastActivity:     time.Now(),
+				ResponseData:     responseData,
+				ResponseCRC:      CalculateCRC16(responseData),
+				IsBinaryChunking: true,
 			}
 			r.conversations.Store(actualConvID, conv)
 		} else {
@@ -347,44 +377,44 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 		conv.mu.Lock()
 
-		conv.responseData = responseData
-		conv.responseCRC = calculateCRC16(responseData)
-		conv.isBinaryChunking = true
+		conv.ResponseData = responseData
+		conv.ResponseCRC = CalculateCRC16(responseData)
+		conv.IsBinaryChunking = true
 
-		conv.responseChunks = nil
+		conv.ResponseChunks = nil
 		for i := 0; i < len(responseData); i += maxCapacity {
 			end := i + maxCapacity
 			if end > len(responseData) {
 				end = len(responseData)
 			}
-			conv.responseChunks = append(conv.responseChunks, string(responseData[i:end]))
+			conv.ResponseChunks = append(conv.ResponseChunks, string(responseData[i:end]))
 		}
 
 		conv.mu.Unlock()
 
 		var response []byte
 		if maxCapacity <= 4 {
-			if len(conv.responseChunks) > 65535 {
-				slog.Error("too many chunks for binary format", "chunks", len(conv.responseChunks))
+			if len(conv.ResponseChunks) > 65535 {
+				slog.Error("too many chunks for binary format", "chunks", len(conv.ResponseChunks))
 				r.sendErrorResponse(conn, addr, transactionID)
 				return
 			}
 			response = make([]byte, 4)
 			response[0] = 0xFF
-			response[1] = byte(len(conv.responseChunks) >> 8)
-			response[2] = byte(len(conv.responseChunks) & 0xFF)
-			response[3] = byte(conv.responseCRC & 0xFF)
+			response[1] = byte(len(conv.ResponseChunks) >> 8)
+			response[2] = byte(len(conv.ResponseChunks) & 0xFF)
+			response[3] = byte(conv.ResponseCRC & 0xFF)
 
 			slog.Debug("using compact binary chunked indicator",
-				"chunks", len(conv.responseChunks), "crc_low", response[3])
+				"chunks", len(conv.ResponseChunks), "crc_low", response[3])
 		} else {
-			responseStr := fmt.Sprintf("%s%s:%s", respChunked, encodeSeq(len(conv.responseChunks)), encodeBase36CRC(int(conv.responseCRC)))
+			responseStr := fmt.Sprintf("%s%s:%s", respChunked, encodeSeq(len(conv.ResponseChunks)), EncodeBase36CRC(int(conv.ResponseCRC)))
 			response = []byte(responseStr)
 		}
 
 		slog.Debug("response too large for record type, using multi-query chunking",
 			"conv_id", actualConvID, "packet_type", string(pktType), "data_size", len(responseData),
-			"max_capacity", maxCapacity, "query_type", queryType, "chunks", len(conv.responseChunks),
+			"max_capacity", maxCapacity, "query_type", queryType, "chunks", len(conv.ResponseChunks),
 			"indicator_size", len(response))
 
 		r.sendDNSResponse(conn, addr, transactionID, domain, response, queryType)
@@ -399,9 +429,9 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 }
 
-// handleInitPacket processes init packet and creates conversation
+// HandleInitPacket processes init packet and creates conversation
 // Init payload format: [method_code:2][total_chunks:5][crc:4]
-func (r *Redirector) handleInitPacket(tempConvID string, data string) ([]byte, error) {
+func (r *Redirector) HandleInitPacket(tempConvID string, data string) ([]byte, error) {
 	slog.Debug("handling init packet", "temp_conv_id", tempConvID, "data", data, "data_len", len(data))
 
 	// Payload: method(2) + chunks(5) + crc(4) = 11 chars
@@ -431,12 +461,12 @@ func (r *Redirector) handleInitPacket(tempConvID string, data string) ([]byte, e
 	realConvID := generateConvID()
 
 	conv := &Conversation{
-		id:           realConvID,
-		methodPath:   methodPath,
-		totalChunks:  totalChunks,
-		expectedCRC:  uint16(expectedCRC),
-		chunks:       make(map[int][]byte),
-		lastActivity: time.Now(),
+		ID:           realConvID,
+		MethodPath:   methodPath,
+		TotalChunks:  totalChunks,
+		ExpectedCRC:  uint16(expectedCRC),
+		Chunks:       make(map[int][]byte),
+		LastActivity: time.Now(),
 	}
 
 	r.conversations.Store(realConvID, conv)
@@ -446,8 +476,8 @@ func (r *Redirector) handleInitPacket(tempConvID string, data string) ([]byte, e
 	return []byte(realConvID), nil
 }
 
-// handleDataPacket stores a data chunk in the conversation
-func (r *Redirector) handleDataPacket(convID string, seq int, data []byte) ([]byte, error) {
+// HandleDataPacket stores a data chunk in the conversation
+func (r *Redirector) HandleDataPacket(convID string, seq int, data []byte) ([]byte, error) {
 	convVal, ok := r.conversations.Load(convID)
 	if !ok {
 		return nil, fmt.Errorf("unknown conversation: %s", convID)
@@ -457,15 +487,15 @@ func (r *Redirector) handleDataPacket(convID string, seq int, data []byte) ([]by
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	conv.lastActivity = time.Now()
+	conv.LastActivity = time.Now()
 
 	// Ignore chunks beyond declared total (duplicates/retransmissions)
-	if seq >= conv.totalChunks {
-		slog.Warn("ignoring chunk beyond expected total", "conv_id", convID, "seq", seq, "expected_total", conv.totalChunks)
+	if seq >= conv.TotalChunks {
+		slog.Warn("ignoring chunk beyond expected total", "conv_id", convID, "seq", seq, "expected_total", conv.TotalChunks)
 		return []byte{}, nil
 	}
 
-	conv.chunks[seq] = data
+	conv.Chunks[seq] = data
 
 	dataPreview := ""
 	if len(data) > 0 {
@@ -473,13 +503,13 @@ func (r *Redirector) handleDataPacket(convID string, seq int, data []byte) ([]by
 		dataPreview = fmt.Sprintf("%x", data[:previewLen])
 	}
 
-	slog.Debug("received chunk", "conv_id", convID, "seq", seq, "chunk_len", len(data), "total_received", len(conv.chunks), "expected_total", conv.totalChunks, "data_preview", dataPreview)
+	slog.Debug("received chunk", "conv_id", convID, "seq", seq, "chunk_len", len(data), "total_received", len(conv.Chunks), "expected_total", conv.TotalChunks, "data_preview", dataPreview)
 
 	return []byte{}, nil
 }
 
-// handleEndPacket processes end packet and returns server response
-func (r *Redirector) handleEndPacket(ctx context.Context, upstream *grpc.ClientConn, convID string, lastSeq int, queryType uint16) ([]byte, error) {
+// HandleEndPacket processes end packet and returns server response
+func (r *Redirector) HandleEndPacket(ctx context.Context, upstream *grpc.ClientConn, convID string, lastSeq int, queryType uint16) ([]byte, error) {
 	convVal, ok := r.conversations.Load(convID)
 	if !ok {
 		return nil, fmt.Errorf("unknown conversation: %s", convID)
@@ -489,14 +519,14 @@ func (r *Redirector) handleEndPacket(ctx context.Context, upstream *grpc.ClientC
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	conv.lastActivity = time.Now()
+	conv.LastActivity = time.Now()
 
-	slog.Debug("end packet received", "conv_id", convID, "last_seq", lastSeq, "chunks_received", len(conv.chunks))
+	slog.Debug("end packet received", "conv_id", convID, "last_seq", lastSeq, "chunks_received", len(conv.Chunks))
 
 	// Check for missing chunks
 	var missing []int
-	for i := 0; i < conv.totalChunks; i++ {
-		if _, ok := conv.chunks[i]; !ok {
+	for i := 0; i < conv.TotalChunks; i++ {
+		if _, ok := conv.Chunks[i]; !ok {
 			missing = append(missing, i)
 		}
 	}
@@ -515,31 +545,31 @@ func (r *Redirector) handleEndPacket(ctx context.Context, upstream *grpc.ClientC
 	}
 
 	// Reassemble data (chunks now contain raw binary, not base32)
-	requestData := r.reassembleChunks(conv.chunks, conv.totalChunks)
+	requestData := r.reassembleChunks(conv.Chunks, conv.TotalChunks)
 
 	// Sanity check: ensure we have exactly the right number of chunks
-	if len(conv.chunks) != conv.totalChunks {
-		slog.Error("chunk count mismatch", "conv_id", convID, "chunks_in_map", len(conv.chunks), "total_chunks_declared", conv.totalChunks)
-		return []byte(respError + fmt.Sprintf("chunk_count_mismatch: have %d, expected %d", len(conv.chunks), conv.totalChunks)), nil
+	if len(conv.Chunks) != conv.TotalChunks {
+		slog.Error("chunk count mismatch", "conv_id", convID, "chunks_in_map", len(conv.Chunks), "total_chunks_declared", conv.TotalChunks)
+		return []byte(respError + fmt.Sprintf("chunk_count_mismatch: have %d, expected %d", len(conv.Chunks), conv.TotalChunks)), nil
 	}
 
 	slog.Debug("reassembled data", "conv_id", convID, "bytes_len", len(requestData))
 
 	// Verify CRC (chunks already contain raw decrypted data)
-	actualCRC := calculateCRC16(requestData)
-	expectedCRC := uint16(conv.expectedCRC)
+	actualCRC := CalculateCRC16(requestData)
+	expectedCRC := uint16(conv.ExpectedCRC)
 
-	slog.Debug("CRC check", "conv_id", convID, "expected", expectedCRC, "actual", actualCRC, "data_len", len(requestData), "chunks_received", len(conv.chunks), "chunks_expected", conv.totalChunks)
+	slog.Debug("CRC check", "conv_id", convID, "expected", expectedCRC, "actual", actualCRC, "data_len", len(requestData), "chunks_received", len(conv.Chunks), "chunks_expected", conv.TotalChunks)
 
 	if actualCRC != expectedCRC {
 		errMsg := fmt.Sprintf("CRC mismatch: expected %d, got %d", expectedCRC, actualCRC)
-		slog.Error(errMsg, "conv_id", convID, "data_len", len(requestData), "chunks_map_size", len(conv.chunks), "total_chunks_declared", conv.totalChunks)
+		slog.Error(errMsg, "conv_id", convID, "data_len", len(requestData), "chunks_map_size", len(conv.Chunks), "total_chunks_declared", conv.TotalChunks)
 		return []byte(respError + "invalid_crc"), nil
 	}
 	slog.Debug("reassembled and validated data", "conv_id", convID, "bytes", len(requestData))
 
 	// Forward to upstream gRPC server
-	responseData, err := r.forwardToUpstream(ctx, upstream, conv.methodPath, requestData)
+	responseData, err := r.forwardToUpstream(ctx, upstream, conv.MethodPath, requestData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to forward to upstream: %w", err)
 	}
@@ -547,7 +577,7 @@ func (r *Redirector) handleEndPacket(ctx context.Context, upstream *grpc.ClientC
 	// Determine if we need to base32-encode the response
 	// For A/AAAA records that will use binary chunking, return raw binary
 	// For TXT records, return base32-encoded with "ok:" prefix
-	useBinaryChunking := (queryType == 1 || queryType == 28) // A or AAAA record
+	useBinaryChunking := (queryType == aRecordType || queryType == aaaaRecordType)
 
 	if useBinaryChunking {
 		// Return raw binary data for A/AAAA records
@@ -564,32 +594,30 @@ func (r *Redirector) handleEndPacket(ctx context.Context, upstream *grpc.ClientC
 		slog.Debug("response too large, chunking", "conv_id", convID, "size", len(responseData), "encoded_size", len(encodedResponse))
 
 		// Store response data in conversation
-		conv.responseData = responseData
-		conv.responseCRC = calculateCRC16(responseData) // Use full 16-bit CRC
+		conv.ResponseData = responseData
+		conv.ResponseCRC = CalculateCRC16(responseData) // Use full 16-bit CRC
 
 		// Chunk the encoded response
-		conv.responseChunks = nil
+		conv.ResponseChunks = nil
 		for i := 0; i < len(encodedResponse); i += maxResponseChunkSize {
 			end := i + maxResponseChunkSize
 			if end > len(encodedResponse) {
 				end = len(encodedResponse)
 			}
-			conv.responseChunks = append(conv.responseChunks, encodedResponse[i:end])
+			conv.ResponseChunks = append(conv.ResponseChunks, encodedResponse[i:end])
 		}
 
 		// Return chunked response indicator: "r:[num_chunks]:[crc]"
-		response := fmt.Sprintf("%s%s:%s", respChunked, encodeSeq(len(conv.responseChunks)), encodeBase36CRC(int(conv.responseCRC)))
-		slog.Debug("returning chunked response indicator", "conv_id", convID, "chunks", len(conv.responseChunks), "crc", conv.responseCRC) // Don't delete conversation yet - client will fetch chunks
+		response := fmt.Sprintf("%s%s:%s", respChunked, encodeSeq(len(conv.ResponseChunks)), EncodeBase36CRC(int(conv.ResponseCRC)))
+		slog.Debug("returning chunked response indicator", "conv_id", convID, "chunks", len(conv.ResponseChunks), "crc", conv.ResponseCRC)
 		return []byte(response), nil
 	}
 
-	// Return success with response
-	// Note: Conversation will be deleted by the main handler after successful send
 	return []byte(responseWithPrefix), nil
 }
 
-// handleFetchPacket serves a response chunk to the client
-func (r *Redirector) handleFetchPacket(convID string, chunkSeq int) ([]byte, error) {
+// HandleFetchPacket serves a response chunk to the client
+func (r *Redirector) HandleFetchPacket(convID string, chunkSeq int) ([]byte, error) {
 	convVal, ok := r.conversations.Load(convID)
 	if !ok {
 		return nil, fmt.Errorf("unknown conversation: %s", convID)
@@ -599,10 +627,10 @@ func (r *Redirector) handleFetchPacket(convID string, chunkSeq int) ([]byte, err
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	conv.lastActivity = time.Now()
+	conv.LastActivity = time.Now()
 
 	// Check if this is the final fetch (cleanup request)
-	if chunkSeq >= len(conv.responseChunks) {
+	if chunkSeq >= len(conv.ResponseChunks) {
 		// Client is done fetching - clean up conversation
 		r.conversations.Delete(convID)
 		slog.Debug("conversation completed and cleaned up", "conv_id", convID)
@@ -610,16 +638,16 @@ func (r *Redirector) handleFetchPacket(convID string, chunkSeq int) ([]byte, err
 	}
 
 	// Return the requested chunk
-	if chunkSeq < 0 || chunkSeq >= len(conv.responseChunks) {
-		return nil, fmt.Errorf("invalid chunk sequence: %d (total: %d)", chunkSeq, len(conv.responseChunks))
+	if chunkSeq < 0 || chunkSeq >= len(conv.ResponseChunks) {
+		return nil, fmt.Errorf("invalid chunk sequence: %d (total: %d)", chunkSeq, len(conv.ResponseChunks))
 	}
 
-	chunk := conv.responseChunks[chunkSeq]
-	slog.Debug("serving response chunk", "conv_id", convID, "seq", chunkSeq, "size", len(chunk), "is_binary", conv.isBinaryChunking)
+	chunk := conv.ResponseChunks[chunkSeq]
+	slog.Debug("serving response chunk", "conv_id", convID, "seq", chunkSeq, "size", len(chunk), "is_binary", conv.IsBinaryChunking)
 
 	// For binary chunking (A/AAAA), return raw bytes
 	// For text chunking (TXT), return "ok:" prefix + base32 data
-	if conv.isBinaryChunking {
+	if conv.IsBinaryChunking {
 		return []byte(chunk), nil
 	}
 	return []byte(respOK + chunk), nil
@@ -740,30 +768,6 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 	return responseData, nil
 }
 
-// parseDomainName extracts the domain name from a DNS query
-func (r *Redirector) parseDomainName(data []byte) (string, error) {
-	var labels []string
-	offset := 0
-
-	for offset < len(data) {
-		length := int(data[offset])
-		if length == 0 {
-			break
-		}
-		offset++
-
-		if offset+length > len(data) {
-			return "", fmt.Errorf("invalid label length")
-		}
-
-		label := string(data[offset : offset+length])
-		labels = append(labels, label)
-		offset += length
-	}
-
-	return strings.Join(labels, "."), nil
-}
-
 // parseDomainNameAndType extracts both domain name and query type from DNS question
 func (r *Redirector) parseDomainNameAndType(data []byte) (string, uint16, error) {
 	var labels []string
@@ -861,12 +865,12 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 			rdata = append(rdata, chunk...)
 		}
 
-	case 1: // A record (4 bytes capacity)
+	case aRecordType:
 		// Pad to 4 bytes (data already validated to fit)
 		rdata = make([]byte, 4)
 		copy(rdata, data)
 
-	case 28: // AAAA record (16 bytes capacity)
+	case aaaaRecordType:
 		// Pad to 16 bytes (data already validated to fit)
 		rdata = make([]byte, 16)
 		copy(rdata, data)
@@ -933,15 +937,44 @@ func codeToMethod(code string) string {
 	return "/c2.C2/ClaimTasks"
 }
 
+// encodeBase36 encodes an integer to base36 string with specified number of digits
+func encodeBase36(value int, digits int) string {
+	const base36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+	result := make([]byte, digits)
+	for i := digits - 1; i >= 0; i-- {
+		result[i] = base36[value%36]
+		value /= 36
+	}
+	return string(result)
+}
+
+// decodeBase36 decodes a base36 string to an integer
+func decodeBase36(encoded string) (int, error) {
+	val := func(c byte) (int, error) {
+		switch {
+		case c >= '0' && c <= '9':
+			return int(c - '0'), nil
+		case c >= 'a' && c <= 'z':
+			return int(c-'a') + 10, nil
+		default:
+			return 0, fmt.Errorf("invalid base36 character: %c", c)
+		}
+	}
+
+	result := 0
+	for _, c := range []byte(encoded) {
+		digit, err := val(c)
+		if err != nil {
+			return 0, err
+		}
+		result = result*36 + digit
+	}
+	return result, nil
+}
+
 // encodeSeq encodes sequence number to 5-digit base36 (max: 60,466,175)
 func encodeSeq(seq int) string {
-	const base36 = "0123456789abcdefghijklmnopqrstuvwxyz"
-	digit4 := (seq / 1679616) % 36 // 36^4
-	digit3 := (seq / 46656) % 36   // 36^3
-	digit2 := (seq / 1296) % 36    // 36^2
-	digit1 := (seq / 36) % 36      // 36^1
-	digit0 := seq % 36             // 36^0
-	return string([]byte{base36[digit4], base36[digit3], base36[digit2], base36[digit1], base36[digit0]})
+	return encodeBase36(seq, 5)
 }
 
 // decodeSeq decodes 5-character base36 sequence number
@@ -949,39 +982,12 @@ func decodeSeq(encoded string) (int, error) {
 	if len(encoded) != 5 {
 		return 0, fmt.Errorf("invalid sequence length: expected 5, got %d", len(encoded))
 	}
-
-	val := func(c byte) (int, error) {
-		switch {
-		case c >= '0' && c <= '9':
-			return int(c - '0'), nil
-		case c >= 'a' && c <= 'z':
-			return int(c-'a') + 10, nil
-		default:
-			return 0, fmt.Errorf("invalid base36 character: %c", c)
-		}
-	}
-
-	d4, _ := val(encoded[0])
-	d3, _ := val(encoded[1])
-	d2, _ := val(encoded[2])
-	d1, _ := val(encoded[3])
-	d0, err := val(encoded[4])
-	if err != nil {
-		return 0, err
-	}
-
-	return d4*1679616 + d3*46656 + d2*1296 + d1*36 + d0, nil
+	return decodeBase36(encoded)
 }
 
-// encodeBase36CRC encodes CRC16 to 4-digit base36 (range: 0-1,679,615 covers 0-65,535)
-// Used only for init packet payload and chunked response metadata
-func encodeBase36CRC(crc int) string {
-	const base36 = "0123456789abcdefghijklmnopqrstuvwxyz"
-	digit3 := (crc / 46656) % 36 // 36^3
-	digit2 := (crc / 1296) % 36  // 36^2
-	digit1 := (crc / 36) % 36    // 36^1
-	digit0 := crc % 36           // 36^0
-	return string([]byte{base36[digit3], base36[digit2], base36[digit1], base36[digit0]})
+// EncodeBase36CRC encodes CRC16 to 4-digit base36 (range: 0-1,679,615 covers 0-65,535)
+func EncodeBase36CRC(crc int) string {
+	return encodeBase36(crc, 4)
 }
 
 // decodeBase36CRC decodes 4-character base36 CRC value
@@ -989,31 +995,11 @@ func decodeBase36CRC(encoded string) (int, error) {
 	if len(encoded) != 4 {
 		return 0, fmt.Errorf("invalid CRC length: expected 4, got %d", len(encoded))
 	}
-
-	val := func(c byte) (int, error) {
-		switch {
-		case c >= '0' && c <= '9':
-			return int(c - '0'), nil
-		case c >= 'a' && c <= 'z':
-			return int(c-'a') + 10, nil
-		default:
-			return 0, fmt.Errorf("invalid base36 character: %c", c)
-		}
-	}
-
-	d3, _ := val(encoded[0])
-	d2, _ := val(encoded[1])
-	d1, _ := val(encoded[2])
-	d0, err := val(encoded[3])
-	if err != nil {
-		return 0, err
-	}
-
-	return d3*46656 + d2*1296 + d1*36 + d0, nil
+	return decodeBase36(encoded)
 }
 
-// calculateCRC16 computes CRC16-CCITT checksum (polynomial 0x1021, init 0xFFFF)
-func calculateCRC16(data []byte) uint16 {
+// CalculateCRC16 computes CRC16-CCITT checksum (polynomial 0x1021, init 0xFFFF)
+func CalculateCRC16(data []byte) uint16 {
 	var crc uint16 = 0xFFFF
 	for _, b := range data {
 		crc ^= uint16(b) << 8

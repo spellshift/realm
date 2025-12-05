@@ -1408,3 +1408,220 @@ impl Transport for DNS {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dns_init_defaults() {
+        let dns = DNS::init();
+
+        assert!(dns.dns_server.is_none());
+        assert!(dns.base_domain.is_empty());
+        assert_eq!(dns.preferred_record_type, TXT_RECORD_TYPE);
+        assert_eq!(dns.current_record_type, TXT_RECORD_TYPE);
+        assert!(dns.enable_fallback);
+    }
+
+    #[test]
+    fn test_dns_new_parses_callback() {
+        // Test with specific DNS server
+        let dns = DNS::new("dns://8.8.8.8/c2.example.com".to_string(), None).unwrap();
+        assert_eq!(dns.dns_server, Some("8.8.8.8:53".to_string()));
+        assert_eq!(dns.base_domain, "c2.example.com");
+        assert_eq!(dns.preferred_record_type, TXT_RECORD_TYPE);
+        assert!(dns.enable_fallback);
+
+        // Test with system resolver (*)
+        let dns = DNS::new("dns://*/c2.example.com".to_string(), None).unwrap();
+        assert!(dns.dns_server.is_none());
+        assert_eq!(dns.base_domain, "c2.example.com");
+
+        // Test with A record type preference and fallback disabled
+        let dns = DNS::new(
+            "dns://*/c2.example.com?type=A&fallback=false".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(dns.preferred_record_type, A_RECORD_TYPE);
+        assert_eq!(dns.current_record_type, A_RECORD_TYPE);
+        assert!(!dns.enable_fallback);
+    }
+
+    #[test]
+    fn test_dns_new_invalid_type_errors() {
+        let result = DNS::new("dns://8.8.8.8/c2.example.com?type=BOGUS".to_string(), None);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("type") || err_msg.contains("BOGUS"));
+    }
+
+    #[test]
+    fn test_calculate_max_data_size_positive() {
+        let dns = DNS {
+            dns_server: None,
+            base_domain: "c2.example.com".to_string(),
+            socket: None,
+            preferred_record_type: TXT_RECORD_TYPE,
+            current_record_type: TXT_RECORD_TYPE,
+            enable_fallback: true,
+        };
+
+        let max_size = dns.calculate_max_data_size();
+        assert!(max_size > 0, "max data size should be positive");
+
+        // Test with a very long base domain - should be smaller
+        let dns_long = DNS {
+            dns_server: None,
+            base_domain: "very.long.subdomain.hierarchy.for.testing.purposes.c2.example.com"
+                .to_string(),
+            socket: None,
+            preferred_record_type: TXT_RECORD_TYPE,
+            current_record_type: TXT_RECORD_TYPE,
+            enable_fallback: true,
+        };
+
+        let max_size_long = dns_long.calculate_max_data_size();
+        assert!(max_size_long > 0, "long domain max size should be positive");
+        assert!(
+            max_size_long < max_size,
+            "longer domain should reduce available data size"
+        );
+    }
+
+    #[test]
+    fn test_generate_conv_id_length() {
+        let id = DNS::generate_conv_id();
+        assert_eq!(id.len(), CONV_ID_SIZE);
+
+        // Verify all characters are base32 lowercase (a-z0-7)
+        for c in id.chars() {
+            assert!(
+                c.is_ascii_lowercase() || c.is_ascii_digit(),
+                "conv_id should contain only lowercase alphanumeric chars"
+            );
+        }
+    }
+
+    #[test]
+    fn test_encode_decode_seq() {
+        // Test round-trip encoding/decoding
+        let test_values = vec![0, 1, 42, 1234, 60466175]; // Max is 36^5 - 1
+
+        for val in test_values {
+            let encoded = DNS::encode_seq(val);
+            assert_eq!(encoded.len(), SEQ_SIZE);
+
+            let decoded = DNS::decode_seq(&encoded).unwrap();
+            assert_eq!(decoded, val, "seq {} should round-trip correctly", val);
+        }
+    }
+
+    #[test]
+    fn test_encode_decode_base36_crc() {
+        // Test round-trip encoding/decoding
+        let test_crcs = vec![0, 1, 255, 12345, 65535]; // 16-bit values
+
+        for crc in test_crcs {
+            let encoded = DNS::encode_base36_crc(crc as u16);
+            assert_eq!(encoded.len(), 4);
+
+            let decoded = DNS::decode_base36_crc(&encoded).unwrap();
+            assert_eq!(
+                decoded, crc as u16,
+                "CRC {} should round-trip correctly",
+                crc
+            );
+        }
+    }
+
+    #[test]
+    fn test_calculate_crc16() {
+        // Test with known data
+        let data1 = b"hello world";
+        let crc1 = DNS::calculate_crc16(data1);
+        assert!(crc1 > 0, "CRC should be non-zero for non-empty data");
+
+        // Same data should produce same CRC
+        let crc1_again = DNS::calculate_crc16(data1);
+        assert_eq!(crc1, crc1_again, "CRC should be deterministic");
+
+        // Different data should produce different CRC (highly likely)
+        let data2 = b"hello world!";
+        let crc2 = DNS::calculate_crc16(data2);
+        assert_ne!(crc1, crc2, "different data should produce different CRC");
+    }
+
+    #[tokio::test]
+    async fn test_handle_response_ok_prefix() {
+        // Create a mock DNS instance
+        let mut dns = DNS::init();
+        dns.base_domain = "example.com".to_string();
+
+        // Simple test data
+        let test_data = b"test response data";
+        let encoded_data = DNS::encode_base32(test_data);
+        let response = format!("{}{}", RESP_OK, encoded_data);
+
+        // Call handle_response with empty chunks (no retries needed)
+        let conv_id = "test12345678";
+        let chunks: Vec<Vec<u8>> = vec![];
+
+        let result = dns
+            .handle_response(conv_id, response.as_bytes(), &chunks, 0)
+            .await;
+
+        assert!(result.is_ok());
+        let decoded = result.unwrap();
+        assert_eq!(decoded, test_data);
+    }
+
+    #[tokio::test]
+    async fn test_handle_response_error_prefix() {
+        let mut dns = DNS::init();
+        dns.base_domain = "example.com".to_string();
+
+        let response = b"e:something_broke";
+        let conv_id = "test12345678";
+        let chunks: Vec<Vec<u8>> = vec![];
+
+        let result = dns.handle_response(conv_id, response, &chunks, 0).await;
+
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("something_broke") || err_msg.contains("error"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_response_missing_prefix() {
+        let mut dns = DNS::init();
+        dns.base_domain = "example.com".to_string();
+
+        // Missing chunks response - should trigger retry or error
+        let response = b"m:00000,00001,00002";
+        let conv_id = "test12345678";
+        let chunks: Vec<Vec<u8>> = vec![b"chunk0".to_vec(), b"chunk1".to_vec()];
+
+        // With retry_count at max, this should error out
+        let result = dns.handle_response(conv_id, response, &chunks, 5).await;
+
+        // Should either error or handle the missing chunks
+        // Since we're at max retries, it should error
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_reverse_shell_not_supported() {
+        let mut dns = DNS::init();
+
+        let (_tx, rx) = tokio::sync::mpsc::channel(1);
+        let (resp_tx, _resp_rx) = tokio::sync::mpsc::channel(1);
+
+        let result = dns.reverse_shell(rx, resp_tx).await;
+
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("reverse shell") || err_msg.contains("not support"));
+    }
+}

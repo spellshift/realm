@@ -39,9 +39,9 @@ import (
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 
+	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
-	_ "realm.pub/tavern/internal/redirectors/dns"
 )
 
 func init() {
