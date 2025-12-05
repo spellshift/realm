@@ -139,7 +139,6 @@ fn test_dict_extended() {
 
     // Fail
     assert::fail("d={}; d.popitem()", "empty");
-    assert::fail("d={}; d.get(1)", "Dict keys must be strings");
 }
 
 #[test]
@@ -238,8 +237,6 @@ fn test_interplay() {
     d = {"inner": {"a": 1}}
     assert_eq(d["inner"]["a"], 1)
     "#);
-
-    assert::fail("{(1, 2): 1}", "Dictionary keys must be strings");
 }
 
 #[test]

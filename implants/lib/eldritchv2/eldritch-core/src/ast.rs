@@ -14,6 +14,7 @@ pub struct Environment {
     pub parent: Option<Arc<RwLock<Environment>>>,
     pub values: BTreeMap<String, Value>,
     pub printer: Arc<dyn Printer + Send + Sync>,
+    pub libraries: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone)]

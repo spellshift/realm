@@ -119,6 +119,7 @@ fn evaluate_list_comp(
         parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
         printer,
+        libraries: BTreeSet::new(),
     }));
     let original_env = interp.env.clone();
     interp.env = comp_env;
@@ -161,6 +162,7 @@ fn evaluate_dict_comp(
         parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
         printer,
+        libraries: BTreeSet::new(),
     }));
     let original_env = interp.env.clone();
     interp.env = comp_env;
@@ -239,6 +241,7 @@ fn evaluate_set_comp(
         parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
         printer,
+        libraries: BTreeSet::new(),
     }));
     let original_env = interp.env.clone();
     interp.env = comp_env;
@@ -590,6 +593,7 @@ fn call_function(
                     parent: Some(closure),
                     values: BTreeMap::new(),
                     printer,
+                    libraries: BTreeSet::new(),
                 }));
                 let mut pos_idx = 0;
                 for param in params {

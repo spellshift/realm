@@ -1,6 +1,5 @@
 use super::{Input, Repl, ReplAction};
-#[cfg(feature = "fake_bindings")]
-use eldritch_core::{register_lib, BufferPrinter, Interpreter, Value};
+use eldritch_core::{BufferPrinter, Interpreter, Value};
 use alloc::format;
 use alloc::string::String;
 use alloc::string::ToString;
@@ -9,7 +8,7 @@ use alloc::vec::Vec;
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
-use eldritch_stdlib::{
+use eldritchv2::{
     agent::fake::AgentLibraryFake, assets::fake::AssetsLibraryFake,
     crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
     pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
@@ -91,24 +90,24 @@ impl ExecutionResult {
 impl WasmRepl {
     #[wasm_bindgen(constructor)]
     pub fn new() -> WasmRepl {
+        let printer = Arc::new(BufferPrinter::new());
+        let mut interp = Interpreter::new_with_printer(printer.clone());
+
         #[cfg(feature = "fake_bindings")]
         {
-            register_lib(FileLibraryFake::default());
-            register_lib(ProcessLibraryFake::default());
-            register_lib(SysLibraryFake::default());
-            register_lib(HttpLibraryFake::default());
-            register_lib(CryptoLibraryFake::default());
-            register_lib(AgentLibraryFake::default());
-            register_lib(AssetsLibraryFake::default());
-            register_lib(PivotLibraryFake::default());
-            register_lib(RandomLibraryFake::default());
-            register_lib(RegexLibraryFake::default());
-            register_lib(ReportLibraryFake::default());
-            register_lib(TimeLibraryFake::default());
+            interp.register_lib(FileLibraryFake::default());
+            interp.register_lib(ProcessLibraryFake::default());
+            interp.register_lib(SysLibraryFake::default());
+            interp.register_lib(HttpLibraryFake::default());
+            interp.register_lib(CryptoLibraryFake::default());
+            interp.register_lib(AgentLibraryFake::default());
+            interp.register_lib(AssetsLibraryFake::default());
+            interp.register_lib(PivotLibraryFake::default());
+            interp.register_lib(RandomLibraryFake::default());
+            interp.register_lib(RegexLibraryFake::default());
+            interp.register_lib(ReportLibraryFake::default());
+            interp.register_lib(TimeLibraryFake::default());
         }
-
-        let printer = Arc::new(BufferPrinter::new());
-        let interp = Interpreter::new_with_printer(printer.clone());
 
         WasmRepl {
             interp,

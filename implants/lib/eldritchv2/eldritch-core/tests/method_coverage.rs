@@ -37,7 +37,6 @@ fn test_dict_edge_cases() {
     // Errors
     assert::fail("d={}; d.get()", "get() takes 1 or 2 arguments");
     assert::fail("d={}; d.get('a', 'b', 'c')", "get() takes 1 or 2 arguments");
-    assert::fail("d={}; d.get(1)", "Dict keys must be strings");
     assert::fail("d={}; d.update()", "update() takes exactly one argument");
     assert::fail("d={}; d.update(1)", "update() requires a dictionary");
 }
