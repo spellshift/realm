@@ -31,7 +31,8 @@ async fn main() -> Result<()> {
     let transport = ActiveTransport::new(config.callback_uri.clone(), None)
         .context("Failed to initialize transport")?;
 
-    let agent = Arc::new(ImixAgent::new(config, transport));
+    let task_registry = TaskRegistry::new();
+    let agent = Arc::new(ImixAgent::new(config, transport, task_registry.clone()));
 
     loop {
         match agent.fetch_tasks().await {
@@ -41,7 +42,7 @@ async fn main() -> Result<()> {
                 }
                 for task in tasks {
                     log::info!("Claimed task: {}", task.id);
-                    TaskRegistry::spawn(task, agent.clone());
+                    task_registry.spawn(task, agent.clone());
                 }
             }
             Err(e) => {

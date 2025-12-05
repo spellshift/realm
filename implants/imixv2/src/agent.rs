@@ -10,13 +10,15 @@ use crate::task::TaskRegistry;
 pub struct ImixAgent<T: Transport> {
     config: RwLock<Config>,
     transport: RwLock<T>,
+    task_registry: TaskRegistry,
 }
 
 impl<T: Transport + 'static> ImixAgent<T> {
-    pub fn new(config: Config, transport: T) -> Self {
+    pub fn new(config: Config, transport: T, task_registry: TaskRegistry) -> Self {
         Self {
             config: RwLock::new(config),
             transport: RwLock::new(transport),
+            task_registry,
         }
     }
 
@@ -40,6 +42,9 @@ impl<T: Transport + 'static> ImixAgent<T> {
              .context("Failed to claim tasks")?;
          Ok(response.tasks)
     }
+
+    // Expose task spawning if needed, or main can use registry directly
+    // Main will have its own clone of TaskRegistry so it can just use that.
 }
 
 // Implement the Eldritch Agent Trait
@@ -163,11 +168,11 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-        Ok(TaskRegistry::list())
+        Ok(self.task_registry.list())
     }
 
     fn stop_task(&self, task_id: i64) -> Result<(), String> {
-        TaskRegistry::stop(task_id);
+        self.task_registry.stop(task_id);
         Ok(())
     }
 }

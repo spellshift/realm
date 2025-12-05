@@ -11,10 +11,6 @@ use eldritch_libagent::std::StdAgentLibrary;
 use eldritch_libassets::std::StdAssetsLibrary;
 use pb::c2::Task;
 
-lazy_static::lazy_static! {
-    static ref TASKS: Mutex<BTreeMap<i64, TaskHandle>> = Mutex::new(BTreeMap::new());
-}
-
 struct TaskHandle {
     #[allow(dead_code)] // Keep for future use/tracking
     start_time: SystemTime,
@@ -24,15 +20,24 @@ struct TaskHandle {
     // For now, we just track existence.
 }
 
-pub struct TaskRegistry;
+#[derive(Clone)]
+pub struct TaskRegistry {
+    tasks: Arc<Mutex<BTreeMap<i64, TaskHandle>>>,
+}
 
 impl TaskRegistry {
-    pub fn spawn(task: Task, agent: Arc<dyn Agent>) {
+    pub fn new() -> Self {
+        Self {
+            tasks: Arc::new(Mutex::new(BTreeMap::new())),
+        }
+    }
+
+    pub fn spawn(&self, task: Task, agent: Arc<dyn Agent>) {
         let task_id = task.id;
         let tome = task.tome.clone();
 
         {
-            let mut tasks = TASKS.lock().unwrap();
+            let mut tasks = self.tasks.lock().unwrap();
             if tasks.contains_key(&task_id) {
                 // Already running
                 return;
@@ -46,6 +51,7 @@ impl TaskRegistry {
             );
         }
 
+        let tasks_registry = self.tasks.clone();
         thread::spawn(move || {
             if let Some(tome) = tome {
                 // Removed global registration call
@@ -122,13 +128,13 @@ impl TaskRegistry {
 
             // Cleanup
             log::info!("Completed Task: {task_id}");
-            let mut tasks = TASKS.lock().unwrap();
+            let mut tasks = tasks_registry.lock().unwrap();
             tasks.remove(&task_id);
         });
     }
 
-    pub fn list() -> Vec<Task> {
-        let tasks = TASKS.lock().unwrap();
+    pub fn list(&self) -> Vec<Task> {
+        let tasks = self.tasks.lock().unwrap();
         tasks
             .iter()
             .map(|(id, handle)| Task {
@@ -139,8 +145,8 @@ impl TaskRegistry {
             .collect()
     }
 
-    pub fn stop(task_id: i64) {
-        let mut tasks = TASKS.lock().unwrap();
+    pub fn stop(&self, task_id: i64) {
+        let mut tasks = self.tasks.lock().unwrap();
         if tasks.remove(&task_id).is_some() {
             log::info!("Task {} stop requested (thread may persist)", task_id);
         }
