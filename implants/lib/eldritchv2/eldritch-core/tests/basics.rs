@@ -119,7 +119,6 @@ fn test_basic_errors() {
     assert::fail("1 / 0", "divide by zero");
     assert::fail("undefined_var", "Undefined variable");
     assert::fail("1 + 'string'", "Unsupported binary op");
-    // Verify type mismatch in comparison isn't just a crash (though implementation currently returns false or err depending on logic)
-    // Our implementation returns runtime error for unsupported ops:
-    assert::fail("1 < 'a'", "Unsupported binary op");
+    // Verify type mismatch in comparison
+    assert::fail("1 < 'a'", "Type mismatch or unsortable types");
 }

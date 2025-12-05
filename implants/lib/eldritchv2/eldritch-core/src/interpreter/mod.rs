@@ -2,6 +2,7 @@ mod builtins;
 mod core;
 mod error;
 mod eval;
+mod eval_helpers;
 mod exec;
 mod methods;
 pub mod printer;

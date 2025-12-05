@@ -5,6 +5,9 @@ use super::super::ast::{
 use super::super::token::{Span, TokenKind};
 use super::core::{Flow, Interpreter};
 use super::error::{runtime_error, EldritchError};
+use super::eval_helpers::{
+    apply_arithmetic_op, apply_bitwise_op, apply_comparison_op, evaluate_comprehension_generic,
+};
 use super::methods::call_bound_method;
 use super::utils::{adjust_slice_indices, get_type_name, is_truthy};
 use alloc::boxed::Box;
@@ -14,6 +17,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::fmt::Write;
 use spin::RwLock;
 
 use super::exec::execute_stmts;
@@ -112,29 +116,11 @@ fn evaluate_list_comp(
     iterable: &Expr,
     cond: &Option<Box<Expr>>,
 ) -> Result<Value, EldritchError> {
-    let iterable_val = evaluate(interp, iterable)?;
-    let items = to_iterable(interp, &iterable_val, iterable.span)?;
-    let printer = interp.env.read().printer.clone();
-    let comp_env = Arc::new(RwLock::new(Environment {
-        parent: Some(interp.env.clone()),
-        values: BTreeMap::new(),
-        printer,
-        libraries: BTreeSet::new(),
-    }));
-    let original_env = interp.env.clone();
-    interp.env = comp_env;
     let mut results = Vec::new();
-    for item in items {
-        interp.define_variable(var, item);
-        let include = match cond {
-            Some(c) => is_truthy(&evaluate(interp, c)?),
-            None => true,
-        };
-        if include {
-            results.push(evaluate(interp, body)?);
-        }
-    }
-    interp.env = original_env;
+    evaluate_comprehension_generic(interp, var, iterable, cond, |i| {
+        results.push(evaluate(i, body)?);
+        Ok(())
+    })?;
     Ok(Value::List(Arc::new(RwLock::new(results))))
 }
 
@@ -146,41 +132,30 @@ fn evaluate_dict_comp(
     iterable: &Expr,
     cond: &Option<Box<Expr>>,
 ) -> Result<Value, EldritchError> {
-    let iterable_val = evaluate(interp, iterable)?;
-    let items = match iterable_val {
-        Value::List(l) => l.read().clone(),
-        Value::Tuple(t) => t.clone(),
-        _ => {
-            return runtime_error(
-                iterable.span,
-                &format!("Type '{:?}' is not iterable", get_type_name(&iterable_val)),
-            )
-        }
-    };
-    let printer = interp.env.read().printer.clone();
-    let comp_env = Arc::new(RwLock::new(Environment {
-        parent: Some(interp.env.clone()),
-        values: BTreeMap::new(),
-        printer,
-        libraries: BTreeSet::new(),
-    }));
-    let original_env = interp.env.clone();
-    interp.env = comp_env;
     let mut results = BTreeMap::new();
-    for item in items {
-        interp.define_variable(var, item);
-        let include = match cond {
-            Some(c) => is_truthy(&evaluate(interp, c)?),
-            None => true,
-        };
-        if include {
-            let k = evaluate(interp, key_expr)?;
-            let v = evaluate(interp, val_expr)?;
-            results.insert(k, v);
-        }
-    }
-    interp.env = original_env;
+    evaluate_comprehension_generic(interp, var, iterable, cond, |i| {
+        let k = evaluate(i, key_expr)?;
+        let v = evaluate(i, val_expr)?;
+        results.insert(k, v);
+        Ok(())
+    })?;
     Ok(Value::Dictionary(Arc::new(RwLock::new(results))))
+}
+
+fn evaluate_set_comp(
+    interp: &mut Interpreter,
+    body: &Expr,
+    var: &str,
+    iterable: &Expr,
+    cond: &Option<Box<Expr>>,
+) -> Result<Value, EldritchError> {
+    #[allow(clippy::mutable_key_type)]
+    let mut results = BTreeSet::new();
+    evaluate_comprehension_generic(interp, var, iterable, cond, |i| {
+        results.insert(evaluate(i, body)?);
+        Ok(())
+    })?;
+    Ok(Value::Set(Arc::new(RwLock::new(results))))
 }
 
 fn evaluate_list_literal(
@@ -216,49 +191,6 @@ fn evaluate_dict_literal(
         map.insert(key_val, value_val);
     }
     Ok(Value::Dictionary(Arc::new(RwLock::new(map))))
-}
-
-fn evaluate_set_comp(
-    interp: &mut Interpreter,
-    body: &Expr,
-    var: &str,
-    iterable: &Expr,
-    cond: &Option<Box<Expr>>,
-) -> Result<Value, EldritchError> {
-    let iterable_val = evaluate(interp, iterable)?;
-    let items = match iterable_val {
-        Value::List(l) => l.read().clone(),
-        Value::Tuple(t) => t.clone(),
-        _ => {
-            return runtime_error(
-                iterable.span,
-                &format!("Type '{:?}' is not iterable", get_type_name(&iterable_val)),
-            )
-        }
-    };
-    let printer = interp.env.read().printer.clone();
-    let comp_env = Arc::new(RwLock::new(Environment {
-        parent: Some(interp.env.clone()),
-        values: BTreeMap::new(),
-        printer,
-        libraries: BTreeSet::new(),
-    }));
-    let original_env = interp.env.clone();
-    interp.env = comp_env;
-    #[allow(clippy::mutable_key_type)]
-    let mut results = BTreeSet::new();
-    for item in items {
-        interp.define_variable(var, item);
-        let include = match cond {
-            Some(c) => is_truthy(&evaluate(interp, c)?),
-            None => true,
-        };
-        if include {
-            results.insert(evaluate(interp, body)?);
-        }
-    }
-    interp.env = original_env;
-    Ok(Value::Set(Arc::new(RwLock::new(results))))
 }
 
 fn evaluate_set_literal(
@@ -849,7 +781,7 @@ fn evaluate_arg(interp: &mut Interpreter, arg: &Argument) -> Result<Value, Eldri
     }
 }
 
-fn to_iterable(
+pub(crate) fn to_iterable(
     _interp: &Interpreter,
     val: &Value,
     span: Span,
@@ -966,45 +898,64 @@ fn apply_binary_op(
     let a = evaluate(interp, left)?;
     let b = evaluate(interp, right)?;
 
+    // Handle operations that are fully delegated
+    if matches!(
+        op,
+        TokenKind::Plus
+            | TokenKind::Minus
+            | TokenKind::Star
+            | TokenKind::Slash
+            | TokenKind::SlashSlash
+            | TokenKind::Percent
+    ) {
+         // Some specific type combinations need special handling, but generic arithmetic is in helper.
+         // Wait, string concatenation is + but logic is in apply_binary_op?
+         // Let's check which are generic.
+
+         // Only numbers are fully handled in apply_arithmetic_op
+         if (matches!(a, Value::Int(_) | Value::Float(_)) && matches!(b, Value::Int(_) | Value::Float(_))) {
+             return apply_arithmetic_op(interp, &a, op, &b, span);
+         }
+    }
+
+    // Comparisons
+    if matches!(
+        op,
+        TokenKind::Eq
+            | TokenKind::NotEq
+            | TokenKind::Lt
+            | TokenKind::Gt
+            | TokenKind::LtEq
+            | TokenKind::GtEq
+    ) {
+         // Sequence comparison is special (recursive).
+         // Numbers and Mixed are handled in helper.
+         match (&a, &b) {
+             (Value::List(la), Value::List(lb)) => {
+                 let list_a = la.read();
+                 let list_b = lb.read();
+                 return compare_sequences(&list_a, &list_b, op.clone(), span);
+             }
+             (Value::Tuple(ta), Value::Tuple(tb)) => {
+                 return compare_sequences(ta, tb, op.clone(), span);
+             }
+             _ => return apply_comparison_op(&a, op, &b, span),
+         }
+    }
+
+    // Bitwise
+    if matches!(
+        op,
+        TokenKind::BitAnd
+            | TokenKind::BitOr
+            | TokenKind::BitXor
+            | TokenKind::LShift
+            | TokenKind::RShift
+    ) {
+        return apply_bitwise_op(&a, op, &b, span);
+    }
+
     match (a, op.clone(), b) {
-        // Mixed arithmetic equality
-        (Value::Int(a), TokenKind::Eq, Value::Float(b)) => Ok(Value::Bool(a as f64 == b)),
-        (Value::Float(a), TokenKind::Eq, Value::Int(b)) => Ok(Value::Bool(a == b as f64)),
-        (Value::Int(a), TokenKind::NotEq, Value::Float(b)) => Ok(Value::Bool(a as f64 != b)),
-        (Value::Float(a), TokenKind::NotEq, Value::Int(b)) => Ok(Value::Bool(a != b as f64)),
-
-        (a, TokenKind::Eq, b) => Ok(Value::Bool(a == b)),
-        (a, TokenKind::NotEq, b) => Ok(Value::Bool(a != b)),
-
-        // INT Comparisons
-        (Value::Int(a), TokenKind::Lt, Value::Int(b)) => Ok(Value::Bool(a < b)),
-        (Value::Int(a), TokenKind::Gt, Value::Int(b)) => Ok(Value::Bool(a > b)),
-        (Value::Int(a), TokenKind::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= b)),
-        (Value::Int(a), TokenKind::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= b)),
-
-        // FLOAT Comparisons
-        (Value::Float(a), TokenKind::Lt, Value::Float(b)) => Ok(Value::Bool(a < b)),
-        (Value::Float(a), TokenKind::Gt, Value::Float(b)) => Ok(Value::Bool(a > b)),
-        (Value::Float(a), TokenKind::LtEq, Value::Float(b)) => Ok(Value::Bool(a <= b)),
-        (Value::Float(a), TokenKind::GtEq, Value::Float(b)) => Ok(Value::Bool(a >= b)),
-
-        // MIXED Comparisons (Int vs Float)
-        (Value::Int(a), TokenKind::Lt, Value::Float(b)) => Ok(Value::Bool((a as f64) < b)),
-        (Value::Int(a), TokenKind::Gt, Value::Float(b)) => Ok(Value::Bool((a as f64) > b)),
-        (Value::Int(a), TokenKind::LtEq, Value::Float(b)) => Ok(Value::Bool((a as f64) <= b)),
-        (Value::Int(a), TokenKind::GtEq, Value::Float(b)) => Ok(Value::Bool((a as f64) >= b)),
-
-        (Value::Float(a), TokenKind::Lt, Value::Int(b)) => Ok(Value::Bool(a < (b as f64))),
-        (Value::Float(a), TokenKind::Gt, Value::Int(b)) => Ok(Value::Bool(a > (b as f64))),
-        (Value::Float(a), TokenKind::LtEq, Value::Int(b)) => Ok(Value::Bool(a <= (b as f64))),
-        (Value::Float(a), TokenKind::GtEq, Value::Int(b)) => Ok(Value::Bool(a >= (b as f64))),
-
-        // STRING Comparisons
-        (Value::String(a), TokenKind::Lt, Value::String(b)) => Ok(Value::Bool(a < b)),
-        (Value::String(a), TokenKind::Gt, Value::String(b)) => Ok(Value::Bool(a > b)),
-        (Value::String(a), TokenKind::LtEq, Value::String(b)) => Ok(Value::Bool(a <= b)),
-        (Value::String(a), TokenKind::GtEq, Value::String(b)) => Ok(Value::Bool(a >= b)),
-
         // IN Operator
         (item, TokenKind::In, collection) => evaluate_in(interp, &item, &collection, span),
         (item, TokenKind::NotIn, collection) => {
@@ -1015,152 +966,9 @@ fn apply_binary_op(
             }
         }
 
-        // Arithmetic
-        (Value::Int(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
-        (Value::Int(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
-        (Value::Int(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
-        (Value::Int(a), TokenKind::Slash, Value::Int(b)) => {
-            if b == 0 {
-                return runtime_error(span, "divide by zero");
-            }
-            // User requirement: / for integers returns float
-            Ok(Value::Float((a as f64) / (b as f64)))
-        }
+        // Non-numeric arithmetic (Sequences)
 
-        // Float Arithmetic
-        (Value::Float(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float(a + b)),
-        (Value::Float(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float(a - b)),
-        (Value::Float(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float(a * b)),
-        (Value::Float(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float(a / b)),
-        (Value::Float(a), TokenKind::SlashSlash, Value::Float(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float(a.div_euclid(b)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(Value::Float(libm::floor(a / b)))
-            }
-        } // Floor div for float
-        // Mixed Arithmetic
-        (Value::Int(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float((a as f64) + b)),
-        (Value::Int(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float((a as f64) - b)),
-        (Value::Int(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float((a as f64) * b)),
-        (Value::Int(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float((a as f64) / b)),
-
-        (Value::Float(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Float(a + (b as f64))),
-        (Value::Float(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Float(a - (b as f64))),
-        (Value::Float(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Float(a * (b as f64))),
-        (Value::Float(a), TokenKind::Slash, Value::Int(b)) => Ok(Value::Float(a / (b as f64))),
-
-        (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float((a as f64).div_euclid(b)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(Value::Float(libm::floor(a as f64 / b)))
-            }
-        }
-        (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float(a.div_euclid(b as f64)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(Value::Float(libm::floor(a / b as f64)))
-            }
-        }
-        (Value::Float(a), TokenKind::Percent, Value::Float(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float(a.rem_euclid(b)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                let div = libm::floor(a / b);
-                Ok(Value::Float(a - b * div))
-            }
-        }
-        (Value::Int(a), TokenKind::Percent, Value::Float(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float((a as f64).rem_euclid(b)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                let a = a as f64;
-                let div = libm::floor(a / b);
-                Ok(Value::Float(a - b * div))
-            }
-        }
-        (Value::Float(a), TokenKind::Percent, Value::Int(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float(a.rem_euclid(b as f64)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                let b = b as f64;
-                let div = libm::floor(a / b);
-                Ok(Value::Float(a - b * div))
-            }
-        }
-
-        (Value::Int(a), TokenKind::SlashSlash, Value::Int(b)) => {
-            if b == 0 {
-                return runtime_error(span, "divide by zero");
-            }
-            // Floor division with correct negative handling (Python style)
-            // Rust integer division truncates toward zero.
-            // We want floor (towards negative infinity).
-            let mut res = a / b;
-            // If the result is not exact and the signs are different, we need to subtract 1 (or add -1)
-            if (a % b != 0) && ((a < 0) ^ (b < 0)) {
-                res -= 1;
-            }
-            Ok(Value::Int(res))
-        }
-        // Modulo
-        (Value::Int(a), TokenKind::Percent, Value::Int(b)) => {
-            if b == 0 {
-                return runtime_error(span, "modulo by zero");
-            }
-            // Python style modulo
-            let res = ((a % b) + b) % b;
-            Ok(Value::Int(res))
-        }
-
-        // Bitwise
-        (Value::Int(a), TokenKind::BitAnd, Value::Int(b)) => Ok(Value::Int(a & b)),
-        (Value::Int(a), TokenKind::BitOr, Value::Int(b)) => Ok(Value::Int(a | b)),
-        (Value::Int(a), TokenKind::BitXor, Value::Int(b)) => Ok(Value::Int(a ^ b)),
-        (Value::Int(a), TokenKind::LShift, Value::Int(b)) => Ok(Value::Int(a << b)),
-        (Value::Int(a), TokenKind::RShift, Value::Int(b)) => Ok(Value::Int(a >> b)),
-
-        // Set Bitwise operations
-        (Value::Set(a), TokenKind::BitAnd, Value::Set(b)) => {
-            #[allow(clippy::mutable_key_type)]
-            let intersection: BTreeSet<Value> =
-                a.read().intersection(&b.read()).cloned().collect();
-            Ok(Value::Set(Arc::new(RwLock::new(intersection))))
-        }
-        (Value::Set(a), TokenKind::BitOr, Value::Set(b)) => {
-            #[allow(clippy::mutable_key_type)]
-            let union: BTreeSet<Value> = a.read().union(&b.read()).cloned().collect();
-            Ok(Value::Set(Arc::new(RwLock::new(union))))
-        }
-        (Value::Set(a), TokenKind::BitXor, Value::Set(b)) => {
-            #[allow(clippy::mutable_key_type)]
-            let symmetric_difference: BTreeSet<Value> = a
-                .read()
-                .symmetric_difference(&b.read())
-                .cloned()
-                .collect();
-            Ok(Value::Set(Arc::new(RwLock::new(symmetric_difference))))
-        }
+        // Set Difference (Minus)
         (Value::Set(a), TokenKind::Minus, Value::Set(b)) => {
             #[allow(clippy::mutable_key_type)]
             let difference: BTreeSet<Value> = a.read().difference(&b.read()).cloned().collect();
@@ -1274,17 +1082,8 @@ fn apply_binary_op(
             }
         }
 
-        // Sequence Comparisons
-        (Value::List(a), op, Value::List(b)) => {
-            let list_a = a.read();
-            let list_b = b.read();
-            compare_sequences(&list_a, &list_b, op, span)
-        }
-        (Value::Tuple(a), op, Value::Tuple(b)) => compare_sequences(&a, &b, op, span),
-
         // Dict merge (new dict)
-        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b))
-        | (Value::Dictionary(a), TokenKind::BitOr, Value::Dictionary(b)) => {
+        (Value::Dictionary(a), TokenKind::Plus, Value::Dictionary(b)) => {
             let mut new_dict = a.read().clone();
             for (k, v) in b.read().iter() {
                 new_dict.insert(k.clone(), v.clone());
@@ -1323,269 +1122,64 @@ fn string_modulo_format(
     while let Some(c) = chars.next() {
         if c == '%' {
             if let Some(&next) = chars.peek() {
+                // If it is '%%', handle immediately
+                if next == '%' {
+                    chars.next();
+                    result.push('%');
+                    continue;
+                }
+
+                chars.next(); // Consume specifier
+
+                if val_idx >= vals.len() {
+                     return runtime_error(span, "not enough arguments for format string");
+                }
+                let v = &vals[val_idx];
+                val_idx += 1;
+
                 match next {
                     's' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        result.push_str(&vals[val_idx].to_string());
-                        val_idx += 1;
+                        result.push_str(&v.to_string());
                     }
                     'd' | 'i' | 'u' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let i_val = match v {
-                            Value::Int(i) => *i,
-                            Value::Float(f) => *f as i64,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1
-                                } else {
-                                    0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%{} format: a number is required, not {:?}",
-                                        next,
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{}", i_val));
-                        val_idx += 1;
+                        let i_val = to_int_or_error(v, next, span)?;
+                        let _ = write!(result, "{}", i_val);
                     }
                     'o' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let i_val = match v {
-                            Value::Int(i) => *i,
-                            Value::Float(f) => *f as i64,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1
-                                } else {
-                                    0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%o format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{:o}", i_val));
-                        val_idx += 1;
+                        let i_val = to_int_or_error(v, next, span)?;
+                        let _ = write!(result, "{:o}", i_val);
                     }
                     'x' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let i_val = match v {
-                            Value::Int(i) => *i,
-                            Value::Float(f) => *f as i64,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1
-                                } else {
-                                    0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%x format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{:x}", i_val));
-                        val_idx += 1;
+                        let i_val = to_int_or_error(v, next, span)?;
+                        let _ = write!(result, "{:x}", i_val);
                     }
                     'X' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let i_val = match v {
-                            Value::Int(i) => *i,
-                            Value::Float(f) => *f as i64,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1
-                                } else {
-                                    0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%X format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{:X}", i_val));
-                        val_idx += 1;
+                        let i_val = to_int_or_error(v, next, span)?;
+                        let _ = write!(result, "{:X}", i_val);
                     }
                     'e' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let f_val = match v {
-                            Value::Int(i) => *i as f64,
-                            Value::Float(f) => *f,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1.0
-                                } else {
-                                    0.0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%e format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{:e}", f_val));
-                        val_idx += 1;
+                        let f_val = to_float_or_error(v, next, span)?;
+                        let _ = write!(result, "{:e}", f_val);
                     }
                     'E' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let f_val = match v {
-                            Value::Int(i) => *i as f64,
-                            Value::Float(f) => *f,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1.0
-                                } else {
-                                    0.0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%E format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{:E}", f_val));
-                        val_idx += 1;
+                        let f_val = to_float_or_error(v, next, span)?;
+                        let _ = write!(result, "{:E}", f_val);
                     }
                     'f' | 'F' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let f_val = match v {
-                            Value::Int(i) => *i as f64,
-                            Value::Float(f) => *f,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1.0
-                                } else {
-                                    0.0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%f format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        // Python defaults to 6 decimal places for %f
-                        result.push_str(&format!("{:.6}", f_val));
-                        val_idx += 1;
+                         let f_val = to_float_or_error(v, next, span)?;
+                         let _ = write!(result, "{:.6}", f_val);
                     }
                     'g' | 'G' => {
-                        // Rust doesn't have direct %g support in std::fmt (general format)
-                        // It uses Debug or Display which are usually compact.
-                        // However, %g implies trying to keep it short.
-                        // {:?} (Debug) for f64 often does a good job.
-                        // Or we can just use Display {} which is usually what we want.
-                        // Python's %g logic is complex. We will approximate with {:?} to ensure floats look like floats
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
-                        }
-                        let v = &vals[val_idx];
-                        let f_val = match v {
-                            Value::Int(i) => *i as f64,
-                            Value::Float(f) => *f,
-                            Value::Bool(b) => {
-                                if *b {
-                                    1.0
-                                } else {
-                                    0.0
-                                }
-                            }
-                            _ => {
-                                return runtime_error(
-                                    span,
-                                    &format!(
-                                        "%g format: a number is required, not {:?}",
-                                        get_type_name(v)
-                                    ),
-                                )
-                            }
-                        };
-                        result.push_str(&format!("{:?}", f_val));
-                        val_idx += 1;
+                         let f_val = to_float_or_error(v, next, span)?;
+                         let _ = write!(result, "{:?}", f_val);
                     }
                     'r' => {
-                        chars.next();
-                        if val_idx >= vals.len() {
-                            return runtime_error(span, "not enough arguments for format string");
+                        match v {
+                            Value::String(s) => {
+                                 let _ = write!(result, "\"{}\"", s);
+                            },
+                            _ => result.push_str(&v.to_string()),
                         }
-                        match &vals[val_idx] {
-                            Value::String(s) => result.push_str(&format!("\"{}\"", s)), // Simple repr
-                            v => result.push_str(&v.to_string()),
-                        }
-                        val_idx += 1;
-                    }
-                    '%' => {
-                        chars.next();
-                        result.push('%');
                     }
                     _ => {
                         return runtime_error(span, &format!("Unsupported format specifier: %{next}"));
@@ -1600,11 +1194,42 @@ fn string_modulo_format(
     }
 
     if val_idx < vals.len() {
-        // Python raises TypeError
         return runtime_error(span, "not all arguments converted during string formatting");
     }
 
     Ok(Value::String(result))
+}
+
+fn to_int_or_error(v: &Value, spec: char, span: Span) -> Result<i64, EldritchError> {
+    match v {
+        Value::Int(i) => Ok(*i),
+        Value::Float(f) => Ok(*f as i64),
+        Value::Bool(b) => Ok(if *b { 1 } else { 0 }),
+        _ => runtime_error(
+            span,
+            &format!(
+                "%{} format: a number is required, not {:?}",
+                spec,
+                get_type_name(v)
+            ),
+        )
+    }
+}
+
+fn to_float_or_error(v: &Value, spec: char, span: Span) -> Result<f64, EldritchError> {
+     match v {
+        Value::Int(i) => Ok(*i as f64),
+        Value::Float(f) => Ok(*f),
+        Value::Bool(b) => Ok(if *b { 1.0 } else { 0.0 }),
+        _ => runtime_error(
+            span,
+            &format!(
+                "%{} format: a number is required, not {:?}",
+                spec,
+                get_type_name(v)
+            ),
+        )
+    }
 }
 
 fn compare_sequences(
