@@ -216,6 +216,12 @@ mod inner_fake {
             Ok(())
         }
 
+        fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
+            let mut state = self.state.lock().unwrap();
+            state.reverse_shell_active = true;
+            Ok(())
+        }
+
         fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
             let mut state = self.state.lock().unwrap();
             // Move all pending tasks to the response

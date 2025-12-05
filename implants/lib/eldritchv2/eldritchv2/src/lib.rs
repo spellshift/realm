@@ -69,7 +69,7 @@ impl Interpreter {
         self.inner.register_lib(StdCryptoLibrary);
         self.inner.register_lib(StdFileLibrary);
         self.inner.register_lib(StdHttpLibrary);
-        self.inner.register_lib(StdPivotLibrary);
+        self.inner.register_lib(StdPivotLibrary::default());
         self.inner.register_lib(StdProcessLibrary);
         self.inner.register_lib(StdRandomLibrary);
         self.inner.register_lib(StdRegexLibrary);
@@ -86,6 +86,9 @@ impl Interpreter {
 
         let report_lib = StdReportLibrary::new(agent.clone(), 0);
         self.inner.register_lib(report_lib);
+
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), 0);
+        self.inner.register_lib(pivot_lib);
 
         // Assets library
         let assets_lib = StdAssetsLibrary::new(agent.clone(), Vec::new());
@@ -105,6 +108,9 @@ impl Interpreter {
 
         let report_lib = StdReportLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(report_lib);
+
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
+        self.inner.register_lib(pivot_lib);
 
         let assets_lib = StdAssetsLibrary::new(agent, assets);
         self.inner.register_lib(assets_lib);
