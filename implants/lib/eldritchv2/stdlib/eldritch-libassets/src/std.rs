@@ -90,3 +90,23 @@ impl AssetsLibrary for StdAssetsLibrary {
         Ok(files)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eldritch_libagent::fake::AgentFake;
+    use tempfile::NamedTempFile;
+    use alloc::string::ToString;
+
+    #[test]
+    fn test_assets_read_binary_fail() {
+        let agent = Arc::new(AgentFake::default());
+        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        assert!(lib.read_binary("nonexistent".to_string()).is_err());
+    }
+
+    // Since we don't have guaranteed embedded assets in the test environment unless we build with specific flags
+    // or point to existing files, we might be limited in what we can test without a real asset folder.
+    // However, the `debug_assertions` cfg points to `../../../../../bin/embedded_files_test`.
+    // If that folder exists and has files, we can test.
+}

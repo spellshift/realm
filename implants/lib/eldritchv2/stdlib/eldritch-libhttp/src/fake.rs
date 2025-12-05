@@ -31,7 +31,7 @@ impl HttpLibrary for HttpLibraryFake {
 
         // Mock headers
         let mut headers_map = BTreeMap::new();
-        headers_map.insert("Content-Type".into(), Value::String("text/plain".into()));
+        headers_map.insert(Value::String("Content-Type".into()), Value::String("text/plain".into()));
         map.insert(
             "headers".into(),
             Value::Dictionary(Arc::new(RwLock::new(headers_map))),
@@ -63,7 +63,7 @@ impl HttpLibrary for HttpLibraryFake {
         // Mock headers
         let mut headers_map = BTreeMap::new();
         headers_map.insert(
-            "Content-Type".into(),
+            Value::String("Content-Type".into()),
             Value::String("application/json".into()),
         );
         map.insert(
