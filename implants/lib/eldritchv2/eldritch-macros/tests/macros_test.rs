@@ -1,6 +1,6 @@
 mod tests {
     extern crate alloc;
-    use eldritch_core::{Interpreter, Value, register_lib};
+    use eldritch_core::{Interpreter, Value};
     use eldritch_macros::{eldritch_library, eldritch_library_impl, eldritch_method};
     use std::collections::BTreeMap;
     use std::sync::{Arc, Mutex};
@@ -138,9 +138,8 @@ mod tests {
             let ops = Arc::new(Mutex::new(Vec::new()));
             let mock = MockFS { ops: ops.clone() };
 
-            register_lib(mock);
-
             let mut interp = Interpreter::new();
+            interp.register_lib(mock);
 
             let code = "file.move_file(\"/src\", dst=\"/dst\")\nfile.write_str(\"/foo\", content=\"hello\")";
             interp.interpret(code).unwrap();
@@ -158,10 +157,10 @@ mod tests {
                 files: files.clone(),
             };
 
-            // Re-register 'file' library
-            register_lib(fs);
-
             let mut interp = Interpreter::new();
+            // Register 'file' library
+            interp.register_lib(fs);
+
             let code =
                 "file.write_str(\"/a.txt\", \"data\")\nfile.move_file(\"/a.txt\", \"/b.txt\")";
 
@@ -184,11 +183,11 @@ mod tests {
                 log: net_log.clone(),
             };
 
-            // Re-register 'file' to be MockFS
-            register_lib(mock_fs);
-            register_lib(mock_net);
-
             let mut interp = Interpreter::new();
+            // Re-register 'file' to be MockFS
+            interp.register_lib(mock_fs);
+            interp.register_lib(mock_net);
+
             let code = "file.move_file(\"/local\", \"/remote\")\nnet.connect(\"example.com\", 80)\nnet.send(\"GET / HTTP/1.1\")";
 
             interp.interpret(code).unwrap();
@@ -206,13 +205,13 @@ mod tests {
 
         // --- Test 4: Complex Types (using MockFS) ---
         {
-            // Note: MockFS is already registered from previous step
             // But we should create a fresh ops vector to verify output cleanly
             let ops = Arc::new(Mutex::new(Vec::new()));
             let mock = MockFS { ops: ops.clone() };
-            register_lib(mock);
 
             let mut interp = Interpreter::new();
+            interp.register_lib(mock);
+
             let code = "file.complex_op([1, 2, 3], {\"active\": True, \"hidden\": False})";
             let res = interp.interpret(code).unwrap();
 
@@ -234,16 +233,17 @@ mod tests {
         {
             let ops = Arc::new(Mutex::new(Vec::new()));
             let mock = MockFS { ops: ops.clone() };
-            register_lib(mock);
 
             let mut interp = Interpreter::new();
+            interp.register_lib(mock);
+
             let code = "file.btree_ret()";
             let res = interp.interpret(code).unwrap();
 
             if let Value::Dictionary(d) = res {
                 let dict = d.read();
-                assert_eq!(dict.get("one").unwrap(), &Value::Int(1));
-                assert_eq!(dict.get("two").unwrap(), &Value::Int(2));
+                assert_eq!(dict.get(&Value::String("one".to_string())).unwrap(), &Value::Int(1));
+                assert_eq!(dict.get(&Value::String("two".to_string())).unwrap(), &Value::Int(2));
             } else {
                 panic!("Expected Dictionary, got {res:?}");
             }
@@ -251,8 +251,13 @@ mod tests {
 
         // --- Test 6: Introspection ---
         {
+            let ops = Arc::new(Mutex::new(Vec::new()));
+            let mock = MockFS { ops: ops.clone() };
+
             // MockFS is registered
             let mut interp = Interpreter::new();
+            interp.register_lib(mock);
+
             let code = "dir(file)";
             let res = interp.interpret(code).unwrap();
 
