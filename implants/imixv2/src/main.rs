@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     let transport = ActiveTransport::init();
 
     let handle = tokio::runtime::Handle::current();
-    let task_registry = TaskRegistry::new();
+    let task_registry = Arc::new(TaskRegistry::new());
     let agent = Arc::new(ImixAgent::new(
         config,
         transport,
