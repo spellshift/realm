@@ -598,6 +598,9 @@ impl Parser {
                 let mut elements = vec![expr];
                 if !self.check(&TokenKind::RParen) {
                     loop {
+                        if self.check(&TokenKind::RParen) {
+                            break;
+                        }
                         elements.push(self.expression()?);
                         if !self.match_token(&[TokenKind::Comma]) {
                             break;
@@ -673,6 +676,9 @@ impl Parser {
             let mut elements = vec![first_expr];
             if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBracket) {
                 loop {
+                    if self.check(&TokenKind::RBracket) {
+                        break;
+                    }
                     elements.push(self.expression()?);
                     if !self.match_token(&[TokenKind::Comma]) {
                         break;
@@ -741,6 +747,9 @@ impl Parser {
                 let mut entries = vec![(first_expr, val_expr)];
                 if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBrace) {
                     loop {
+                        if self.check(&TokenKind::RBrace) {
+                            break;
+                        }
                         let k = self.expression()?;
                         self.consume(|t| matches!(t, TokenKind::Colon), "Expected ':'.")?;
                         let v = self.expression()?;
@@ -797,6 +806,9 @@ impl Parser {
                 let mut elements = vec![first_expr];
                 if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBrace) {
                     loop {
+                        if self.check(&TokenKind::RBrace) {
+                            break;
+                        }
                         elements.push(self.expression()?);
                         if !self.match_token(&[TokenKind::Comma]) {
                             break;
