@@ -1,8 +1,6 @@
 #[cfg(not(target_os = "windows"))]
 use {
-    alloc::collections::BTreeMap,
     alloc::string::ToString,
-    eldritch_core::Value,
     ipnetwork::{IpNetwork, Ipv4Network},
     pnet::{
         datalink::{self, channel, Channel::Ethernet, NetworkInterface},
@@ -20,9 +18,11 @@ use {
     std::time::{Duration, SystemTime},
 };
 
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use anyhow::{anyhow, Result};
+use eldritch_core::Value;
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
