@@ -1,8 +1,8 @@
 use crate::ast::{Environment, Value};
 use crate::token::Span;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use spin::RwLock;
 
 pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
@@ -23,9 +23,7 @@ pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
     pretty_format(&args[0], 0, indent_width, &mut output);
 
     // TODO: Pass actual span
-    env.read()
-        .printer
-        .print_out(&Span::new(0, 0, 0), &output);
+    env.read().printer.print_out(&Span::new(0, 0, 0), &output);
 
     Ok(Value::None)
 }
@@ -68,7 +66,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
 
             for (i, (key, value)) in dict.iter().enumerate() {
                 buf.push_str(&next_indent_str);
-                buf.push_str(&format!("{:?}: ", key));
+                buf.push_str(&format!("{key:?}: "));
                 pretty_format(value, next_indent, indent_width, buf);
                 if i < dict.len() - 1 {
                     buf.push(',');
@@ -124,7 +122,7 @@ fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &
             buf.push_str(&indent_str);
             buf.push('}');
         }
-        Value::String(s) => buf.push_str(&format!("{:?}", s)),
-        _ => buf.push_str(&format!("{}", val)),
+        Value::String(s) => buf.push_str(&format!("{s:?}")),
+        _ => buf.push_str(&format!("{val}")),
     }
 }

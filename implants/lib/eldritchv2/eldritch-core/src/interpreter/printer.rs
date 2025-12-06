@@ -1,8 +1,8 @@
+use crate::token::Span;
 use alloc::string::String;
 use alloc::sync::Arc;
 use core::fmt;
 use spin::Mutex;
-use crate::token::Span;
 
 /// Trait for handling output from the interpreter.
 /// It must be Send + Sync to be safe in threaded environments.
@@ -24,7 +24,7 @@ impl Printer for StdoutPrinter {
     fn print_out(&self, _span: &Span, s: &str) {
         #[cfg(feature = "std")]
         {
-            println!("{}", s);
+            println!("{s}");
         }
         #[cfg(not(feature = "std"))]
         {
@@ -35,7 +35,7 @@ impl Printer for StdoutPrinter {
     fn print_err(&self, _span: &Span, s: &str) {
         #[cfg(feature = "std")]
         {
-            eprintln!("{}", s);
+            eprintln!("{s}");
         }
         #[cfg(not(feature = "std"))]
         {

@@ -1,9 +1,9 @@
-use anyhow::Result;
-use alloc::collections::BTreeMap;
-use eldritch_core::Value;
 use crate::std::Session;
-use alloc::string::{String, ToString};
+use alloc::collections::BTreeMap;
 use alloc::format;
+use alloc::string::{String, ToString};
+use anyhow::Result;
+use eldritch_core::Value;
 
 struct SSHExecOutput {
     stdout: String,
@@ -29,7 +29,7 @@ async fn handle_ssh_exec(
             password,
             key,
             key_password,
-            format!("{}:{}", target, port),
+            format!("{target}:{port}"),
         ),
     )
     .await??;

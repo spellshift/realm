@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn test_sys_get_ip() {
         let res = get_ip().unwrap();
-        println!("{:?}", res);
-        assert!(format!("{:?}", res).contains("127.0.0.1"));
+        println!("{res:?}");
+        assert!(format!("{res:?}").contains("127.0.0.1"));
     }
 }

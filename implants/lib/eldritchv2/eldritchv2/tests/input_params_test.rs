@@ -1,18 +1,22 @@
 #[cfg(test)]
 mod tests {
-    use eldritchv2::Interpreter;
     use eldritch_core::Value;
+    use eldritchv2::Interpreter;
+    use spin::RwLock;
     use std::collections::BTreeMap;
     use std::sync::Arc;
-    use spin::RwLock;
 
     #[test]
     fn test_input_params() {
         let mut interp = Interpreter::new();
 
         // Create input_params dictionary
+        #[allow(clippy::mutable_key_type)]
         let mut params = BTreeMap::new();
-        params.insert(Value::String("key1".to_string()), Value::String("value1".to_string()));
+        params.insert(
+            Value::String("key1".to_string()),
+            Value::String("value1".to_string()),
+        );
         params.insert(Value::String("key2".to_string()), Value::Int(42));
 
         let params_val = Value::Dictionary(Arc::new(RwLock::new(params)));
@@ -25,7 +29,10 @@ mod tests {
 
         interp.interpret(code).unwrap();
 
-        assert_eq!(interp.interpret("val1").unwrap(), Value::String("value1".to_string()));
+        assert_eq!(
+            interp.interpret("val1").unwrap(),
+            Value::String("value1".to_string())
+        );
         assert_eq!(interp.interpret("val2").unwrap(), Value::Int(42));
     }
 }

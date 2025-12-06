@@ -1,23 +1,23 @@
 #[cfg(feature = "stdlib")]
+use alloc::collections::BTreeMap;
+#[cfg(feature = "stdlib")]
 use alloc::format;
 #[cfg(feature = "stdlib")]
 use alloc::string::{String, ToString};
 #[cfg(feature = "stdlib")]
-use alloc::vec::Vec;
-#[cfg(feature = "stdlib")]
-use alloc::collections::BTreeMap;
-#[cfg(feature = "stdlib")]
 use alloc::sync::Arc;
 #[cfg(feature = "stdlib")]
-use spin::RwLock;
-#[cfg(feature = "stdlib")]
-use eldritch_core::Value;
+use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
 use eldritch_core::conversion::{FromValue, ToValue};
+#[cfg(feature = "stdlib")]
+use eldritch_core::Value;
 #[cfg(feature = "stdlib")]
 use pb::c2;
 #[cfg(feature = "stdlib")]
 use pb::eldritch;
+#[cfg(feature = "stdlib")]
+use spin::RwLock;
 
 // --- Wrappers ---
 
@@ -61,7 +61,10 @@ impl ToValue for TaskWrapper {
         let task = self.0;
         let mut map = BTreeMap::new();
         map.insert(Value::String("id".to_string()), Value::Int(task.id));
-        map.insert(Value::String("quest_name".to_string()), Value::String(task.quest_name));
+        map.insert(
+            Value::String("quest_name".to_string()),
+            Value::String(task.quest_name),
+        );
         // Tome is complex, let's represent it as a dict or None for now
         // For strict correctness we might want a TomeWrapper, but often scripts just need the ID.
         // If needed, we can expand Tome.
@@ -81,11 +84,13 @@ impl FromValue for CredentialWrapper {
             Value::Dictionary(d) => {
                 let dict = d.read();
                 // pb::eldritch::Credential fields: principal, secret, kind
-                let principal = dict.get(&Value::String("principal".to_string()))
+                let principal = dict
+                    .get(&Value::String("principal".to_string()))
                     .or_else(|| dict.get(&Value::String("user".to_string()))) // alias
                     .map(|v| v.to_string())
                     .unwrap_or_default();
-                let secret = dict.get(&Value::String("secret".to_string()))
+                let secret = dict
+                    .get(&Value::String("secret".to_string()))
                     .or_else(|| dict.get(&Value::String("password".to_string()))) // alias
                     .map(|v| v.to_string())
                     .unwrap_or_default();
@@ -98,7 +103,7 @@ impl FromValue for CredentialWrapper {
                     kind: 0,
                 }))
             }
-            _ => Err(format!("Expected Dictionary for Credential, got {:?}", v))
+            _ => Err(format!("Expected Dictionary for Credential, got {v:?}")),
         }
     }
 }
@@ -106,11 +111,16 @@ impl FromValue for CredentialWrapper {
 #[cfg(feature = "stdlib")]
 impl FromValue for FileWrapper {
     fn from_value(v: &Value) -> Result<Self, String> {
-         match v {
+        match v {
             Value::Dictionary(d) => {
                 let dict = d.read();
-                let path = dict.get(&Value::String("path".to_string())).map(|v| v.to_string()).unwrap_or_default();
-                let chunk = if let Some(Value::Bytes(b)) = dict.get(&Value::String("content".to_string())) {
+                let path = dict
+                    .get(&Value::String("path".to_string()))
+                    .map(|v| v.to_string())
+                    .unwrap_or_default();
+                let chunk = if let Some(Value::Bytes(b)) =
+                    dict.get(&Value::String("content".to_string()))
+                {
                     b.clone()
                 } else {
                     Vec::new()
@@ -128,7 +138,7 @@ impl FromValue for FileWrapper {
                     chunk,
                 }))
             }
-            _ => Err(format!("Expected Dictionary for File, got {:?}", v))
+            _ => Err(format!("Expected Dictionary for File, got {v:?}")),
         }
     }
 }
@@ -136,29 +146,40 @@ impl FromValue for FileWrapper {
 #[cfg(feature = "stdlib")]
 impl FromValue for ProcessListWrapper {
     fn from_value(v: &Value) -> Result<Self, String> {
-         // ProcessList has `repeated Process list`.
-         match v {
-             Value::List(l) => {
-                 let list_val = l.read();
-                 let mut processes = Vec::new();
-                 for item in list_val.iter() {
-                     // Assume item is a dict representing a Process
-                     if let Value::Dictionary(d) = item {
-                         let d = d.read();
-                         let pid = d.get(&Value::String("pid".to_string())).and_then(|v| match v { Value::Int(i) => Some(*i as u64), _ => None }).unwrap_or(0);
-                         let name = d.get(&Value::String("name".to_string())).map(|v| v.to_string()).unwrap_or_default();
-                         // ... other fields
-                         processes.push(eldritch::Process {
-                             pid,
-                             name,
-                             ..Default::default()
-                         });
-                     }
-                 }
-                 Ok(ProcessListWrapper(eldritch::ProcessList { list: processes }))
-             }
-             _ => Err(format!("Expected List for ProcessList, got {:?}", v))
-         }
+        // ProcessList has `repeated Process list`.
+        match v {
+            Value::List(l) => {
+                let list_val = l.read();
+                let mut processes = Vec::new();
+                for item in list_val.iter() {
+                    // Assume item is a dict representing a Process
+                    if let Value::Dictionary(d) = item {
+                        let d = d.read();
+                        let pid = d
+                            .get(&Value::String("pid".to_string()))
+                            .and_then(|v| match v {
+                                Value::Int(i) => Some(*i as u64),
+                                _ => None,
+                            })
+                            .unwrap_or(0);
+                        let name = d
+                            .get(&Value::String("name".to_string()))
+                            .map(|v| v.to_string())
+                            .unwrap_or_default();
+                        // ... other fields
+                        processes.push(eldritch::Process {
+                            pid,
+                            name,
+                            ..Default::default()
+                        });
+                    }
+                }
+                Ok(ProcessListWrapper(eldritch::ProcessList {
+                    list: processes,
+                }))
+            }
+            _ => Err(format!("Expected List for ProcessList, got {v:?}")),
+        }
     }
 }
 
@@ -172,6 +193,9 @@ impl FromValue for TaskOutputWrapper {
 
 // Helpers for responses
 #[cfg(feature = "stdlib")]
-impl ToValue for CredentialWrapper { // Not needed usually for return
-    fn to_value(self) -> Value { Value::None }
+impl ToValue for CredentialWrapper {
+    // Not needed usually for return
+    fn to_value(self) -> Value {
+        Value::None
+    }
 }

@@ -47,8 +47,8 @@ mod tests {
     #[test]
     fn test_sys_get_os() -> anyhow::Result<()> {
         let res = get_os()?;
-        let res_str = format!("{:?}", res);
-        println!("{}", res_str);
+        let res_str = format!("{res:?}");
+        println!("{res_str}");
         #[cfg(target_arch = "x86_64")]
         assert!(res_str.contains(r#""arch": "x86_64""#));
         #[cfg(target_arch = "aarch64")]

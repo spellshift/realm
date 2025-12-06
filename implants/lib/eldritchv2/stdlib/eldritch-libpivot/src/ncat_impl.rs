@@ -1,11 +1,11 @@
 use std::net::Ipv4Addr;
 
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use anyhow::Result;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpStream, UdpSocket};
-use alloc::vec::Vec;
-use alloc::string::String;
-use alloc::format;
 
 // Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
 async fn handle_ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
@@ -13,7 +13,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
     let mut response_buffer: Vec<u8> = Vec::new();
     let result_string: String;
 
-    let address_and_port = format!("{}:{}", address, port);
+    let address_and_port = format!("{address}:{port}");
 
     if protocol == "tcp" {
         // Connect to remote host
@@ -90,7 +90,7 @@ mod tests {
         let listener_handle;
 
         if protocol == "tcp" {
-            let listener = TcpListener::bind(format!("{}:0", address)).await?;
+            let listener = TcpListener::bind(format!("{address}:0")).await?;
             port = listener.local_addr().unwrap().port().into();
             listener_handle = task::spawn(async move {
                 let mut i = 0;
@@ -106,7 +106,7 @@ mod tests {
                 Ok(())
             });
         } else if protocol == "udp" {
-            let sock = UdpSocket::bind(format!("{}:0", address)).await?;
+            let sock = UdpSocket::bind(format!("{address}:0")).await?;
             port = sock.local_addr().unwrap().port().into();
             listener_handle = task::spawn(async move {
                 let mut buf = [0; 1024];
@@ -123,7 +123,7 @@ mod tests {
                 Ok(())
             });
         } else {
-             return Err(anyhow::anyhow!("Unrecognized protocol"));
+            return Err(anyhow::anyhow!("Unrecognized protocol"));
         }
         Ok((port, listener_handle))
     }
@@ -132,10 +132,8 @@ mod tests {
     async fn test_ncat_send_tcp() -> anyhow::Result<()> {
         let expected_response = String::from("Hello world!");
 
-        let (test_port, listen_task) = setup_test_listener(
-            String::from("127.0.0.1"),
-            String::from("tcp"),
-        ).await?;
+        let (test_port, listen_task) =
+            setup_test_listener(String::from("127.0.0.1"), String::from("tcp")).await?;
 
         // Setup a sender
         let send_task = task::spawn(handle_ncat(
@@ -155,10 +153,8 @@ mod tests {
     async fn test_ncat_send_udp() -> anyhow::Result<()> {
         let expected_response = String::from("Hello world!");
 
-        let (test_port, listen_task) = setup_test_listener(
-            String::from("127.0.0.1"),
-            String::from("udp"),
-        ).await?;
+        let (test_port, listen_task) =
+            setup_test_listener(String::from("127.0.0.1"), String::from("udp")).await?;
 
         // Setup a sender
         let send_task = task::spawn(handle_ncat(

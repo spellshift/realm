@@ -145,7 +145,7 @@ impl CryptoLibrary for StdCryptoLibrary {
                 process(&mut |chunk| hasher.update(chunk))?;
                 Ok(format!("{:02x}", hasher.finalize()))
             }
-            _ => Err(format!("Unknown algorithm: {}", algo)),
+            _ => Err(format!("Unknown algorithm: {algo}")),
         }
     }
 }
@@ -242,7 +242,7 @@ mod tests {
         let lorem_hash_sha512 = "8ba760cac29cb2b2ce66858ead169174057aa1298ccd581514e6db6dee3285280ee6e3a54c9319071dc8165ff061d77783100d449c937ff1fb4cd1bb516a69b9";
 
         let mut tmp_file = NamedTempFile::new().expect("failed to create temp file");
-        write!(tmp_file, "{}", lorem).expect("failed to write to temp file");
+        write!(tmp_file, "{lorem}").expect("failed to write to temp file");
         let path = String::from(tmp_file.path().to_str().unwrap());
 
         assert_eq!(

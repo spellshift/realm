@@ -17,30 +17,28 @@ mod tests {
     #[test]
     fn test_assert_no_args() {
         let res = run_code("assert()");
-        // assert is likely not a function but a keyword or statement.
-        // If it's a statement `assert <expr>`, then `assert()` might be parsed as function call `assert()`?
-        // If `assert` is a keyword, `assert()` is syntax error or `assert` statement with `()` tuple?
-        // Let's assume it was intended to be tested as a builtin function if it exists as such.
-        // If it is a keyword, then `assert()` is `assert ()` which asserts the empty tuple (truthy?).
-        // Wait, `builtins/assert.rs` exists. `builtin_assert`.
-        // So it IS a builtin function named `assert`?
-        // Or is it used to implement the keyword?
-        // If I run `dir(__builtins__)` I would see it.
-        // Assuming it's exposed as `assert`, checking for error.
-        let res = run_code("assert()");
-        assert!(res.is_err(), "assert() without args should error, not panic");
+        assert!(
+            res.is_err(),
+            "assert() without args should error, not panic"
+        );
     }
 
     #[test]
     fn test_assert_eq_no_args() {
         let res = run_code("assert_eq()");
-        assert!(res.is_err(), "assert_eq() without args should error, not panic");
+        assert!(
+            res.is_err(),
+            "assert_eq() without args should error, not panic"
+        );
     }
 
     #[test]
     fn test_assert_eq_one_arg() {
         let res = run_code("assert_eq(1)");
-        assert!(res.is_err(), "assert_eq() with one arg should error, not panic");
+        assert!(
+            res.is_err(),
+            "assert_eq() with one arg should error, not panic"
+        );
     }
 
     #[test]

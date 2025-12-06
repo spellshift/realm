@@ -1,7 +1,7 @@
-use anyhow::Result;
-use alloc::string::{String, ToString};
-use alloc::format;
 use crate::std::Session;
+use alloc::format;
+use alloc::string::{String, ToString};
+use anyhow::Result;
 
 #[allow(clippy::too_many_arguments)]
 async fn handle_ssh_copy(
@@ -22,7 +22,7 @@ async fn handle_ssh_copy(
             password,
             key,
             key_password,
-            format!("{}:{}", target, port),
+            format!("{target}:{port}"),
         ),
     )
     .await??;
@@ -64,7 +64,7 @@ pub fn ssh_copy(
     )) {
         Ok(local_res) => local_res,
         Err(local_err) => {
-            return Ok(format!("Failed to run handle_ssh_copy: {}", local_err));
+            return Ok(format!("Failed to run handle_ssh_copy: {local_err}"));
         }
     };
 

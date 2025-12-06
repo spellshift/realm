@@ -1,8 +1,9 @@
+#[cfg(feature = "fake_bindings")]
 #[cfg(test)]
 mod tests {
+    use eldritch_core::Value;
     use eldritchv2::Interpreter;
     use eldritchv2::agent::fake::AgentFake;
-    use eldritch_core::Value;
     use std::sync::Arc;
 
     // Helper to create a fully loaded interpreter using the facade
@@ -17,20 +18,23 @@ mod tests {
 
     fn check_bindings(module: &str, expected: &[&str]) {
         let mut interp = create_interp();
-        let code = format!("dir({})", module);
+        let code = format!("dir({module})");
         let val = interp.interpret(&code).unwrap();
 
         if let Value::List(l) = val {
             let list = l.read();
-            let mut actual: Vec<String> = list.iter().map(|v| v.to_string().replace("\"", "")).collect();
+            let mut actual: Vec<String> = list
+                .iter()
+                .map(|v| v.to_string().replace("\"", ""))
+                .collect();
             actual.sort();
 
             let mut expected_sorted: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
             expected_sorted.sort();
 
-            assert_eq!(actual, expected_sorted, "Mismatch for module {}", module);
+            assert_eq!(actual, expected_sorted, "Mismatch for module {module}");
         } else {
-            panic!("Expected list for dir({})", module);
+            panic!("Expected list for dir({module})");
         }
     }
 
@@ -39,19 +43,35 @@ mod tests {
         check_bindings(
             "file",
             &[
-                "append", "compress", "copy", "decompress", "exists", "find", "follow", "is_dir",
-                "is_file", "list", "mkdir", "move", "parent_dir", "read", "read_binary",
-                "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write",
+                "append",
+                "compress",
+                "copy",
+                "decompress",
+                "exists",
+                "find",
+                "follow",
+                "is_dir",
+                "is_file",
+                "list",
+                "mkdir",
+                "move",
+                "parent_dir",
+                "read",
+                "read_binary",
+                "remove",
+                "replace",
+                "replace_all",
+                "temp_file",
+                "template",
+                "timestomp",
+                "write",
             ],
         );
     }
 
     #[test]
     fn test_process_bindings() {
-        check_bindings(
-            "process",
-            &["info", "kill", "list", "name", "netstat"],
-        );
+        check_bindings("process", &["info", "kill", "list", "name", "netstat"]);
     }
 
     #[test]
@@ -59,9 +79,24 @@ mod tests {
         check_bindings(
             "sys",
             &[
-                "dll_inject", "dll_reflect", "exec", "get_env", "get_ip", "get_os", "get_pid",
-                "get_reg", "get_user", "hostname", "is_bsd", "is_linux", "is_macos", "is_windows",
-                "shell", "write_reg_hex", "write_reg_int", "write_reg_str",
+                "dll_inject",
+                "dll_reflect",
+                "exec",
+                "get_env",
+                "get_ip",
+                "get_os",
+                "get_pid",
+                "get_reg",
+                "get_user",
+                "hostname",
+                "is_bsd",
+                "is_linux",
+                "is_macos",
+                "is_windows",
+                "shell",
+                "write_reg_hex",
+                "write_reg_int",
+                "write_reg_str",
             ],
         );
     }
@@ -71,18 +106,23 @@ mod tests {
         check_bindings(
             "pivot",
             &[
-                "arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "reverse_shell_pty", "reverse_shell_repl",
-                "smb_exec", "ssh_copy", "ssh_exec",
+                "arp_scan",
+                "bind_proxy",
+                "ncat",
+                "port_forward",
+                "port_scan",
+                "reverse_shell_pty",
+                "reverse_shell_repl",
+                "smb_exec",
+                "ssh_copy",
+                "ssh_exec",
             ],
         );
     }
 
     #[test]
     fn test_assets_bindings() {
-        check_bindings(
-            "assets",
-            &["copy", "list", "read", "read_binary"],
-        );
+        check_bindings("assets", &["copy", "list", "read", "read_binary"]);
     }
 
     #[test]
@@ -103,10 +143,7 @@ mod tests {
 
     #[test]
     fn test_random_bindings() {
-        check_bindings(
-            "random",
-            &["bool", "bytes", "int", "string", "uuid"],
-        );
+        check_bindings("random", &["bool", "bytes", "int", "string", "uuid"]);
     }
 
     #[test]
@@ -119,18 +156,12 @@ mod tests {
 
     #[test]
     fn test_regex_bindings() {
-        check_bindings(
-            "regex",
-            &["match", "match_all", "replace", "replace_all"],
-        );
+        check_bindings("regex", &["match", "match_all", "replace", "replace_all"]);
     }
 
     #[test]
     fn test_http_bindings() {
-        check_bindings(
-            "http",
-            &["download", "get", "post"],
-        );
+        check_bindings("http", &["download", "get", "post"]);
     }
 
     #[test]
@@ -138,10 +169,26 @@ mod tests {
         check_bindings(
             "agent",
             &[
-                "add_transport", "claim_tasks", "fetch_asset", "get_callback_interval", "get_config",
-                "get_id", "get_platform", "get_transport", "kill", "list_tasks", "list_transports",
-                "report_credential", "report_file", "report_process_list", "report_task_output",
-                "reverse_shell", "set_callback_interval", "set_config", "set_transport", "sleep",
+                "add_transport",
+                "claim_tasks",
+                "fetch_asset",
+                "get_callback_interval",
+                "get_config",
+                "get_id",
+                "get_platform",
+                "get_transport",
+                "kill",
+                "list_tasks",
+                "list_transports",
+                "report_credential",
+                "report_file",
+                "report_process_list",
+                "report_task_output",
+                "reverse_shell",
+                "set_callback_interval",
+                "set_config",
+                "set_transport",
+                "sleep",
                 "stop_task",
             ],
         );

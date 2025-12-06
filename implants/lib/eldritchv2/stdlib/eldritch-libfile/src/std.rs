@@ -359,9 +359,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     }
 
     // Absolute Path
-    let abs_path = path
-        .canonicalize()
-        .unwrap_or_else(|_| path.to_path_buf());
+    let abs_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
     dict.insert(
         "absolute_path".to_string(),
         Value::String(abs_path.to_string_lossy().to_string()),
@@ -680,7 +678,7 @@ mod tests {
 
         // Check absolute_path
         if let Value::String(abs) = &f["absolute_path"] {
-            assert!(abs.len() > 0);
+            assert!(!abs.is_empty());
             assert!(std::path::Path::new(abs).is_absolute());
         } else {
             panic!("absolute_path is not a string");

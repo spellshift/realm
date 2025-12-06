@@ -101,7 +101,6 @@ mod tests {
     use super::*;
     use alloc::string::ToString;
     use eldritch_libagent::fake::AgentFake;
-    use tempfile::NamedTempFile;
 
     #[test]
     fn test_assets_read_binary_fail() {

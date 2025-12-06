@@ -1,16 +1,16 @@
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use anyhow::{Context, Result};
 use async_recursion::async_recursion;
-use alloc::collections::BTreeMap;
 use eldritch_core::Value;
 use std::net::Ipv4Addr;
+use std::sync::Arc;
 use tokio::net::{TcpStream, UdpSocket};
+use tokio::sync::Semaphore;
 use tokio::task;
 use tokio::time::{sleep, Duration};
-use alloc::vec::Vec;
-use alloc::string::{String, ToString};
-use alloc::format;
-use std::sync::Arc;
-use tokio::sync::Semaphore;
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
@@ -77,10 +77,10 @@ fn get_network_and_broadcast(target_cidr: String) -> Result<(Vec<u32>, Vec<u32>)
     let cidr: u64 = bits as u64;
 
     let (octet_one, octet_two, octet_three, octet_four) = scanf!(host, ".", u64, u64, u64, u64);
-    addr[3] = octet_four.context(format!("Failed to extract fourth octet {}", host))?;
-    addr[2] = octet_three.context(format!("Failed to extract third octet {}", host))?;
-    addr[1] = octet_two.context(format!("Failed to extract second octet {}", host))?;
-    addr[0] = octet_one.context(format!("Failed to extract first octet {}", host))?;
+    addr[3] = octet_four.context(format!("Failed to extract fourth octet {host}"))?;
+    addr[2] = octet_three.context(format!("Failed to extract third octet {host}"))?;
+    addr[1] = octet_two.context(format!("Failed to extract second octet {host}"))?;
+    addr[0] = octet_one.context(format!("Failed to extract first octet {host}"))?;
 
     // Calculate netmask store as vector.
     let v: Vec<u64> = vec![24, 16, 8, 0];
@@ -163,7 +163,7 @@ async fn tcp_connect_scan_socket(
                     Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 _ => {
-                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err))
+                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{err}"))
                 },
 
             }
@@ -209,7 +209,7 @@ async fn udp_scan_socket(
                     Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 _ => {
-                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err))
+                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{err}"))
                 },
             }
         }
@@ -367,7 +367,7 @@ async fn handle_port_scan(
             Ok(res) => {
                 result.push(res);
             }
-            Err(err) => return Err(anyhow::anyhow!("Async task await failed:\n{}", err)),
+            Err(err) => return Err(anyhow::anyhow!("Async task await failed:\n{err}")),
         };
     }
     Ok(result)
@@ -396,7 +396,13 @@ pub fn port_scan(
         .build()?;
 
     let limit = fd_limit.unwrap_or(64) as usize;
-    let response = runtime.block_on(handle_port_scan(target_cidrs, ports, protocol, timeout, limit));
+    let response = runtime.block_on(handle_port_scan(
+        target_cidrs,
+        ports,
+        protocol,
+        timeout,
+        limit,
+    ));
 
     match response {
         Ok(results) => {
@@ -413,7 +419,7 @@ pub fn port_scan(
 
             Ok(final_res)
         }
-        Err(err) => Err(anyhow::anyhow!("The port_scan command failed: {:?}", err)),
+        Err(err) => Err(anyhow::anyhow!("The port_scan command failed: {err:?}")),
     }
 }
 
@@ -587,12 +593,11 @@ mod tests {
                 Ok(res_inner) => res_inner,
                 Err(inner_error) => {
                     return Err(anyhow::anyhow!(
-                        "error unwrapping scan result\n{}",
-                        inner_error
+                        "error unwrapping scan result\n{inner_error}"
                     ))
                 }
             },
-            Err(error) => return Err(anyhow::anyhow!("error unwrapping async result\n{}", error)),
+            Err(error) => return Err(anyhow::anyhow!("error unwrapping async result\n{error}")),
         };
 
         let host = "127.0.0.1".to_string();

@@ -1,10 +1,9 @@
-
-use eldritch_core::Value;
+use super::AgentLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
-use super::AgentLibrary;
 
 #[cfg(feature = "stdlib")]
 use super::conversion::*;
@@ -120,11 +119,11 @@ pub use self::inner_fake::AgentFake;
 #[cfg(all(feature = "stdlib", feature = "fake_bindings"))]
 mod inner_fake {
     use super::super::agent::Agent;
-    use pb::c2;
-    use std::sync::{Arc, Mutex};
     use alloc::collections::BTreeMap;
     use alloc::string::{String, ToString};
     use alloc::vec::Vec;
+    use pb::c2;
+    use std::sync::{Arc, Mutex};
 
     #[derive(Default, Debug)]
     pub struct AgentFakeState {
@@ -183,28 +182,44 @@ mod inner_fake {
     impl Agent for AgentFake {
         fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
             let state = self.state.lock().unwrap();
-            state.assets.get(&req.name).cloned().ok_or_else(|| "Asset not found".to_string())
+            state
+                .assets
+                .get(&req.name)
+                .cloned()
+                .ok_or_else(|| "Asset not found".to_string())
         }
 
-        fn report_credential(&self, req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse, String> {
+        fn report_credential(
+            &self,
+            req: c2::ReportCredentialRequest,
+        ) -> Result<c2::ReportCredentialResponse, String> {
             let mut state = self.state.lock().unwrap();
             state.credentials.push(req);
             Ok(c2::ReportCredentialResponse {})
         }
 
-        fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+        fn report_file(
+            &self,
+            req: c2::ReportFileRequest,
+        ) -> Result<c2::ReportFileResponse, String> {
             let mut state = self.state.lock().unwrap();
             state.files.push(req);
             Ok(c2::ReportFileResponse {})
         }
 
-        fn report_process_list(&self, req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String> {
+        fn report_process_list(
+            &self,
+            req: c2::ReportProcessListRequest,
+        ) -> Result<c2::ReportProcessListResponse, String> {
             let mut state = self.state.lock().unwrap();
             state.processes.push(req);
             Ok(c2::ReportProcessListResponse {})
         }
 
-        fn report_task_output(&self, req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse, String> {
+        fn report_task_output(
+            &self,
+            req: c2::ReportTaskOutputRequest,
+        ) -> Result<c2::ReportTaskOutputResponse, String> {
             let mut state = self.state.lock().unwrap();
             state.task_outputs.push(req);
             Ok(c2::ReportTaskOutputResponse {})
@@ -228,7 +243,10 @@ mod inner_fake {
             Ok(())
         }
 
-        fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+        fn claim_tasks(
+            &self,
+            _req: c2::ClaimTasksRequest,
+        ) -> Result<c2::ClaimTasksResponse, String> {
             let mut state = self.state.lock().unwrap();
             // Move all pending tasks to the response
             let tasks = state.tasks.drain(..).collect();
@@ -238,13 +256,18 @@ mod inner_fake {
         fn get_transport(&self) -> Result<String, String> {
             // Default or first? Let's say "http" if not set, or we can check keys
             let state = self.state.lock().unwrap();
-             // Just return a dummy or first key
-            state.transports.keys().next().cloned().ok_or_else(|| "No transports".to_string())
+            // Just return a dummy or first key
+            state
+                .transports
+                .keys()
+                .next()
+                .cloned()
+                .ok_or_else(|| "No transports".to_string())
         }
 
         fn set_transport(&self, _transport: String) -> Result<(), String> {
-             // For now just ensure it exists? or set current?
-             Ok(())
+            // For now just ensure it exists? or set current?
+            Ok(())
         }
 
         fn add_transport(&self, transport: String, config: String) -> Result<(), String> {
@@ -275,9 +298,9 @@ mod inner_fake {
         }
 
         fn stop_task(&self, task_id: i64) -> Result<(), String> {
-             let mut state = self.state.lock().unwrap();
-             state.tasks.retain(|t| t.id != task_id);
-             Ok(())
+            let mut state = self.state.lock().unwrap();
+            state.tasks.retain(|t| t.id != task_id);
+            Ok(())
         }
     }
 }
@@ -288,17 +311,17 @@ mod tests {
 
     #[test]
     fn test_agent_fake() {
-        let agent = AgentLibraryFake::default();
+        let agent = AgentLibraryFake;
         assert_eq!(agent.get_id().unwrap(), "fake-agent-uuid");
     }
 
     #[cfg(feature = "stdlib")]
     #[test]
     fn test_agent_fake_impl() {
+        use super::super::agent::Agent;
+        use super::inner_fake::AgentFake;
         use pb::c2;
         use pb::eldritch::Credential;
-        use super::inner_fake::AgentFake;
-        use super::super::agent::Agent;
 
         let agent = AgentFake::new();
 

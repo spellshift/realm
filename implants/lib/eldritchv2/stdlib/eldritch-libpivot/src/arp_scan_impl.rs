@@ -1,7 +1,7 @@
 #[cfg(not(target_os = "windows"))]
 use {
-    alloc::string::ToString,
     alloc::collections::BTreeMap,
+    alloc::string::ToString,
     eldritch_core::Value,
     ipnetwork::{IpNetwork, Ipv4Network},
     pnet::{
@@ -20,9 +20,9 @@ use {
     std::time::{Duration, SystemTime},
 };
 
-use anyhow::{anyhow, Result};
 use alloc::string::String;
 use alloc::vec::Vec;
+use anyhow::{anyhow, Result};
 
 #[cfg(not(target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq)]
@@ -47,13 +47,13 @@ fn start_listener(
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => return Err(anyhow!("Unhandled channel type")),
         Err(e) => {
-            return Err(anyhow!("Error creating channel: {}", e));
+            return Err(anyhow!("Error creating channel: {e}"));
         }
     };
     let ips = match data.lock() {
         Ok(lock) => lock.keys().cloned().collect::<Vec<Ipv4Addr>>(),
         Err(err) => {
-            return Err(anyhow!("Failed to get lock on ips: {}", err));
+            return Err(anyhow!("Failed to get lock on ips: {err}"));
         }
     };
     for ip in ips {
@@ -143,10 +143,10 @@ fn start_listener(
                                     });
                                     break;
                                 }
-                                return Err(anyhow!("Failed to find {} in HashMap", ip));
+                                return Err(anyhow!("Failed to find {ip} in HashMap"));
                             }
                             Err(err) => {
-                                return Err(anyhow!("Failed to get lock on data: {}", err));
+                                return Err(anyhow!("Failed to get lock on data: {err}"));
                             }
                         }
                     }
@@ -155,7 +155,7 @@ fn start_listener(
                     if e.kind() == std::io::ErrorKind::TimedOut {
                         continue;
                     }
-                    return Err(anyhow!("Error receiving packet: {}", e));
+                    return Err(anyhow!("Error receiving packet: {e}"));
                 }
             }
         }
@@ -176,24 +176,24 @@ pub fn handle_arp_scan(
         .map(|cidr| {
             let (addr, prefix) = cidr.split_at(
                 cidr.find('/')
-                    .context(format!("Failed to find / in Network {}", cidr))?,
+                    .context(format!("Failed to find / in Network {cidr}"))?,
             );
             let addr = match Ipv4Addr::from_str(addr) {
                 Ok(addr) => addr,
                 Err(_) => {
-                    return Err(anyhow::anyhow!("Invalid IPv4 address: {}", addr));
+                    return Err(anyhow::anyhow!("Invalid IPv4 address: {addr}"));
                 }
             };
             let prefix: u8 = match prefix[1..].parse() {
                 Ok(prefix) => prefix,
                 Err(_) => {
-                    return Err(anyhow::anyhow!("Invalid CIDR prefix: {}", prefix));
+                    return Err(anyhow::anyhow!("Invalid CIDR prefix: {prefix}"));
                 }
             };
             let network = match Ipv4Network::new(addr, prefix) {
                 Ok(network) => network,
                 Err(_) => {
-                    return Err(anyhow::anyhow!("Invalid CIDR: {}", cidr));
+                    return Err(anyhow::anyhow!("Invalid CIDR: {cidr}"));
                 }
             };
             Ok(network)
@@ -205,7 +205,7 @@ pub fn handle_arp_scan(
                 Ok(mut listener_lock) => {
                     listener_lock.insert(ip, None);
                 }
-                Err(err) => return Err(anyhow::anyhow!("Failed to get lock on IP List: {}", err)),
+                Err(err) => return Err(anyhow::anyhow!("Failed to get lock on IP List: {err}")),
             }
         }
     }
@@ -233,7 +233,7 @@ pub fn handle_arp_scan(
     }
     let out = listener_out
         .lock()
-        .map_err(|err| anyhow::anyhow!("Failed to get final lock when returning results: {}", err))?
+        .map_err(|err| anyhow::anyhow!("Failed to get final lock when returning results: {err}"))?
         .clone();
     Ok(out)
 }

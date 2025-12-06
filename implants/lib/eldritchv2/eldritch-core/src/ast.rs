@@ -109,7 +109,7 @@ impl fmt::Debug for Value {
                         b'\\' => write!(f, "\\\\")?,
                         b'"' => write!(f, "\\\"")?,
                         0x20..=0x7E => write!(f, "{}", *byte as char)?,
-                        _ => write!(f, "\\x{:02x}", byte)?,
+                        _ => write!(f, "\\x{byte:02x}")?,
                     }
                 }
                 write!(f, "\"")
@@ -311,7 +311,7 @@ impl fmt::Display for Value {
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
             Value::Int(i) => write!(f, "{i}"),
             Value::Float(fl) => write!(f, "{fl:?}"), // Use Debug for floats to get decent formatting (1.0 etc)
-            Value::String(s) => write!(f, "{s}"), // Strings print without quotes in str()
+            Value::String(s) => write!(f, "{s}"),    // Strings print without quotes in str()
             Value::Bytes(b) => write!(f, "{:?}", Value::Bytes(b.clone())), // Delegate to Debug for bytes representation
             Value::List(l) => {
                 // Containers use repr (Debug) for their elements

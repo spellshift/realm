@@ -473,12 +473,7 @@ fn call_function(
                                 Value::String(s) => {
                                     kw_args_val.insert(s.clone(), v.clone());
                                 }
-                                _ => {
-                                    return runtime_error(
-                                        expr.span,
-                                        "Keywords must be strings",
-                                    )
-                                }
+                                _ => return runtime_error(expr.span, "Keywords must be strings"),
                             }
                         }
                     }
@@ -541,10 +536,7 @@ fn call_function(
                                     .insert(param_name.clone(), pos_args_val[pos_idx].clone());
                                 pos_idx += 1;
                             } else if let Some(val) = kw_args_val.remove(&param_name) {
-                                function_env
-                                    .write()
-                                    .values
-                                    .insert(param_name.clone(), val);
+                                function_env.write().values.insert(param_name.clone(), val);
                             } else {
                                 return runtime_error(
                                     span,
@@ -560,10 +552,7 @@ fn call_function(
                                     .insert(param_name.clone(), pos_args_val[pos_idx].clone());
                                 pos_idx += 1;
                             } else if let Some(val) = kw_args_val.remove(&param_name) {
-                                function_env
-                                    .write()
-                                    .values
-                                    .insert(param_name.clone(), val);
+                                function_env.write().values.insert(param_name.clone(), val);
                             } else {
                                 function_env
                                     .write()
@@ -753,7 +742,12 @@ fn builtin_sorted(
                     )
                 }
             },
-            _ => return runtime_error(span, "sorted() does not support *args or **kwargs unpacking"),
+            _ => {
+                return runtime_error(
+                    span,
+                    "sorted() does not support *args or **kwargs unpacking",
+                )
+            }
         }
     }
 
@@ -868,11 +862,7 @@ pub(crate) fn to_iterable(
         Value::List(l) => Ok(l.read().clone()),
         Value::Tuple(t) => Ok(t.clone()),
         Value::Set(s) => Ok(s.read().iter().cloned().collect()),
-        Value::Dictionary(d) => Ok(d
-            .read()
-            .keys()
-            .cloned()
-            .collect()),
+        Value::Dictionary(d) => Ok(d.read().keys().cloned().collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
         _ => runtime_error(
             span,
@@ -986,14 +976,16 @@ fn apply_binary_op(
             | TokenKind::SlashSlash
             | TokenKind::Percent
     ) {
-         // Some specific type combinations need special handling, but generic arithmetic is in helper.
-         // Wait, string concatenation is + but logic is in apply_binary_op?
-         // Let's check which are generic.
+        // Some specific type combinations need special handling, but generic arithmetic is in helper.
+        // Wait, string concatenation is + but logic is in apply_binary_op?
+        // Let's check which are generic.
 
-         // Only numbers are fully handled in apply_arithmetic_op
-         if (matches!(a, Value::Int(_) | Value::Float(_)) && matches!(b, Value::Int(_) | Value::Float(_))) {
-             return apply_arithmetic_op(interp, &a, op, &b, span);
-         }
+        // Only numbers are fully handled in apply_arithmetic_op
+        if (matches!(a, Value::Int(_) | Value::Float(_))
+            && matches!(b, Value::Int(_) | Value::Float(_)))
+        {
+            return apply_arithmetic_op(interp, &a, op, &b, span);
+        }
     }
 
     // Comparisons
@@ -1006,19 +998,19 @@ fn apply_binary_op(
             | TokenKind::LtEq
             | TokenKind::GtEq
     ) {
-         // Sequence comparison is special (recursive).
-         // Numbers and Mixed are handled in helper.
-         match (&a, &b) {
-             (Value::List(la), Value::List(lb)) => {
-                 let list_a = la.read();
-                 let list_b = lb.read();
-                 return compare_sequences(&list_a, &list_b, op.clone(), span);
-             }
-             (Value::Tuple(ta), Value::Tuple(tb)) => {
-                 return compare_sequences(ta, tb, op.clone(), span);
-             }
-             _ => return apply_comparison_op(&a, op, &b, span),
-         }
+        // Sequence comparison is special (recursive).
+        // Numbers and Mixed are handled in helper.
+        match (&a, &b) {
+            (Value::List(la), Value::List(lb)) => {
+                let list_a = la.read();
+                let list_b = lb.read();
+                return compare_sequences(&list_a, &list_b, op.clone(), span);
+            }
+            (Value::Tuple(ta), Value::Tuple(tb)) => {
+                return compare_sequences(ta, tb, op.clone(), span);
+            }
+            _ => return apply_comparison_op(&a, op, &b, span),
+        }
     }
 
     // Bitwise
@@ -1234,7 +1226,7 @@ fn string_modulo_format(
                 chars.next(); // Consume specifier
 
                 if val_idx >= vals.len() {
-                     return runtime_error(span, "not enough arguments for format string");
+                    return runtime_error(span, "not enough arguments for format string");
                 }
                 let v = &vals[val_idx];
                 val_idx += 1;
@@ -1245,46 +1237,47 @@ fn string_modulo_format(
                     }
                     'd' | 'i' | 'u' => {
                         let i_val = to_int_or_error(v, next, span)?;
-                        let _ = write!(result, "{}", i_val);
+                        let _ = write!(result, "{i_val}");
                     }
                     'o' => {
                         let i_val = to_int_or_error(v, next, span)?;
-                        let _ = write!(result, "{:o}", i_val);
+                        let _ = write!(result, "{i_val:o}");
                     }
                     'x' => {
                         let i_val = to_int_or_error(v, next, span)?;
-                        let _ = write!(result, "{:x}", i_val);
+                        let _ = write!(result, "{i_val:x}");
                     }
                     'X' => {
                         let i_val = to_int_or_error(v, next, span)?;
-                        let _ = write!(result, "{:X}", i_val);
+                        let _ = write!(result, "{i_val:X}");
                     }
                     'e' => {
                         let f_val = to_float_or_error(v, next, span)?;
-                        let _ = write!(result, "{:e}", f_val);
+                        let _ = write!(result, "{f_val:e}");
                     }
                     'E' => {
                         let f_val = to_float_or_error(v, next, span)?;
-                        let _ = write!(result, "{:E}", f_val);
+                        let _ = write!(result, "{f_val:E}");
                     }
                     'f' | 'F' => {
-                         let f_val = to_float_or_error(v, next, span)?;
-                         let _ = write!(result, "{:.6}", f_val);
+                        let f_val = to_float_or_error(v, next, span)?;
+                        let _ = write!(result, "{f_val:.6}",);
                     }
                     'g' | 'G' => {
-                         let f_val = to_float_or_error(v, next, span)?;
-                         let _ = write!(result, "{:?}", f_val);
+                        let f_val = to_float_or_error(v, next, span)?;
+                        let _ = write!(result, "{f_val:?}");
                     }
-                    'r' => {
-                        match v {
-                            Value::String(s) => {
-                                 let _ = write!(result, "\"{}\"", s);
-                            },
-                            _ => result.push_str(&v.to_string()),
+                    'r' => match v {
+                        Value::String(s) => {
+                            let _ = write!(result, "\"{s}\"");
                         }
-                    }
+                        _ => result.push_str(&v.to_string()),
+                    },
                     _ => {
-                        return runtime_error(span, &format!("Unsupported format specifier: %{next}"));
+                        return runtime_error(
+                            span,
+                            &format!("Unsupported format specifier: %{next}"),
+                        );
                     }
                 }
             } else {
@@ -1314,12 +1307,12 @@ fn to_int_or_error(v: &Value, spec: char, span: Span) -> Result<i64, EldritchErr
                 spec,
                 get_type_name(v)
             ),
-        )
+        ),
     }
 }
 
 fn to_float_or_error(v: &Value, spec: char, span: Span) -> Result<f64, EldritchError> {
-     match v {
+    match v {
         Value::Int(i) => Ok(*i as f64),
         Value::Float(f) => Ok(*f),
         Value::Bool(b) => Ok(if *b { 1.0 } else { 0.0 }),
@@ -1330,7 +1323,7 @@ fn to_float_or_error(v: &Value, spec: char, span: Span) -> Result<f64, EldritchE
                 spec,
                 get_type_name(v)
             ),
-        )
+        ),
     }
 }
 
@@ -1361,23 +1354,28 @@ fn compare_sequences(
                 TokenKind::NotEq => Ok(Value::Bool(true)),
                 TokenKind::Lt => {
                     // Check if a < b
-                    Ok(Value::Bool(super::operations::compare_values(val_a, val_b).is_ok_and(
-                        |ord| matches!(ord, core::cmp::Ordering::Less),
-                    )))
+                    Ok(Value::Bool(
+                        super::operations::compare_values(val_a, val_b)
+                            .is_ok_and(|ord| matches!(ord, core::cmp::Ordering::Less)),
+                    ))
                 }
-                TokenKind::Gt => Ok(Value::Bool(super::operations::compare_values(val_a, val_b).is_ok_and(
-                    |ord| matches!(ord, core::cmp::Ordering::Greater),
-                ))),
-                TokenKind::LtEq => Ok(Value::Bool(super::operations::compare_values(val_a, val_b)
-                    .is_ok_and(|ord| matches!(
-                        ord,
-                        core::cmp::Ordering::Less | core::cmp::Ordering::Equal
-                    )))),
-                TokenKind::GtEq => Ok(Value::Bool(super::operations::compare_values(val_a, val_b)
-                    .is_ok_and(|ord| matches!(
-                        ord,
-                        core::cmp::Ordering::Greater | core::cmp::Ordering::Equal
-                    )))),
+                TokenKind::Gt => Ok(Value::Bool(
+                    super::operations::compare_values(val_a, val_b)
+                        .is_ok_and(|ord| matches!(ord, core::cmp::Ordering::Greater)),
+                )),
+                TokenKind::LtEq => Ok(Value::Bool(
+                    super::operations::compare_values(val_a, val_b).is_ok_and(|ord| {
+                        matches!(ord, core::cmp::Ordering::Less | core::cmp::Ordering::Equal)
+                    }),
+                )),
+                TokenKind::GtEq => Ok(Value::Bool(
+                    super::operations::compare_values(val_a, val_b).is_ok_and(|ord| {
+                        matches!(
+                            ord,
+                            core::cmp::Ordering::Greater | core::cmp::Ordering::Equal
+                        )
+                    }),
+                )),
                 _ => runtime_error(span, "Invalid comparison operator for sequences"),
             };
         }

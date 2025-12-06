@@ -1,12 +1,12 @@
 use crate::{std::StdPivotLibrary, PivotLibrary};
-use eldritch_core::Value;
 use eldritch_libagent::agent::Agent;
 use pb::c2;
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 // Mock Agent
 struct MockAgent {
+    // TODO: Determine if this can be simplified
+    #[allow(clippy::type_complexity)]
     start_calls: Arc<Mutex<Vec<(i64, Option<String>)>>>,
 }
 
@@ -79,6 +79,7 @@ impl Agent for MockAgent {
     }
 
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
+        let _ = task_id;
         Ok(())
     }
 }
