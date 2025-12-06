@@ -2,8 +2,7 @@ extern crate alloc;
 
 use anyhow::Result;
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::time::sleep;
+use std::time::{Duration, Instant};
 
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
@@ -47,6 +46,8 @@ async fn main() -> Result<()> {
     ));
 
     loop {
+        let start = Instant::now();
+
         // Refresh IP
         agent.refresh_ip().await;
 
@@ -88,6 +89,16 @@ async fn main() -> Result<()> {
         }
 
         let interval = agent.get_callback_interval_u64();
-        sleep(Duration::from_secs(interval)).await;
+        let delay = match interval.checked_sub(start.elapsed().as_secs()) {
+            Some(secs) => Duration::from_secs(secs),
+            None => Duration::from_secs(0),
+        };
+        #[cfg(debug_assertions)]
+        log::info!(
+            "callback complete (duration={}s, sleep={}s)",
+            start.elapsed().as_secs(),
+            delay.as_secs()
+        );
+        std::thread::sleep(delay);
     }
 }
