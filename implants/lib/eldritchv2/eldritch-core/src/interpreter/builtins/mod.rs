@@ -33,7 +33,6 @@ mod min;
 mod repr;
 mod reversed;
 mod set;
-mod sorted;
 mod tuple;
 mod zip;
 
@@ -69,7 +68,6 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("repr", repr::builtin_repr as BuiltinFn),
         ("reversed", reversed::builtin_reversed as BuiltinFn),
         ("set", set::builtin_set as BuiltinFn),
-        ("sorted", sorted::builtin_sorted as BuiltinFn),
         ("tuple", tuple::builtin_tuple as BuiltinFn),
         ("zip", zip::builtin_zip as BuiltinFn),
     ]
@@ -93,5 +91,6 @@ pub fn get_stubs() -> Vec<(&'static str, BuiltinFn)> {
         ("map", builtin_stub as BuiltinFn),
         ("filter", builtin_stub as BuiltinFn),
         ("reduce", builtin_stub as BuiltinFn),
+        ("sorted", builtin_stub as BuiltinFn),
     ]
 }
