@@ -269,51 +269,72 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
 
             // Parse input
             let inputs = parser.parse(&msg.data);
-            for input in inputs {
+            let mut pending_render = false;
+
+            for (i, input) in inputs.iter().enumerate() {
                 #[cfg(debug_assertions)]
                 log::info!("Handling input: {input:?}");
-                match repl.handle_input(input) {
-                    ReplAction::Quit => return,
-                    ReplAction::Submit { code, .. } => {
-                        // Move to next line
-                        let _ = stdout.queue(cursor::MoveToNextLine(1));
-                        let _ = stdout.flush();
-
-                        // Execute
-                        match interpreter.interpret(&code) {
-                            Ok(v) => {
-                                if !matches!(v, Value::None) {
-                                    let s = format!("{v:?}\r\n");
-                                    let _ = stdout.write(s.as_bytes());
-                                }
-                            }
-                            Err(e) => {
-                                let s = format!("Error: {e}\r\n");
-                                let _ = stdout.write(s.as_bytes());
-                            }
-                        }
-                        let _ = render(&mut stdout, &repl);
-                    }
-                    ReplAction::AcceptLine { .. } => {
-                        let _ = stdout.queue(cursor::MoveToNextLine(1));
-                        let _ = render(&mut stdout, &repl);
-                    }
+                let action = repl.handle_input(input.clone());
+                match action {
                     ReplAction::Render => {
-                        let _ = render(&mut stdout, &repl);
+                        pending_render = true;
                     }
-                    ReplAction::ClearScreen => {
-                        let _ = stdout.queue(terminal::Clear(terminal::ClearType::All));
-                        let _ = stdout.queue(cursor::MoveTo(0, 0));
-                        let _ = render(&mut stdout, &repl);
+                    other => {
+                        // If we have a pending render from previous inputs, do it now
+                        // before processing a non-render action (like Submit) which relies on visual state.
+                        if pending_render {
+                            let _ = render(&mut stdout, &repl);
+                            pending_render = false;
+                        }
+
+                        match other {
+                            ReplAction::Quit => return,
+                            ReplAction::Submit { code, .. } => {
+                                // Move to next line
+                                let _ = stdout.queue(cursor::MoveToNextLine(1));
+                                let _ = stdout.flush();
+
+                                // Execute
+                                match interpreter.interpret(&code) {
+                                    Ok(v) => {
+                                        if !matches!(v, Value::None) {
+                                            let s = format!("{v:?}\r\n");
+                                            let _ = stdout.write(s.as_bytes());
+                                        }
+                                    }
+                                    Err(e) => {
+                                        let s = format!("Error: {e}\r\n");
+                                        let _ = stdout.write(s.as_bytes());
+                                    }
+                                }
+                                let _ = render(&mut stdout, &repl);
+                            }
+                            ReplAction::AcceptLine { .. } => {
+                                let _ = stdout.queue(cursor::MoveToNextLine(1));
+                                let _ = render(&mut stdout, &repl);
+                            }
+                            ReplAction::ClearScreen => {
+                                let _ = stdout.queue(terminal::Clear(terminal::ClearType::All));
+                                let _ = stdout.queue(cursor::MoveTo(0, 0));
+                                let _ = render(&mut stdout, &repl);
+                            }
+                            ReplAction::Complete => {
+                                let state = repl.get_render_state();
+                                let (start, completions) =
+                                    interpreter.complete(&state.buffer, state.cursor);
+                                repl.set_suggestions(completions, start);
+                                let _ = render(&mut stdout, &repl);
+                            }
+                            ReplAction::None => {}
+                            ReplAction::Render => unreachable!(),
+                        }
                     }
-                    ReplAction::Complete => {
-                        let state = repl.get_render_state();
-                        let (start, completions) =
-                            interpreter.complete(&state.buffer, state.cursor);
-                        repl.set_suggestions(completions, start);
-                        let _ = render(&mut stdout, &repl);
-                    }
-                    ReplAction::None => {}
+                }
+
+                // If this is the last input and we have a pending render, flush it.
+                if i == inputs.len() - 1 && pending_render {
+                    let _ = render(&mut stdout, &repl);
+                    pending_render = false;
                 }
             }
         }
