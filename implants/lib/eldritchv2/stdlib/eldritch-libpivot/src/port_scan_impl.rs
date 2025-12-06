@@ -9,6 +9,8 @@ use tokio::time::{sleep, Duration};
 use alloc::vec::Vec;
 use alloc::string::{String, ToString};
 use alloc::format;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
@@ -333,16 +335,26 @@ async fn handle_port_scan(
     ports: Vec<i32>,
     protocol: String,
     timeout: i32,
+    fd_limit: usize,
 ) -> Result<Vec<(String, i32, String, String)>> {
+    let semaphore = Arc::new(Semaphore::new(fd_limit));
+
     // This vector will hold the handles to our futures so we can retrieve the results when they finish.
     let mut all_scan_futures: Vec<_> = vec![];
     // Iterate over all IP addresses in the CIDR range.
     for target in parse_cidr(target_cidrs)? {
         // Iterate over all listed ports.
         for port in &ports {
+            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let target_clone = target.clone();
+            let protocol_clone = protocol.clone();
+            let port_val = *port;
+
             // Add scanning job to the queue.
-            let scan_with_timeout =
-                handle_port_scan_timeout(target.clone(), *port, protocol.clone(), timeout);
+            let scan_with_timeout = async move {
+                let _permit = permit;
+                handle_port_scan_timeout(target_clone, port_val, protocol_clone, timeout).await
+            };
             all_scan_futures.push(task::spawn(scan_with_timeout));
         }
     }
@@ -373,6 +385,7 @@ pub fn port_scan(
     ports: Vec<i32>,
     protocol: String,
     timeout: i32,
+    fd_limit: Option<i64>,
 ) -> Result<Vec<BTreeMap<String, Value>>> {
     if protocol != TCP && protocol != UDP {
         return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."));
@@ -382,7 +395,8 @@ pub fn port_scan(
         .enable_all()
         .build()?;
 
-    let response = runtime.block_on(handle_port_scan(target_cidrs, ports, protocol, timeout));
+    let limit = fd_limit.unwrap_or(64) as usize;
+    let response = runtime.block_on(handle_port_scan(target_cidrs, ports, protocol, timeout, limit));
 
     match response {
         Ok(results) => {
@@ -549,6 +563,7 @@ mod tests {
             test_ports.clone(),
             String::from(TCP),
             5,
+            64,
         ));
 
         let mut listen_task_iter = listen_tasks.into_iter();
