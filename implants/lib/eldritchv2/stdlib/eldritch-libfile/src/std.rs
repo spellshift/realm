@@ -83,7 +83,7 @@ impl FileLibrary for StdFileLibrary {
         .map_err(|e| format!("Failed to create directory {path}: {e}"))
     }
 
-    fn moveto(&self, src: String, dst: String) -> Result<(), String> {
+    fn move_(&self, src: String, dst: String) -> Result<(), String> {
         fs::rename(&src, &dst).map_err(|e| format!("Failed to move {src} to {dst}: {e}"))
     }
 

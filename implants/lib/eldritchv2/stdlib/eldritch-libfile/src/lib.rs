@@ -42,8 +42,8 @@ pub trait FileLibrary {
     #[eldritch_method]
     fn mkdir(&self, path: String, parent: Option<bool>) -> Result<(), String>;
 
-    #[eldritch_method]
-    fn moveto(&self, src: String, dst: String) -> Result<(), String>;
+    #[eldritch_method("move")]
+    fn move_(&self, src: String, dst: String) -> Result<(), String>;
 
     #[eldritch_method]
     fn parent_dir(&self, path: String) -> Result<String, String>;

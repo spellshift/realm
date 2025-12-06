@@ -40,7 +40,7 @@ mod tests {
             "file",
             &[
                 "append", "compress", "copy", "decompress", "exists", "find", "follow", "is_dir",
-                "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "read_binary",
+                "is_file", "list", "mkdir", "move", "parent_dir", "read", "read_binary",
                 "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write",
             ],
         );
@@ -89,10 +89,7 @@ mod tests {
     fn test_crypto_bindings() {
         check_bindings(
             "crypto",
-            &[
-                "aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json",
-                "hash_file", "is_json", "to_json",
-            ],
+            &["aes_decrypt", "aes_encrypt", "md5", "sha1", "sha256"],
         );
     }
 
@@ -108,7 +105,7 @@ mod tests {
     fn test_random_bindings() {
         check_bindings(
             "random",
-            &["bool", "int", "string"],
+            &["bool", "bytes", "int", "string", "uuid"],
         );
     }
 

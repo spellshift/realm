@@ -218,7 +218,7 @@ impl FileLibrary for FileLibraryFake {
         Err("Parent path not found".to_string())
     }
 
-    fn moveto(&self, src: String, dst: String) -> Result<(), String> {
+    fn move_(&self, src: String, dst: String) -> Result<(), String> {
         self.copy(src.clone(), dst)?;
         self.remove(src)
     }
@@ -334,7 +334,7 @@ impl FileLibrary for FileLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_file_fake() {
