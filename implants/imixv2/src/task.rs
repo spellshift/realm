@@ -131,7 +131,7 @@ impl TaskRegistry {
     pub fn stop(&self, task_id: i64) {
         let mut tasks = self.tasks.lock().unwrap();
         if tasks.remove(&task_id).is_some() {
-            log::info!("Task {} stop requested (thread may persist)", task_id);
+            log::info!("Task {task_id} stop requested (thread may persist)");
         }
     }
 }
