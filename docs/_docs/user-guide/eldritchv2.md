@@ -223,7 +223,7 @@ The `file` module allows interaction with the filesystem.
 *   **`file.mkdir(path: String, parent: Option<Bool>)`**
     Creates a directory. Set `parent` to True to create parent directories as needed.
 
-*   **`file.moveto(src: String, dst: String)`**
+*   **`file.move(src: String, dst: String)`**
     Moves or renames a file.
 
 *   **`file.parent_dir(path: String) -> String`**
