@@ -4,13 +4,9 @@ import { useParams } from "react-router-dom";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
 import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
-import { QuestQueryTopLevel, TaskQueryResponse } from "../../utils/interfacesQuery";
+import { QuestQueryTopLevel, } from "../../utils/interfacesQuery";
 
-interface EditablePageHeaderProps {
-    tasks?: TaskQueryResponse;
-}
-
-export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ tasks }) => {
+export const EditablePageHeader: FC = () => {
     const { questId } = useParams();
 
     const { data } = useQuery<QuestQueryTopLevel>(GET_QUEST_QUERY, {
@@ -22,6 +18,7 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ tasks }) => {
         },
         skip: !questId
     });
+    console.log(data);
 
     const questData = data?.quests?.edges?.[0]?.node;
 
@@ -40,13 +37,13 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ tasks }) => {
         <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-row justify-between w-full items-center">
                 <Breadcrumbs pages={BreadcrumbsList} />
-                {questData && tasks && (
+                {questData && questData.tasks.edges && (
                     <CreateQuestDropdown
                         showLabel={true}
                         name={questData.name}
                         originalParms={questData.parameters || ""}
                         tome={questData.tome}
-                        tasks={tasks}
+                        tasks={questData.tasks}
                     />
                 )}
             </div>

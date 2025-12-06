@@ -61,6 +61,10 @@ const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCu
         ...filterInfo && filterInfo.hasBeaconWith.hasHostWith,
         ...(filterInfo && filterInfo.hasBeaconWith.nameIn) && {"hasBeaconsWith": {"nameIn": filterInfo.hasBeaconWith.nameIn}}
       },
+      "orderBy": [{
+        "field": "LAST_SEEN_AT",
+        "direction": "DESC"
+      }]
     } as any;
 
     if(pagination){

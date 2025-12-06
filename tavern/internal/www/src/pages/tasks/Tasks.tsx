@@ -24,7 +24,7 @@ const Tasks = () => {
 
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
-            <EditablePageHeader tasks={data?.tasks} />
+            <EditablePageHeader />
             <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">{data?.tasks?.edges[0]?.node?.quest?.name || questId}</h3>
                 <div className="flex flex-row justify-end">

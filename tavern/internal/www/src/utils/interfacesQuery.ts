@@ -166,6 +166,7 @@ export interface QuestNode {
     creator: UserNode;
     tome: TomeNode;
     parameters: string | null;
+    tasks: TaskQueryResponse;
     lastUpdatedTask?: LastUpdatedTaskConnection;
     tasksTotal?: TaskCountOnly;
     tasksOutput?: TaskCountOnly;
