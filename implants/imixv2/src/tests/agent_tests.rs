@@ -1,10 +1,9 @@
-
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch_libagent::agent::Agent;
 use pb::config::Config;
-use transport::MockTransport;
 use std::sync::Arc;
+use transport::MockTransport;
 
 #[tokio::test]
 async fn test_start_reverse_shell() {
@@ -16,17 +15,13 @@ async fn test_start_reverse_shell() {
     // Expect clone to be called, and return a mock that expects reverse_shell
     transport.expect_clone().returning(|| {
         let mut t = MockTransport::default();
-        t.expect_reverse_shell()
-         .times(1)
-         .returning(|_, _| Ok(()));
-        t.expect_is_active()
-         .returning(|| true);
+        t.expect_reverse_shell().times(1).returning(|_, _| Ok(()));
+        t.expect_is_active().returning(|| true);
         t
     });
 
     // Expect is_active to be called by get_usable_transport
-    transport.expect_is_active()
-             .returning(|| true);
+    transport.expect_is_active().returning(|| true);
 
     // Handle required for ImixAgent spawning
     let handle = tokio::runtime::Handle::current();
@@ -43,14 +38,19 @@ async fn test_start_reverse_shell() {
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
         agent_clone.start_reverse_shell(12345, Some("echo test".to_string()))
-    }).join().unwrap();
+    })
+    .join()
+    .unwrap();
 
     assert!(result.is_ok(), "start_reverse_shell should succeed");
 
     // Verify subtask is registered
     {
         let subtasks = agent.subtasks.lock().unwrap();
-        assert!(subtasks.contains_key(&12345), "Subtask should be registered");
+        assert!(
+            subtasks.contains_key(&12345),
+            "Subtask should be registered"
+        );
     }
 
     // Test stop_task stops the subtask
@@ -59,6 +59,9 @@ async fn test_start_reverse_shell() {
 
     {
         let subtasks = agent.subtasks.lock().unwrap();
-        assert!(!subtasks.contains_key(&12345), "Subtask should be removed after stop");
+        assert!(
+            !subtasks.contains_key(&12345),
+            "Subtask should be removed after stop"
+        );
     }
 }

@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
-use eldritchv2::{conversion::ToValue, BufferPrinter, Interpreter};
 use eldritch_libagent::agent::Agent;
+use eldritchv2::{conversion::ToValue, BufferPrinter, Interpreter};
 use pb::c2::Task;
 use prost_types::Timestamp;
 

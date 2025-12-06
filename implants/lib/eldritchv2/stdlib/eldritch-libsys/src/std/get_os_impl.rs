@@ -1,6 +1,6 @@
-use anyhow::Result;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
+use anyhow::Result;
 
 #[derive(Debug)]
 struct OsInfo {

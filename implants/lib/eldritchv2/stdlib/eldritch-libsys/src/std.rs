@@ -39,7 +39,8 @@ impl SysLibrary for StdSysLibrary {
         pid: i64,
         function_name: String,
     ) -> Result<(), String> {
-        dll_reflect_impl::dll_reflect(dll_bytes, pid as u32, function_name).map_err(|e| e.to_string())
+        dll_reflect_impl::dll_reflect(dll_bytes, pid as u32, function_name)
+            .map_err(|e| e.to_string())
     }
 
     fn exec(
@@ -65,10 +66,16 @@ impl SysLibrary for StdSysLibrary {
     }
 
     fn get_pid(&self) -> Result<i64, String> {
-        get_pid_impl::get_pid().map(|pid| pid as i64).map_err(|e| e.to_string())
+        get_pid_impl::get_pid()
+            .map(|pid| pid as i64)
+            .map_err(|e| e.to_string())
     }
 
-    fn get_reg(&self, reghive: String, regpath: String) -> Result<BTreeMap<String, String>, String> {
+    fn get_reg(
+        &self,
+        reghive: String,
+        regpath: String,
+    ) -> Result<BTreeMap<String, String>, String> {
         get_reg_impl::get_reg(reghive, regpath).map_err(|e| e.to_string())
     }
 
@@ -108,7 +115,8 @@ impl SysLibrary for StdSysLibrary {
         regtype: String,
         regvalue: String,
     ) -> Result<bool, String> {
-        write_reg_hex_impl::write_reg_hex(reghive, regpath, regname, regtype, regvalue).map_err(|e| e.to_string())
+        write_reg_hex_impl::write_reg_hex(reghive, regpath, regname, regtype, regvalue)
+            .map_err(|e| e.to_string())
     }
 
     fn write_reg_int(
@@ -119,7 +127,8 @@ impl SysLibrary for StdSysLibrary {
         regtype: String,
         regvalue: i64,
     ) -> Result<bool, String> {
-        write_reg_int_impl::write_reg_int(reghive, regpath, regname, regtype, regvalue as u32).map_err(|e| e.to_string())
+        write_reg_int_impl::write_reg_int(reghive, regpath, regname, regtype, regvalue as u32)
+            .map_err(|e| e.to_string())
     }
 
     fn write_reg_str(
@@ -130,6 +139,7 @@ impl SysLibrary for StdSysLibrary {
         regtype: String,
         regvalue: String,
     ) -> Result<bool, String> {
-        write_reg_str_impl::write_reg_str(reghive, regpath, regname, regtype, regvalue).map_err(|e| e.to_string())
+        write_reg_str_impl::write_reg_str(reghive, regpath, regname, regtype, regvalue)
+            .map_err(|e| e.to_string())
     }
 }
