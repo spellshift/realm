@@ -1,11 +1,11 @@
-use anyhow::Result;
-use alloc::string::String;
-#[cfg(target_os = "windows")]
-use alloc::vec::Vec;
 #[cfg(target_os = "windows")]
 use alloc::format;
+use alloc::string::String;
 #[cfg(target_os = "windows")]
 use alloc::string::ToString;
+#[cfg(target_os = "windows")]
+use alloc::vec::Vec;
+use anyhow::Result;
 
 #[allow(unused_variables)]
 pub fn write_reg_hex(

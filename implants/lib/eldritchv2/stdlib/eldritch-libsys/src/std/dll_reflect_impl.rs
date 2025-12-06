@@ -1,6 +1,5 @@
-use alloc::vec::Vec;
 use alloc::string::String;
-use eldritch_core::Value;
+use alloc::vec::Vec;
 
 #[cfg(target_os = "windows")]
 use {
@@ -51,7 +50,20 @@ macro_rules! sep {
 
 #[cfg(target_os = "windows")]
 const LOADER_BYTES: &[u8] = include_bytes!(concat!(
-    "..", sep!(), "..", sep!(), "..", sep!(), "..", sep!(), "..", sep!(), "..", sep!(), "..", sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
+    "..",
+    sep!(),
     "bin",
     sep!(),
     "reflective_loader",
@@ -319,22 +331,14 @@ fn handle_dll_reflect(
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn dll_reflect(
-    _dll_bytes: Vec<u8>,
-    _pid: u32,
-    _function_name: String,
-) -> anyhow::Result<()> {
+pub fn dll_reflect(_dll_bytes: Vec<u8>, _pid: u32, _function_name: String) -> anyhow::Result<()> {
     Err(anyhow::anyhow!(
         "This OS isn't supported by the dll_reflect function.\nOnly windows systems are supported"
     ))
 }
 
 #[cfg(target_os = "windows")]
-pub fn dll_reflect(
-    dll_bytes: Vec<u8>,
-    pid: u32,
-    function_name: String,
-) -> anyhow::Result<()> {
+pub fn dll_reflect(dll_bytes: Vec<u8>, pid: u32, function_name: String) -> anyhow::Result<()> {
     // V1 converted Vec<u32> to Vec<u8>. V2 takes Vec<u8> directly.
     handle_dll_reflect(dll_bytes, pid, function_name.as_str())?;
     Ok(())
@@ -342,13 +346,10 @@ pub fn dll_reflect(
 
 #[cfg(not(target_os = "windows"))]
 mod tests {
-    use super::*;
-    use alloc::vec::Vec;
-    use alloc::string::ToString;
 
     #[test]
     fn test_dll_reflect_non_windows_test() -> anyhow::Result<()> {
-        let res = dll_reflect(Vec::new(), 0, "Garbage".to_string());
+        let res = super::dll_reflect(Vec::new(), 0, "Garbage".to_string());
         match res {
             Ok(_) => return Err(anyhow::anyhow!("dll_reflect should have errored out.")),
             Err(local_err) => assert!(local_err

@@ -112,9 +112,10 @@ impl PivotLibrary for StdPivotLibrary {
         ports: Vec<i64>,
         protocol: String,
         timeout: i64,
+        fd_limit: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
         let ports_i32: Vec<i32> = ports.into_iter().map(|p| p as i32).collect();
-        port_scan_impl::port_scan(target_cidrs, ports_i32, protocol, timeout as i32).map_err(|e| e.to_string())
+        port_scan_impl::port_scan(target_cidrs, ports_i32, protocol, timeout as i32, fd_limit).map_err(|e| e.to_string())
     }
 
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {

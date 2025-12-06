@@ -3,8 +3,8 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
-use eldritch_macros::eldritch_library_impl;
 use eldritch_libagent::agent::Agent;
+use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use rust_embed::RustEmbed;
 use std::io::Write;
@@ -35,14 +35,17 @@ pub struct StdAssetsLibrary {
 impl core::fmt::Debug for StdAssetsLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAssetsLibrary")
-         .field("remote_assets", &self.remote_assets)
-         .finish()
+            .field("remote_assets", &self.remote_assets)
+            .finish()
     }
 }
 
 impl StdAssetsLibrary {
     pub fn new(agent: Arc<dyn Agent>, remote_assets: Vec<String>) -> Self {
-        Self { agent, remote_assets }
+        Self {
+            agent,
+            remote_assets,
+        }
     }
 
     fn read_binary_embedded(&self, src: &str) -> Result<Vec<u8>> {
@@ -55,7 +58,9 @@ impl StdAssetsLibrary {
 
     fn _read_binary(&self, name: &str) -> Result<Vec<u8>> {
         if self.remote_assets.iter().any(|s| s == name) {
-            let req = FetchAssetRequest { name: name.to_string() };
+            let req = FetchAssetRequest {
+                name: name.to_string(),
+            };
             return self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
         }
         self.read_binary_embedded(name)
@@ -83,9 +88,9 @@ impl AssetsLibrary for StdAssetsLibrary {
         let mut files: Vec<String> = Asset::iter().map(|f| f.as_ref().to_string()).collect();
         // Append remote assets to the list if they are not already there
         for remote in &self.remote_assets {
-             if !files.contains(remote) {
-                 files.push(remote.clone());
-             }
+            if !files.contains(remote) {
+                files.push(remote.clone());
+            }
         }
         Ok(files)
     }
@@ -94,9 +99,9 @@ impl AssetsLibrary for StdAssetsLibrary {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::string::ToString;
     use eldritch_libagent::fake::AgentFake;
     use tempfile::NamedTempFile;
-    use alloc::string::ToString;
 
     #[test]
     fn test_assets_read_binary_fail() {

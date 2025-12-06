@@ -88,6 +88,7 @@ pub trait PivotLibrary {
         ports: Vec<i64>,
         protocol: String,
         timeout: i64,
+        fd_limit: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]

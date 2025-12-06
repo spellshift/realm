@@ -1,10 +1,10 @@
-use anyhow::{Context, Result};
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use anyhow::{Context, Result};
+use eldritch_core::Value;
 use std::collections::HashMap;
 use std::process::Command;
-use eldritch_core::Value;
 
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {

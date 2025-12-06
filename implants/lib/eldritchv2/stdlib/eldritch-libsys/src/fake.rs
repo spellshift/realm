@@ -1,10 +1,9 @@
-
-use eldritch_core::Value;
+use super::SysLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
-use super::SysLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(SysLibrary)]
@@ -142,7 +141,6 @@ impl SysLibrary for SysLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
 
     #[test]
     fn test_sys_fake() {
