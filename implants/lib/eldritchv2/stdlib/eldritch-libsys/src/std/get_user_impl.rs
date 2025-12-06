@@ -1,12 +1,12 @@
-use anyhow::Result;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use anyhow::Result;
+use eldritch_core::Value;
+use spin::RwLock;
 use std::process;
 use sysinfo::{Pid, ProcessExt, System, SystemExt, UserExt};
-use eldritch_core::Value;
-use alloc::sync::Arc;
-use spin::RwLock;
 
 pub fn get_user() -> Result<BTreeMap<String, Value>> {
     let mut dict_res = BTreeMap::new();
@@ -20,7 +20,10 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
             None => return Err(anyhow::anyhow!("Failed to get uid")),
         };
         #[cfg(target_os = "windows")]
-        dict_user.insert(Value::String("uid".to_string()), Value::String(uid.to_string()));
+        dict_user.insert(
+            Value::String("uid".to_string()),
+            Value::String(uid.to_string()),
+        );
 
         #[cfg(not(target_os = "windows"))]
         dict_user.insert(Value::String("uid".to_string()), Value::Int(**uid as i64));
@@ -29,11 +32,24 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
             Some(user) => user,
             None => return Err(anyhow::anyhow!("Failed to get user")),
         };
-        dict_user.insert(Value::String("name".to_string()), Value::String(user.name().to_string()));
-        dict_user.insert(Value::String("gid".to_string()), Value::Int(*user.group_id() as i64));
+        dict_user.insert(
+            Value::String("name".to_string()),
+            Value::String(user.name().to_string()),
+        );
+        dict_user.insert(
+            Value::String("gid".to_string()),
+            Value::Int(*user.group_id() as i64),
+        );
 
-        let groups: Vec<Value> = user.groups().iter().map(|g| Value::String(g.clone())).collect();
-        dict_user.insert(Value::String("groups".to_string()), Value::List(Arc::new(RwLock::new(groups))));
+        let groups: Vec<Value> = user
+            .groups()
+            .iter()
+            .map(|g| Value::String(g.clone()))
+            .collect();
+        dict_user.insert(
+            Value::String("groups".to_string()),
+            Value::List(Arc::new(RwLock::new(groups))),
+        );
 
         #[cfg(not(target_os = "windows"))]
         {
@@ -48,13 +64,29 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
                 Some(euser) => euser,
                 None => return Err(anyhow::anyhow!("Failed to get euser")),
             };
-            dict_euser.insert(Value::String("name".to_string()), Value::String(euser.name().to_string()));
-            dict_euser.insert(Value::String("gid".to_string()), Value::Int(*euser.group_id() as i64));
+            dict_euser.insert(
+                Value::String("name".to_string()),
+                Value::String(euser.name().to_string()),
+            );
+            dict_euser.insert(
+                Value::String("gid".to_string()),
+                Value::Int(*euser.group_id() as i64),
+            );
 
-            let egroups: Vec<Value> = euser.groups().iter().map(|g| Value::String(g.clone())).collect();
-            dict_euser.insert(Value::String("groups".to_string()), Value::List(Arc::new(RwLock::new(egroups))));
+            let egroups: Vec<Value> = euser
+                .groups()
+                .iter()
+                .map(|g| Value::String(g.clone()))
+                .collect();
+            dict_euser.insert(
+                Value::String("groups".to_string()),
+                Value::List(Arc::new(RwLock::new(egroups))),
+            );
 
-            dict_res.insert("euid".to_string(), Value::Dictionary(Arc::new(RwLock::new(dict_euser))));
+            dict_res.insert(
+                "euid".to_string(),
+                Value::Dictionary(Arc::new(RwLock::new(dict_euser))),
+            );
 
             let gid = match process.group_id() {
                 Some(gid) => gid,
@@ -69,7 +101,10 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
             dict_res.insert("egid".to_string(), Value::Int(*egid as i64));
         }
 
-        dict_res.insert("uid".to_string(), Value::Dictionary(Arc::new(RwLock::new(dict_user))));
+        dict_res.insert(
+            "uid".to_string(),
+            Value::Dictionary(Arc::new(RwLock::new(dict_user))),
+        );
         return Ok(dict_res);
     }
     Err(anyhow::anyhow!("Failed to obtain process information"))

@@ -1,8 +1,8 @@
-use anyhow::Result;
-use local_ip_address::list_afinet_netifas;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use anyhow::Result;
+use local_ip_address::list_afinet_netifas;
 use std::net::IpAddr;
 
 fn create_dict_from_interface(name: String, ip: IpAddr) -> Result<BTreeMap<String, String>> {

@@ -3,10 +3,10 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
-#[cfg(feature = "stdlib")]
-pub mod std;
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
+#[cfg(feature = "stdlib")]
+pub mod std;
 
 #[eldritch_library("assets")]
 pub trait AssetsLibrary {

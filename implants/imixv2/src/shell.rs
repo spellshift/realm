@@ -60,7 +60,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     }) {
         Ok(p) => p,
         Err(e) => {
-            return Err(e.into());
+            return Err(e);
         }
     };
 
@@ -84,20 +84,20 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     let mut child = match pair.slave.spawn_command(cmd_builder) {
         Ok(c) => c,
         Err(e) => {
-            return Err(e.into());
+            return Err(e);
         }
     };
 
     let mut reader = match pair.master.try_clone_reader() {
         Ok(r) => r,
         Err(e) => {
-            return Err(e.into());
+            return Err(e);
         }
     };
     let mut writer = match pair.master.take_writer() {
         Ok(w) => w,
         Err(e) => {
-            return Err(e.into());
+            return Err(e);
         }
     };
 
@@ -163,7 +163,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     // Initiate gRPC stream
     if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
         let _ = child.kill();
-        return Err(e.into());
+        return Err(e);
     }
 
     // Handle Input
@@ -224,9 +224,7 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     }
 
     // Initiate gRPC stream
-    if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
-        return Err(e.into());
-    }
+    transport.reverse_shell(output_rx, input_tx).await?;
 
     // Move logic to blocking thread
     run_repl_loop(task_id, input_rx, output_tx, agent).await;
