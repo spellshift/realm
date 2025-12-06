@@ -52,6 +52,29 @@ const (
 	// Response size limits (to fit in single UDP packet)
 	maxDNSResponseSize   = 1400 // Conservative MTU limit
 	maxResponseChunkSize = 1200 // Base32-encoded chunk size
+
+	// DNS response constants
+	dnsResponseFlags     = 0x8180 // Flags: Response, no error (0x81, 0x80)
+	dnsErrorFlags        = 0x8183 // Flags: Response with name error (0x81, 0x83)
+	dnsPointerToQuestion = 0xC00C // Compression pointer to question at offset 12
+	dnsTTLSeconds        = 60     // DNS record TTL in seconds
+	txtMaxChunkSize      = 255    // Maximum size of single TXT string
+
+	// Localhost IP addresses (for benign responses)
+	localhostIPv4Octet1 = 127
+	localhostIPv4Octet4 = 1
+	localhostIPv6Byte15 = 1 // ::1 has only byte 15 set to 1, rest are 0
+
+	// Base36 encoding constants
+	base36Radix = 36
+	base36Pow2  = 1296    // 36^2
+	base36Pow3  = 46656   // 36^3
+	base36Pow4  = 1679616 // 36^4
+
+	// CRC16-CCITT constants
+	crc16Init       = 0xFFFF
+	crc16Polynomial = 0x1021
+	crc16HighBit    = 0x8000
 )
 
 func init() {
@@ -832,11 +855,11 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 
 	// DNS Header
 	response = append(response, byte(transactionID>>8), byte(transactionID))
-	response = append(response, 0x81, 0x80) // Flags: Response, no error
-	response = append(response, 0x00, 0x01) // Questions: 1
-	response = append(response, 0x00, 0x01) // Answers: 1
-	response = append(response, 0x00, 0x00) // Authority RRs: 0
-	response = append(response, 0x00, 0x00) // Additional RRs: 0
+	response = append(response, byte(dnsResponseFlags>>8), byte(dnsResponseFlags&0xFF)) // Flags: Response, no error
+	response = append(response, 0x00, 0x01)                                             // Questions: 1
+	response = append(response, 0x00, 0x01)                                             // Answers: 1
+	response = append(response, 0x00, 0x00)                                             // Authority RRs: 0
+	response = append(response, 0x00, 0x00)                                             // Additional RRs: 0
 
 	// Question section (echo the question)
 	for _, label := range strings.Split(domain, ".") {
@@ -852,26 +875,26 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 
 	// Answer section
 	// Name (pointer to question)
-	response = append(response, 0xC0, 0x0C)
+	response = append(response, byte(dnsPointerToQuestion>>8), byte(dnsPointerToQuestion&0xFF))
 	// Type: echo query type
 	response = append(response, 0x00, byte(queryType))
 	// Class: IN
 	response = append(response, 0x00, byte(dnsClassIN))
-	// TTL: 60 seconds
-	response = append(response, 0x00, 0x00, 0x00, 0x3C)
+	// TTL: dnsTTLSeconds
+	response = append(response, 0x00, 0x00, 0x00, byte(dnsTTLSeconds))
 
 	// Build RDATA based on query type
 	var rdata []byte
 
 	switch queryType {
 	case txtRecordType:
-		// TXT record: split data into 255-byte chunks
+		// TXT record: split data into txtMaxChunkSize-byte chunks
 		txtData := data
 		var txtChunks [][]byte
 		for len(txtData) > 0 {
 			chunkSize := len(txtData)
-			if chunkSize > 255 {
-				chunkSize = 255
+			if chunkSize > txtMaxChunkSize {
+				chunkSize = txtMaxChunkSize
 			}
 			txtChunks = append(txtChunks, txtData[:chunkSize])
 			txtData = txtData[chunkSize:]
@@ -923,22 +946,21 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 func (r *Redirector) sendErrorResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16) {
 	response := make([]byte, dnsHeaderSize)
 	binary.BigEndian.PutUint16(response[0:2], transactionID)
-	response[2] = 0x81
-	response[3] = 0x83 // RCODE: Name Error
+	response[2] = byte(dnsErrorFlags >> 8)
+	response[3] = byte(dnsErrorFlags & 0xFF) // RCODE: Name Error
 
 	conn.WriteToUDP(response, addr)
 }
 
 // sendBenignResponse sends a benign DNS response for resolver queries
-// Returns 127.0.0.1 for A, ::1 for AAAA, empty TXT for others
 func (r *Redirector) sendBenignResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16, domain string, queryType uint16) {
 	var data []byte
 	switch queryType {
 	case aRecordType:
-		data = []byte{127, 0, 0, 1} // localhost
+		data = []byte{localhostIPv4Octet1, 0, 0, localhostIPv4Octet4} // 127.0.0.1
 	case aaaaRecordType:
 		data = make([]byte, 16) // ::1
-		data[15] = 1
+		data[localhostIPv6Byte15] = localhostIPv6Byte15
 	default:
 		data = []byte{} // empty response
 	}
@@ -981,8 +1003,8 @@ func encodeBase36(value int, digits int) string {
 	const base36 = "0123456789abcdefghijklmnopqrstuvwxyz"
 	result := make([]byte, digits)
 	for i := digits - 1; i >= 0; i-- {
-		result[i] = base36[value%36]
-		value /= 36
+		result[i] = base36[value%base36Radix]
+		value /= base36Radix
 	}
 	return string(result)
 }
@@ -1006,7 +1028,7 @@ func decodeBase36(encoded string) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		result = result*36 + digit
+		result = result*base36Radix + digit
 	}
 	return result, nil
 }
@@ -1037,14 +1059,14 @@ func decodeBase36CRC(encoded string) (int, error) {
 	return decodeBase36(encoded)
 }
 
-// CalculateCRC16 computes CRC16-CCITT checksum (polynomial 0x1021, init 0xFFFF)
+// CalculateCRC16 computes CRC16-CCITT checksum
 func CalculateCRC16(data []byte) uint16 {
-	var crc uint16 = 0xFFFF
+	var crc uint16 = crc16Init
 	for _, b := range data {
 		crc ^= uint16(b) << 8
 		for i := 0; i < 8; i++ {
-			if (crc & 0x8000) != 0 {
-				crc = (crc << 1) ^ 0x1021
+			if (crc & crc16HighBit) != 0 {
+				crc = (crc << 1) ^ crc16Polynomial
 			} else {
 				crc <<= 1
 			}

