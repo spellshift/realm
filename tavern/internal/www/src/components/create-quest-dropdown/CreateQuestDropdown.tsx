@@ -30,25 +30,26 @@ export const CreateQuestDropdown = ({
     return (
         <Menu as="div" >
             <div>
-                <Menu.Button className="inline-flex w-full justify-center">
-                    {showLabel ?
-                        <Button
-                            buttonStyle={{ color: 'purple', size: "md" }}
-                            rightIcon={<ChevronDownIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                            />}
-                        >
-                            Re-run quest
-                        </Button>
-                        :
-                        <Button
-                            leftIcon={<EllipsisHorizontalIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                            />} />
-                    }
-                </Menu.Button>
+                {showLabel ?
+                    <Menu.Button
+                        as={Button}
+                        buttonStyle={{ color: 'purple', size: "md" }}
+                        rightIcon={<ChevronDownIcon
+                            className="h-5 w-5"
+                            aria-hidden="true"
+                        />}
+                    >
+                        Re-run quest
+                    </Menu.Button>
+                    :
+                    <Menu.Button
+                        as={Button}
+                        leftIcon={<EllipsisHorizontalIcon
+                            className="h-5 w-5"
+                            aria-hidden="true"
+                        />}
+                    />
+                }
             </div>
             <Transition
                 as={Fragment}

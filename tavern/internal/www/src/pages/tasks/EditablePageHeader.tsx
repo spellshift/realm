@@ -18,7 +18,6 @@ export const EditablePageHeader: FC = () => {
         },
         skip: !questId
     });
-    console.log(data);
 
     const questData = data?.quests?.edges?.[0]?.node;
 
