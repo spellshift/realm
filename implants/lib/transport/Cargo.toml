@@ -8,7 +8,7 @@ default = []
 grpc = []
 grpc-doh = ["grpc", "dep:hickory-resolver"]
 http1 = []
-dns = ["dep:data-encoding", "dep:rand"]
+dns = ["dep:data-encoding", "dep:rand", "dep:hickory-resolver"]
 mock = ["dep:mockall"]
 
 [dependencies]

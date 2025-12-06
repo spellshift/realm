@@ -241,6 +241,9 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		return
 	}
 
+	// Normalize domain to lowercase for case-insensitive matching
+	domain = strings.ToLower(domain)
+
 	slog.Debug("received DNS query", "domain", domain, "query_type", queryType, "from", addr.String())
 
 	domainParts := strings.Split(domain, ".")
@@ -288,6 +291,13 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	// Decode base32 to get raw packet bytes
 	packetBytes, err := decodeBase32(fullSubdomain)
 	if err != nil {
+		// For A/AAAA queries, this is likely a DNS resolver doing lookups (not C2 traffic)
+		// Return a benign response instead of an error to avoid polluting logs
+		if queryType == aRecordType || queryType == aaaaRecordType {
+			slog.Debug("ignoring non-C2 resolver query", "query_type", queryType, "domain", domain)
+			r.sendBenignResponse(conn, addr, transactionID, domain, queryType)
+			return
+		}
 		slog.Debug("failed to decode base32 subdomain", "error", err, "subdomain", fullSubdomain[:min(len(fullSubdomain), 50)])
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
@@ -295,6 +305,12 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	// Parse packet: [type:1][seq:5][convid:12][data...]
 	if len(packetBytes) < headerSize {
+		// For A/AAAA queries with invalid packet structure, likely resolver lookups
+		if queryType == aRecordType || queryType == aaaaRecordType {
+			slog.Debug("ignoring malformed resolver query", "query_type", queryType, "domain", domain, "size", len(packetBytes))
+			r.sendBenignResponse(conn, addr, transactionID, domain, queryType)
+			return
+		}
 		slog.Debug("packet too short after decoding", "size", len(packetBytes), "min_size", headerSize)
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
@@ -309,6 +325,12 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	seq, err := decodeSeq(seqStr)
 	if err != nil {
+		// For A/AAAA queries, invalid sequence likely means resolver lookup
+		if queryType == aRecordType || queryType == aaaaRecordType {
+			slog.Debug("ignoring resolver query with invalid sequence", "query_type", queryType, "domain", domain)
+			r.sendBenignResponse(conn, addr, transactionID, domain, queryType)
+			return
+		}
 		slog.Debug("invalid sequence", "seq", seqStr, "error", err)
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
@@ -505,6 +527,7 @@ func (r *Redirector) HandleDataPacket(convID string, seq int, data []byte) ([]by
 
 	slog.Debug("received chunk", "conv_id", convID, "seq", seq, "chunk_len", len(data), "total_received", len(conv.Chunks), "expected_total", conv.TotalChunks, "data_preview", dataPreview)
 
+	// Return acknowledgment
 	return []byte{}, nil
 }
 
@@ -904,6 +927,22 @@ func (r *Redirector) sendErrorResponse(conn *net.UDPConn, addr *net.UDPAddr, tra
 	response[3] = 0x83 // RCODE: Name Error
 
 	conn.WriteToUDP(response, addr)
+}
+
+// sendBenignResponse sends a benign DNS response for resolver queries
+// Returns 127.0.0.1 for A, ::1 for AAAA, empty TXT for others
+func (r *Redirector) sendBenignResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16, domain string, queryType uint16) {
+	var data []byte
+	switch queryType {
+	case aRecordType:
+		data = []byte{127, 0, 0, 1} // localhost
+	case aaaaRecordType:
+		data = make([]byte, 16) // ::1
+		data[15] = 1
+	default:
+		data = []byte{} // empty response
+	}
+	r.sendDNSResponse(conn, addr, transactionID, domain, data, queryType)
 }
 
 // generateConvID generates a random conversation ID

