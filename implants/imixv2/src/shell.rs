@@ -1,7 +1,7 @@
 use anyhow::Result;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
-use std::io::{Read, Write};
+use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 use std::sync::Arc;
 use transport::Transport;
@@ -239,10 +239,11 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             .with_default_libs()
             .with_task_context(Arc::new(agent), task_id, Vec::new());
         let mut repl = Repl::new();
-        let mut stdout = VtWriter {
+        let stdout = VtWriter {
             tx: output_tx,
             task_id,
         };
+        let mut stdout = BufWriter::new(stdout);
 
         let _ = render(&mut stdout, &repl);
 
@@ -521,7 +522,7 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
     stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
 
     stdout.queue(terminal::Clear(terminal::ClearType::CurrentLine))?;
-    stdout.queue(cursor::MoveToColumn(0))?;
+    stdout.write_all(b"\r")?;
 
     // Write prompt (Blue)
     stdout.queue(SetForegroundColor(Color::Blue))?;
@@ -536,7 +537,7 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
         // Save cursor position
         stdout.queue(cursor::SavePosition)?;
         stdout.queue(cursor::MoveToNextLine(1))?;
-        stdout.queue(cursor::MoveToColumn(0))?;
+        stdout.write_all(b"\r")?;
 
         if !suggestions.is_empty() {
              for (i, s) in suggestions.iter().take(10).enumerate() {
