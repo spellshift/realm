@@ -27,6 +27,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	client := tx.Client()
 
 	// Delete relevant ents
+	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
+	}
 	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
 	}
