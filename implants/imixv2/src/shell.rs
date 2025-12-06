@@ -251,6 +251,8 @@ async fn run_repl_loop(
             // Parse input
             let inputs = parser.parse(&msg.data);
             for input in inputs {
+                #[cfg(debug_assertions)]
+                log::info!("Handling input: {:?}", input);
                 match repl.handle_input(input) {
                     ReplAction::Quit => return,
                     ReplAction::Submit { code, .. } => {
@@ -329,6 +331,7 @@ impl std::io::Write for VtWriter {
     }
 }
 
+/// A robust VT100/ANSI input parser that logs incoming bytes and swallows unknown sequences.
 struct InputParser {
     buffer: Vec<u8>,
 }
@@ -339,115 +342,166 @@ impl InputParser {
     }
 
     fn parse(&mut self, data: &[u8]) -> Vec<Input> {
+        #[cfg(debug_assertions)]
+        log::debug!("Received raw bytes: {:02x?}", data);
+
         self.buffer.extend_from_slice(data);
         let mut inputs = Vec::new();
-        let mut i = 0;
-        while i < self.buffer.len() {
-            let b = self.buffer[i];
+
+        // Process buffer
+        loop {
+            if self.buffer.is_empty() {
+                break;
+            }
+
+            let b = self.buffer[0];
+
             if b == 0x1b {
-                // Escape sequence
-                if i + 1 >= self.buffer.len() {
-                    break; // Incomplete
+                // Potential Escape Sequence
+                // We need at least 2 bytes to decide type, or just 1 byte if it's strictly just ESC (unlikely in streams)
+                // But we must handle split packets.
+                if self.buffer.len() < 2 {
+                    // Incomplete, wait for more data
+                    break;
                 }
 
-                let prefix = self.buffer[i + 1];
-                if prefix == b'[' || prefix == b'O' {
-                    if i + 2 >= self.buffer.len() {
-                        break; // Incomplete
-                    }
-                    let code = self.buffer[i + 2];
-
-                    // Handle Cursor Keys & Home/End (standard)
-                    let input = match code {
-                        b'A' => Some(Input::Up),
-                        b'B' => Some(Input::Down),
-                        b'C' => Some(Input::Right),
-                        b'D' => Some(Input::Left),
-                        b'H' => Some(Input::Home),
-                        b'F' => Some(Input::End),
-                        _ => None,
-                    };
-
-                    if let Some(inp) = input {
-                        inputs.push(inp);
-                        i += 3;
-                        continue;
-                    }
-
-                    // Handle ~ terminated sequences (e.g. [3~ for Delete)
-                    if prefix == b'[' && (code >= b'0' && code <= b'9') {
-                        // Scan for ~
-                        let mut j = i + 3;
-                        let mut found_tilde = false;
-                        while j < self.buffer.len() && j < i + 8 {
-                            if self.buffer[j] == b'~' {
-                                found_tilde = true;
+                let second = self.buffer[1];
+                match second {
+                    b'[' => {
+                        // CSI Sequence: ESC [ params final
+                        // Params: 0x30-0x3F, Intermediate: 0x20-0x2F, Final: 0x40-0x7E
+                        let mut end_idx = None;
+                        for (i, &byte) in self.buffer.iter().enumerate().skip(2) {
+                            if (0x40..=0x7E).contains(&byte) {
+                                end_idx = Some(i);
                                 break;
                             }
-                            j += 1;
                         }
 
-                        if !found_tilde {
-                            if j >= self.buffer.len() {
-                                break; // Incomplete
+                        if let Some(end) = end_idx {
+                            // We have a complete sequence
+                            let seq = &self.buffer[0..=end];
+                            if let Some(input) = self.parse_csi(seq) {
+                                inputs.push(input);
+                            } else {
+                                #[cfg(debug_assertions)]
+                                log::warn!("Ignored CSI sequence: {:02x?}", seq);
                             }
-                            // Garbage or unsupported long sequence, consume ESC to skip
-                            i += 1;
-                            continue;
+                            // Consume
+                            self.buffer.drain(0..=end);
+                        } else {
+                            // Incomplete CSI or very long garbage
+                            if self.buffer.len() > 32 {
+                                // Safety valve: sequence too long, probably garbage. Consume ESC and continue.
+                                #[cfg(debug_assertions)]
+                                log::warn!("Dropping long incomplete CSI buffer: {:02x?}", &self.buffer[..32]);
+                                self.buffer.remove(0);
+                            } else {
+                                // Wait for more data
+                                break;
+                            }
                         }
-
-                        // Parse number
-                        let num_slice = &self.buffer[i + 2..j];
-                        if num_slice == b"3" {
-                            inputs.push(Input::Delete);
-                        } else if num_slice == b"1" || num_slice == b"7" {
-                            inputs.push(Input::Home);
-                        } else if num_slice == b"4" || num_slice == b"8" {
-                            inputs.push(Input::End);
-                        }
-                        // Ignore others (PageUp/Down/Insert) for now
-                        i = j + 1;
-                        continue;
                     }
-
-                    // Unknown [ or O sequence
-                    i += 1;
-                    continue;
-                } else {
-                    // Unknown ESC sequence
-                    i += 1;
-                    continue;
+                    b'O' => {
+                        // SS3 Sequence: ESC O char
+                        if self.buffer.len() < 3 {
+                            break;
+                        }
+                        let code = self.buffer[2];
+                        let seq = &self.buffer[0..3];
+                        if let Some(input) = self.parse_ss3(code) {
+                            inputs.push(input);
+                        } else {
+                            #[cfg(debug_assertions)]
+                            log::warn!("Ignored SS3 sequence: {:02x?}", seq);
+                        }
+                        self.buffer.drain(0..3);
+                    }
+                    _ => {
+                        // Unknown Escape Sequence or Alt+Key
+                        // To be safe and avoid "random characters injected", we consume ESC and the next char.
+                        #[cfg(debug_assertions)]
+                        log::warn!("Unknown Escape sequence start: 1b {:02x}", second);
+                        self.buffer.drain(0..2);
+                    }
                 }
-            } else if b == b'\r' || b == b'\n' {
-                inputs.push(Input::Enter);
-                i += 1;
-            } else if b == 0x7f || b == 0x08 {
-                inputs.push(Input::Backspace);
-                i += 1;
-            } else if b == 0x03 {
-                inputs.push(Input::Cancel);
-                i += 1;
-            } else if b == 0x04 {
-                inputs.push(Input::EOF);
-                i += 1;
-            } else if b == 0x0c {
-                inputs.push(Input::ClearScreen);
-                i += 1;
-            } else if b == 0x09 {
-                inputs.push(Input::Tab);
-                i += 1;
-            } else if b == 0x00 {
-                // Ctrl+Space
-                inputs.push(Input::ForceComplete);
-                i += 1;
             } else {
-                inputs.push(Input::Char(b as char));
-                i += 1;
+                // Regular character or Control Code
+                match b {
+                    b'\r' | b'\n' => inputs.push(Input::Enter),
+                    0x7f | 0x08 => inputs.push(Input::Backspace),
+                    0x03 => inputs.push(Input::Cancel),      // Ctrl+C
+                    0x04 => inputs.push(Input::EOF),         // Ctrl+D
+                    0x0c => inputs.push(Input::ClearScreen), // Ctrl+L
+                    0x09 => inputs.push(Input::Tab),
+                    0x12 => inputs.push(Input::HistorySearch), // Ctrl+R
+                    0x15 => inputs.push(Input::KillLine),      // Ctrl+U
+                    0x0b => inputs.push(Input::KillToEnd),     // Ctrl+K
+                    0x17 => inputs.push(Input::WordBackspace), // Ctrl+W
+                    0x00 => inputs.push(Input::ForceComplete), // Ctrl+Space
+                    x if x >= 0x20 => inputs.push(Input::Char(x as char)),
+                    _ => {
+                        // Other control codes? Ignore them to prevent weirdness
+                        #[cfg(debug_assertions)]
+                        log::debug!("Ignored control char: {:02x}", b);
+                    }
+                }
+                self.buffer.remove(0);
             }
         }
-        // Drain processed
-        self.buffer = self.buffer.split_off(i);
         inputs
+    }
+
+    fn parse_csi(&self, seq: &[u8]) -> Option<Input> {
+        // seq is like [0x1b, '[', ..., final]
+        // Minimal length 3: \x1b[A
+        if seq.len() < 3 {
+            return None;
+        }
+
+        let final_byte = *seq.last()?;
+
+        // Check for simple no-param sequences
+        if seq.len() == 3 {
+            return match final_byte {
+                b'A' => Some(Input::Up),
+                b'B' => Some(Input::Down),
+                b'C' => Some(Input::Right),
+                b'D' => Some(Input::Left),
+                b'H' => Some(Input::Home),
+                b'F' => Some(Input::End),
+                _ => None,
+            };
+        }
+
+        // Tilde sequences: \x1b[num~
+        // e.g. \x1b[3~ (Del), \x1b[1~ (Home)
+        if final_byte == b'~' {
+             // Extract number between [ and ~
+             let inner = &seq[2..seq.len()-1];
+             if let Ok(s) = std::str::from_utf8(inner) {
+                 return match s {
+                     "1" | "7" => Some(Input::Home),
+                     "4" | "8" => Some(Input::End),
+                     "3" => Some(Input::Delete),
+                     _ => None, // PageUp(5), PageDown(6), Insert(2) - ignore for now
+                 };
+             }
+        }
+
+        None
+    }
+
+    fn parse_ss3(&self, code: u8) -> Option<Input> {
+        match code {
+            b'A' => Some(Input::Up),
+            b'B' => Some(Input::Down),
+            b'C' => Some(Input::Right),
+            b'D' => Some(Input::Left),
+            b'H' => Some(Input::Home),
+            b'F' => Some(Input::End),
+            _ => None,
+        }
     }
 }
 
@@ -512,48 +566,64 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_input_parser_application_cursor_keys() {
+    fn test_input_parser_simple() {
         let mut parser = InputParser::new();
-        // Up arrow in Application Mode: \x1bOA
-        let inputs = parser.parse(b"\x1bOA");
-        assert_eq!(inputs.len(), 1, "Expected 1 input (Up), got {:?}", inputs);
+        let inputs = parser.parse(b"hello");
+        assert_eq!(inputs.len(), 5);
+        assert_eq!(inputs[0], Input::Char('h'));
+    }
+
+    #[test]
+    fn test_input_parser_csi_arrow() {
+        let mut parser = InputParser::new();
+        let inputs = parser.parse(b"\x1b[A");
+        assert_eq!(inputs.len(), 1);
         assert_eq!(inputs[0], Input::Up);
     }
 
     #[test]
-    fn test_input_parser_delete_key() {
+    fn test_input_parser_ss3_arrow() {
         let mut parser = InputParser::new();
-        // Delete key: \x1b[3~
-        let inputs = parser.parse(b"\x1b[3~");
-        assert_eq!(inputs.len(), 1, "Expected 1 input (Delete), got {:?}", inputs);
-        assert_eq!(inputs[0], Input::Delete);
-    }
-
-    #[test]
-    fn test_input_parser_home_end() {
-        let mut parser = InputParser::new();
-        // Home (xterm): \x1bOH
-        let inputs = parser.parse(b"\x1bOH");
-        assert_eq!(inputs.len(), 1, "Expected 1 input (Home), got {:?}", inputs);
-        assert_eq!(inputs[0], Input::Home);
-
-        // End (xterm): \x1bOF
-        let mut parser = InputParser::new();
-        let inputs = parser.parse(b"\x1bOF");
-        assert_eq!(inputs.len(), 1, "Expected 1 input (End), got {:?}", inputs);
-        assert_eq!(inputs[0], Input::End);
+        let inputs = parser.parse(b"\x1bOA");
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(inputs[0], Input::Up);
     }
 
     #[test]
     fn test_input_parser_split_packet() {
         let mut parser = InputParser::new();
-        // Packet 1: \x1b
-        let inputs = parser.parse(b"\x1b");
-        assert_eq!(inputs.len(), 0, "Should buffer incomplete sequence");
+        // Packet 1: Partial CSI
+        let inputs = parser.parse(b"\x1b[");
+        assert_eq!(inputs.len(), 0);
 
-        // Packet 2: [A
-        let inputs = parser.parse(b"[A");
-        assert_eq!(inputs.len(), 1, "Should complete sequence");
+        // Packet 2: Remainder
+        let inputs = parser.parse(b"A");
+        assert_eq!(inputs.len(), 1);
         assert_eq!(inputs[0], Input::Up);
+    }
+
+    #[test]
+    fn test_input_parser_unknown_csi_swallowed() {
+        let mut parser = InputParser::new();
+        // Unknown CSI: \x1b[99;99X (Random Garbage)
+        // Should produce NO inputs and NOT leak 'X'
+        let inputs = parser.parse(b"\x1b[99;99X");
+        assert_eq!(inputs.len(), 0);
+
+        // Verify buffer is drained
+        assert!(parser.buffer.is_empty());
+
+        // Followed by valid input
+        let inputs = parser.parse(b"A");
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(inputs[0], Input::Char('A'));
+    }
+
+    #[test]
+    fn test_input_parser_delete() {
+         let mut parser = InputParser::new();
+         let inputs = parser.parse(b"\x1b[3~");
+         assert_eq!(inputs.len(), 1);
+         assert_eq!(inputs[0], Input::Delete);
     }
 }
