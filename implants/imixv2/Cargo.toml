@@ -3,6 +3,9 @@ name = "imixv2"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+win_service = []
+
 [dependencies]
 tokio = { workspace = true, features = [
     "rt-multi-thread",
@@ -34,6 +37,12 @@ eldritch-libassets = { path = "../lib/eldritchv2/stdlib/eldritch-libassets", fea
 transport = { path = "../lib/transport", features = ["grpc"] }
 pb = { path = "../lib/pb", features = ["imix"] }
 portable-pty.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-service = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+static_vcruntime = { workspace = true }
 
 [dev-dependencies]
 transport = { path = "../lib/transport", features = ["mock", "grpc"] }
