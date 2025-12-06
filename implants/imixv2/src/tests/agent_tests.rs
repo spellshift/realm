@@ -31,7 +31,7 @@ async fn test_start_reverse_shell() {
     // Handle required for ImixAgent spawning
     let handle = tokio::runtime::Handle::current();
 
-    let task_registry = TaskRegistry::new();
+    let task_registry = Arc::new(TaskRegistry::new());
     let agent = Arc::new(ImixAgent::new(
         Config::default(),
         transport,

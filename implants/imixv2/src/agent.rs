@@ -15,7 +15,7 @@ pub struct ImixAgent<T: Transport> {
     config: Arc<RwLock<Config>>,
     transport: Arc<RwLock<T>>,
     runtime_handle: tokio::runtime::Handle,
-    pub task_registry: TaskRegistry,
+    pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
 }
@@ -25,7 +25,7 @@ impl<T: Transport + 'static> ImixAgent<T> {
         config: Config,
         transport: T,
         runtime_handle: tokio::runtime::Handle,
-        task_registry: TaskRegistry,
+        task_registry: Arc<TaskRegistry>,
     ) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
