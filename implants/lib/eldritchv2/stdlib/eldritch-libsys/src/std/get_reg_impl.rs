@@ -1,6 +1,6 @@
-use anyhow::Result;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
+use anyhow::Result;
 
 #[cfg(not(target_os = "windows"))]
 pub fn get_reg(_reghive: String, _regpath: String) -> Result<BTreeMap<String, String>> {
@@ -57,10 +57,7 @@ mod tests {
         let (nkey, _ndisp) = hkcu.create_subkey(format!("SOFTWARE\\{}", id))?;
         nkey.set_value("FOO", &"BAR")?;
 
-        let ares = get_reg(
-            "HKEY_CURRENT_USER".to_string(),
-            format!("SOFTWARE\\{}", id),
-        )?;
+        let ares = get_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}", id))?;
         let val2 = ares.get("FOO").unwrap();
         //delete temp regkey
         hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;

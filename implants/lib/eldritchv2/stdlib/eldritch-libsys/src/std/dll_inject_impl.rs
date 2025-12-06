@@ -1,7 +1,7 @@
-use anyhow::Result;
-use alloc::string::String;
 #[cfg(target_os = "windows")]
 use alloc::format;
+use alloc::string::String;
+use anyhow::Result;
 
 #[cfg(target_os = "windows")]
 use std::ffi::c_void;

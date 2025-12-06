@@ -1,9 +1,9 @@
-use anyhow::Result;
 use alloc::string::String;
 #[cfg(target_os = "windows")]
 use alloc::string::ToString;
 #[cfg(target_os = "windows")]
 use alloc::vec::Vec;
+use anyhow::Result;
 
 #[allow(unused_variables)]
 pub fn write_reg_str(
@@ -101,10 +101,10 @@ mod tests {
         #[cfg(target_os = "windows")]
         {
             use super::*;
+            use alloc::format;
             use std::str;
             use uuid::Uuid;
             use winreg::{enums::*, RegKey};
-            use alloc::format;
             let id = Uuid::new_v4();
 
             // -------------------- WRITE_REG_STR TESTS ---------------------------------------

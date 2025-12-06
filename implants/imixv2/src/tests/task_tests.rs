@@ -29,10 +29,7 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportCredentialResponse, String> {
         Ok(c2::ReportCredentialResponse {})
     }
-    fn report_file(
-        &self,
-        _req: c2::ReportFileRequest,
-    ) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse {})
     }
     fn report_process_list(
@@ -57,10 +54,7 @@ impl Agent for MockAgent {
     fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
-    fn claim_tasks(
-        &self,
-        _req: c2::ClaimTasksRequest,
-    ) -> Result<c2::ClaimTasksResponse, String> {
+    fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         Ok(c2::ClaimTasksResponse { tasks: vec![] })
     }
     fn get_transport(&self) -> Result<String, String> {
@@ -115,9 +109,15 @@ fn test_task_registry_spawn() {
     assert!(!reports.is_empty(), "Should have reported output");
     // Find the report with the output
     let output_report = reports.iter().find(|r| {
-        r.output.as_ref().map(|o| o.output.contains("Hello World")).unwrap_or(false)
+        r.output
+            .as_ref()
+            .map(|o| o.output.contains("Hello World"))
+            .unwrap_or(false)
     });
-    assert!(output_report.is_some(), "Should have found report containing 'Hello World'");
+    assert!(
+        output_report.is_some(),
+        "Should have found report containing 'Hello World'"
+    );
     let output = output_report.unwrap().output.as_ref().unwrap();
     assert_eq!(output.id, task_id);
 }
@@ -151,5 +151,8 @@ fn test_task_registry_list_and_stop() {
 
     registry.stop(task_id);
     let tasks_after = registry.list();
-    assert!(!tasks_after.iter().any(|t| t.id == task_id), "Task should be removed from list");
+    assert!(
+        !tasks_after.iter().any(|t| t.id == task_id),
+        "Task should be removed from list"
+    );
 }
