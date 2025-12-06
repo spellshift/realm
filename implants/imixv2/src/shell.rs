@@ -22,8 +22,8 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     mut transport: T,
 ) -> Result<()> {
     // Channels to manage gRPC stream
-    let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
-    let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(1);
+    let (output_tx, output_rx) = tokio::sync::mpsc::channel(100);
+    let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(100);
     // We will recreate the internal channels needed for the loop.
     let (internal_exit_tx, mut internal_exit_rx) = tokio::sync::mpsc::channel(1);
 
@@ -138,20 +138,6 @@ pub async fn run_reverse_shell_pty<T: Transport>(
                 log::error!("reverse_shell_pty output failed to queue: {}", _err);
                 break;
             }
-
-            // Ping to flush
-            if let Err(_err) = output_tx
-                .send(ReverseShellRequest {
-                    kind: ReverseShellMessageKind::Ping.into(),
-                    data: Vec::new(),
-                    task_id,
-                })
-                .await
-            {
-                #[cfg(debug_assertions)]
-                log::error!("reverse_shell_pty ping failed: {}", _err);
-                break;
-            }
         }
     });
 
@@ -199,8 +185,8 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     agent: ImixAgent<T>,
 ) -> Result<()> {
     // Channels to manage gRPC stream
-    let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
-    let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
+    let (output_tx, output_rx) = tokio::sync::mpsc::channel(100);
+    let (input_tx, input_rx) = tokio::sync::mpsc::channel(100);
 
     #[cfg(debug_assertions)]
     log::info!("starting repl_reverse_shell (task_id={})", task_id);
@@ -330,14 +316,7 @@ impl std::io::Write for VtWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        match self.tx.blocking_send(ReverseShellRequest {
-            kind: ReverseShellMessageKind::Ping.into(),
-            data: Vec::new(),
-            task_id: self.task_id,
-        }) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
-        }
+        Ok(())
     }
 }
 
