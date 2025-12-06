@@ -1,7 +1,7 @@
 use anyhow::Result;
 use pb::c2::{
     ReportTaskOutputRequest, ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse,
-    TaskOutput,
+    TaskError, TaskOutput,
 };
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::fmt;
@@ -310,7 +310,8 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                     }
                     ReplAction::Complete => {
                         let state = repl.get_render_state();
-                        let (start, completions) = interpreter.complete(&state.buffer, state.cursor);
+                        let (start, completions) =
+                            interpreter.complete(&state.buffer, state.cursor);
                         repl.set_suggestions(completions, start);
                         let _ = render(&mut stdout, &repl);
                     }
@@ -370,8 +371,10 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         let req = ReportTaskOutputRequest {
             output: Some(TaskOutput {
                 id: self.task_id,
-                output: format!("{}\n", s),
-                error: None,
+                output: String::new(),
+                error: Some(TaskError {
+                    msg: format!("{s}\n"),
+                }),
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
@@ -473,7 +476,10 @@ impl InputParser {
                             if self.buffer.len() > 32 {
                                 // Safety valve: sequence too long, probably garbage. Consume ESC and continue.
                                 #[cfg(debug_assertions)]
-                                log::warn!("Dropping long incomplete CSI buffer: {:02x?}", &self.buffer[..32]);
+                                log::warn!(
+                                    "Dropping long incomplete CSI buffer: {:02x?}",
+                                    &self.buffer[..32]
+                                );
                                 self.buffer.remove(0);
                             } else {
                                 // Wait for more data
@@ -509,8 +515,8 @@ impl InputParser {
                 match b {
                     b'\r' | b'\n' => inputs.push(Input::Enter),
                     0x7f | 0x08 => inputs.push(Input::Backspace),
-                    0x03 => inputs.push(Input::Cancel),      // Ctrl+C
-                    0x04 => inputs.push(Input::EOF),         // Ctrl+D
+                    0x03 => inputs.push(Input::Cancel), // Ctrl+C
+                    0x04 => inputs.push(Input::EOF),    // Ctrl+D
                     0x0c => inputs.push(Input::ClearScreen), // Ctrl+L
                     0x09 => inputs.push(Input::Tab),
                     0x12 => inputs.push(Input::HistorySearch), // Ctrl+R
@@ -556,16 +562,16 @@ impl InputParser {
         // Tilde sequences: \x1b[num~
         // e.g. \x1b[3~ (Del), \x1b[1~ (Home)
         if final_byte == b'~' {
-             // Extract number between [ and ~
-             let inner = &seq[2..seq.len()-1];
-             if let Ok(s) = std::str::from_utf8(inner) {
-                 return match s {
-                     "1" | "7" => Some(Input::Home),
-                     "4" | "8" => Some(Input::End),
-                     "3" => Some(Input::Delete),
-                     _ => None, // PageUp(5), PageDown(6), Insert(2) - ignore for now
-                 };
-             }
+            // Extract number between [ and ~
+            let inner = &seq[2..seq.len() - 1];
+            if let Ok(s) = std::str::from_utf8(inner) {
+                return match s {
+                    "1" | "7" => Some(Input::Home),
+                    "4" | "8" => Some(Input::End),
+                    "3" => Some(Input::Delete),
+                    _ => None, // PageUp(5), PageDown(6), Insert(2) - ignore for now
+                };
+            }
         }
 
         None
@@ -609,24 +615,24 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
         stdout.write_all(b"\r")?;
 
         if !suggestions.is_empty() {
-             for (i, s) in suggestions.iter().take(10).enumerate() {
-                 if i > 0 {
+            for (i, s) in suggestions.iter().take(10).enumerate() {
+                if i > 0 {
                     stdout.write_all(b"  ")?;
-                 }
-                 if Some(i) == state.suggestion_idx {
+                }
+                if Some(i) == state.suggestion_idx {
                     // Highlight selected (Black on White)
-                     stdout.queue(crossterm::style::SetBackgroundColor(Color::White))?;
-                     stdout.queue(SetForegroundColor(Color::Black))?;
-                     stdout.write_all(s.as_bytes())?;
-                     stdout.queue(crossterm::style::SetBackgroundColor(Color::Reset))?;
-                     stdout.queue(SetForegroundColor(Color::Reset))?;
-                 } else {
-                     stdout.write_all(s.as_bytes())?;
-                 }
-             }
-             if suggestions.len() > 10 {
-                 stdout.write_all(b" ...")?;
-             }
+                    stdout.queue(crossterm::style::SetBackgroundColor(Color::White))?;
+                    stdout.queue(SetForegroundColor(Color::Black))?;
+                    stdout.write_all(s.as_bytes())?;
+                    stdout.queue(crossterm::style::SetBackgroundColor(Color::Reset))?;
+                    stdout.queue(SetForegroundColor(Color::Reset))?;
+                } else {
+                    stdout.write_all(s.as_bytes())?;
+                }
+            }
+            if suggestions.len() > 10 {
+                stdout.write_all(b" ...")?;
+            }
         }
 
         // Restore cursor
@@ -700,9 +706,9 @@ mod tests {
 
     #[test]
     fn test_input_parser_delete() {
-         let mut parser = InputParser::new();
-         let inputs = parser.parse(b"\x1b[3~");
-         assert_eq!(inputs.len(), 1);
-         assert_eq!(inputs[0], Input::Delete);
+        let mut parser = InputParser::new();
+        let inputs = parser.parse(b"\x1b[3~");
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(inputs[0], Input::Delete);
     }
 }
