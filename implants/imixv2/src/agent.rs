@@ -11,11 +11,23 @@ use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 pub struct ImixAgent<T: Transport> {
-    config: RwLock<Config>,
-    transport: RwLock<T>,
+    config: Arc<RwLock<Config>>,
+    pub transport: Arc<RwLock<T>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: TaskRegistry,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
+}
+
+impl<T: Transport> Clone for ImixAgent<T> {
+    fn clone(&self) -> Self {
+        Self {
+            config: self.config.clone(),
+            transport: self.transport.clone(),
+            runtime_handle: self.runtime_handle.clone(),
+            task_registry: self.task_registry.clone(),
+            subtasks: self.subtasks.clone(),
+        }
+    }
 }
 
 impl<T: Transport + 'static> ImixAgent<T> {
@@ -26,8 +38,8 @@ impl<T: Transport + 'static> ImixAgent<T> {
         task_registry: TaskRegistry,
     ) -> Self {
         Self {
-            config: RwLock::new(config),
-            transport: RwLock::new(transport),
+            config: Arc::new(RwLock::new(config)),
+            transport: Arc::new(RwLock::new(transport)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -156,13 +168,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
         let subtasks = self.subtasks.clone();
 
-        let transport_clone = self.block_on(async {
-            let guard = self.transport.read().await;
-            Ok(guard.clone())
-        })?;
+        let agent_clone = self.clone();
 
         let handle = self.runtime_handle.spawn(async move {
-            if let Err(_e) = run_repl_reverse_shell(task_id, transport_clone).await {
+            if let Err(_e) = run_repl_reverse_shell(task_id, agent_clone).await {
                 #[cfg(debug_assertions)]
                 log::error!("repl_reverse_shell error: {}", _e);
             }

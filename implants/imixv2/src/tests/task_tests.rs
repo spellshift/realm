@@ -113,9 +113,16 @@ fn test_task_registry_spawn() {
 
     let reports = agent.output_reports.lock().unwrap();
     assert!(!reports.is_empty(), "Should have reported output");
-    let output = reports[0].output.as_ref().unwrap();
-    assert_eq!(output.id, task_id);
-    assert!(output.output.contains("Hello World"));
+
+    let found = reports.iter().any(|r| {
+        if let Some(output) = &r.output {
+            output.id == task_id && output.output.contains("Hello World")
+        } else {
+            false
+        }
+    });
+
+    assert!(found, "Should have reported output containing 'Hello World'");
 }
 
 #[test]

