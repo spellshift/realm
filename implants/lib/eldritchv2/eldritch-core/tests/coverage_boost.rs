@@ -207,7 +207,7 @@ fn test_ast_display() {
         assert(str([1, 2]) == "[1, 2]")
         assert(str((1, 2)) == "(1, 2)")
         assert(str((1,)) == "(1,)")
-        assert(str({"a": 1}) == "{a: 1}")
+        assert(str({"a": 1}) == "{\"a\": 1}")
 
         def f(): pass
         assert("<function f>" in str(f))
