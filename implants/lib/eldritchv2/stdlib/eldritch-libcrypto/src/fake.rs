@@ -36,6 +36,10 @@ impl CryptoLibrary for CryptoLibraryFake {
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         )) // Empty sha256
     }
+
+    fn hash_file(&self, _file: String, _algo: String) -> Result<String, String> {
+        Err("File hashing not supported in fake/wasm environment".into())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

@@ -25,4 +25,7 @@ pub trait CryptoLibrary {
 
     #[eldritch_method]
     fn sha256(&self, data: Vec<u8>) -> Result<String, String>;
+
+    #[eldritch_method]
+    fn hash_file(&self, file: String, algo: String) -> Result<String, String>;
 }
