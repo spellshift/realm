@@ -27,8 +27,8 @@ async fn main() -> Result<()> {
             .filter_level(log::LevelFilter::Info)
             .parse_env("IMIX_LOG")
             .init();
+        log::info!("Starting imixv2 agent");
     }
-    log::info!("Starting imixv2 agent");
 
     // Load config / defaults
     let config = Config::default_with_imix_verison(VERSION);
@@ -65,14 +65,18 @@ async fn main() -> Result<()> {
                 match agent.fetch_tasks().await {
                     Ok(tasks) => {
                         if tasks.is_empty() {
+                            #[cfg(debug_assertions)]
                             log::info!("Callback success, no tasks to claim")
                         }
                         for task in tasks {
+                            #[cfg(debug_assertions)]
                             log::info!("Claimed task: {}", task.id);
+
                             task_registry.spawn(task, agent.clone());
                         }
                     }
                     Err(e) => {
+                        #[cfg(debug_assertions)]
                         log::error!("Callback failed: {e:#}");
                     }
                 }
@@ -84,6 +88,7 @@ async fn main() -> Result<()> {
                 agent.update_transport(ActiveTransport::init()).await;
             }
             Err(e) => {
+                #[cfg(debug_assertions)]
                 log::error!("Failed to create transport: {e:#}");
             }
         }

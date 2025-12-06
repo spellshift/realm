@@ -10,6 +10,9 @@ use anyhow::{Context, Result as AnyhowResult};
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
+#[cfg(unix)]
+use nix::unistd::{Gid, Group, Uid, User};
+
 #[cfg(feature = "stdlib")]
 use flate2::Compression;
 #[cfg(feature = "stdlib")]
@@ -332,6 +335,38 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
 
     dict.insert("permissions".to_string(), Value::String(perms));
 
+    // Owner and Group
+    #[cfg(unix)]
+    {
+        use ::std::os::unix::fs::MetadataExt;
+        let uid = metadata.uid();
+        let gid = metadata.gid();
+
+        let user = User::from_uid(Uid::from_raw(uid)).ok().flatten();
+        let group = Group::from_gid(Gid::from_raw(gid)).ok().flatten();
+
+        let owner_name = user.map(|u| u.name).unwrap_or_else(|| uid.to_string());
+        let group_name = group.map(|g| g.name).unwrap_or_else(|| gid.to_string());
+
+        dict.insert("owner".to_string(), Value::String(owner_name));
+        dict.insert("group".to_string(), Value::String(group_name));
+    }
+    #[cfg(not(unix))]
+    {
+        // Fallback for Windows or others
+        dict.insert("owner".to_string(), Value::String("".to_string()));
+        dict.insert("group".to_string(), Value::String("".to_string()));
+    }
+
+    // Absolute Path
+    let abs_path = path
+        .canonicalize()
+        .unwrap_or_else(|_| path.to_path_buf());
+    dict.insert(
+        "absolute_path".to_string(),
+        Value::String(abs_path.to_string_lossy().to_string()),
+    );
+
     // Times
     if let Ok(m) = metadata.modified() {
         if let Ok(d) = m.duration_since(::std::time::UNIX_EPOCH) {
@@ -621,6 +656,35 @@ mod tests {
             .unwrap();
 
         assert_eq!(fs::read_to_string(&out_path)?, "Hello World");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_list_owner_group() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp = NamedTempFile::new()?;
+        let path = tmp.path().to_string_lossy().to_string();
+
+        let files = lib.list(path).unwrap();
+        assert_eq!(files.len(), 1);
+        let f = &files[0];
+
+        assert!(f.contains_key("owner"));
+        assert!(f.contains_key("group"));
+        assert!(f.contains_key("absolute_path"));
+
+        // On unix, owner/group should not be empty (usually)
+        // But in some containers or weird envs, it might be stringified ID.
+        // We just check presence as requested by the user's error message.
+
+        // Check absolute_path
+        if let Value::String(abs) = &f["absolute_path"] {
+            assert!(abs.len() > 0);
+            assert!(std::path::Path::new(abs).is_absolute());
+        } else {
+            panic!("absolute_path is not a string");
+        }
 
         Ok(())
     }
