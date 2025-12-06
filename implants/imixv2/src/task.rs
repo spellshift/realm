@@ -6,6 +6,7 @@ use std::time::SystemTime;
 use eldritchv2::{conversion::ToValue, BufferPrinter, Interpreter};
 use eldritch_libagent::agent::Agent;
 use pb::c2::Task;
+use prost_types::Timestamp;
 
 struct TaskHandle {
     #[allow(dead_code)] // Keep for future use/tracking
@@ -63,6 +64,19 @@ impl TaskRegistry {
 
                 // Run
                 let code = tome.eldritch;
+
+                // Report Start
+                let start_time = SystemTime::now();
+                let _ = agent.report_task_output(pb::c2::ReportTaskOutputRequest {
+                    output: Some(pb::c2::TaskOutput {
+                        id: task_id,
+                        output: String::new(),
+                        error: None,
+                        exec_started_at: Some(Timestamp::from(start_time)),
+                        exec_finished_at: None,
+                    }),
+                });
+
                 match interp.interpret(&code) {
                     Ok(v) => {
                         let out = printer.read();
@@ -74,7 +88,7 @@ impl TaskRegistry {
                                 output: out,
                                 error: None,
                                 exec_started_at: None,
-                                exec_finished_at: None,
+                                exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                             }),
                         });
                     }
@@ -86,7 +100,7 @@ impl TaskRegistry {
                                 output: String::new(),
                                 error: Some(pb::c2::TaskError { msg: e }),
                                 exec_started_at: None,
-                                exec_finished_at: None,
+                                exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                             }),
                         });
                     }

@@ -10,6 +10,7 @@ log = { workspace = true }
 futures = { workspace = true }
 lazy_static = { workspace = true }
 crossterm = { workspace = true }
+prost-types = { workspace = true }
 
 # Workspace dependencies
 eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
