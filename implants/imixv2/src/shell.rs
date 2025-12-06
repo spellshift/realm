@@ -346,45 +346,103 @@ impl InputParser {
             let b = self.buffer[i];
             if b == 0x1b {
                 // Escape sequence
-                if i + 2 < self.buffer.len() {
-                    if self.buffer[i + 1] == b'[' {
-                        match self.buffer[i + 2] {
-                            b'A' => { inputs.push(Input::Up); i += 3; continue; }
-                            b'B' => { inputs.push(Input::Down); i += 3; continue; }
-                            b'C' => { inputs.push(Input::Right); i += 3; continue; }
-                            b'D' => { inputs.push(Input::Left); i += 3; continue; }
-                            _ => {
-                                // Unknown, consume escape
-                                i += 1;
-                                continue;
-                            }
-                        }
+                if i + 1 >= self.buffer.len() {
+                    break; // Incomplete
+                }
+
+                let prefix = self.buffer[i + 1];
+                if prefix == b'[' || prefix == b'O' {
+                    if i + 2 >= self.buffer.len() {
+                        break; // Incomplete
                     }
+                    let code = self.buffer[i + 2];
+
+                    // Handle Cursor Keys & Home/End (standard)
+                    let input = match code {
+                        b'A' => Some(Input::Up),
+                        b'B' => Some(Input::Down),
+                        b'C' => Some(Input::Right),
+                        b'D' => Some(Input::Left),
+                        b'H' => Some(Input::Home),
+                        b'F' => Some(Input::End),
+                        _ => None,
+                    };
+
+                    if let Some(inp) = input {
+                        inputs.push(inp);
+                        i += 3;
+                        continue;
+                    }
+
+                    // Handle ~ terminated sequences (e.g. [3~ for Delete)
+                    if prefix == b'[' && (code >= b'0' && code <= b'9') {
+                        // Scan for ~
+                        let mut j = i + 3;
+                        let mut found_tilde = false;
+                        while j < self.buffer.len() && j < i + 8 {
+                            if self.buffer[j] == b'~' {
+                                found_tilde = true;
+                                break;
+                            }
+                            j += 1;
+                        }
+
+                        if !found_tilde {
+                            if j >= self.buffer.len() {
+                                break; // Incomplete
+                            }
+                            // Garbage or unsupported long sequence, consume ESC to skip
+                            i += 1;
+                            continue;
+                        }
+
+                        // Parse number
+                        let num_slice = &self.buffer[i + 2..j];
+                        if num_slice == b"3" {
+                            inputs.push(Input::Delete);
+                        } else if num_slice == b"1" || num_slice == b"7" {
+                            inputs.push(Input::Home);
+                        } else if num_slice == b"4" || num_slice == b"8" {
+                            inputs.push(Input::End);
+                        }
+                        // Ignore others (PageUp/Down/Insert) for now
+                        i = j + 1;
+                        continue;
+                    }
+
+                    // Unknown [ or O sequence
+                    i += 1;
+                    continue;
                 } else {
-                    // Incomplete? Wait for more data?
-                    break;
+                    // Unknown ESC sequence
+                    i += 1;
+                    continue;
                 }
             } else if b == b'\r' || b == b'\n' {
-                 inputs.push(Input::Enter);
-                 i += 1;
+                inputs.push(Input::Enter);
+                i += 1;
             } else if b == 0x7f || b == 0x08 {
-                 inputs.push(Input::Backspace);
-                 i += 1;
+                inputs.push(Input::Backspace);
+                i += 1;
             } else if b == 0x03 {
-                 inputs.push(Input::Cancel);
-                 i += 1;
+                inputs.push(Input::Cancel);
+                i += 1;
             } else if b == 0x04 {
-                 inputs.push(Input::EOF);
-                 i += 1;
+                inputs.push(Input::EOF);
+                i += 1;
             } else if b == 0x0c {
-                 inputs.push(Input::ClearScreen);
-                 i += 1;
+                inputs.push(Input::ClearScreen);
+                i += 1;
             } else if b == 0x09 {
-                 inputs.push(Input::Tab);
-                 i += 1;
+                inputs.push(Input::Tab);
+                i += 1;
+            } else if b == 0x00 {
+                // Ctrl+Space
+                inputs.push(Input::ForceComplete);
+                i += 1;
             } else {
-                 inputs.push(Input::Char(b as char));
-                 i += 1;
+                inputs.push(Input::Char(b as char));
+                i += 1;
             }
         }
         // Drain processed
@@ -447,4 +505,55 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
 
     stdout.flush()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_input_parser_application_cursor_keys() {
+        let mut parser = InputParser::new();
+        // Up arrow in Application Mode: \x1bOA
+        let inputs = parser.parse(b"\x1bOA");
+        assert_eq!(inputs.len(), 1, "Expected 1 input (Up), got {:?}", inputs);
+        assert_eq!(inputs[0], Input::Up);
+    }
+
+    #[test]
+    fn test_input_parser_delete_key() {
+        let mut parser = InputParser::new();
+        // Delete key: \x1b[3~
+        let inputs = parser.parse(b"\x1b[3~");
+        assert_eq!(inputs.len(), 1, "Expected 1 input (Delete), got {:?}", inputs);
+        assert_eq!(inputs[0], Input::Delete);
+    }
+
+    #[test]
+    fn test_input_parser_home_end() {
+        let mut parser = InputParser::new();
+        // Home (xterm): \x1bOH
+        let inputs = parser.parse(b"\x1bOH");
+        assert_eq!(inputs.len(), 1, "Expected 1 input (Home), got {:?}", inputs);
+        assert_eq!(inputs[0], Input::Home);
+
+        // End (xterm): \x1bOF
+        let mut parser = InputParser::new();
+        let inputs = parser.parse(b"\x1bOF");
+        assert_eq!(inputs.len(), 1, "Expected 1 input (End), got {:?}", inputs);
+        assert_eq!(inputs[0], Input::End);
+    }
+
+    #[test]
+    fn test_input_parser_split_packet() {
+        let mut parser = InputParser::new();
+        // Packet 1: \x1b
+        let inputs = parser.parse(b"\x1b");
+        assert_eq!(inputs.len(), 0, "Should buffer incomplete sequence");
+
+        // Packet 2: [A
+        let inputs = parser.parse(b"[A");
+        assert_eq!(inputs.len(), 1, "Should complete sequence");
+        assert_eq!(inputs[0], Input::Up);
+    }
 }
