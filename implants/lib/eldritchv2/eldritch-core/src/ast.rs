@@ -83,29 +83,92 @@ pub enum Value {
     Foreign(Arc<dyn ForeignValue>),
 }
 
-// Manual Debug implementation for Value
+// Implement repr-like behavior for Debug
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::None => write!(f, "None"),
-            Value::Bool(b) => write!(f, "Bool({b})"),
-            Value::Int(i) => write!(f, "Int({i})"),
-            Value::Float(fl) => write!(f, "Float({fl})"),
-            Value::String(s) => write!(f, "String({s:?})"),
-            Value::Bytes(b) => write!(f, "Bytes({b:?})"),
-            Value::List(l) => write!(f, "List({l:?})"),
-            Value::Tuple(t) => write!(f, "Tuple({t:?})"),
-            Value::Dictionary(d) => write!(f, "Dictionary({d:?})"),
-            Value::Set(s) => write!(f, "Set({s:?})"),
-            Value::Function(func) => write!(f, "Function({func:?})"),
-            Value::NativeFunction(name, _) => write!(f, "NativeFunction({name})"),
-            Value::NativeFunctionWithKwargs(name, _) => {
-                write!(f, "NativeFunctionWithKwargs({name})")
+            Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
+            Value::Int(i) => write!(f, "{i}"),
+            Value::Float(fl) => write!(f, "{fl:?}"),
+            Value::String(s) => write!(f, "{s:?}"), // Quoted string
+            Value::Bytes(b) => {
+                // Heuristic: if all bytes are printable ASCII, print as b"...", else [...]
+                // Or just stick to python's repr(bytes) which uses hex escapes for non-printable.
+                // For simplicity and correctness with existing types, let's use the Rust debug for byte literal if possible,
+                // or just `b` prefix.
+                // `write!(f, "b{:?}", b)` prints `b[1, 2]`. We want `b"..."`.
+                // We can convert to string with escaping.
+                // Simple version:
+                write!(f, "b\"")?;
+                for byte in b {
+                    match byte {
+                        b'\n' => write!(f, "\\n")?,
+                        b'\r' => write!(f, "\\r")?,
+                        b'\t' => write!(f, "\\t")?,
+                        b'\\' => write!(f, "\\\\")?,
+                        b'"' => write!(f, "\\\"")?,
+                        0x20..=0x7E => write!(f, "{}", *byte as char)?,
+                        _ => write!(f, "\\x{:02x}", byte)?,
+                    }
+                }
+                write!(f, "\"")
             }
-            Value::BoundMethod(receiver, name) => {
-                write!(f, "BoundMethod({receiver:?}, {name})")
+            Value::List(l) => {
+                write!(f, "[")?;
+                let list = l.read();
+                for (i, v) in list.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{v:?}")?;
+                }
+                write!(f, "]")
             }
-            Value::Foreign(obj) => write!(f, "Foreign({obj:?})"),
+            Value::Tuple(t) => {
+                write!(f, "(")?;
+                for (i, v) in t.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{v:?}")?;
+                }
+                if t.len() == 1 {
+                    write!(f, ",")?;
+                }
+                write!(f, ")")
+            }
+            Value::Dictionary(d) => {
+                write!(f, "{{")?;
+                let dict = d.read();
+                for (i, (k, v)) in dict.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{k:?}: {v:?}")?;
+                }
+                write!(f, "}}")
+            }
+            Value::Set(s) => {
+                let set = s.read();
+                if set.is_empty() {
+                    write!(f, "set()")
+                } else {
+                    write!(f, "{{")?;
+                    for (i, v) in set.iter().enumerate() {
+                        if i > 0 {
+                            write!(f, ", ")?;
+                        }
+                        write!(f, "{v:?}")?;
+                    }
+                    write!(f, "}}")
+                }
+            }
+            Value::Function(func) => write!(f, "<function {}>", func.name),
+            Value::NativeFunction(name, _) => write!(f, "<native function {name}>"),
+            Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {name}>"),
+            Value::BoundMethod(_, name) => write!(f, "<bound method {name}>"),
+            Value::Foreign(obj) => write!(f, "<{}>", obj.type_name()),
         }
     }
 }
@@ -240,7 +303,7 @@ impl Value {
     }
 }
 
-// Display implementation
+// Display implementation (equivalent to Python str())
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -248,53 +311,20 @@ impl fmt::Display for Value {
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
             Value::Int(i) => write!(f, "{i}"),
             Value::Float(fl) => write!(f, "{fl:?}"), // Use Debug for floats to get decent formatting (1.0 etc)
-            Value::String(s) => write!(f, "{s}"),
-            Value::Bytes(b) => write!(f, "{b:?}"),
+            Value::String(s) => write!(f, "{s}"), // Strings print without quotes in str()
+            Value::Bytes(b) => write!(f, "{:?}", Value::Bytes(b.clone())), // Delegate to Debug for bytes representation
             Value::List(l) => {
-                write!(f, "[")?;
-                let list = l.read();
-                for (i, v) in list.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{v}")?;
-                }
-                write!(f, "]")
+                // Containers use repr (Debug) for their elements
+                write!(f, "{:?}", Value::List(l.clone()))
             }
             Value::Tuple(t) => {
-                write!(f, "(")?;
-                for (i, v) in t.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{v}")?;
-                }
-                if t.len() == 1 {
-                    write!(f, ",")?;
-                }
-                write!(f, ")")
+                write!(f, "{:?}", Value::Tuple(t.clone()))
             }
             Value::Dictionary(d) => {
-                write!(f, "{{")?;
-                let dict = d.read();
-                for (i, (k, v)) in dict.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{k}: {v}")?;
-                }
-                write!(f, "}}")
+                write!(f, "{:?}", Value::Dictionary(d.clone()))
             }
             Value::Set(s) => {
-                write!(f, "{{")?;
-                let set = s.read();
-                for (i, v) in set.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{v}")?;
-                }
-                write!(f, "}}")
+                write!(f, "{:?}", Value::Set(s.clone()))
             }
             Value::Function(func) => write!(f, "<function {}>", func.name),
             Value::NativeFunction(name, _) => write!(f, "<native function {name}>"),
