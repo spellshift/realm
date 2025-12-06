@@ -20,6 +20,15 @@ use crate::version::VERSION;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize logging
+    #[cfg(debug_assertions)]
+    {
+        use pretty_env_logger;
+        pretty_env_logger::formatted_timed_builder()
+            .filter_level(log::LevelFilter::Info)
+            .parse_env("IMIX_LOG")
+            .init();
+    }
     log::info!("Starting imixv2 agent");
 
     // Load config / defaults
@@ -30,7 +39,12 @@ async fn main() -> Result<()> {
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = TaskRegistry::new();
-    let agent = Arc::new(ImixAgent::new(config, transport, handle, task_registry.clone()));
+    let agent = Arc::new(ImixAgent::new(
+        config,
+        transport,
+        handle,
+        task_registry.clone(),
+    ));
 
     loop {
         match agent.fetch_tasks().await {

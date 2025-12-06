@@ -4,17 +4,26 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+] }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
 lazy_static = { workspace = true }
 crossterm = { workspace = true }
 prost-types = { workspace = true }
+pretty_env_logger = { workspace = true }
 
 # Workspace dependencies
 eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
-eldritchv2 = { path = "../lib/eldritchv2/eldritchv2", features = ["std", "stdlib"] }
+eldritchv2 = { path = "../lib/eldritchv2/eldritchv2", features = [
+    "std",
+    "stdlib",
+] }
 eldritch-repl = { path = "../lib/eldritchv2/eldritch-repl" }
 eldritch-libagent = { path = "../lib/eldritchv2/stdlib/eldritch-libagent", features = [
     "stdlib",
@@ -28,4 +37,3 @@ portable-pty.workspace = true
 
 [dev-dependencies]
 transport = { path = "../lib/transport", features = ["mock", "grpc"] }
-pretty_env_logger = { workspace = true }
