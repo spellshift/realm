@@ -19,8 +19,14 @@ async fn test_start_reverse_shell() {
         t.expect_reverse_shell()
          .times(1)
          .returning(|_, _| Ok(()));
+        t.expect_is_active()
+         .returning(|| true);
         t
     });
+
+    // Expect is_active to be called by get_usable_transport
+    transport.expect_is_active()
+             .returning(|| true);
 
     // Handle required for ImixAgent spawning
     let handle = tokio::runtime::Handle::current();
