@@ -78,4 +78,8 @@ pub trait UnsafeTransport: Clone + Send {
         rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()>;
+
+    /// Returns true if the transport is fully initialized and active
+    #[allow(dead_code)]
+    fn is_active(&self) -> bool;
 }

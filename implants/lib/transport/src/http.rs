@@ -420,6 +420,10 @@ impl Transport for HTTP {
             "http/1.1 transport does not support reverse shell"
         ))
     }
+
+    fn is_active(&self) -> bool {
+        !self.base_url.is_empty()
+    }
 }
 
 #[cfg(test)]
