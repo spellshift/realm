@@ -9,6 +9,7 @@ import {
 } from "../../../utils/interfacesQuery";
 import { GET_REPOSITORY_QUERY, GET_TOMES_QUERY } from "../../../utils/queries";
 import { RepositoryRow } from "../../../utils/interfacesUI";
+import { OrderDirection, RepositoryOrderField } from "../../../utils/enums";
 
 export const useRepositoryView = () => {
     const [firstParty, setFirstParty] = useState<RepositoryRow | null>(null);
@@ -27,8 +28,8 @@ export const useRepositoryView = () => {
         variables:
         {
             "orderBy": [{
-                "direction": "DESC",
-                "field": "LAST_MODIFIED_AT"
+                "direction": OrderDirection.Desc,
+                "field": RepositoryOrderField.LastModifiedAt
             }]
         }
     });

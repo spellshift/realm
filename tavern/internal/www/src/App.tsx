@@ -20,6 +20,7 @@ import { FilterProvider } from "./context/FilterContext";
 import { Tomes } from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
+import { SortsProvider } from "./context/SortContext";
 
 
 const router = createBrowserRouter([
@@ -77,7 +78,9 @@ export const App = () => {
         <TagContextProvider>
           <UserPreferencesContextProvider>
             <FilterProvider>
-              <RouterProvider router={router} />
+              <SortsProvider>
+                <RouterProvider router={router} />
+              </SortsProvider>
             </FilterProvider>
           </UserPreferencesContextProvider>
         </TagContextProvider>
