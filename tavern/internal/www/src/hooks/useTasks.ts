@@ -42,12 +42,17 @@ export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
 
     const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
-        refetch(query);
+        return refetch(query);
     },[constructDefaultQuery, refetch]);
 
 
     useEffect(()=> {
+        const abortController = new AbortController();
         updateTaskList();
+
+        return () => {
+            abortController.abort();
+        };
     },[updateTaskList]);
 
     useEffect(()=>{

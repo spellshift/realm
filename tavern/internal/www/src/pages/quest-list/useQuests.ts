@@ -65,11 +65,16 @@ export const useQuests = (pagination: boolean) => {
 
     const updateQuestList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
       const query = constructDefaultQuery(afterCursor, beforeCursor, filters, questSort);
-      refetch(query);
+      return refetch(query);
     }, [filters, questSort, constructDefaultQuery, refetch]);
 
     useEffect(() => {
+      const abortController = new AbortController();
       updateQuestList();
+
+      return () => {
+        abortController.abort();
+      };
     }, [updateQuestList]);
 
     useEffect(() => {

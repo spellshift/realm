@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
     DocumentDuplicateIcon,
     CommandLineIcon,
@@ -23,7 +24,7 @@ interface NavigationItemType {
 export const usePageNavigation = () => {
     const { data } = useAuthorization();
 
-    const navigation = [
+    const navigation = useMemo(() => [
         { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },
         { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true },
         { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
@@ -32,7 +33,7 @@ export const usePageNavigation = () => {
         ...data?.me?.isAdmin ? [{ name: PageNavItem.admin, href: '/admin', icon: UserGroupIcon, internal: true, adminOnly: true }] : [],
         { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
         { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
-    ] as Array<NavigationItemType>;
+    ] as Array<NavigationItemType>, [data?.me?.isAdmin]);
 
     return navigation;
 }
