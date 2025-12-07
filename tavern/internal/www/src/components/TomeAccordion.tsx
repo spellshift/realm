@@ -65,12 +65,10 @@ const TomeAccordion = (props: Props) => {
                             </div>
                         )}
                         <CodeBlock
-                            className="w-full"
                             text={tome.eldritch}
                             language={"python"}
                             showLineNumbers={false}
                             theme={tomorrow}
-                            codeBlock
                         />
                     </AccordionPanel>
                 }
