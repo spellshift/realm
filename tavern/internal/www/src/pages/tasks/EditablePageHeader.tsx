@@ -18,7 +18,6 @@ export const EditablePageHeader: FC = () => {
         },
         skip: !questId
     });
-    console.log(data);
 
     const questData = data?.quests?.edges?.[0]?.node;
 
@@ -35,7 +34,7 @@ export const EditablePageHeader: FC = () => {
 
     return (
         <div className="flex flex-col gap-4 w-full">
-            <div className="flex flex-row justify-between w-full items-center">
+            <div className="flex flex-row justify-between w-full items-center gap-2">
                 <Breadcrumbs pages={BreadcrumbsList} />
                 {questData && questData.tasks.edges && (
                     <CreateQuestDropdown
