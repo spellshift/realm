@@ -112,12 +112,10 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
                                                 {tome.eldritch &&
                                                     <AccordionPanel pb={4} pl={12}>
                                                         <CodeBlock
-                                                            className="w-full"
                                                             text={tome.eldritch}
                                                             language={"python"}
                                                             showLineNumbers={false}
                                                             theme={tomorrow}
-                                                            codeBlock
                                                         />
                                                     </AccordionPanel>
                                                 }
