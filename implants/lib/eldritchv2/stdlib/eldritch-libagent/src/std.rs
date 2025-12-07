@@ -6,9 +6,7 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
-use crate::{
-    CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper,
-};
+use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
@@ -25,8 +23,8 @@ pub struct StdAgentLibrary {
 impl core::fmt::Debug for StdAgentLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAgentLibrary")
-         .field("task_id", &self.task_id)
-         .finish()
+            .field("task_id", &self.task_id)
+            .finish()
     }
 }
 
@@ -49,7 +47,7 @@ impl AgentLibrary for StdAgentLibrary {
         Err("get_platform not implemented".to_string())
     }
 
-    fn kill(&self) -> Result<(), String> {
+    fn _terminate_this_process_clowntown(&self) -> Result<(), String> {
         ::std::process::exit(0);
     }
 
@@ -112,9 +110,7 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
-        let req = c2::ClaimTasksRequest {
-            beacon: None,
-        };
+        let req = c2::ClaimTasksRequest { beacon: None };
         let resp = self.agent.claim_tasks(req)?;
         Ok(resp.tasks.into_iter().map(TaskWrapper).collect())
     }

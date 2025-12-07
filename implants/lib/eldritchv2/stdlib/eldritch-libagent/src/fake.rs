@@ -25,7 +25,7 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(String::from("linux"))
     }
 
-    fn kill(&self) -> Result<(), String> {
+    fn _terminate_this_process_clowntown(&self) -> Result<(), String> {
         Ok(())
     }
 

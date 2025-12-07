@@ -1,9 +1,9 @@
 #![allow(clippy::mutable_key_type)]
 extern crate alloc;
 
-use eldritch_core::Value;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 use alloc::collections::BTreeMap;
@@ -12,9 +12,9 @@ use alloc::collections::BTreeMap;
 pub mod fake;
 
 #[cfg(feature = "stdlib")]
-pub mod conversion;
-#[cfg(feature = "stdlib")]
 pub mod agent;
+#[cfg(feature = "stdlib")]
+pub mod conversion;
 #[cfg(feature = "stdlib")]
 pub mod std;
 
@@ -33,7 +33,7 @@ pub trait AgentLibrary {
     fn get_platform(&self) -> Result<String, String>;
 
     #[eldritch_method]
-    fn kill(&self) -> Result<(), String>;
+    fn _terminate_this_process_clowntown(&self) -> Result<(), String>;
 
     #[eldritch_method]
     fn set_config(&self, config: BTreeMap<String, Value>) -> Result<(), String>;
