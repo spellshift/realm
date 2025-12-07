@@ -19,7 +19,6 @@ const TagBarChart = ({ data, loading, tagKind, children }: { data: Array<any>, l
 
     const handleBarClick = (_: any, index?: any) => {
         const item = data[index];
-        console.log(item);
         if (item.name === "undefined") {
             return null;
         }

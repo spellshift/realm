@@ -212,6 +212,16 @@ export const GET_QUEST_QUERY = gql`
                             }
                         }
                     }
+                    tasks{
+                        edges{
+                            node{
+                                id
+                                beacon {
+                                    id
+                                }
+                            }
+                        }
+                    }
                     tasksTotal:tasks(where: $whereTotalTask){
                         totalCount
                     }
