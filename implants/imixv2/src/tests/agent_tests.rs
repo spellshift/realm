@@ -1,6 +1,6 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
-use eldritch_libagent::agent::Agent;
+use eldritch_libagent::agent::{Agent, TaskManager};
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;

@@ -1,5 +1,5 @@
 use super::super::task::TaskRegistry;
-use eldritch_libagent::agent::Agent;
+use eldritch_libagent::agent::{Agent, Transport, TaskManager, AgentConfig};
 use pb::c2;
 use pb::eldritch::Tome;
 use std::sync::Arc;
@@ -19,7 +19,7 @@ impl MockAgent {
     }
 }
 
-impl Agent for MockAgent {
+impl Transport for MockAgent {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(vec![])
     }
@@ -45,6 +45,12 @@ impl Agent for MockAgent {
         self.output_reports.lock().unwrap().push(req);
         Ok(c2::ReportTaskOutputResponse {})
     }
+    fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+        Ok(c2::ClaimTasksResponse { tasks: vec![] })
+    }
+}
+
+impl TaskManager for MockAgent {
     fn reverse_shell(&self) -> Result<(), String> {
         Ok(())
     }
@@ -54,9 +60,15 @@ impl Agent for MockAgent {
     fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
-    fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        Ok(c2::ClaimTasksResponse { tasks: vec![] })
+    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+        Ok(vec![])
     }
+    fn stop_task(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
+}
+
+impl AgentConfig for MockAgent {
     fn get_transport(&self) -> Result<String, String> {
         Ok("mock".to_string())
     }
@@ -75,13 +87,9 @@ impl Agent for MockAgent {
     fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
         Ok(())
     }
-    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-        Ok(vec![])
-    }
-    fn stop_task(&self, _task_id: i64) -> Result<(), String> {
-        Ok(())
-    }
 }
+
+impl Agent for MockAgent {}
 
 #[test]
 fn test_task_registry_spawn() {

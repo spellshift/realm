@@ -17,7 +17,7 @@ use crossterm::{
     terminal, QueueableCommand,
 };
 use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
+use eldritch_libagent::agent::{Agent, Transport as AgentTransport};
 use eldritch_repl::{Input, Repl, ReplAction};
 use eldritchv2::{Interpreter, Printer, Span};
 

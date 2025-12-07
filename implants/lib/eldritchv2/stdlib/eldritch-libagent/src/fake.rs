@@ -118,7 +118,7 @@ pub use self::inner_fake::AgentFake;
 
 #[cfg(all(feature = "stdlib", feature = "fake_bindings"))]
 mod inner_fake {
-    use super::super::agent::Agent;
+    use super::super::agent::{Agent, Transport, TaskManager, AgentConfig};
     use alloc::collections::BTreeMap;
     use alloc::string::{String, ToString};
     use alloc::vec::Vec;
@@ -179,7 +179,7 @@ mod inner_fake {
         }
     }
 
-    impl Agent for AgentFake {
+    impl Transport for AgentFake {
         fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
             let state = self.state.lock().unwrap();
             state
@@ -225,6 +225,18 @@ mod inner_fake {
             Ok(c2::ReportTaskOutputResponse {})
         }
 
+        fn claim_tasks(
+            &self,
+            _req: c2::ClaimTasksRequest,
+        ) -> Result<c2::ClaimTasksResponse, String> {
+            let mut state = self.state.lock().unwrap();
+            // Move all pending tasks to the response
+            let tasks = state.tasks.drain(..).collect();
+            Ok(c2::ClaimTasksResponse { tasks })
+        }
+    }
+
+    impl TaskManager for AgentFake {
         fn reverse_shell(&self) -> Result<(), String> {
             let mut state = self.state.lock().unwrap();
             state.reverse_shell_active = !state.reverse_shell_active;
@@ -243,16 +255,19 @@ mod inner_fake {
             Ok(())
         }
 
-        fn claim_tasks(
-            &self,
-            _req: c2::ClaimTasksRequest,
-        ) -> Result<c2::ClaimTasksResponse, String> {
-            let mut state = self.state.lock().unwrap();
-            // Move all pending tasks to the response
-            let tasks = state.tasks.drain(..).collect();
-            Ok(c2::ClaimTasksResponse { tasks })
+        fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+            let state = self.state.lock().unwrap();
+            Ok(state.tasks.clone())
         }
 
+        fn stop_task(&self, task_id: i64) -> Result<(), String> {
+            let mut state = self.state.lock().unwrap();
+            state.tasks.retain(|t| t.id != task_id);
+            Ok(())
+        }
+    }
+
+    impl AgentConfig for AgentFake {
         fn get_transport(&self) -> Result<String, String> {
             // Default or first? Let's say "http" if not set, or we can check keys
             let state = self.state.lock().unwrap();
@@ -291,18 +306,9 @@ mod inner_fake {
             state.callback_interval = interval;
             Ok(())
         }
-
-        fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-            let state = self.state.lock().unwrap();
-            Ok(state.tasks.clone())
-        }
-
-        fn stop_task(&self, task_id: i64) -> Result<(), String> {
-            let mut state = self.state.lock().unwrap();
-            state.tasks.retain(|t| t.id != task_id);
-            Ok(())
-        }
     }
+
+    impl Agent for AgentFake {}
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

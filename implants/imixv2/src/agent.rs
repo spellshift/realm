@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use eldritch_libagent::agent::Agent;
+use eldritch_libagent::agent::{Agent, Transport as AgentTransport, TaskManager, AgentConfig};
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::BTreeMap;
@@ -135,8 +135,8 @@ impl<T: Transport + 'static> ImixAgent<T> {
     }
 }
 
-// Implement the Eldritch Agent Trait
-impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
+// Implement the Eldritch Agent Traits
+impl<T: Transport + Send + Sync + 'static> AgentTransport for ImixAgent<T> {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.block_on(async {
             let mut t = self
@@ -206,6 +206,20 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportTaskOutputResponse {})
     }
 
+    fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+        // Direct claim tasks logic usually used internally or for chaining.
+        // We use get_usable_transport here as well to be safe.
+        self.block_on(async {
+            let mut t = self
+                .get_usable_transport()
+                .await
+                .map_err(|e| e.to_string())?;
+            t.claim_tasks(req).await.map_err(|e| e.to_string())
+        })
+    }
+}
+
+impl<T: Transport + Send + Sync + 'static> TaskManager for ImixAgent<T> {
     fn reverse_shell(&self) -> Result<(), String> {
         Err("Reverse shell not implemented in imixv2 agent yet".to_string())
     }
@@ -254,18 +268,27 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(())
     }
 
-    fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        // Direct claim tasks logic usually used internally or for chaining.
-        // We use get_usable_transport here as well to be safe.
-        self.block_on(async {
-            let mut t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
-            t.claim_tasks(req).await.map_err(|e| e.to_string())
-        })
+    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+        Ok(self.task_registry.list())
     }
 
+    fn stop_task(&self, task_id: i64) -> Result<(), String> {
+        self.task_registry.stop(task_id);
+        // Also stop subtask
+        let mut map = self
+            .subtasks
+            .lock()
+            .map_err(|_| "Poisoned lock".to_string())?;
+        if let Some(handle) = map.remove(&task_id) {
+            handle.abort();
+            #[cfg(debug_assertions)]
+            log::info!("Aborted subtask {task_id}");
+        }
+        Ok(())
+    }
+}
+
+impl<T: Transport + Send + Sync + 'static> AgentConfig for ImixAgent<T> {
     fn get_transport(&self) -> Result<String, String> {
         Ok("grpc".to_string())
     }
@@ -295,23 +318,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             Ok(())
         })
     }
-
-    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-        Ok(self.task_registry.list())
-    }
-
-    fn stop_task(&self, task_id: i64) -> Result<(), String> {
-        self.task_registry.stop(task_id);
-        // Also stop subtask
-        let mut map = self
-            .subtasks
-            .lock()
-            .map_err(|_| "Poisoned lock".to_string())?;
-        if let Some(handle) = map.remove(&task_id) {
-            handle.abort();
-            #[cfg(debug_assertions)]
-            log::info!("Aborted subtask {task_id}");
-        }
-        Ok(())
-    }
 }
+
+impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {}
