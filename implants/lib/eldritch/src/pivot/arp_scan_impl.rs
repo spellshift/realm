@@ -238,7 +238,7 @@ pub fn handle_arp_scan(
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict>> {
+pub fn arp_scan(starlark_heap: &'_ Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict<'_>>> {
     let mut out: Vec<Dict> = Vec::new();
     let final_listener_output = handle_arp_scan(target_cidrs)?;
     for (ipaddr, res) in final_listener_output {

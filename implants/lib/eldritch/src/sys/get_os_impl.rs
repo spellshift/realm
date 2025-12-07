@@ -13,7 +13,7 @@ struct OsInfo {
     platform: String,
 }
 
-pub fn get_os(starlark_heap: &Heap) -> Result<Dict> {
+pub fn get_os(starlark_heap: &'_ Heap) -> Result<Dict<'_>> {
     let cmd_res = handle_get_os()?;
 
     let res = SmallMap::new();
