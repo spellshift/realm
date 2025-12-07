@@ -11,7 +11,7 @@ pub fn get_reg(_starlark_heap: &'_ Heap, _reghive: String, _regpath: String) -> 
 }
 
 #[cfg(target_os = "windows")]
-pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result<Dict> {
+pub fn get_reg(starlark_heap: &'_ Heap, reghive: String, regpath: String) -> Result<Dict<'_>> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
