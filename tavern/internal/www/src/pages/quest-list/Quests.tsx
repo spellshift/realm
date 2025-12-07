@@ -25,7 +25,7 @@ const Quests = () => {
         <PageWrapper currNavItem={PageNavItem.quests}>
             <QuestHeader />
             <div className="bg-gray-50 rounded-md">
-                <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
+                <div className="flex flex-col md:flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">Quests</h3>
                     <div className="flex flex-row justify-end">
                         <SortingControls type={PageNavItem.quests} />

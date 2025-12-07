@@ -9,6 +9,7 @@ import TaskCard from "../../components/task-card/TaskCard";
 import FilterControls, { FilterPageType } from "../../components/filter-controls";
 import { TaskEdge } from "../../utils/interfacesQuery";
 import { EditablePageHeader } from "./EditablePageHeader";
+import SortingControls from "../../components/SortingControls";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -28,8 +29,7 @@ const Tasks = () => {
             <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">{data?.tasks?.edges[0]?.node?.quest?.name || questId}</h3>
                 <div className="flex flex-row justify-end">
-                    {/* Sorting not added yet */}
-                    {/* <Button leftIcon={<Bars3BottomLeftIcon className="w-4" />} buttonVariant="ghost" buttonStyle={{ color: 'gray', size: "md" }} onClick={() => console.log("hi")}>Sort</Button> */}
+                    <SortingControls type={PageNavItem.tasks} />
                     <FilterControls type={FilterPageType.TASK} />
                 </div>
             </div>
