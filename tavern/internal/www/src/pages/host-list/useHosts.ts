@@ -32,12 +32,17 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
 
     const updateHosts = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
-        refetch(query)
+        return refetch(query);
       },[constructDefaultQuery, refetch]);
 
 
     useEffect(()=>{
+        const abortController = new AbortController();
         updateHosts();
+
+        return () => {
+            abortController.abort();
+        };
     },[updateHosts]);
 
     useEffect(()=>{
