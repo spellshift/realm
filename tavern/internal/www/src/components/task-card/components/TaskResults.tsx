@@ -13,7 +13,6 @@ const TaskResults = ({
                             language={""}
                             showLineNumbers={false}
                             theme={tomorrow}
-                            codeBlock
                         />
                     </div>
                 ) : (
