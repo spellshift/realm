@@ -21,7 +21,7 @@ russh-sftp = { workspace = true, optional = true }
 russh-keys = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "fs"], optional = true }
 pnet = { workspace = true, optional = true }
-pb.workspace = true
+pb = { workspace = true, optional = true }
 
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
 listeners = { workspace = true, optional = true }
@@ -32,5 +32,5 @@ eldritch-libagent = { path = "../eldritch-libagent" }
 
 [features]
 default = ["stdlib"]
-stdlib = ["eldritch-libagent", "anyhow", "async-recursion", "async-trait", "ipnetwork", "log", "russh", "russh-sftp", "russh-keys", "tokio", "pnet"]
+stdlib = ["eldritch-libagent", "anyhow", "async-recursion", "async-trait", "ipnetwork", "log", "russh", "russh-sftp", "russh-keys", "tokio", "pnet", "pb"]
 fake_bindings = []

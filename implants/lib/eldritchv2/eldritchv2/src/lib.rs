@@ -29,18 +29,55 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 
+#[cfg(feature = "stdlib")]
 use crate::agent::{agent::Agent, std::StdAgentLibrary};
+#[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
+#[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
+#[cfg(feature = "stdlib")]
 use crate::file::std::StdFileLibrary;
+#[cfg(feature = "stdlib")]
 use crate::http::std::StdHttpLibrary;
+#[cfg(feature = "stdlib")]
 use crate::pivot::std::StdPivotLibrary;
+#[cfg(feature = "stdlib")]
 use crate::process::std::StdProcessLibrary;
+#[cfg(feature = "stdlib")]
 use crate::random::std::StdRandomLibrary;
+#[cfg(feature = "stdlib")]
 use crate::regex::std::StdRegexLibrary;
+#[cfg(feature = "stdlib")]
 use crate::report::std::StdReportLibrary;
+#[cfg(feature = "stdlib")]
 use crate::sys::std::StdSysLibrary;
+#[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
+
+#[cfg(feature = "fake_bindings")]
+use crate::agent::fake::AgentLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::assets::fake::FakeAssetsLibrary;
+#[cfg(feature = "fake_bindings")]
+use crate::crypto::fake::CryptoLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::file::fake::FileLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::http::fake::HttpLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::pivot::fake::PivotLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::process::fake::ProcessLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::random::fake::RandomLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::regex::fake::RegexLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::report::fake::ReportLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::sys::fake::SysLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::time::fake::TimeLibraryFake;
 
 pub struct Interpreter {
     inner: CoreInterpreter,
@@ -66,18 +103,36 @@ impl Interpreter {
     }
 
     pub fn with_default_libs(mut self) -> Self {
-        self.inner.register_lib(StdCryptoLibrary);
-        self.inner.register_lib(StdFileLibrary);
-        self.inner.register_lib(StdHttpLibrary);
-        self.inner.register_lib(StdPivotLibrary::default());
-        self.inner.register_lib(StdProcessLibrary);
-        self.inner.register_lib(StdRandomLibrary);
-        self.inner.register_lib(StdRegexLibrary);
-        self.inner.register_lib(StdSysLibrary);
-        self.inner.register_lib(StdTimeLibrary);
+        #[cfg(feature = "stdlib")]
+        {
+            self.inner.register_lib(StdCryptoLibrary);
+            self.inner.register_lib(StdFileLibrary);
+            self.inner.register_lib(StdHttpLibrary);
+            self.inner.register_lib(StdPivotLibrary::default());
+            self.inner.register_lib(StdProcessLibrary);
+            self.inner.register_lib(StdRandomLibrary);
+            self.inner.register_lib(StdRegexLibrary);
+            self.inner.register_lib(StdSysLibrary);
+            self.inner.register_lib(StdTimeLibrary);
+        }
+
+        #[cfg(feature = "fake_bindings")]
+        {
+            self.inner.register_lib(CryptoLibraryFake::default());
+            self.inner.register_lib(FileLibraryFake::default());
+            self.inner.register_lib(HttpLibraryFake::default());
+            self.inner.register_lib(PivotLibraryFake::default());
+            self.inner.register_lib(ProcessLibraryFake::default());
+            self.inner.register_lib(RandomLibraryFake::default());
+            self.inner.register_lib(RegexLibraryFake::default());
+            self.inner.register_lib(SysLibraryFake::default());
+            self.inner.register_lib(TimeLibraryFake::default());
+        }
+
         self
     }
 
+    #[cfg(feature = "stdlib")]
     pub fn with_agent(mut self, agent: Arc<dyn Agent>) -> Self {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
@@ -97,6 +152,16 @@ impl Interpreter {
         self
     }
 
+    #[cfg(feature = "fake_bindings")]
+    pub fn with_agent(mut self) -> Self {
+        self.inner.register_lib(AgentLibraryFake::default());
+        self.inner.register_lib(ReportLibraryFake::default());
+        self.inner.register_lib(PivotLibraryFake::default());
+        self.inner.register_lib(FakeAssetsLibrary::default());
+        self
+    }
+
+    #[cfg(feature = "stdlib")]
     pub fn with_task_context(
         mut self,
         agent: Arc<dyn Agent>,

@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eldritch-core = { path = "../../eldritch-core" }
 eldritch-macros = { path = "../../eldritch-macros" }
+spin = { version = "0.10.0", features = ["rwlock"] }
 aes = { workspace = true, optional = true }
 md5 = { workspace = true, optional = true }
 sha1 = { workspace = true, optional = true }

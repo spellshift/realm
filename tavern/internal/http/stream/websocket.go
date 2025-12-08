@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/auth"
@@ -34,6 +36,11 @@ type connector struct {
 	*Stream
 	mux *Mux
 	ws  *websocket.Conn
+}
+
+type wSMessage struct {
+	Type string `json:"type"`
+	Data []byte `json:"data"`
 }
 
 // WriteToWebsocket will read messages from the Mux and write them to the underlying websocket.
@@ -73,11 +80,25 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				return
 			}
 
+			kind := message.Metadata[MetadataMsgKind]
+			if kind == "" {
+				kind = "data"
+			}
+			payload := wSMessage{
+				Type: kind,
+				Data: message.Body,
+			}
+			jsonPayload, err := json.Marshal(payload)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to marshal websocket payload", "error", err)
+				continue
+			}
+
 			w, err := c.ws.NextWriter(websocket.BinaryMessage)
 			if err != nil {
 				return
 			}
-			if _, err := w.Write(message.Body); err != nil {
+			if _, err := w.Write(jsonPayload); err != nil {
 				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
 					"stream_id", c.Stream.id,
 					"stream_order_key", c.Stream.orderKey,
@@ -89,7 +110,21 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			n := len(c.Messages())
 			for i := 0; i < n; i++ {
 				additionalMsg := <-c.Messages()
-				if _, err := w.Write(additionalMsg.Body); err != nil {
+				kind := additionalMsg.Metadata[MetadataMsgKind]
+				if kind == "" {
+					kind = "data"
+				}
+				payload := wSMessage{
+					Type: kind,
+					Data: additionalMsg.Body,
+				}
+				jsonPayload, err := json.Marshal(payload)
+				if err != nil {
+					slog.ErrorContext(ctx, "failed to marshal additional websocket payload", "error", err)
+					continue
+				}
+
+				if _, err := w.Write(jsonPayload); err != nil {
 					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
 						"stream_id", c.Stream.id,
 						"stream_order_key", c.Stream.orderKey,
@@ -138,11 +173,26 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 				}
 				return
 			}
-			msgLen := len(message)
+
+			var payload wSMessage
+			if err := json.Unmarshal(message, &payload); err != nil {
+				// Fallback or error?
+				// Assuming strict JSON protocol now.
+				// Try to treat as raw data for backward compatibility?
+				// Maybe better to just error or treat as "data" type.
+				// Let's treat as data to be safe, but wrapped in valid structure for internal use
+				payload = wSMessage{
+					Type: "data",
+					Data: message,
+				}
+			}
+
+			msgLen := len(payload.Data)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
-				Body: message,
+				Body: payload.Data,
 				Metadata: map[string]string{
-					metadataID: c.id,
+					metadataID:      c.id,
+					MetadataMsgKind: payload.Type,
 				},
 			}, c.mux); err != nil {
 				slog.ErrorContext(ctx, "websocket failed to publish message",
