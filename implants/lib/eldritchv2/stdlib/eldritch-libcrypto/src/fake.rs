@@ -44,7 +44,8 @@ impl CryptoLibrary for CryptoLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::CryptoLibraryFake;
+    use crate::CryptoLibrary;
 
     #[test]
     fn test_crypto_fake() {

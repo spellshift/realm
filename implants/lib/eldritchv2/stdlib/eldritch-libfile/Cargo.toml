@@ -35,3 +35,6 @@ stdlib = [
     "dep:serde_json",
 ]
 fake_bindings = []
+
+[dev-dependencies]
+tempfile = { workspace = true }

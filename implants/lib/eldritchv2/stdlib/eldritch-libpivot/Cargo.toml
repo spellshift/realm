@@ -28,7 +28,7 @@ listeners = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-eldritch-libagent = { path = "../eldritch-libagent" }
+eldritch-libagent = { path = "../eldritch-libagent", features = ["fake_bindings"] }
 
 [features]
 default = ["stdlib"]

@@ -9,18 +9,18 @@ use super::RegexLibrary;
 pub struct RegexLibraryFake;
 
 impl RegexLibrary for RegexLibraryFake {
-    fn match_all(&self, _haystack: String, _pattern: String) -> Result<Vec<String>, String> {
+    fn match_all(&self, _pattern: String, _haystack: String) -> Result<Vec<String>, String> {
         Ok(Vec::new())
     }
 
-    fn r#match(&self, _haystack: String, _pattern: String) -> Result<String, String> {
+    fn r#match(&self, _pattern: String, _haystack: String) -> Result<String, String> {
         Ok(String::new())
     }
 
     fn replace_all(
         &self,
-        haystack: String,
         _pattern: String,
+        haystack: String,
         _value: String,
     ) -> Result<String, String> {
         Ok(haystack) // No-op replacement
@@ -28,8 +28,8 @@ impl RegexLibrary for RegexLibraryFake {
 
     fn replace(
         &self,
-        haystack: String,
         _pattern: String,
+        haystack: String,
         _value: String,
     ) -> Result<String, String> {
         Ok(haystack)
@@ -38,7 +38,8 @@ impl RegexLibrary for RegexLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::RegexLibraryFake;
+    use crate::RegexLibrary;
 
     #[test]
     fn test_regex_fake() {

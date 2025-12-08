@@ -9,7 +9,7 @@ use regex::{NoExpand, Regex};
 pub struct StdRegexLibrary;
 
 impl RegexLibrary for StdRegexLibrary {
-    fn match_all(&self, haystack: String, pattern: String) -> Result<Vec<String>, String> {
+    fn match_all(&self, pattern: String, haystack: String) -> Result<Vec<String>, String> {
         let re = Regex::new(&pattern).map_err(|e| e.to_string())?;
         // - 1 because capture_locations includes the implicit whole-match group
         let num_capture_groups = re.capture_locations().len().saturating_sub(1);
@@ -27,7 +27,7 @@ impl RegexLibrary for StdRegexLibrary {
         Ok(matches)
     }
 
-    fn r#match(&self, haystack: String, pattern: String) -> Result<String, String> {
+    fn r#match(&self, pattern: String, haystack: String) -> Result<String, String> {
         let re = Regex::new(&pattern).map_err(|e| e.to_string())?;
         let num_capture_groups = re.capture_locations().len().saturating_sub(1);
         if num_capture_groups != 1 {
@@ -45,8 +45,8 @@ impl RegexLibrary for StdRegexLibrary {
 
     fn replace_all(
         &self,
-        haystack: String,
         pattern: String,
+        haystack: String,
         value: String,
     ) -> Result<String, String> {
         let re = Regex::new(&pattern).map_err(|e| e.to_string())?;
@@ -54,7 +54,7 @@ impl RegexLibrary for StdRegexLibrary {
         Ok(String::from(result))
     }
 
-    fn replace(&self, haystack: String, pattern: String, value: String) -> Result<String, String> {
+    fn replace(&self, pattern: String, haystack: String, value: String) -> Result<String, String> {
         let re = Regex::new(&pattern).map_err(|e| e.to_string())?;
         let result = re.replace(&haystack, NoExpand(&value));
         Ok(String::from(result))
@@ -80,8 +80,8 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
-        let matches = lib.match_all(test_haystack, test_pattern).unwrap();
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
+        let matches = lib.match_all(test_pattern, test_haystack).unwrap();
         assert_eq!(matches.len(), 1);
         assert_eq!(matches.first().unwrap(), "Frozen with snow.");
     }
@@ -101,8 +101,8 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
-        let matches = lib.match_all(test_haystack, test_pattern).unwrap();
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
+        let matches = lib.match_all(test_pattern, test_haystack).unwrap();
         assert_eq!(matches.len(), 2);
         assert_eq!(matches.first().unwrap(), "That cannot fly.");
         assert_eq!(matches.get(1).unwrap(), "Frozen with snow.");
@@ -123,8 +123,8 @@ mod tests {
             Life is a barren field
             Frozen with snow"#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
-        let matches = lib.match_all(test_haystack, test_pattern).unwrap();
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
+        let matches = lib.match_all(test_pattern, test_haystack).unwrap();
         assert!(matches.is_empty());
     }
 
@@ -143,8 +143,8 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
-        let m = lib.r#match(test_haystack, test_pattern).unwrap();
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
+        let m = lib.r#match(test_pattern, test_haystack).unwrap();
         assert_eq!(m, "That cannot fly.");
     }
 
@@ -163,8 +163,8 @@ mod tests {
             Life is a barren field
             Frozen with snow"#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
-        let m = lib.r#match(test_haystack, test_pattern).unwrap();
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
+        let m = lib.r#match(test_pattern, test_haystack).unwrap();
         assert_eq!(m, "");
     }
 
@@ -183,10 +183,10 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let test_value = String::from("That cannot soar.");
         let m = lib
-            .replace_all(test_haystack, test_pattern, test_value)
+            .replace_all(test_pattern, test_haystack, test_value)
             .unwrap();
         assert!(!m.contains("That cannot fly."));
         assert!(!m.contains("Frozen with snow."));
@@ -208,10 +208,10 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(That we may believe)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(That we may believe)$");
         let test_value = String::from("That cannot soar.");
         let m = lib
-            .replace_all(test_haystack.clone(), test_pattern, test_value)
+            .replace_all(test_pattern, test_haystack.clone(), test_value)
             .unwrap();
         assert_eq!(test_haystack, m);
     }
@@ -231,10 +231,10 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let test_value = String::from("That cannot soar.");
         let m = lib
-            .replace(test_haystack, test_pattern, test_value)
+            .replace(test_pattern, test_haystack, test_value)
             .unwrap();
         assert!(!m.contains("That cannot fly."));
         assert!(m.contains("Frozen with snow."));
@@ -245,14 +245,14 @@ mod tests {
     fn test_invalid_capture_groups() {
         let lib = StdRegexLibrary;
         let test_pattern = String::from(r"(foo)(bar)");
-        let res = lib.match_all("foobar".into(), test_pattern.clone());
+        let res = lib.match_all(test_pattern.clone(), "foobar".into());
         assert!(res.is_err());
         assert_eq!(
             res.err().unwrap(),
             "only 1 capture group is supported but 2 given"
         );
 
-        let res = lib.r#match("foobar".into(), test_pattern);
+        let res = lib.r#match(test_pattern, "foobar".into());
         assert!(res.is_err());
         assert_eq!(
             res.err().unwrap(),

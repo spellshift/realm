@@ -141,6 +141,8 @@ impl SysLibrary for SysLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
+    use super::SysLibraryFake;
+    use crate::SysLibrary;
 
     #[test]
     fn test_sys_fake() {

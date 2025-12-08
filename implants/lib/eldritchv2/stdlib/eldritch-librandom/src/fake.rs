@@ -32,7 +32,8 @@ impl RandomLibrary for RandomLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::RandomLibraryFake;
+    use crate::RandomLibrary;
 
     #[test]
     fn test_random_fake() {

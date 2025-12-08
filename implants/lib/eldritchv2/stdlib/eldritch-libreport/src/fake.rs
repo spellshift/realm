@@ -30,7 +30,8 @@ impl ReportLibrary for ReportLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::ReportLibraryFake;
+    use crate::ReportLibrary;
 
     #[test]
     fn test_report_fake() {

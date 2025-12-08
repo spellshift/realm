@@ -27,7 +27,8 @@ impl TimeLibrary for TimeLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::TimeLibraryFake;
+    use crate::TimeLibrary;
 
     #[test]
     fn test_time_fake() {

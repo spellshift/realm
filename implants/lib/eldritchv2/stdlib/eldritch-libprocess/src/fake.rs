@@ -150,7 +150,8 @@ impl ProcessLibrary for ProcessLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::ProcessLibraryFake;
+    use crate::ProcessLibrary;
 
     #[test]
     fn test_process_fake() {

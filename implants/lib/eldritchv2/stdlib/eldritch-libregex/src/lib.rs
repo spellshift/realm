@@ -12,19 +12,19 @@ pub mod std;
 #[eldritch_library("regex")]
 pub trait RegexLibrary {
     #[eldritch_method]
-    fn match_all(&self, haystack: String, pattern: String) -> Result<Vec<String>, String>;
+    fn match_all(&self, pattern: String, haystack: String) -> Result<Vec<String>, String>;
 
     #[eldritch_method("match")]
-    fn r#match(&self, haystack: String, pattern: String) -> Result<String, String>;
+    fn r#match(&self, pattern: String, haystack: String) -> Result<String, String>;
 
     #[eldritch_method]
     fn replace_all(
         &self,
-        haystack: String,
         pattern: String,
+        haystack: String,
         value: String,
     ) -> Result<String, String>;
 
     #[eldritch_method]
-    fn replace(&self, haystack: String, pattern: String, value: String) -> Result<String, String>;
+    fn replace(&self, pattern: String, haystack: String, value: String) -> Result<String, String>;
 }
