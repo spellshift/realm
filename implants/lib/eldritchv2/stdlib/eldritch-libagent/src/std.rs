@@ -60,6 +60,15 @@ impl AgentLibrary for StdAgentLibrary {
         Ok(())
     }
 
+    fn set_callback_interval(&self, interval: i64) -> Result<(), String> {
+        self.agent.set_callback_interval(interval as u64)
+    }
+
+    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
+        // Not supported by Agent trait yet
+        Ok(())
+    }
+
     // Interactivity
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String> {
         let req = c2::FetchAssetRequest { name };
@@ -134,10 +143,6 @@ impl AgentLibrary for StdAgentLibrary {
 
     fn get_callback_interval(&self) -> Result<i64, String> {
         self.agent.get_callback_interval().map(|i| i as i64)
-    }
-
-    fn set_callback_interval(&self, interval: i64) -> Result<(), String> {
-        self.agent.set_callback_interval(interval as u64)
     }
 
     // Task Management
