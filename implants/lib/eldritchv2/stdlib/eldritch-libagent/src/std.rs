@@ -149,4 +149,8 @@ impl AgentLibrary for StdAgentLibrary {
     fn stop_task(&self, task_id: i64) -> Result<(), String> {
         self.agent.stop_task(task_id)
     }
+
+    fn eval(&self, code: String) -> Result<Value, String> {
+        self.agent.eval(code)
+    }
 }

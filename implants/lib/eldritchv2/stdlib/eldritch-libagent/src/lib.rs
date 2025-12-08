@@ -103,4 +103,8 @@ pub trait AgentLibrary {
     #[cfg(feature = "stdlib")]
     #[eldritch_method]
     fn stop_task(&self, task_id: i64) -> Result<(), String>;
+
+    #[cfg(feature = "stdlib")]
+    #[eldritch_method]
+    fn eval(&self, code: String) -> Result<Value, String>;
 }

@@ -4,9 +4,13 @@ use alloc::string::String;
 use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
 use pb::c2;
+#[cfg(feature = "stdlib")]
+use eldritch_core::Value;
 
 #[cfg(feature = "stdlib")]
 pub trait Agent: Send + Sync {
+    fn eval(&self, code: String) -> Result<Value, String>;
+
     // Interactivity
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String>;
     fn report_credential(&self, req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse, String>;

