@@ -1,4 +1,4 @@
-
+use super::CryptoLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;

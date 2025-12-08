@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
-eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
 flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
 tar = { workspace = true, optional = true }
 tera = { workspace = true, optional = true }

@@ -20,22 +20,13 @@ lazy_static = { workspace = true }
 crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
-
-# Workspace dependencies
-eldritch-core = { path = "../lib/eldritchv2/eldritch-core" }
-eldritchv2 = { path = "../lib/eldritchv2/eldritchv2", features = [
-    "std",
-    "stdlib",
-] }
-eldritch-repl = { path = "../lib/eldritchv2/eldritch-repl" }
-eldritch-libagent = { path = "../lib/eldritchv2/stdlib/eldritch-libagent", features = [
-    "stdlib",
-] }
-eldritch-libassets = { path = "../lib/eldritchv2/stdlib/eldritch-libassets", features = [
-    "stdlib",
-] }
-transport = { path = "../lib/transport", features = ["grpc"] }
-pb = { path = "../lib/pb", features = ["imix"] }
+eldritch-core = { workspace = true }
+eldritchv2 = { workspace = true, features = ["std", "stdlib"] }
+eldritch-repl = { workspace = true }
+eldritch-libagent = { workspace = true, features = ["stdlib"] }
+eldritch-libassets = { workspace = true, features = ["stdlib"] }
+transport = { workspace = true, features = ["grpc"] }
+pb = { workspace = true, features = ["imix"] }
 portable-pty.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
@@ -45,4 +36,4 @@ windows-service = { workspace = true }
 static_vcruntime = { workspace = true }
 
 [dev-dependencies]
-transport = { path = "../lib/transport", features = ["mock", "grpc"] }
+transport = { workspace = true, features = ["mock", "grpc"] }

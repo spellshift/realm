@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
-eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
 anyhow = { workspace = true }
 sysinfo = { workspace = true, optional = true }
 whoami = { workspace = true, optional = true }
@@ -36,12 +36,7 @@ windows-sys = { workspace = true, features = [
 
 [features]
 default = ["stdlib"]
-stdlib = [
-    "dep:sysinfo",
-    "dep:whoami",
-    "dep:local-ip-address",
-    "dep:hex",
-]
+stdlib = ["dep:sysinfo", "dep:whoami", "dep:local-ip-address", "dep:hex"]
 fake_bindings = []
 
 [dev-dependencies]
