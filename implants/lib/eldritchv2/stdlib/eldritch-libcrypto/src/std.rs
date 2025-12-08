@@ -1,10 +1,14 @@
 use super::CryptoLibrary;
 use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes128;
+use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use base64::{engine::general_purpose, Engine};
+use eldritch_core::conversion::ToValue;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use md5::Context as Md5Context;
 use sha1::Sha1;
@@ -148,11 +152,148 @@ impl CryptoLibrary for StdCryptoLibrary {
             _ => Err(format!("Unknown algorithm: {algo}")),
         }
     }
+
+    fn encode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+        let encode_type = match encode_type
+            .unwrap_or_else(|| "STANDARD".to_string())
+            .as_str()
+        {
+            "STANDARD" => general_purpose::STANDARD,
+            "STANDARD_NO_PAD" => general_purpose::STANDARD_NO_PAD,
+            "URL_SAFE" => general_purpose::URL_SAFE,
+            "URL_SAFE_NO_PAD" => general_purpose::URL_SAFE_NO_PAD,
+            _ => {
+                return Err(
+                    "Invalid encode type. Valid types are: STANDARD, STANDARD_NO_PAD, URL_SAFE_PAD, URL_SAFE_NO_PAD"
+                        .into(),
+                )
+            }
+        };
+        Ok(encode_type.encode(content.as_bytes()))
+    }
+
+    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+        let decode_type = match encode_type
+            .unwrap_or_else(|| "STANDARD".to_string())
+            .as_str()
+        {
+            "STANDARD" => general_purpose::STANDARD,
+            "STANDARD_NO_PAD" => general_purpose::STANDARD_NO_PAD,
+            "URL_SAFE" => general_purpose::URL_SAFE,
+            "URL_SAFE_NO_PAD" => general_purpose::URL_SAFE_NO_PAD,
+            _ => {
+                return Err(
+                    "Invalid encode type. Valid types are: STANDARD, STANDARD_NO_PAD, URL_SAFE_PAD, URL_SAFE_NO_PAD"
+                        .into(),
+                )
+            }
+        };
+        decode_type
+            .decode(content.as_bytes())
+            .map(|res| String::from_utf8_lossy(&res).to_string())
+            .map_err(|e| format!("Error decoding base64: {:?}", e))
+    }
+
+    fn is_json(&self, content: String) -> Result<bool, String> {
+        match serde_json::from_str::<serde_json::Value>(&content) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    }
+
+    fn from_json(&self, content: String) -> Result<Value, String> {
+        let json_data: serde_json::Value = serde_json::from_str(&content)
+            .map_err(|e| format!("Error parsing json: {:?}", e))?;
+        convert_json_to_value(json_data)
+    }
+
+    fn to_json(&self, content: Value) -> Result<String, String> {
+        let json_value = convert_value_to_json(&content)?;
+        serde_json::to_string(&json_value).map_err(|e| format!("Error serializing to json: {:?}", e))
+    }
+}
+
+fn convert_json_to_value(json: serde_json::Value) -> Result<Value, String> {
+    match json {
+        serde_json::Value::Null => Ok(Value::None),
+        serde_json::Value::Bool(b) => Ok(Value::Bool(b)),
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(Value::Int(i))
+            } else if let Some(f) = n.as_f64() {
+                Ok(Value::Float(f))
+            } else {
+                Err(format!("Unsupported number type: {n}"))
+            }
+        }
+        serde_json::Value::String(s) => Ok(Value::String(s)),
+        serde_json::Value::Array(arr) => {
+            let mut res = Vec::with_capacity(arr.len());
+            for item in arr {
+                res.push(convert_json_to_value(item)?);
+            }
+            Ok(res.to_value())
+        }
+        serde_json::Value::Object(map) => {
+            let mut res = BTreeMap::new();
+            for (k, v) in map {
+                res.insert(Value::String(k), convert_json_to_value(v)?);
+            }
+            Ok(res.to_value())
+        }
+    }
+}
+
+fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {
+    match val {
+        Value::None => Ok(serde_json::Value::Null),
+        Value::Bool(b) => Ok(serde_json::Value::Bool(*b)),
+        Value::Int(i) => Ok(serde_json::json!(i)),
+        Value::Float(f) => Ok(serde_json::json!(f)),
+        Value::String(s) => Ok(serde_json::Value::String(s.clone())),
+        Value::Bytes(_b) => {
+             // Bytes are not natively JSON serializable.
+             Err(format!("Object of type 'bytes' is not JSON serializable"))
+        },
+        Value::List(l) => {
+            let list = l.read();
+            let mut res = Vec::with_capacity(list.len());
+            for item in list.iter() {
+                res.push(convert_value_to_json(item)?);
+            }
+            Ok(serde_json::Value::Array(res))
+        },
+        Value::Tuple(t) => {
+            let mut res = Vec::with_capacity(t.len());
+            for item in t.iter() {
+                res.push(convert_value_to_json(item)?);
+            }
+            Ok(serde_json::Value::Array(res))
+        },
+        Value::Dictionary(d) => {
+            let dict = d.read();
+            let mut res = serde_json::Map::new();
+            for (k, v) in dict.iter() {
+                if let Value::String(s) = k {
+                    res.insert(s.clone(), convert_value_to_json(v)?);
+                } else {
+                     // JSON keys must be strings
+                     return Err(format!("Keys must be strings, got {:?}", k));
+                }
+            }
+            Ok(serde_json::Value::Object(res))
+        },
+        Value::Set(_) => Err(format!("Object of type 'set' is not JSON serializable")),
+        Value::Function(_) | Value::NativeFunction(_, _) | Value::NativeFunctionWithKwargs(_, _) | Value::BoundMethod(_, _) | Value::Foreign(_) => {
+             Err(format!("Object of type '{:?}' is not JSON serializable", val))
+        },
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eldritch_core::conversion::ToValue;
 
     #[test]
     fn test_aes_roundtrip() {
@@ -282,5 +423,172 @@ mod tests {
         assert!(lib
             .hash_file("/non/existent/file".to_string(), "md5".to_string())
             .is_err());
+    }
+
+    #[test]
+    fn test_encode_b64() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.encode_b64("test".to_string(), Some("STANDARD".to_string()))?;
+        assert_eq!(res, "dGVzdA==");
+        let res = lib.encode_b64("test".to_string(), Some("STANDARD_NO_PAD".to_string()))?;
+        assert_eq!(res, "dGVzdA");
+        let res = lib.encode_b64(
+            "https://google.com/&".to_string(),
+            Some("URL_SAFE".to_string()),
+        )?;
+        assert_eq!(res, "aHR0cHM6Ly9nb29nbGUuY29tLyY=");
+        let res = lib.encode_b64(
+            "https://google.com/&".to_string(),
+            Some("URL_SAFE_NO_PAD".to_string()),
+        )?;
+        assert_eq!(res, "aHR0cHM6Ly9nb29nbGUuY29tLyY");
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_b64_invalid_type() {
+        let lib = StdCryptoLibrary;
+        let res = lib.encode_b64("test".to_string(), Some("INVALID".to_string()));
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_encode_b64_default_type() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.encode_b64("test".to_string(), None)?;
+        assert_eq!(res, "dGVzdA==");
+        Ok(())
+    }
+
+    #[test]
+    fn test_decode_b64() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.decode_b64("dGVzdA==".to_string(), Some("STANDARD".to_string()))?;
+        assert_eq!(res, "test");
+        let res = lib.decode_b64("dGVzdA".to_string(), Some("STANDARD_NO_PAD".to_string()))?;
+        assert_eq!(res, "test");
+        let res = lib.decode_b64(
+            "aHR0cHM6Ly9nb29nbGUuY29tLyY=".to_string(),
+            Some("URL_SAFE".to_string()),
+        )?;
+        assert_eq!(res, "https://google.com/&");
+        let res = lib.decode_b64(
+            "aHR0cHM6Ly9nb29nbGUuY29tLyY".to_string(),
+            Some("URL_SAFE_NO_PAD".to_string()),
+        )?;
+        assert_eq!(res, "https://google.com/&");
+        Ok(())
+    }
+
+    #[test]
+    fn test_decode_b64_invalid_type() {
+        let lib = StdCryptoLibrary;
+        let res = lib.decode_b64("test".to_string(), Some("INVALID".to_string()));
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_decode_b64_default_type() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.decode_b64("dGVzdA==".to_string(), None)?;
+        assert_eq!(res, "test");
+        Ok(())
+    }
+
+    #[test]
+    fn test_decode_b64_invalid_content() {
+        let lib = StdCryptoLibrary;
+        let res = lib.decode_b64("///".to_string(), Some("STANDARD".to_string()));
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_is_json_object() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.is_json(r#"{"test": "test"}"#.to_string())?;
+        assert!(res);
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_json_list() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.is_json(r#"[1, "foo", false, null]"#.to_string())?;
+        assert!(res);
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_json_invalid() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.is_json(r#"{"test":"#.to_string())?;
+        assert!(!res);
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_json_object() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.from_json(r#"{"test": "test"}"#.to_string())?;
+        // Construct expected value
+        let mut map = BTreeMap::new();
+        map.insert("test".to_string().to_value(), "test".to_string().to_value());
+        let expected = map.to_value();
+
+        assert_eq!(res, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_json_list() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let res = lib.from_json(r#"[1, "foo", false, null]"#.to_string())?;
+
+        let mut vec = Vec::new();
+        vec.push(1i64.to_value());
+        vec.push("foo".to_string().to_value());
+        vec.push(false.to_value());
+        vec.push(Value::None);
+        let expected = vec.to_value();
+
+        assert_eq!(res, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_json_invalid() {
+        let lib = StdCryptoLibrary;
+        let res = lib.from_json(r#"{"test":"#.to_string());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn to_json_object() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let mut map = BTreeMap::new();
+        map.insert("test".to_string().to_value(), "test".to_string().to_value());
+        let val = map.to_value();
+
+        let res = lib.to_json(val)?;
+        assert_eq!(res, r#"{"test":"test"}"#);
+        Ok(())
+    }
+
+    #[test]
+    fn to_json_list() -> Result<(), String> {
+        let lib = StdCryptoLibrary;
+        let vec_val: Vec<Value> = vec![
+            1i64.to_value(),
+            "foo".to_string().to_value(),
+            false.to_value(),
+            Value::None,
+        ];
+        let val = vec_val.to_value();
+
+        let res = lib.to_json(val)?;
+        // serde_json ordering might vary but usually consistent for simple types
+        // actually serde_json usually compacts, so spacing matches v1 test
+        assert_eq!(res, r#"[1,"foo",false,null]"#);
+        Ok(())
     }
 }
