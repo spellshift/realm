@@ -1,6 +1,6 @@
-use eldritch_core::{Lexer, TokenKind};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use eldritch_core::{Lexer, TokenKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Input {
@@ -646,7 +646,7 @@ fn expand_macros(code: &str) -> String {
                     };
 
                     if line_num == 0 {
-                         break;
+                        break;
                     }
 
                     let lines: Vec<&str> = expanded_code.lines().collect();
@@ -663,10 +663,13 @@ fn expand_macros(code: &str) -> String {
 
                         let cmd = rest;
                         let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
+                        let macro_var = "_nonomacroclowntown";
+                        let replacement = alloc::format!(
+                            "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
+                        );
 
-                        let replacement = alloc::format!("{}sys.shell(\"{}\")", indentation, escaped_cmd);
-
-                        let mut new_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
+                        let mut new_lines: Vec<String> =
+                            lines.iter().map(|s| s.to_string()).collect();
                         new_lines[line_idx] = replacement;
 
                         expanded_code = new_lines.join("\n");
@@ -675,9 +678,8 @@ fn expand_macros(code: &str) -> String {
                             expanded_code.push('\n');
                         }
                     } else {
-                         break;
+                        break;
                     }
-
                 } else {
                     break;
                 }
