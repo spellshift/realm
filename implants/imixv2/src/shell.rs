@@ -291,7 +291,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                             ReplAction::Quit => return,
                             ReplAction::Submit { code, .. } => {
                                 // Move to next line
-                                let _ = stdout.queue(cursor::MoveToNextLine(1));
+                                let _ = stdout.write_all(b"\r\n");
                                 let _ = stdout.flush();
 
                                 // Execute
@@ -310,7 +310,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                 let _ = render(&mut stdout, &repl);
                             }
                             ReplAction::AcceptLine { .. } => {
-                                let _ = stdout.queue(cursor::MoveToNextLine(1));
+                                let _ = stdout.write_all(b"\r\n");
                                 let _ = render(&mut stdout, &repl);
                             }
                             ReplAction::ClearScreen => {
