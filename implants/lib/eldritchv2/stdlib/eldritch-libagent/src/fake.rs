@@ -104,3 +104,67 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 }
+
+#[cfg(feature = "stdlib")]
+use super::agent::Agent;
+#[cfg(feature = "stdlib")]
+use pb::c2;
+
+#[cfg(feature = "stdlib")]
+#[derive(Debug, Default)]
+pub struct AgentFake;
+
+#[cfg(feature = "stdlib")]
+impl Agent for AgentFake {
+    fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
+        Ok(Vec::new())
+    }
+    fn report_credential(&self, _req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse, String> {
+        Ok(c2::ReportCredentialResponse::default())
+    }
+    fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+        Ok(c2::ReportFileResponse::default())
+    }
+    fn report_process_list(&self, _req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String> {
+        Ok(c2::ReportProcessListResponse::default())
+    }
+    fn report_task_output(&self, _req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse, String> {
+        Ok(c2::ReportTaskOutputResponse::default())
+    }
+    fn reverse_shell(&self) -> Result<(), String> {
+        Ok(())
+    }
+    fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
+        Ok(())
+    }
+    fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
+    fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+        Ok(c2::ClaimTasksResponse::default())
+    }
+    fn get_transport(&self) -> Result<String, String> {
+        Ok("http".into())
+    }
+    fn set_transport(&self, _transport: String) -> Result<(), String> {
+        Ok(())
+    }
+    fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
+        Ok(())
+    }
+    fn list_transports(&self) -> Result<Vec<String>, String> {
+        Ok(alloc::vec!["http".into()])
+    }
+    fn get_callback_interval(&self) -> Result<u64, String> {
+        Ok(10)
+    }
+    fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
+        Ok(())
+    }
+    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+        Ok(Vec::new())
+    }
+    fn stop_task(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
+}

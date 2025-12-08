@@ -153,7 +153,7 @@ impl Interpreter {
     }
 
     #[cfg(feature = "fake_bindings")]
-    pub fn with_agent(mut self) -> Self {
+    pub fn with_fake_agent(mut self) -> Self {
         self.inner.register_lib(AgentLibraryFake::default());
         self.inner.register_lib(ReportLibraryFake::default());
         self.inner.register_lib(PivotLibraryFake::default());

@@ -12,6 +12,7 @@ The following libraries are available in Eldritch.
 
 ## Agent Library
 The `agent` library provides capabilities for interacting with the agent's internal state, configuration, and task management.
+
 It allows you to:
 - Modify agent configuration (callback intervals, transports).
 - Manage background tasks.
@@ -21,160 +22,208 @@ It allows you to:
 ### agent._terminate_this_process_clowntown
 `agent._terminate_this_process_clowntown() -> None`
 **DANGER**: Terminates the agent process immediately.
+
 This method calls `std::process::exit(0)`, effectively killing the agent.
 Use with extreme caution.
+
 **Returns**
 - `None` (Does not return as the process exits).
+
 **Errors**
 - This function is unlikely to return an error, as it terminates the process.
 
 ### agent.add_transport
 `agent.add_transport(transport: str, config: str) -> None`
 Adds or updates a transport configuration.
+
 **Parameters**
 - `transport` (`str`): The name of the transport.
 - `config` (`str`): The configuration string (e.g., URL or connection string).
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the transport configuration fails.
 
 ### agent.claim_tasks
 `agent.claim_tasks() -> List<TaskWrapper>`
 Manually triggers a check-in to claim pending tasks from the C2 server.
+
 **Returns**
 - `List<Task>`: A list of tasks retrieved from the server.
+
 **Errors**
 - Returns an error string if the check-in fails.
 
 ### agent.fetch_asset
 `agent.fetch_asset(name: str) -> Bytes`
 Fetches an asset (file) from the C2 server by name.
+
 This method requests the asset content from the server.
+
 **Parameters**
 - `name` (`str`): The name of the asset to fetch.
+
 **Returns**
 - `Bytes`: The content of the asset as a byte array.
+
 **Errors**
 - Returns an error string if the asset cannot be fetched or communication fails.
 
 ### agent.get_callback_interval
 `agent.get_callback_interval() -> int`
 Returns the current callback interval in seconds.
+
 **Returns**
 - `int`: The interval in seconds.
+
 **Errors**
 - Returns an error string if the interval cannot be retrieved.
 
 ### agent.get_config
 `agent.get_config() -> Dict`
 Returns the current configuration of the agent as a dictionary.
+
 **Returns**
 - `Dict<String, Value>`: A dictionary containing configuration keys and values.
+
 **Errors**
 - Returns an error string if the configuration cannot be retrieved or is not implemented.
 
 ### agent.get_id
 `agent.get_id() -> str`
 Returns the unique identifier (ID) of the agent.
+
 **Returns**
 - `str`: The agent's ID.
+
 **Errors**
 - Returns an error string if the ID cannot be retrieved or is not implemented.
 
 ### agent.get_platform
 `agent.get_platform() -> str`
 Returns the platform identifier the agent is running on.
+
 **Returns**
 - `str`: The platform string (e.g., "linux", "windows").
+
 **Errors**
 - Returns an error string if the platform cannot be determined or is not implemented.
 
 ### agent.get_transport
 `agent.get_transport() -> str`
 Returns the name of the currently active transport.
+
 **Returns**
 - `str`: The name of the transport (e.g., "http", "grpc").
+
 **Errors**
 - Returns an error string if the transport cannot be identified.
 
 ### agent.list_tasks
 `agent.list_tasks() -> List<TaskWrapper>`
 Lists the currently running or queued background tasks on the agent.
+
 **Returns**
 - `List<Task>`: A list of task objects.
+
 **Errors**
 - Returns an error string if the task list cannot be retrieved.
 
 ### agent.list_transports
 `agent.list_transports() -> List<str>`
 Returns a list of available transport names.
+
 **Returns**
 - `List<str>`: A list of transport names.
+
 **Errors**
 - Returns an error string if the list cannot be retrieved.
 
 ### agent.report_credential
 `agent.report_credential(credential: CredentialWrapper) -> None`
 Reports a captured credential to the C2 server.
+
 **Parameters**
 - `credential` (`Credential`): The credential object to report.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the reporting fails.
 
 ### agent.report_file
 `agent.report_file(file: FileWrapper) -> None`
 Reports a file (chunk) to the C2 server.
+
 This is typically used internally by `report.file`.
+
 **Parameters**
 - `file` (`File`): The file chunk wrapper to report.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the reporting fails.
 
 ### agent.report_process_list
 `agent.report_process_list(list: ProcessListWrapper) -> None`
 Reports a list of processes to the C2 server.
+
 This is typically used internally by `report.process_list`.
+
 **Parameters**
 - `list` (`ProcessList`): The process list wrapper to report.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the reporting fails.
 
 ### agent.report_task_output
 `agent.report_task_output(output: str, error: Option<str>) -> None`
 Reports the output of a task to the C2 server.
+
 This is used to send stdout/stderr or errors back to the controller.
+
 **Parameters**
 - `output` (`str`): The standard output content.
 - `error` (`Option<str>`): Optional error message.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the reporting fails.
 
 ### agent.reverse_shell
 `agent.reverse_shell() -> None`
 Initiates a reverse shell session.
+
 This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the reverse shell cannot be started.
 
 ### agent.set_callback_interval
 `agent.set_callback_interval(interval: int) -> None`
 Sets the callback interval for the agent.
+
 This configuration change is typically transient and may not persist across reboots.
+
 **Parameters**
 - `interval` (`int`): The new interval in seconds.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the interval cannot be set.
 
@@ -184,94 +233,121 @@ This configuration change is typically transient and may not persist across rebo
 ### agent.set_config
 `agent.set_config(config: Dict) -> None`
 Updates the agent's configuration with the provided dictionary.
+
 **Parameters**
 - `config` (`Dict<String, Value>`): A dictionary of configuration keys and values to update.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the configuration cannot be updated or is not implemented.
 
 ### agent.set_transport
 `agent.set_transport(transport: str) -> None`
 Switches the agent to use the specified transport.
+
 **Parameters**
 - `transport` (`str`): The name of the transport to switch to.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the transport is unknown or cannot be activated.
 
 ### agent.sleep
 `agent.sleep(secs: int) -> None`
 Pauses execution of the current thread for the specified number of seconds.
+
 This is a blocking call and will prevent other operations in the same thread
 from executing for the duration.
+
 **Parameters**
 - `secs` (`int`): The number of seconds to sleep.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the sleep operation fails (unlikely).
 
 ### agent.stop_task
 `agent.stop_task(task_id: int) -> None`
 Stops a specific background task by its ID.
+
 **Parameters**
 - `task_id` (`int`): The ID of the task to stop.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the task cannot be stopped or does not exist.
 
 ## Assets Library
 The `assets` library provides access to files embedded directly within the agent binary.
+
 This allows you to:
 - Deploy tools or payloads without downloading them from the network.
 - Read embedded configuration or scripts.
 - List available embedded assets.
+
 **Note**: Asset paths are typically relative to the embedding root (e.g., `sliver/agent-x64`).
 
 ### assets.copy
 `assets.copy(src: str, dest: str) -> None`
 Copies an embedded asset to a destination path on the disk.
+
 **Parameters**
 - `src` (`str`): The name/path of the source asset.
 - `dest` (`str`): The destination file path on the local system.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the asset does not exist or the file cannot be written (e.g., permission denied).
 
 ### assets.list
 `assets.list() -> List<str>`
 Returns a list of all available asset names.
+
 **Returns**
 - `List<str>`: A list of asset names available in the agent.
+
 **Errors**
 - Returns an error string if the asset list cannot be retrieved.
 
 ### assets.read
 `assets.read(name: str) -> str`
 Reads the content of an embedded asset as a UTF-8 string.
+
 **Parameters**
 - `name` (`str`): The name/path of the asset to read.
+
 **Returns**
 - `str`: The asset content as a string.
+
 **Errors**
 - Returns an error string if the asset does not exist or contains invalid UTF-8 data.
 
 ### assets.read_binary
 `assets.read_binary(name: str) -> Bytes`
 Reads the content of an embedded asset as a list of bytes.
+
 **Parameters**
 - `name` (`str`): The name/path of the asset to read.
+
 **Returns**
 - `List<int>`: The asset content as a list of bytes (u8).
+
 **Errors**
 - Returns an error string if the asset does not exist.
 
 ## Crypto Library
 The `crypto` library provides cryptographic primitives, hashing, encoding, and JSON handling utilities.
+
 It supports:
 - AES encryption and decryption.
 - Hashing (MD5, SHA1, SHA256) for data and files.
@@ -281,30 +357,37 @@ It supports:
 ### crypto.aes_decrypt
 `crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 Decrypts data using AES (CBC mode).
+
 **Parameters**
 - `key` (`Bytes`): The decryption key (must be 16, 24, or 32 bytes).
 - `iv` (`Bytes`): The initialization vector (must be 16 bytes).
 - `data` (`Bytes`): The encrypted data to decrypt.
+
 **Returns**
 - `Bytes`: The decrypted data.
+
 **Errors**
 - Returns an error string if decryption fails (e.g., invalid padding, incorrect key length).
 
 ### crypto.aes_encrypt
 `crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 Encrypts data using AES (CBC mode).
+
 **Parameters**
 - `key` (`Bytes`): The encryption key (must be 16, 24, or 32 bytes).
 - `iv` (`Bytes`): The initialization vector (must be 16 bytes).
 - `data` (`Bytes`): The data to encrypt.
+
 **Returns**
 - `Bytes`: The encrypted data.
+
 **Errors**
 - Returns an error string if encryption fails (e.g., incorrect key length).
 
 ### crypto.decode_b64
 `crypto.decode_b64(content: str, encode_type: Option<str>) -> str`
 Decodes a Base64 encoded string.
+
 **Parameters**
 - `content` (`str`): The Base64 string to decode.
 - `encode_type` (`Option<str>`): The decoding variant (matches encoding options).
@@ -312,14 +395,17 @@ Decodes a Base64 encoded string.
 - "STANDARD_NO_PAD"
 - "URL_SAFE"
 - "URL_SAFE_NO_PAD"
+
 **Returns**
 - `str`: The decoded string.
+
 **Errors**
 - Returns an error string if decoding fails or the variant is invalid.
 
 ### crypto.encode_b64
 `crypto.encode_b64(content: str, encode_type: Option<str>) -> str`
 Encodes a string to Base64.
+
 **Parameters**
 - `content` (`str`): The string content to encode.
 - `encode_type` (`Option<str>`): The encoding variant. Valid options:
@@ -327,82 +413,105 @@ Encodes a string to Base64.
 - "STANDARD_NO_PAD"
 - "URL_SAFE"
 - "URL_SAFE_NO_PAD"
+
 **Returns**
 - `str`: The Base64 encoded string.
+
 **Errors**
 - Returns an error string if the encoding type is invalid.
 
 ### crypto.from_json
 `crypto.from_json(content: str) -> Value`
 Parses a JSON string into an Eldritch value (Dict, List, etc.).
+
 **Parameters**
 - `content` (`str`): The JSON string.
+
 **Returns**
 - `Value`: The parsed value.
+
 **Errors**
 - Returns an error string if the JSON is invalid.
 
 ### crypto.hash_file
 `crypto.hash_file(file: str, algo: str) -> str`
 Calculates the hash of a file on disk.
+
 **Parameters**
 - `file` (`str`): The path to the file.
 - `algo` (`str`): The hashing algorithm to use ("MD5", "SHA1", "SHA256", "SHA512").
+
 **Returns**
 - `str`: The hexadecimal representation of the hash.
+
 **Errors**
 - Returns an error string if the file cannot be read or the algorithm is not supported.
 
 ### crypto.is_json
 `crypto.is_json(content: str) -> bool`
 Checks if a string is valid JSON.
+
 **Parameters**
 - `content` (`str`): The string to check.
+
 **Returns**
 - `bool`: `True` if valid JSON, `False` otherwise.
 
 ### crypto.md5
 `crypto.md5(data: Bytes) -> str`
 Calculates the MD5 hash of the provided data.
+
 **Parameters**
 - `data` (`Bytes`): The input data.
+
 **Returns**
 - `str`: The hexadecimal representation of the hash.
+
 **Errors**
 - Returns an error string if hashing fails.
 
 ### crypto.sha1
 `crypto.sha1(data: Bytes) -> str`
 Calculates the SHA1 hash of the provided data.
+
 **Parameters**
 - `data` (`Bytes`): The input data.
+
 **Returns**
 - `str`: The hexadecimal representation of the hash.
+
 **Errors**
 - Returns an error string if hashing fails.
 
 ### crypto.sha256
 `crypto.sha256(data: Bytes) -> str`
 Calculates the SHA256 hash of the provided data.
+
 **Parameters**
 - `data` (`Bytes`): The input data.
+
 **Returns**
 - `str`: The hexadecimal representation of the hash.
+
 **Errors**
 - Returns an error string if hashing fails.
 
 ### crypto.to_json
 `crypto.to_json(content: Value) -> str`
 Serializes an Eldritch value into a JSON string.
+
 **Parameters**
 - `content` (`Value`): The value to serialize.
+
 **Returns**
 - `str`: The JSON string representation.
+
 **Errors**
 - Returns an error string if serialization fails (e.g., circular references, unsupported types).
 
 ## File Library
 The `file` library provides comprehensive filesystem operations.
+
 It supports:
 - reading and writing files (text and binary).
 - file manipulation (copy, move, remove).
@@ -413,62 +522,81 @@ It supports:
 ### file.append
 `file.append(path: str, content: str) -> None`
 Appends content to a file.
+
 If the file does not exist, it will be created.
+
 **Parameters**
 - `path` (`str`): The path to the file.
 - `content` (`str`): The string content to append.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the file cannot be opened or written to.
 
 ### file.compress
 `file.compress(src: str, dst: str) -> None`
 Compresses a file or directory using GZIP.
+
 If `src` is a directory, it will be archived (tar) before compression.
+
 **Parameters**
 - `src` (`str`): The source file or directory path.
 - `dst` (`str`): The destination path for the compressed file (e.g., `archive.tar.gz`).
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the source doesn't exist or compression fails.
 
 ### file.copy
 `file.copy(src: str, dst: str) -> None`
 Copies a file from source to destination.
+
 If the destination exists, it will be overwritten.
+
 **Parameters**
 - `src` (`str`): The source file path.
 - `dst` (`str`): The destination file path.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the source doesn't exist or copy fails.
 
 ### file.decompress
 `file.decompress(src: str, dst: str) -> None`
 Decompresses a GZIP file.
+
 If the file is a tar archive, it will be extracted to the destination directory.
+
 **Parameters**
 - `src` (`str`): The source compressed file path.
 - `dst` (`str`): The destination path (file or directory).
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if decompression fails.
 
 ### file.exists
 `file.exists(path: str) -> bool`
 Checks if a file or directory exists at the given path.
+
 **Parameters**
 - `path` (`str`): The path to check.
+
 **Returns**
 - `bool`: `True` if it exists, `False` otherwise.
 
 ### file.find
 `file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>`
 Finds files matching specific criteria.
+
 **Parameters**
 - `path` (`str`): The base directory to start searching from.
 - `name` (`Option<str>`): Filter by filename (substring match).
@@ -476,45 +604,58 @@ Finds files matching specific criteria.
 - `permissions` (`Option<int>`): Filter by permissions (Unix octal e.g., 777, Windows readonly check).
 - `modified_time` (`Option<int>`): Filter by modification time (epoch seconds).
 - `create_time` (`Option<int>`): Filter by creation time (epoch seconds).
+
 **Returns**
 - `List<str>`: A list of matching file paths.
+
 **Errors**
 - Returns an error string if the search encounters issues.
 
 ### file.follow
 `file.follow(path: str, fn_val: Value) -> None`
 Follows a file (tail -f) and executes a callback function for each new line.
+
 This is useful for monitoring logs.
+
 **Parameters**
 - `path` (`str`): The file path to follow.
 - `fn` (`function(str)`): A callback function that takes a string (the new line) as an argument.
+
 **Returns**
 - `None` (This function may block indefinitely or until interrupted).
+
 **Errors**
 - Returns an error string if the file cannot be opened.
 
 ### file.is_dir
 `file.is_dir(path: str) -> bool`
 Checks if the path exists and is a directory.
+
 **Parameters**
 - `path` (`str`): The path to check.
+
 **Returns**
 - `bool`: `True` if it is a directory, `False` otherwise.
 
 ### file.is_file
 `file.is_file(path: str) -> bool`
 Checks if the path exists and is a file.
+
 **Parameters**
 - `path` (`str`): The path to check.
+
 **Returns**
 - `bool`: `True` if it is a file, `False` otherwise.
 
 ### file.list
 `file.list(path: str) -> List<Dict>`
 Lists files and directories in the specified path.
+
 Supports globbing patterns (e.g., `/home/*/*.txt`).
+
 **Parameters**
 - `path` (`str`): The directory path or glob pattern.
+
 **Returns**
 - `List<Dict>`: A list of dictionaries containing file details:
 - `file_name` (`str`)
@@ -525,192 +666,242 @@ Supports globbing patterns (e.g., `/home/*/*.txt`).
 - `permissions` (`str`)
 - `modified` (`str`)
 - `type` (`str`: "File" or "Directory")
+
 **Errors**
 - Returns an error string if listing fails.
 
 ### file.mkdir
 `file.mkdir(path: str, parent: Option<bool>) -> None`
 Creates a new directory.
+
 **Parameters**
 - `path` (`str`): The directory path to create.
 - `parent` (`Option<bool>`): If `True`, creates parent directories as needed (like `mkdir -p`). Defaults to `False`.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if creation fails.
 
 ### file.move
 `file.move(src: str, dst: str) -> None`
 Moves or renames a file or directory.
+
 **Parameters**
 - `src` (`str`): The source path.
 - `dst` (`str`): The destination path.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the move fails.
 
 ### file.parent_dir
 `file.parent_dir(path: str) -> str`
 Returns the parent directory of the given path.
+
 **Parameters**
 - `path` (`str`): The file or directory path.
+
 **Returns**
 - `str`: The parent directory path.
+
 **Errors**
 - Returns an error string if the path is invalid or has no parent.
 
 ### file.read
 `file.read(path: str) -> str`
 Reads the entire content of a file as a string.
+
 Supports globbing; if multiple files match, reads the first one (or behavior may vary, usually reads specific file).
 *Note*: v1 docs say it errors if a directory matches.
+
 **Parameters**
 - `path` (`str`): The file path.
+
 **Returns**
 - `str`: The file content.
+
 **Errors**
 - Returns an error string if the file cannot be read or contains invalid UTF-8.
 
 ### file.read_binary
 `file.read_binary(path: str) -> Bytes`
 Reads the entire content of a file as binary data.
+
 **Parameters**
 - `path` (`str`): The file path.
+
 **Returns**
 - `List<int>`: The file content as a list of bytes (u8).
+
 **Errors**
 - Returns an error string if the file cannot be read.
 
 ### file.remove
 `file.remove(path: str) -> None`
 Deletes a file or directory recursively.
+
 **Parameters**
 - `path` (`str`): The path to remove.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if removal fails.
 
 ### file.replace
 `file.replace(path: str, pattern: str, value: str) -> None`
 Replaces the first occurrence of a regex pattern in a file with a replacement string.
+
 **Parameters**
 - `path` (`str`): The file path.
 - `pattern` (`str`): The regex pattern to match.
 - `value` (`str`): The replacement string.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the file cannot be modified or the regex is invalid.
 
 ### file.replace_all
 `file.replace_all(path: str, pattern: str, value: str) -> None`
 Replaces all occurrences of a regex pattern in a file with a replacement string.
+
 **Parameters**
 - `path` (`str`): The file path.
 - `pattern` (`str`): The regex pattern to match.
 - `value` (`str`): The replacement string.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the file cannot be modified or the regex is invalid.
 
 ### file.temp_file
 `file.temp_file(name: Option<str>) -> str`
 Creates a temporary file and returns its path.
+
 **Parameters**
 - `name` (`Option<str>`): Optional preferred filename. If None, a random name is generated.
+
 **Returns**
 - `str`: The absolute path to the temporary file.
+
 **Errors**
 - Returns an error string if creation fails.
 
 ### file.template
 `file.template(template_path: str, dst: str, args: Dict, autoescape: bool) -> None`
 Renders a Jinja2 template file to a destination path.
+
 **Parameters**
 - `template_path` (`str`): Path to the source template file.
 - `dst` (`str`): Destination path for the rendered file.
 - `args` (`Dict<str, Value>`): Variables to substitute in the template.
 - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the template cannot be read, parsed, or written.
 
 ### file.timestomp
 `file.timestomp(src: str, dst: str) -> None`
 Timestomps a file (copies timestamps from source to destination).
+
 **Parameters**
 - `src` (`str`): The source file with desired timestamps.
 - `dst` (`str`): The target file to modify.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the operation fails.
 
 ### file.write
 `file.write(path: str, content: str) -> None`
 Writes content to a file, overwriting it if it exists.
+
 **Parameters**
 - `path` (`str`): The file path.
 - `content` (`str`): The string content to write.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if writing fails.
 
 ## Http Library
 The `http` library enables the agent to make HTTP requests.
+
 It supports:
 - GET and POST requests.
 - File downloading.
 - Custom headers.
+
 **Note**: TLS validation behavior depends on the underlying agent configuration and may not be exposed per-request in this version of the library (unlike v1 which had `allow_insecure` arg).
 
 ### http.download
 `http.download(url: str, path: str) -> None`
 Downloads a file from a URL to a local path.
+
 **Parameters**
 - `url` (`str`): The URL to download from.
 - `path` (`str`): The local destination path.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the download fails.
 
 ### http.get
 `http.get(url: str, headers: Option<Dict<str, str>>) -> Dict`
 Performs an HTTP GET request.
+
 **Parameters**
 - `url` (`str`): The target URL.
 - `headers` (`Option<Dict<str, str>>`): Optional custom HTTP headers.
+
 **Returns**
 - `Dict`: A dictionary containing the response:
 - `status_code` (`int`): HTTP status code.
 - `body` (`Bytes`): The response body.
 - `headers` (`Dict<str, str>`): Response headers.
+
 **Errors**
 - Returns an error string if the request fails.
 
 ### http.post
 `http.post(url: str, body: Option<Bytes>, headers: Option<Dict<str, str>>) -> Dict`
 Performs an HTTP POST request.
+
 **Parameters**
 - `url` (`str`): The target URL.
 - `body` (`Option<Bytes>`): The request body.
 - `headers` (`Option<Dict<str, str>>`): Optional custom HTTP headers.
+
 **Returns**
 - `Dict`: A dictionary containing the response:
 - `status_code` (`int`): HTTP status code.
 - `body` (`Bytes`): The response body.
 - `headers` (`Dict<str, str>`): Response headers.
+
 **Errors**
 - Returns an error string if the request fails.
 
 ## Pivot Library
 The `pivot` library provides tools for lateral movement, scanning, and tunneling.
+
 It supports:
 - Reverse shells (PTY and REPL).
 - SSH execution and file copy.
@@ -722,80 +913,98 @@ It supports:
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<Dict>`
 Performs an ARP scan to discover live hosts on the local network.
+
 **Parameters**
 - `target_cidrs` (`List<str>`): List of CIDRs to scan.
+
 **Returns**
 - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
 
 ### pivot.bind_proxy
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str) -> None`
 Starts a SOCKS5 proxy server on the agent.
+
 **Parameters**
 - `listen_address` (`str`): Address to bind.
 - `listen_port` (`int`): Port to listen on.
 - `username` (`str`): Proxy username (for auth).
 - `password` (`str`): Proxy password.
+
 **Returns**
 - `None`
 
 ### pivot.ncat
 `pivot.ncat(address: str, port: int, data: str, protocol: str) -> str`
 Sends arbitrary data to a host via TCP or UDP and waits for a response.
+
 **Parameters**
 - `address` (`str`): Target address.
 - `port` (`int`): Target port.
 - `data` (`str`): Data to send.
 - `protocol` (`str`): "tcp" or "udp".
+
 **Returns**
 - `str`: The response data.
 
 ### pivot.port_forward
 `pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port: int, protocol: str) -> None`
 Sets up a port forwarding rule.
+
 **Parameters**
 - `listen_address` (`str`): Local address to bind.
 - `listen_port` (`int`): Local port to listen on.
 - `forward_address` (`str`): Remote address to forward to.
 - `forward_port` (`int`): Remote port.
 - `protocol` (`str`): Protocol (tcp/udp).
+
 **Returns**
 - `None`
 
 ### pivot.port_scan
 `pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<Dict>`
 Scans TCP/UDP ports on target hosts.
+
 **Parameters**
 - `target_cidrs` (`List<str>`): List of CIDRs to scan (e.g., `["192.168.1.0/24"]`).
 - `ports` (`List<int>`): List of ports to scan.
 - `protocol` (`str`): "tcp" or "udp".
 - `timeout` (`int`): Timeout per port in seconds.
 - `fd_limit` (`Option<int>`): Maximum concurrent file descriptors/sockets (defaults to 64).
+
 **Returns**
 - `List<Dict>`: List of open ports/results.
 
 ### pivot.reverse_shell_pty
 `pivot.reverse_shell_pty(cmd: Option<str>) -> None`
 Spawns a reverse shell with a PTY (Pseudo-Terminal) attached.
+
 This provides a full interactive shell experience over the agent's C2 channel.
+
 **Parameters**
 - `cmd` (`Option<str>`): The shell command to run (e.g., `/bin/bash`, `cmd.exe`). If `None`, defaults to system shell.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the shell cannot be spawned.
 
 ### pivot.reverse_shell_repl
 `pivot.reverse_shell_repl() -> None`
 Spawns a basic REPL-style reverse shell.
+
 Useful if PTY is not available.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if failure occurs.
 
 ### pivot.smb_exec
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
 **Experimental**: Executes a command via SMB.
+
 **Parameters**
 - `target` (`str`): Target host.
 - `port` (`int`): SMB port.
@@ -803,12 +1012,14 @@ Useful if PTY is not available.
 - `password` (`str`): Password.
 - `hash` (`str`): NTLM hash.
 - `command` (`str`): Command to execute.
+
 **Returns**
 - `str`: Command output.
 
 ### pivot.ssh_copy
 `pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Option<str>, key: Option<str>, key_password: Option<str>, timeout: Option<int>) -> str`
 Copies a file to a remote host via SSH (SCP/SFTP).
+
 **Parameters**
 - `target` (`str`): The remote host IP or hostname.
 - `port` (`int`): The SSH port.
@@ -819,14 +1030,17 @@ Copies a file to a remote host via SSH (SCP/SFTP).
 - `key` (`Option<str>`): SSH private key.
 - `key_password` (`Option<str>`): Key password.
 - `timeout` (`Option<int>`): Connection timeout.
+
 **Returns**
 - `str`: "Success" message or error detail.
+
 **Errors**
 - Returns an error string if copy fails.
 
 ### pivot.ssh_exec
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Option<str>, key: Option<str>, key_password: Option<str>, timeout: Option<int>) -> Dict`
 Executes a command on a remote host via SSH.
+
 **Parameters**
 - `target` (`str`): The remote host IP or hostname.
 - `port` (`int`): The SSH port (usually 22).
@@ -836,16 +1050,19 @@ Executes a command on a remote host via SSH.
 - `key` (`Option<str>`): SSH private key (optional).
 - `key_password` (`Option<str>`): Password for the private key (optional).
 - `timeout` (`Option<int>`): Connection timeout in seconds (optional).
+
 **Returns**
 - `Dict`: A dictionary containing command output:
 - `stdout` (`str`)
 - `stderr` (`str`)
 - `status` (`int`): Exit code.
+
 **Errors**
 - Returns an error string if connection fails.
 
 ## Process Library
 The `process` library allows interaction with system processes.
+
 It supports:
 - Listing running processes.
 - Retrieving process details (info, name).
@@ -855,46 +1072,59 @@ It supports:
 ### process.info
 `process.info(pid: Option<int>) -> Dict`
 Returns detailed information about a specific process.
+
 **Parameters**
 - `pid` (`Option<int>`): The process ID to query. If `None`, returns info for the current agent process.
+
 **Returns**
 - `Dict`: Dictionary with process details (pid, name, cmd, exe, environ, cwd, memory_usage, user, etc.).
+
 **Errors**
 - Returns an error string if the process is not found or cannot be accessed.
 
 ### process.kill
 `process.kill(pid: int) -> None`
 Terminates a process by its ID.
+
 **Parameters**
 - `pid` (`int`): The process ID to kill.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the process cannot be killed (e.g., permission denied).
 
 ### process.list
 `process.list() -> List<Dict>`
 Lists all currently running processes.
+
 **Returns**
 - `List<Dict>`: A list of process dictionaries containing `pid`, `ppid`, `name`, `path`, `username`, `command`, `cwd`, etc.
+
 **Errors**
 - Returns an error string if the process list cannot be retrieved.
 
 ### process.name
 `process.name(pid: int) -> str`
 Returns the name of a process given its ID.
+
 **Parameters**
 - `pid` (`int`): The process ID.
+
 **Returns**
 - `str`: The process name.
+
 **Errors**
 - Returns an error string if the process is not found.
 
 ### process.netstat
 `process.netstat() -> List<Dict>`
 Returns a list of active network connections (TCP/UDP/Unix).
+
 **Returns**
 - `List<Dict>`: A list of connection details including socket type, local/remote address/port, and associated PID.
+
 **Errors**
 - Returns an error string if network information cannot be retrieved.
 
@@ -904,94 +1134,117 @@ The `random` library provides cryptographically secure random value generation.
 ### random.bool
 `random.bool() -> bool`
 Generates a random boolean value.
+
 **Returns**
 - `bool`: True or False.
 
 ### random.bytes
 `random.bytes(len: int) -> Bytes`
 Generates a list of random bytes.
+
 **Parameters**
 - `len` (`int`): Number of bytes to generate.
+
 **Returns**
 - `List<int>`: The random bytes.
 
 ### random.int
 `random.int(min: int, max: int) -> int`
 Generates a random integer within a range.
+
 **Parameters**
 - `min` (`int`): Minimum value (inclusive).
 - `max` (`int`): Maximum value (exclusive).
+
 **Returns**
 - `int`: The random integer.
 
 ### random.string
 `random.string(len: int, charset: Option<str>) -> str`
 Generates a random string.
+
 **Parameters**
 - `len` (`int`): Length of the string.
 - `charset` (`Option<str>`): Optional string of characters to use. If `None`, defaults to alphanumeric.
+
 **Returns**
 - `str`: The random string.
 
 ### random.uuid
 `random.uuid() -> str`
 Generates a random UUID (v4).
+
 **Returns**
 - `str`: The UUID string.
 
 ## Regex Library
 The `regex` library provides regular expression capabilities using Rust's `regex` crate syntax.
+
 **Note**: Currently, it primarily supports a single capture group. Multi-group support might be limited.
 
 ### regex.match
 `regex.match(haystack: str, pattern: str) -> str`
 Returns the first substring matching the pattern.
+
 **Parameters**
 - `haystack` (`str`): The string to search.
 - `pattern` (`str`): The regex pattern.
+
 **Returns**
 - `str`: The matching string.
+
 **Errors**
 - Returns an error string if no match is found or the regex is invalid.
 
 ### regex.match_all
 `regex.match_all(haystack: str, pattern: str) -> List<str>`
 Returns all substrings matching the pattern in the haystack.
+
 If the pattern contains capture groups, returns the captured string for each match.
+
 **Parameters**
 - `haystack` (`str`): The string to search.
 - `pattern` (`str`): The regex pattern.
+
 **Returns**
 - `List<str>`: A list of matching strings.
+
 **Errors**
 - Returns an error string if the regex is invalid.
 
 ### regex.replace
 `regex.replace(haystack: str, pattern: str, value: str) -> str`
 Replaces the first occurrence of the pattern with the value.
+
 **Parameters**
 - `haystack` (`str`): The string to modify.
 - `pattern` (`str`): The regex pattern to match.
 - `value` (`str`): The replacement string.
+
 **Returns**
 - `str`: The modified string.
+
 **Errors**
 - Returns an error string if the regex is invalid.
 
 ### regex.replace_all
 `regex.replace_all(haystack: str, pattern: str, value: str) -> str`
 Replaces all occurrences of the pattern with the value.
+
 **Parameters**
 - `haystack` (`str`): The string to modify.
 - `pattern` (`str`): The regex pattern to match.
 - `value` (`str`): The replacement string.
+
 **Returns**
 - `str`: The modified string.
+
 **Errors**
 - Returns an error string if the regex is invalid.
 
 ## Report Library
 The `report` library handles structured data reporting to the C2 server.
+
 It allows you to:
 - Exfiltrate files (in chunks).
 - Report process snapshots.
@@ -1000,43 +1253,55 @@ It allows you to:
 ### report.file
 `report.file(path: str) -> None`
 Reports (exfiltrates) a file from the host to the C2 server.
+
 The file is sent asynchronously in chunks.
+
 **Parameters**
 - `path` (`str`): The path of the file to exfiltrate.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if the file cannot be read or queued for reporting.
 
 ### report.process_list
 `report.process_list(list: List<Dict>) -> None`
 Reports a snapshot of running processes.
+
 This updates the process list view in the C2 UI.
+
 **Parameters**
 - `list` (`List<Dict>`): The list of process dictionaries (typically from `process.list()`).
+
 **Returns**
 - `None`
 
 ### report.ssh_key
 `report.ssh_key(username: str, key: str) -> None`
 Reports a captured SSH private key.
+
 **Parameters**
 - `username` (`str`): The associated username.
 - `key` (`str`): The SSH key content.
+
 **Returns**
 - `None`
 
 ### report.user_password
 `report.user_password(username: str, password: str) -> None`
 Reports a captured user password.
+
 **Parameters**
 - `username` (`str`): The username.
 - `password` (`str`): The password.
+
 **Returns**
 - `None`
 
 ## Sys Library
 The `sys` library provides general system interaction capabilities.
+
 It supports:
 - Process execution (`exec`, `shell`).
 - System information (`get_os`, `get_ip`, `get_user`, `hostname`).
@@ -1047,147 +1312,175 @@ It supports:
 ### sys.dll_inject
 `sys.dll_inject(dll_path: str, pid: int) -> None`
 Injects a DLL from disk into a remote process.
+
 **Parameters**
 - `dll_path` (`str`): Path to the DLL on disk.
 - `pid` (`int`): Target process ID.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if injection fails.
 
 ### sys.dll_reflect
 `sys.dll_reflect(dll_bytes: Bytes, pid: int, function_name: str) -> None`
 Reflectively injects a DLL from memory into a remote process.
+
 **Parameters**
 - `dll_bytes` (`List<int>`): Content of the DLL.
 - `pid` (`int`): Target process ID.
 - `function_name` (`str`): Exported function to call.
+
 **Returns**
 - `None`
+
 **Errors**
 - Returns an error string if injection fails.
 
 ### sys.exec
 `sys.exec(path: str, args: List<str>, disown: Option<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
 Executes a program directly (without a shell).
+
 **Parameters**
 - `path` (`str`): Path to the executable.
 - `args` (`List<str>`): List of arguments.
 - `disown` (`Option<bool>`): If `True`, runs in background/detached.
 - `env_vars` (`Option<Dict<str, str>>`): Environment variables to set.
+
 **Returns**
 - `Dict`: Output containing `stdout`, `stderr`, and `status` (exit code).
 
 ### sys.get_env
 `sys.get_env() -> Dict`
 Returns the current process's environment variables.
+
 **Returns**
 - `Dict<str, str>`: Map of environment variables.
 
 ### sys.get_ip
 `sys.get_ip() -> List<Dict>`
 Returns network interface information.
+
 **Returns**
 - `List<Dict>`: List of interfaces with `name` and `ip`.
 
 ### sys.get_os
 `sys.get_os() -> Dict`
 Returns information about the operating system.
+
 **Returns**
 - `Dict`: Details like `arch`, `distro`, `platform`.
 
 ### sys.get_pid
 `sys.get_pid() -> int`
 Returns the current process ID.
+
 **Returns**
 - `int`: The PID.
 
 ### sys.get_reg
 `sys.get_reg(reghive: str, regpath: str) -> Dict`
 Reads values from the Windows Registry.
+
 **Parameters**
 - `reghive` (`str`): The registry hive (e.g., "HKEY_LOCAL_MACHINE").
 - `regpath` (`str`): The registry path.
+
 **Returns**
 - `Dict<str, str>`: A dictionary of registry keys and values.
 
 ### sys.get_user
 `sys.get_user() -> Dict`
 Returns information about the current user.
+
 **Returns**
 - `Dict`: User details (uid, gid, name, groups).
 
 ### sys.hostname
 `sys.hostname() -> str`
 Returns the system hostname.
+
 **Returns**
 - `str`: The hostname.
 
 ### sys.is_bsd
 `sys.is_bsd() -> bool`
 Checks if the OS is BSD.
+
 **Returns**
 - `bool`: True if BSD.
 
 ### sys.is_linux
 `sys.is_linux() -> bool`
 Checks if the OS is Linux.
+
 **Returns**
 - `bool`: True if Linux.
 
 ### sys.is_macos
 `sys.is_macos() -> bool`
 Checks if the OS is macOS.
+
 **Returns**
 - `bool`: True if macOS.
 
 ### sys.is_windows
 `sys.is_windows() -> bool`
 Checks if the OS is Windows.
+
 **Returns**
 - `bool`: True if Windows.
 
 ### sys.shell
 `sys.shell(cmd: str) -> Dict`
 Executes a command via the system shell (`/bin/sh` or `cmd.exe`).
+
 **Parameters**
 - `cmd` (`str`): The command string to execute.
+
 **Returns**
 - `Dict`: Output containing `stdout`, `stderr`, and `status`.
 
 ### sys.write_reg_hex
 `sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> bool`
 Writes a hex value to the Windows Registry.
+
 **Parameters**
 - `reghive` (`str`)
 - `regpath` (`str`)
 - `regname` (`str`)
 - `regtype` (`str`): e.g., "REG_BINARY".
 - `regvalue` (`str`): Hex string.
+
 **Returns**
 - `bool`: True on success.
 
 ### sys.write_reg_int
 `sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> bool`
 Writes an integer value to the Windows Registry.
+
 **Parameters**
 - `reghive` (`str`)
 - `regpath` (`str`)
 - `regname` (`str`)
 - `regtype` (`str`): e.g., "REG_DWORD".
 - `regvalue` (`int`)
+
 **Returns**
 - `bool`: True on success.
 
 ### sys.write_reg_str
 `sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> bool`
 Writes a string value to the Windows Registry.
+
 **Parameters**
 - `reghive` (`str`)
 - `regpath` (`str`)
 - `regname` (`str`)
 - `regtype` (`str`): e.g., "REG_SZ".
 - `regvalue` (`str`)
+
 **Returns**
 - `bool`: True on success.
 
@@ -1197,33 +1490,41 @@ The `time` library provides time measurement, formatting, and sleep capabilities
 ### time.format_to_epoch
 `time.format_to_epoch(input: str, format: str) -> int`
 Converts a formatted time string to a Unix timestamp (epoch seconds).
+
 **Parameters**
 - `input` (`str`): The time string (e.g., "2023-01-01 12:00:00").
 - `format` (`str`): The format string (e.g., "%Y-%m-%d %H:%M:%S").
+
 **Returns**
 - `int`: The timestamp.
+
 **Errors**
 - Returns an error string if parsing fails.
 
 ### time.format_to_readable
 `time.format_to_readable(input: int, format: str) -> str`
 Converts a Unix timestamp to a readable string.
+
 **Parameters**
 - `input` (`int`): The timestamp (epoch seconds).
 - `format` (`str`): The desired output format.
+
 **Returns**
 - `str`: The formatted time string.
 
 ### time.now
 `time.now() -> int`
 Returns the current time as a Unix timestamp.
+
 **Returns**
 - `int`: Current epoch seconds.
 
 ### time.sleep
 `time.sleep(secs: int) -> None`
 Pauses execution for the specified number of seconds.
+
 **Parameters**
 - `secs` (`int`): Seconds to sleep.
+
 **Returns**
 - `None`

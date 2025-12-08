@@ -115,16 +115,16 @@ fn parse_libraries(root: &Path) -> Vec<LibraryDoc> {
 
 fn clean_docs(raw: &str) -> String {
     raw.lines()
-       .map(|l| {
+       .filter_map(|l| {
            let trimmed = l.trim();
            if trimmed.starts_with("///") {
                let content = trimmed[3..].trim();
-               content
+               // We keep empty lines (content is empty string)
+               Some(content)
            } else {
-               ""
+               None
            }
        })
-       .filter(|l| !l.is_empty())
        .filter(|l| !l.contains("pub trait"))
        .collect::<Vec<_>>()
        .join("\n")
