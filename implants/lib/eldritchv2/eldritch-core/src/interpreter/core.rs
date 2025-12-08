@@ -386,7 +386,7 @@ impl Interpreter {
         // Filter by prefix
         let results: Vec<String> = candidates
             .into_iter()
-            .filter(|c| c.starts_with(&prefix) && *c != prefix)
+            .filter(|c| c.starts_with(&prefix) && *c != prefix && (!c.starts_with('_') || prefix.starts_with('_')))
             .collect();
 
         // Calculate start index for completion replacement
