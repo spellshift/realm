@@ -3,17 +3,24 @@
 mod tests {
     use eldritch_core::Value;
     use eldritchv2::Interpreter;
+    #[cfg(feature = "stdlib")]
     use eldritchv2::agent::fake::AgentFake;
     use std::sync::Arc;
 
     // Helper to create a fully loaded interpreter using the facade
     fn create_interp() -> Interpreter {
-        let agent_mock = Arc::new(AgentFake::default());
-        let task_id = 123;
-
-        Interpreter::new()
-            .with_default_libs()
-            .with_task_context(agent_mock, task_id, vec![])
+        #[cfg(feature = "stdlib")]
+        {
+            let agent_mock = Arc::new(AgentFake::default());
+            let task_id = 123;
+            Interpreter::new()
+                .with_default_libs()
+                .with_task_context(agent_mock, task_id, vec![])
+        }
+        #[cfg(not(feature = "stdlib"))]
+        {
+             Interpreter::new().with_default_libs()
+        }
     }
 
     fn check_bindings(module: &str, expected: &[&str]) {
@@ -129,7 +136,19 @@ mod tests {
     fn test_crypto_bindings() {
         check_bindings(
             "crypto",
-            &["aes_decrypt", "aes_encrypt", "md5", "sha1", "sha256"],
+            &[
+                "aes_decrypt",
+                "aes_encrypt",
+                "decode_b64",
+                "encode_b64",
+                "from_json",
+                "hash_file",
+                "is_json",
+                "md5",
+                "sha1",
+                "sha256",
+                "to_json",
+            ],
         );
     }
 
@@ -169,6 +188,7 @@ mod tests {
         check_bindings(
             "agent",
             &[
+                "_terminate_this_process_clowntown",
                 "add_transport",
                 "claim_tasks",
                 "fetch_asset",
@@ -177,7 +197,6 @@ mod tests {
                 "get_id",
                 "get_platform",
                 "get_transport",
-                "kill",
                 "list_tasks",
                 "list_transports",
                 "report_credential",
@@ -186,6 +205,7 @@ mod tests {
                 "report_task_output",
                 "reverse_shell",
                 "set_callback_interval",
+                "set_callback_uri",
                 "set_config",
                 "set_transport",
                 "sleep",

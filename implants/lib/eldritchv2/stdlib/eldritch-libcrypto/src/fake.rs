@@ -3,6 +3,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
+use super::CryptoLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(CryptoLibrary)]
