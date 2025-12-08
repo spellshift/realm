@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
-eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 reqwest = { version = "0.11", default-features = false, features = [
     "blocking",
@@ -20,11 +20,7 @@ futures = { version = "0.3", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = [
-    "dep:reqwest",
-    "dep:tokio",
-    "dep:futures",
-]
+stdlib = ["dep:reqwest", "dep:tokio", "dep:futures"]
 fake_bindings = []
 
 [dev-dependencies]
