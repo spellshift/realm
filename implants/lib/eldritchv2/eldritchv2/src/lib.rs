@@ -188,6 +188,10 @@ impl Interpreter {
         self
     }
 
+    pub fn register_lib(&mut self, lib: impl ForeignValue + 'static) {
+        self.inner.register_lib(lib);
+    }
+
     // Proxy methods to inner interpreter
 
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
