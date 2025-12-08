@@ -66,10 +66,10 @@ const Shell = () => {
 
         // Cleanup
         return () => {
-             if (ws.current) {
-                 ws.current.close();
-                 ws.current = null;
-             }
+            if (ws.current) {
+                ws.current.close();
+                ws.current = null;
+            }
         }
     }, [shellId]);
 
@@ -137,9 +137,9 @@ const Shell = () => {
                         <h3 className="text-xl font-semibold leading-6 text-gray-900">Shell for id:{shellId}</h3>
                         <Badge badgeStyle={{ color: "purple" }} >BETA FEATURE</Badge>
                         {latency !== null && (
-                             <Badge badgeStyle={{ color: latency < 200 ? "green" : "red" }}>
+                            <Badge badgeStyle={{ color: latency < 200 ? "green" : "red" }}>
                                 {latency}ms
-                             </Badge>
+                            </Badge>
                         )}
                     </div>
                     <p className="max-w-2xl text-sm">Start by clicking inside the terminal, you may need to enter a newline to see the terminal prompt.</p>
