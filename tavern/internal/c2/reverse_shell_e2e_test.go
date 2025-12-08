@@ -135,14 +135,18 @@ func TestReverseShell_E2E(t *testing.T) {
 
 	_, wsMsg, err := ws.ReadMessage()
 	assert.NoError(t, err)
-	assert.Equal(t, grpcMsg, wsMsg)
+
+	// Verify JSON structure
+	expectedJSON := `{"type":"data","data":"aGVsbG8gZnJvbSBncnBj"}` // base64 encoded "hello from grpc"
+	assert.Equal(t, []byte(expectedJSON), wsMsg)
 
 	// Test message from WebSocket to gRPC
-	wsMsgToSend := []byte("hello from websocket")
-	err = ws.WriteMessage(websocket.BinaryMessage, wsMsgToSend)
+	// Client sends JSON
+	wsMsgToSend := []byte(`{"type":"data","data":"aGVsbG8gZnJvbSB3ZWJzb2NrZXQ="}`) // base64 encoded "hello from websocket"
+	err = ws.WriteMessage(websocket.TextMessage, wsMsgToSend)
 	require.NoError(t, err)
 
 	grpcResp, err := gRPCStream.Recv()
 	require.NoError(t, err)
-	assert.Equal(t, wsMsgToSend, grpcResp.Data)
+	assert.Equal(t, []byte("hello from websocket"), grpcResp.Data)
 }
