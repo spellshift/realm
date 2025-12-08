@@ -72,6 +72,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 Value::Tuple(t) => t.clone(),
                 Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
                 Value::Bytes(b) => b.iter().map(|&byte| Value::Int(byte as i64)).collect(),
+                Value::Dictionary(d) => d.read().keys().cloned().collect(),
                 _ => return runtime_error(
                     iterable.span,
                     &format!(

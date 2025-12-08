@@ -2,6 +2,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
+use eldritch_core::Value;
 use super::CryptoLibrary;
 
 #[derive(Default, Debug)]
@@ -40,11 +41,44 @@ impl CryptoLibrary for CryptoLibraryFake {
     fn hash_file(&self, _file: String, _algo: String) -> Result<String, String> {
         Err("File hashing not supported in fake/wasm environment".into())
     }
+
+    fn encode_b64(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
+        // Simple mock if needed, or implement using base64 crate if available.
+        // For fake/wasm, maybe we can rely on pure rust base64 if available or just return input.
+        // But usually we want some encoding.
+        // Let's check imports.
+        // Just mocking it by prefixing for now or using a simple implementation?
+        // Actually, `base64` crate is a dependency of `eldritch-libcrypto`.
+        // We can use it if available.
+        // But `fake_bindings` usually implies minimal dependencies.
+        // Let's just return the content prefixed with "B64:" to prove it was called?
+        Ok(format!("B64:{}", content))
+    }
+
+    fn decode_b64(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
+        if content.starts_with("B64:") {
+            Ok(content[4..].into())
+        } else {
+            Ok(content)
+        }
+    }
+
+    fn is_json(&self, _content: String) -> Result<bool, String> {
+        Ok(true) // Always pretend valid JSON
+    }
+
+    fn from_json(&self, content: String) -> Result<Value, String> {
+        Ok(Value::String(content)) // Just return as string for now
+    }
+
+    fn to_json(&self, content: Value) -> Result<String, String> {
+        Ok(format!("{:?}", content))
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_crypto_fake() {
