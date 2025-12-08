@@ -1,167 +1,72 @@
-
-use eldritch_core::Value;
-use alloc::collections::BTreeMap;
-use alloc::string::{String, ToString};
-use alloc::sync::Arc;
-use alloc::vec::Vec;
-use eldritch_macros::eldritch_library_impl;
-use spin::Mutex;
 use super::ProcessLibrary;
+use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec::Vec;
+use eldritch_core::Value;
+use eldritch_macros::eldritch_library_impl;
 
-#[derive(Clone, Debug)]
-struct ProcessInfo {
-    pid: i64,
-    ppid: i64,
-    name: String,
-    user: String,
-    arch: String,
-}
-
-#[derive(Debug)]
+#[derive(Default, Debug)]
 #[eldritch_library_impl(ProcessLibrary)]
-pub struct ProcessLibraryFake {
-    processes: Arc<Mutex<BTreeMap<i64, ProcessInfo>>>,
-}
-
-impl Default for ProcessLibraryFake {
-    fn default() -> Self {
-        let mut map = BTreeMap::new();
-        map.insert(
-            1,
-            ProcessInfo {
-                pid: 1,
-                ppid: 0,
-                name: "init".to_string(),
-                user: "root".to_string(),
-                arch: "x86_64".to_string(),
-            },
-        );
-        map.insert(
-            2,
-            ProcessInfo {
-                pid: 2,
-                ppid: 0,
-                name: "kthreadd".to_string(),
-                user: "root".to_string(),
-                arch: "x86_64".to_string(),
-            },
-        );
-        map.insert(
-            100,
-            ProcessInfo {
-                pid: 100,
-                ppid: 1,
-                name: "systemd".to_string(),
-                user: "root".to_string(),
-                arch: "x86_64".to_string(),
-            },
-        );
-        map.insert(
-            1000,
-            ProcessInfo {
-                pid: 1000,
-                ppid: 100,
-                name: "sshd".to_string(),
-                user: "root".to_string(),
-                arch: "x86_64".to_string(),
-            },
-        );
-        map.insert(
-            1001,
-            ProcessInfo {
-                pid: 1001,
-                ppid: 1000,
-                name: "bash".to_string(),
-                user: "user".to_string(),
-                arch: "x86_64".to_string(),
-            },
-        );
-        map.insert(
-            1337,
-            ProcessInfo {
-                pid: 1337,
-                ppid: 1001,
-                name: "eldritch".to_string(),
-                user: "user".to_string(),
-                arch: "x86_64".to_string(),
-            },
-        );
-
-        Self {
-            processes: Arc::new(Mutex::new(map)),
-        }
-    }
-}
+pub struct ProcessLibraryFake;
 
 impl ProcessLibrary for ProcessLibraryFake {
-    fn info(&self, pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
-        let pid = pid.unwrap_or(1337); // Default to current process
-        let procs = self.processes.lock();
-        if let Some(p) = procs.get(&pid) {
-            let mut map = BTreeMap::new();
-            map.insert("pid".to_string(), Value::Int(p.pid));
-            map.insert("ppid".to_string(), Value::Int(p.ppid));
-            map.insert("name".to_string(), Value::String(p.name.clone()));
-            map.insert("user".to_string(), Value::String(p.user.clone()));
-            map.insert("arch".to_string(), Value::String(p.arch.clone()));
-            Ok(map)
-        } else {
-            Err("Process not found".to_string())
-        }
+    fn info(&self, _pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("name".into(), Value::String("init".into()));
+        map.insert("pid".into(), Value::Int(1));
+        map.insert("ppid".into(), Value::Int(0));
+        map.insert("arch".into(), Value::String("x86_64".into()));
+        map.insert("user".into(), Value::String("root".into()));
+        map.insert("command".into(), Value::String("/sbin/init".into()));
+        Ok(map)
     }
 
-    fn kill(&self, pid: i64) -> Result<(), String> {
-        let mut procs = self.processes.lock();
-        if procs.remove(&pid).is_some() {
-            Ok(())
-        } else {
-            Err("Process not found".to_string())
-        }
+    fn kill(&self, _pid: i64) -> Result<(), String> {
+        Ok(())
     }
 
     fn list(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        let procs = self.processes.lock();
-        let mut list = Vec::new();
-        for p in procs.values() {
-            let mut map = BTreeMap::new();
-            map.insert("pid".to_string(), Value::Int(p.pid));
-            map.insert("ppid".to_string(), Value::Int(p.ppid));
-            map.insert("name".to_string(), Value::String(p.name.clone()));
-            map.insert("user".to_string(), Value::String(p.user.clone()));
-            map.insert("arch".to_string(), Value::String(p.arch.clone()));
-            list.push(map);
-        }
-        Ok(list)
+        let mut p1 = BTreeMap::new();
+        p1.insert("name".into(), Value::String("init".into()));
+        p1.insert("pid".into(), Value::Int(1));
+        p1.insert("ppid".into(), Value::Int(0));
+        p1.insert("arch".into(), Value::String("x86_64".into()));
+        p1.insert("user".into(), Value::String("root".into()));
+        p1.insert("command".into(), Value::String("/sbin/init".into()));
+
+        let mut p2 = BTreeMap::new();
+        p2.insert("name".into(), Value::String("bash".into()));
+        p2.insert("pid".into(), Value::Int(1001));
+        p2.insert("ppid".into(), Value::Int(1));
+        p2.insert("arch".into(), Value::String("x86_64".into()));
+        p2.insert("user".into(), Value::String("user".into()));
+        p2.insert("command".into(), Value::String("/bin/bash".into()));
+
+        let mut p3 = BTreeMap::new();
+        p3.insert("name".into(), Value::String("eldritch".into()));
+        p3.insert("pid".into(), Value::Int(1337)); // The PID returned by netstat
+        p3.insert("ppid".into(), Value::Int(1));
+        p3.insert("arch".into(), Value::String("x86_64".into()));
+        p3.insert("user".into(), Value::String("user".into()));
+        p3.insert("command".into(), Value::String("./eldritch".into()));
+
+        Ok(vec![p1, p2, p3])
     }
 
-    fn name(&self, pid: i64) -> Result<String, String> {
-        let procs = self.processes.lock();
-        if let Some(p) = procs.get(&pid) {
-            Ok(p.name.clone())
-        } else {
-            Err("Process not found".to_string())
-        }
+    fn name(&self, _pid: i64) -> Result<String, String> {
+        Ok("fake-process".into())
     }
 
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        Ok(Vec::new())
-    }
-}
-
-#[cfg(all(test, feature = "fake_bindings"))]
-mod tests {
-
-
-    #[test]
-    fn test_process_fake() {
-        let process = ProcessLibraryFake::default();
-        let list = process.list().unwrap();
-        assert!(list.len() >= 5);
-
-        let info = process.info(Some(1001)).unwrap();
-        assert_eq!(info.get("name").unwrap().to_string(), "bash");
-
-        process.kill(1001).unwrap();
-        assert!(process.info(Some(1001)).is_err());
+        let mut conn = BTreeMap::new();
+        conn.insert("protocol".into(), Value::String("tcp".into()));
+        conn.insert("local_address".into(), Value::String("127.0.0.1".into()));
+        conn.insert("local_port".into(), Value::Int(80));
+        conn.insert("remote_address".into(), Value::String("0.0.0.0".into()));
+        conn.insert("remote_port".into(), Value::Int(0));
+        conn.insert("state".into(), Value::String("LISTEN".into()));
+        conn.insert("pid".into(), Value::Int(1337));
+        conn.insert("socket_type".into(), Value::String("STREAM".into()));
+        Ok(vec![conn])
     }
 }

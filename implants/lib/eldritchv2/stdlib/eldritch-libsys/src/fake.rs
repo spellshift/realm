@@ -54,6 +54,7 @@ impl SysLibrary for SysLibraryFake {
         map.insert("os".into(), "linux".into());
         map.insert("arch".into(), "x86_64".into());
         map.insert("version".into(), "5.4.0-generic".into());
+        map.insert("platform".into(), "PLATFORM_LINUX".into()); // Fixed key value to match expected constant
         Ok(map)
     }
 
@@ -141,6 +142,7 @@ impl SysLibrary for SysLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_sys_fake() {
@@ -150,5 +152,6 @@ mod tests {
         assert!(!sys.is_windows().unwrap());
         assert_eq!(sys.hostname().unwrap(), "eldritch-test-box");
         assert!(sys.get_env().unwrap().contains_key("PATH"));
+        assert!(sys.get_os().unwrap().contains_key("platform"));
     }
 }

@@ -22,6 +22,7 @@ members = [
     "lib/eldritchv2/stdlib/eldritch-libreport",
     "lib/eldritchv2/stdlib/eldritch-libsys",
     "lib/eldritchv2/stdlib/eldritch-libtime",
+    "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/eldritchv2",
 ]
 resolver = "2"
