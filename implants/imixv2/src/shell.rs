@@ -562,6 +562,8 @@ impl InputParser {
                     0x0b => inputs.push(Input::KillToEnd),     // Ctrl+K
                     0x17 => inputs.push(Input::WordBackspace), // Ctrl+W
                     0x00 => inputs.push(Input::ForceComplete), // Ctrl+Space
+                    0x01 => inputs.push(Input::Home),          // Ctrl+A
+                    0x05 => inputs.push(Input::End),           // Ctrl+E
                     x if x >= 0x20 => inputs.push(Input::Char(x as char)),
                     _ => {
                         // Other control codes? Ignore them to prevent weirdness
@@ -800,5 +802,19 @@ mod tests {
         // "for i in range(5):\r\n    print(i)\r\n    print(i*2)"
 
         assert!(output.contains("for i in range(5):\r\n    print(i)\r\n    print(i*2)"));
+    }
+
+    #[test]
+    fn test_input_parser_home_end_ctrl_chars() {
+        let mut parser = InputParser::new();
+        // Ctrl+A (Home)
+        let inputs = parser.parse(b"\x01");
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(inputs[0], Input::Home);
+
+        // Ctrl+E (End)
+        let inputs = parser.parse(b"\x05");
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(inputs[0], Input::End);
     }
 }
