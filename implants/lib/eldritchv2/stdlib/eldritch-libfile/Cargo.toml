@@ -19,7 +19,7 @@ anyhow = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
-[target.'cfg(not(windows))'.dependencies]
+[target.'cfg(unix)'.dependencies]
 nix = { workspace = true, features = ["user"] }
 
 [features]
