@@ -178,6 +178,9 @@ This configuration change is typically transient and may not persist across rebo
 **Errors**
 - Returns an error string if the interval cannot be set.
 
+### agent.set_callback_uri
+`agent.set_callback_uri(uri: str) -> None`
+
 ### agent.set_config
 `agent.set_config(config: Dict) -> None`
 Updates the agent's configuration with the provided dictionary.
