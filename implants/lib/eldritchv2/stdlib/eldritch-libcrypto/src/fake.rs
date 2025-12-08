@@ -1,6 +1,7 @@
 
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use super::CryptoLibrary;
 
@@ -40,11 +41,33 @@ impl CryptoLibrary for CryptoLibraryFake {
     fn hash_file(&self, _file: String, _algo: String) -> Result<String, String> {
         Err("File hashing not supported in fake/wasm environment".into())
     }
+
+    fn encode_b64(&self, _content: String, _encode_type: Option<String>) -> Result<String, String> {
+        Ok(String::from("fake_b64"))
+    }
+
+    fn decode_b64(&self, _content: String, _encode_type: Option<String>) -> Result<String, String> {
+        Ok(String::from("fake_decoded"))
+    }
+
+    fn is_json(&self, _content: String) -> Result<bool, String> {
+        Ok(true)
+    }
+
+    fn from_json(&self, _content: String) -> Result<Value, String> {
+        Ok(Value::Dictionary(alloc::sync::Arc::new(
+            spin::RwLock::new(alloc::collections::BTreeMap::new())
+        )))
+    }
+
+    fn to_json(&self, _content: Value) -> Result<String, String> {
+        Ok(String::from("{}"))
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_crypto_fake() {
