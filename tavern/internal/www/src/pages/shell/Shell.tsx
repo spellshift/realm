@@ -17,16 +17,23 @@ class WebSocketProxy extends WebSocket {
     private onOpenCallback: ((this: WebSocket, ev: Event) => any) | null = null;
     private onCloseCallback: ((this: WebSocket, ev: CloseEvent) => any) | null = null;
     private onErrorCallback: ((this: WebSocket, ev: Event) => any) | null = null;
+    private messageListeners: Map<EventListenerOrEventListenerObject, EventListenerOrEventListenerObject> = new Map();
 
     // Callbacks to hook into the stream
     public onLatencyUpdate: ((latency: number) => void) | null = null;
 
     constructor(url: string, protocols?: string | string[]) {
         super(url, protocols);
-        super.onmessage = (ev) => this.handleMessage(ev);
-        super.onopen = (ev) => this.handleOpen(ev);
-        super.onclose = (ev) => this.handleClose(ev);
-        super.onerror = (ev) => this.handleError(ev);
+        // Use addEventListener to hook into the native stream
+        // This ensures we get called when the native socket receives a message
+        // We do NOT use super.onmessage = ... as TS forbids it and it is not reliable if we want to intercept listeners.
+        // By adding a listener here, we ensure handleMessage is called.
+        // Note: This does not stop other listeners from being called if they are attached to super.
+        // BUT, since we override addEventListener, users (AttachAddon) will attach through our wrapper.
+        super.addEventListener('message', (ev) => this.handleMessage(ev as MessageEvent));
+        super.addEventListener('open', (ev) => this.handleOpen(ev));
+        super.addEventListener('close', (ev) => this.handleClose(ev));
+        super.addEventListener('error', (ev) => this.handleError(ev));
     }
 
     // Helper to encode UTF-8 string to Base64
@@ -47,18 +54,11 @@ class WebSocketProxy extends WebSocket {
 
     // Override send to wrap data
     send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
-        // If data is binary, we need to convert to something JSON serializable?
+        // If data is binary, we need to convert to something JSON serializable.
         // xterm attach addon usually sends strings.
-        // But if it sends binary, we might have issues.
-        // Assuming strings for now as per xterm default.
+        // In Go json, []byte encodes to/from Base64 string.
+        // So we must base64 encode our data here.
         if (typeof data === 'string') {
-             // We need to encode string to bytes (or base64?) No, our backend handles []byte which JSON unmarshals from base64 string usually in Go?
-             // Actually, the backend `json.Unmarshal` into `[]byte` expects a base64 string.
-             // But if we send a string in JSON, Go might complain if the struct field is `[]byte`.
-             // Wait, `type wSMessage struct { Data []byte }`.
-             // In Go `json`, `[]byte` encodes to/from Base64 string.
-             // So we must base64 encode our data here.
-
              const b64 = this.toBase64(data);
              super.send(JSON.stringify({
                  type: "data",
@@ -79,26 +79,16 @@ class WebSocketProxy extends WebSocket {
         }));
     }
 
-    private handleMessage(ev: MessageEvent) {
+    private processMessage(ev: MessageEvent): MessageEvent | null {
         // Parse JSON
         try {
-            // The backend sends binary messages which are actually JSON strings bytes.
-            // But WebSocket might receive them as Blob or ArrayBuffer if binaryType is set?
-            // xterm-addon-attach sets binaryType to "arraybuffer" usually? No, let's check.
-            // AttachAddon doesn't strictly enforce binaryType, but xterm might.
-            // If we receive a string (text frame), easy.
-
             let jsonStr = "";
             if (typeof ev.data === "string") {
                 jsonStr = ev.data;
             } else if (ev.data instanceof Blob) {
-                // Determine how to handle blob
-                 // We rely on the fact that we can't easily sync read blob.
-                 // This might be tricky if AttachAddon expects sync.
-                 // But let's assume text frames for now since we control the backend.
-                 // The backend uses `ws.WriteMessage(websocket.BinaryMessage, ...)` so it is binary.
-                 // We should set binaryType to arraybuffer to be safe?
-                 return;
+                 // Blobs are not handled yet for synchronous parsing in this structure
+                 // But since we control the backend, we should be fine assuming strings or pre-decoded ArrayBuffers
+                 return null;
             } else if (ev.data instanceof ArrayBuffer) {
                 const dec = new TextDecoder("utf-8");
                 jsonStr = dec.decode(ev.data);
@@ -108,15 +98,9 @@ class WebSocketProxy extends WebSocket {
             if (payload.type === "data") {
                  // Decode Base64
                  const str = this.fromBase64(payload.data);
-                 // Convert to Uint8Array for xterm?
-                 // AttachAddon handles strings or Uint8Array.
-                 // Let's pass the string.
-                 if (this.onMessageCallback) {
-                     const newEv = new MessageEvent("message", {
-                         data: str
-                     });
-                     this.onMessageCallback.call(this, newEv);
-                 }
+                 return new MessageEvent("message", {
+                     data: str
+                 });
             } else if (payload.type === "ping") {
                 // Calculate Latency
                 const sentAtStr = this.fromBase64(payload.data);
@@ -126,13 +110,22 @@ class WebSocketProxy extends WebSocket {
                 if (this.onLatencyUpdate) {
                     this.onLatencyUpdate(latency);
                 }
+                return null;
             }
 
         } catch (e) {
             console.error("Failed to parse websocket message", e);
-            // Fallback?
+            // Fallback: return original event
+            return ev;
+        }
+        return null;
+    }
+
+    private handleMessage(ev: MessageEvent) {
+        const processed = this.processMessage(ev);
+        if (processed) {
             if (this.onMessageCallback) {
-                this.onMessageCallback.call(this, ev);
+                this.onMessageCallback.call(this, processed);
             }
         }
     }
@@ -145,6 +138,41 @@ class WebSocketProxy extends WebSocket {
     }
     private handleError(ev: Event) {
         if (this.onErrorCallback) this.onErrorCallback.call(this, ev);
+    }
+
+    // Override addEventListener to wrap 'message' listeners
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void {
+        if (type === 'message') {
+            // Check if we have already wrapped this listener to avoid memory leaks/duplicate additions
+            if (this.messageListeners.has(listener)) {
+                return;
+            }
+            const wrappedListener = (ev: Event) => {
+                const originalEvent = ev as MessageEvent;
+                const processed = this.processMessage(originalEvent);
+                if (processed) {
+                    if (typeof listener === 'function') {
+                        listener.call(this, processed);
+                    } else {
+                        listener.handleEvent(processed);
+                    }
+                }
+            };
+            this.messageListeners.set(listener, wrappedListener);
+            super.addEventListener(type, wrappedListener, options);
+        } else {
+            super.addEventListener(type, listener, options);
+        }
+    }
+
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void {
+        if (type === 'message' && this.messageListeners.has(listener)) {
+            const wrapped = this.messageListeners.get(listener)!;
+            super.removeEventListener(type, wrapped, options);
+            this.messageListeners.delete(listener);
+        } else {
+            super.removeEventListener(type, listener, options);
+        }
     }
 
     // Mimic WebSocket properties
@@ -258,7 +286,7 @@ const Shell = () => {
                         <h3 className="text-xl font-semibold leading-6 text-gray-900">Shell for id:{shellId}</h3>
                         <Badge badgeStyle={{ color: "purple" }} >BETA FEATURE</Badge>
                         {latency !== null && (
-                             <Badge badgeStyle={{ color: latency < 200 ? "green" : "orange" }}>
+                             <Badge badgeStyle={{ color: latency < 200 ? "green" : "red" }}>
                                 {latency}ms
                              </Badge>
                         )}
