@@ -60,9 +60,6 @@ impl<T: Transport + 'static> ImixAgent<T> {
 
     // Flushes all buffered task outputs using the provided transport (or internal one if not provided, but here we assume internal is set by main)
     pub async fn flush_outputs(&self) {
-        // Wait a short delay to allow tasks to produce output
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
         // Drain the buffer
         let outputs: Vec<_> = {
             match self.output_buffer.lock() {

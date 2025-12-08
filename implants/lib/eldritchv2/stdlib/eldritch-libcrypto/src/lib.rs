@@ -1,7 +1,6 @@
 extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
@@ -29,19 +28,4 @@ pub trait CryptoLibrary {
 
     #[eldritch_method]
     fn hash_file(&self, file: String, algo: String) -> Result<String, String>;
-
-    #[eldritch_method]
-    fn encode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
-
-    #[eldritch_method]
-    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
-
-    #[eldritch_method]
-    fn is_json(&self, content: String) -> Result<bool, String>;
-
-    #[eldritch_method]
-    fn from_json(&self, content: String) -> Result<Value, String>;
-
-    #[eldritch_method]
-    fn to_json(&self, content: Value) -> Result<String, String>;
 }

@@ -291,7 +291,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                             ReplAction::Quit => return,
                             ReplAction::Submit { code, .. } => {
                                 // Move to next line
-                                let _ = stdout.write_all(b"\r\n");
+                                let _ = stdout.queue(cursor::MoveToNextLine(1));
                                 let _ = stdout.flush();
 
                                 // Execute
@@ -310,7 +310,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                 let _ = render(&mut stdout, &repl);
                             }
                             ReplAction::AcceptLine { .. } => {
-                                let _ = stdout.write_all(b"\r\n");
+                                let _ = stdout.queue(cursor::MoveToNextLine(1));
                                 let _ = render(&mut stdout, &repl);
                             }
                             ReplAction::ClearScreen => {
@@ -359,8 +359,7 @@ impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
 impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     fn print_out(&self, _span: &Span, s: &str) {
         // Send to REPL
-        let s_crlf = s.replace('\n', "\r\n");
-        let display_s = format!("{s_crlf}\r\n");
+        let display_s = format!("{s}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
@@ -381,8 +380,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     }
 
     fn print_err(&self, _span: &Span, s: &str) {
-        let s_crlf = s.replace('\n', "\r\n");
-        let display_s = format!("{s_crlf}\r\n");
+        let display_s = format!("{s}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
@@ -626,8 +624,7 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
     stdout.queue(SetForegroundColor(Color::Reset))?;
 
     // Write buffer
-    let buffer_crlf = state.buffer.replace('\n', "\r\n");
-    stdout.write_all(buffer_crlf.as_bytes())?;
+    stdout.write_all(state.buffer.as_bytes())?;
 
     // Render suggestions if any
     if let Some(suggestions) = &state.suggestions {
@@ -637,34 +634,8 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
         stdout.write_all(b"\r")?;
 
         if !suggestions.is_empty() {
-            let visible_count = 10;
-            let len = suggestions.len();
-            let idx = state.suggestion_idx.unwrap_or(0);
-
-            let start = if len <= visible_count {
-                0
-            } else {
-                let s = idx.saturating_sub(visible_count / 2);
-                if s + visible_count > len {
-                    len - visible_count
-                } else {
-                    s
-                }
-            };
-
-            let end = std::cmp::min(len, start + visible_count);
-
-            if start > 0 {
-                stdout.write_all(b"... ")?;
-            }
-
-            for (i, s) in suggestions
-                .iter()
-                .enumerate()
-                .skip(start)
-                .take(visible_count)
-            {
-                if i > start {
+            for (i, s) in suggestions.iter().take(10).enumerate() {
+                if i > 0 {
                     stdout.write_all(b"  ")?;
                 }
                 if Some(i) == state.suggestion_idx {
@@ -678,7 +649,7 @@ fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()>
                     stdout.write_all(s.as_bytes())?;
                 }
             }
-            if end < len {
+            if suggestions.len() > 10 {
                 stdout.write_all(b" ...")?;
             }
         }
@@ -758,30 +729,5 @@ mod tests {
         let inputs = parser.parse(b"\x1b[3~");
         assert_eq!(inputs.len(), 1);
         assert_eq!(inputs[0], Input::Delete);
-    }
-
-    #[test]
-    fn test_render_multi_line_history() {
-        // Setup
-        let mut repl = Repl::new();
-        // Simulate loading history with multi-line block
-        let history = vec!["for i in range(5):\n    print(i)\n    print(i*2)".to_string()];
-        repl.load_history(history);
-
-        // Simulate recalling history (Up arrow)
-        repl.handle_input(Input::Up);
-
-        // Render to buffer
-        let mut stdout = Vec::new();
-        render(&mut stdout, &repl).unwrap();
-
-        let output = String::from_utf8_lossy(&stdout);
-
-        // Check that newlines are converted to \r\n
-        // The output will contain clearing codes, prompt colors, etc.
-        // We look for the sequence:
-        // "for i in range(5):\r\n    print(i)\r\n    print(i*2)"
-
-        assert!(output.contains("for i in range(5):\r\n    print(i)\r\n    print(i*2)"));
     }
 }

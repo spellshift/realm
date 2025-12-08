@@ -196,51 +196,25 @@ fn render(stdout: &mut io::Stdout, repl: &Repl) -> io::Result<()> {
         stdout.queue(cursor::MoveToColumn(0))?;
 
         // Print suggestions
-        if !suggestions.is_empty() {
-            let visible_count = 10;
-            let len = suggestions.len();
-            let idx = state.suggestion_idx.unwrap_or(0);
-
-            let start = if len <= visible_count {
-                0
-            } else {
-                let s = idx.saturating_sub(visible_count / 2);
-                if s + visible_count > len {
-                    len - visible_count
-                } else {
-                    s
-                }
-            };
-
-            let end = std::cmp::min(len, start + visible_count);
-
-            if start > 0 {
-                stdout.write_all(b"... ")?;
-            }
-
-            for (i, s) in suggestions
-                .iter()
-                .enumerate()
-                .skip(start)
-                .take(visible_count)
-            {
-                // i is the absolute index
-                // Separator logic: if we are not the very first item displayed
-                if i > start {
+        // Simple list for now
+        if suggestions.is_empty() {
+             // Do nothing
+        } else {
+             // Maybe limit?
+             for (i, s) in suggestions.iter().take(10).enumerate() {
+                 if i > 0 {
                     stdout.write_all(b"  ")?;
-                }
-
-                if Some(i) == state.suggestion_idx {
+                 }
+                 if Some(i) == state.suggestion_idx {
                     // Highlight selected
-                    stdout.write_all(format!("{}", s.as_str().black().on_white()).as_bytes())?;
-                } else {
-                    stdout.write_all(s.as_bytes())?;
-                }
-            }
-
-            if end < len {
-                stdout.write_all(b" ...")?;
-            }
+                     stdout.write_all(format!("{}", s.as_str().black().on_white()).as_bytes())?;
+                 } else {
+                     stdout.write_all(s.as_bytes())?;
+                 }
+             }
+             if suggestions.len() > 10 {
+                 stdout.write_all(b" ...")?;
+             }
         }
 
         // Restore cursor
