@@ -4,22 +4,22 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-eldritch-core = { path = "../eldritch-core", default-features = false }
+eldritch-core = { workspace = true, default-features = false }
 spin = "0.10"
 
 # Libs
-eldritch-libagent = { path = "../stdlib/eldritch-libagent", default-features = false }
-eldritch-libassets = { path = "../stdlib/eldritch-libassets", default-features = false }
-eldritch-libcrypto = { path = "../stdlib/eldritch-libcrypto", default-features = false }
-eldritch-libfile = { path = "../stdlib/eldritch-libfile", default-features = false }
-eldritch-libhttp = { path = "../stdlib/eldritch-libhttp", default-features = false }
-eldritch-libpivot = { path = "../stdlib/eldritch-libpivot", default-features = false }
-eldritch-libprocess = { path = "../stdlib/eldritch-libprocess", default-features = false }
-eldritch-librandom = { path = "../stdlib/eldritch-librandom", default-features = false }
-eldritch-libregex = { path = "../stdlib/eldritch-libregex", default-features = false }
-eldritch-libreport = { path = "../stdlib/eldritch-libreport", default-features = false }
-eldritch-libsys = { path = "../stdlib/eldritch-libsys", default-features = false }
-eldritch-libtime = { path = "../stdlib/eldritch-libtime", default-features = false }
+eldritch-libagent = { workspace = true, default-features = false }
+eldritch-libassets = { workspace = true, default-features = false }
+eldritch-libcrypto = { workspace = true, default-features = false }
+eldritch-libfile = { workspace = true, default-features = false }
+eldritch-libhttp = { workspace = true, default-features = false }
+eldritch-libpivot = { workspace = true, default-features = false }
+eldritch-libprocess = { workspace = true, default-features = false }
+eldritch-librandom = { workspace = true, default-features = false }
+eldritch-libregex = { workspace = true, default-features = false }
+eldritch-libreport = { workspace = true, default-features = false }
+eldritch-libsys = { workspace = true, default-features = false }
+eldritch-libtime = { workspace = true, default-features = false }
 
 [features]
 default = ["std", "stdlib"]

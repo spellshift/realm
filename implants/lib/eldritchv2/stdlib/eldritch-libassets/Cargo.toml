@@ -4,10 +4,10 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core", default-features = false }
-eldritch-macros = { path = "../../eldritch-macros" }
-eldritch-libagent = { path = "../eldritch-libagent", optional = true, default-features = false }
-pb = { path = "../../../pb", optional = true }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch-libagent = { workspace = true, optional = true }
+pb = { workspace = true, optional = true }
 anyhow = { version = "1.0", optional = true }
 rust-embed = { version = "8.0", optional = true }
 
@@ -16,8 +16,14 @@ default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = []
 imix = []
-stdlib = ["dep:eldritch-libagent", "dep:pb", "dep:anyhow", "dep:rust-embed", "eldritch-libagent/stdlib"]
+stdlib = [
+    "dep:eldritch-libagent",
+    "dep:pb",
+    "dep:anyhow",
+    "dep:rust-embed",
+    "eldritch-libagent/stdlib",
+]
 
 [dev-dependencies]
 tempfile = "3.3"
-eldritch-libagent = { path = "../eldritch-libagent", features = ["fake_bindings", "stdlib"] }
+eldritch-libagent = { workspace = true, features = ["fake_bindings", "stdlib"] }

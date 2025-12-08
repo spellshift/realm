@@ -7,16 +7,13 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
-eldritch-macros = { path = "../../eldritch-macros" }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
 sysinfo = { workspace = true, optional = true }
 listeners = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [features]
 default = ["stdlib"]
-stdlib = [
-    "dep:sysinfo",
-    "dep:listeners",
-]
+stdlib = ["dep:sysinfo", "dep:listeners"]
 fake_bindings = []

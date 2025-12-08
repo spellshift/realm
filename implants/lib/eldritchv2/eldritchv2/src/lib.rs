@@ -21,8 +21,8 @@ pub use eldritch_libtime as time;
 
 // Re-export core types
 pub use eldritch_core::{
-    conversion, BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer,
-    Span, StdoutPrinter, TokenKind, Value,
+    BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer, Span,
+    StdoutPrinter, TokenKind, Value, conversion,
 };
 
 use alloc::string::String;
@@ -153,11 +153,11 @@ impl Interpreter {
     }
 
     #[cfg(feature = "fake_bindings")]
-    pub fn with_agent(mut self) -> Self {
-        self.inner.register_lib(AgentLibraryFake::default());
-        self.inner.register_lib(ReportLibraryFake::default());
-        self.inner.register_lib(PivotLibraryFake::default());
-        self.inner.register_lib(FakeAssetsLibrary::default());
+    pub fn with_fake_agent(mut self) -> Self {
+        self.inner.register_lib(AgentLibraryFake);
+        self.inner.register_lib(ReportLibraryFake);
+        self.inner.register_lib(PivotLibraryFake);
+        self.inner.register_lib(FakeAssetsLibrary);
         self
     }
 

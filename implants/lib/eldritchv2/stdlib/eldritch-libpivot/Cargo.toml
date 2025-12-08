@@ -7,9 +7,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eldritch-core = { path = "../../eldritch-core" }
-eldritch-macros = { path = "../../eldritch-macros" }
-eldritch-libagent = { path = "../eldritch-libagent", optional = true }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch-libagent = { workspace = true, optional = true }
 
 anyhow = { workspace = true, optional = true }
 async-recursion = { workspace = true, optional = true }
@@ -19,7 +19,11 @@ log = { workspace = true, optional = true }
 russh = { workspace = true, optional = true }
 russh-sftp = { workspace = true, optional = true }
 russh-keys = { workspace = true, optional = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "fs"], optional = true }
+tokio = { workspace = true, features = [
+    "macros",
+    "rt-multi-thread",
+    "fs",
+], optional = true }
 pnet = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 
@@ -28,9 +32,22 @@ listeners = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-eldritch-libagent = { path = "../eldritch-libagent" }
+eldritch-libagent = { workspace = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["eldritch-libagent", "anyhow", "async-recursion", "async-trait", "ipnetwork", "log", "russh", "russh-sftp", "russh-keys", "tokio", "pnet", "pb"]
+stdlib = [
+    "eldritch-libagent",
+    "anyhow",
+    "async-recursion",
+    "async-trait",
+    "ipnetwork",
+    "log",
+    "russh",
+    "russh-sftp",
+    "russh-keys",
+    "tokio",
+    "pnet",
+    "pb",
+]
 fake_bindings = []

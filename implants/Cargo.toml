@@ -33,6 +33,24 @@ eldritch = { path = "./lib/eldritch" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
 
+# Eldritch V2
+eldritch-core = {path = "lib/eldritchv2/eldritch-core", default-features = false }
+eldritch-macros = {path = "lib/eldritchv2/eldritch-macros", default-features = false}
+eldritch-repl = {path = "lib/eldritchv2/eldritch-repl", default-features = false}
+eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
+eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
+eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
+eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
+eldritch-libfile = {path = "lib/eldritchv2/stdlib/eldritch-libfile",default-features = false }
+eldritch-libhttp = {path = "lib/eldritchv2/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libpivot = {path = "lib/eldritchv2/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libprocess = {path = "lib/eldritchv2/stdlib/eldritch-libprocess",default-features = false }
+eldritch-librandom = {path = "lib/eldritchv2/stdlib/eldritch-librandom", default-features = false }
+eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-features = false }
+eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
+eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
+
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"
