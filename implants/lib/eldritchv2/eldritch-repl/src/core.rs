@@ -1,6 +1,6 @@
-use eldritch_core::{Lexer, TokenKind};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use eldritch_core::{Lexer, TokenKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Input {
@@ -120,16 +120,8 @@ impl Repl {
             self.suggestion_idx = None;
             self.completion_start = None;
         } else {
-            // Auto-accept if single match?
-            // "easier to cycle" implies showing matches.
-            // If user typed 'process.li' and there is only 'list', maybe we just want to accept?
-            // But if user pressed Tab on 'p', and 'print' is the only option, maybe they want to see it?
-            // Standard shell: Tab once -> show partial completion (longest common prefix). Tab twice -> show list.
-            // Here we just show list.
-            // Let's stick to showing list.
             self.suggestions = Some(suggestions);
-            self.suggestion_idx = Some(0); // Select first by default? Or None?
-            // If we select first, Enter will accept it.
+            self.suggestion_idx = Some(0);
             self.completion_start = Some(start_index);
         }
     }
@@ -267,13 +259,9 @@ impl Repl {
             Input::Char(c) => self.search_append(c),
             Input::Backspace => self.search_backspace(),
             Input::Enter => self.end_search(true),
-            Input::Cancel => self.end_search(false), // Cancel restores original buffer
-            // Navigation keys could accept the search and move cursor?
+            Input::Cancel => self.end_search(false),
             Input::Left | Input::Right | Input::Home | Input::End => {
                 self.end_search(true);
-                // Re-process the navigation input on the restored buffer?
-                // For simplicity, just accept the search result and let user navigate next.
-                // Or we could re-dispatch. Let's just accept.
                 ReplAction::Render
             }
             _ => ReplAction::None,
@@ -298,18 +286,8 @@ impl Repl {
             if self.history[i].contains(&query) {
                 self.search_state.as_mut().unwrap().match_index = Some(i);
                 self.buffer = self.history[i].clone();
-                // Cursor position: Zsh usually puts it at end of match or end of line.
-                // We'll put it at end of line to visualize the match clearly.
-                // Wait, in search mode, the buffer displayed IS the match.
-                // The prompt shows the query.
-
-                // Let's highlight match?
-                // RenderState only has one buffer string.
-                // We just show the history line in the buffer.
-                // The cursor in RenderState is an index into buffer.
-                // We can set cursor to where the match starts?
                 if let Some(pos) = self.buffer.find(&query) {
-                    self.cursor = pos; // Point to start of match?
+                    self.cursor = pos;
                 } else {
                     self.cursor = 0;
                 }
@@ -362,8 +340,7 @@ impl Repl {
         }
 
         // No match
-        self.buffer.clear(); // Or keep previous match? Standard is usually showing failing search
-                             // We'll clear for now to indicate no match found
+        self.buffer.clear();
         self.cursor = 0;
         ReplAction::Render
     }
@@ -372,14 +349,10 @@ impl Repl {
         let saved = self.search_state.as_ref().unwrap().saved_buffer.clone();
 
         if accept {
-            // Keep current buffer (the match)
-            // Restore saved buffer if no match was found (buffer empty)?
-            // If buffer is empty (no match), maybe restore saved.
             if self.buffer.is_empty() {
                 self.buffer = saved;
             }
         } else {
-            // Restore original buffer
             self.buffer = saved;
         }
 
@@ -389,9 +362,6 @@ impl Repl {
     }
 
     fn handle_tab(&mut self) -> ReplAction {
-        // Trigger completion more easily.
-        // If the line up to the cursor is just whitespace, we indent.
-        // Otherwise, we trigger completion.
         let line_up_to_cursor: String = self.buffer.chars().take(self.cursor).collect();
         if line_up_to_cursor.trim().is_empty() {
             self.insert_str("    ")
@@ -574,8 +544,11 @@ impl Repl {
             self.history_idx = None;
             self.is_multiline = false;
 
+            // Expand macros before submitting
+            let expanded_code = expand_macros(&full_code);
+
             ReplAction::Submit {
-                code: full_code,
+                code: expanded_code,
                 last_line,
                 prompt: current_prompt,
             }
@@ -629,6 +602,18 @@ impl Repl {
             return false;
         }
 
+        // Special check for macro: if the line starts with ! and Lexer failed, we might want to submit
+        // However, we rely on Lexer error to trigger expansion.
+        // If `!ls` is entered, Lexer returns Error("Unexpected character !").
+        // We catch that error in `should_execute`?
+        // Currently `should_execute` returns false if balance > 0 or incomplete string.
+        // If Lexer returns error "Unexpected character !", balance is 0, incomplete_string is false.
+        // So `should_execute` proceeds to check line count / colon logic.
+        // `!ls` -> 1 line, no colon -> returns true.
+        // So it submits.
+        // Then `handle_enter` calls `expand_macros`. `expand_macros` sees the error and expands.
+        // Seems correct.
+
         let ends_with_colon = trimmed_last.ends_with(':');
         let is_empty_last = trimmed_last.is_empty();
         let line_count = full_code.lines().count();
@@ -643,4 +628,64 @@ impl Repl {
 
         false
     }
+}
+
+fn expand_macros(code: &str) -> String {
+    let mut expanded_code = code.to_string();
+
+    loop {
+        match Lexer::new(expanded_code.clone()).scan_tokens() {
+            Ok(_) => {
+                break;
+            }
+            Err(msg) => {
+                if let Some(line_num_str) = msg.strip_prefix("Unexpected character: ! on line ") {
+                    let line_num: usize = match line_num_str.trim().parse() {
+                        Ok(n) => n,
+                        Err(_) => break,
+                    };
+
+                    if line_num == 0 {
+                        break;
+                    }
+
+                    let lines: Vec<&str> = expanded_code.lines().collect();
+                    if line_num > lines.len() {
+                        break;
+                    }
+
+                    let line_idx = line_num - 1;
+                    let line = lines[line_idx];
+
+                    let trimmed_line = line.trim_start();
+                    if let Some(rest) = trimmed_line.strip_prefix('!') {
+                        let indentation = &line[..line.len() - trimmed_line.len()];
+
+                        let cmd = rest;
+                        let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
+                        let macro_var = "_nonomacroclowntown";
+                        let replacement = alloc::format!(
+                            "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
+                        );
+
+                        let mut new_lines: Vec<String> =
+                            lines.iter().map(|s| s.to_string()).collect();
+                        new_lines[line_idx] = replacement;
+
+                        expanded_code = new_lines.join("\n");
+
+                        if code.ends_with('\n') && !expanded_code.ends_with('\n') {
+                            expanded_code.push('\n');
+                        }
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    expanded_code
 }
