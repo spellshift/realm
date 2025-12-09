@@ -440,14 +440,7 @@ impl std::io::Write for VtWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        match self.tx.blocking_send(ReverseShellRequest {
-            kind: ReverseShellMessageKind::Ping.into(),
-            data: Vec::new(),
-            task_id: self.task_id,
-        }) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
-        }
+        Ok(())
     }
 }
 
@@ -816,5 +809,27 @@ mod tests {
         let inputs = parser.parse(b"\x05");
         assert_eq!(inputs.len(), 1);
         assert_eq!(inputs[0], Input::End);
+    }
+
+    #[test]
+    fn test_vt_writer_flush_does_not_send_ping() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+        let mut writer = VtWriter { tx, task_id: 1 };
+
+        // Write some data
+        writer.write(b"hello").unwrap();
+        let msg = rx.blocking_recv().unwrap();
+        assert_eq!(msg.kind, ReverseShellMessageKind::Data as i32);
+        assert_eq!(msg.data, b"hello");
+
+        // Flush
+        writer.flush().unwrap();
+
+        // Assert no message is received
+        match rx.try_recv() {
+            Ok(msg) => panic!("Received unexpected message: {:?}", msg),
+            Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {},
+            Err(e) => panic!("Unexpected error: {:?}", e),
+        }
     }
 }
