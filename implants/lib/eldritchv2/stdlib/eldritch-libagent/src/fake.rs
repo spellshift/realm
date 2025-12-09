@@ -1,4 +1,4 @@
-use eldritch_core::Value;
+use eldritch_core::{Interpreter, Value};
 use eldritch_macros::eldritch_library_impl;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
@@ -102,6 +102,12 @@ impl AgentLibrary for AgentLibraryFake {
 
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
+    }
+
+    fn eval(&self, code: String) -> Result<Value, String> {
+        let mut interp = Interpreter::new();
+        interp.register_lib(AgentLibraryFake::default());
+        interp.interpret(&code)
     }
 }
 
