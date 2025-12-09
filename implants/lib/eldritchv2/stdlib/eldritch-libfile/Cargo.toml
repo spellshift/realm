@@ -17,6 +17,7 @@ glob = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
+notify = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(unix)'.dependencies]
@@ -33,5 +34,6 @@ stdlib = [
     "dep:regex",
     "dep:anyhow",
     "dep:serde_json",
+    "dep:notify",
 ]
 fake_bindings = []
