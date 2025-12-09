@@ -8,6 +8,7 @@ import { convertArrayToObject } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { BeaconNode } from "../../../utils/interfacesQuery";
 import { QuestFormikProps } from "../types";
+import { FilterBarOption } from "../../../utils/interfacesUI";
 
 
 type Props = {
@@ -26,9 +27,9 @@ const FinalizeStep = (props: Props) => {
 
     const { data } = useTags();
 
-    function getSelectedBeacons(beacons: BeaconNode[], selectedBeaconIds: string[]): BeaconNode[] {
+    function getSelectedBeacons(beacons: Array<FilterBarOption & BeaconNode>, selectedBeaconIds: string[]): BeaconNode[] {
         const beaconSelectedObject = convertArrayToObject(selectedBeaconIds);
-        return beacons.filter((beacon: BeaconNode) => beaconSelectedObject[beacon.id]);
+        return beacons.filter((beacon) => beaconSelectedObject[beacon.id]);
     }
 
     const beaconsSelected = getSelectedBeacons(data.beacons, formik.values.beacons);
