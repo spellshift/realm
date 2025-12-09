@@ -1,0 +1,23 @@
+[package]
+name = "eldritch-migration"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eldritch = { workspace = true }
+eldritchv2 = { workspace = true, features = ["fake_bindings"] }
+eldritch-core = { workspace = true, default-features = false }
+anyhow = { workspace = true }
+glob = { workspace = true }
+spin = "0.10"
+log = { workspace = true }
+pb = { workspace = true }
+starlark = { workspace = true }
+
+[features]
+default = ["fake_bindings"]
+fake_bindings = []
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+pretty_env_logger = { workspace = true }
