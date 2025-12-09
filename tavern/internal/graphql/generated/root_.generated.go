@@ -56,7 +56,18 @@ type ComplexityRoot struct {
 		Name            func(childComplexity int) int
 		Principal       func(childComplexity int) int
 		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tasks           func(childComplexity int) int
+		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+	}
+
+	BeaconConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	BeaconEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	File struct {
@@ -66,15 +77,26 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Size           func(childComplexity int) int
-		Tomes          func(childComplexity int) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+	}
+
+	FileConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	FileEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Host struct {
-		Beacons        func(childComplexity int) int
+		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
-		Credentials    func(childComplexity int) int
+		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ExternalIP     func(childComplexity int) int
-		Files          func(childComplexity int) int
+		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
@@ -82,8 +104,8 @@ type ComplexityRoot struct {
 		Name           func(childComplexity int) int
 		Platform       func(childComplexity int) int
 		PrimaryIP      func(childComplexity int) int
-		Processes      func(childComplexity int) int
-		Tags           func(childComplexity int) int
+		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
 
 	HostConnection struct {
@@ -101,6 +123,17 @@ type ComplexityRoot struct {
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
 		Task           func(childComplexity int) int
+	}
+
+	HostCredentialConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostCredentialEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	HostEdge struct {
@@ -122,6 +155,17 @@ type ComplexityRoot struct {
 		Task           func(childComplexity int) int
 	}
 
+	HostFileConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostFileEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	HostProcess struct {
 		Cmd            func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -137,6 +181,17 @@ type ComplexityRoot struct {
 		Principal      func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Task           func(childComplexity int) int
+	}
+
+	HostProcessConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostProcessEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -163,8 +218,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Beacons      func(childComplexity int, where *ent.BeaconWhereInput) int
-		Files        func(childComplexity int, where *ent.FileWhereInput) int
+		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		Files        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
 		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
@@ -172,10 +227,10 @@ type ComplexityRoot struct {
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, where *ent.TagWhereInput) int
+		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, where *ent.UserWhereInput) int
+		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -210,7 +265,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
 		PublicKey      func(childComplexity int) int
-		Tomes          func(childComplexity int) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 		URL            func(childComplexity int) int
 	}
 
@@ -226,7 +281,7 @@ type ComplexityRoot struct {
 	}
 
 	Shell struct {
-		ActiveUsers    func(childComplexity int) int
+		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Beacon         func(childComplexity int) int
 		ClosedAt       func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -248,10 +303,21 @@ type ComplexityRoot struct {
 	}
 
 	Tag struct {
-		Hosts func(childComplexity int) int
+		Hosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		ID    func(childComplexity int) int
 		Kind  func(childComplexity int) int
 		Name  func(childComplexity int) int
+	}
+
+	TagConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TagEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Task struct {
@@ -266,10 +332,10 @@ type ComplexityRoot struct {
 		Output              func(childComplexity int) int
 		OutputSize          func(childComplexity int) int
 		Quest               func(childComplexity int) int
-		ReportedCredentials func(childComplexity int) int
-		ReportedFiles       func(childComplexity int) int
-		ReportedProcesses   func(childComplexity int) int
-		Shells              func(childComplexity int) int
+		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
+		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		Shells              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 	}
 
 	TaskConnection struct {
@@ -288,7 +354,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		Description    func(childComplexity int) int
 		Eldritch       func(childComplexity int) int
-		Files          func(childComplexity int) int
+		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
@@ -299,14 +365,36 @@ type ComplexityRoot struct {
 		Uploader       func(childComplexity int) int
 	}
 
+	TomeConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TomeEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	User struct {
-		ActiveShells func(childComplexity int) int
+		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		ID           func(childComplexity int) int
 		IsActivated  func(childComplexity int) int
 		IsAdmin      func(childComplexity int) int
 		Name         func(childComplexity int) int
 		PhotoURL     func(childComplexity int) int
-		Tomes        func(childComplexity int) int
+		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+	}
+
+	UserConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	UserEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 }
 
@@ -416,7 +504,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Beacon.Tasks(childComplexity), true
+		args, err := ec.field_Beacon_tasks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Beacon.Tasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TaskOrder), args["where"].(*ent.TaskWhereInput)), true
+
+	case "BeaconConnection.edges":
+		if e.complexity.BeaconConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.BeaconConnection.Edges(childComplexity), true
+
+	case "BeaconConnection.pageInfo":
+		if e.complexity.BeaconConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.BeaconConnection.PageInfo(childComplexity), true
+
+	case "BeaconConnection.totalCount":
+		if e.complexity.BeaconConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.BeaconConnection.TotalCount(childComplexity), true
+
+	case "BeaconEdge.cursor":
+		if e.complexity.BeaconEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.BeaconEdge.Cursor(childComplexity), true
+
+	case "BeaconEdge.node":
+		if e.complexity.BeaconEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.BeaconEdge.Node(childComplexity), true
 
 	case "File.createdAt":
 		if e.complexity.File.CreatedAt == nil {
@@ -465,14 +593,59 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.File.Tomes(childComplexity), true
+		args, err := ec.field_File_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.File.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
+
+	case "FileConnection.edges":
+		if e.complexity.FileConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.FileConnection.Edges(childComplexity), true
+
+	case "FileConnection.pageInfo":
+		if e.complexity.FileConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.FileConnection.PageInfo(childComplexity), true
+
+	case "FileConnection.totalCount":
+		if e.complexity.FileConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.FileConnection.TotalCount(childComplexity), true
+
+	case "FileEdge.cursor":
+		if e.complexity.FileEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.FileEdge.Cursor(childComplexity), true
+
+	case "FileEdge.node":
+		if e.complexity.FileEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.FileEdge.Node(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
 			break
 		}
 
-		return e.complexity.Host.Beacons(childComplexity), true
+		args, err := ec.field_Host_beacons_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
 
 	case "Host.createdAt":
 		if e.complexity.Host.CreatedAt == nil {
@@ -486,7 +659,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Host.Credentials(childComplexity), true
+		args, err := ec.field_Host_credentials_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Credentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
 
 	case "Host.externalIP":
 		if e.complexity.Host.ExternalIP == nil {
@@ -500,7 +678,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Host.Files(childComplexity), true
+		args, err := ec.field_Host_files_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Files(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFileOrder), args["where"].(*ent.HostFileWhereInput)), true
 
 	case "Host.id":
 		if e.complexity.Host.ID == nil {
@@ -556,14 +739,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Host.Processes(childComplexity), true
+		args, err := ec.field_Host_processes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Processes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
 
 	case "Host.tags":
 		if e.complexity.Host.Tags == nil {
 			break
 		}
 
-		return e.complexity.Host.Tags(childComplexity), true
+		args, err := ec.field_Host_tags_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Tags(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TagOrder), args["where"].(*ent.TagWhereInput)), true
 
 	case "HostConnection.edges":
 		if e.complexity.HostConnection.Edges == nil {
@@ -641,6 +834,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostCredential.Task(childComplexity), true
+
+	case "HostCredentialConnection.edges":
+		if e.complexity.HostCredentialConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialConnection.Edges(childComplexity), true
+
+	case "HostCredentialConnection.pageInfo":
+		if e.complexity.HostCredentialConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialConnection.PageInfo(childComplexity), true
+
+	case "HostCredentialConnection.totalCount":
+		if e.complexity.HostCredentialConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialConnection.TotalCount(childComplexity), true
+
+	case "HostCredentialEdge.cursor":
+		if e.complexity.HostCredentialEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialEdge.Cursor(childComplexity), true
+
+	case "HostCredentialEdge.node":
+		if e.complexity.HostCredentialEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialEdge.Node(childComplexity), true
 
 	case "HostEdge.cursor":
 		if e.complexity.HostEdge.Cursor == nil {
@@ -732,6 +960,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostFile.Task(childComplexity), true
+
+	case "HostFileConnection.edges":
+		if e.complexity.HostFileConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostFileConnection.Edges(childComplexity), true
+
+	case "HostFileConnection.pageInfo":
+		if e.complexity.HostFileConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostFileConnection.PageInfo(childComplexity), true
+
+	case "HostFileConnection.totalCount":
+		if e.complexity.HostFileConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostFileConnection.TotalCount(childComplexity), true
+
+	case "HostFileEdge.cursor":
+		if e.complexity.HostFileEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostFileEdge.Cursor(childComplexity), true
+
+	case "HostFileEdge.node":
+		if e.complexity.HostFileEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostFileEdge.Node(childComplexity), true
 
 	case "HostProcess.cmd":
 		if e.complexity.HostProcess.Cmd == nil {
@@ -830,6 +1093,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostProcess.Task(childComplexity), true
+
+	case "HostProcessConnection.edges":
+		if e.complexity.HostProcessConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostProcessConnection.Edges(childComplexity), true
+
+	case "HostProcessConnection.pageInfo":
+		if e.complexity.HostProcessConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostProcessConnection.PageInfo(childComplexity), true
+
+	case "HostProcessConnection.totalCount":
+		if e.complexity.HostProcessConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostProcessConnection.TotalCount(childComplexity), true
+
+	case "HostProcessEdge.cursor":
+		if e.complexity.HostProcessEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostProcessEdge.Cursor(childComplexity), true
+
+	case "HostProcessEdge.node":
+		if e.complexity.HostProcessEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostProcessEdge.Node(childComplexity), true
 
 	case "Mutation.createCredential":
 		if e.complexity.Mutation.CreateCredential == nil {
@@ -1020,7 +1318,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Beacons(childComplexity, args["where"].(*ent.BeaconWhereInput)), true
+		return e.complexity.Query.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
 
 	case "Query.files":
 		if e.complexity.Query.Files == nil {
@@ -1032,7 +1330,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
+		return e.complexity.Query.Files(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.FileOrder), args["where"].(*ent.FileWhereInput)), true
 
 	case "Query.hosts":
 		if e.complexity.Query.Hosts == nil {
@@ -1123,7 +1421,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tags(childComplexity, args["where"].(*ent.TagWhereInput)), true
+		return e.complexity.Query.Tags(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TagOrder), args["where"].(*ent.TagWhereInput)), true
 
 	case "Query.tasks":
 		if e.complexity.Query.Tasks == nil {
@@ -1147,7 +1445,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tomes(childComplexity, args["where"].(*ent.TomeWhereInput)), true
+		return e.complexity.Query.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -1159,7 +1457,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["where"].(*ent.UserWhereInput)), true
+		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Quest.bundle":
 		if e.complexity.Quest.Bundle == nil {
@@ -1325,7 +1623,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Repository.Tomes(childComplexity), true
+		args, err := ec.field_Repository_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Repository.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
 
 	case "Repository.url":
 		if e.complexity.Repository.URL == nil {
@@ -1374,7 +1677,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Shell.ActiveUsers(childComplexity), true
+		args, err := ec.field_Shell_activeUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ActiveUsers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Shell.beacon":
 		if e.complexity.Shell.Beacon == nil {
@@ -1465,7 +1773,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Tag.Hosts(childComplexity), true
+		args, err := ec.field_Tag_hosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tag.Hosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
 
 	case "Tag.id":
 		if e.complexity.Tag.ID == nil {
@@ -1487,6 +1800,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tag.Name(childComplexity), true
+
+	case "TagConnection.edges":
+		if e.complexity.TagConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.Edges(childComplexity), true
+
+	case "TagConnection.pageInfo":
+		if e.complexity.TagConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.PageInfo(childComplexity), true
+
+	case "TagConnection.totalCount":
+		if e.complexity.TagConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.TotalCount(childComplexity), true
+
+	case "TagEdge.cursor":
+		if e.complexity.TagEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TagEdge.Cursor(childComplexity), true
+
+	case "TagEdge.node":
+		if e.complexity.TagEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TagEdge.Node(childComplexity), true
 
 	case "Task.beacon":
 		if e.complexity.Task.Beacon == nil {
@@ -1570,28 +1918,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Task.ReportedCredentials(childComplexity), true
+		args, err := ec.field_Task_reportedCredentials_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedCredentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
 
 	case "Task.reportedFiles":
 		if e.complexity.Task.ReportedFiles == nil {
 			break
 		}
 
-		return e.complexity.Task.ReportedFiles(childComplexity), true
+		args, err := ec.field_Task_reportedFiles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedFiles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFileOrder), args["where"].(*ent.HostFileWhereInput)), true
 
 	case "Task.reportedProcesses":
 		if e.complexity.Task.ReportedProcesses == nil {
 			break
 		}
 
-		return e.complexity.Task.ReportedProcesses(childComplexity), true
+		args, err := ec.field_Task_reportedProcesses_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedProcesses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
 
 	case "Task.shells":
 		if e.complexity.Task.Shells == nil {
 			break
 		}
 
-		return e.complexity.Task.Shells(childComplexity), true
+		args, err := ec.field_Task_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "TaskConnection.edges":
 		if e.complexity.TaskConnection.Edges == nil {
@@ -1661,7 +2029,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Tome.Files(childComplexity), true
+		args, err := ec.field_Tome_files_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tome.Files(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.FileOrder), args["where"].(*ent.FileWhereInput)), true
 
 	case "Tome.id":
 		if e.complexity.Tome.ID == nil {
@@ -1719,12 +2092,52 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Uploader(childComplexity), true
 
+	case "TomeConnection.edges":
+		if e.complexity.TomeConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TomeConnection.Edges(childComplexity), true
+
+	case "TomeConnection.pageInfo":
+		if e.complexity.TomeConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TomeConnection.PageInfo(childComplexity), true
+
+	case "TomeConnection.totalCount":
+		if e.complexity.TomeConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.TomeConnection.TotalCount(childComplexity), true
+
+	case "TomeEdge.cursor":
+		if e.complexity.TomeEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TomeEdge.Cursor(childComplexity), true
+
+	case "TomeEdge.node":
+		if e.complexity.TomeEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TomeEdge.Node(childComplexity), true
+
 	case "User.activeShells":
 		if e.complexity.User.ActiveShells == nil {
 			break
 		}
 
-		return e.complexity.User.ActiveShells(childComplexity), true
+		args, err := ec.field_User_activeShells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.ActiveShells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -1766,7 +2179,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.User.Tomes(childComplexity), true
+		args, err := ec.field_User_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
+
+	case "UserConnection.edges":
+		if e.complexity.UserConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.UserConnection.Edges(childComplexity), true
+
+	case "UserConnection.pageInfo":
+		if e.complexity.UserConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.UserConnection.PageInfo(childComplexity), true
+
+	case "UserConnection.totalCount":
+		if e.complexity.UserConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.UserConnection.TotalCount(childComplexity), true
+
+	case "UserEdge.cursor":
+		if e.complexity.UserEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.UserEdge.Cursor(childComplexity), true
+
+	case "UserEdge.node":
+		if e.complexity.UserEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.UserEdge.Node(childComplexity), true
 
 	}
 	return 0, false
@@ -1813,6 +2266,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
+		ec.unmarshalInputUserOrder,
 		ec.unmarshalInputUserWhereInput,
 	)
 	first := true
@@ -1957,10 +2411,37 @@ type Beacon implements Node {
   Host this beacon is running on.
   """
   host: Host!
-  """
-  Tasks that have been assigned to the beacon.
-  """
-  tasks: [Task!]
+  tasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tasks returned from the connection.
+    """
+    orderBy: [TaskOrder!]
+
+    """
+    Filtering options for Tasks returned from the connection.
+    """
+    where: TaskWhereInput
+  ): TaskConnection!
   shells(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -1992,6 +2473,36 @@ type Beacon implements Node {
     """
     where: ShellWhereInput
   ): ShellConnection!
+}
+"""
+A connection to a list of items.
+"""
+type BeaconConnection {
+  """
+  A list of edges.
+  """
+  edges: [BeaconEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BeaconEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Beacon
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for Beacon connections
@@ -2288,7 +2799,67 @@ type File implements Node {
   A SHA3-256 digest of the content field
   """
   hash: String!
-  tomes: [Tome!]
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
+}
+"""
+A connection to a list of items.
+"""
+type FileConnection {
+  """
+  A list of edges.
+  """
+  edges: [FileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type FileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: File
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for File connections
@@ -2436,26 +3007,161 @@ type Host implements Node {
   Timestamp of when a task was last claimed or updated for the host.
   """
   lastSeenAt: Time
-  """
-  Tags used to group this host with other hosts.
-  """
-  tags: [Tag!]
-  """
-  Beacons that are present on this host system.
-  """
-  beacons: [Beacon!]
-  """
-  Files reported on this host system.
-  """
-  files: [HostFile!]
-  """
-  Processes reported as running on this host system.
-  """
-  processes: [HostProcess!]
-  """
-  Credentials reported from this host system.
-  """
-  credentials: [HostCredential!]
+  tags(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tags returned from the connection.
+    """
+    orderBy: [TagOrder!]
+
+    """
+    Filtering options for Tags returned from the connection.
+    """
+    where: TagWhereInput
+  ): TagConnection!
+  beacons(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Beacons returned from the connection.
+    """
+    orderBy: [BeaconOrder!]
+
+    """
+    Filtering options for Beacons returned from the connection.
+    """
+    where: BeaconWhereInput
+  ): BeaconConnection!
+  files(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  processes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  credentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
 }
 """
 A connection to a list of items.
@@ -2504,6 +3210,36 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+}
+"""
+A connection to a list of items.
+"""
+type HostCredentialConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostCredentialEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostCredentialEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostCredential
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 HostCredentialKind is enum for the field kind
@@ -2680,6 +3416,36 @@ type HostFile implements Node {
   Task that reported this file.
   """
   task: Task!
+}
+"""
+A connection to a list of items.
+"""
+type HostFileConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostFileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostFileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostFile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for HostFile connections
@@ -2939,6 +3705,36 @@ type HostProcess implements Node {
   Task that reported this process.
   """
   task: Task!
+}
+"""
+A connection to a list of items.
+"""
+type HostProcessConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostProcessEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostProcessEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostProcess
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for HostProcess connections
@@ -3664,10 +4460,37 @@ type Repository implements Node {
   Timestamp of when this repo was last imported
   """
   lastImportedAt: Time
-  """
-  Tomes imported using this repository.
-  """
-  tomes: [Tome!]
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
   """
   User that created this repository.
   """
@@ -3847,10 +4670,37 @@ type Shell implements Node {
   User that created the shell
   """
   owner: User!
-  """
-  Users that are currently using the shell
-  """
-  activeUsers: [User!]
+  activeUsers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
 }
 """
 A connection to a list of items.
@@ -3988,7 +4838,67 @@ type Tag implements Node {
   Describes the type of tag this is
   """
   kind: TagKind!
-  hosts: [Host!]
+  hosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
+}
+"""
+A connection to a list of items.
+"""
+type TagConnection {
+  """
+  A list of edges.
+  """
+  edges: [TagEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TagEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Tag
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 TagKind is enum for the field kind
@@ -4100,22 +5010,130 @@ type Task implements Node {
   error: String
   quest: Quest!
   beacon: Beacon!
-  """
-  Files that have been reported by this task.
-  """
-  reportedFiles: [HostFile!]
-  """
-  Processes that have been reported by this task.
-  """
-  reportedProcesses: [HostProcess!]
-  """
-  Credentials that have been reported by this task.
-  """
-  reportedCredentials: [HostCredential!]
-  """
-  Shells that were created by this task
-  """
-  shells: [Shell!]
+  reportedFiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  reportedProcesses(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  reportedCredentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
+  shells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
 }
 """
 A connection to a list of items.
@@ -4367,10 +5385,37 @@ type Tome implements Node {
   Eldritch script that will be executed when the tome is run
   """
   eldritch: String!
-  """
-  Any files required for tome execution that will be bundled and provided to the agent for download
-  """
-  files: [File!]
+  files(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Files returned from the connection.
+    """
+    orderBy: [FileOrder!]
+
+    """
+    Filtering options for Files returned from the connection.
+    """
+    where: FileWhereInput
+  ): FileConnection!
   """
   User who uploaded the tome (may be null).
   """
@@ -4379,6 +5424,36 @@ type Tome implements Node {
   Repository from which this Tome was imported (may be null).
   """
   repository: Repository
+}
+"""
+A connection to a list of items.
+"""
+type TomeConnection {
+  """
+  A list of edges.
+  """
+  edges: [TomeEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TomeEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Tome
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for Tome connections
@@ -4728,14 +5803,117 @@ type User implements Node {
   True if the user is an Admin
   """
   isAdmin: Boolean!
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
+  activeShells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
+}
+"""
+A connection to a list of items.
+"""
+type UserConnection {
   """
-  Tomes uploaded by the user.
+  A list of edges.
   """
-  tomes: [Tome!]
+  edges: [UserEdge]
   """
-  Shells actively used by the user
+  Information to aid in pagination.
   """
-  activeShells: [Shell!]
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type UserEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: User
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for User connections
+"""
+input UserOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Users.
+  """
+  field: UserOrderField!
+}
+"""
+Properties by which User connections can be ordered.
+"""
+enum UserOrderField {
+  NAME
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -4814,7 +5992,25 @@ input UserWhereInput {
 scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
-  files(where: FileWhereInput): [File!]! @requireRole(role: USER)
+  files(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Files returned from the connection."""
+    orderBy: [FileOrder!]
+
+    """Filtering options for Files returned from the connection."""
+    where: FileWhereInput
+  ): FileConnection! @requireRole(role: USER)
   quests(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -4872,7 +6068,25 @@ scalar Uint64
     """Filtering options for Repositories returned from the connection."""
     where: RepositoryWhereInput
   ): RepositoryConnection! @requireRole(role: USER)
-  beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
+  beacons(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Beacons returned from the connection."""
+    orderBy: [BeaconOrder!]
+
+    """Filtering options for Beacons returned from the connection."""
+    where: BeaconWhereInput
+  ): BeaconConnection! @requireRole(role: USER)
   hosts(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -4892,9 +6106,63 @@ scalar Uint64
     """Filtering options for Hosts returned from the connection."""
     where: HostWhereInput
   ): HostConnection! @requireRole(role: USER)
-  tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
-  tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
-  users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  tags(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [TagOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: TagWhereInput
+  ): TagConnection! @requireRole(role: USER)
+  tomes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tomes returned from the connection."""
+    orderBy: [TomeOrder!]
+
+    """Filtering options for Tomes returned from the connection."""
+    where: TomeWhereInput
+  ): TomeConnection! @requireRole(role: USER)
+  users(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Users returned from the connection."""
+    orderBy: [UserOrder!]
+
+    """Filtering options for Users returned from the connection."""
+    where: UserWhereInput
+  ): UserConnection! @requireRole(role: USER)
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

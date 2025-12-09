@@ -1,5 +1,4 @@
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
-import React from "react";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
@@ -18,7 +17,7 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
                 }]} />
                 <div>
                     <Button
-                        buttonStyle={{ color: "gray", "size": "md" }}
+                        buttonStyle={{ color: "purple", "size": "md" }}
                         leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />}
                         onClick={() => setOpen(true)}
                     >

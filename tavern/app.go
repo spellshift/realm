@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"log/slog"
@@ -25,32 +28,98 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
+
+	_ "realm.pub/tavern/internal/redirectors/grpc"
+	_ "realm.pub/tavern/internal/redirectors/http1"
 )
 
 func init() {
 	configureLogging()
 }
 
-func newApp(ctx context.Context, options ...func(*Config)) (app *cli.App) {
+func newApp(ctx context.Context) (app *cli.App) {
 	app = cli.NewApp()
 	app.Name = "tavern"
 	app.Description = "Teamserver implementation for Realm, see https://docs.realm.pub for more details"
 	app.Usage = "Time for an Adventure!"
 	app.Version = Version
-	app.Action = cli.ActionFunc(func(*cli.Context) error {
-		return run(ctx, options...)
-	})
+	app.Action = func(c *cli.Context) error {
+		return runTavern(
+			ctx,
+			ConfigureHTTPServerFromEnv(),
+			ConfigureMySQLFromEnv(),
+			ConfigureOAuthFromEnv("/oauth/authorize"),
+		)
+	}
+	app.Commands = []cli.Command{
+		{
+			Name:      "redirector",
+			Usage:     "Run a redirector connecting agents using a specific transport to the server",
+			ArgsUsage: "[upstream_address]",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "listen",
+					Usage: "Address to listen on for incoming redirector traffic (default: :8080)",
+					Value: ":8080",
+				},
+				cli.StringFlag{
+					Name:  "transport",
+					Usage: "Transport protocol to use for redirector",
+					Value: "grpc",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				var (
+					upstream  = c.Args().First()
+					listenOn  = c.String("listen")
+					transport = c.String("transport")
+				)
+				if upstream == "" {
+					return fmt.Errorf("gRPC upstream address is required (first argument)")
+				}
+				if listenOn == "" {
+					listenOn = ":8080"
+				}
+				if transport == "" {
+					transport = "grpc"
+				}
+				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn)
+				return redirectors.Run(ctx, transport, listenOn, upstream)
+			},
+			Subcommands: cli.Commands{
+				cli.Command{
+					Name:  "list",
+					Usage: "List available redirectors",
+					Action: func(c *cli.Context) error {
+						redirectorNames := redirectors.List()
+						if len(redirectorNames) == 0 {
+							fmt.Println("No redirectors registered")
+							return nil
+						}
+						fmt.Println("Available redirectors:")
+						for _, name := range redirectorNames {
+							fmt.Printf("- %s\n", name)
+						}
+						return nil
+					},
+				},
+			},
+		},
+	}
 	return
 }
 
-func run(ctx context.Context, options ...func(*Config)) error {
+func runTavern(ctx context.Context, options ...func(*Config)) error {
 	srv, err := NewServer(ctx, options...)
 	if err != nil {
 		return err
@@ -340,9 +409,98 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
+func generateKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
+	curve := ecdh.X25519()
+	privateKey, err := curve.GenerateKey(rand.Reader)
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed to generate private key: %v\n", err))
+		return nil, nil, err
+	}
+	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
+		return nil, nil, err
+	}
+
+	return publicKey, privateKey, nil
+}
+
+func GetPubKey() (*ecdh.PublicKey, error) {
+	pub, _, err := getKeyPair()
+	if err != nil {
+		return nil, err
+	}
+	return pub, nil
+}
+
+func newSecretsManager() (secrets.SecretsManager, error) {
+	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
+		slog.Error("No configuration provided for secret manager path, using a potentially insecure default.")
+		return secrets.NewDebugFileSecrets("/tmp/tavern-secrets")
+	}
+	if EnvSecretsManagerPath.String() == "" {
+		return secrets.NewGcp(EnvGCPProjectID.String())
+	}
+
+	return secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
+}
+
+func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
+	curve := ecdh.X25519()
+
+	secretsManager, err := newSecretsManager()
+	if err != nil || secretsManager == nil {
+		return nil, nil, fmt.Errorf("failed to configure secret manager: %w", err)
+	}
+
+	// Check if we already have a key
+	privateKeyString, err := secretsManager.GetValue("tavern_encryption_private_key")
+	if err != nil {
+		// Generate a new one if it doesn't exist
+		pubKey, privateKey, err := generateKeyPair()
+		if err != nil {
+			return nil, nil, fmt.Errorf("key generation failed: %v", err)
+		}
+
+		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to marshal private key: %v", err)
+		}
+		_, err = secretsManager.SetValue("tavern_encryption_private_key", privateKeyBytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
+		}
+		return pubKey, privateKey, nil
+	}
+
+	// Parse private key bytes
+	tmp, err := x509.ParsePKCS8PrivateKey(privateKeyString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to parse private key: %v", err)
+	}
+	privateKey := tmp.(*ecdh.PrivateKey)
+
+	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate public key: %v", err)
+	}
+
+	return publicKey, privateKey, nil
+}
+
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+	pub, priv, err := getKeyPair()
+	if err != nil {
+		panic(err)
+	}
+	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
+
 	c2srv := c2.New(client, grpcShellMux)
+	xchacha := cryptocodec.StreamDecryptCodec{
+		Csvc: cryptocodec.NewCryptoSvc(priv),
+	}
 	grpcSrv := grpc.NewServer(
+		grpc.ForceServerCodecV2(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)

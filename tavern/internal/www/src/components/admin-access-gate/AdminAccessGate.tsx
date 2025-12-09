@@ -1,12 +1,12 @@
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
-import { AuthorizationContext } from "../../context/AuthorizationContext";
-import { ReactNode, useContext } from "react";
+import { useAuthorization } from "../../context/AuthorizationContext";
+import { ReactNode } from "react";
 
 type Props = {
     children: ReactNode;
 }
 export const AdminAccessGate = ({ children }: Props) => {
-    const { data } = useContext(AuthorizationContext);
+    const { data } = useAuthorization();
     const userData = data?.me || null;
 
     if (!userData?.isAdmin) {

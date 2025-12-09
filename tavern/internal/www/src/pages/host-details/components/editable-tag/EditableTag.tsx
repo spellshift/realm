@@ -1,15 +1,15 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
-import { useContext } from "react";
 import Button from "../../../../components/tavern-base-ui/button/Button";
-import { AuthorizationContext } from "../../../../context/AuthorizationContext";
-import { KindOfTag, TagOptionType, TomeTag } from "../../../../utils/consts";
+import { useAuthorization } from "../../../../context/AuthorizationContext";
 import CreatableSelect from "react-select/creatable";
 import { useEditableTag } from "./useEditableTag";
 import { SingleValue } from "react-select";
+import { TagNode } from "../../../../utils/interfacesQuery";
+import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 
-export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTag, tagSaved?: TomeTag, hostId?: string }) {
-    const { data } = useContext(AuthorizationContext);
+export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTag, tagSaved?: TagNode, hostId?: string }) {
+    const { data } = useAuthorization();
     const canEdit = data?.me?.isAdmin || false;
     const {
         tagValue,
@@ -28,7 +28,7 @@ export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTa
                     isClearable
                     isDisabled={loading}
                     isLoading={loading}
-                    onChange={(newValue: SingleValue<TagOptionType>) => handleSelectOption(newValue, hostId, tagSaved)}
+                    onChange={(newValue: SingleValue<FilterBarOption>) => handleSelectOption(newValue, hostId, tagSaved)}
                     onCreateOption={(inputValue: string) => handleCreateOption(inputValue, hostId, tagSaved)}
                     options={options}
                     value={tagValue}

@@ -16,7 +16,11 @@ query: |
     updateHost(hostID: $hostID, input: $input) {
       id
       tags {
-        id
+        edges {
+          node {
+            id
+          }
+        }
       }
     }
   }
@@ -29,4 +33,5 @@ variables:
 expected:
   updateHost:
     id: "1010"
-    tags: []
+    tags:
+      edges: []

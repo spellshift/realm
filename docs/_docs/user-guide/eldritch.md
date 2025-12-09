@@ -135,7 +135,7 @@ of the broader tome.
 `agent.set_callback_interval(new_interval: int) -> None`
 
 The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
-running agent's callback interval to the passed value. This configuration change will
+running agent's callback interval to the passed value as seconds. This configuration change will
 not persist across agent reboots.
 
 ### agent.set_callback_uri
@@ -301,6 +301,18 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 `file.copy(src: str, dst: str) -> None`
 
 The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
+
+### file.decompress
+
+`file.decompress(src: str, dst: str) -> None`
+
+The <b>file.decompress</b> method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
+
+```python
+file.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
+file.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')
+# Files will exist in /tmp/bob_ssh_output/.ssh/*
+```
 
 ### file.exists
 
@@ -891,20 +903,22 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
 
 ```json
 [
-    {
-        "name": "eth0",
-        "ips": [
-            "172.17.0.2/24"
-        ],
-        "mac": "02:42:ac:11:00:02"
-    },
-    {
-        "name": "lo",
-        "ips": [
-            "127.0.0.1/8"
-        ],
-        "mac": "00:00:00:00:00:00"
-    }
+  {
+    "name": "lo0",
+    "ip": "127.0.0.1"
+  },
+  {
+    "name": "lo0",
+    "ip": "::1"
+  },
+  {
+    "name": "en0",
+    "ip": "fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15"
+  },
+  {
+    "name": "en0",
+    "ip": "10.0.124.42"
+  }
 ]
 ```
 

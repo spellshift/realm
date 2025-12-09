@@ -11,7 +11,7 @@ import { relayStylePagination } from "@apollo/client/utilities";
 const container = document.getElementById("root")
 if (!container) throw new Error('Failed to find the root element');
 const root = ReactDOM.createRoot(container);
-const REACT_APP_API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT;
+const REACT_APP_API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ?? 'http://localhost:8000';
 
 
 const cache = new InMemoryCache({

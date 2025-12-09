@@ -1,7 +1,6 @@
-import React, { useContext } from "react";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
-import { TagContext } from "../../context/TagContext";
+import { useTags } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import QuestForm from "./components/QuestForm";
 import EmptyStateNoBeacon from "../../components/empty-states/EmptyStateNoBeacon";
@@ -9,7 +8,10 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
 
 export const CreateQuest = () => {
-    const { data, isLoading, error } = useContext(TagContext);
+    const { data, isLoading, error } = useTags();
+
+    const isDataLoading = isLoading || !data.beacons;
+    const hasBeacons = data.beacons && data.beacons.length > 0;
 
     return (
         <PageWrapper currNavItem={PageNavItem.createQuest}>
@@ -18,11 +20,11 @@ export const CreateQuest = () => {
                 link: "/createQuest"
             }]} />
             <PageHeader title="Create new quest" />
-            {isLoading ? (
-                <EmptyState type={EmptyStateType.loading} label="loading beacon info..." />
-            ) : error ? (
+            {error ? (
                 <EmptyState type={EmptyStateType.error} label="Error loading beacon info" />
-            ) : data?.beacons && data?.beacons?.length > 0 ? (
+            ) : isDataLoading ? (
+                <EmptyState type={EmptyStateType.loading} label="loading beacon info..." />
+            ) : hasBeacons ? (
                 <QuestForm />
             ) : (
                 <EmptyStateNoBeacon />

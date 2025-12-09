@@ -9,22 +9,23 @@ crate-type = ["cdylib"]
 [features]
 # Check if compiled by imix
 win_service = []
-default = []
+default = ["transport/grpc"]
+http1 = ["transport/http1"]
+transport-grpc-doh = ["transport/grpc-doh"]
 
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
-pb = { workspace = true }
-transport = { workspace = true, features = ["grpc"] }
+
+pb = { workspace = true, features = ["imix"]}
+transport = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 pretty_env_logger = { workspace = true }
 
-
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = "0.6.0"
-
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }

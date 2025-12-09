@@ -138,7 +138,7 @@ fn handle_list(path: String) -> Result<Vec<File>> {
     Ok(final_res)
 }
 
-fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict> {
+fn create_dict_from_file(starlark_heap: &'_ Heap, file: File) -> Result<Dict<'_>> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut dict_res = Dict::new(res);
 
@@ -178,7 +178,7 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict> {
     Ok(dict_res)
 }
 
-pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
+pub fn list(starlark_heap: &'_ Heap, path: String) -> Result<Vec<Dict<'_>>> {
     let mut final_res: Vec<Dict> = Vec::new();
     for entry in glob(&path)? {
         match entry {
@@ -191,10 +191,7 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
                 ) {
                     Ok(local_file_list) => local_file_list,
                     Err(local_err) => {
-                        return Err(anyhow::anyhow!(
-                            "Failed to get file list: {}",
-                            local_err.to_string()
-                        ))
+                        return Err(anyhow::anyhow!("Failed to get file list: {}", local_err))
                     }
                 };
                 for file in file_list {

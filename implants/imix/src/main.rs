@@ -1,4 +1,7 @@
-#![cfg_attr(not(feature = "win_service"), windows_subsystem = "windows")]
+#![cfg_attr(
+    all(not(debug_assertions), not(feature = "win_service")),
+    windows_subsystem = "windows"
+)]
 #![deny(warnings)]
 
 #[cfg(all(feature = "win_service", windows))]

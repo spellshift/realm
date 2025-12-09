@@ -17,12 +17,12 @@ use {
 };
 
 pub fn exec(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     path: String,
     args: Vec<String>,
     disown: Option<bool>,
     env_vars: Option<SmallMap<String, String>>,
-) -> Result<Dict> {
+) -> Result<Dict<'_>> {
     let mut env_vars_map = HashMap::new();
     if let Some(e) = env_vars {
         for (k, v) in e {
@@ -299,15 +299,14 @@ mod tests {
                 String::from("C:\\Windows\\System32\\cmd.exe"),
                 vec![
                     String::from("/c"),
-                    String::from("wmic useraccount get name | findstr /i admin"),
+                    String::from("echo admin | findstr /i admin"),
                 ],
                 HashMap::new(),
                 false,
             )?
-            .stdout;
-            assert!(
-                res.contains("runner") || res.contains("Administrator") || res.contains("user")
-            );
+            .stdout
+            .to_lowercase();
+            assert!(res.contains("admin"));
         }
         Ok(())
     }

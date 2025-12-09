@@ -1,8 +1,5 @@
 {
-    "rust-analyzer.cargo.extraArgs": [
-        "--profile",
-        "rust-analyzer"
-    ],
-    "rust-analyzer.check.command": "clippy",
-    "rust-analyzer.showUnlinkedFileNotification": false,
+    "rust-analyzer.server.extraEnv": {
+        "IMIX_SERVER_PUBKEY": "v3NEg3eB9/e3wi4HHSoIIgPq3BEi6xrurKOSuOVj72g="
+    },
 }

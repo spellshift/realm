@@ -89,7 +89,7 @@ apt install -y graphviz
 ### Collect a Profile
 
 1. Start Tavern with profiling enabled: `ENABLE_PPROF=1 go run ./tavern`.
-2. Collect a Profile in desired format (e.g. png): `go tool pprof -png -seconds=10 http://127.0.0.1:80/debug/pprof/allocs?seconds=10 > .pprof/allocs.png`
+2. Collect a Profile in desired format (e.g. png): `go tool pprof -png -seconds=10 http://127.0.0.1:8000/debug/pprof/allocs?seconds=10 > .pprof/allocs.png`
     a. Replace "allocs" with the [name of the profile](https://pkg.go.dev/runtime/pprof#Profile) to collect.
     b. Replace the value of seconds with the amount of time you need to reproduce performance issues.
     c. Read more about the available profiling URL parameters [here](https://pkg.go.dev/net/http/pprof#hdr-Parameters).
@@ -100,6 +100,48 @@ apt install -y graphviz
 ## Agent Development
 
 Tavern provides an HTTP(s) [gRPC API](https://grpc.io/) that agents may use directly to claim tasks and submit execution results. This is the standard request flow, and is supported as a core function of realm. For more information, please consult our [API Specification](https://github.com/spellshift/realm/blob/main/tavern/internal/c2/proto/c2.proto).
+
+### Reverse Shell Architecture
+
+The reverse shell in Tavern is a powerful feature that allows for interactive sessions with agents. It's a complex system with several moving parts, so this section will provide a detailed overview of its architecture.
+
+#### Overview
+
+The reverse shell system is designed to be highly scalable and resilient. It uses a combination of gRPC, WebSockets, and a pub/sub messaging system to create a bidirectional communication channel between the agent and the user. The system is designed to work in a distributed fashion, where the server that hosts the WebSocket connection need not be the same server that hosts the gRPC stream.
+
+#### Components
+
+The reverse shell system is composed of the following components:
+
+* **gRPC Server**: The gRPC server is the entry point for the agent. It exposes the `ReverseShell` service, which is a bidirectional gRPC stream. The agent connects to this service to initiate a reverse shell session.
+* **WebSocket Server**: The WebSocket server is the entry point for the user. It exposes a WebSocket endpoint that the user can connect to to interact with the reverse shell.
+* **Pub/Sub Messaging System**: The pub/sub messaging system is the backbone of the reverse shell. It's used to decouple the gRPC server and the WebSocket server, and to provide a reliable and scalable way to transport messages between them. The system uses two topics:
+  * **Input Topic**: The input topic is used to send messages from the user (via the WebSocket) to the agent (via the gRPC stream).
+  * **Output Topic**: The output topic is used to send messages from the agent (via the gRPC stream) to the user (via the WebSocket).
+* **Mux**: The `Mux` is a multiplexer that sits between the pub/sub system and the gRPC/WebSocket servers. It's responsible for routing messages between the two. There are two `Mux` instances:
+  * **wsMux**: The `wsMux` is used by the WebSocket server. It subscribes to the output topic and publishes to the input topic.
+  * **grpcMux**: The `grpcMux` is used by the gRPC server. It subscribes to the input topic and publishes to the output topic.
+* **Stream**: A `Stream` represents a single reverse shell session. It's responsible for managing the connection between the `Mux` and the gRPC/WebSocket client.
+* **sessionBuffer**: The `sessionBuffer` is used to order messages within a `Stream`. This is important because multiple users can be connected to the same shell session, and their messages need to be delivered in the correct order.
+
+#### Communication Flow
+
+1. The agent connects to the `ReverseShell` gRPC service.
+2. The gRPC server creates a new `Shell` entity, a new `Stream`, and registers the `Stream` with the `grpcMux`.
+3. The user connects to the WebSocket endpoint.
+4. The WebSocket server creates a new `Stream` and registers it with the `wsMux`.
+5. When the user sends a message, it's sent to the WebSocket server, which publishes it to the input topic via the `wsMux`.
+6. The `grpcMux` receives the message from the input topic and sends it to the agent via the gRPC stream.
+7. When the agent sends a message, it's sent to the gRPC server, which publishes it to the output topic via the `grpcMux`.
+8. The `wsMux` receives the message from the output topic and sends it to the user via the WebSocket.
+
+#### Distributed Architecture
+
+The reverse shell system is designed to be distributed. The gRPC server and the WebSocket server can be running on different machines. This is made possible by the pub/sub messaging system, which decouples the two servers. This allows the system to be scaled horizontally by adding more gRPC or WebSocket servers as needed.
+
+#### Message Ordering and Multi-User Sessions
+
+The reverse shell supports multi-user sessions, where multiple users can be connected to the same shell session. To ensure that messages are delivered in the correct order, the `sessionBuffer` is used. The `sessionBuffer` assigns a unique order key to each user's session, and then it orders the messages based on that key. This ensures that messages from different users are not interleaved, and that they are delivered in the order that they were sent.
 
 If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's gRPC API. We recommend reusing the existing protobuf definitions for simplicity and forward compatability. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/spellshift/realm/pulls).
 

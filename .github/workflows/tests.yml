@@ -18,9 +18,9 @@ jobs:
         os:
           - ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: ⚡ Setup Golang
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: true
@@ -29,10 +29,14 @@ jobs:
     - name: 🔎 Test
       run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 📶 Upload Coverage Results
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
     strategy:
       matrix:
         os:
@@ -40,7 +44,7 @@ jobs:
           - macOS-latest
           - windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - if: matrix.os == 'windows-latest'
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
@@ -48,7 +52,7 @@ jobs:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: '1.87.0'
+        toolchain: '1.91.1'
         default: true
         profile: minimal
         components: rustfmt, clippy
@@ -56,10 +60,10 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       if: matrix.os == 'windows-latest'
       with:
-        toolchain: 'nightly-2025-01-31'
+        toolchain: 'nightly-2025-11-27'
         default: false
         profile: minimal
-        components: rust-src
+        components: rust-src, rustfmt
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
@@ -69,9 +73,9 @@ jobs:
       name: Build reflective loader
       run: |
         cd ./bin/reflective_loader/
-        cargo +nightly-2025-01-31 build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+        cargo +nightly-2025-11-27 build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
     - name: Install latest nextest & cargo-llvm-cov release
-      uses: taiki-e/install-action@v2.52.7
+      uses: taiki-e/install-action@v2
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
@@ -80,4 +84,6 @@ jobs:
         cargo fmt --check &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 📶 Upload Coverage Results
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}

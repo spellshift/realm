@@ -48,7 +48,7 @@ async fn handle_ssh_exec(
 
 #[allow(clippy::too_many_arguments)]
 pub fn ssh_exec(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     target: String,
     port: i32,
     command: String,
@@ -57,7 +57,7 @@ pub fn ssh_exec(
     key: Option<String>,
     key_password: Option<String>,
     timeout: Option<u32>,
-) -> Result<Dict> {
+) -> Result<Dict<'_>> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;

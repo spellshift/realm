@@ -1,38 +1,28 @@
-import { gql, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import { TomeParams } from "../../../utils/consts";
 import TomeStep from "./TomeStep";
 import Button from "../../../components/tavern-base-ui/button/Button";
-
-const GET_TOMES = gql`
-    query get_tomes{
-        tomes {
-            id
-            name
-            paramDefs
-            description
-            eldritch
-            tactic
-            supportModel
-        }
-    }
-`;
+import { FieldInputParams } from "../../../utils/interfacesUI";
+import { GET_TOMES_QUERY } from "../../../utils/queries";
+import { TomeQueryTopLevel } from "../../../utils/interfacesQuery";
+import { QuestFormikProps } from "../types";
 
 type Props = {
-    setCurrStep: (arg1: number) => void;
-    formik: any;
+    setCurrStep: (step: number) => void;
+    formik: QuestFormikProps;
 }
-const TomeStepWrapper = (
-    props: Props
-) => {
-    const { setCurrStep, formik } = props;
-    const { loading, error, data } = useQuery(GET_TOMES);
 
-    const hasAllParamsSet = formik?.values?.params.filter((param: TomeParams) => {
-        return param?.value && param?.value !== "";
+const TomeStepWrapper = (props: Props) => {
+    const { setCurrStep, formik } = props;
+    const { loading, error, data } = useQuery<TomeQueryTopLevel>(GET_TOMES_QUERY);
+
+    const paramsWithValues = formik.values.params.filter((param: FieldInputParams) => {
+        return param?.value != null && param?.value !== "";
     });
 
-    const isContinueDisabled = hasAllParamsSet.length !== formik?.values?.params.length || formik?.values?.tome === null;
+    const isContinueDisabled = paramsWithValues.length !== formik.values.params.length || formik.values.tome === null;
+
+    const tomeNodes = data?.tomes?.edges?.map(edge => edge.node) || [];
 
     return (
         <div className="flex flex-col gap-6">
@@ -42,7 +32,7 @@ const TomeStepWrapper = (
             ) : error ? (
                 <EmptyState type={EmptyStateType.error} label="Error loading tomes..." />
             ) : (
-                <TomeStep formik={formik} data={data?.tomes || []} />
+                <TomeStep formik={formik} data={tomeNodes} />
             )}
             <div className="flex flex-row gap-2">
                 <Button

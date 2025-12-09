@@ -42,6 +42,11 @@ variable "gcp_project" {
     error_message = "Must provide a valid gcp_project"
   }
 }
+
+data "google_project" "project" {
+  project_id = var.gcp_project
+}
+
 variable "gcp_region" {
   type = string
   description = "GCP Region for deployment"
@@ -134,6 +139,11 @@ resource "google_project_service" "cloud_run_api" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "secret_manager" {
+  service = "secretmanager.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "cloud_sqladmin_api" {
   service = "sqladmin.googleapis.com"
   disable_on_destroy = false
@@ -176,6 +186,62 @@ locals {
   prometheus_container_name = "prometheus-sidecar"
 }
 
+resource "google_service_account" "svctavern" {
+  account_id = "svctavern"
+  description = "The service account Realm's Tavern uses to connect to GCP based services. Managed by Terraform."
+}
+
+resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
+  secret_id = "REALM_tavern_encryption_private_key"
+
+  replication {
+    auto {
+    }
+  }
+}
+
+resource "google_secret_manager_secret_iam_binding" "tavern-secrets-read-binding" {
+  project = var.gcp_project
+  secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
+  role = "roles/secretmanager.secretAccessor"
+  members = [
+    "serviceAccount:${google_service_account.svctavern.email}",
+  ]
+}
+
+resource "google_secret_manager_secret_iam_binding" "tavern-secrets-write-binding" {
+  project = var.gcp_project
+  secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
+  role = "roles/secretmanager.secretVersionAdder"
+  members = [
+    "serviceAccount:${google_service_account.svctavern.email}",
+  ]
+}
+
+resource "google_project_iam_member" "tavern-sqlclient-binding" {
+  project = var.gcp_project
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+resource "google_project_iam_member" "tavern-metricwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+resource "google_project_iam_member" "tavern-logwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+resource "google_project_iam_member" "tavern-pubsub-binding" {
+  project = var.gcp_project
+  role    = "roles/pubsub.editor"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
 resource "google_pubsub_topic" "shell_input" {
   count = var.disable_gcp_pubsub ? 0 : 1
   name = var.gcp_pubsub_topic_shell_input
@@ -206,6 +272,7 @@ resource "google_cloud_run_service" "tavern" {
 
   template {
     spec {
+      service_account_name = google_service_account.svctavern.email
       // Controls request timeout, must be long-lived to enable reverse shell support
       timeout_seconds = var.tavern_request_timeout_seconds
 
@@ -214,7 +281,7 @@ resource "google_cloud_run_service" "tavern" {
         image = var.tavern_container_image
 
         ports {
-          container_port = 80
+          container_port = 8000
         }
         env {
           name = "MYSQL_NET"
@@ -335,6 +402,12 @@ resource "google_cloud_run_service" "tavern" {
   autogenerate_revision_name = true
 
   depends_on = [
+    google_project_iam_member.tavern-sqlclient-binding,
+    google_secret_manager_secret_iam_binding.tavern-secrets-read-binding,
+    google_secret_manager_secret_iam_binding.tavern-secrets-write-binding,
+    google_project_iam_member.tavern-metricwriter-binding,
+    google_project_iam_member.tavern-logwriter-binding,
+    google_project_iam_member.tavern-pubsub-binding,
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
     google_sql_user.tavern-user,
@@ -363,4 +436,9 @@ resource "google_cloud_run_domain_mapping" "tavern-domain" {
   spec {
     route_name = google_cloud_run_service.tavern.name
   }
+}
+
+
+output "pubkey" {
+  value = var.oauth_domain == "" ? "Unable to get pubkey automatically" : "bash ${path.module}/../bin/getpubkey.sh https://${google_cloud_run_domain_mapping.tavern-domain[0].name}"
 }

@@ -117,7 +117,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		if err != nil {
 			slog.ErrorContext(ctx, "reverse shell closed and failed to load ent for updates",
 				"error", err,
-				"shell_id", shell.ID,
+				"shell_id", shellID,
 			)
 			return
 		}

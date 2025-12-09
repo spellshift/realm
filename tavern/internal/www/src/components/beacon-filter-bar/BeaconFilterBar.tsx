@@ -1,21 +1,22 @@
 import React from "react";
-import { Heading } from "@chakra-ui/react";
 import Select, { createFilter, } from "react-select"
-import { BeaconType, HostType, TomeTag } from "../../utils/consts";
 import { SupportedPlatforms } from "../../utils/enums";
+import { BeaconNode, HostNode, TagNode } from "../../utils/interfacesQuery";
 
 type Props = {
     setFiltersSelected: (arg1: any) => void;
-    beacons: Array<BeaconType>;
-    groups: Array<TomeTag>;
-    services: Array<TomeTag>;
-    hosts: Array<HostType>;
+    beacons: Array<BeaconNode>;
+    groups: Array<TagNode>;
+    services: Array<TagNode>;
+    hosts: Array<HostNode>;
     filtersSelected?: any;
+    initialFilters?: any;
+    isDisabled?: boolean;
 }
 export const BeaconFilterBar = (props: Props) => {
     // TODO add host to filter
 
-    const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected } = props;
+    const { setFiltersSelected, beacons, groups, services, hosts, filtersSelected, isDisabled, initialFilters } = props;
     const supportedPlatformsList = Object.values(SupportedPlatforms);
 
     // TODO: IN the future lets style things purple
@@ -48,7 +49,7 @@ export const BeaconFilterBar = (props: Props) => {
     //     })
     // };
 
-    const getFormattedOptions = (beacons: Array<BeaconType>, groups: Array<TomeTag>, services: Array<TomeTag>, hosts: Array<HostType>) => {
+    const getFormattedOptions = (beacons: Array<BeaconNode>, groups: Array<TagNode>, services: Array<TagNode>, hosts: Array<HostNode>) => {
         return [
             {
                 label: "Platform",
@@ -63,7 +64,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Service",
-                options: services.map(function (service: TomeTag) {
+                options: services.map(function (service: TagNode) {
                     return {
                         ...service,
                         value: service?.id,
@@ -74,7 +75,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Group",
-                options: groups.map(function (group: TomeTag) {
+                options: groups.map(function (group: TagNode) {
                     return {
                         ...group,
                         value: group?.id,
@@ -85,7 +86,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Host",
-                options: hosts.map(function (host: HostType) {
+                options: hosts.map(function (host: HostNode) {
                     return {
                         ...host,
                         value: host?.id,
@@ -96,7 +97,7 @@ export const BeaconFilterBar = (props: Props) => {
             },
             {
                 label: "Beacon",
-                options: beacons.map(function (beacon: BeaconType) {
+                options: beacons.map(function (beacon: BeaconNode) {
                     return {
                         ...beacon,
                         value: beacon?.id,
@@ -109,9 +110,10 @@ export const BeaconFilterBar = (props: Props) => {
     };
 
     return (
-        <div>
-            <Heading size="sm" mb={2}> Filter by platform, service, group, hosts, and beacon</Heading>
+        <div className="flex flex-col gap-1">
+            <label className=" font-medium text-gray-700">Beacon fields</label>
             <Select
+                isDisabled={isDisabled}
                 isSearchable={true}
                 isMulti
                 options={getFormattedOptions(beacons, groups, services, hosts)}
@@ -121,6 +123,7 @@ export const BeaconFilterBar = (props: Props) => {
                     stringify: option => `${option.label}`,
                 })}
                 value={filtersSelected || undefined}
+                defaultValue={initialFilters || undefined}
             />
         </div>
     );

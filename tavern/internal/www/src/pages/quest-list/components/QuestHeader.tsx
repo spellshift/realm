@@ -1,8 +1,6 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import PageHeader from "../../../components/tavern-base-ui/PageHeader";
+import { useNavigate } from "react-router-dom";
 
 const QuestHeader = () => {
     const navigate = useNavigate();
@@ -16,14 +14,13 @@ const QuestHeader = () => {
                 }]} />
                 <div>
                     <Button
-                        buttonStyle={{ color: "gray", size: "md" }}
+                        buttonStyle={{ color: "purple", size: "md" }}
                         onClick={() => navigate("/createQuest")}
                     >
                         Create new quest
                     </Button>
                 </div>
             </div>
-            <PageHeader title="Quests" description="Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks assocaited with a single beacon." />
         </div>
     );
 }

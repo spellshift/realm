@@ -24,6 +24,7 @@ async-recursion = "1.0.0"
 async-trait = "0.1.68"
 base64 = "0.21.4"
 chrono = "0.4.34"
+const-decoder = "0.3.0"
 clap = "3.2.23"
 netdev = "0.33.0"
 derive_more = "=0.99.17"
@@ -43,7 +44,7 @@ lsp-types = "0.93.0"
 log = "0.4.20"
 md5 = "0.7.0"
 mockall = "0.12.1"
-network-interface = "1.0.1"
+local-ip-address = "0.6.5"
 nix = "0.26.1"
 notify = "6.1.1"
 object = "0.31.1"
@@ -79,7 +80,7 @@ tokio-stream = { version = "0.1.9", default-features = false }
 tokio-test = "*"
 tokio-util = { version = "0.7.10", features = ["io"] }
 tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
-tonic-build = "0.10"
+tonic-build = { git = "https://github.com/hyperium/tonic.git", rev = "c783652" } # Needed git for `.codec_path` in build.rs - previous version of codec setting is really gross. https://github.com/hyperium/tonic/blob/ea8cd3f384e953e177f20a62aa156a75676853f4/examples/build.rs#L44
 trait-variant = "0.1.1"
 uuid = "1.5.0"
 static_vcruntime = "2.0"
@@ -88,6 +89,10 @@ whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"
 windows-sys = "0.45.0"
 winreg = "0.51.0"
+chacha20poly1305 = "0.10.1"
+bytes = "1.6.0"
+x25519-dalek = "2.0.1"
+lru = "0.16.0"
 
 
 [profile.release]
