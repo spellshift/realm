@@ -56,6 +56,24 @@ Manually triggers a check-in to claim pending tasks from the C2 server.
 **Errors**
 - Returns an error string if the check-in fails.
 
+### agent.eval
+`agent.eval(code: str) -> Value`
+Evaluates the provided Eldritch code in a new interpreter instance.
+
+This method allows the agent to execute dynamic code. The new interpreter
+has access to the agent library itself (enabling recursion), but does not
+automatically inherit other standard libraries unless they are part of the
+agent's context.
+
+**Parameters**
+- `code` (`str`): The Eldritch code to evaluate.
+
+**Returns**
+- `Value`: The result of the evaluation.
+
+**Errors**
+- Returns an error string if the code execution fails.
+
 ### agent.fetch_asset
 `agent.fetch_asset(name: str) -> Bytes`
 Fetches an asset (file) from the C2 server by name.
