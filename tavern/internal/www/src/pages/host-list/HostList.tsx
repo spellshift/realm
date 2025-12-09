@@ -4,7 +4,7 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useHosts } from "./useHosts";
-import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import FilterControls, { FilterPageType } from "../../components/FilterControls";
 import HostTable from "./HostTable";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import SortingControls from "../../components/SortingControls";

@@ -92,13 +92,6 @@ export interface GetQueryVariables {
     orderBy?: any[];
 }
 
-export interface TagContextProps {
-    beacons: Array<BeaconNode>;
-    groupTags: Array<TagNode>;
-    serviceTags: Array<TagNode>;
-    hosts: Array<HostNode>;
-}
-
 export interface UserQueryTopLevel {
     users: UserQueryResponse;
 }

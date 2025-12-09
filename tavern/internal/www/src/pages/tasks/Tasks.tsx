@@ -6,7 +6,7 @@ import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enum
 import { useTasks } from "../../hooks/useTasks";
 import Button from "../../components/tavern-base-ui/button/Button";
 import TaskCard from "../../components/task-card/TaskCard";
-import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import FilterControls, { FilterPageType } from "../../components/FilterControls";
 import { TaskEdge } from "../../utils/interfacesQuery";
 import { EditablePageHeader } from "./EditablePageHeader";
 import SortingControls from "../../components/SortingControls";

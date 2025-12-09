@@ -1,47 +1,14 @@
 import { gql, useMutation } from "@apollo/client";
-import { useCallback, useEffect, useState } from "react";
-import { useTags } from "../../../../context/TagContext";
+import { useState } from "react";
 import { GET_HOST_QUERY, GET_TAG_FILTERS } from "../../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
-import { TagContextProps, TagNode } from "../../../../utils/interfacesQuery";
 import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 export const useEditableTag = (kind: KindOfTag) => {
     const toast = useToast();
-    const { data: allTagData } = useTags();
-    const [options, setOptions ] = useState<Array<FilterBarOption> | undefined>(undefined);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [displayEditTag, setDisplayEditTag] = useState(false);
     const [tagValue, setTagValue] = useState<FilterBarOption | null>(null);
-
-    const getDefaultTags = useCallback( (kind: KindOfTag, allTagData?: TagContextProps)=> {
-        switch (kind) {
-            case 'group':
-                return formatTagOptions(allTagData?.groupTags || []);
-            case 'service':
-                return formatTagOptions(allTagData?.serviceTags || []);
-            default:
-                return [];
-        }
-    },[]);
-
-    useEffect(()=>{
-        if(allTagData && !options){
-            setOptions(getDefaultTags(kind, allTagData));
-            setLoading(false);
-        }
-    },[allTagData, kind, options, getDefaultTags]);
-
-    function formatTagOptions(tags: Array<TagNode>){
-        return tags.map(function (tag: TagNode) {
-            return {
-                ...tag,
-                value: tag?.id,
-                label: tag?.name,
-                kind: tag?.kind
-            };
-        });
-    };
 
     const CREATE_TAG_MUTATION = gql`
         mutation CreateTag($input: CreateTagInput!){
@@ -153,7 +120,6 @@ export const useEditableTag = (kind: KindOfTag) => {
 
     return {
         tagValue,
-        options: options || [],
         loading,
         displayEditTag,
         handleSelectOption,
