@@ -52,6 +52,7 @@ query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
                 node{
                     id
                     name
+                    primaryIP
                 }
             }
         }

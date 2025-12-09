@@ -3,6 +3,7 @@ import { PrincipalAdminTypes } from "../../../utils/enums";
 import { useFilters } from "../../../context/FilterContext";
 import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
 import { SelectedBeacons } from "../../../utils/interfacesUI";
+import { getFilterNameByTypes } from "../../../utils/utils";
 
 export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: SelectedBeacons) => {
     const {filters} = useFilters();
@@ -16,42 +17,15 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
 
     const [viewOnlyOnePerHost, setViewOnlyOnePerHost] = useState(false);
 
-    function getSearchTypes(typeFilters: any){
-        return typeFilters.reduce((accumulator:any, currentValue:any) => {
-            if(currentValue.kind === "beacon"){
-                accumulator.beacon.push(currentValue.value);
-            }
-            else if(currentValue.kind === "platform"){
-                accumulator.platform.push(currentValue.value);
-            }
-            else if(currentValue.kind === "service"){
-                accumulator.service.push(currentValue.value);
-            }
-            else if(currentValue.kind === "group"){
-                accumulator.group.push(currentValue.value);
-            }
-            else if(currentValue.kind === "host"){
-                accumulator.host.push(currentValue.value);
-            }
-            return accumulator;
-        },
-        {
-            "beacon": [],
-            "service": [],
-            "host": [],
-            "group": [],
-            "platform": []
-        });
-    };
 
     const filterByTypes = useCallback((filteredBeacons: Array<BeaconNode>) => {
         if(typeFilters.length < 1){
             return filteredBeacons;
         }
 
-        const searchTypes = getSearchTypes(typeFilters);
+        const searchTypes = getFilterNameByTypes(typeFilters);
 
-        return filteredBeacons.filter( (beacon) => {
+        return filteredBeacons.filter( (beacon: BeaconNode) => {
             let group = beacon?.host?.tags ? (beacon?.host?.tags?.edges).find( (obj : TagEdge) => {
                 return obj?.node.kind === "group"
             }) : null;
@@ -72,8 +46,17 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
                 }
             }
 
+            if(searchTypes.principal.length > 0){
+                if(searchTypes.principal.indexOf(beacon.principal) > -1){
+                    match = true;
+                }
+                else{
+                    return false;
+                }
+            }
+
             if(searchTypes.host.length > 0){
-                if(searchTypes.host.indexOf(beacon?.host?.id) > -1){
+                if(beacon?.host?.id && searchTypes.host.indexOf(beacon?.host?.id) > -1){
                     match = true;
                 }
                 else{
@@ -100,7 +83,16 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             }
 
             if(searchTypes.platform.length > 0){
-                if(searchTypes.platform.indexOf(beacon?.host?.platform) > -1){
+                if(beacon?.host?.platform && searchTypes.platform.indexOf(beacon?.host?.platform) > -1){
+                    match = true;
+                }
+                else{
+                    return false;
+                }
+            }
+
+            if(searchTypes.primaryIP.length > 0){
+                if(beacon?.host?.primaryIP && searchTypes.primaryIP.indexOf(beacon?.host?.primaryIP) > -1){
                     match = true;
                 }
                 else{

@@ -1,8 +1,8 @@
-import { useFilters } from "../../context/FilterContext";
-import { useTags } from "../../context/TagContext";
-import { BeaconFilterBar } from "../beacon-filter-bar";
-import FreeTextSearch from "../tavern-base-ui/FreeTextSearch";
-import { FilterControlWrapper } from "./FilterControlWrapper";
+import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
+import { useFilters } from "../context/FilterContext";
+import { BeaconFilterBar } from "./beacon-filter-bar";
+import { ButtonDialogPopover } from "./ButtonDialogPopover";
+import FreeTextSearch from "./tavern-base-ui/FreeTextSearch";
 import { Switch } from "@chakra-ui/react";
 
 export enum FilterPageType {
@@ -27,7 +27,6 @@ const filterConfig: Record<FilterPageType, FilterFieldType[]> = {
 
 export default function FilterControls({ type }: { type: FilterPageType }) {
     const { filters, updateFilters } = useFilters();
-    const { data } = useTags();
     const fieldsToRender = filterConfig[type];
 
     const calculateFilterCount = (field: FilterFieldType): number => {
@@ -60,10 +59,6 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
                 <div key={field}>
                     <BeaconFilterBar
                         key={field}
-                        beacons={data?.beacons || []}
-                        groups={data?.groupTags || []}
-                        services={data?.serviceTags || []}
-                        hosts={data?.hosts || []}
                         setFiltersSelected={(newValue) => updateFilters({ 'beaconFields': newValue })}
                         filtersSelected={filters.beaconFields}
                         isDisabled={!filters.filtersEnabled}
@@ -102,7 +97,7 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
 
 
     return (
-        <FilterControlWrapper label={getLabel()}>
+        <ButtonDialogPopover label={getLabel()} leftIcon={<AdjustmentsHorizontalIcon className="w-4" />}>
             <div className="flex flex-col gap-1">
                 <div className="flex flex-row justify-between pb-2 border-gray-100 border-b-2">
                     <h3 className="font-medium text-lg text-gray-700">Filters</h3>
@@ -118,6 +113,6 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
                     return renderFilterComponent(field);
                 })}
             </div>
-        </FilterControlWrapper>
+        </ButtonDialogPopover>
     )
 }
