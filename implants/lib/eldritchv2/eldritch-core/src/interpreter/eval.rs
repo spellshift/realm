@@ -4,7 +4,7 @@ use super::super::ast::{
 };
 use super::super::token::{Span, TokenKind};
 use super::core::{Flow, Interpreter};
-use super::error::{runtime_error, EldritchError};
+use super::error::{runtime_error, EldritchError, EldritchErrorKind};
 use super::introspection::{get_type_name, is_truthy};
 use super::methods::call_bound_method;
 use super::operations::{
@@ -220,7 +220,7 @@ fn evaluate_index(
         Value::List(l) => {
             let idx_int = match idx_val {
                 Value::Int(i) => i,
-                _ => return runtime_error(index.span, "List indices must be integers"),
+                _ => return interp.error(EldritchErrorKind::TypeError, "List indices must be integers", index.span),
             };
             let list = l.read();
             let true_idx = if idx_int < 0 {
@@ -229,14 +229,14 @@ fn evaluate_index(
                 idx_int
             };
             if true_idx < 0 || true_idx as usize >= list.len() {
-                return runtime_error(span, "List index out of range");
+                return interp.error(EldritchErrorKind::IndexError, "List index out of range", span);
             }
             Ok(list[true_idx as usize].clone())
         }
         Value::Tuple(t) => {
             let idx_int = match idx_val {
                 Value::Int(i) => i,
-                _ => return runtime_error(index.span, "Tuple indices must be integers"),
+                _ => return interp.error(EldritchErrorKind::TypeError, "Tuple indices must be integers", index.span),
             };
             let true_idx = if idx_int < 0 {
                 t.len() as i64 + idx_int
@@ -244,7 +244,7 @@ fn evaluate_index(
                 idx_int
             };
             if true_idx < 0 || true_idx as usize >= t.len() {
-                return runtime_error(span, "Tuple index out of range");
+                return interp.error(EldritchErrorKind::IndexError, "Tuple index out of range", span);
             }
             Ok(t[true_idx as usize].clone())
         }
@@ -252,10 +252,10 @@ fn evaluate_index(
             let dict = d.read();
             match dict.get(&idx_val) {
                 Some(v) => Ok(v.clone()),
-                None => runtime_error(span, &format!("KeyError: '{idx_val}'")),
+                None => interp.error(EldritchErrorKind::KeyError, &format!("KeyError: '{idx_val}'"), span),
             }
         }
-        _ => runtime_error(obj.span, &format!("Type not subscriptable: {obj_val:?}")),
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("Type not subscriptable: {obj_val:?}"), obj.span),
     }
 }
 
@@ -272,20 +272,20 @@ fn evaluate_slice(
     let step_val = if let Some(s) = step {
         match evaluate(interp, s)? {
             Value::Int(i) => i,
-            _ => return runtime_error(s.span, "Slice step must be integer"),
+            _ => return interp.error(EldritchErrorKind::TypeError, "Slice step must be integer", s.span),
         }
     } else {
         1
     };
 
     if step_val == 0 {
-        return runtime_error(span, "slice step cannot be zero");
+        return interp.error(EldritchErrorKind::ValueError, "slice step cannot be zero", span);
     }
 
     let start_val_opt = if let Some(s) = start {
         match evaluate(interp, s)? {
             Value::Int(i) => Some(i),
-            _ => return runtime_error(s.span, "Slice start must be integer"),
+            _ => return interp.error(EldritchErrorKind::TypeError, "Slice start must be integer", s.span),
         }
     } else {
         None
@@ -294,7 +294,7 @@ fn evaluate_slice(
     let stop_val_opt = if let Some(s) = stop {
         match evaluate(interp, s)? {
             Value::Int(i) => Some(i),
-            _ => return runtime_error(s.span, "Slice stop must be integer"),
+            _ => return interp.error(EldritchErrorKind::TypeError, "Slice stop must be integer", s.span),
         }
     } else {
         None
@@ -371,7 +371,7 @@ fn evaluate_slice(
             }
             Ok(Value::String(result_chars.into_iter().collect()))
         }
-        _ => runtime_error(obj.span, &format!("Type not sliceable: {obj_val:?}")),
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("Type not sliceable: {obj_val:?}"), obj.span),
     }
 }
 
@@ -455,12 +455,13 @@ fn call_function(
                     Value::List(l) => pos_args_val.extend(l.read().clone()),
                     Value::Tuple(t) => pos_args_val.extend(t.clone()),
                     _ => {
-                        return runtime_error(
-                            expr.span,
+                        return interp.error(
+                            EldritchErrorKind::TypeError,
                             &format!(
                                 "*args argument must be iterable, got {:?}",
                                 get_type_name(&val)
                             ),
+                            expr.span,
                         )
                     }
                 }
@@ -475,17 +476,18 @@ fn call_function(
                                 Value::String(s) => {
                                     kw_args_val.insert(s.clone(), v.clone());
                                 }
-                                _ => return runtime_error(expr.span, "Keywords must be strings"),
+                                _ => return interp.error(EldritchErrorKind::TypeError, "Keywords must be strings", expr.span),
                             }
                         }
                     }
                     _ => {
-                        return runtime_error(
-                            expr.span,
+                        return interp.error(
+                            EldritchErrorKind::TypeError,
                             &format!(
                                 "**kwargs argument must be a dict, got {:?}",
                                 get_type_name(&val)
                             ),
+                            expr.span,
                         )
                     }
                 }
@@ -498,12 +500,30 @@ fn call_function(
     match callee_val {
         Value::NativeFunction(_, f) => {
             if !kw_args_val.is_empty() {
-                return runtime_error(span, "NativeFunction does not accept keyword arguments");
+                return interp.error(EldritchErrorKind::TypeError, "NativeFunction does not accept keyword arguments", span);
             }
-            f(&interp.env, args_slice).map_err(|e| EldritchError { message: e, span })
+            // Ensure stack frame for native call
+            // Native function name?
+            if let ExprKind::Identifier(name) = &callee.kind {
+                 interp.push_frame(name, span);
+            } else {
+                 interp.push_frame("<native>", span);
+            }
+
+            let res = f(&interp.env, args_slice).map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+            interp.pop_frame();
+            res
         }
         Value::NativeFunctionWithKwargs(_, f) => {
-            f(&interp.env, args_slice, &kw_args_val).map_err(|e| EldritchError { message: e, span })
+             // Ensure stack frame for native call
+            if let ExprKind::Identifier(name) = &callee.kind {
+                 interp.push_frame(name, span);
+            } else {
+                 interp.push_frame("<native>", span);
+            }
+            let res = f(&interp.env, args_slice, &kw_args_val).map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+            interp.pop_frame();
+            res
         }
         Value::Function(Function {
             name,
@@ -515,9 +535,12 @@ fn call_function(
             let _ = name; // Silence unused name warning if any
 
             if interp.depth >= MAX_RECURSION_DEPTH {
-                return runtime_error(span, "Recursion limit exceeded");
+                return interp.error(EldritchErrorKind::RecursionError, "Recursion limit exceeded", span);
             }
             interp.depth += 1;
+
+            // Push stack frame
+            interp.push_frame(&name, span);
 
             let result = (|| {
                 let printer = interp.env.read().printer.clone();
@@ -540,9 +563,10 @@ fn call_function(
                             } else if let Some(val) = kw_args_val.remove(&param_name) {
                                 function_env.write().values.insert(param_name.clone(), val);
                             } else {
-                                return runtime_error(
-                                    span,
+                                return interp.error(
+                                    EldritchErrorKind::TypeError,
                                     &format!("Missing required argument: '{param_name}'"),
+                                    span,
                                 );
                             }
                         }
@@ -591,15 +615,16 @@ fn call_function(
                 }
 
                 if pos_idx < pos_args_val.len() {
-                    return runtime_error(span, "Function got too many positional arguments.");
+                    return interp.error(EldritchErrorKind::TypeError, "Function got too many positional arguments.", span);
                 }
 
                 if !kw_args_val.is_empty() {
                     let mut keys: Vec<&String> = kw_args_val.keys().collect();
                     keys.sort();
-                    return runtime_error(
-                        span,
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
                         &format!("Function '{name}' got unexpected keyword arguments: {keys:?}"),
+                        span,
                     );
                 }
 
@@ -620,23 +645,31 @@ fn call_function(
                 Ok(ret_val)
             })();
             interp.depth -= 1;
+            interp.pop_frame();
             result
         }
         Value::BoundMethod(receiver, method_name) => {
-            // Check if receiver is Foreign
-            if let Value::Foreign(foreign) = receiver.as_ref() {
-                foreign
-                    .call_method(&method_name, args_slice, &kw_args_val)
-                    .map_err(|e| EldritchError { message: e, span })
-            } else {
-                if !kw_args_val.is_empty() {
-                    return runtime_error(span, "BoundMethod does not accept keyword arguments");
+             // Push stack frame
+            interp.push_frame(&method_name, span);
+            let res = {
+                // Check if receiver is Foreign
+                if let Value::Foreign(foreign) = receiver.as_ref() {
+                    foreign
+                        .call_method(&method_name, args_slice, &kw_args_val)
+                        .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
+                } else {
+                    if !kw_args_val.is_empty() {
+                        Err(EldritchError::new(EldritchErrorKind::TypeError, "BoundMethod does not accept keyword arguments", span).with_stack(interp.call_stack.clone()))
+                    } else {
+                        call_bound_method(&receiver, &method_name, args_slice)
+                            .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
+                    }
                 }
-                call_bound_method(&receiver, &method_name, args_slice)
-                    .map_err(|e| EldritchError { message: e, span })
-            }
+            };
+            interp.pop_frame();
+            res
         }
-        _ => runtime_error(span, &format!("Cannot call value of type: {callee_val:?}")),
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("Cannot call value of type: {callee_val:?}"), span),
     }
 }
 
@@ -646,7 +679,7 @@ fn builtin_map(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() != 2 {
-        return runtime_error(span, "map() takes exactly 2 arguments");
+        return interp.error(EldritchErrorKind::TypeError, "map() takes exactly 2 arguments", span);
     }
     let func_val = evaluate_arg(interp, &args[0])?;
     let iterable_val = evaluate_arg(interp, &args[1])?;
@@ -668,7 +701,7 @@ fn builtin_filter(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() != 2 {
-        return runtime_error(span, "filter() takes exactly 2 arguments");
+        return interp.error(EldritchErrorKind::TypeError, "filter() takes exactly 2 arguments", span);
     }
     let func_val = evaluate_arg(interp, &args[0])?;
     let iterable_val = evaluate_arg(interp, &args[1])?;
@@ -695,7 +728,7 @@ fn builtin_reduce(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() < 2 || args.len() > 3 {
-        return runtime_error(span, "reduce() takes 2 or 3 arguments");
+        return interp.error(EldritchErrorKind::TypeError, "reduce() takes 2 or 3 arguments", span);
     }
     let func_val = evaluate_arg(interp, &args[0])?;
     let iterable_val = evaluate_arg(interp, &args[1])?;
@@ -706,7 +739,7 @@ fn builtin_reduce(
     } else {
         match items.next() {
             Some(v) => v,
-            None => return runtime_error(span, "reduce() of empty sequence with no initial value"),
+            None => return interp.error(EldritchErrorKind::TypeError, "reduce() of empty sequence with no initial value", span),
         }
     };
 
@@ -731,31 +764,32 @@ fn builtin_sorted(
                 if iterable_arg.is_none() {
                     iterable_arg = Some(e);
                 } else {
-                    return runtime_error(span, "sorted() takes only 1 positional argument");
+                    return interp.error(EldritchErrorKind::TypeError, "sorted() takes only 1 positional argument", span);
                 }
             }
             Argument::Keyword(name, e) => match name.as_str() {
                 "key" => key_arg = Some(e),
                 "reverse" => reverse_arg = Some(e),
                 _ => {
-                    return runtime_error(
-                        span,
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
                         &format!("sorted() got an unexpected keyword argument '{name}'"),
+                        span,
                     )
                 }
             },
             _ => {
-                return runtime_error(
-                    span,
+                return interp.error(
+                    EldritchErrorKind::TypeError,
                     "sorted() does not support *args or **kwargs unpacking",
+                    span,
                 )
             }
         }
     }
 
-    let iterable_expr = iterable_arg.ok_or_else(|| EldritchError {
-        message: "sorted() missing 1 required positional argument: 'iterable'".to_string(),
-        span,
+    let iterable_expr = iterable_arg.ok_or_else(|| {
+        interp.error::<()>(EldritchErrorKind::TypeError, "sorted() missing 1 required positional argument: 'iterable'", span).unwrap_err()
     })?;
 
     let iterable_val = evaluate(interp, iterable_expr)?;
@@ -802,17 +836,17 @@ fn builtin_eval(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() != 1 {
-        return runtime_error(span, "eval() takes exactly 1 argument");
+        return interp.error(EldritchErrorKind::TypeError, "eval() takes exactly 1 argument", span);
     }
 
     let code_val = evaluate_arg(interp, &args[0])?;
     let code = match code_val {
         Value::String(s) => s,
-        _ => return runtime_error(span, "eval() argument must be a string"),
+        _ => return interp.error(EldritchErrorKind::TypeError, "eval() argument must be a string", span),
     };
 
     if interp.depth >= MAX_RECURSION_DEPTH {
-        return runtime_error(span, "Recursion limit exceeded");
+        return interp.error(EldritchErrorKind::RecursionError, "Recursion limit exceeded", span);
     }
 
     // Create a new interpreter instance that shares the environment
@@ -821,11 +855,13 @@ fn builtin_eval(
         env: interp.env.clone(),
         flow: Flow::Next,
         depth: interp.depth + 1,
+        call_stack: interp.call_stack.clone(),
+        current_func_name: "<eval>".to_string(),
     };
 
     match temp_interp.interpret(&code) {
         Ok(v) => Ok(v),
-        Err(e) => runtime_error(span, &e),
+        Err(e) => interp.error(EldritchErrorKind::RuntimeError, &e, span),
     }
 }
 
@@ -837,7 +873,12 @@ fn call_value(
 ) -> Result<Value, EldritchError> {
     match func {
         Value::NativeFunction(_, f) => {
-            f(&interp.env, args).map_err(|e| EldritchError { message: e, span })
+             // Push stack frame
+             // Native function name?
+             interp.push_frame("<native>", span);
+            let res = f(&interp.env, args).map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+            interp.pop_frame();
+            res
         }
         Value::Function(Function {
             name: _,
@@ -846,7 +887,7 @@ fn call_value(
             closure: _,
         }) => {
             if interp.depth >= MAX_RECURSION_DEPTH {
-                return runtime_error(span, "Recursion limit exceeded");
+                return interp.error(EldritchErrorKind::RecursionError, "Recursion limit exceeded", span);
             }
             interp.depth += 1;
 
@@ -870,9 +911,14 @@ fn call_value(
             interp.depth -= 1;
             res
         }
-        Value::BoundMethod(receiver, method_name) => call_bound_method(receiver, method_name, args)
-            .map_err(|e| EldritchError { message: e, span }),
-        _ => runtime_error(span, "not callable"),
+        Value::BoundMethod(receiver, method_name) => {
+             interp.push_frame(method_name, span);
+             let res = call_bound_method(receiver, method_name, args)
+                .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+             interp.pop_frame();
+             res
+        },
+        _ => interp.error(EldritchErrorKind::TypeError, "not callable", span),
     }
 }
 
@@ -881,15 +927,16 @@ fn evaluate_arg(interp: &mut Interpreter, arg: &Argument) -> Result<Value, Eldri
         Argument::Positional(e) => evaluate(interp, e),
         // Just return a dummy span here for the error, or match e.span if available.
         // Since we don't have easy access to a span here without unpacking, use a dummy one.
-        _ => runtime_error(
-            Span::new(0, 0, 0),
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
             "HOFs currently only support positional arguments",
+            Span::new(0, 0, 0),
         ),
     }
 }
 
 pub(crate) fn to_iterable(
-    _interp: &Interpreter,
+    interp: &Interpreter,
     val: &Value,
     span: Span,
 ) -> Result<Vec<Value>, EldritchError> {
@@ -899,9 +946,10 @@ pub(crate) fn to_iterable(
         Value::Set(s) => Ok(s.read().iter().cloned().collect()),
         Value::Dictionary(d) => Ok(d.read().keys().cloned().collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
-        _ => runtime_error(
-            span,
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
             &format!("Type '{:?}' is not iterable", get_type_name(val)),
+            span,
         ),
     }
 }
@@ -917,14 +965,14 @@ fn apply_unary_op(
         TokenKind::Minus => match val {
             Value::Int(i) => Ok(Value::Int(-i)),
             Value::Float(f) => Ok(Value::Float(-f)),
-            _ => runtime_error(span, "Unary '-' only valid for numbers"),
+            _ => interp.error(EldritchErrorKind::TypeError, "Unary '-' only valid for numbers", span),
         },
         TokenKind::Not => Ok(Value::Bool(!is_truthy(&val))),
         TokenKind::BitNot => match val {
             Value::Int(i) => Ok(Value::Int(!i)),
-            _ => runtime_error(span, "Bitwise '~' only valid for integers"),
+            _ => interp.error(EldritchErrorKind::TypeError, "Bitwise '~' only valid for integers", span),
         },
-        _ => runtime_error(span, "Invalid unary operator"),
+        _ => interp.error(EldritchErrorKind::SyntaxError, "Invalid unary operator", span),
     }
 }
 
@@ -949,12 +997,12 @@ fn apply_logical_op(
             }
             evaluate(interp, right)
         }
-        _ => runtime_error(span, "Invalid logical operator"),
+        _ => interp.error(EldritchErrorKind::SyntaxError, "Invalid logical operator", span),
     }
 }
 
 fn evaluate_in(
-    _interp: &mut Interpreter,
+    interp: &mut Interpreter,
     item: &Value,
     collection: &Value,
     span: Span,
@@ -977,16 +1025,17 @@ fn evaluate_in(
         Value::String(s) => {
             let sub = match item {
                 Value::String(ss) => ss,
-                _ => return runtime_error(span, "'in <string>' requires string as left operand"),
+                _ => return interp.error(EldritchErrorKind::TypeError, "'in <string>' requires string as left operand", span),
             };
             Ok(Value::Bool(s.contains(sub)))
         }
-        _ => runtime_error(
-            span,
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
             &format!(
                 "argument of type '{}' is not iterable",
                 get_type_name(collection)
             ),
+            span,
         ),
     }
 }
@@ -1044,7 +1093,7 @@ fn apply_binary_op(
             (Value::Tuple(ta), Value::Tuple(tb)) => {
                 return compare_sequences(ta, tb, op.clone(), span);
             }
-            _ => return apply_comparison_op(&a, op, &b, span),
+            _ => return apply_comparison_op(interp, &a, op, &b, span),
         }
     }
 
@@ -1057,7 +1106,7 @@ fn apply_binary_op(
             | TokenKind::LShift
             | TokenKind::RShift
     ) {
-        return apply_bitwise_op(&a, op, &b, span);
+        return apply_bitwise_op(interp, &a, op, &b, span);
     }
 
     match (a, op.clone(), b) {
@@ -1230,12 +1279,12 @@ fn apply_binary_op(
             }
         }
 
-        _ => runtime_error(span, "Unsupported binary op"),
+        _ => interp.error(EldritchErrorKind::TypeError, "Unsupported binary op", span),
     }
 }
 
 fn string_modulo_format(
-    _interp: &mut Interpreter,
+    interp: &mut Interpreter,
     fmt_str: &str,
     val: &Value,
     span: Span,
@@ -1261,7 +1310,7 @@ fn string_modulo_format(
                 chars.next(); // Consume specifier
 
                 if val_idx >= vals.len() {
-                    return runtime_error(span, "not enough arguments for format string");
+                    return interp.error(EldritchErrorKind::TypeError, "not enough arguments for format string", span);
                 }
                 let v = &vals[val_idx];
                 val_idx += 1;
@@ -1271,35 +1320,35 @@ fn string_modulo_format(
                         result.push_str(&v.to_string());
                     }
                     'd' | 'i' | 'u' => {
-                        let i_val = to_int_or_error(v, next, span)?;
+                        let i_val = to_int_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{i_val}");
                     }
                     'o' => {
-                        let i_val = to_int_or_error(v, next, span)?;
+                        let i_val = to_int_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{i_val:o}");
                     }
                     'x' => {
-                        let i_val = to_int_or_error(v, next, span)?;
+                        let i_val = to_int_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{i_val:x}");
                     }
                     'X' => {
-                        let i_val = to_int_or_error(v, next, span)?;
+                        let i_val = to_int_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{i_val:X}");
                     }
                     'e' => {
-                        let f_val = to_float_or_error(v, next, span)?;
+                        let f_val = to_float_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{f_val:e}");
                     }
                     'E' => {
-                        let f_val = to_float_or_error(v, next, span)?;
+                        let f_val = to_float_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{f_val:E}");
                     }
                     'f' | 'F' => {
-                        let f_val = to_float_or_error(v, next, span)?;
+                        let f_val = to_float_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{f_val:.6}",);
                     }
                     'g' | 'G' => {
-                        let f_val = to_float_or_error(v, next, span)?;
+                        let f_val = to_float_or_error(interp, v, next, span)?;
                         let _ = write!(result, "{f_val:?}");
                     }
                     'r' => match v {
@@ -1309,14 +1358,15 @@ fn string_modulo_format(
                         _ => result.push_str(&v.to_string()),
                     },
                     _ => {
-                        return runtime_error(
-                            span,
+                        return interp.error(
+                            EldritchErrorKind::ValueError,
                             &format!("Unsupported format specifier: %{next}"),
+                            span,
                         );
                     }
                 }
             } else {
-                return runtime_error(span, "incomplete format");
+                return interp.error(EldritchErrorKind::ValueError, "incomplete format", span);
             }
         } else {
             result.push(c);
@@ -1324,40 +1374,42 @@ fn string_modulo_format(
     }
 
     if val_idx < vals.len() {
-        return runtime_error(span, "not all arguments converted during string formatting");
+        return interp.error(EldritchErrorKind::TypeError, "not all arguments converted during string formatting", span);
     }
 
     Ok(Value::String(result))
 }
 
-fn to_int_or_error(v: &Value, spec: char, span: Span) -> Result<i64, EldritchError> {
+fn to_int_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) -> Result<i64, EldritchError> {
     match v {
         Value::Int(i) => Ok(*i),
         Value::Float(f) => Ok(*f as i64),
         Value::Bool(b) => Ok(if *b { 1 } else { 0 }),
-        _ => runtime_error(
-            span,
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
             &format!(
                 "%{} format: a number is required, not {:?}",
                 spec,
                 get_type_name(v)
             ),
+            span,
         ),
     }
 }
 
-fn to_float_or_error(v: &Value, spec: char, span: Span) -> Result<f64, EldritchError> {
+fn to_float_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) -> Result<f64, EldritchError> {
     match v {
         Value::Int(i) => Ok(*i as f64),
         Value::Float(f) => Ok(*f),
         Value::Bool(b) => Ok(if *b { 1.0 } else { 0.0 }),
-        _ => runtime_error(
-            span,
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
             &format!(
                 "%{} format: a number is required, not {:?}",
                 spec,
                 get_type_name(v)
             ),
+            span,
         ),
     }
 }
