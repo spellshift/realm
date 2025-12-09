@@ -92,5 +92,6 @@ pub fn get_stubs() -> Vec<(&'static str, BuiltinFn)> {
         ("filter", builtin_stub as BuiltinFn),
         ("reduce", builtin_stub as BuiltinFn),
         ("sorted", builtin_stub as BuiltinFn),
+        ("eval", builtin_stub as BuiltinFn),
     ]
 }
