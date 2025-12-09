@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `float(x)`: Converts a number or string to a floating point number.
+///
+/// **Parameters**
+/// - `x` (Int | Float | String): The value to convert.
 pub fn builtin_float(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Float(0.0));

@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `all(iterable)`: Returns True if all elements of the iterable are true.
+///
+/// **Parameters**
+/// - `iterable` (Iterable): The iterable to check.
 pub fn builtin_all(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(

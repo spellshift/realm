@@ -7,6 +7,13 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `zip(*iterables)`: Returns an iterator of tuples.
+///
+/// Returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.
+/// The returned list is truncated to the length of the shortest argument sequence.
+///
+/// **Parameters**
+/// - `*iterables` (Iterable): Iterables to zip together.
 pub fn builtin_zip(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::List(Arc::new(RwLock::new(Vec::new()))));

@@ -7,6 +7,13 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `enumerate(iterable, start=0)`: Returns an enumerate object.
+///
+/// Returns a list of tuples containing (index, value) pairs.
+///
+/// **Parameters**
+/// - `iterable` (Iterable): The sequence to enumerate.
+/// - `start` (Int): The starting index. Defaults to 0.
 pub fn builtin_enumerate(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Err("enumerate() takes at least one argument".to_string());

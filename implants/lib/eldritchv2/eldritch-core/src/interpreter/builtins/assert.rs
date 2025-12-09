@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `assert(condition)`: Aborts if the condition is false.
+///
+/// **Parameters**
+/// - `condition` (Any): The condition to check.
 pub fn builtin_assert(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(
