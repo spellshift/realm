@@ -66,6 +66,7 @@ type BeaconMutation struct {
 	identifier       *string
 	agent_identifier *string
 	last_seen_at     *time.Time
+	next_seen_at     *time.Time
 	interval         *uint64
 	addinterval      *int64
 	clearedFields    map[string]struct{}
@@ -471,6 +472,55 @@ func (m *BeaconMutation) ResetLastSeenAt() {
 	delete(m.clearedFields, beacon.FieldLastSeenAt)
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (m *BeaconMutation) SetNextSeenAt(t time.Time) {
+	m.next_seen_at = &t
+}
+
+// NextSeenAt returns the value of the "next_seen_at" field in the mutation.
+func (m *BeaconMutation) NextSeenAt() (r time.Time, exists bool) {
+	v := m.next_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextSeenAt returns the old "next_seen_at" field's value of the Beacon entity.
+// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BeaconMutation) OldNextSeenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextSeenAt: %w", err)
+	}
+	return oldValue.NextSeenAt, nil
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (m *BeaconMutation) ClearNextSeenAt() {
+	m.next_seen_at = nil
+	m.clearedFields[beacon.FieldNextSeenAt] = struct{}{}
+}
+
+// NextSeenAtCleared returns if the "next_seen_at" field was cleared in this mutation.
+func (m *BeaconMutation) NextSeenAtCleared() bool {
+	_, ok := m.clearedFields[beacon.FieldNextSeenAt]
+	return ok
+}
+
+// ResetNextSeenAt resets all changes to the "next_seen_at" field.
+func (m *BeaconMutation) ResetNextSeenAt() {
+	m.next_seen_at = nil
+	delete(m.clearedFields, beacon.FieldNextSeenAt)
+}
+
 // SetInterval sets the "interval" field.
 func (m *BeaconMutation) SetInterval(u uint64) {
 	m.interval = &u
@@ -722,7 +772,7 @@ func (m *BeaconMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BeaconMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, beacon.FieldCreatedAt)
 	}
@@ -743,6 +793,9 @@ func (m *BeaconMutation) Fields() []string {
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, beacon.FieldLastSeenAt)
+	}
+	if m.next_seen_at != nil {
+		fields = append(fields, beacon.FieldNextSeenAt)
 	}
 	if m.interval != nil {
 		fields = append(fields, beacon.FieldInterval)
@@ -769,6 +822,8 @@ func (m *BeaconMutation) Field(name string) (ent.Value, bool) {
 		return m.AgentIdentifier()
 	case beacon.FieldLastSeenAt:
 		return m.LastSeenAt()
+	case beacon.FieldNextSeenAt:
+		return m.NextSeenAt()
 	case beacon.FieldInterval:
 		return m.Interval()
 	}
@@ -794,6 +849,8 @@ func (m *BeaconMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldAgentIdentifier(ctx)
 	case beacon.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
+	case beacon.FieldNextSeenAt:
+		return m.OldNextSeenAt(ctx)
 	case beacon.FieldInterval:
 		return m.OldInterval(ctx)
 	}
@@ -853,6 +910,13 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastSeenAt(v)
+		return nil
+	case beacon.FieldNextSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextSeenAt(v)
 		return nil
 	case beacon.FieldInterval:
 		v, ok := value.(uint64)
@@ -915,6 +979,9 @@ func (m *BeaconMutation) ClearedFields() []string {
 	if m.FieldCleared(beacon.FieldLastSeenAt) {
 		fields = append(fields, beacon.FieldLastSeenAt)
 	}
+	if m.FieldCleared(beacon.FieldNextSeenAt) {
+		fields = append(fields, beacon.FieldNextSeenAt)
+	}
 	if m.FieldCleared(beacon.FieldInterval) {
 		fields = append(fields, beacon.FieldInterval)
 	}
@@ -940,6 +1007,9 @@ func (m *BeaconMutation) ClearField(name string) error {
 		return nil
 	case beacon.FieldLastSeenAt:
 		m.ClearLastSeenAt()
+		return nil
+	case beacon.FieldNextSeenAt:
+		m.ClearNextSeenAt()
 		return nil
 	case beacon.FieldInterval:
 		m.ClearInterval()
@@ -972,6 +1042,9 @@ func (m *BeaconMutation) ResetField(name string) error {
 		return nil
 	case beacon.FieldLastSeenAt:
 		m.ResetLastSeenAt()
+		return nil
+	case beacon.FieldNextSeenAt:
+		m.ResetNextSeenAt()
 		return nil
 	case beacon.FieldInterval:
 		m.ResetInterval()
@@ -1847,6 +1920,7 @@ type HostMutation struct {
 	external_ip        *string
 	platform           *c2pb.Host_Platform
 	last_seen_at       *time.Time
+	next_seen_at       *time.Time
 	clearedFields      map[string]struct{}
 	tags               map[int]struct{}
 	removedtags        map[int]struct{}
@@ -2306,6 +2380,55 @@ func (m *HostMutation) ResetLastSeenAt() {
 	delete(m.clearedFields, host.FieldLastSeenAt)
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (m *HostMutation) SetNextSeenAt(t time.Time) {
+	m.next_seen_at = &t
+}
+
+// NextSeenAt returns the value of the "next_seen_at" field in the mutation.
+func (m *HostMutation) NextSeenAt() (r time.Time, exists bool) {
+	v := m.next_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextSeenAt returns the old "next_seen_at" field's value of the Host entity.
+// If the Host object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostMutation) OldNextSeenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextSeenAt: %w", err)
+	}
+	return oldValue.NextSeenAt, nil
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (m *HostMutation) ClearNextSeenAt() {
+	m.next_seen_at = nil
+	m.clearedFields[host.FieldNextSeenAt] = struct{}{}
+}
+
+// NextSeenAtCleared returns if the "next_seen_at" field was cleared in this mutation.
+func (m *HostMutation) NextSeenAtCleared() bool {
+	_, ok := m.clearedFields[host.FieldNextSeenAt]
+	return ok
+}
+
+// ResetNextSeenAt resets all changes to the "next_seen_at" field.
+func (m *HostMutation) ResetNextSeenAt() {
+	m.next_seen_at = nil
+	delete(m.clearedFields, host.FieldNextSeenAt)
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by ids.
 func (m *HostMutation) AddTagIDs(ids ...int) {
 	if m.tags == nil {
@@ -2610,7 +2733,7 @@ func (m *HostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HostMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, host.FieldCreatedAt)
 	}
@@ -2634,6 +2757,9 @@ func (m *HostMutation) Fields() []string {
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, host.FieldLastSeenAt)
+	}
+	if m.next_seen_at != nil {
+		fields = append(fields, host.FieldNextSeenAt)
 	}
 	return fields
 }
@@ -2659,6 +2785,8 @@ func (m *HostMutation) Field(name string) (ent.Value, bool) {
 		return m.Platform()
 	case host.FieldLastSeenAt:
 		return m.LastSeenAt()
+	case host.FieldNextSeenAt:
+		return m.NextSeenAt()
 	}
 	return nil, false
 }
@@ -2684,6 +2812,8 @@ func (m *HostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPlatform(ctx)
 	case host.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
+	case host.FieldNextSeenAt:
+		return m.OldNextSeenAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Host field %s", name)
 }
@@ -2749,6 +2879,13 @@ func (m *HostMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastSeenAt(v)
 		return nil
+	case host.FieldNextSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextSeenAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Host field %s", name)
 }
@@ -2791,6 +2928,9 @@ func (m *HostMutation) ClearedFields() []string {
 	if m.FieldCleared(host.FieldLastSeenAt) {
 		fields = append(fields, host.FieldLastSeenAt)
 	}
+	if m.FieldCleared(host.FieldNextSeenAt) {
+		fields = append(fields, host.FieldNextSeenAt)
+	}
 	return fields
 }
 
@@ -2816,6 +2956,9 @@ func (m *HostMutation) ClearField(name string) error {
 		return nil
 	case host.FieldLastSeenAt:
 		m.ClearLastSeenAt()
+		return nil
+	case host.FieldNextSeenAt:
+		m.ClearNextSeenAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Host nullable field %s", name)
@@ -2848,6 +2991,9 @@ func (m *HostMutation) ResetField(name string) error {
 		return nil
 	case host.FieldLastSeenAt:
 		m.ResetLastSeenAt()
+		return nil
+	case host.FieldNextSeenAt:
+		m.ResetNextSeenAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Host field %s", name)

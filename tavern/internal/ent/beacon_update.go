@@ -111,6 +111,26 @@ func (bu *BeaconUpdate) ClearLastSeenAt() *BeaconUpdate {
 	return bu
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (bu *BeaconUpdate) SetNextSeenAt(t time.Time) *BeaconUpdate {
+	bu.mutation.SetNextSeenAt(t)
+	return bu
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (bu *BeaconUpdate) SetNillableNextSeenAt(t *time.Time) *BeaconUpdate {
+	if t != nil {
+		bu.SetNextSeenAt(*t)
+	}
+	return bu
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (bu *BeaconUpdate) ClearNextSeenAt() *BeaconUpdate {
+	bu.mutation.ClearNextSeenAt()
+	return bu
+}
+
 // SetInterval sets the "interval" field.
 func (bu *BeaconUpdate) SetInterval(u uint64) *BeaconUpdate {
 	bu.mutation.ResetInterval()
@@ -326,6 +346,12 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if bu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := bu.mutation.NextSeenAt(); ok {
+		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
+	}
+	if bu.mutation.NextSeenAtCleared() {
+		_spec.ClearField(beacon.FieldNextSeenAt, field.TypeTime)
 	}
 	if value, ok := bu.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
@@ -552,6 +578,26 @@ func (buo *BeaconUpdateOne) SetNillableLastSeenAt(t *time.Time) *BeaconUpdateOne
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (buo *BeaconUpdateOne) ClearLastSeenAt() *BeaconUpdateOne {
 	buo.mutation.ClearLastSeenAt()
+	return buo
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (buo *BeaconUpdateOne) SetNextSeenAt(t time.Time) *BeaconUpdateOne {
+	buo.mutation.SetNextSeenAt(t)
+	return buo
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (buo *BeaconUpdateOne) SetNillableNextSeenAt(t *time.Time) *BeaconUpdateOne {
+	if t != nil {
+		buo.SetNextSeenAt(*t)
+	}
+	return buo
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (buo *BeaconUpdateOne) ClearNextSeenAt() *BeaconUpdateOne {
+	buo.mutation.ClearNextSeenAt()
 	return buo
 }
 
@@ -800,6 +846,12 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	}
 	if buo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := buo.mutation.NextSeenAt(); ok {
+		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
+	}
+	if buo.mutation.NextSeenAtCleared() {
+		_spec.ClearField(beacon.FieldNextSeenAt, field.TypeTime)
 	}
 	if value, ok := buo.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
