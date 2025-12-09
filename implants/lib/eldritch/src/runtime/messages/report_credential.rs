@@ -5,7 +5,7 @@ use pb::{c2::ReportCredentialRequest, config::Config, eldritch::Credential};
 /*
  * ReportCredentialMessage reports a credential captured by this tome's evaluation.
  */
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportCredentialMessage {
     pub(crate) id: i64,

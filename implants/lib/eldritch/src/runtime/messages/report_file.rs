@@ -17,7 +17,7 @@ use std::{io::Read, sync::mpsc::sync_channel};
  * If the transport errors, it will close the file and exit immediately.
  * It will not open the provided file until it has been dispatched.
  */
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportFileMessage {
     pub(crate) id: i64,

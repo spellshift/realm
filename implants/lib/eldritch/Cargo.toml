@@ -90,6 +90,7 @@ listeners = { workspace = true }
 
 # DEV
 [dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
 transport = { workspace = true, features = ["mock"] }
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
@@ -99,3 +100,7 @@ uuid = { workspace = true, features = ["v4"] }
 tonic-build = { workspace = true }
 anyhow = { workspace = true }
 which = { workspace = true }
+
+[[bench]]
+name = "reverse_shell"
+harness = false

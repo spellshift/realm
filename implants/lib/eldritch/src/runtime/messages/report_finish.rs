@@ -9,7 +9,7 @@ use prost_types::Timestamp;
 /*
  * ReportFinishMessage indicates the end of a tome's evaluation.
  */
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportFinishMessage {
     pub(crate) id: i64,

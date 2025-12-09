@@ -6,7 +6,7 @@ use pb::config::Config;
  * SetCallbackUriMessage sets the callback URI in the dispatched config.
  */
 #[allow(dead_code)]
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct SetCallbackUriMessage {
     pub(crate) id: i64,

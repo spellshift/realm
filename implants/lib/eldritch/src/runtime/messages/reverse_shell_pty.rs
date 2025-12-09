@@ -13,11 +13,17 @@ use transport::Transport;
 /*
  * ReverseShellPTYMessage will open a reverse shell when dispatched.
  */
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReverseShellPTYMessage {
     pub(crate) id: i64,
     pub(crate) cmd: Option<String>,
+}
+
+impl ReverseShellPTYMessage {
+    pub fn new(id: i64, cmd: Option<String>) -> Self {
+        Self { id, cmd }
+    }
 }
 
 impl AsyncDispatcher for ReverseShellPTYMessage {

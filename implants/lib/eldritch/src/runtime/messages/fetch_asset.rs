@@ -9,11 +9,18 @@ use transport::Transport;
  * FetchAssetMessage indicates that the owner of the corresponding `eldritch::Runtime` should send
  * an asset with the requested name to the provided sender (it may be sent in chunks).
  */
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug))]
 #[derive(Clone)]
 pub struct FetchAssetMessage {
     pub(crate) name: String,
     pub(crate) tx: Sender<FetchAssetResponse>,
+}
+
+#[cfg(any(debug_assertions, test))]
+impl PartialEq for FetchAssetMessage {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl AsyncDispatcher for FetchAssetMessage {
@@ -25,9 +32,3 @@ impl AsyncDispatcher for FetchAssetMessage {
     }
 }
 
-#[cfg(debug_assertions)]
-impl PartialEq for FetchAssetMessage {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}

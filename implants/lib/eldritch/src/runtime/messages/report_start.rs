@@ -9,7 +9,7 @@ use prost_types::Timestamp;
 /*
  * ReportStartMessage indicates the start of a tome's evaluation.
  */
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportStartMessage {
     pub(crate) id: i64,

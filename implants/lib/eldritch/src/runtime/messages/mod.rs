@@ -51,7 +51,7 @@ pub trait SyncDispatcher {
  * This enables eldritch library functions to communicate with the caller API, enabling structured data reporting
  * as well as resource requests (e.g. fetching assets).
  */
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Display, From, Clone)]
 pub enum Message {
     #[display(fmt = "Async")]
@@ -61,7 +61,7 @@ pub enum Message {
     Sync(SyncMessage),
 }
 
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Display, From, Clone)]
 pub enum AsyncMessage {
     #[display(fmt = "FetchAsset")]
@@ -118,7 +118,7 @@ impl AsyncDispatcher for AsyncMessage {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Display, From, Clone)]
 pub enum SyncMessage {
     #[display(fmt = "SetCallbackInterval")]

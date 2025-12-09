@@ -12,7 +12,7 @@ use prost_types::Timestamp;
  *
  * Prefer using Text, Error, Start, and Finish messages instead.
  */
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[cfg_attr(any(debug_assertions, test), derive(Debug, PartialEq))]
 #[derive(Clone)]
 pub struct ReportAggOutputMessage {
     pub(crate) id: i64,
