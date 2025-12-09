@@ -17,7 +17,6 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
 
     const [viewOnlyOnePerHost, setViewOnlyOnePerHost] = useState(false);
 
-
     const filterByTypes = useCallback((filteredBeacons: Array<BeaconNode>) => {
         if(typeFilters.length < 1){
             return filteredBeacons;
