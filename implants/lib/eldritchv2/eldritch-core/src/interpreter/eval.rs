@@ -433,6 +433,8 @@ fn call_function(
             return builtin_reduce(interp, args, span);
         } else if name == "sorted" {
             return builtin_sorted(interp, args, span);
+        } else if name == "eval" {
+            return builtin_eval(interp, args, span);
         }
     }
 
@@ -792,6 +794,39 @@ fn builtin_sorted(
     }
 
     Ok(Value::List(Arc::new(RwLock::new(items))))
+}
+
+fn builtin_eval(
+    interp: &mut Interpreter,
+    args: &[Argument],
+    span: Span,
+) -> Result<Value, EldritchError> {
+    if args.len() != 1 {
+        return runtime_error(span, "eval() takes exactly 1 argument");
+    }
+
+    let code_val = evaluate_arg(interp, &args[0])?;
+    let code = match code_val {
+        Value::String(s) => s,
+        _ => return runtime_error(span, "eval() argument must be a string"),
+    };
+
+    if interp.depth >= MAX_RECURSION_DEPTH {
+        return runtime_error(span, "Recursion limit exceeded");
+    }
+
+    // Create a new interpreter instance that shares the environment
+    // We manually construct it to avoid re-loading builtins and to set depth
+    let mut temp_interp = Interpreter {
+        env: interp.env.clone(),
+        flow: Flow::Next,
+        depth: interp.depth + 1,
+    };
+
+    match temp_interp.interpret(&code) {
+        Ok(v) => Ok(v),
+        Err(e) => runtime_error(span, &e),
+    }
 }
 
 fn call_value(

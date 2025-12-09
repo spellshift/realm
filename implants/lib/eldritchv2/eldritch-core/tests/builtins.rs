@@ -212,3 +212,30 @@ fn test_min_max_args() {
     assert::fail("max(1)", "not iterable");
     assert::fail("min(1)", "not iterable");
 }
+
+#[test]
+fn test_eval() {
+    assert::pass(r#"
+        x = 1
+        eval("x = 2")
+        assert_eq(x, 2)
+    "#);
+
+    assert::pass(r#"
+        res = eval("1 + 1")
+        assert_eq(res, 2)
+    "#);
+
+    assert::pass(r#"
+        # Nested eval
+        res = eval("eval('1 + 2')")
+        assert_eq(res, 3)
+    "#);
+
+    // Recursion limit check
+    assert::fail(r#"
+        def f():
+            eval("f()")
+        f()
+    "#, "Recursion limit exceeded");
+}
