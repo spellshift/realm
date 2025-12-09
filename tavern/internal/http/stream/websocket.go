@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"encoding/json"
-
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/auth"
@@ -34,13 +32,9 @@ const (
 
 type connector struct {
 	*Stream
-	mux *Mux
-	ws  *websocket.Conn
-}
-
-type wSMessage struct {
-	Type string `json:"type"`
-	Data []byte `json:"data"`
+	mux  *Mux
+	ws   *websocket.Conn
+	kind string
 }
 
 // WriteToWebsocket will read messages from the Mux and write them to the underlying websocket.
@@ -80,17 +74,12 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				return
 			}
 
+			// Filter by kind
 			kind := message.Metadata[MetadataMsgKind]
 			if kind == "" {
 				kind = "data"
 			}
-			payload := wSMessage{
-				Type: kind,
-				Data: message.Body,
-			}
-			jsonPayload, err := json.Marshal(payload)
-			if err != nil {
-				slog.ErrorContext(ctx, "failed to marshal websocket payload", "error", err)
+			if kind != c.kind {
 				continue
 			}
 
@@ -98,7 +87,7 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			if err != nil {
 				return
 			}
-			if _, err := w.Write(jsonPayload); err != nil {
+			if _, err := w.Write(message.Body); err != nil {
 				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
 					"stream_id", c.Stream.id,
 					"stream_order_key", c.Stream.orderKey,
@@ -110,21 +99,17 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			n := len(c.Messages())
 			for i := 0; i < n; i++ {
 				additionalMsg := <-c.Messages()
+
+				// Filter additional messages too
 				kind := additionalMsg.Metadata[MetadataMsgKind]
 				if kind == "" {
 					kind = "data"
 				}
-				payload := wSMessage{
-					Type: kind,
-					Data: additionalMsg.Body,
-				}
-				jsonPayload, err := json.Marshal(payload)
-				if err != nil {
-					slog.ErrorContext(ctx, "failed to marshal additional websocket payload", "error", err)
+				if kind != c.kind {
 					continue
 				}
 
-				if _, err := w.Write(jsonPayload); err != nil {
+				if _, err := w.Write(additionalMsg.Body); err != nil {
 					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
 						"stream_id", c.Stream.id,
 						"stream_order_key", c.Stream.orderKey,
@@ -174,25 +159,12 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 				return
 			}
 
-			var payload wSMessage
-			if err := json.Unmarshal(message, &payload); err != nil {
-				// Fallback or error?
-				// Assuming strict JSON protocol now.
-				// Try to treat as raw data for backward compatibility?
-				// Maybe better to just error or treat as "data" type.
-				// Let's treat as data to be safe, but wrapped in valid structure for internal use
-				payload = wSMessage{
-					Type: "data",
-					Data: message,
-				}
-			}
-
-			msgLen := len(payload.Data)
+			msgLen := len(message)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
-				Body: payload.Data,
+				Body: message,
 				Metadata: map[string]string{
 					metadataID:      c.id,
-					MetadataMsgKind: payload.Type,
+					MetadataMsgKind: c.kind,
 				},
 			}, c.mux); err != nil {
 				slog.ErrorContext(ctx, "websocket failed to publish message",
@@ -344,6 +316,7 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			Stream: stream,
 			mux:    mux,
 			ws:     ws,
+			kind:   "data",
 		}
 
 		// Read & Write
@@ -361,5 +334,63 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		wg.Wait()
 		activeUserDoneCh <- struct{}{}
 		activeUserWG.Wait()
+	})
+}
+
+// NewPingHandler provides an HTTP handler which handles a websocket for latency pings.
+// It requires a query param "shell_id" be specified (must be an integer).
+func NewPingHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Parse Shell ID
+		shellIDStr := r.URL.Query().Get("shell_id")
+		if shellIDStr == "" {
+			http.Error(w, "must provide integer value for 'shell_id'", http.StatusBadRequest)
+			return
+		}
+		shellID, err := strconv.Atoi(shellIDStr)
+		if err != nil {
+			http.Error(w, "invalid 'shell_id' provided, must be integer", http.StatusBadRequest)
+			return
+		}
+
+		// Check if shell exists (optional, but good for consistency)
+		exists, err := graph.Shell.Query().Where(shell.ID(shellID)).Exist(ctx)
+		if err != nil || !exists {
+			http.Error(w, "shell not found", http.StatusNotFound)
+			return
+		}
+
+		// Start Websocket
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+
+		// Initialize Stream
+		stream := New(shellIDStr)
+
+		// Create Connector
+		conn := &connector{
+			Stream: stream,
+			mux:    mux,
+			ws:     ws,
+			kind:   "ping",
+		}
+
+		// Read & Write
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			conn.ReadFromWebsocket(ctx)
+		}()
+		go func() {
+			defer wg.Done()
+			conn.WriteToWebsocket(ctx)
+		}()
+
+		wg.Wait()
 	})
 }
