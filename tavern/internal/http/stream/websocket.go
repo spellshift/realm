@@ -106,33 +106,6 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				)
 			}
 
-			// Flush queued messages to the current websocket message.
-			n := len(c.Messages())
-			for i := 0; i < n; i++ {
-				additionalMsg := <-c.Messages()
-				kind := additionalMsg.Metadata[MetadataMsgKind]
-				if kind == "" {
-					kind = "data"
-				}
-				payload := wSMessage{
-					Type: kind,
-					Data: additionalMsg.Body,
-				}
-				jsonPayload, err := json.Marshal(payload)
-				if err != nil {
-					slog.ErrorContext(ctx, "failed to marshal additional websocket payload", "error", err)
-					continue
-				}
-
-				if _, err := w.Write(jsonPayload); err != nil {
-					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
-						"stream_id", c.Stream.id,
-						"stream_order_key", c.Stream.orderKey,
-						"error", err,
-					)
-				}
-			}
-
 			if err := w.Close(); err != nil {
 				return
 			}
