@@ -45,3 +45,21 @@ implants/golem/embed_files_golem_prod/*
 
 .venv
 *.tfvars
+tavern/internal/www/build
+tavern/internal/www/build
+tavern/internal/www/build/
+tavern/internal/www/build/*
+tavern/internal/www/build
+build
+build/
+build/*
+tavern/internal/www/build/static
+tavern/internal/www/build/static/
+tavern/internal/www/build/static/*
+tavern/internal/www/build/static/js
+tavern/internal/www/build/static/js/
+tavern/internal/www/build/static/js/*
+tavern/internal/www/build/**
+tavern/internal/www/build/static/js/*.js
+tavern/internal/www/build/static/js/*.map
+tavern/internal/www/build/static/js/**
