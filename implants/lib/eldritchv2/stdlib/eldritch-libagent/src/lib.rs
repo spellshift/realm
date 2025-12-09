@@ -270,7 +270,6 @@ pub trait AgentLibrary {
     /// - Returns an error string if the interval cannot be retrieved.
     fn get_callback_interval(&self) -> Result<i64, String>;
 
-    #[cfg(feature = "stdlib")]
     #[eldritch_method]
     /// Sets the callback interval for the agent.
     ///
