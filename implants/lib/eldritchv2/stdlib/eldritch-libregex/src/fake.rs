@@ -1,8 +1,7 @@
-
+use super::RegexLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
-use super::RegexLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(RegexLibrary)]
@@ -38,11 +37,11 @@ impl RegexLibrary for RegexLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_regex_fake() {
-        let regex = RegexLibraryFake::default();
+        let regex = RegexLibraryFake;
         assert!(regex
             .match_all("foo".into(), "bar".into())
             .unwrap()

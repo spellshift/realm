@@ -1,10 +1,9 @@
-
-use eldritch_core::Value;
+use super::ReportLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
-use super::ReportLibrary;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(ReportLibrary)]
@@ -30,11 +29,11 @@ impl ReportLibrary for ReportLibraryFake {
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod tests {
-
+    use super::*;
 
     #[test]
     fn test_report_fake() {
-        let report = ReportLibraryFake::default();
+        let report = ReportLibraryFake;
         report.file("path".into()).unwrap();
     }
 }

@@ -12,6 +12,10 @@ Welcome to our repository! Most commands need to be run from the root of the pro
 
 To run all Golang tests in our repository, please run `go test ./...` from the project root.
 
+## Implant Tests
+
+To run all Rust tests for our implants, please run `cargo test` from our `implants` directory. Any new Rust code added should rely on workspace dependencies and be able to be built and tested from the workspace root.
+
 ## Code Generation
 
 This project heavily relies on generated code. When making changes to ent schemas, GraphQL, or user interface / front-end changes in the `tavern/internal/www/` directory, you will need to run `go generate ./...` from the project root directory to re-generate some critical files.

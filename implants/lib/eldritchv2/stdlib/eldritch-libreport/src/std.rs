@@ -4,11 +4,8 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::eldritch_library_impl;
-
-#[cfg(feature = "stdlib")]
 use eldritch_libagent::agent::Agent;
-#[cfg(feature = "stdlib")]
+use eldritch_macros::eldritch_library_impl;
 use pb::{c2, eldritch};
 
 #[eldritch_library_impl(ReportLibrary)]
@@ -55,12 +52,36 @@ impl ReportLibrary for StdReportLibrary {
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {
         let mut processes = Vec::new();
         for d in list {
-            let pid = d.get("pid").and_then(|v| match v { Value::Int(i) => Some(*i as u64), _ => None }).unwrap_or(0);
-            let ppid = d.get("ppid").and_then(|v| match v { Value::Int(i) => Some(*i as u64), _ => None }).unwrap_or(0);
+            let pid = d
+                .get("pid")
+                .and_then(|v| match v {
+                    Value::Int(i) => Some(*i as u64),
+                    _ => None,
+                })
+                .unwrap_or(0);
+            let ppid = d
+                .get("ppid")
+                .and_then(|v| match v {
+                    Value::Int(i) => Some(*i as u64),
+                    _ => None,
+                })
+                .unwrap_or(0);
             let name = d.get("name").map(|v| v.to_string()).unwrap_or_default();
-            let principal = d.get("user").or_else(|| d.get("principal")).map(|v| v.to_string()).unwrap_or_default();
-            let path = d.get("path").or_else(|| d.get("exe")).map(|v| v.to_string()).unwrap_or_default();
-            let cmd = d.get("cmd").or_else(|| d.get("command")).map(|v| v.to_string()).unwrap_or_default();
+            let principal = d
+                .get("user")
+                .or_else(|| d.get("principal"))
+                .map(|v| v.to_string())
+                .unwrap_or_default();
+            let path = d
+                .get("path")
+                .or_else(|| d.get("exe"))
+                .map(|v| v.to_string())
+                .unwrap_or_default();
+            let cmd = d
+                .get("cmd")
+                .or_else(|| d.get("command"))
+                .map(|v| v.to_string())
+                .unwrap_or_default();
             let cwd = d.get("cwd").map(|v| v.to_string()).unwrap_or_default();
             let env = d.get("env").map(|v| v.to_string()).unwrap_or_default();
             // Ignoring status for now as mapping is not trivial without string-to-enum logic

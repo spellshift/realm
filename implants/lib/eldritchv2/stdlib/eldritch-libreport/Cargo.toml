@@ -15,5 +15,5 @@ spin = { version = "0.10.0", features = ["rwlock"] }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:eldritch-libagent", "dep:pb"]
+stdlib = ["dep:pb", "dep:eldritch-libagent", "eldritch-libagent/stdlib"]
 fake_bindings = []
