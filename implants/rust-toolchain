@@ -1,2 +1,6 @@
 [toolchain]
+<<<<<<< HEAD
 channel = "1.88.0"
+=======
+channel = "1.91.1"
+>>>>>>> 89560d96 (update rust fix failing CI (#1184))
