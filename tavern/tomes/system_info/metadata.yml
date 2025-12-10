@@ -1,0 +1,5 @@
+name: System Info
+description: Enumerate basic system info
+author: hulto
+tactic: RECON
+support_model: FIRST_PARTY
