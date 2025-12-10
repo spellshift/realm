@@ -4,6 +4,11 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `assert_eq(a, b)`: Aborts if `a` is not equal to `b`.
+///
+/// **Parameters**
+/// - `a` (Any): Left operand.
+/// - `b` (Any): Right operand.
 pub fn builtin_assert_eq(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 2 {
         return Err(format!(

@@ -7,6 +7,10 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `tuple([iterable])`: Creates a tuple.
+///
+/// If no argument is given, the constructor creates a new empty tuple.
+/// The argument must be an iterable if specified.
 pub fn builtin_tuple(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Tuple(Vec::new()));

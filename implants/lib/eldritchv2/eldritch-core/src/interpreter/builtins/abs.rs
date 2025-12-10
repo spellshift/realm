@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `abs(x)`: Returns the absolute value of a number.
+///
+/// **Parameters**
+/// - `x` (Int | Float): The number.
 pub fn builtin_abs(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(

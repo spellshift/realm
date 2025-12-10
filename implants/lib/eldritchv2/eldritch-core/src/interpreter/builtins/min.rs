@@ -7,6 +7,11 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `min(iterable)` or `min(arg1, arg2, *args)`: Returns the smallest item.
+///
+/// **Parameters**
+/// - `iterable` (Iterable): An iterable to search.
+/// - `arg1, arg2, *args` (Any): Two or more arguments to compare.
 pub fn builtin_min(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Err("min expected at least 1 argument, got 0".to_string());

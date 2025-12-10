@@ -1,6 +1,6 @@
 use super::ast::Stmt;
-use super::token::{Token, TokenKind};
-use alloc::string::{String, ToString};
+use super::token::{Span, Token, TokenKind};
+use super::interpreter::error::{EldritchError, EldritchErrorKind};
 use alloc::vec::Vec;
 
 pub mod expr;
@@ -41,14 +41,28 @@ impl Parser {
         &self.tokens[self.current - 1]
     }
 
-    pub(crate) fn consume<F>(&mut self, check_fn: F, msg: &str) -> Result<&Token, String>
+    pub(crate) fn error<T>(&self, msg: &str) -> Result<T, EldritchError> {
+        let span = if self.current < self.tokens.len() {
+             self.tokens[self.current].span
+        } else {
+             // Use last token span or dummy
+             if let Some(last) = self.tokens.last() {
+                 last.span
+             } else {
+                 Span::new(0,0,0)
+             }
+        };
+        Err(EldritchError::new(EldritchErrorKind::SyntaxError, msg, span))
+    }
+
+    pub(crate) fn consume<F>(&mut self, check_fn: F, msg: &str) -> Result<&Token, EldritchError>
     where
         F: Fn(&TokenKind) -> bool,
     {
         if check_fn(&self.peek().kind) {
             Ok(self.advance())
         } else {
-            Err(msg.to_string())
+            self.error(msg)
         }
     }
 
@@ -69,7 +83,7 @@ impl Parser {
         matches!(self.tokens[self.current].kind, TokenKind::Eof)
     }
 
-    pub fn parse(&mut self) -> Result<Vec<Stmt>, String> {
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, EldritchError> {
         let mut statements = Vec::new();
         while !self.is_at_end() {
             while matches!(self.peek().kind, TokenKind::Newline) {
@@ -84,7 +98,7 @@ impl Parser {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    pub(crate) fn validate_assignment_target(&self, expr: &super::ast::Expr) -> Result<(), String> {
+    pub(crate) fn validate_assignment_target(&self, expr: &super::ast::Expr) -> Result<(), EldritchError> {
         use super::ast::ExprKind;
         match &expr.kind {
             ExprKind::Identifier(_) => Ok(()),
@@ -97,7 +111,7 @@ impl Parser {
                 }
                 Ok(())
             }
-            _ => Err("Invalid assignment target".to_string()),
+            _ => Err(EldritchError::new(EldritchErrorKind::SyntaxError, "Invalid assignment target", expr.span)),
         }
     }
 }

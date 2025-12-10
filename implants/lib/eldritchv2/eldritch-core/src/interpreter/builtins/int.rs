@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `int(x)`: Converts a number or string to an integer.
+///
+/// If x is a number, return x.__int__(). For floating point numbers, this truncates towards zero.
+/// If x is not a number or if base is given, then x must be a string, bytes, or bytearray instance representing an integer literal in the given base.
 pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Int(0));

@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `any(iterable)`: Returns True if any element of the iterable is true.
+///
+/// **Parameters**
+/// - `iterable` (Iterable): The iterable to check.
 pub fn builtin_any(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(

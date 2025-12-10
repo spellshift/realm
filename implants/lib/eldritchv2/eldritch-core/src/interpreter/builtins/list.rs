@@ -7,6 +7,10 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `list([iterable])`: Creates a list.
+///
+/// If no argument is given, the constructor creates a new empty list.
+/// The argument must be an iterable if specified.
 pub fn builtin_list(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::List(Arc::new(RwLock::new(Vec::new()))));

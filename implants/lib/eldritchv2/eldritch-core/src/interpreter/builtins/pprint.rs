@@ -5,6 +5,10 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use spin::RwLock;
 
+/// `pprint(object, indent=2)`: Pretty-prints an object.
+///
+/// Prints the object in a formatted, readable way with indentation.
+/// Useful for debugging complex data structures like dictionaries and lists.
 pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     let indent_width = if args.len() > 1 {
         match args[1] {
