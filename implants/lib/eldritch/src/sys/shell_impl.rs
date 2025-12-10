@@ -18,7 +18,7 @@ use {
 
 use super::CommandOutput;
 
-pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict<'_>> {
+pub fn shell(starlark_heap: &'_ Heap, cmd: String) -> Result<Dict<'_>> {
     let cmd_res = handle_shell(cmd)?;
 
     let res = SmallMap::new();
@@ -205,8 +205,7 @@ func_shell("whoami")
         };
 
         #[starlark_module]
-        #[allow(clippy::needless_lifetimes)]
-        fn func_shell(builder: &mut GlobalsBuilder) {
+        fn func_shell(_builder: &mut GlobalsBuilder) {
             fn func_shell<'v>(starlark_heap: &'v Heap, cmd: String) -> anyhow::Result<Dict<'v>> {
                 shell(starlark_heap, cmd)
             }

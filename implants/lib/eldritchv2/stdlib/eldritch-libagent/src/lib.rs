@@ -27,6 +27,9 @@ use conversion::*;
 #[cfg(not(feature = "stdlib"))]
 use conversion_fake::*;
 
+#[cfg(test)]
+mod tests;
+
 // Re-export wrappers so modules can use them (but they are internal to crate if not pub)
 // Wait, `conversion` and `conversion_fake` define public structs.
 // We need to make sure they are accessible.

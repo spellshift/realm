@@ -3,6 +3,8 @@ use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
+use alloc::collections::BTreeMap;
+#[cfg(feature = "stdlib")]
 use pb::c2;
 
 #[cfg(feature = "stdlib")]
@@ -19,6 +21,7 @@ pub trait Agent: Send + Sync {
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String>;
 
     // Agent Configuration
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String>;
     fn get_transport(&self) -> Result<String, String>;
     fn set_transport(&self, transport: String) -> Result<(), String>;
     fn add_transport(&self, transport: String, config: String) -> Result<(), String>;

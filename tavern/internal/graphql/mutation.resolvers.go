@@ -27,6 +27,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	client := tx.Client()
 
 	// Delete relevant ents
+	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
+	}
 	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
 	}
@@ -60,7 +63,7 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 // CreateQuest is the resolver for the createQuest field.
 func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error) {
 	// Ensure at least one Beacon ID provided
-	if beaconIDs == nil || len(beaconIDs) < 1 {
+	if len(beaconIDs) < 1 {
 		return nil, fmt.Errorf("must provide at least one beacon id")
 	}
 

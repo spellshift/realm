@@ -70,3 +70,48 @@ impl ProcessLibrary for ProcessLibraryFake {
         Ok(vec![conn])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fake_process_list() {
+        let lib = ProcessLibraryFake;
+        let list = lib.list().unwrap();
+        assert_eq!(list.len(), 3);
+        assert_eq!(list[0].get("name"), Some(&Value::String("init".into())));
+        assert_eq!(list[1].get("name"), Some(&Value::String("bash".into())));
+        assert_eq!(list[2].get("name"), Some(&Value::String("eldritch".into())));
+    }
+
+    #[test]
+    fn test_fake_process_info() {
+        let lib = ProcessLibraryFake;
+        let info = lib.info(Some(123)).unwrap(); // PID doesn't matter for fake
+        assert_eq!(info.get("name"), Some(&Value::String("init".into())));
+        assert_eq!(info.get("pid"), Some(&Value::Int(1)));
+    }
+
+    #[test]
+    fn test_fake_process_name() {
+        let lib = ProcessLibraryFake;
+        let name = lib.name(123).unwrap();
+        assert_eq!(name, "fake-process");
+    }
+
+    #[test]
+    fn test_fake_process_kill() {
+        let lib = ProcessLibraryFake;
+        // Should always succeed
+        assert!(lib.kill(123).is_ok());
+    }
+
+    #[test]
+    fn test_fake_process_netstat() {
+        let lib = ProcessLibraryFake;
+        let netstat = lib.netstat().unwrap();
+        assert_eq!(netstat.len(), 1);
+        assert_eq!(netstat[0].get("local_port"), Some(&Value::Int(80)));
+    }
+}

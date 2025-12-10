@@ -7,7 +7,7 @@ use starlark::{
 };
 use sysinfo::{PidExt, ProcessExt, System, SystemExt, UserExt};
 
-pub fn list(starlark_heap: &Heap) -> Result<Vec<Dict<'_>>> {
+pub fn list(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
     if !System::IS_SUPPORTED {
         return Err(anyhow::anyhow!(
             "This OS isn't supported for process functions.

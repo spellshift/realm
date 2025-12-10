@@ -4,14 +4,14 @@ use starlark::values::{dict::Dict, Heap};
 use starlark::{collections::SmallMap, values::Value};
 
 #[cfg(not(target_os = "windows"))]
-pub fn get_reg(_starlark_heap: &Heap, _reghive: String, _regpath: String) -> Result<Dict<'_>> {
+pub fn get_reg(_starlark_heap: &'_ Heap, _reghive: String, _regpath: String) -> Result<Dict<'_>> {
     Err(anyhow::anyhow!(
         "This OS isn't supported by the get_reg function. Only windows systems are supported"
     ))
 }
 
 #[cfg(target_os = "windows")]
-pub fn get_reg(starlark_heap: &Heap, reghive: String, regpath: String) -> Result<Dict<'_>> {
+pub fn get_reg(starlark_heap: &'_ Heap, reghive: String, regpath: String) -> Result<Dict<'_>> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 

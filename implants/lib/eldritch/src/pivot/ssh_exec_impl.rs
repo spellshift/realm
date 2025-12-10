@@ -48,7 +48,7 @@ async fn handle_ssh_exec(
 
 #[allow(clippy::too_many_arguments)]
 pub fn ssh_exec(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     target: String,
     port: i32,
     command: String,

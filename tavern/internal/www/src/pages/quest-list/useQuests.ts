@@ -1,78 +1,85 @@
 import { useQuery } from "@apollo/client";
-import { useCallback, useEffect,  useState } from "react";
-import { TableRowLimit } from "../../utils/enums";
-import { GET_QUEST_BY_ID_QUERY, GET_QUEST_QUERY } from "../../utils/queries";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageNavItem, TableRowLimit } from "../../utils/enums";
+import { GET_QUEST_QUERY } from "../../utils/queries";
 import { Filters, useFilters } from "../../context/FilterContext";
 import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
+import { Cursor, GetQuestQueryVariables, OrderByField, QuestQueryTopLevel } from "../../utils/interfacesQuery";
+import { useSorts } from "../../context/SortContext";
 
-export const useQuests = (pagination: boolean, id?: string) => {
+export const useQuests = (pagination: boolean) => {
     const [page, setPage] = useState<number>(1);
-    const {filters} = useFilters();
+    const { filters } = useFilters();
+    const { sorts } = useSorts();
 
-    const constructDefaultQuery = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined, filters?: Filters) => {
+    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters, sort?: OrderByField): GetQuestQueryVariables => {
         const defaultRowLimit = TableRowLimit.QuestRowLimit;
-        const filterQueryFields = (filters && filters.filtersEnabled) && constructTaskFilterQuery(filters);
+        const filterQueryFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
 
-        const query = {
-          "where": {
-            ...(id && {"id": id}),
-            ...((filters?.filtersEnabled && filters.questName) && {
-              "nameContains": filters.questName
+        const query: GetQuestQueryVariables = {
+          where: {
+            ...(currentFilters?.filtersEnabled && currentFilters.questName && {
+              nameContains: currentFilters.questName
             }),
-            ...(filterQueryFields && filterQueryFields)
+            ...(filterQueryFields || {})
           },
-          "whereTotalTask": {
-            ...(filterQueryFields && filterQueryFields.hasTasksWith)
+          whereTotalTask: {
+            ...(filterQueryFields?.hasTasksWith || {})
           },
-          "whereFinishedTask": {
-            "execFinishedAtNotNil": true,
-            ...(filterQueryFields && filterQueryFields.hasTasksWith)
+          whereFinishedTask: {
+            execFinishedAtNotNil: true,
+            ...(filterQueryFields?.hasTasksWith || {})
           },
-          "whereOutputTask":{
-            "outputSizeGT": 0,
-            ...(filterQueryFields && filterQueryFields.hasTasksWith)
+          whereOutputTask: {
+            outputSizeGT: 0,
+            ...(filterQueryFields?.hasTasksWith || {})
           },
-          "whereErrorTask": {
-            "errorNotNil": true,
-            ...(filterQueryFields && filterQueryFields.hasTasksWith)
+          whereErrorTask: {
+            errorNotNil: true,
+            ...(filterQueryFields?.hasTasksWith || {})
           },
           firstTask: 1,
-          orderByTask: [{
-            "direction": "DESC",
-            "field": "LAST_MODIFIED_AT"
-          }],
-          "orderBy": [{
-            "direction": "DESC",
-            "field": "CREATED_AT"
-          }]
-        } as any;
+          ...(sort && {orderBy: [sort]})
+        };
 
-        if(pagination){
-          query.first = beforeCursor ? null : defaultRowLimit;
-          query.last =  beforeCursor ? defaultRowLimit : null;
-          query.after = afterCursor ? afterCursor : null;
-          query.before = beforeCursor ? beforeCursor : null;
+        if (pagination) {
+          query.first = beforeCursor ? undefined : defaultRowLimit;
+          query.last = beforeCursor ? defaultRowLimit : undefined;
+          query.after = afterCursor || undefined;
+          query.before = beforeCursor || undefined;
         }
 
-        return query
-    },[pagination, id]);
+        return query;
+    }, [pagination]);
 
-    const { loading, data, error, refetch } = useQuery(
-      id ? GET_QUEST_BY_ID_QUERY : GET_QUEST_QUERY, {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true}
-      );
+    const questSort = sorts[PageNavItem.quests];
+    const queryVariables = useMemo(() => constructDefaultQuery(undefined, undefined, filters, questSort), [constructDefaultQuery, filters, questSort]);
 
-    const updateQuestList = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
-      const query = constructDefaultQuery(afterCursor, beforeCursor, filters);
-      refetch(query);
-    },[filters, constructDefaultQuery, refetch]);
+    const { loading, data, error, refetch } = useQuery<QuestQueryTopLevel>(
+      GET_QUEST_QUERY,
+      {
+        variables: queryVariables,
+        notifyOnNetworkStatusChange: true
+      }
+    );
 
-    useEffect(()=> {
+    const updateQuestList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
+      const query = constructDefaultQuery(afterCursor, beforeCursor, filters, questSort);
+      return refetch(query);
+    }, [filters, questSort, constructDefaultQuery, refetch]);
+
+    useEffect(() => {
+      const abortController = new AbortController();
       updateQuestList();
-    },[updateQuestList]);
 
-    useEffect(()=>{
+      return () => {
+        abortController.abort();
+      };
+    }, [updateQuestList]);
+
+    useEffect(() => {
       setPage(1);
-    },[filters])
+    }, [filters, questSort]);
 
     return {
         data,
@@ -81,5 +88,5 @@ export const useQuests = (pagination: boolean, id?: string) => {
         page,
         setPage,
         updateQuestList
-    }
-}
+    };
+};

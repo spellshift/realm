@@ -1,5 +1,5 @@
 import { Filters } from "../context/FilterContext";
-import { FilterBarOption } from "./consts";
+import { FilterBarOption } from "./interfacesUI";
 import { getFilterNameByTypes } from "./utils";
 
 export function constructTagQueryFormat(
@@ -30,9 +30,10 @@ export function constructHostFieldQuery(
     groups: Array<string>,
     services: Array<string>,
     platforms: Array<string>,
-    hosts: Array<string>
+    hosts: Array<string>,
+    primaryIP: Array<string>
   ){
-    if(hosts.length < 1 && groups.length < 1 && services.length < 1 && platforms.length < 1){
+    if(hosts.length < 1 && groups.length < 1 && services.length < 1 && platforms.length < 1 && primaryIP.length < 1){
       return null;
     }
 
@@ -40,22 +41,24 @@ export function constructHostFieldQuery(
       "hasHostWith": {
         "and": constructTagFieldsQuery(groups, services),
         ...(hosts.length > 0) && {"nameIn": hosts},
-        ...(platforms.length > 0) && {"platformIn": platforms}
+        ...(platforms.length > 0) && {"platformIn": platforms},
+        ...(primaryIP.length > 0) && {"primaryIPIn": primaryIP}
       }
     }
 };
 
 export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>){
-    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts} = getFilterNameByTypes(beaconFields);
-    const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts);
+    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP} = getFilterNameByTypes(beaconFields);
+    const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP);
 
-    if(beacons.length < 1 && !hostFiledQuery){
+    if(beacons.length < 1 && principal.length < 1 && !hostFiledQuery){
       return null;
     }
 
     return {
       "hasBeaconWith": {
           ...(beacons.length > 0 && {"nameIn": beacons}),
+          ...(principal.length > 0 && {"principalIn": principal}),
           ...hostFiledQuery
       }
     };

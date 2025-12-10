@@ -73,10 +73,11 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         };
         let mut stdout = BufWriter::new(stdout);
 
-        let _ = render(&mut stdout, &repl);
+        let _ = render(&mut stdout, &repl, None);
 
         // State machine for VT100 parsing
         let mut parser = InputParser::new();
+        let mut previous_buffer = String::new();
 
         while let Some(msg) = input_rx.blocking_recv() {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
@@ -107,7 +108,9 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                         // If we have a pending render from previous inputs, do it now
                         // before processing a non-render action (like Submit) which relies on visual state.
                         if pending_render {
-                            let _ = render(&mut stdout, &repl);
+                            let _ = render(&mut stdout, &repl, Some(previous_buffer.as_str()));
+                            // Update previous_buffer after render
+                            previous_buffer = repl.get_render_state().buffer;
                             pending_render = false;
                         }
 
@@ -127,27 +130,33 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                         }
                                     }
                                     Err(e) => {
-                                        let s = format!("Error: {e}\r\n");
-                                        let _ = stdout.write(s.as_bytes());
+                                        let s = format!("Error: {e}");
+                                        let s_crlf = s.replace('\n', "\r\n");
+                                        let final_s = format!("{s_crlf}\r\n");
+                                        let _ = stdout.write(final_s.as_bytes());
                                     }
                                 }
-                                let _ = render(&mut stdout, &repl);
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer.clear(); // Reset after submit
                             }
                             ReplAction::AcceptLine { .. } => {
                                 let _ = stdout.write_all(b"\r\n");
-                                let _ = render(&mut stdout, &repl);
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer.clear(); // Buffer is cleared in repl too
                             }
                             ReplAction::ClearScreen => {
                                 let _ = stdout.queue(terminal::Clear(terminal::ClearType::All));
                                 let _ = stdout.queue(cursor::MoveTo(0, 0));
-                                let _ = render(&mut stdout, &repl);
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer = repl.get_render_state().buffer;
                             }
                             ReplAction::Complete => {
                                 let state = repl.get_render_state();
                                 let (start, completions) =
                                     interpreter.complete(&state.buffer, state.cursor);
                                 repl.set_suggestions(completions, start);
-                                let _ = render(&mut stdout, &repl);
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer = repl.get_render_state().buffer;
                             }
                             ReplAction::None => {}
                             ReplAction::Render => unreachable!(),
@@ -157,7 +166,8 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
 
                 // If this is the last input and we have a pending render, flush it.
                 if i == inputs.len() - 1 && pending_render {
-                    let _ = render(&mut stdout, &repl);
+                    let _ = render(&mut stdout, &repl, Some(previous_buffer.as_str()));
+                    previous_buffer = repl.get_render_state().buffer;
                     pending_render = false;
                 }
             }

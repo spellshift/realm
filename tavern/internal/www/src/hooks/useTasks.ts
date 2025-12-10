@@ -1,16 +1,19 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../utils/enums";
+import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../utils/enums";
 import { GET_TASK_QUERY } from "../utils/queries";
 import { useFilters } from "../context/FilterContext";
 import { constructTaskFilterQuery } from "../utils/constructQueryUtils";
-
+import { Cursor } from "../utils/interfacesQuery";
+import { useSorts } from "../context/SortContext";
 
 export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
     const [page, setPage] = useState<number>(1);
     const {filters} = useFilters();
+    const { sorts } = useSorts();
+    const taskSort = sorts[PageNavItem.tasks];
 
-    const constructDefaultQuery = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
       const defaultRowLimit = TableRowLimit.TaskRowLimit;
       const filterQueryFields = (filters && filters.filtersEnabled) && constructTaskFilterQuery(filters);
 
@@ -23,10 +26,7 @@ export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
         "last": beforeCursor ? defaultRowLimit : null,
         "after": afterCursor ? afterCursor : null,
         "before": beforeCursor ? beforeCursor : null,
-        "orderBy": [{
-          "direction": "DESC",
-          "field": "LAST_MODIFIED_AT"
-        }]
+        ...(taskSort && {orderBy: [taskSort]})
       } as any;
 
       if(defaultQuery === DEFAULT_QUERY_TYPE.hostIDQuery && id){
@@ -35,24 +35,29 @@ export const useTasks = (defaultQuery?: DEFAULT_QUERY_TYPE, id?: string) => {
       }
 
       return query;
-    },[defaultQuery, id, filters]);
+    },[defaultQuery, id, filters, taskSort]);
 
 
     const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
 
-    const updateTaskList = useCallback((afterCursor?: string | undefined, beforeCursor?: string | undefined) => {
+    const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
-        refetch(query);
-    },[filters, constructDefaultQuery, refetch]);
+        return refetch(query);
+    },[constructDefaultQuery, refetch]);
 
 
     useEffect(()=> {
+        const abortController = new AbortController();
         updateTaskList();
+
+        return () => {
+            abortController.abort();
+        };
     },[updateTaskList]);
 
     useEffect(()=>{
       setPage(1);
-    },[filters])
+    },[filters, taskSort])
 
     return {
         data,

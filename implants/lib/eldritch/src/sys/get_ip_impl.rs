@@ -8,7 +8,11 @@ use starlark::{
 };
 use std::net::IpAddr;
 
-fn create_dict_from_interface(starlark_heap: &Heap, name: String, ip: IpAddr) -> Result<Dict<'_>> {
+fn create_dict_from_interface(
+    starlark_heap: &'_ Heap,
+    name: String,
+    ip: IpAddr,
+) -> Result<Dict<'_>> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut tmp_res = Dict::new(res);
 
@@ -18,7 +22,7 @@ fn create_dict_from_interface(starlark_heap: &Heap, name: String, ip: IpAddr) ->
     Ok(tmp_res)
 }
 
-pub fn get_ip(starlark_heap: &Heap) -> Result<Vec<Dict<'_>>> {
+pub fn get_ip(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
     let network_interfaces = list_afinet_netifas()?;
 
     let mut final_res: Vec<Dict> = Vec::new();
