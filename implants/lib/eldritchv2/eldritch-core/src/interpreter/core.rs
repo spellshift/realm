@@ -248,7 +248,7 @@ impl Interpreter {
         self.env.write().values.insert(name.to_string(), value);
     }
 
-    pub(crate) fn lookup_variable(&self, name: &str, span: Span) -> Result<Value, EldritchError> {
+    pub fn lookup_variable(&self, name: &str, span: Span) -> Result<Value, EldritchError> {
         let mut current_env = Some(self.env.clone());
         while let Some(env_arc) = current_env {
             let env_ref = env_arc.read();

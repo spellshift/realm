@@ -169,7 +169,8 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn list(&self, path: String) -> Result<Vec<BTreeMap<String, Value>>, String> {
+    fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let path = path.unwrap_or_else(|| "/".to_string());
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
@@ -363,7 +364,7 @@ mod tests {
         assert_eq!(file.read("/tmp/test.txt".into()).unwrap(), "hello");
 
         // List
-        let items = file.list("/home/user".into()).unwrap();
+        let items = file.list(Some("/home/user".into())).unwrap();
         assert!(items
             .iter()
             .any(|x| x.get("file_name").unwrap().to_string() == "notes.txt"));

@@ -93,8 +93,8 @@ pub fn write_reg_int(
 mod tests {
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn test_write_reg_int() -> anyhow::Result<()> {
-        #[cfg(target_os = "windows")]
         {
             use super::*;
             use uuid::Uuid;
@@ -297,5 +297,19 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_write_reg_int_non_windows() {
+        let res = super::write_reg_int(
+            "HKEY_CURRENT_USER".into(),
+            "SOFTWARE".into(),
+            "foo".into(),
+            "REG_SZ".into(),
+            123,
+        );
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
     }
 }

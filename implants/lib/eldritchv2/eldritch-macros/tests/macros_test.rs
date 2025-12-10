@@ -131,6 +131,36 @@ mod tests {
         }
     }
 
+    // --- Library 3: Interpreter Access ---
+    #[eldritch_library("interp_test")]
+    pub trait LibInterp {
+        #[eldritch_method]
+        fn set_var(&self, interp: &mut Interpreter, name: &str, val: i64) -> Result<(), String>;
+
+        #[eldritch_method]
+        fn get_var(&self, interp: &mut Interpreter, name: &str) -> Result<i64, String>;
+    }
+
+    #[derive(Debug, Default, Clone)]
+    #[eldritch_library_impl(LibInterp)]
+    struct MockInterp;
+
+    impl LibInterp for MockInterp {
+        fn set_var(&self, interp: &mut Interpreter, name: &str, val: i64) -> Result<(), String> {
+            interp.define_variable(name, Value::Int(val));
+            Ok(())
+        }
+
+        fn get_var(&self, interp: &mut Interpreter, name: &str) -> Result<i64, String> {
+            let val = interp.lookup_variable(name, eldritch_core::Span::new(0, 0, 0))
+                .map_err(|e| e.to_string())?;
+            match val {
+                Value::Int(i) => Ok(i),
+                _ => Err("Not an int".to_string()),
+            }
+        }
+    }
+
     #[test]
     fn test_macros_integration() {
         // --- Test 1: MockFS ---
@@ -271,6 +301,26 @@ mod tests {
             } else {
                 panic!("Expected List, got {res:?}");
             }
+        }
+
+        // --- Test 7: Interpreter Access ---
+        {
+            let mock = MockInterp;
+            let mut interp = Interpreter::new();
+            interp.register_lib(mock);
+
+            // Set a variable via library
+            let code = "interp_test.set_var(\"my_var\", 42)";
+            interp.interpret(code).unwrap();
+
+            // Check var existence in environment
+            let val = interp.lookup_variable("my_var", eldritch_core::Span::new(0, 0, 0)).unwrap();
+            assert_eq!(val, Value::Int(42));
+
+            // Get var via library
+            let code = "interp_test.get_var(\"my_var\")";
+            let res = interp.interpret(code).unwrap();
+            assert_eq!(res, Value::Int(42));
         }
     }
 }

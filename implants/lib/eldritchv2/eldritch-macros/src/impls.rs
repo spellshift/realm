@@ -100,6 +100,7 @@ pub fn expand_eldritch_library(
     trait_def.items.push(parse_quote! {
         fn _eldritch_call_method(
             &self,
+            interp: &mut eldritch_core::Interpreter,
             name: &str,
             _eldritch_args: &[eldritch_core::Value],
             _eldritch_kwargs: &alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>,
@@ -142,11 +143,12 @@ pub fn expand_eldritch_library_impl(
 
             fn call_method(
                 &self,
+                interp: &mut eldritch_core::Interpreter,
                 name: &str,
                 args: &[eldritch_core::Value],
                 kwargs: &alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>,
             ) -> Result<eldritch_core::Value, alloc::string::String> {
-                <Self as #trait_ident>::_eldritch_call_method(self, name, args, kwargs)
+                <Self as #trait_ident>::_eldritch_call_method(self, interp, name, args, kwargs)
             }
         }
     })
@@ -157,6 +159,19 @@ fn is_option_type(ty: &Type) -> bool {
     if let Type::Path(type_path) = ty {
         if let Some(segment) = type_path.path.segments.last() {
             return segment.ident == "Option";
+        }
+    }
+    false
+}
+
+fn is_interpreter_type(ty: &Type) -> bool {
+    // Check if type is `Interpreter`, `&Interpreter`, or `&mut Interpreter`
+    // Or fully qualified `eldritch_core::Interpreter`
+    if let Type::Reference(type_ref) = ty {
+        if let Type::Path(type_path) = &*type_ref.elem {
+            if let Some(segment) = type_path.path.segments.last() {
+                return segment.ident == "Interpreter";
+            }
         }
     }
     false
@@ -175,6 +190,14 @@ fn generate_args_parsing(
             FnArg::Typed(pat_type) => {
                 let pat = &pat_type.pat;
                 let ty = &pat_type.ty;
+
+                // Check if this argument is the Interpreter
+                if is_interpreter_type(ty) {
+                    // Pass the interpreter instance
+                    call_args.push(quote!(interp));
+                    continue;
+                }
+
                 let arg_name_str = quote!(#pat).to_string();
 
                 // Detect &str

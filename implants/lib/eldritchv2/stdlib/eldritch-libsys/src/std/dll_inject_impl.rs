@@ -83,16 +83,22 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<()> {
     }
 }
 
-#[cfg(target_os = "windows")]
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(target_os = "windows")]
     use core::time;
+    #[cfg(target_os = "windows")]
     use std::{fs, path::Path, process::Command, thread};
+    #[cfg(target_os = "windows")]
     use sysinfo::{Pid, Signal};
+    #[cfg(target_os = "windows")]
     use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+    #[cfg(target_os = "windows")]
     use tempfile::NamedTempFile;
 
+    #[cfg(target_os = "windows")]
     #[test]
     fn test_dll_inject_simple() -> anyhow::Result<()> {
         const DLL_EXEC_WAIT_TIME: u64 = 5;
@@ -136,5 +142,13 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_dll_inject_non_windows() {
+        let res = dll_inject("foo".to_string(), 123);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
     }
 }

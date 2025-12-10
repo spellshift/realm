@@ -97,8 +97,8 @@ pub fn write_reg_str(
 mod tests {
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn test_write_reg_str() -> anyhow::Result<()> {
-        #[cfg(target_os = "windows")]
         {
             use super::*;
             use alloc::format;
@@ -302,5 +302,19 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_write_reg_str_non_windows() {
+        let res = super::write_reg_str(
+            "HKEY_CURRENT_USER".into(),
+            "SOFTWARE".into(),
+            "foo".into(),
+            "REG_SZ".into(),
+            "bar".into(),
+        );
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
     }
 }

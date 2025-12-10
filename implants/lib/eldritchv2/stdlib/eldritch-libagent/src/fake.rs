@@ -176,4 +176,10 @@ impl Agent for AgentFake {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
+
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("test".to_string(), "config".to_string());
+        Ok(map)
+    }
 }

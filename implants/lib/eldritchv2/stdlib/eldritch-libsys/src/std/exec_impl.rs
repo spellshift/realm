@@ -120,5 +120,44 @@ fn handle_exec(
 
 #[cfg(test)]
 mod tests {
-    // Tests omitted for brevity
+    use super::*;
+
+    #[test]
+    fn test_exec_simple() -> Result<()> {
+        #[cfg(target_os = "windows")]
+        let (cmd, args) = ("cmd.exe".to_string(), vec!["/C".to_string(), "echo".to_string(), "hello".to_string()]);
+        #[cfg(not(target_os = "windows"))]
+        let (cmd, args) = ("echo".to_string(), vec!["hello".to_string()]);
+
+        let res = exec(cmd, args, Some(false), None)?;
+        assert_eq!(res.get("status").unwrap(), &Value::Int(0));
+
+        let stdout = res.get("stdout").unwrap();
+        match stdout {
+            Value::String(s) => assert!(s.trim() == "hello"),
+            _ => panic!("Expected string stdout"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_exec_env() -> Result<()> {
+         #[cfg(target_os = "windows")]
+        let (cmd, args) = ("cmd.exe".to_string(), vec!["/C".to_string(), "echo".to_string(), "%MY_VAR%".to_string()]);
+        #[cfg(not(target_os = "windows"))]
+        let (cmd, args) = ("sh".to_string(), vec!["-c".to_string(), "echo $MY_VAR".to_string()]);
+
+        let mut env = BTreeMap::new();
+        env.insert("MY_VAR".to_string(), "my_value".to_string());
+
+        let res = exec(cmd, args, Some(false), Some(env))?;
+        assert_eq!(res.get("status").unwrap(), &Value::Int(0));
+
+        let stdout = res.get("stdout").unwrap();
+        match stdout {
+            Value::String(s) => assert!(s.trim() == "my_value"),
+            _ => panic!("Expected string stdout"),
+        }
+        Ok(())
+    }
 }

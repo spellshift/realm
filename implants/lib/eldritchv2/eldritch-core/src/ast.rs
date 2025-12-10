@@ -9,6 +9,9 @@ use core::cmp::Ordering;
 use core::fmt;
 use spin::RwLock;
 
+// Resolve circular reference for ForeignValue signature
+use crate::interpreter::Interpreter;
+
 #[derive(Debug)]
 pub struct Environment {
     pub parent: Option<Arc<RwLock<Environment>>>,
@@ -58,6 +61,7 @@ pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn method_names(&self) -> Vec<String>;
     fn call_method(
         &self,
+        interp: &mut Interpreter,
         name: &str,
         args: &[Value],
         kwargs: &BTreeMap<String, Value>,
