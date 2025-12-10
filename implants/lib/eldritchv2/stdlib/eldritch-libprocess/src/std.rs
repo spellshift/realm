@@ -221,14 +221,24 @@ mod tests {
 
         // Ensure current process is in list
         let my_pid = ::std::process::id() as i64;
-        let found = list.iter().any(|p| {
+        let my_process = list.iter().find(|p| {
             if let Some(Value::Int(pid)) = p.get("pid") {
                 *pid == my_pid
             } else {
                 false
             }
         });
-        assert!(found, "Current process not found in list");
+        assert!(my_process.is_some(), "Current process not found in list");
+
+        if let Some(process) = my_process {
+            // Check for expected fields
+            assert!(process.contains_key("pid"));
+            assert!(process.contains_key("ppid"));
+            assert!(process.contains_key("name"));
+            assert!(process.contains_key("path"));
+            assert!(process.contains_key("username"));
+            assert!(process.contains_key("status"));
+        }
     }
 
     #[test]
@@ -239,6 +249,23 @@ mod tests {
         let info = lib.info(Some(my_pid)).unwrap();
         assert_eq!(info.get("pid"), Some(&Value::Int(my_pid)));
         assert!(info.contains_key("name"));
+        assert!(info.contains_key("cmd"));
+        assert!(info.contains_key("exe"));
+        assert!(info.contains_key("environ"));
+        assert!(info.contains_key("cwd"));
+        assert!(info.contains_key("root"));
+        assert!(info.contains_key("memory_usage"));
+        assert!(info.contains_key("virtual_memory_usage"));
+        assert!(info.contains_key("ppid"));
+        assert!(info.contains_key("status"));
+        assert!(info.contains_key("start_time"));
+        assert!(info.contains_key("run_time"));
+
+        #[cfg(not(windows))]
+        {
+            assert!(info.contains_key("uid"));
+            assert!(info.contains_key("gid"));
+        }
 
         let name = lib.name(my_pid).unwrap();
         assert!(!name.is_empty());
@@ -281,5 +308,28 @@ mod tests {
         } else {
             // If sleep command not found, skip?
         }
+    }
+
+    #[test]
+    fn test_std_process_netstat() {
+        let lib = StdProcessLibrary;
+        // netstat relies on system permissions and open ports, so we just check it doesn't crash
+        // and returns a result (even empty).
+        let res = lib.netstat();
+        assert!(res.is_ok());
+        let connections = res.unwrap();
+        // Just print length to ensure it ran
+        println!("Found {} connections", connections.len());
+    }
+
+    #[test]
+    fn test_std_process_errors() {
+        let lib = StdProcessLibrary;
+        // Using a very large PID that shouldn't exist
+        let invalid_pid = 999999999;
+
+        assert!(lib.info(Some(invalid_pid)).is_err());
+        assert!(lib.name(invalid_pid).is_err());
+        assert!(lib.kill(invalid_pid).is_err());
     }
 }
