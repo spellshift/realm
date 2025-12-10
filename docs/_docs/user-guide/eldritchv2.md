@@ -1133,6 +1133,34 @@ It supports:
     **Errors**
     - Returns an error string if encryption fails (e.g., incorrect key length).
 
+*   **`crypto.aes_decrypt_file`**
+    Decrypts a file using AES.
+
+    **Parameters**
+    - `src` (`str`): The source file path.
+    - `dst` (`str`): The destination file path.
+    - `key` (`str`): The decryption key.
+
+    **Returns**
+    - `None`
+
+    **Errors**
+    - Returns an error string if decryption fails or file operations fail.
+
+*   **`crypto.aes_encrypt_file`**
+    Encrypts a file using AES.
+
+    **Parameters**
+    - `src` (`str`): The source file path.
+    - `dst` (`str`): The destination file path.
+    - `key` (`str`): The encryption key.
+
+    **Returns**
+    - `None`
+
+    **Errors**
+    - Returns an error string if encryption fails or file operations fail.
+
 *   **`crypto.md5`**
     Calculates the MD5 hash of the provided data.
     
