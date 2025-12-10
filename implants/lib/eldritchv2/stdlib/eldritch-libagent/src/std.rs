@@ -36,7 +36,19 @@ impl StdAgentLibrary {
 
 impl AgentLibrary for StdAgentLibrary {
     fn get_config(&self) -> Result<BTreeMap<String, Value>, String> {
-        Err("get_config not implemented".to_string())
+        let config = self.agent.get_config()?;
+        let mut result = BTreeMap::new();
+        for (k, v) in config {
+            // Try to parse numbers, otherwise keep as string
+            if let Ok(i) = v.parse::<i64>() {
+                result.insert(k, Value::Int(i));
+            } else if let Ok(b) = v.parse::<bool>() {
+                result.insert(k, Value::Bool(b));
+            } else {
+                result.insert(k, Value::String(v));
+            }
+        }
+        Ok(result)
     }
 
     fn get_id(&self) -> Result<String, String> {

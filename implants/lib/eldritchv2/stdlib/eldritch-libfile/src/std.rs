@@ -1017,6 +1017,7 @@ cb
         Ok(())
     }
 
+    #[test]
     fn test_timestomp() -> AnyhowResult<()> {
         let lib = StdFileLibrary;
         let tmp = NamedTempFile::new()?;
@@ -1075,6 +1076,163 @@ cb
         let final_mtime = final_meta.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs();
 
         assert_eq!(final_mtime, ref_mtime);
+        Ok(())
+    }
+
+    #[test]
+    fn test_find() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp_dir = tempfile::tempdir()?;
+        let base_path = tmp_dir.path();
+
+        // Setup directory structure
+        let dir1 = base_path.join("dir1");
+        fs::create_dir(&dir1)?;
+        let file1 = base_path.join("file1.txt");
+        fs::write(&file1, "content1")?;
+        let file2 = dir1.join("file2.log");
+        fs::write(&file2, "content2")?;
+        let file3 = dir1.join("file3.txt");
+        fs::write(&file3, "content3")?;
+
+        let base_path_str = base_path.to_string_lossy().to_string();
+
+        // 1. Basic list all
+        let res = lib.find(base_path_str.clone(), None, None, None, None, None).unwrap();
+        // Should contain file1, file2, file3. Might contain dir1 too.
+        // Logic says: `if path.is_dir() { recurse } if check_path() { push }`
+        // check_path without filters returns true. So it should return dirs too.
+        assert!(res.iter().any(|p| p.contains("file1.txt")));
+        assert!(res.iter().any(|p| p.contains("file2.log")));
+        assert!(res.iter().any(|p| p.contains("dir1")));
+
+        // 2. Name filter
+        let res = lib.find(base_path_str.clone(), Some(".txt".to_string()), None, None, None, None).unwrap();
+        assert!(res.iter().any(|p| p.contains("file1.txt")));
+        assert!(res.iter().any(|p| p.contains("file3.txt")));
+        assert!(!res.iter().any(|p| p.contains("file2.log")));
+
+        // 3. Type filter
+        let res = lib.find(base_path_str.clone(), None, Some("file".to_string()), None, None, None).unwrap();
+        assert!(res.iter().all(|p| !Path::new(p).is_dir()));
+        assert!(res.iter().any(|p| p.contains("file1.txt")));
+
+        let res = lib.find(base_path_str.clone(), None, Some("dir".to_string()), None, None, None).unwrap();
+        assert!(res.iter().all(|p| Path::new(p).is_dir()));
+        assert!(res.iter().any(|p| p.contains("dir1")));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp = NamedTempFile::new()?;
+        let path = tmp.path().to_string_lossy().to_string();
+
+        fs::write(&path, "hello world hello universe")?;
+
+        // Replace first
+        lib.replace(path.clone(), "hello".to_string(), "hi".to_string()).unwrap();
+        let content = fs::read_to_string(&path)?;
+        assert_eq!(content, "hi world hello universe");
+
+        // Replace all
+        lib.replace_all(path.clone(), "hello".to_string(), "hi".to_string()).unwrap();
+        let content = fs::read_to_string(&path)?;
+        assert_eq!(content, "hi world hi universe");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_mkdir_parent() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp_dir = tempfile::tempdir()?;
+        let base_path = tmp_dir.path();
+
+        let sub_dir = base_path.join("sub/deep");
+        let sub_dir_str = sub_dir.to_string_lossy().to_string();
+
+        // Without parent=true, should fail
+        assert!(lib.mkdir(sub_dir_str.clone(), Some(false)).is_err());
+
+        // With parent=true, should succeed
+        lib.mkdir(sub_dir_str.clone(), Some(true)).unwrap();
+        assert!(sub_dir.exists());
+        assert!(sub_dir.is_dir());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parent_dir() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp_dir = tempfile::tempdir()?;
+        let base_path = tmp_dir.path();
+        let file_path = base_path.join("test.txt");
+
+        let parent = lib.parent_dir(file_path.to_string_lossy().to_string()).unwrap();
+        // parent_dir returns string of parent path
+        // On temp dir, it might be complex, but let's check it ends with what we expect or is equal
+        assert_eq!(parent, base_path.to_string_lossy().to_string());
+
+        // Test root parent (might fail on some envs if we can't read root, but logic should hold)
+        // If we pass "/", parent is None -> Error
+        #[cfg(unix)]
+        assert!(lib.parent_dir("/".to_string()).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_binary() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp = NamedTempFile::new()?;
+        let path = tmp.path().to_string_lossy().to_string();
+
+        let data = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        fs::write(&path, &data)?;
+
+        let read_data = lib.read_binary(path).unwrap();
+        assert_eq!(read_data, data);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp_dir = tempfile::tempdir()?;
+        let src = tmp_dir.path().join("src.txt");
+        let dst = tmp_dir.path().join("dst.txt");
+
+        fs::write(&src, "move me")?;
+
+        lib.move_(src.to_string_lossy().to_string(), dst.to_string_lossy().to_string()).unwrap();
+
+        assert!(!src.exists());
+        assert!(dst.exists());
+        assert_eq!(fs::read_to_string(dst)?, "move me");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_copy() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp_dir = tempfile::tempdir()?;
+        let src = tmp_dir.path().join("src.txt");
+        let dst = tmp_dir.path().join("dst.txt");
+
+        fs::write(&src, "copy me")?;
+
+        lib.copy(src.to_string_lossy().to_string(), dst.to_string_lossy().to_string()).unwrap();
+
+        assert!(src.exists());
+        assert!(dst.exists());
+        assert_eq!(fs::read_to_string(dst)?, "copy me");
+
         Ok(())
     }
 }
