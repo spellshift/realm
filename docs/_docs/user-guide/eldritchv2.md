@@ -1020,12 +1020,9 @@ It allows you to:
     - Returns an error string if the task cannot be stopped or does not exist.
 
 *   **`agent.eval`**
-    Evaluates the provided Eldritch code in a new interpreter instance.
+    Evaluates the provided Eldritch code using the current interpreter instance.
     
-    This method allows the agent to execute dynamic code. The new interpreter
-    has access to the agent library itself (enabling recursion), but does not
-    automatically inherit other standard libraries unless they are part of the
-    agent's context.
+    This method allows the agent to execute dynamic code within the current context.
     
     **Parameters**
     - `code` (`str`): The Eldritch code to evaluate.
@@ -1132,6 +1129,34 @@ It supports:
     
     **Errors**
     - Returns an error string if encryption fails (e.g., incorrect key length).
+
+*   **`crypto.aes_decrypt_file`**
+    Decrypts a file using AES.
+    
+    **Parameters**
+    - `src` (`str`): The source file path.
+    - `dst` (`str`): The destination file path.
+    - `key` (`str`): The decryption key.
+    
+    **Returns**
+    - `None`
+    
+    **Errors**
+    - Returns an error string if decryption fails or file operations fail.
+
+*   **`crypto.aes_encrypt_file`**
+    Encrypts a file using AES.
+    
+    **Parameters**
+    - `src` (`str`): The source file path.
+    - `dst` (`str`): The destination file path.
+    - `key` (`str`): The encryption key.
+    
+    **Returns**
+    - `None`
+    
+    **Errors**
+    - Returns an error string if encryption fails or file operations fail.
 
 *   **`crypto.md5`**
     Calculates the MD5 hash of the provided data.
@@ -1704,20 +1729,6 @@ It supports:
     **Errors**
     - Returns an error string if copy fails.
 
-*   **`pivot.smb_exec`**
-    **Experimental**: Executes a command via SMB.
-    
-    **Parameters**
-    - `target` (`str`): Target host.
-    - `port` (`int`): SMB port.
-    - `username` (`str`): Username.
-    - `password` (`str`): Password.
-    - `hash` (`str`): NTLM hash.
-    - `command` (`str`): Command to execute.
-    
-    **Returns**
-    - `str`: Command output.
-
 *   **`pivot.port_scan`**
     Scans TCP/UDP ports on target hosts.
     
@@ -1740,19 +1751,6 @@ It supports:
     **Returns**
     - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
 
-*   **`pivot.port_forward`**
-    Sets up a port forwarding rule.
-    
-    **Parameters**
-    - `listen_address` (`str`): Local address to bind.
-    - `listen_port` (`int`): Local port to listen on.
-    - `forward_address` (`str`): Remote address to forward to.
-    - `forward_port` (`int`): Remote port.
-    - `protocol` (`str`): Protocol (tcp/udp).
-    
-    **Returns**
-    - `None`
-
 *   **`pivot.ncat`**
     Sends arbitrary data to a host via TCP or UDP and waits for a response.
     
@@ -1764,18 +1762,6 @@ It supports:
     
     **Returns**
     - `str`: The response data.
-
-*   **`pivot.bind_proxy`**
-    Starts a SOCKS5 proxy server on the agent.
-    
-    **Parameters**
-    - `listen_address` (`str`): Address to bind.
-    - `listen_port` (`int`): Port to listen on.
-    - `username` (`str`): Proxy username (for auth).
-    - `password` (`str`): Proxy password.
-    
-    **Returns**
-    - `None`
 
 ### Process
 

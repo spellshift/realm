@@ -53,6 +53,7 @@ mod tests {
         fn add_transport(&self, _: String, _: String) -> Result<(), String> { Err("".into()) }
         fn list_transports(&self) -> Result<Vec<String>, String> { Err("".into()) }
         fn get_callback_interval(&self) -> Result<u64, String> { Err("".into()) }
+        fn set_callback_uri(&self, _: String) -> Result<(), String> { Err("".into()) }
         fn list_tasks(&self) -> Result<Vec<pb::c2::Task>, String> { Err("".into()) }
         fn stop_task(&self, _: i64) -> Result<(), String> { Err("".into()) }
     }
@@ -107,5 +108,28 @@ mod tests {
         } else {
             panic!("Interval should be an int");
         }
+    }
+
+    #[test]
+    fn test_eval_context() {
+        use eldritch_core::Interpreter;
+        let agent = Arc::new(MockAgent::new());
+        let lib = StdAgentLibrary::new(agent, 1);
+        let mut interp = Interpreter::new();
+        interp.register_lib(lib);
+
+        // Define a variable in outer scope
+        interp.interpret("x = 10").unwrap();
+
+        // Use eval to access it and modify it?
+        // eval runs in same interpreter, so it should see 'x'.
+        let res = interp.interpret("agent.eval('x + 5')").unwrap();
+        assert_eq!(res, Value::Int(15));
+
+        // Define variable inside eval
+        interp.interpret("agent.eval('y = 20')").unwrap();
+        // Check if visible outside (it should be, as it's the same env)
+        let res_y = interp.interpret("y").unwrap();
+        assert_eq!(res_y, Value::Int(20));
     }
 }

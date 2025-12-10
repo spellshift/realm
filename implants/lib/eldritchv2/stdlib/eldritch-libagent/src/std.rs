@@ -76,9 +76,8 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.set_callback_interval(interval as u64)
     }
 
-    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
-        // Not supported by Agent trait yet
-        Ok(())
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.agent.set_callback_uri(uri)
     }
 
     // Interactivity
@@ -167,11 +166,7 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.stop_task(task_id)
     }
 
-    fn eval(&self, code: String) -> Result<Value, String> {
-        let mut interp = Interpreter::new();
-        // Register a new StdAgentLibrary instance to allow recursion
-        let lib = StdAgentLibrary::new(self.agent.clone(), self.task_id);
-        interp.register_lib(lib);
+    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String> {
         interp.interpret(&code)
     }
 }

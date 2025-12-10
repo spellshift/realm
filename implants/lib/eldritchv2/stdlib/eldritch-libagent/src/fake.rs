@@ -104,9 +104,7 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 
-    fn eval(&self, code: String) -> Result<Value, String> {
-        let mut interp = Interpreter::new();
-        interp.register_lib(AgentLibraryFake::default());
+    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String> {
         interp.interpret(&code)
     }
 }
@@ -165,6 +163,9 @@ impl Agent for AgentFake {
         Ok(10)
     }
     fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
+        Ok(())
+    }
+    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {

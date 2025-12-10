@@ -196,6 +196,14 @@ impl Transport for GRPC {
     fn is_active(&self) -> bool {
         self.grpc.is_some()
     }
+
+    fn name(&self) -> &'static str {
+        "grpc"
+    }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["grpc".to_string()]
+    }
 }
 
 impl GRPC {
