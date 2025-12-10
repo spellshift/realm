@@ -80,7 +80,7 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let matches = lib.match_all(test_haystack, test_pattern).unwrap();
         assert_eq!(matches.len(), 1);
         assert_eq!(matches.first().unwrap(), "Frozen with snow.");
@@ -101,7 +101,7 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let matches = lib.match_all(test_haystack, test_pattern).unwrap();
         assert_eq!(matches.len(), 2);
         assert_eq!(matches.first().unwrap(), "That cannot fly.");
@@ -123,7 +123,7 @@ mod tests {
             Life is a barren field
             Frozen with snow"#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let matches = lib.match_all(test_haystack, test_pattern).unwrap();
         assert!(matches.is_empty());
     }
@@ -143,7 +143,7 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let m = lib.r#match(test_haystack, test_pattern).unwrap();
         assert_eq!(m, "That cannot fly.");
     }
@@ -163,7 +163,7 @@ mod tests {
             Life is a barren field
             Frozen with snow"#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let m = lib.r#match(test_haystack, test_pattern).unwrap();
         assert_eq!(m, "");
     }
@@ -183,7 +183,7 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let test_value = String::from("That cannot soar.");
         let m = lib
             .replace_all(test_haystack, test_pattern, test_value)
@@ -208,7 +208,7 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(That we may believe)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(That we may believe)$");
         let test_value = String::from("That cannot soar.");
         let m = lib
             .replace_all(test_haystack.clone(), test_pattern, test_value)
@@ -231,7 +231,7 @@ mod tests {
             Life is a barren field
             Frozen with snow."#,
         );
-        let test_pattern = String::from(r"(?m)^\s*(.+\.)$");
+        let test_pattern = String::from(r"(?m)^[ \t]*(.+\.)$");
         let test_value = String::from("That cannot soar.");
         let m = lib
             .replace(test_haystack, test_pattern, test_value)
@@ -258,5 +258,53 @@ mod tests {
             res.err().unwrap(),
             "only 1 capture group is supported but 2 given"
         );
+    }
+
+    #[test]
+    fn test_invalid_regex_match_all() {
+        let lib = StdRegexLibrary;
+        let res = lib.match_all("foo".into(), "[".into());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_invalid_regex_match() {
+        let lib = StdRegexLibrary;
+        let res = lib.r#match("foo".into(), "[".into());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_invalid_regex_replace_all() {
+        let lib = StdRegexLibrary;
+        let res = lib.replace_all("foo".into(), "[".into(), "bar".into());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_invalid_regex_replace() {
+        let lib = StdRegexLibrary;
+        let res = lib.replace("foo".into(), "[".into(), "bar".into());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_replace_all_multiple_occurrences() {
+        let lib = StdRegexLibrary;
+        let haystack = String::from("foo bar foo bar");
+        let pattern = String::from("foo");
+        let value = String::from("baz");
+        let res = lib.replace_all(haystack, pattern, value).unwrap();
+        assert_eq!(res, "baz bar baz bar");
+    }
+
+    #[test]
+    fn test_replace_multiple_occurrences() {
+        let lib = StdRegexLibrary;
+        let haystack = String::from("foo bar foo bar");
+        let pattern = String::from("foo");
+        let value = String::from("baz");
+        let res = lib.replace(haystack, pattern, value).unwrap();
+        assert_eq!(res, "baz bar foo bar");
     }
 }

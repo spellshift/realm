@@ -39,4 +39,26 @@ mod tests {
         assert!(rnd.bool().unwrap());
         assert_eq!(rnd.int(10, 20).unwrap(), 10);
     }
+
+    #[test]
+    fn test_bytes_fake() {
+        let rnd = RandomLibraryFake::default();
+        let b = rnd.bytes(5).unwrap();
+        assert_eq!(b.len(), 5);
+        assert_eq!(b, vec![0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_string_fake() {
+        let rnd = RandomLibraryFake::default();
+        let s = rnd.string(5, None).unwrap();
+        assert_eq!(s, "aaaaa");
+    }
+
+    #[test]
+    fn test_uuid_fake() {
+        let rnd = RandomLibraryFake::default();
+        let u = rnd.uuid().unwrap();
+        assert_eq!(u, "00000000-0000-0000-0000-000000000000");
+    }
 }
