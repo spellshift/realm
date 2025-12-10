@@ -76,9 +76,8 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.set_callback_interval(interval as u64)
     }
 
-    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
-        // Not supported by Agent trait yet
-        Ok(())
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.agent.set_callback_uri(uri)
     }
 
     // Interactivity

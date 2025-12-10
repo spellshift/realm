@@ -315,6 +315,14 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         })
     }
 
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            cfg.callback_uri = uri;
+            Ok(())
+        })
+    }
+
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
         Ok(self.task_registry.list())
     }

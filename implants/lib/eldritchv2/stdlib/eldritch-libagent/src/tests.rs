@@ -53,6 +53,7 @@ mod tests {
         fn add_transport(&self, _: String, _: String) -> Result<(), String> { Err("".into()) }
         fn list_transports(&self) -> Result<Vec<String>, String> { Err("".into()) }
         fn get_callback_interval(&self) -> Result<u64, String> { Err("".into()) }
+        fn set_callback_uri(&self, _: String) -> Result<(), String> { Err("".into()) }
         fn list_tasks(&self) -> Result<Vec<pb::c2::Task>, String> { Err("".into()) }
         fn stop_task(&self, _: i64) -> Result<(), String> { Err("".into()) }
     }

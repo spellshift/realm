@@ -170,6 +170,9 @@ impl Agent for AgentFake {
     fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
         Ok(())
     }
+    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
         Ok(Vec::new())
     }
