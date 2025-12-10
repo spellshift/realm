@@ -59,6 +59,13 @@ impl Agent for MockAgent {
         Ok(c2::ClaimTasksResponse { tasks: vec![] })
     }
 
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
+        Ok(BTreeMap::new())
+    }
+    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
     fn get_transport(&self) -> Result<String, String> {
         Ok("mock".to_string())
     }
