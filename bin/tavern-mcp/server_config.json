@@ -1,0 +1,19 @@
+{
+    "mcpServers": {
+      "tavern": {
+        "type": "stdio",
+        "command": "uv",
+        "args": [
+            "--directory", "/workspaces/realm/bin/tavern-mcp",
+            "run", "./tavern.py",
+            "--type", "stdio",
+            "--url", "https://example.com/graphql",
+            "--schema", "../../tavern/internal/graphql/schema.graphql"
+        ],
+        "env": {
+            "TAVERN_AUTH_SESSION": "bps...zlw==",
+            "PATH": "/workspaces/realm/bin/tavern-mcp/.venv/bin:/vscode/vscode-server/bin/linux-x64/4949701c880d4bdb949e3c0e6b400288da7f474b/bin/remote-cli:/home/vscode/.local/bin:/usr/local/cargo/bin:/usr/local/python/current/bin:/usr/local/py-utils/bin:/usr/local/jupyter:/usr/local/share/nvm/versions/node/v22.14.0/bin:/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/vscode/.vscode-server/extensions/ms-python.debugpy-2025.6.0-linux-x64/bundled/scripts/noConfigScripts:/home/vscode/.vscode-server/data/User/globalStorage/github.copilot-chat/debugCommand"
+        }
+      }
+    }
+  }

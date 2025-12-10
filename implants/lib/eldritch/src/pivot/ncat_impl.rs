@@ -60,9 +60,9 @@ async fn handle_ncat_timeout(
             String::from(String::from_utf8(response_buffer.to_vec())?.trim_matches(char::from(0)));
         Ok(result_string)
     } else {
-        return Err(anyhow::anyhow!(
+        Err(anyhow::anyhow!(
             "Protocol not supported please use: udp or tcp."
-        ));
+        ))
     }
 }
 

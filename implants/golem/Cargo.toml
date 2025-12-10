@@ -1,6 +1,6 @@
 [package]
 name = "golem"
-version = "0.0.5"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
@@ -23,3 +23,7 @@ lsp-types = { workspace = true }
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 tempfile = { workspace = true }
+
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+static_vcruntime = { workspace = true }

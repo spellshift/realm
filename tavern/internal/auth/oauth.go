@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -50,7 +50,7 @@ func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Ha
 		// Redirect to identity provider
 		http.Redirect(w, req, url, http.StatusFound)
 
-		log.Printf("[INFO] [OAuth] starting flow for new login")
+		slog.Info("oauth: starting flow for new login")
 	})
 }
 
@@ -103,7 +103,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		code := req.FormValue("code")
 		accessToken, err := cfg.Exchange(req.Context(), code)
 		if err != nil {
-			log.Printf("[ERROR] [OAuth] failed to exchange auth code for an access token: %v", err)
+			slog.ErrorContext(req.Context(), "oauth failed to exchange auth code for an access token", "err", err)
 			http.Error(w, ErrOAuthExchangeFailed.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -112,7 +112,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		client := cfg.Client(req.Context(), accessToken)
 		resp, err := client.Get(profileURL)
 		if err != nil {
-			log.Printf("[ERROR] [OAuth] failed to obtain profile info: %v", err)
+			slog.ErrorContext(req.Context(), "oauth failed to obtain profile info", "err", err)
 			http.Error(w, ErrOAuthFailedToObtainProfileInfo.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -128,12 +128,12 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		}
 		decoder := json.NewDecoder(resp.Body)
 		if err := decoder.Decode(&profile); err != nil {
-			log.Printf("[ERROR] [OAuth] failed to parse profile info: %v", err)
+			slog.ErrorContext(req.Context(), "oauth failed to parse profile info", "err", err)
 			http.Error(w, ErrOAuthFailedToParseProfileInfo.Error(), http.StatusInternalServerError)
 			return
 		}
 		if profile.OAuthID == "" {
-			log.Printf("[ERROR] [OAuth] profile info was missing OAuthID")
+			slog.ErrorContext(req.Context(), "oauth profile info was missing oauth id")
 			http.Error(w, ErrOAuthInvalidProfileInfo.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -150,14 +150,14 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 				HttpOnly: true,
 				Expires:  time.Now().AddDate(0, 1, 0),
 			})
-			log.Printf("[INFO] [OAuth] new login for user %q", usr.Name)
+			slog.InfoContext(req.Context(), "oauth new login", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
 			http.Redirect(w, req, "/", http.StatusFound)
 			return
 		}
 
 		// If we encountered a DB error, fail
 		if !ent.IsNotFound(err) {
-			log.Printf("[ERROR] [OAuth] failed to lookup user profile: %v", err)
+			slog.ErrorContext(req.Context(), "oauth failed to lookup user profile", "err", err, "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
 			http.Error(w, ErrOAuthFailedUserLookup.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -180,7 +180,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			HttpOnly: true,
 			Expires:  time.Now().AddDate(0, 1, 0),
 		})
-		log.Printf("[INFO] [OAuth] registered new user %q", usr.Name)
+		slog.InfoContext(req.Context(), "oauth registered new user %q", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
 		http.Redirect(w, req, "/", http.StatusFound)
 	})
 }

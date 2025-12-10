@@ -9,10 +9,16 @@ requestor:
 query: |
   query Files {
     files {
-      id
+      edges {
+        node {
+          id
+        }
+      }
     }
   }
 
 expected:
   files:
-    - id: "3000"
+    edges:
+      - node:
+          id: "3000"

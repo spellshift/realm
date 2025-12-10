@@ -1,34 +1,36 @@
-use crate::{config::Config, task::TaskHandle};
+use crate::task::TaskHandle;
 use anyhow::Result;
-use pb::c2::ClaimTasksRequest;
+use pb::{c2::ClaimTasksRequest, config::Config};
 use std::time::{Duration, Instant};
-use transport::{Transport, GRPC};
+use transport::Transport;
 
 /*
  * Agent contains all relevant logic for managing callbacks to a c2 server.
  * It is responsible for obtaining tasks, executing them, and returning their output.
  */
-pub struct Agent {
+pub struct Agent<T: Transport> {
     cfg: Config,
     handles: Vec<TaskHandle>,
+    t: T,
 }
 
-impl Agent {
+impl<T: Transport + 'static> Agent<T> {
     /*
      * Initialize an agent using the provided configuration.
      */
-    pub fn new(cfg: Config) -> Result<Self> {
+    pub fn new(cfg: Config, t: T) -> Result<Self> {
         Ok(Agent {
             cfg,
             handles: Vec::new(),
+            t,
         })
     }
 
     // Claim tasks and start their execution
-    async fn claim_tasks(&mut self, mut tavern: GRPC) -> Result<()> {
+    async fn claim_tasks(&mut self, mut tavern: T) -> Result<()> {
         let tasks = tavern
             .claim_tasks(ClaimTasksRequest {
-                beacon: Some(self.cfg.info.clone()),
+                beacon: self.cfg.info.clone(),
             })
             .await?
             .tasks;
@@ -56,19 +58,26 @@ impl Agent {
     }
 
     // Report task output, remove completed tasks
-    async fn report(&mut self, mut tavern: GRPC) -> Result<()> {
+    async fn report(&mut self, mut tavern: T) -> Result<()> {
         // Report output from each handle
         let mut idx = 0;
         while idx < self.handles.len() {
+            // Report task output
+            // Moving this before the if even though it double reports.
+            // Seems to resolve an issue with IO blocked and fast tasks
+            // running at the same time.
+            // https://github.com/spellshift/realm/issues/754
+            self.cfg = self.handles[idx]
+                .report(&mut tavern, self.cfg.clone())
+                .await?;
+
             // Drop any handles that have completed
             if self.handles[idx].is_finished() {
                 let mut handle = self.handles.remove(idx);
-                handle.report(&mut tavern).await?;
+                self.cfg = handle.report(&mut tavern, self.cfg.clone()).await?;
                 continue;
             }
 
-            // Otherwise report and increment
-            self.handles[idx].report(&mut tavern).await?;
             idx += 1;
         }
 
@@ -79,9 +88,10 @@ impl Agent {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        let transport = GRPC::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
-        self.claim_tasks(transport.clone()).await?;
-        self.report(transport.clone()).await?;
+        self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
+        self.claim_tasks(self.t.clone()).await?;
+        self.report(self.t.clone()).await?;
+        self.t = T::init(); // re-init to make sure no active connections during sleep
 
         Ok(())
     }
@@ -106,7 +116,14 @@ impl Agent {
                 }
             };
 
-            let interval = self.cfg.info.interval;
+            if self.cfg.run_once {
+                return Ok(());
+            }
+
+            let interval = match self.cfg.info.clone() {
+                Some(b) => Ok(b.interval),
+                None => Err(anyhow::anyhow!("beacon info is missing from agent")),
+            }?;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),

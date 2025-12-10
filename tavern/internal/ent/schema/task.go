@@ -79,13 +79,29 @@ func (Task) Edges() []ent.Edge {
 			Required().
 			Unique(),
 		edge.To("reported_files", HostFile.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Files that have been reported by this task."),
 		edge.To("reported_processes", HostProcess.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Processes that have been reported by this task."),
 		edge.To("reported_credentials", HostCredential.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Credentials that have been reported by this task."),
 		edge.From("shells", Shell.Type).
 			Ref("task").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Shells that were created by this task"),
 	}
 }
@@ -95,6 +111,9 @@ func (Task) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
 		entgql.MultiOrder(),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 

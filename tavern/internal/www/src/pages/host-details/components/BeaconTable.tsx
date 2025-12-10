@@ -3,17 +3,13 @@ import { formatDistance } from "date-fns";
 import { useNavigate } from 'react-router-dom';
 
 import Table from "../../../components/tavern-base-ui/Table";
-import { BeaconType } from "../../../utils/consts";
 import { PrincipalAdminTypes } from "../../../utils/enums";
 import { checkIfBeaconOffline } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import { BeaconEdge } from "../../../utils/interfacesQuery";
 
-type Props = {
-    beacons: Array<BeaconType>
-}
-const BeaconTable = (props: Props) => {
-    const { beacons } = props;
+const BeaconTable = ({ beacons }: { beacons: Array<BeaconEdge> }) => {
     const nav = useNavigate();
     const currentDate = new Date();
     const princialColors = Object.values(PrincipalAdminTypes);
@@ -22,26 +18,17 @@ const BeaconTable = (props: Props) => {
         {
             id: "name",
             header: 'Beacon',
-            accessorFn: row => row?.name,
+            accessorFn: (row: BeaconEdge) => row?.node?.name,
             footer: props => props.column.id,
-            enableSorting: true,
+            enableSorting: false,
         },
         {
             id: "principal",
             header: "Principal",
-            accessorFn: row => row?.principal,
+            accessorFn: (row: BeaconEdge) => row?.node?.principal,
             footer: props => props.column.id,
-            enableSorting: true,
+            enableSorting: false,
             maxSize: 100,
-            sortingFn: (
-                rowA,
-                rowB,
-            ) => {
-                const numA = rowA?.original?.principal ? (princialColors.indexOf(rowA?.original?.principal) !== -1) : 0;
-                const numB = rowB?.original?.principal ? (princialColors.indexOf(rowB?.original?.principal) !== -1) : 0;
-
-                return numA < numB ? 1 : numA > numB ? -1 : 0;
-            },
             cell: (cellData: any) => {
                 const principal = cellData.getValue();
                 const color = princialColors.indexOf(principal) === -1 ? 'gray' : 'purple';
@@ -53,7 +40,7 @@ const BeaconTable = (props: Props) => {
         {
             id: "Status",
             header: "Status",
-            accessorFn: row => row,
+            accessorFn: (row: BeaconEdge) => row.node,
             footer: props => props.column.id,
             enableSorting: false,
             maxSize: 80,
@@ -72,23 +59,15 @@ const BeaconTable = (props: Props) => {
         {
             id: "lastSeenAt",
             header: 'Last callback',
-            accessorFn: row => formatDistance(new Date(row.lastSeenAt), currentDate),
+            accessorFn: (row: BeaconEdge) => formatDistance(new Date(row?.node.lastSeenAt), currentDate),
             footer: props => props.column.id,
             maxSize: 120,
-            sortingFn: (
-                rowA,
-                rowB,
-            ) => {
-                const numA = new Date(rowA?.original?.lastSeenAt as string);
-                const numB = new Date(rowB?.original?.lastSeenAt as string);
-
-                return numA < numB ? 1 : numA > numB ? -1 : 0;
-            }
+            enableSorting: false
         },
         {
             id: "Create quest",
             header: "",
-            accessorFn: row => row,
+            accessorFn: (row: BeaconEdge) => row.node,
             footer: props => props.column.id,
             enableSorting: false,
             maxSize: 100,

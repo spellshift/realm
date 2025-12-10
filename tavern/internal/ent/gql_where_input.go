@@ -138,6 +138,18 @@ type BeaconWhereInput struct {
 	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
 	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
 
+	// "next_seen_at" field predicates.
+	NextSeenAt       *time.Time  `json:"nextSeenAt,omitempty"`
+	NextSeenAtNEQ    *time.Time  `json:"nextSeenAtNEQ,omitempty"`
+	NextSeenAtIn     []time.Time `json:"nextSeenAtIn,omitempty"`
+	NextSeenAtNotIn  []time.Time `json:"nextSeenAtNotIn,omitempty"`
+	NextSeenAtGT     *time.Time  `json:"nextSeenAtGT,omitempty"`
+	NextSeenAtGTE    *time.Time  `json:"nextSeenAtGTE,omitempty"`
+	NextSeenAtLT     *time.Time  `json:"nextSeenAtLT,omitempty"`
+	NextSeenAtLTE    *time.Time  `json:"nextSeenAtLTE,omitempty"`
+	NextSeenAtIsNil  bool        `json:"nextSeenAtIsNil,omitempty"`
+	NextSeenAtNotNil bool        `json:"nextSeenAtNotNil,omitempty"`
+
 	// "interval" field predicates.
 	Interval       *uint64  `json:"interval,omitempty"`
 	IntervalNEQ    *uint64  `json:"intervalNEQ,omitempty"`
@@ -503,6 +515,36 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	}
 	if i.LastSeenAtNotNil {
 		predicates = append(predicates, beacon.LastSeenAtNotNil())
+	}
+	if i.NextSeenAt != nil {
+		predicates = append(predicates, beacon.NextSeenAtEQ(*i.NextSeenAt))
+	}
+	if i.NextSeenAtNEQ != nil {
+		predicates = append(predicates, beacon.NextSeenAtNEQ(*i.NextSeenAtNEQ))
+	}
+	if len(i.NextSeenAtIn) > 0 {
+		predicates = append(predicates, beacon.NextSeenAtIn(i.NextSeenAtIn...))
+	}
+	if len(i.NextSeenAtNotIn) > 0 {
+		predicates = append(predicates, beacon.NextSeenAtNotIn(i.NextSeenAtNotIn...))
+	}
+	if i.NextSeenAtGT != nil {
+		predicates = append(predicates, beacon.NextSeenAtGT(*i.NextSeenAtGT))
+	}
+	if i.NextSeenAtGTE != nil {
+		predicates = append(predicates, beacon.NextSeenAtGTE(*i.NextSeenAtGTE))
+	}
+	if i.NextSeenAtLT != nil {
+		predicates = append(predicates, beacon.NextSeenAtLT(*i.NextSeenAtLT))
+	}
+	if i.NextSeenAtLTE != nil {
+		predicates = append(predicates, beacon.NextSeenAtLTE(*i.NextSeenAtLTE))
+	}
+	if i.NextSeenAtIsNil {
+		predicates = append(predicates, beacon.NextSeenAtIsNil())
+	}
+	if i.NextSeenAtNotNil {
+		predicates = append(predicates, beacon.NextSeenAtNotNil())
 	}
 	if i.Interval != nil {
 		predicates = append(predicates, beacon.IntervalEQ(*i.Interval))
@@ -1041,6 +1083,23 @@ type HostWhereInput struct {
 	PrimaryIPEqualFold    *string  `json:"primaryIPEqualFold,omitempty"`
 	PrimaryIPContainsFold *string  `json:"primaryIPContainsFold,omitempty"`
 
+	// "external_ip" field predicates.
+	ExternalIP             *string  `json:"externalIP,omitempty"`
+	ExternalIPNEQ          *string  `json:"externalIPNEQ,omitempty"`
+	ExternalIPIn           []string `json:"externalIPIn,omitempty"`
+	ExternalIPNotIn        []string `json:"externalIPNotIn,omitempty"`
+	ExternalIPGT           *string  `json:"externalIPGT,omitempty"`
+	ExternalIPGTE          *string  `json:"externalIPGTE,omitempty"`
+	ExternalIPLT           *string  `json:"externalIPLT,omitempty"`
+	ExternalIPLTE          *string  `json:"externalIPLTE,omitempty"`
+	ExternalIPContains     *string  `json:"externalIPContains,omitempty"`
+	ExternalIPHasPrefix    *string  `json:"externalIPHasPrefix,omitempty"`
+	ExternalIPHasSuffix    *string  `json:"externalIPHasSuffix,omitempty"`
+	ExternalIPIsNil        bool     `json:"externalIPIsNil,omitempty"`
+	ExternalIPNotNil       bool     `json:"externalIPNotNil,omitempty"`
+	ExternalIPEqualFold    *string  `json:"externalIPEqualFold,omitempty"`
+	ExternalIPContainsFold *string  `json:"externalIPContainsFold,omitempty"`
+
 	// "platform" field predicates.
 	Platform      *c2pb.Host_Platform  `json:"platform,omitempty"`
 	PlatformNEQ   *c2pb.Host_Platform  `json:"platformNEQ,omitempty"`
@@ -1058,6 +1117,18 @@ type HostWhereInput struct {
 	LastSeenAtLTE    *time.Time  `json:"lastSeenAtLTE,omitempty"`
 	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
 	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
+
+	// "next_seen_at" field predicates.
+	NextSeenAt       *time.Time  `json:"nextSeenAt,omitempty"`
+	NextSeenAtNEQ    *time.Time  `json:"nextSeenAtNEQ,omitempty"`
+	NextSeenAtIn     []time.Time `json:"nextSeenAtIn,omitempty"`
+	NextSeenAtNotIn  []time.Time `json:"nextSeenAtNotIn,omitempty"`
+	NextSeenAtGT     *time.Time  `json:"nextSeenAtGT,omitempty"`
+	NextSeenAtGTE    *time.Time  `json:"nextSeenAtGTE,omitempty"`
+	NextSeenAtLT     *time.Time  `json:"nextSeenAtLT,omitempty"`
+	NextSeenAtLTE    *time.Time  `json:"nextSeenAtLTE,omitempty"`
+	NextSeenAtIsNil  bool        `json:"nextSeenAtIsNil,omitempty"`
+	NextSeenAtNotNil bool        `json:"nextSeenAtNotNil,omitempty"`
 
 	// "tags" edge predicates.
 	HasTags     *bool            `json:"hasTags,omitempty"`
@@ -1352,6 +1423,51 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	if i.PrimaryIPContainsFold != nil {
 		predicates = append(predicates, host.PrimaryIPContainsFold(*i.PrimaryIPContainsFold))
 	}
+	if i.ExternalIP != nil {
+		predicates = append(predicates, host.ExternalIPEQ(*i.ExternalIP))
+	}
+	if i.ExternalIPNEQ != nil {
+		predicates = append(predicates, host.ExternalIPNEQ(*i.ExternalIPNEQ))
+	}
+	if len(i.ExternalIPIn) > 0 {
+		predicates = append(predicates, host.ExternalIPIn(i.ExternalIPIn...))
+	}
+	if len(i.ExternalIPNotIn) > 0 {
+		predicates = append(predicates, host.ExternalIPNotIn(i.ExternalIPNotIn...))
+	}
+	if i.ExternalIPGT != nil {
+		predicates = append(predicates, host.ExternalIPGT(*i.ExternalIPGT))
+	}
+	if i.ExternalIPGTE != nil {
+		predicates = append(predicates, host.ExternalIPGTE(*i.ExternalIPGTE))
+	}
+	if i.ExternalIPLT != nil {
+		predicates = append(predicates, host.ExternalIPLT(*i.ExternalIPLT))
+	}
+	if i.ExternalIPLTE != nil {
+		predicates = append(predicates, host.ExternalIPLTE(*i.ExternalIPLTE))
+	}
+	if i.ExternalIPContains != nil {
+		predicates = append(predicates, host.ExternalIPContains(*i.ExternalIPContains))
+	}
+	if i.ExternalIPHasPrefix != nil {
+		predicates = append(predicates, host.ExternalIPHasPrefix(*i.ExternalIPHasPrefix))
+	}
+	if i.ExternalIPHasSuffix != nil {
+		predicates = append(predicates, host.ExternalIPHasSuffix(*i.ExternalIPHasSuffix))
+	}
+	if i.ExternalIPIsNil {
+		predicates = append(predicates, host.ExternalIPIsNil())
+	}
+	if i.ExternalIPNotNil {
+		predicates = append(predicates, host.ExternalIPNotNil())
+	}
+	if i.ExternalIPEqualFold != nil {
+		predicates = append(predicates, host.ExternalIPEqualFold(*i.ExternalIPEqualFold))
+	}
+	if i.ExternalIPContainsFold != nil {
+		predicates = append(predicates, host.ExternalIPContainsFold(*i.ExternalIPContainsFold))
+	}
 	if i.Platform != nil {
 		predicates = append(predicates, host.PlatformEQ(*i.Platform))
 	}
@@ -1393,6 +1509,36 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	}
 	if i.LastSeenAtNotNil {
 		predicates = append(predicates, host.LastSeenAtNotNil())
+	}
+	if i.NextSeenAt != nil {
+		predicates = append(predicates, host.NextSeenAtEQ(*i.NextSeenAt))
+	}
+	if i.NextSeenAtNEQ != nil {
+		predicates = append(predicates, host.NextSeenAtNEQ(*i.NextSeenAtNEQ))
+	}
+	if len(i.NextSeenAtIn) > 0 {
+		predicates = append(predicates, host.NextSeenAtIn(i.NextSeenAtIn...))
+	}
+	if len(i.NextSeenAtNotIn) > 0 {
+		predicates = append(predicates, host.NextSeenAtNotIn(i.NextSeenAtNotIn...))
+	}
+	if i.NextSeenAtGT != nil {
+		predicates = append(predicates, host.NextSeenAtGT(*i.NextSeenAtGT))
+	}
+	if i.NextSeenAtGTE != nil {
+		predicates = append(predicates, host.NextSeenAtGTE(*i.NextSeenAtGTE))
+	}
+	if i.NextSeenAtLT != nil {
+		predicates = append(predicates, host.NextSeenAtLT(*i.NextSeenAtLT))
+	}
+	if i.NextSeenAtLTE != nil {
+		predicates = append(predicates, host.NextSeenAtLTE(*i.NextSeenAtLTE))
+	}
+	if i.NextSeenAtIsNil {
+		predicates = append(predicates, host.NextSeenAtIsNil())
+	}
+	if i.NextSeenAtNotNil {
+		predicates = append(predicates, host.NextSeenAtNotNil())
 	}
 
 	if i.HasTags != nil {

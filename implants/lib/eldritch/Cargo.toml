@@ -1,6 +1,6 @@
 [package]
 name = "eldritch"
-version = "0.0.5"
+version = "0.2.0"
 edition = "2021"
 
 [features]
@@ -12,6 +12,7 @@ print_stdout = []
 pb = { workspace = true }
 transport = { workspace = true }
 
+generic-array = "=0.14.7"
 aes = { workspace = true }
 allocative = { workspace = true }
 anyhow = { workspace = true }
@@ -28,21 +29,24 @@ hex-literal = { workspace = true }
 ipnetwork = { workspace = true }
 log = { workspace = true }
 md5 = { workspace = true }
-nix = { workspace = true }
 notify = { workspace = true }
-object = { workspace = true }
-openssl = { workspace = true, features = ["vendored"] }
 portable-pty = { workspace = true }
 pretty_env_logger = { workspace = true }
 prost-types = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 regex = { workspace = true }
-reqwest = { workspace = true, features = ["blocking", "stream"] }
+reqwest = { workspace = true, default-features = false, features = [
+    "blocking",
+    "json",
+    "rustls-tls",
+    "stream",
+    "http2",
+] }
 russh = { workspace = true }
 russh-sftp = { workspace = true }
 russh-keys = { workspace = true }
-rust-embed = { workspace = true }
+rust-embed = { workspace = true, features = ["compression"] }
 serde_json = { workspace = true }
 sha1 = { workspace = true }
 sha2 = { workspace = true }
@@ -56,6 +60,14 @@ tera = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tokio-util = { workspace = true }
+whoami = { workspace = true }
+local-ip-address = { workspace = true }
+nix = { workspace = true }
+
+# WINDOWS
+[target.'cfg(windows)'.dependencies]
+winreg = { workspace = true }
+object = { workspace = true }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
@@ -65,13 +77,8 @@ windows-sys = { workspace = true, features = [
     "Win32_Security",
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
+    "Win32_UI_Shell",
 ] }
-whoami = { workspace = true }
-network-interface = { workspace = true }
-
-# WINDOWS
-[target.'cfg(windows)'.dependencies]
-winreg = { workspace = true }
 
 # NOT WINDOWS
 [target.'cfg(not(windows))'.dependencies]

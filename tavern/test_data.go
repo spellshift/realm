@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	mrand "math/rand"
 	"net"
 	"time"
@@ -21,7 +21,30 @@ import (
 
 // createTestData populates the DB with some test data :)
 func createTestData(ctx context.Context, client *ent.Client) {
-	log.Printf("[WARN] Test data is enabled")
+	slog.WarnContext(ctx, "test data is enabled")
+
+	client.User.Create().
+		SetName("Admin").
+		SetOauthID("AdminOAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+	client.User.Create().
+		SetName("Admin2").
+		SetOauthID("Admin2OAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+	client.User.Create().
+		SetName("User").
+		SetOauthID("UserOAuthID").
+		SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
+		SetIsActivated(true).
+		SetIsAdmin(false).
+		SaveX(ctx)
+
 	svcTags := make([]*ent.Tag, 0, 20)
 	for i := 0; i < 20; i++ {
 		svcTags = append(
@@ -49,6 +72,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
+				SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+				SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
@@ -59,11 +84,11 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetKind(epb.Credential_KIND_PASSWORD).
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
-			
 
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
@@ -75,6 +100,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				testBeacons = append(testBeacons,
 					client.Beacon.Create().
 						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-30*time.Second).Add(600000*time.Second)).
 						SetIdentifier(newRandomIdentifier()).
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
@@ -87,6 +113,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-10*time.Second).Add(1000*time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
@@ -98,6 +125,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
+					SetNextSeenAt(time.Now().Add(-1*time.Hour).Add(4*time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).

@@ -28,10 +28,14 @@ type Host struct {
 	Name string `json:"name,omitempty"`
 	// Primary interface IP address reported by the agent.
 	PrimaryIP string `json:"primary_ip,omitempty"`
+	// Incoming IP from Proxy. Will return first proxy IP if multiple.
+	ExternalIP string `json:"external_ip,omitempty"`
 	// Platform the agent is operating on.
 	Platform c2pb.Host_Platform `json:"platform,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the host.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
+	// Timestamp of when a task is next expected to be claimed or updated for the host.
+	NextSeenAt time.Time `json:"next_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostQuery when eager-loading is set.
 	Edges        HostEdges `json:"edges"`
@@ -117,9 +121,9 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case host.FieldID:
 			values[i] = new(sql.NullInt64)
-		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP:
+		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldExternalIP:
 			values[i] = new(sql.NullString)
-		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt:
+		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt, host.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -172,6 +176,12 @@ func (h *Host) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				h.PrimaryIP = value.String
 			}
+		case host.FieldExternalIP:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field external_ip", values[i])
+			} else if value.Valid {
+				h.ExternalIP = value.String
+			}
 		case host.FieldPlatform:
 			if value, ok := values[i].(*c2pb.Host_Platform); !ok {
 				return fmt.Errorf("unexpected type %T for field platform", values[i])
@@ -183,6 +193,12 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
 				h.LastSeenAt = value.Time
+			}
+		case host.FieldNextSeenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_seen_at", values[i])
+			} else if value.Valid {
+				h.NextSeenAt = value.Time
 			}
 		default:
 			h.selectValues.Set(columns[i], values[i])
@@ -260,11 +276,17 @@ func (h *Host) String() string {
 	builder.WriteString("primary_ip=")
 	builder.WriteString(h.PrimaryIP)
 	builder.WriteString(", ")
+	builder.WriteString("external_ip=")
+	builder.WriteString(h.ExternalIP)
+	builder.WriteString(", ")
 	builder.WriteString("platform=")
 	builder.WriteString(fmt.Sprintf("%v", h.Platform))
 	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
 	builder.WriteString(h.LastSeenAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("next_seen_at=")
+	builder.WriteString(h.NextSeenAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

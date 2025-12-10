@@ -1,8 +1,9 @@
-block_list = ["/proc","/sys","/lib","/libx32","/lib32","/lib64","/boot","/srv","/usr","/snap","/run","/dev","/cores"]
+block_list = ["/proc", "/sys", "/lib", "/libx32", "/lib32", "/lib64",
+              "/boot", "/srv", "/usr", "/snap", "/run", "/dev", "/cores"]
 
 
-def file_list(path,tree):
-    tree=f"|\t{tree}"
+def file_list(path, tree):
+    tree = f"|\t{tree}"
     files = file.list(path)
     for f in files:
         file_name = f['file_name']
@@ -11,26 +12,27 @@ def file_list(path,tree):
             continue
         if f['type'] == "Directory":
             print(f"{tree}|---{path}/{file_name}")
-            file_list(f"{path}/{file_name}",tree)
+            file_list(f"{path}/{file_name}", tree)
         if f['type'] == "Link":
             print(f"{tree}|---{file_name}")
         if f['type'] == "File":
             print(f"{tree}|---{file_name}")
 
+
 def main(path):
-    tree=""
+    tree = ""
     if file.is_dir(path):
         print(path+"")
         if path == "/":
             print("It looks like you're trying to list every file on the system.")
-            print("This generates a lot of data so I'm going to exclude less helpful directories")
-            print("If you really really want everything including /proc and /sys specify \"//\"")
-        file_list(path,tree)
+            print(
+                "This generates a lot of data so I'm going to exclude less helpful directories")
+            print(
+                "If you really really want everything including /proc and /sys specify \"//\"")
+        file_list(path, tree)
     elif file.is_file(path):
         eprint(f"Error: Invalid Path ({path})")
 
-time.sleep(1)
 
-input_params['path']="/"
 main(input_params['path'])
 print("")

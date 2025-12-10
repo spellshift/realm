@@ -1,7 +1,7 @@
 import { FC } from "react";
 import Select from "react-select"
 
-type Option = {
+export type Option = {
     label: string;
     value: string;
 }
@@ -9,11 +9,15 @@ type SingleDropdownSelectorProps = {
     label: string;
     options: Array<Option>;
     setSelectedOption: any;
+    isSearchable?: boolean;
+    defaultValue?: Option
 }
 const SingleDropdownSelector: FC<SingleDropdownSelectorProps> = ({
     label,
     options,
-    setSelectedOption
+    setSelectedOption,
+    isSearchable = true,
+    defaultValue
 }) => {
 
     const styles = {
@@ -63,8 +67,9 @@ const SingleDropdownSelector: FC<SingleDropdownSelectorProps> = ({
     return (
         <div className="min-w-[140px]">
             <Select
+                isSearchable={isSearchable}
                 styles={styles}
-                defaultValue={options[0]}
+                defaultValue={defaultValue || options[0]}
                 onChange={setSelectedOption}
                 name={label}
                 options={options}

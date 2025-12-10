@@ -81,9 +81,19 @@ func PrimaryIP(v string) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldPrimaryIP, v))
 }
 
+// ExternalIP applies equality check predicate on the "external_ip" field. It's identical to ExternalIPEQ.
+func ExternalIP(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldExternalIP, v))
+}
+
 // LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldLastSeenAt, v))
+}
+
+// NextSeenAt applies equality check predicate on the "next_seen_at" field. It's identical to NextSeenAtEQ.
+func NextSeenAt(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldNextSeenAt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -381,6 +391,81 @@ func PrimaryIPContainsFold(v string) predicate.Host {
 	return predicate.Host(sql.FieldContainsFold(FieldPrimaryIP, v))
 }
 
+// ExternalIPEQ applies the EQ predicate on the "external_ip" field.
+func ExternalIPEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldExternalIP, v))
+}
+
+// ExternalIPNEQ applies the NEQ predicate on the "external_ip" field.
+func ExternalIPNEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldNEQ(FieldExternalIP, v))
+}
+
+// ExternalIPIn applies the In predicate on the "external_ip" field.
+func ExternalIPIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldIn(FieldExternalIP, vs...))
+}
+
+// ExternalIPNotIn applies the NotIn predicate on the "external_ip" field.
+func ExternalIPNotIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldNotIn(FieldExternalIP, vs...))
+}
+
+// ExternalIPGT applies the GT predicate on the "external_ip" field.
+func ExternalIPGT(v string) predicate.Host {
+	return predicate.Host(sql.FieldGT(FieldExternalIP, v))
+}
+
+// ExternalIPGTE applies the GTE predicate on the "external_ip" field.
+func ExternalIPGTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldGTE(FieldExternalIP, v))
+}
+
+// ExternalIPLT applies the LT predicate on the "external_ip" field.
+func ExternalIPLT(v string) predicate.Host {
+	return predicate.Host(sql.FieldLT(FieldExternalIP, v))
+}
+
+// ExternalIPLTE applies the LTE predicate on the "external_ip" field.
+func ExternalIPLTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldLTE(FieldExternalIP, v))
+}
+
+// ExternalIPContains applies the Contains predicate on the "external_ip" field.
+func ExternalIPContains(v string) predicate.Host {
+	return predicate.Host(sql.FieldContains(FieldExternalIP, v))
+}
+
+// ExternalIPHasPrefix applies the HasPrefix predicate on the "external_ip" field.
+func ExternalIPHasPrefix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasPrefix(FieldExternalIP, v))
+}
+
+// ExternalIPHasSuffix applies the HasSuffix predicate on the "external_ip" field.
+func ExternalIPHasSuffix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasSuffix(FieldExternalIP, v))
+}
+
+// ExternalIPIsNil applies the IsNil predicate on the "external_ip" field.
+func ExternalIPIsNil() predicate.Host {
+	return predicate.Host(sql.FieldIsNull(FieldExternalIP))
+}
+
+// ExternalIPNotNil applies the NotNil predicate on the "external_ip" field.
+func ExternalIPNotNil() predicate.Host {
+	return predicate.Host(sql.FieldNotNull(FieldExternalIP))
+}
+
+// ExternalIPEqualFold applies the EqualFold predicate on the "external_ip" field.
+func ExternalIPEqualFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldEqualFold(FieldExternalIP, v))
+}
+
+// ExternalIPContainsFold applies the ContainsFold predicate on the "external_ip" field.
+func ExternalIPContainsFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldContainsFold(FieldExternalIP, v))
+}
+
 // PlatformEQ applies the EQ predicate on the "platform" field.
 func PlatformEQ(v c2pb.Host_Platform) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldPlatform, v))
@@ -449,6 +534,56 @@ func LastSeenAtIsNil() predicate.Host {
 // LastSeenAtNotNil applies the NotNil predicate on the "last_seen_at" field.
 func LastSeenAtNotNil() predicate.Host {
 	return predicate.Host(sql.FieldNotNull(FieldLastSeenAt))
+}
+
+// NextSeenAtEQ applies the EQ predicate on the "next_seen_at" field.
+func NextSeenAtEQ(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldNextSeenAt, v))
+}
+
+// NextSeenAtNEQ applies the NEQ predicate on the "next_seen_at" field.
+func NextSeenAtNEQ(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldNEQ(FieldNextSeenAt, v))
+}
+
+// NextSeenAtIn applies the In predicate on the "next_seen_at" field.
+func NextSeenAtIn(vs ...time.Time) predicate.Host {
+	return predicate.Host(sql.FieldIn(FieldNextSeenAt, vs...))
+}
+
+// NextSeenAtNotIn applies the NotIn predicate on the "next_seen_at" field.
+func NextSeenAtNotIn(vs ...time.Time) predicate.Host {
+	return predicate.Host(sql.FieldNotIn(FieldNextSeenAt, vs...))
+}
+
+// NextSeenAtGT applies the GT predicate on the "next_seen_at" field.
+func NextSeenAtGT(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldGT(FieldNextSeenAt, v))
+}
+
+// NextSeenAtGTE applies the GTE predicate on the "next_seen_at" field.
+func NextSeenAtGTE(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldGTE(FieldNextSeenAt, v))
+}
+
+// NextSeenAtLT applies the LT predicate on the "next_seen_at" field.
+func NextSeenAtLT(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldLT(FieldNextSeenAt, v))
+}
+
+// NextSeenAtLTE applies the LTE predicate on the "next_seen_at" field.
+func NextSeenAtLTE(v time.Time) predicate.Host {
+	return predicate.Host(sql.FieldLTE(FieldNextSeenAt, v))
+}
+
+// NextSeenAtIsNil applies the IsNil predicate on the "next_seen_at" field.
+func NextSeenAtIsNil() predicate.Host {
+	return predicate.Host(sql.FieldIsNull(FieldNextSeenAt))
+}
+
+// NextSeenAtNotNil applies the NotNil predicate on the "next_seen_at" field.
+func NextSeenAtNotNil() predicate.Host {
+	return predicate.Host(sql.FieldNotNull(FieldNextSeenAt))
 }
 
 // HasTags applies the HasEdge predicate on the "tags" edge.

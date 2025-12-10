@@ -94,6 +94,26 @@ func (hu *HostUpdate) ClearPrimaryIP() *HostUpdate {
 	return hu
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (hu *HostUpdate) SetExternalIP(s string) *HostUpdate {
+	hu.mutation.SetExternalIP(s)
+	return hu
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableExternalIP(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetExternalIP(*s)
+	}
+	return hu
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (hu *HostUpdate) ClearExternalIP() *HostUpdate {
+	hu.mutation.ClearExternalIP()
+	return hu
+}
+
 // SetPlatform sets the "platform" field.
 func (hu *HostUpdate) SetPlatform(cp c2pb.Host_Platform) *HostUpdate {
 	hu.mutation.SetPlatform(cp)
@@ -125,6 +145,26 @@ func (hu *HostUpdate) SetNillableLastSeenAt(t *time.Time) *HostUpdate {
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (hu *HostUpdate) ClearLastSeenAt() *HostUpdate {
 	hu.mutation.ClearLastSeenAt()
+	return hu
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (hu *HostUpdate) SetNextSeenAt(t time.Time) *HostUpdate {
+	hu.mutation.SetNextSeenAt(t)
+	return hu
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableNextSeenAt(t *time.Time) *HostUpdate {
+	if t != nil {
+		hu.SetNextSeenAt(*t)
+	}
+	return hu
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (hu *HostUpdate) ClearNextSeenAt() *HostUpdate {
+	hu.mutation.ClearNextSeenAt()
 	return hu
 }
 
@@ -399,6 +439,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if hu.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
 	}
+	if value, ok := hu.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+	}
+	if hu.mutation.ExternalIPCleared() {
+		_spec.ClearField(host.FieldExternalIP, field.TypeString)
+	}
 	if value, ok := hu.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 	}
@@ -407,6 +453,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if hu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(host.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := hu.mutation.NextSeenAt(); ok {
+		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
+	}
+	if hu.mutation.NextSeenAtCleared() {
+		_spec.ClearField(host.FieldNextSeenAt, field.TypeTime)
 	}
 	if hu.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -713,6 +765,26 @@ func (huo *HostUpdateOne) ClearPrimaryIP() *HostUpdateOne {
 	return huo
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (huo *HostUpdateOne) SetExternalIP(s string) *HostUpdateOne {
+	huo.mutation.SetExternalIP(s)
+	return huo
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableExternalIP(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetExternalIP(*s)
+	}
+	return huo
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (huo *HostUpdateOne) ClearExternalIP() *HostUpdateOne {
+	huo.mutation.ClearExternalIP()
+	return huo
+}
+
 // SetPlatform sets the "platform" field.
 func (huo *HostUpdateOne) SetPlatform(cp c2pb.Host_Platform) *HostUpdateOne {
 	huo.mutation.SetPlatform(cp)
@@ -744,6 +816,26 @@ func (huo *HostUpdateOne) SetNillableLastSeenAt(t *time.Time) *HostUpdateOne {
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (huo *HostUpdateOne) ClearLastSeenAt() *HostUpdateOne {
 	huo.mutation.ClearLastSeenAt()
+	return huo
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (huo *HostUpdateOne) SetNextSeenAt(t time.Time) *HostUpdateOne {
+	huo.mutation.SetNextSeenAt(t)
+	return huo
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableNextSeenAt(t *time.Time) *HostUpdateOne {
+	if t != nil {
+		huo.SetNextSeenAt(*t)
+	}
+	return huo
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (huo *HostUpdateOne) ClearNextSeenAt() *HostUpdateOne {
+	huo.mutation.ClearNextSeenAt()
 	return huo
 }
 
@@ -1048,6 +1140,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	if huo.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
 	}
+	if value, ok := huo.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+	}
+	if huo.mutation.ExternalIPCleared() {
+		_spec.ClearField(host.FieldExternalIP, field.TypeString)
+	}
 	if value, ok := huo.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 	}
@@ -1056,6 +1154,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	}
 	if huo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(host.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := huo.mutation.NextSeenAt(); ok {
+		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
+	}
+	if huo.mutation.NextSeenAtCleared() {
+		_spec.ClearField(host.FieldNextSeenAt, field.TypeTime)
 	}
 	if huo.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

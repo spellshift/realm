@@ -1,6 +1,9 @@
-use super::{Dispatcher, Transport};
+use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
-use pb::c2::{ReportTaskOutputRequest, TaskOutput};
+use pb::{
+    c2::{ReportTaskOutputRequest, TaskOutput},
+    config::Config,
+};
 use prost_types::Timestamp;
 
 /*
@@ -13,8 +16,8 @@ pub struct ReportStartMessage {
     pub(crate) exec_started_at: Timestamp,
 }
 
-impl Dispatcher for ReportStartMessage {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+impl AsyncDispatcher for ReportStartMessage {
+    async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {

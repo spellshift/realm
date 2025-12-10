@@ -138,7 +138,7 @@ fn handle_list(path: String) -> Result<Vec<File>> {
     Ok(final_res)
 }
 
-fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict> {
+fn create_dict_from_file(starlark_heap: &'_ Heap, file: File) -> Result<Dict<'_>> {
     let res: SmallMap<Value, Value> = SmallMap::new();
     let mut dict_res = Dict::new(res);
 
@@ -178,7 +178,7 @@ fn create_dict_from_file(starlark_heap: &Heap, file: File) -> Result<Dict> {
     Ok(dict_res)
 }
 
-pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
+pub fn list(starlark_heap: &'_ Heap, path: String) -> Result<Vec<Dict<'_>>> {
     let mut final_res: Vec<Dict> = Vec::new();
     for entry in glob(&path)? {
         match entry {
@@ -191,10 +191,7 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
                 ) {
                     Ok(local_file_list) => local_file_list,
                     Err(local_err) => {
-                        return Err(anyhow::anyhow!(
-                            "Failed to get file list: {}",
-                            local_err.to_string()
-                        ))
+                        return Err(anyhow::anyhow!("Failed to get file list: {}", local_err))
                     }
                 };
                 for file in file_list {
@@ -212,7 +209,7 @@ pub fn list(starlark_heap: &Heap, path: String) -> Result<Vec<Dict>> {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
 
     use super::*;
     use pb::eldritch::Tome;
@@ -248,7 +245,7 @@ mod tests {
         // Read Messages
         let mut found = false;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 assert_eq!(123, m.id);
                 assert!(m.text.contains(&expected_file_name));
                 log::debug!("text: {:?}", m.text);
@@ -300,7 +297,7 @@ for f in file.list(input_params['path']):
 
         let mut counter = 0;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 counter += 1;
                 log::debug!("text: {:?}", m.text);
             }
@@ -356,7 +353,7 @@ for f in file.list(input_params['path']):
 
         let mut found = false;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 assert_eq!(123, m.id);
                 assert!(m.text.contains(file));
                 log::debug!("text: {:?}", m.text);

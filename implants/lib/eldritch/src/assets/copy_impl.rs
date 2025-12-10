@@ -1,4 +1,4 @@
-use crate::runtime::{messages::FetchAssetMessage, Environment};
+use crate::runtime::{messages::AsyncMessage, messages::FetchAssetMessage, Environment};
 use anyhow::{Context, Result};
 use pb::c2::FetchAssetResponse;
 use starlark::{eval::Evaluator, values::list::ListRef};
@@ -66,7 +66,7 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
         if tmp_list.contains(&src_value.to_value()) {
             let env = Environment::from_extra(starlark_eval.extra)?;
             let (tx, rx) = channel();
-            env.send(FetchAssetMessage { name: src, tx })?;
+            env.send(AsyncMessage::from(FetchAssetMessage { name: src, tx }))?;
 
             return copy_remote(rx, dst);
         }
@@ -78,7 +78,7 @@ pub fn copy(starlark_eval: &Evaluator<'_, '_>, src: String, dst: String) -> Resu
 mod tests {
     use crate::{
         assets::copy_impl::copy_remote,
-        runtime::messages::{FetchAssetMessage, Message},
+        runtime::messages::{AsyncMessage, FetchAssetMessage, Message, ReportErrorMessage},
     };
     use pb::c2::FetchAssetResponse;
     use pb::eldritch::Tome;
@@ -143,7 +143,7 @@ mod tests {
             let mut fetch_asset_msgs: Vec<&FetchAssetMessage> = messages
                 .iter()
                 .filter_map(|m| match m {
-                    Message::FetchAsset(msg) => Some(msg),
+                    Message::Async(AsyncMessage::FetchAsset(fam)) => Some(fam),
                     _ => None,
                 })
                 .collect();
@@ -215,8 +215,11 @@ mod tests {
         let messages = runtime.collect();
         let errors = messages
             .iter()
-            .filter(|x| matches!(x, Message::ReportError(_)))
-            .collect::<Vec<&Message>>();
+            .filter_map(|m| match m {
+                Message::Async(AsyncMessage::ReportError(rem)) => Some(rem),
+                _ => None,
+            })
+            .collect::<Vec<&ReportErrorMessage>>();
         assert!(errors.is_empty());
 
         let mut contents: String = String::new();

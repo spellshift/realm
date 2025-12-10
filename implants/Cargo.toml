@@ -24,11 +24,12 @@ async-recursion = "1.0.0"
 async-trait = "0.1.68"
 base64 = "0.21.4"
 chrono = "0.4.34"
+const-decoder = "0.3.0"
 clap = "3.2.23"
-default-net = "0.13.1"
+netdev = "0.33.0"
 derive_more = "=0.99.17"
 eval = "0.4.3"
-flate2 = "1.0.24"
+flate2 = { version = "1.0.24", default-features = false }
 gazebo = "0.8.1"
 glob = "0.3.1"
 graphql_client = "0.12.0"
@@ -43,52 +44,55 @@ lsp-types = "0.93.0"
 log = "0.4.20"
 md5 = "0.7.0"
 mockall = "0.12.1"
-network-interface = "1.0.1"
+local-ip-address = "0.6.5"
 nix = "0.26.1"
 notify = "6.1.1"
 object = "0.31.1"
-openssl = "0.10.55"
 pnet = "0.34.0"
 portable-pty = "0.8.1"
-predicates = "2.1"
+predicates = { version = "2.1", default-features = false }
 pretty_env_logger = "0.5.0"
 prost = "0.12"
 prost-types = "0.12"
 rand = "0.8.5"
-rand_chacha = "0.3.1"
-regex = "1.5.5"
-reqwest = "0.11.18"
+rand_chacha = { version = "0.3.1", default-features = false, features = ["std"]}
+regex = { version = "1.5.5", default-features = false}
+reqwest = { version = "0.12.15", default-features = false }
 russh = "0.37.1"
-russh-sftp = "2.0.0-beta.2"
+russh-sftp = "=2.0.8" # `thiserror` dependcy in older versions causes downstream issues in other libraries.
 russh-keys = "0.37.1"
 rust-embed = "8.5.0"
 serde = "1.0"
 serde_json = "1.0.87"
 sha1 = "0.10.5"
 sha2 = "0.10.7"
-sha256 = "1.0.3"
+sha256 = { version = "1.0.3", default-features = false }
 starlark = "0.12.0"
 starlark_derive = "0.12.0"
 structopt = "0.3.23"
-sys-info = "0.9.1"
-sysinfo = "0.29.7"
-tar = "0.4.38"
-tempfile = "3.3.0"
-tera = "1.17.1"
+sysinfo = { version = "0.29.7", default-features = false }
+tar = { version = "0.4.38", default-features = false }
+tempfile = "3.20.0"
+tera = { version = "1.17.1", default-features = false }
 thiserror = "1.0.30"
 tokio = "1.19.1"
-tokio-stream = "0.1.9"
+tokio-stream = { version = "0.1.9", default-features = false }
 tokio-test = "*"
 tokio-util = { version = "0.7.10", features = ["io"] }
 tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
-tonic-build = "0.10"
+tonic-build = { git = "https://github.com/hyperium/tonic.git", rev = "c783652" } # Needed git for `.codec_path` in build.rs - previous version of codec setting is really gross. https://github.com/hyperium/tonic/blob/ea8cd3f384e953e177f20a62aa156a75676853f4/examples/build.rs#L44
 trait-variant = "0.1.1"
 uuid = "1.5.0"
+static_vcruntime = "2.0"
 which = "4.4.2"
-whoami = "1.5.1"
+whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"
 windows-sys = "0.45.0"
 winreg = "0.51.0"
+chacha20poly1305 = "0.10.1"
+bytes = "1.6.0"
+x25519-dalek = "2.0.1"
+lru = "0.16.0"
 
 
 [profile.release]

@@ -90,6 +90,20 @@ func (hc *HostCreate) SetNillablePrimaryIP(s *string) *HostCreate {
 	return hc
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (hc *HostCreate) SetExternalIP(s string) *HostCreate {
+	hc.mutation.SetExternalIP(s)
+	return hc
+}
+
+// SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
+func (hc *HostCreate) SetNillableExternalIP(s *string) *HostCreate {
+	if s != nil {
+		hc.SetExternalIP(*s)
+	}
+	return hc
+}
+
 // SetPlatform sets the "platform" field.
 func (hc *HostCreate) SetPlatform(cp c2pb.Host_Platform) *HostCreate {
 	hc.mutation.SetPlatform(cp)
@@ -106,6 +120,20 @@ func (hc *HostCreate) SetLastSeenAt(t time.Time) *HostCreate {
 func (hc *HostCreate) SetNillableLastSeenAt(t *time.Time) *HostCreate {
 	if t != nil {
 		hc.SetLastSeenAt(*t)
+	}
+	return hc
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (hc *HostCreate) SetNextSeenAt(t time.Time) *HostCreate {
+	hc.mutation.SetNextSeenAt(t)
+	return hc
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (hc *HostCreate) SetNillableNextSeenAt(t *time.Time) *HostCreate {
+	if t != nil {
+		hc.SetNextSeenAt(*t)
 	}
 	return hc
 }
@@ -306,6 +334,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		_spec.SetField(host.FieldPrimaryIP, field.TypeString, value)
 		_node.PrimaryIP = value
 	}
+	if value, ok := hc.mutation.ExternalIP(); ok {
+		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
+		_node.ExternalIP = value
+	}
 	if value, ok := hc.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 		_node.Platform = value
@@ -313,6 +345,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 	if value, ok := hc.mutation.LastSeenAt(); ok {
 		_spec.SetField(host.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
+	}
+	if value, ok := hc.mutation.NextSeenAt(); ok {
+		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
+		_node.NextSeenAt = value
 	}
 	if nodes := hc.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -506,6 +542,24 @@ func (u *HostUpsert) ClearPrimaryIP() *HostUpsert {
 	return u
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (u *HostUpsert) SetExternalIP(v string) *HostUpsert {
+	u.Set(host.FieldExternalIP, v)
+	return u
+}
+
+// UpdateExternalIP sets the "external_ip" field to the value that was provided on create.
+func (u *HostUpsert) UpdateExternalIP() *HostUpsert {
+	u.SetExcluded(host.FieldExternalIP)
+	return u
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (u *HostUpsert) ClearExternalIP() *HostUpsert {
+	u.SetNull(host.FieldExternalIP)
+	return u
+}
+
 // SetPlatform sets the "platform" field.
 func (u *HostUpsert) SetPlatform(v c2pb.Host_Platform) *HostUpsert {
 	u.Set(host.FieldPlatform, v)
@@ -533,6 +587,24 @@ func (u *HostUpsert) UpdateLastSeenAt() *HostUpsert {
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (u *HostUpsert) ClearLastSeenAt() *HostUpsert {
 	u.SetNull(host.FieldLastSeenAt)
+	return u
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *HostUpsert) SetNextSeenAt(v time.Time) *HostUpsert {
+	u.Set(host.FieldNextSeenAt, v)
+	return u
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *HostUpsert) UpdateNextSeenAt() *HostUpsert {
+	u.SetExcluded(host.FieldNextSeenAt)
+	return u
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *HostUpsert) ClearNextSeenAt() *HostUpsert {
+	u.SetNull(host.FieldNextSeenAt)
 	return u
 }
 
@@ -651,6 +723,27 @@ func (u *HostUpsertOne) ClearPrimaryIP() *HostUpsertOne {
 	})
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (u *HostUpsertOne) SetExternalIP(v string) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetExternalIP(v)
+	})
+}
+
+// UpdateExternalIP sets the "external_ip" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateExternalIP() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateExternalIP()
+	})
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (u *HostUpsertOne) ClearExternalIP() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearExternalIP()
+	})
+}
+
 // SetPlatform sets the "platform" field.
 func (u *HostUpsertOne) SetPlatform(v c2pb.Host_Platform) *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
@@ -683,6 +776,27 @@ func (u *HostUpsertOne) UpdateLastSeenAt() *HostUpsertOne {
 func (u *HostUpsertOne) ClearLastSeenAt() *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *HostUpsertOne) SetNextSeenAt(v time.Time) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateNextSeenAt() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *HostUpsertOne) ClearNextSeenAt() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearNextSeenAt()
 	})
 }
 
@@ -967,6 +1081,27 @@ func (u *HostUpsertBulk) ClearPrimaryIP() *HostUpsertBulk {
 	})
 }
 
+// SetExternalIP sets the "external_ip" field.
+func (u *HostUpsertBulk) SetExternalIP(v string) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetExternalIP(v)
+	})
+}
+
+// UpdateExternalIP sets the "external_ip" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateExternalIP() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateExternalIP()
+	})
+}
+
+// ClearExternalIP clears the value of the "external_ip" field.
+func (u *HostUpsertBulk) ClearExternalIP() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearExternalIP()
+	})
+}
+
 // SetPlatform sets the "platform" field.
 func (u *HostUpsertBulk) SetPlatform(v c2pb.Host_Platform) *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
@@ -999,6 +1134,27 @@ func (u *HostUpsertBulk) UpdateLastSeenAt() *HostUpsertBulk {
 func (u *HostUpsertBulk) ClearLastSeenAt() *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *HostUpsertBulk) SetNextSeenAt(v time.Time) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateNextSeenAt() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *HostUpsertBulk) ClearNextSeenAt() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearNextSeenAt()
 	})
 }
 

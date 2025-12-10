@@ -1,16 +1,15 @@
-import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageWrapper } from "../../components/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
 import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enums";
-import FilterBar from "../../components/FilterBar";
 import { useTasks } from "../../hooks/useTasks";
-import { Task } from "../../utils/consts";
-import { EditablePageHeader } from "./EditablePageHeader";
-import { useQuests } from "../../hooks/useQuests";
 import Button from "../../components/tavern-base-ui/button/Button";
-import TaskCard from "../../features/task-card/TaskCard";
+import TaskCard from "../../components/task-card/TaskCard";
+import FilterControls, { FilterPageType } from "../../components/FilterControls";
+import { TaskEdge } from "../../utils/interfacesQuery";
+import { EditablePageHeader } from "./EditablePageHeader";
+import SortingControls from "../../components/SortingControls";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -19,33 +18,20 @@ const Tasks = () => {
         data,
         loading,
         error,
-        setSearch,
-        setFiltersSelected,
-        filtersSelected,
         updateTaskList,
         page,
         setPage
     } = useTasks(pageType, questId);
 
-    const {
-        data: questData,
-        loading: questLoading,
-        error: questError,
-        setFiltersSelected: setQuestFiltersSelected
-    } = useQuests(false, questId);
-
-    const handleFilterSelected = (filtersSelected: Array<any>) => {
-        setFiltersSelected(filtersSelected);
-        setQuestFiltersSelected(filtersSelected);
-    }
-
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
-            <div className="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
-                <EditablePageHeader questId={questId} data={questData} loading={questLoading} error={questError} />
-            </div>
-            <div className="bg-white rounded-lg mt-2">
-                <FilterBar setSearch={setSearch} filtersSelected={filtersSelected} setFiltersSelected={handleFilterSelected} />
+            <EditablePageHeader />
+            <div className="flex md:flex-row md:gap-0 gap-2 flex-col justify-between md:items-center px-4 py-2 border-b border-gray-200 pb-5">
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">{data?.tasks?.edges[0]?.node?.quest?.name || questId}</h3>
+                <div className="flex flex-row justify-end">
+                    <SortingControls type={PageNavItem.tasks} />
+                    <FilterControls type={FilterPageType.TASK} />
+                </div>
             </div>
             {loading ? (
                 <EmptyState type={EmptyStateType.loading} label="Loading quest tasks..." />
@@ -55,8 +41,8 @@ const Tasks = () => {
                 <div>
                     {data?.tasks?.edges.length > 0 ? (
                         <div>
-                            <div className=" w-full flex flex-col gap-2 my-4">
-                                {data.tasks.edges.map((task: { node: Task }) => {
+                            <div className=" w-full flex flex-col gap-4 my-4">
+                                {data.tasks.edges.map((task: TaskEdge) => {
                                     return (
                                         <TaskCard key={task.node.id} task={task.node} />
                                     )
@@ -68,7 +54,7 @@ const Tasks = () => {
                         <EmptyState label="No data found" details="Try creating a new quest or adjusting filters." type={EmptyStateType.noData}>
                             <Link to="/createQuest">
                                 <Button
-                                    buttonStyle={{ color: "gray", "size": "md" }}
+                                    buttonStyle={{ color: "purple", "size": "md" }}
                                     type="button"
                                 >
                                     Create new quest

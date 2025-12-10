@@ -27,10 +27,14 @@ const (
 	FieldName = "name"
 	// FieldPrimaryIP holds the string denoting the primary_ip field in the database.
 	FieldPrimaryIP = "primary_ip"
+	// FieldExternalIP holds the string denoting the external_ip field in the database.
+	FieldExternalIP = "external_ip"
 	// FieldPlatform holds the string denoting the platform field in the database.
 	FieldPlatform = "platform"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
+	// FieldNextSeenAt holds the string denoting the next_seen_at field in the database.
+	FieldNextSeenAt = "next_seen_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
@@ -86,8 +90,10 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldName,
 	FieldPrimaryIP,
+	FieldExternalIP,
 	FieldPlatform,
 	FieldLastSeenAt,
+	FieldNextSeenAt,
 }
 
 var (
@@ -162,6 +168,11 @@ func ByPrimaryIP(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrimaryIP, opts...).ToFunc()
 }
 
+// ByExternalIP orders the results by the external_ip field.
+func ByExternalIP(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalIP, opts...).ToFunc()
+}
+
 // ByPlatform orders the results by the platform field.
 func ByPlatform(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPlatform, opts...).ToFunc()
@@ -170,6 +181,11 @@ func ByPlatform(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSeenAt orders the results by the last_seen_at field.
 func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByNextSeenAt orders the results by the next_seen_at field.
+func ByNextSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextSeenAt, opts...).ToFunc()
 }
 
 // ByTagsCount orders the results by tags count.
