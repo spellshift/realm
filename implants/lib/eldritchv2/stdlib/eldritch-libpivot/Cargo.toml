@@ -32,12 +32,12 @@ listeners = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-eldritch-libagent = { workspace = true }
+eldritch-libagent = { workspace = true, features = ["stdlib"] }
 
 [features]
 default = ["stdlib"]
 stdlib = [
-    "eldritch-libagent",
+    "eldritch-libagent/stdlib",
     "anyhow",
     "async-recursion",
     "async-trait",
