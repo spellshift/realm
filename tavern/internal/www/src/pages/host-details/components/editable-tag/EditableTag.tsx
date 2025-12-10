@@ -6,20 +6,24 @@ import { useEditableTag } from "./useEditableTag";
 import { SingleValue } from "react-select";
 import { TagNode } from "../../../../utils/interfacesQuery";
 import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
+import { useTags } from "../../../../context/TagContext";
 
 
 export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTag, tagSaved?: TagNode, hostId?: string }) {
     const { data } = useAuthorization();
+    const { data: tagData } = useTags();
+
     const canEdit = data?.me?.isAdmin || false;
     const {
         tagValue,
-        options,
         loading,
         displayEditTag,
         handleSelectOption,
         handleCreateOption,
         setDisplayEditTag
     } = useEditableTag(kind);
+    const options = kind === "group" ? tagData.groupTags : tagData.serviceTags;
+
 
     if (displayEditTag) {
         return (

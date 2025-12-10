@@ -1,4 +1,4 @@
-import { TomeNode, UserNode } from "./interfacesQuery";
+import { BeaconNode, HostNode, TagNode, TomeNode, UserNode } from "./interfacesQuery";
 
 export type KindOfTag = 'service' | 'group';
 
@@ -8,6 +8,21 @@ export interface FilterBarOption {
     kind: string;
     id: string;
     name: string;
+}
+
+export interface FilterOptionGroup {
+    label: string;
+    options: FilterBarOption[];
+}
+
+export interface TagContextProps {
+    beacons: Array<FilterBarOption & BeaconNode>;
+    groupTags: Array<FilterBarOption & TagNode>;
+    serviceTags: Array<FilterBarOption & TagNode>;
+    hosts: Array<FilterBarOption & HostNode>;
+    principals: Array<FilterBarOption>;
+    primaryIPs: Array<FilterBarOption>;
+    platforms: Array<FilterBarOption>;
 }
 
 export interface OnlineOfflineStatus {
