@@ -139,7 +139,10 @@ pub fn render<W: std::io::Write>(
     }
 
     let cursor_col = state.prompt.len() as u16 + state.cursor as u16;
-    stdout.queue(cursor::MoveToColumn(cursor_col))?;
+    stdout.write_all(b"\r")?;
+    if cursor_col > 0 {
+        stdout.queue(cursor::MoveRight(cursor_col))?;
+    }
 
     stdout.flush()?;
     Ok(())
