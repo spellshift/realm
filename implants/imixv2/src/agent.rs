@@ -276,11 +276,21 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn get_transport(&self) -> Result<String, String> {
-        Ok("grpc".to_string())
+        // Blocks on read, but it's fast
+        self.block_on(async { Ok(self.transport.read().await.name().to_string()) })
     }
 
-    fn set_transport(&self, _transport: String) -> Result<(), String> {
-        Err("Switching transport not supported yet".to_string())
+    fn set_transport(&self, transport: String) -> Result<(), String> {
+        let current_transport =
+            self.block_on(async { Ok(self.transport.read().await.name().to_string()) })?;
+        if transport == current_transport {
+            Ok(())
+        } else {
+            Err(format!(
+                "Switching transport from {} to {} not supported",
+                current_transport, transport
+            ))
+        }
     }
 
     fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
@@ -288,7 +298,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        Ok(vec!["grpc".to_string()])
+        self.block_on(async { Ok(vec![self.transport.read().await.name().to_string()]) })
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {

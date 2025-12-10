@@ -424,6 +424,10 @@ impl Transport for HTTP {
     fn is_active(&self) -> bool {
         !self.base_url.is_empty()
     }
+
+    fn name(&self) -> &'static str {
+        "http"
+    }
 }
 
 #[cfg(test)]
