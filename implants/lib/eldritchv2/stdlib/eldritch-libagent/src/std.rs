@@ -166,11 +166,7 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.stop_task(task_id)
     }
 
-    fn eval(&self, code: String) -> Result<Value, String> {
-        let mut interp = Interpreter::new();
-        // Register a new StdAgentLibrary instance to allow recursion
-        let lib = StdAgentLibrary::new(self.agent.clone(), self.task_id);
-        interp.register_lib(lib);
+    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String> {
         interp.interpret(&code)
     }
 }

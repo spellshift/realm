@@ -115,7 +115,14 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             let iterable = &args[0];
             match iterable {
-                Value::List(other) => l.write().extend(other.read().clone()),
+                Value::List(other) => {
+                    // DEADLOCK FIX: Read other first, then write l.
+                    // If l and other are the same list, l.write().extend(other.read().clone())
+                    // would acquire the write lock on l, then try to acquire the read lock on other
+                    // (which is l), causing a deadlock.
+                    let items = other.read().clone();
+                    l.write().extend(items);
+                }
                 Value::Tuple(other) => l.write().extend(other.clone()),
                 _ => {
                     return Err(format!(

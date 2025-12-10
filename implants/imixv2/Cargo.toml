@@ -3,6 +3,9 @@ name = "imixv2"
 version = "0.3.0"
 edition = "2024"
 
+[lib]
+crate-type = ["cdylib"]
+
 [features]
 win_service = []
 

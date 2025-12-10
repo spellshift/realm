@@ -3,7 +3,7 @@ extern crate alloc;
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::Value;
+use eldritch_core::{Interpreter, Value};
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 use alloc::collections::BTreeMap;
@@ -313,12 +313,9 @@ pub trait AgentLibrary {
     fn stop_task(&self, task_id: i64) -> Result<(), String>;
 
     #[eldritch_method]
-    /// Evaluates the provided Eldritch code in a new interpreter instance.
+    /// Evaluates the provided Eldritch code using the current interpreter instance.
     ///
-    /// This method allows the agent to execute dynamic code. The new interpreter
-    /// has access to the agent library itself (enabling recursion), but does not
-    /// automatically inherit other standard libraries unless they are part of the
-    /// agent's context.
+    /// This method allows the agent to execute dynamic code within the current context.
     ///
     /// **Parameters**
     /// - `code` (`str`): The Eldritch code to evaluate.
@@ -328,5 +325,5 @@ pub trait AgentLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the code execution fails.
-    fn eval(&self, code: String) -> Result<Value, String>;
+    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String>;
 }

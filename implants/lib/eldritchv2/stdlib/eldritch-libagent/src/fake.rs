@@ -104,9 +104,7 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 
-    fn eval(&self, code: String) -> Result<Value, String> {
-        let mut interp = Interpreter::new();
-        interp.register_lib(AgentLibraryFake::default());
+    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String> {
         interp.interpret(&code)
     }
 }

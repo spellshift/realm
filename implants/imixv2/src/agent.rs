@@ -20,7 +20,7 @@ pub struct ImixAgent<T: Transport> {
     pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
 }
 
-impl<T: Transport + 'static> ImixAgent<T> {
+impl<T: Transport + Sync + 'static> ImixAgent<T> {
     pub fn new(
         config: Config,
         transport: T,
@@ -156,16 +156,21 @@ impl<T: Transport + 'static> ImixAgent<T> {
         Fut: std::future::Future<Output = Result<()>> + Send + 'static,
     {
         let subtasks = self.subtasks.clone();
-
-        // We need a transport for the subtask. Get it synchronously.
-        let transport = self.block_on(async {
-            self.get_usable_transport().await.map_err(|e| e.to_string())
-        })?;
+        let agent = self.clone();
 
         let handle = self.runtime_handle.spawn(async move {
-            if let Err(e) = action(transport).await {
-                #[cfg(debug_assertions)]
-                log::error!("Subtask {} error: {e:#}", task_id);
+            // We need a transport for the subtask. Get it asynchronously.
+            match agent.get_usable_transport().await {
+                Ok(transport) => {
+                    if let Err(e) = action(transport).await {
+                        #[cfg(debug_assertions)]
+                        log::error!("Subtask {} error: {e:#}", task_id);
+                    }
+                }
+                Err(e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Subtask {} failed to get transport: {e:#}", task_id);
+                }
             }
         });
 
