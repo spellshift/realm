@@ -9,21 +9,19 @@ eldritch-macros = { workspace = true }
 eldritch-libagent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 anyhow = { version = "1.0", optional = true }
-rust-embed = { version = "8.0", optional = true }
 
 [features]
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = []
-imix = []
 stdlib = [
     "dep:eldritch-libagent",
     "dep:pb",
     "dep:anyhow",
-    "dep:rust-embed",
     "eldritch-libagent/stdlib",
 ]
 
 [dev-dependencies]
 tempfile = "3.3"
 eldritch-libagent = { workspace = true, features = ["fake_bindings", "stdlib"] }
+rust-embed = "8.0"
