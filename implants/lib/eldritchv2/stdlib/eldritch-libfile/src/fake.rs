@@ -294,7 +294,15 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
-    fn timestomp(&self, _src: String, _dst: String) -> Result<(), String> {
+    #[allow(unused_variables)]
+    fn timestomp(
+        &self,
+        path: String,
+        mtime: Option<Value>,
+        atime: Option<Value>,
+        ctime: Option<Value>,
+        ref_file: Option<String>,
+    ) -> Result<(), String> {
         Ok(())
     }
 

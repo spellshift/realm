@@ -1008,9 +1008,15 @@ cb
         assert!(res.is_err());
         let err_msg = res.unwrap_err().to_string();
         assert!(err_msg.contains("STOP"));
+
+        Ok(())
     }
-  
+
     fn test_timestomp() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let tmp = NamedTempFile::new()?;
+        let path = tmp.path().to_string_lossy().to_string();
+
         // Initial stat
         let initial_meta = fs::metadata(&path)?;
         let _initial_mtime = initial_meta.modified()?;
