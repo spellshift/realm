@@ -428,6 +428,10 @@ impl Transport for HTTP {
     fn name(&self) -> &'static str {
         "http"
     }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["http".to_string()]
+    }
 }
 
 #[cfg(test)]

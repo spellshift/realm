@@ -286,16 +286,26 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn set_transport(&self, transport: String) -> Result<(), String> {
-        let current_transport =
-            self.block_on(async { Ok(self.transport.read().await.name().to_string()) })?;
-        if transport == current_transport {
-            Ok(())
-        } else {
-            Err(format!(
-                "Switching transport from {} to {} not supported",
-                current_transport, transport
-            ))
+        let available = self.list_transports()?;
+        if !available.contains(&transport) {
+            return Err(format!("Invalid transport: {}", transport));
         }
+
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+
+            // We need to update the scheme of the callback URI
+            let uri = &cfg.callback_uri;
+            if let Some(idx) = uri.find("://") {
+                let new_uri = format!("{}://{}", transport, &uri[idx + 3..]);
+                cfg.callback_uri = new_uri;
+            } else {
+                // Should not happen if uri is valid, but handle gracefully
+                let new_uri = format!("{}://{}", transport, uri);
+                cfg.callback_uri = new_uri;
+            }
+            Ok(())
+        })
     }
 
     fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
@@ -303,7 +313,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        self.block_on(async { Ok(vec![self.transport.read().await.name().to_string()]) })
+        self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {

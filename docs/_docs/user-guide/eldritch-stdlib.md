@@ -387,6 +387,21 @@ Decrypts data using AES (CBC mode).
 **Errors**
 - Returns an error string if decryption fails (e.g., invalid padding, incorrect key length).
 
+### crypto.aes_decrypt_file
+`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
+Decrypts a file using AES.
+
+**Parameters**
+- `src` (`str`): The source file path.
+- `dst` (`str`): The destination file path.
+- `key` (`str`): The decryption key.
+
+**Returns**
+- `None`
+
+**Errors**
+- Returns an error string if decryption fails or file operations fail.
+
 ### crypto.aes_encrypt
 `crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 Encrypts data using AES (CBC mode).
@@ -401,6 +416,21 @@ Encrypts data using AES (CBC mode).
 
 **Errors**
 - Returns an error string if encryption fails (e.g., incorrect key length).
+
+### crypto.aes_encrypt_file
+`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
+Encrypts a file using AES.
+
+**Parameters**
+- `src` (`str`): The source file path.
+- `dst` (`str`): The destination file path.
+- `key` (`str`): The encryption key.
+
+**Returns**
+- `None`
+
+**Errors**
+- Returns an error string if encryption fails or file operations fail.
 
 ### crypto.decode_b64
 `crypto.decode_b64(content: str, encode_type: Option<str>) -> str`
@@ -944,19 +974,6 @@ Performs an ARP scan to discover live hosts on the local network.
 **Returns**
 - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
 
-### pivot.bind_proxy
-`pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str) -> None`
-Starts a SOCKS5 proxy server on the agent.
-
-**Parameters**
-- `listen_address` (`str`): Address to bind.
-- `listen_port` (`int`): Port to listen on.
-- `username` (`str`): Proxy username (for auth).
-- `password` (`str`): Proxy password.
-
-**Returns**
-- `None`
-
 ### pivot.ncat
 `pivot.ncat(address: str, port: int, data: str, protocol: str) -> str`
 Sends arbitrary data to a host via TCP or UDP and waits for a response.
@@ -969,20 +986,6 @@ Sends arbitrary data to a host via TCP or UDP and waits for a response.
 
 **Returns**
 - `str`: The response data.
-
-### pivot.port_forward
-`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port: int, protocol: str) -> None`
-Sets up a port forwarding rule.
-
-**Parameters**
-- `listen_address` (`str`): Local address to bind.
-- `listen_port` (`int`): Local port to listen on.
-- `forward_address` (`str`): Remote address to forward to.
-- `forward_port` (`int`): Remote port.
-- `protocol` (`str`): Protocol (tcp/udp).
-
-**Returns**
-- `None`
 
 ### pivot.port_scan
 `pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<Dict>`
@@ -1024,21 +1027,6 @@ Useful if PTY is not available.
 
 **Errors**
 - Returns an error string if failure occurs.
-
-### pivot.smb_exec
-`pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
-**Experimental**: Executes a command via SMB.
-
-**Parameters**
-- `target` (`str`): Target host.
-- `port` (`int`): SMB port.
-- `username` (`str`): Username.
-- `password` (`str`): Password.
-- `hash` (`str`): NTLM hash.
-- `command` (`str`): Command to execute.
-
-**Returns**
-- `str`: Command output.
 
 ### pivot.ssh_copy
 `pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Option<str>, key: Option<str>, key_password: Option<str>, timeout: Option<int>) -> str`

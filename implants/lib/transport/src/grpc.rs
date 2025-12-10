@@ -200,6 +200,10 @@ impl Transport for GRPC {
     fn name(&self) -> &'static str {
         "grpc"
     }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["grpc".to_string()]
+    }
 }
 
 impl GRPC {

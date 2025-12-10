@@ -86,4 +86,8 @@ pub trait UnsafeTransport: Clone + Send {
     /// Returns the name of the transport protocol (e.g., "grpc", "http")
     #[allow(dead_code)]
     fn name(&self) -> &'static str;
+
+    /// Returns a list of available transports that this instance can switch to or supports.
+    #[allow(dead_code)]
+    fn list_available(&self) -> Vec<String>;
 }
