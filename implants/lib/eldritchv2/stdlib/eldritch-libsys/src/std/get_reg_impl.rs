@@ -42,14 +42,17 @@ pub fn get_reg(reghive: String, regpath: String) -> Result<BTreeMap<String, Stri
     Ok(tmp_res)
 }
 
-#[cfg(target_os = "windows")]
 #[cfg(test)]
 mod tests {
+    #[cfg(target_os = "windows")]
     use super::*;
+    #[cfg(target_os = "windows")]
     use uuid::Uuid;
+    #[cfg(target_os = "windows")]
     use winreg::{enums::*, RegKey};
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn test_get_reg() -> anyhow::Result<()> {
         let id = Uuid::new_v4();
         //Write something into temp regkey...
@@ -65,5 +68,13 @@ mod tests {
         assert_eq!(val2, "BAR");
 
         Ok(())
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_get_reg_non_windows() {
+        let res = super::get_reg("HKEY_CURRENT_USER".into(), "SOFTWARE".into());
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
     }
 }

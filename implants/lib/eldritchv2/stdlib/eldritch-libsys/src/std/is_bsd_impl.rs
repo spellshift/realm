@@ -10,3 +10,19 @@ pub fn is_bsd() -> Result<bool> {
     }
     Ok(false)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_bsd() {
+        let res = is_bsd().unwrap();
+        let expected = cfg!(any(
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        ));
+        assert_eq!(res, expected);
+    }
+}
