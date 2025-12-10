@@ -1020,12 +1020,9 @@ It allows you to:
     - Returns an error string if the task cannot be stopped or does not exist.
 
 *   **`agent.eval`**
-    Evaluates the provided Eldritch code in a new interpreter instance.
+    Evaluates the provided Eldritch code using the current interpreter instance.
     
-    This method allows the agent to execute dynamic code. The new interpreter
-    has access to the agent library itself (enabling recursion), but does not
-    automatically inherit other standard libraries unless they are part of the
-    agent's context.
+    This method allows the agent to execute dynamic code within the current context.
     
     **Parameters**
     - `code` (`str`): The Eldritch code to evaluate.
