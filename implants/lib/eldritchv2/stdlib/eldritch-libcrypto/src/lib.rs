@@ -50,6 +50,36 @@ pub trait CryptoLibrary {
     fn aes_encrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
+    /// Decrypts a file using AES.
+    ///
+    /// **Parameters**
+    /// - `src` (`str`): The source file path.
+    /// - `dst` (`str`): The destination file path.
+    /// - `key` (`str`): The decryption key.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if decryption fails or file operations fail.
+    fn aes_decrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Encrypts a file using AES.
+    ///
+    /// **Parameters**
+    /// - `src` (`str`): The source file path.
+    /// - `dst` (`str`): The destination file path.
+    /// - `key` (`str`): The encryption key.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if encryption fails or file operations fail.
+    fn aes_encrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String>;
+
+    #[eldritch_method]
     /// Calculates the MD5 hash of the provided data.
     ///
     /// **Parameters**

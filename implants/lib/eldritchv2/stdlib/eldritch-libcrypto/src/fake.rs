@@ -23,6 +23,14 @@ impl CryptoLibrary for CryptoLibraryFake {
         Ok(d)
     }
 
+    fn aes_decrypt_file(&self, _src: String, _dst: String, _key: String) -> Result<(), String> {
+        Err("File decryption not supported in fake/wasm environment".into())
+    }
+
+    fn aes_encrypt_file(&self, _src: String, _dst: String, _key: String) -> Result<(), String> {
+        Err("File encryption not supported in fake/wasm environment".into())
+    }
+
     fn md5(&self, _data: Vec<u8>) -> Result<String, String> {
         Ok(String::from("d41d8cd98f00b204e9800998ecf8427e")) // Empty md5
     }
