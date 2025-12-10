@@ -26,9 +26,6 @@ impl HttpLibrary for StdHttpLibrary {
             .map_err(|e| format!("Failed to create runtime: {e}"))?;
 
         runtime.block_on(async {
-            let mut dest = File::create(PathBuf::from(path.clone()))
-                .map_err(|e| format!("Failed to create file: {e}"))?;
-
             // v1: download(uri, dst, allow_insecure)
             // v2: download(url, path) -> assumes insecure is false or handled by env?
             // The trait signature doesn't have allow_insecure. We'll default to false.
@@ -43,6 +40,13 @@ impl HttpLibrary for StdHttpLibrary {
                 .send()
                 .await
                 .map_err(|e| format!("Failed to send request: {e}"))?;
+
+            if !resp.status().is_success() {
+                return Err(format!("Download failed with status: {}", resp.status()));
+            }
+
+            let mut dest = File::create(PathBuf::from(path.clone()))
+                .map_err(|e| format!("Failed to create file: {e}"))?;
 
             let mut stream = resp.bytes_stream();
 
@@ -171,7 +175,7 @@ impl HttpLibrary for StdHttpLibrary {
 mod tests {
     use super::*;
     use httptest::{
-        matchers::{all_of, request},
+        matchers::{all_of, contains, request},
         responders::status_code,
         Expectation, Server,
     };
@@ -188,10 +192,7 @@ mod tests {
 
         let tmp_file = NamedTempFile::new().unwrap();
         let path = String::from(tmp_file.path().to_str().unwrap());
-        // Close file so download can overwrite/create it if needed, or just keep path
-        // NamedTempFile deletes on drop. We keep it alive until end of test?
-        // Actually, on Windows you can't write to an open file sometimes.
-        // Let's just use the path.
+        // Close file so download can overwrite/create it if needed
 
         let url = server.url("/foo").to_string();
         let lib = StdHttpLibrary;
@@ -200,6 +201,47 @@ mod tests {
 
         let content = read_to_string(&path).unwrap();
         assert_eq!(content, "test body");
+    }
+
+    #[test]
+    fn test_download_404() {
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(request::method_path("GET", "/foo"))
+                .respond_with(status_code(404)),
+        );
+
+        let tmp_file = NamedTempFile::new().unwrap();
+        let path = String::from(tmp_file.path().to_str().unwrap());
+
+        let url = server.url("/foo").to_string();
+        let lib = StdHttpLibrary;
+
+        let res = lib.download(url, path);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().contains("Download failed with status: 404"));
+    }
+
+    #[test]
+    fn test_download_write_error() {
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(request::method_path("GET", "/foo"))
+                .respond_with(status_code(200).body("test body")),
+        );
+
+        let url = server.url("/foo").to_string();
+        let lib = StdHttpLibrary;
+
+        // Try to download to a directory path, which should fail to open as a file
+        let tmp_dir = tempfile::tempdir().unwrap();
+        let path = tmp_dir.path().to_str().unwrap().to_string();
+
+        let res = lib.download(url, path);
+        assert!(res.is_err());
+        // Exact error message depends on OS, but should be a file creation error
+        let err = res.unwrap_err();
+        assert!(err.contains("Failed to create file") || err.contains("Is a directory") || err.contains("Access is denied"));
     }
 
     #[test]
@@ -229,12 +271,80 @@ mod tests {
         if let Value::Dictionary(d) = res.get("headers").unwrap() {
             let dict = d.read();
             assert_eq!(
-                dict.get(&Value::String("x-test".to_string())).or(dict.get(&Value::String("X-Test".to_string()))).unwrap(),
+                dict.get(&Value::String("x-test".to_string()))
+                    .or(dict.get(&Value::String("X-Test".to_string())))
+                    .unwrap(),
                 &Value::String("Value".into())
             );
         } else {
             panic!("Headers should be dictionary");
         }
+    }
+
+    #[test]
+    fn test_get_404() {
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(request::method_path("GET", "/foo"))
+                .respond_with(status_code(404)),
+        );
+
+        let url = server.url("/foo").to_string();
+        let lib = StdHttpLibrary;
+
+        let res = lib.get(url, None).unwrap();
+        assert_eq!(res.get("status_code").unwrap(), &Value::Int(404));
+    }
+
+    #[test]
+    fn test_get_server_error() {
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(request::method_path("GET", "/foo"))
+                .respond_with(status_code(500)),
+        );
+
+        let url = server.url("/foo").to_string();
+        let lib = StdHttpLibrary;
+
+        let res = lib.get(url, None).unwrap();
+        assert_eq!(res.get("status_code").unwrap(), &Value::Int(500));
+    }
+
+    #[test]
+    fn test_get_connection_error() {
+        // Pick a port that is unlikely to be open
+        let url = "http://127.0.0.1:54321/foo".to_string();
+        let lib = StdHttpLibrary;
+
+        let res = lib.get(url, None);
+        assert!(res.is_err());
+        assert!(res.unwrap_err().contains("Request failed"));
+    }
+
+    #[test]
+    fn test_get_with_headers() {
+        let server = Server::run();
+        // Lowercase the header key in expectation as reqwest/httptest might normalize it?
+        // Actually, HTTP/2 normalizes to lowercase. But we are likely using HTTP/1.1 in httptest.
+        // reqwest does preserve case for headers usually, but maybe it canonicalizes.
+        // Let's try matching lowercase.
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("GET", "/foo"),
+                request::headers(contains(("x-my-header", "MyValue")))
+            ])
+            .respond_with(status_code(200)),
+        );
+
+        let url = server.url("/foo").to_string();
+        let lib = StdHttpLibrary;
+
+        let mut headers = BTreeMap::new();
+        headers.insert("X-My-Header".into(), "MyValue".into());
+
+        let res = lib.get(url, Some(headers)).unwrap();
+        assert_eq!(res.get("status_code").unwrap(), &Value::Int(200));
     }
 
     #[test]
@@ -259,5 +369,35 @@ mod tests {
         } else {
             panic!("Body should be bytes");
         }
+    }
+
+    #[test]
+    fn test_post_with_headers() {
+        let server = Server::run();
+        server.expect(
+            Expectation::matching(all_of![
+                request::method_path("POST", "/foo"),
+                request::headers(contains(("content-type", "application/json")))
+            ])
+            .respond_with(status_code(200)),
+        );
+
+        let url = server.url("/foo").to_string();
+        let lib = StdHttpLibrary;
+
+        let mut headers = BTreeMap::new();
+        headers.insert("Content-Type".into(), "application/json".into());
+
+        let res = lib.post(url, None, Some(headers)).unwrap();
+        assert_eq!(res.get("status_code").unwrap(), &Value::Int(200));
+    }
+
+    #[test]
+    fn test_post_error() {
+        let url = "http://127.0.0.1:54321/foo".to_string();
+        let lib = StdHttpLibrary;
+
+        let res = lib.post(url, None, None);
+        assert!(res.is_err());
     }
 }
