@@ -8,6 +8,10 @@ use alloc::string::ToString;
 use spin::RwLock;
 
 #[allow(clippy::mutable_key_type)]
+/// `set([iterable])`: Creates a set.
+///
+/// If no argument is given, the constructor creates a new empty set.
+/// The argument must be an iterable if specified.
 pub fn builtin_set(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Set(Arc::new(RwLock::new(BTreeSet::new()))));

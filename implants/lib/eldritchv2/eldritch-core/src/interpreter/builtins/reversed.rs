@@ -6,6 +6,12 @@ use alloc::string::String;
 use alloc::string::ToString;
 use spin::RwLock;
 
+/// `reversed(seq)`: Returns a reverse iterator.
+///
+/// Returns a list of the elements of the sequence in reverse order.
+///
+/// **Parameters**
+/// - `seq` (Sequence): The sequence to reverse (List, Tuple, String).
 pub fn builtin_reversed(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(
