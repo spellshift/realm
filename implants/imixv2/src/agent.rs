@@ -248,6 +248,33 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
     }
 
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
+        let mut map = BTreeMap::new();
+        // Blocks on read, but it's fast
+        let cfg = self
+            .block_on(async { Ok(self.config.read().await.clone()) })
+            .map_err(|e: String| e)?;
+
+        map.insert("callback_uri".to_string(), cfg.callback_uri.clone());
+        if let Some(proxy) = &cfg.proxy_uri {
+            map.insert("proxy_uri".to_string(), proxy.clone());
+        }
+        map.insert("retry_interval".to_string(), cfg.retry_interval.to_string());
+        map.insert("run_once".to_string(), cfg.run_once.to_string());
+
+        if let Some(info) = &cfg.info {
+            map.insert("beacon_id".to_string(), info.identifier.clone());
+            map.insert("principal".to_string(), info.principal.clone());
+            map.insert("interval".to_string(), info.interval.to_string());
+            if let Some(host) = &info.host {
+                map.insert("hostname".to_string(), host.name.clone());
+                map.insert("platform".to_string(), host.platform.to_string());
+                map.insert("primary_ip".to_string(), host.primary_ip.clone());
+            }
+        }
+        Ok(map)
+    }
+
     fn get_transport(&self) -> Result<String, String> {
         Ok("grpc".to_string())
     }
