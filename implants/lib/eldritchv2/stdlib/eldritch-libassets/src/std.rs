@@ -151,6 +151,7 @@ mod tests {
         fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> { Ok(()) }
         fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
         fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> { Ok(c2::ClaimTasksResponse::default()) }
+        fn get_config(&self) -> Result<BTreeMap<String, String>, String> { Ok(BTreeMap::new()) }
         fn get_transport(&self) -> Result<String, String> { Ok("mock".into()) }
         fn set_transport(&self, _transport: String) -> Result<(), String> { Ok(()) }
         fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> { Ok(()) }

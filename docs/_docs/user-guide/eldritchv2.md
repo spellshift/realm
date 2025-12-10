@@ -1519,17 +1519,17 @@ It supports:
 
 *   **`file.timestomp`**
     Timestomps a file.
-
+    
     Modifies the timestamps (modified, access, creation) of a file.
     Can use a reference file or specific values.
-
+    
     **Parameters**
     - `path` (`str`): The target file to modify.
     - `mtime` (`Option<Value>`): New modification time (Int epoch or String).
     - `atime` (`Option<Value>`): New access time (Int epoch or String).
     - `ctime` (`Option<Value>`): New creation time (Int epoch or String). Windows only.
     - `ref_file` (`Option<str>`): Path to a reference file to copy timestamps from.
-
+    
     **Returns**
     - `None`
     
