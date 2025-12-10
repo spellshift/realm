@@ -84,6 +84,9 @@ impl Agent for MockAgent {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
+    fn get_config(&self) -> Result<std::collections::BTreeMap<String, String>, String> {
+        Ok(std::collections::BTreeMap::new())
+    }
 }
 
 #[tokio::test]
