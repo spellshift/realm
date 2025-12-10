@@ -65,4 +65,68 @@ mod tests {
         let epoch = lib.format_to_epoch(readable, fmt.to_string()).unwrap();
         assert_eq!(epoch, ts);
     }
+
+    #[test]
+    fn test_format_to_epoch_formats() {
+        let lib = StdTimeLibrary;
+        // Test with different format
+        let ts = 1609459200; // 2021-01-01 00:00:00 UTC
+        let date_str = "2021/01/01 00:00:00";
+        let fmt = "%Y/%m/%d %H:%M:%S";
+
+        let epoch = lib.format_to_epoch(date_str.to_string(), fmt.to_string()).unwrap();
+        assert_eq!(epoch, ts);
+    }
+
+    #[test]
+    fn test_date_only_fails() {
+        let lib = StdTimeLibrary;
+        let date_str = "2021/01/01";
+        let fmt = "%Y/%m/%d";
+        let res = lib.format_to_epoch(date_str.to_string(), fmt.to_string());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_format_to_epoch_invalid() {
+        let lib = StdTimeLibrary;
+        let res = lib.format_to_epoch("invalid".to_string(), "%Y".to_string());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_format_to_readable_invalid() {
+        let lib = StdTimeLibrary;
+        let res = lib.format_to_readable(i64::MAX, "%Y".to_string());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_now() {
+        let lib = StdTimeLibrary;
+        let ts = lib.now().unwrap();
+        assert!(ts > 1600000000);
+    }
+
+    #[test]
+    fn test_sleep() {
+        let lib = StdTimeLibrary;
+        let start = std::time::Instant::now();
+        // Use a small sleep to avoid making tests slow
+        lib.sleep(1).unwrap();
+        let elapsed = start.elapsed();
+        assert!(elapsed.as_secs() >= 1);
+    }
+
+    #[test]
+    fn test_format_with_timezone() {
+        let lib = StdTimeLibrary;
+        // RFC3339 format with timezone
+        let input = "2021-01-01T00:00:00+00:00";
+        let fmt = "%Y-%m-%dT%H:%M:%S%z";
+        let ts = 1609459200;
+
+        let epoch = lib.format_to_epoch(input.to_string(), fmt.to_string()).unwrap();
+        assert_eq!(epoch, ts);
+    }
 }
