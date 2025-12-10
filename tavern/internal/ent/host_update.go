@@ -148,6 +148,26 @@ func (hu *HostUpdate) ClearLastSeenAt() *HostUpdate {
 	return hu
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (hu *HostUpdate) SetNextSeenAt(t time.Time) *HostUpdate {
+	hu.mutation.SetNextSeenAt(t)
+	return hu
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableNextSeenAt(t *time.Time) *HostUpdate {
+	if t != nil {
+		hu.SetNextSeenAt(*t)
+	}
+	return hu
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (hu *HostUpdate) ClearNextSeenAt() *HostUpdate {
+	hu.mutation.ClearNextSeenAt()
+	return hu
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (hu *HostUpdate) AddTagIDs(ids ...int) *HostUpdate {
 	hu.mutation.AddTagIDs(ids...)
@@ -433,6 +453,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if hu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(host.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := hu.mutation.NextSeenAt(); ok {
+		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
+	}
+	if hu.mutation.NextSeenAtCleared() {
+		_spec.ClearField(host.FieldNextSeenAt, field.TypeTime)
 	}
 	if hu.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -793,6 +819,26 @@ func (huo *HostUpdateOne) ClearLastSeenAt() *HostUpdateOne {
 	return huo
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (huo *HostUpdateOne) SetNextSeenAt(t time.Time) *HostUpdateOne {
+	huo.mutation.SetNextSeenAt(t)
+	return huo
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableNextSeenAt(t *time.Time) *HostUpdateOne {
+	if t != nil {
+		huo.SetNextSeenAt(*t)
+	}
+	return huo
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (huo *HostUpdateOne) ClearNextSeenAt() *HostUpdateOne {
+	huo.mutation.ClearNextSeenAt()
+	return huo
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (huo *HostUpdateOne) AddTagIDs(ids ...int) *HostUpdateOne {
 	huo.mutation.AddTagIDs(ids...)
@@ -1108,6 +1154,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	}
 	if huo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(host.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := huo.mutation.NextSeenAt(); ok {
+		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
+	}
+	if huo.mutation.NextSeenAtCleared() {
+		_spec.ClearField(host.FieldNextSeenAt, field.TypeTime)
 	}
 	if huo.mutation.TagsCleared() {
 		edge := &sqlgraph.EdgeSpec{

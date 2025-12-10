@@ -124,6 +124,20 @@ func (hc *HostCreate) SetNillableLastSeenAt(t *time.Time) *HostCreate {
 	return hc
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (hc *HostCreate) SetNextSeenAt(t time.Time) *HostCreate {
+	hc.mutation.SetNextSeenAt(t)
+	return hc
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (hc *HostCreate) SetNillableNextSeenAt(t *time.Time) *HostCreate {
+	if t != nil {
+		hc.SetNextSeenAt(*t)
+	}
+	return hc
+}
+
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
 func (hc *HostCreate) AddTagIDs(ids ...int) *HostCreate {
 	hc.mutation.AddTagIDs(ids...)
@@ -331,6 +345,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 	if value, ok := hc.mutation.LastSeenAt(); ok {
 		_spec.SetField(host.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
+	}
+	if value, ok := hc.mutation.NextSeenAt(); ok {
+		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
+		_node.NextSeenAt = value
 	}
 	if nodes := hc.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -572,6 +590,24 @@ func (u *HostUpsert) ClearLastSeenAt() *HostUpsert {
 	return u
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *HostUpsert) SetNextSeenAt(v time.Time) *HostUpsert {
+	u.Set(host.FieldNextSeenAt, v)
+	return u
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *HostUpsert) UpdateNextSeenAt() *HostUpsert {
+	u.SetExcluded(host.FieldNextSeenAt)
+	return u
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *HostUpsert) ClearNextSeenAt() *HostUpsert {
+	u.SetNull(host.FieldNextSeenAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -740,6 +776,27 @@ func (u *HostUpsertOne) UpdateLastSeenAt() *HostUpsertOne {
 func (u *HostUpsertOne) ClearLastSeenAt() *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *HostUpsertOne) SetNextSeenAt(v time.Time) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateNextSeenAt() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *HostUpsertOne) ClearNextSeenAt() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearNextSeenAt()
 	})
 }
 
@@ -1077,6 +1134,27 @@ func (u *HostUpsertBulk) UpdateLastSeenAt() *HostUpsertBulk {
 func (u *HostUpsertBulk) ClearLastSeenAt() *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *HostUpsertBulk) SetNextSeenAt(v time.Time) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateNextSeenAt() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *HostUpsertBulk) ClearNextSeenAt() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearNextSeenAt()
 	})
 }
 

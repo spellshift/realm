@@ -270,6 +270,11 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 				selectedFields = append(selectedFields, beacon.FieldLastSeenAt)
 				fieldSeen[beacon.FieldLastSeenAt] = struct{}{}
 			}
+		case "nextSeenAt":
+			if _, ok := fieldSeen[beacon.FieldNextSeenAt]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldNextSeenAt)
+				fieldSeen[beacon.FieldNextSeenAt] = struct{}{}
+			}
 		case "interval":
 			if _, ok := fieldSeen[beacon.FieldInterval]; !ok {
 				selectedFields = append(selectedFields, beacon.FieldInterval)
@@ -1061,6 +1066,11 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			if _, ok := fieldSeen[host.FieldLastSeenAt]; !ok {
 				selectedFields = append(selectedFields, host.FieldLastSeenAt)
 				fieldSeen[host.FieldLastSeenAt] = struct{}{}
+			}
+		case "nextSeenAt":
+			if _, ok := fieldSeen[host.FieldNextSeenAt]; !ok {
+				selectedFields = append(selectedFields, host.FieldNextSeenAt)
+				fieldSeen[host.FieldNextSeenAt] = struct{}{}
 			}
 		case "id":
 		case "__typename":
