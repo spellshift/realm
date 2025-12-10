@@ -152,7 +152,6 @@ pub fn render<W: std::io::Write>(
 mod tests {
     use super::*;
     use eldritch_repl::Input;
-    use std::io::Write; // Needed here for the test helper vector write
 
     #[test]
     fn test_render_multi_line_history() {

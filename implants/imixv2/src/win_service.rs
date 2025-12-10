@@ -6,7 +6,7 @@ use windows_service::{
     },
     service_control_handler::{self, ServiceControlHandlerResult},
 };
-use crate::SHUTDOWN;
+use crate::run::SHUTDOWN;
 use std::sync::atomic::Ordering;
 
 pub fn handle_service_main(_arguments: Vec<OsString>) {
