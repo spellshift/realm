@@ -54,6 +54,13 @@ func (Host) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Timestamp of when a task was last claimed or updated for the host."),
+		field.Time("next_seen_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("NEXT_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Timestamp of when a task is next expected to be claimed or updated for the host."),
 	}
 }
 
@@ -61,16 +68,36 @@ func (Host) Fields() []ent.Field {
 func (Host) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Tags used to group this host with other hosts."),
 		edge.From("beacons", Beacon.Type).
 			Ref("host").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Beacons that are present on this host system."),
 		edge.To("files", HostFile.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Files reported on this host system."),
 		edge.To("processes", HostProcess.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Processes reported as running on this host system."),
 		edge.From("credentials", HostCredential.Type).
 			Ref("host").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Credentials reported from this host system."),
 	}
 }
@@ -78,6 +105,8 @@ func (Host) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Host) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),

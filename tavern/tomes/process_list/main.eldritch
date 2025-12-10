@@ -15,6 +15,7 @@ def print_table(rows: list[list]):
             row.append(rpad(c, counts[i]+2))
         print("".join(row))
 
+
 def process_list(cmd_substring):
 
     if cmd_substring == '*':
@@ -22,7 +23,7 @@ def process_list(cmd_substring):
 
     procs = process.list()
 
-    rows = [["PID", "PPID", "USER","COMMAND"]]
+    rows = [["PID", "PPID", "USER", "COMMAND"]]
     for proc in procs:
         if cmd_substring in proc['command']:
             current_proc_command = proc['command']
@@ -33,11 +34,11 @@ def process_list(cmd_substring):
                 str(proc['pid']),
                 str(proc['ppid']),
                 proc['username'],
-                current_proc_command.replace("\n","\\n")
+                current_proc_command.replace("\n", "\\n")
             ])
 
     print_table(rows)
 
-time.sleep(1)
+
 process_list(input_params['cmd_substring'])
 print("")

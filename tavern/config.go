@@ -44,7 +44,7 @@ var (
 
 	// EnvHTTPListenAddr sets the address (ip:port) for tavern's HTTP server to bind to.
 	// EnvHTTPMetricsAddr sets the address (ip:port) for the HTTP metrics server to bind to.
-	EnvHTTPListenAddr        = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:80"}
+	EnvHTTPListenAddr        = EnvString{"HTTP_LISTEN_ADDR", "0.0.0.0:8000"}
 	EnvHTTPMetricsListenAddr = EnvString{"HTTP_METRICS_LISTEN_ADDR", "127.0.0.1:8080"}
 
 	// EnvOAuthClientID set to configure OAuth Client ID.
@@ -59,11 +59,11 @@ var (
 	// EnvMySQLUser defines the MySQL user to authenticate as.
 	// EnvMySQLPasswd defines the password for the MySQL user to authenticate with.
 	// EnvMySQLDB defines the name of the MySQL database to use.
-	EnvMySQLAddr      = EnvString{"MYSQL_ADDR", ""}
-	EnvMySQLNet       = EnvString{"MYSQL_NET", "tcp"}
-	EnvMySQLUser      = EnvString{"MYSQL_USER", "root"}
-	EnvMySQLPasswd    = EnvString{"MYSQL_PASSWD", ""}
-	EnvMySQLDB        = EnvString{"MYSQL_DB", "tavern"}
+	EnvMySQLAddr   = EnvString{"MYSQL_ADDR", ""}
+	EnvMySQLNet    = EnvString{"MYSQL_NET", "tcp"}
+	EnvMySQLUser   = EnvString{"MYSQL_USER", "root"}
+	EnvMySQLPasswd = EnvString{"MYSQL_PASSWD", ""}
+	EnvMySQLDB     = EnvString{"MYSQL_DB", "tavern"}
 
 	// EnvDBMaxIdleConns defines the maximum number of idle db connections to allow.
 	// EnvDBMaxOpenConns defines the maximum number of open db connections to allow.
@@ -89,6 +89,8 @@ var (
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvBool{"ENABLE_PPROF"}
 	EnvEnableMetrics = EnvBool{"ENABLE_METRICS"}
+
+	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern

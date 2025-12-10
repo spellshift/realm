@@ -1,18 +1,25 @@
-import { ApolloError } from "@apollo/client";
 import { FC } from "react";
-import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
 import Breadcrumbs from "../../components/Breadcrumbs";
-import PageHeader from "../../components/tavern-base-ui/PageHeader";
+import { useParams } from "react-router-dom";
+import { GET_QUEST_QUERY } from "../../utils/queries";
+import { useQuery } from "@apollo/client";
+import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
+import { QuestQueryTopLevel, } from "../../utils/interfacesQuery";
 
-type EditablePageHeaderProps = {
-    questId?: string;
-    data: any;
-    error?: ApolloError | undefined;
-    loading: boolean;
-}
-export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data }) => {
+export const EditablePageHeader: FC = () => {
+    const { questId } = useParams();
 
-    const questsName = data?.quests?.edges[0]?.node?.name || questId;
+    const { data } = useQuery<QuestQueryTopLevel>(GET_QUEST_QUERY, {
+        variables: {
+            where: {
+                id: questId
+            },
+            first: 1
+        },
+        skip: !questId
+    });
+
+    const questData = data?.quests?.edges?.[0]?.node;
 
     const BreadcrumbsList = [
         {
@@ -20,26 +27,25 @@ export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data 
             link: "/quests"
         },
         {
-            label: questsName,
+            label: questData?.name || "Quest",
             link: `/tasks/${questId}`
         }
     ]
 
     return (
         <div className="flex flex-col gap-4 w-full">
-            <div className="flex flex-row justify-between w-full items-center">
+            <div className="flex flex-row justify-between w-full items-center gap-2">
                 <Breadcrumbs pages={BreadcrumbsList} />
-                {(questId && data?.quests?.edges && data.quests?.edges.length > 0) &&
+                {questData && questData.tasks.edges && (
                     <CreateQuestDropdown
                         showLabel={true}
-                        name={data?.quests?.edges[0]?.node?.name}
-                        originalParms={data?.quests?.edges[0]?.node?.parameters}
-                        tome={data?.quests?.edges[0]?.node?.tome}
-                        tasks={data?.quests?.edges[0]?.node?.tasksTotal}
+                        name={questData.name}
+                        originalParms={questData.parameters || ""}
+                        tome={questData.tome}
+                        tasks={questData.tasks}
                     />
-                }
+                )}
             </div>
-            <PageHeader title={data?.quests?.edges[0]?.node?.name || questId} />
         </div>
     );
 };

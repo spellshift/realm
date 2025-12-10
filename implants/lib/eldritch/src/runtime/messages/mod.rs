@@ -9,8 +9,11 @@ mod report_process_list;
 mod report_start;
 mod report_text;
 mod reverse_shell_pty;
+mod set_callback_interval;
+mod set_callback_uri;
 
 pub use fetch_asset::FetchAssetMessage;
+pub use pb::config::Config;
 pub(super) use reduce::reduce;
 pub use report_credential::ReportCredentialMessage;
 pub use report_error::ReportErrorMessage;
@@ -20,6 +23,8 @@ pub use report_process_list::ReportProcessListMessage;
 pub use report_start::ReportStartMessage;
 pub use report_text::ReportTextMessage;
 pub use reverse_shell_pty::ReverseShellPTYMessage;
+pub use set_callback_interval::SetCallbackIntervalMessage;
+pub use set_callback_uri::SetCallbackUriMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
@@ -27,9 +32,18 @@ use derive_more::{Display, From};
 use report_agg_output::ReportAggOutputMessage;
 use std::future::Future;
 
-// Dispatcher defines the shared "dispatch" method used by all `Message` variants to send their data using a transport.
-pub trait Dispatcher {
-    fn dispatch(self, transport: &mut impl Transport) -> impl Future<Output = Result<()>> + Send;
+// AsyncDispatcher defines the shared "dispatch" method used by all `AsyncMessage` variants to send their data using a transport.
+pub trait AsyncDispatcher {
+    fn dispatch(
+        self,
+        transport: &mut impl Transport,
+        cfg: Config,
+    ) -> impl Future<Output = Result<()>> + Send;
+}
+
+// SyncDispatcher defines the shared "dispatch" method used by all `SyncMessage` variants to facilitate state changes with the Agent.
+pub trait SyncDispatcher {
+    fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<Config>;
 }
 
 /*
@@ -40,6 +54,16 @@ pub trait Dispatcher {
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[derive(Display, From, Clone)]
 pub enum Message {
+    #[display(fmt = "Async")]
+    Async(AsyncMessage),
+
+    #[display(fmt = "Sync")]
+    Sync(SyncMessage),
+}
+
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Display, From, Clone)]
+pub enum AsyncMessage {
     #[display(fmt = "FetchAsset")]
     FetchAsset(FetchAssetMessage),
 
@@ -71,25 +95,47 @@ pub enum Message {
     ReverseShellPTY(ReverseShellPTYMessage),
 }
 
-// The Dispatcher implementation for `Message` simply calls the `dispatch()` implementation on the underlying variant.
-impl Dispatcher for Message {
-    async fn dispatch(self, transport: &mut impl Transport) -> Result<()> {
+// The AsyncDispatcher implementation for `AsyncMessage` simply calls the `dispatch()` implementation on the underlying variant.
+impl AsyncDispatcher for AsyncMessage {
+    async fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<()> {
         #[cfg(debug_assertions)]
-        log::debug!("dispatching message {:?}", self);
+        log::debug!("dispatching async message {:?}", self);
 
         match self {
-            Self::FetchAsset(msg) => msg.dispatch(transport).await,
+            Self::FetchAsset(msg) => msg.dispatch(transport, cfg).await,
 
-            Self::ReportCredential(msg) => msg.dispatch(transport).await,
-            Self::ReportError(msg) => msg.dispatch(transport).await,
-            Self::ReportFile(msg) => msg.dispatch(transport).await,
-            Self::ReportProcessList(msg) => msg.dispatch(transport).await,
-            Self::ReportText(msg) => msg.dispatch(transport).await,
-            Self::ReportAggOutput(msg) => msg.dispatch(transport).await,
-            Self::ReverseShellPTY(msg) => msg.dispatch(transport).await,
+            Self::ReportCredential(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportError(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportFile(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportProcessList(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportText(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportAggOutput(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReverseShellPTY(msg) => msg.dispatch(transport, cfg).await,
 
-            Self::ReportStart(msg) => msg.dispatch(transport).await,
-            Self::ReportFinish(msg) => msg.dispatch(transport).await,
+            Self::ReportStart(msg) => msg.dispatch(transport, cfg).await,
+            Self::ReportFinish(msg) => msg.dispatch(transport, cfg).await,
+        }
+    }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Display, From, Clone)]
+pub enum SyncMessage {
+    #[display(fmt = "SetCallbackInterval")]
+    SetCallbackInterval(SetCallbackIntervalMessage),
+
+    #[display(fmt = "SetCallbackUri")]
+    SetCallbackUri(SetCallbackUriMessage),
+}
+
+impl SyncDispatcher for SyncMessage {
+    fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<Config> {
+        #[cfg(debug_assertions)]
+        log::debug!("dispatching sync message {:?}", self);
+
+        match self {
+            Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg),
+            Self::SetCallbackUri(msg) => msg.dispatch(transport, cfg),
         }
     }
 }

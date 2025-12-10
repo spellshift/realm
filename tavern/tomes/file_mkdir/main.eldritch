@@ -15,5 +15,5 @@ def main():
         return
     file.mkdir(new_dir, parent)
 
-time.sleep(1)
+
 main()

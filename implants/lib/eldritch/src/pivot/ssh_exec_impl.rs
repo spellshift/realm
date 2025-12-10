@@ -10,6 +10,7 @@ use starlark::const_frozen_string;
 
 struct SSHExecOutput {
     stdout: String,
+    stderr: String,
     status: i32,
 }
 
@@ -40,13 +41,14 @@ async fn handle_ssh_exec(
 
     Ok(SSHExecOutput {
         stdout: r.output()?,
+        stderr: r.error()?,
         status: r.code.unwrap_or(0) as i32,
     })
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn ssh_exec(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     target: String,
     port: i32,
     command: String,
@@ -55,7 +57,7 @@ pub fn ssh_exec(
     key: Option<String>,
     key_password: Option<String>,
     timeout: Option<u32>,
-) -> Result<Dict> {
+) -> Result<Dict<'_>> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -63,7 +65,7 @@ pub fn ssh_exec(
     let key_password_ref = key_password.as_deref();
     let local_port: u16 = port.try_into()?;
 
-    let (out, status, err) = match runtime.block_on(handle_ssh_exec(
+    let out = match runtime.block_on(handle_ssh_exec(
         target,
         local_port,
         command,
@@ -73,15 +75,19 @@ pub fn ssh_exec(
         key_password_ref,
         timeout,
     )) {
-        Ok(local_res) => (local_res.stdout, local_res.status, String::from("")),
-        Err(local_err) => (String::from(""), -1, local_err.to_string()),
+        Ok(local_res) => local_res,
+        Err(local_err) => SSHExecOutput {
+            stdout: String::from(""),
+            stderr: local_err.to_string(),
+            status: -1,
+        },
     };
 
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
-    insert_dict_kv!(dict_res, starlark_heap, "stdout", &out, String);
-    insert_dict_kv!(dict_res, starlark_heap, "stderr", &err, String);
-    insert_dict_kv!(dict_res, starlark_heap, "status", status, i32);
+    insert_dict_kv!(dict_res, starlark_heap, "stdout", &out.stdout, String);
+    insert_dict_kv!(dict_res, starlark_heap, "stderr", &out.stderr, String);
+    insert_dict_kv!(dict_res, starlark_heap, "status", out.status, i32);
 
     Ok(dict_res)
 }

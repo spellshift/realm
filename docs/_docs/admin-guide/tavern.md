@@ -102,11 +102,15 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
   * After adding a CloudSQL connection to your CloudRun instance, this unix socket is available at `/cloudsql/<CONNECTION_STRING>` (e.g. `/cloudsql/realm-379301:us-east4:tavern-db`).
 * You must create a new database in your CloudSQL instance before launching Tavern and ensure the `MYSQL_DB` env var is set accordingly.
 
+## Redirectors
+
+By default Tavern only supports GRPC connections directly to the server. To Enable additional protocols or additional IPs / Domain names in your callbacks utilize tavern redirectors which recieve traffic using a specific protocol like HTTP/1.1 and then forward it to an upstream tavern server over GRPC. See: `tavern redirector -help`
+
 ## Configuration
 
 ### Webserver
 
-By default, Tavern will listen on `0.0.0.0:80`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
+By default, Tavern will listen on `0.0.0.0:8000`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
 
 ### Metrics
 
@@ -115,7 +119,16 @@ By default, Tavern does not export metrics. You may use the below environment co
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | ENABLE_METRICS | Set to any value to enable the "/metrics" endpoint. | Disabled | No |
-| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8080` | No |
+| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8000` | No |
+
+### Secrets
+
+By default, Tavern wants to use a GCP KMS for secrets management. The secrets engine is used to generate keypairs when communicating with agents.
+If you're running locally make suer to set the secrets manager to a local file path using:
+
+```bash
+SECRETS_FILE_PATH="/tmp/secrets" go run ./tavern/
+```
 
 ### MySQL
 
@@ -223,7 +236,7 @@ func main() {
  defer cancel()
 
  // Setup your Tavern URL (e.g. from env vars)
- tavernURL := "http://127.0.0.1"
+ tavernURL := "http://127.0.0.1:8000"
 
  // Configure Browser (uses the default system browser)
  browser := auth.BrowserFunc(browser.OpenURL)
@@ -267,7 +280,7 @@ Running Tavern with the `DISABLE_DEFAULT_TOMES` environment variable set will di
 
 ```sh
 DISABLE_DEFAULT_TOMES=1 go run ./tavern
-2024/03/02 01:32:22 [WARN] No value for 'HTTP_LISTEN_ADDR' provided, defaulting to 0.0.0.0:80
+2024/03/02 01:32:22 [WARN] No value for 'HTTP_LISTEN_ADDR' provided, defaulting to 0.0.0.0:8000
 2024/03/02 01:32:22 [WARN] MySQL is not configured, using SQLite
 2024/03/02 01:32:22 [WARN] OAuth is not configured, authentication disabled
 2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_IDLE_CONNS' provided, defaulting to 10

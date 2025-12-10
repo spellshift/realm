@@ -2,7 +2,7 @@ name: Release
 
 env:
   CARGO_TERM_COLOR: always
-  IMIX_CALLBACK_URI: http://127.0.0.1
+  IMIX_CALLBACK_URI: http://127.0.0.1:8000
 
 on:
   workflow_dispatch: ~
@@ -21,9 +21,9 @@ jobs:
     name: 🚀 [Linux] Tavern
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: ⚡ Setup Golang
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
@@ -50,11 +50,11 @@ jobs:
     name: 🚀 [Linux] Imix
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.84.1'
+          toolchain: '1.91.1'
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
@@ -84,11 +84,11 @@ jobs:
     name: 🚀 [MacOS] Imix
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.84.1'
+          toolchain: '1.91.1'
           default: true
           profile: minimal
       - name: 🔨 Build Imix
@@ -113,11 +113,11 @@ jobs:
     name: 🚀 [Windows] Imix
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.84.1'
+          toolchain: '1.91.1'
           default: true
           profile: minimal
           target: x86_64-pc-windows-gnu
@@ -180,11 +180,11 @@ jobs:
     name: 🚀 [Linux] Golem
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.84.1'
+          toolchain: '1.91.1'
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
@@ -214,11 +214,11 @@ jobs:
     name: 🚀 [MacOS] Golem
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.84.1'
+          toolchain: '1.91.1'
           default: true
           profile: minimal
       - name: 🔨 Build Golem
@@ -243,11 +243,11 @@ jobs:
       name: 🚀 [Windows] Golem
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v5
         - name: 🛠️ Setup Rust Toolchain
           uses: actions-rs/toolchain@v1
           with:
-            toolchain: '1.84.1'
+            toolchain: '1.91.1'
             default: true
             profile: minimal
             target: x86_64-pc-windows-gnu

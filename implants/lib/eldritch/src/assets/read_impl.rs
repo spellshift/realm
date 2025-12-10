@@ -4,7 +4,10 @@ use anyhow::{Context, Result};
 use pb::c2::FetchAssetResponse;
 use starlark::{eval::Evaluator, values::list::ListRef};
 
-use crate::runtime::{messages::FetchAssetMessage, Environment};
+use crate::runtime::{
+    messages::{AsyncMessage, FetchAssetMessage},
+    Environment,
+};
 
 fn read_local(src: String) -> Result<String> {
     let src_file_bytes = match super::Asset::get(src.as_str()) {
@@ -44,7 +47,7 @@ pub fn read(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<String> {
         if tmp_list.contains(&src_value.to_value()) {
             let env = Environment::from_extra(starlark_eval.extra)?;
             let (tx, rx) = channel();
-            env.send(FetchAssetMessage { name: src, tx })?;
+            env.send(AsyncMessage::from(FetchAssetMessage { name: src, tx }))?;
 
             return read_remote(rx);
         }
@@ -56,7 +59,7 @@ pub fn read(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<String> {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::runtime::{messages::FetchAssetMessage, Message};
+    use crate::runtime::{messages::AsyncMessage, messages::FetchAssetMessage, Message};
     use pb::{c2::FetchAssetResponse, eldritch::Tome};
 
     macro_rules! test_cases {
@@ -74,7 +77,7 @@ mod tests {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::ReportText(m) = msg {
+                    if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                         println!("{}", m.text);
                         assert_eq!(tc.id, m.id);
                         assert_eq!(tc.want_text, m.text);
@@ -125,10 +128,11 @@ mod tests {
             // The runtime only returns the data that is currently available
             // So this may return an empty vec if our eldritch tokio task has not yet been scheduled
             let messages = runtime.collect();
+
             let mut fetch_asset_msgs: Vec<&FetchAssetMessage> = messages
                 .iter()
                 .filter_map(|m| match m {
-                    Message::FetchAsset(msg) => Some(msg),
+                    Message::Async(AsyncMessage::FetchAsset(fam)) => Some(fam),
                     _ => None,
                 })
                 .collect();
@@ -167,7 +171,7 @@ mod tests {
 
         let mut found = false;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 assert_eq!(123, m.id);
                 assert_eq!("chunk1\nchunk2\n", m.text);
                 found = true;

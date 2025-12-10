@@ -6,7 +6,6 @@ import {
 import './style.css';
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { CreateQuest } from "./pages/create-quest";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
@@ -14,11 +13,14 @@ import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
-import { Tomes } from "./pages/tomes";
 import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
-import { AdminPortal } from "./pages/admin";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
+import { FilterProvider } from "./context/FilterContext";
+import { Tomes } from "./pages/tomes/Tomes";
+import { AdminPortal } from "./pages/admin/AdminPortal";
+import { CreateQuest } from "./pages/create-quest/CreateQuest";
+import { SortsProvider } from "./context/SortContext";
 
 
 const router = createBrowserRouter([
@@ -75,7 +77,11 @@ export const App = () => {
       <AuthorizationContextProvider>
         <TagContextProvider>
           <UserPreferencesContextProvider>
-            <RouterProvider router={router} />
+            <FilterProvider>
+              <SortsProvider>
+                <RouterProvider router={router} />
+              </SortsProvider>
+            </FilterProvider>
           </UserPreferencesContextProvider>
         </TagContextProvider>
       </AuthorizationContextProvider>

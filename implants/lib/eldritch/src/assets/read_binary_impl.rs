@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use pb::c2::FetchAssetResponse;
 use starlark::{eval::Evaluator, values::list::ListRef};
 
-use crate::runtime::{messages::FetchAssetMessage, Environment};
+use crate::runtime::{messages::AsyncMessage, messages::FetchAssetMessage, Environment};
 
 fn read_binary_remote(rx: Receiver<FetchAssetResponse>) -> Result<Vec<u32>> {
     let mut res: Vec<u32> = vec![];
@@ -40,7 +40,7 @@ pub fn read_binary(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<Vec
         if tmp_list.contains(&src_value.to_value()) {
             let env = Environment::from_extra(starlark_eval.extra)?;
             let (tx, rx) = channel();
-            env.send(FetchAssetMessage { name: src, tx })?;
+            env.send(AsyncMessage::from(FetchAssetMessage { name: src, tx }))?;
 
             return read_binary_remote(rx);
         }
@@ -50,7 +50,7 @@ pub fn read_binary(starlark_eval: &Evaluator<'_, '_>, src: String) -> Result<Vec
 
 #[cfg(test)]
 mod tests {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use std::collections::HashMap;
 
     use crate::runtime::messages::FetchAssetMessage;
@@ -110,7 +110,7 @@ mod tests {
             let mut fetch_asset_msgs: Vec<&FetchAssetMessage> = messages
                 .iter()
                 .filter_map(|m| match m {
-                    Message::FetchAsset(msg) => Some(msg),
+                    Message::Async(AsyncMessage::FetchAsset(fam)) => Some(fam),
                     _ => None,
                 })
                 .collect();
@@ -149,7 +149,7 @@ mod tests {
 
         let mut found = false;
         for msg in runtime.messages() {
-            if let Message::ReportText(m) = msg {
+            if let Message::Async(AsyncMessage::ReportText(m)) = msg {
                 log::debug!("{}", m.text);
                 assert_eq!(123, m.id);
                 assert_eq!(

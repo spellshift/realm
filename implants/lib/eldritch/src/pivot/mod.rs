@@ -155,7 +155,7 @@ impl Session {
         channel.request_subsystem(true, "sftp").await.unwrap();
         let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
 
-        sftp.remove_file(dst).await?;
+        let _ = sftp.remove_file(dst).await;
         let mut dst_file = sftp.create(dst).await?;
         let mut src_file = tokio::io::BufReader::new(tokio::fs::File::open(src).await?);
         let _bytes_copied = tokio::io::copy_buf(&mut src_file, &mut dst_file).await?;
@@ -166,12 +166,16 @@ impl Session {
     async fn call(&mut self, command: &str) -> anyhow::Result<CommandResult> {
         let mut channel = self.session.channel_open_session().await?;
         channel.exec(true, command).await?;
-        let mut output = Vec::new();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
         let mut code = None;
         while let Some(msg) = channel.wait().await {
             match msg {
                 russh::ChannelMsg::Data { ref data } => {
-                    std::io::Write::write_all(&mut output, data).unwrap();
+                    std::io::Write::write_all(&mut stdout, data).unwrap();
+                }
+                russh::ChannelMsg::ExtendedData { ref data, ext: _ } => {
+                    std::io::Write::write_all(&mut stderr, data).unwrap();
                 }
                 russh::ChannelMsg::ExitStatus { exit_status } => {
                     code = Some(exit_status);
@@ -179,7 +183,11 @@ impl Session {
                 _ => {}
             }
         }
-        Ok(CommandResult { output, code })
+        Ok(CommandResult {
+            stdout,
+            stderr,
+            code,
+        })
     }
 
     async fn close(&mut self) -> anyhow::Result<()> {
@@ -191,12 +199,17 @@ impl Session {
 }
 
 struct CommandResult {
-    output: Vec<u8>,
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
     code: Option<u32>,
 }
 
 impl CommandResult {
     fn output(&self) -> Result<String> {
-        Ok(String::from_utf8_lossy(&self.output).to_string())
+        Ok(String::from_utf8_lossy(&self.stdout).to_string())
+    }
+
+    fn error(&self) -> Result<String> {
+        Ok(String::from_utf8_lossy(&self.stderr).to_string())
     }
 }

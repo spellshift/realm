@@ -5,23 +5,28 @@ import { useNavigate } from "react-router-dom";
 
 import Table from "../../../components/tavern-base-ui/Table";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import { useFilters } from "../../../context/FilterContext";
 
 const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, term: string }) => {
     const currentDate = new Date();
     const navigation = useNavigate();
+    const { filters, updateFilters } = useFilters();
 
     const handleOnClick = (item: any) => {
         if (item?.id === "undefined") {
             return null;
         }
-        navigation(`/hosts`, {
-            state: [{
+        if (filters.beaconFields.findIndex((field) => field.id === item?.original?.tagId) === -1) {
+            const newFilter = {
                 'label': item?.original?.tag,
                 'kind': term,
                 'name': item?.original?.tag,
-                'value': item?.original?.tagId
-            }]
-        });
+                'value': item?.original?.tagId,
+                'id': item?.original?.tagId
+            };
+            updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter] })
+        }
+        navigation(`/hosts`);
     }
 
     const columns: ColumnDef<any>[] = [

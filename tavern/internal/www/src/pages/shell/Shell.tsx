@@ -1,4 +1,4 @@
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
@@ -25,7 +25,7 @@ const Shell = () => {
     useEffect(() => {
         if (!ws.current) {
             const scheme = window.location.protocol === "https:" ? 'wss' : 'ws';
-            const socket = new WebSocket(`${scheme}://${window.location.hostname}/shell/ws?shell_id=${shellId}`);
+            const socket = new WebSocket(`${scheme}://${window.location.host}/shell/ws?shell_id=${shellId}`);
 
             socket.onopen = (e) => {
                 setWsIsOpen(true);

@@ -157,6 +157,9 @@ async fn tcp_connect_scan_socket(
                 "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
                     Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
+                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => {
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
+                },
                 _ => {
                     Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{}", err))
                 },
@@ -198,6 +201,9 @@ async fn udp_scan_socket(
                     Ok((target_host, target_port, UDP.to_string(), CLOSED.to_string()))
                 },
                 "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
+                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
+                },
+                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => {
                     Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
                 },
                 _ => {
@@ -363,12 +369,12 @@ async fn handle_port_scan(
 
 // Non-async wrapper for our async scan.
 pub fn port_scan(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     target_cidrs: Vec<String>,
     ports: Vec<i32>,
     protocol: String,
     timeout: i32,
-) -> Result<Vec<Dict>> {
+) -> Result<Vec<Dict<'_>>> {
     if protocol != TCP && protocol != UDP {
         return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."));
     }

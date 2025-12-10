@@ -31,6 +31,10 @@ type Beacon implements Node {
   """
   lastSeenAt: Time
   """
+  Timestamp of when a beacon is expected to check for tasks next.
+  """
+  nextSeenAt: Time
+  """
   Duration until next callback, in seconds.
   """
   interval: Uint64
@@ -38,10 +42,37 @@ type Beacon implements Node {
   Host this beacon is running on.
   """
   host: Host!
-  """
-  Tasks that have been assigned to the beacon.
-  """
-  tasks: [Task!]
+  tasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tasks returned from the connection.
+    """
+    orderBy: [TaskOrder!]
+
+    """
+    Filtering options for Tasks returned from the connection.
+    """
+    where: TaskWhereInput
+  ): TaskConnection!
   shells(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -75,6 +106,36 @@ type Beacon implements Node {
   ): ShellConnection!
 }
 """
+A connection to a list of items.
+"""
+type BeaconConnection {
+  """
+  A list of edges.
+  """
+  edges: [BeaconEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BeaconEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Beacon
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
 Ordering options for Beacon connections
 """
 input BeaconOrder {
@@ -94,6 +155,7 @@ enum BeaconOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
   INTERVAL
 }
 """
@@ -218,6 +280,19 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """
   interval field predicates
   """
@@ -369,7 +444,67 @@ type File implements Node {
   A SHA3-256 digest of the content field
   """
   hash: String!
-  tomes: [Tome!]
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
+}
+"""
+A connection to a list of items.
+"""
+type FileConnection {
+  """
+  A list of edges.
+  """
+  edges: [FileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type FileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: File
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for File connections
@@ -518,25 +653,181 @@ type Host implements Node {
   """
   lastSeenAt: Time
   """
-  Tags used to group this host with other hosts.
+  Timestamp of when a task is next expected to be claimed or updated for the host.
   """
-  tags: [Tag!]
+  nextSeenAt: Time
+  tags(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tags returned from the connection.
+    """
+    orderBy: [TagOrder!]
+
+    """
+    Filtering options for Tags returned from the connection.
+    """
+    where: TagWhereInput
+  ): TagConnection!
+  beacons(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Beacons returned from the connection.
+    """
+    orderBy: [BeaconOrder!]
+
+    """
+    Filtering options for Beacons returned from the connection.
+    """
+    where: BeaconWhereInput
+  ): BeaconConnection!
+  files(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  processes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  credentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
+}
+"""
+A connection to a list of items.
+"""
+type HostConnection {
   """
-  Beacons that are present on this host system.
+  A list of edges.
   """
-  beacons: [Beacon!]
+  edges: [HostEdge]
   """
-  Files reported on this host system.
+  Information to aid in pagination.
   """
-  files: [HostFile!]
+  pageInfo: PageInfo!
   """
-  Processes reported as running on this host system.
+  Identifies the total count of items in the connection.
   """
-  processes: [HostProcess!]
-  """
-  Credentials reported from this host system.
-  """
-  credentials: [HostCredential!]
+  totalCount: Int!
 }
 type HostCredential implements Node {
   id: ID!
@@ -568,6 +859,36 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+}
+"""
+A connection to a list of items.
+"""
+type HostCredentialConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostCredentialEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostCredentialEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostCredential
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 HostCredentialKind is enum for the field kind
@@ -689,6 +1010,19 @@ input HostCredentialWhereInput {
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
 }
+"""
+An edge in a connection.
+"""
+type HostEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Host
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
 type HostFile implements Node {
   id: ID!
   """
@@ -731,6 +1065,36 @@ type HostFile implements Node {
   Task that reported this file.
   """
   task: Task!
+}
+"""
+A connection to a list of items.
+"""
+type HostFileConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostFileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostFileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostFile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for HostFile connections
@@ -925,6 +1289,7 @@ enum HostOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
 }
 """
 HostPlatform is enum for the field platform
@@ -990,6 +1355,36 @@ type HostProcess implements Node {
   Task that reported this process.
   """
   task: Task!
+}
+"""
+A connection to a list of items.
+"""
+type HostProcessConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostProcessEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostProcessEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostProcess
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for HostProcess connections
@@ -1349,6 +1744,19 @@ input HostWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """
   tags edge predicates
   """
@@ -1715,10 +2123,37 @@ type Repository implements Node {
   Timestamp of when this repo was last imported
   """
   lastImportedAt: Time
-  """
-  Tomes imported using this repository.
-  """
-  tomes: [Tome!]
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
   """
   User that created this repository.
   """
@@ -1898,10 +2333,37 @@ type Shell implements Node {
   User that created the shell
   """
   owner: User!
-  """
-  Users that are currently using the shell
-  """
-  activeUsers: [User!]
+  activeUsers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
 }
 """
 A connection to a list of items.
@@ -2039,7 +2501,67 @@ type Tag implements Node {
   Describes the type of tag this is
   """
   kind: TagKind!
-  hosts: [Host!]
+  hosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
+}
+"""
+A connection to a list of items.
+"""
+type TagConnection {
+  """
+  A list of edges.
+  """
+  edges: [TagEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TagEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Tag
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 TagKind is enum for the field kind
@@ -2151,22 +2673,130 @@ type Task implements Node {
   error: String
   quest: Quest!
   beacon: Beacon!
-  """
-  Files that have been reported by this task.
-  """
-  reportedFiles: [HostFile!]
-  """
-  Processes that have been reported by this task.
-  """
-  reportedProcesses: [HostProcess!]
-  """
-  Credentials that have been reported by this task.
-  """
-  reportedCredentials: [HostCredential!]
-  """
-  Shells that were created by this task
-  """
-  shells: [Shell!]
+  reportedFiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  reportedProcesses(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  reportedCredentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
+  shells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
 }
 """
 A connection to a list of items.
@@ -2418,10 +3048,37 @@ type Tome implements Node {
   Eldritch script that will be executed when the tome is run
   """
   eldritch: String!
-  """
-  Any files required for tome execution that will be bundled and provided to the agent for download
-  """
-  files: [File!]
+  files(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Files returned from the connection.
+    """
+    orderBy: [FileOrder!]
+
+    """
+    Filtering options for Files returned from the connection.
+    """
+    where: FileWhereInput
+  ): FileConnection!
   """
   User who uploaded the tome (may be null).
   """
@@ -2430,6 +3087,36 @@ type Tome implements Node {
   Repository from which this Tome was imported (may be null).
   """
   repository: Repository
+}
+"""
+A connection to a list of items.
+"""
+type TomeConnection {
+  """
+  A list of edges.
+  """
+  edges: [TomeEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TomeEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Tome
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for Tome connections
@@ -2779,14 +3466,117 @@ type User implements Node {
   True if the user is an Admin
   """
   isAdmin: Boolean!
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
+  activeShells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
+}
+"""
+A connection to a list of items.
+"""
+type UserConnection {
   """
-  Tomes uploaded by the user.
+  A list of edges.
   """
-  tomes: [Tome!]
+  edges: [UserEdge]
   """
-  Shells actively used by the user
+  Information to aid in pagination.
   """
-  activeShells: [Shell!]
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type UserEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: User
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for User connections
+"""
+input UserOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Users.
+  """
+  field: UserOrderField!
+}
+"""
+Properties by which User connections can be ordered.
+"""
+enum UserOrderField {
+  NAME
 }
 """
 UserWhereInput is used for filtering User objects.

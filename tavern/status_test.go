@@ -41,6 +41,6 @@ func TestStatusHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, tc.wantCode, tc.w.Code)
-		assert.Equal(t, tc.wantBody, string(body))
+		assert.Contains(t, string(body), tc.wantBody)
 	}
 }

@@ -338,7 +338,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ClaimTasks");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ClaimTasks"));
@@ -368,7 +368,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/FetchAsset");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "FetchAsset"));
@@ -392,7 +392,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportCredential");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportCredential"));
@@ -403,6 +403,7 @@ pub mod c2_client {
         /// Providing content of the file is optional. If content is provided:
         ///   - Hash will automatically be calculated and the provided hash will be ignored.
         ///   - Size will automatically be calculated and the provided size will be ignored.
+        ///
         /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
         /// Any existing files at the provided path for the host are replaced.
         pub async fn report_file(
@@ -421,7 +422,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportFile");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportFile"));
@@ -446,7 +447,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportProcessList");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
@@ -470,7 +471,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
@@ -496,7 +497,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = tonic::codec::ProstCodec::default();
+            let codec = crate::xchacha::ChachaCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReverseShell");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReverseShell"));

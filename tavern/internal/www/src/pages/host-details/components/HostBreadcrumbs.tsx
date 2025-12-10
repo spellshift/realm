@@ -1,9 +1,8 @@
-import { useContext } from "react";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { HostContext } from "../../../context/HostContext";
+import { useHost } from "../../../context/HostContext";
 
 const HostBreadcrumbs = () => {
-    const { data } = useContext(HostContext);
+    const { data } = useHost();
     const hostName = data?.name;
     const hostId = data?.id;
 

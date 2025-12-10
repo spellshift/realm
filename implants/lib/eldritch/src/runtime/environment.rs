@@ -1,4 +1,4 @@
-use super::messages::{Message, ReportTextMessage};
+use super::messages::{AsyncMessage, Message, ReportTextMessage};
 use anyhow::{Context, Result};
 
 use starlark::{
@@ -33,6 +33,11 @@ impl Environment {
         self.tx.send(msg.into())?;
         Ok(())
     }
+
+    #[cfg(test)]
+    pub fn mock(id: i64, tx: Sender<Message>) -> Self {
+        Self { id, tx }
+    }
 }
 
 /*
@@ -40,10 +45,10 @@ impl Environment {
  */
 impl PrintHandler for Environment {
     fn println(&self, text: &str) -> Result<()> {
-        self.send(ReportTextMessage {
+        self.send(AsyncMessage::from(ReportTextMessage {
             id: self.id,
             text: format!("{}\n", text),
-        })?;
+        }))?;
 
         #[cfg(feature = "print_stdout")]
         println!("{}", text);

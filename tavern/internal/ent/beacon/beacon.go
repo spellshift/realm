@@ -28,6 +28,8 @@ const (
 	FieldAgentIdentifier = "agent_identifier"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
+	// FieldNextSeenAt holds the string denoting the next_seen_at field in the database.
+	FieldNextSeenAt = "next_seen_at"
 	// FieldInterval holds the string denoting the interval field in the database.
 	FieldInterval = "interval"
 	// EdgeHost holds the string denoting the host edge name in mutations.
@@ -71,6 +73,7 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldAgentIdentifier,
 	FieldLastSeenAt,
+	FieldNextSeenAt,
 	FieldInterval,
 }
 
@@ -157,6 +160,11 @@ func ByAgentIdentifier(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSeenAt orders the results by the last_seen_at field.
 func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByNextSeenAt orders the results by the next_seen_at field.
+func ByNextSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextSeenAt, opts...).ToFunc()
 }
 
 // ByInterval orders the results by the interval field.

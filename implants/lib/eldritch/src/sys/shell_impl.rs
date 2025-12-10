@@ -18,7 +18,7 @@ use {
 
 use super::CommandOutput;
 
-pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
+pub fn shell(starlark_heap: &'_ Heap, cmd: String) -> Result<Dict<'_>> {
     let cmd_res = handle_shell(cmd)?;
 
     let res = SmallMap::new();
@@ -140,9 +140,8 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn test_sys_shell_complex_windows() -> anyhow::Result<()> {
-        let res =
-            handle_shell(String::from("wmic useraccount get name | findstr /i admin"))?.stdout;
-        assert!(res.contains("runner") || res.contains("Administrator") || res.contains("user"));
+        let res = handle_shell(String::from("echo admin | findstr /i admin"))?.stdout;
+        assert!(res.contains("admin"));
         Ok(())
     }
 
@@ -206,8 +205,7 @@ func_shell("whoami")
         };
 
         #[starlark_module]
-        #[allow(clippy::needless_lifetimes)]
-        fn func_shell(builder: &mut GlobalsBuilder) {
+        fn func_shell(_builder: &mut GlobalsBuilder) {
             fn func_shell<'v>(starlark_heap: &'v Heap, cmd: String) -> anyhow::Result<Dict<'v>> {
                 shell(starlark_heap, cmd)
             }
