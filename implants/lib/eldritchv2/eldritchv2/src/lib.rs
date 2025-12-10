@@ -25,6 +25,7 @@ pub use eldritch_core::{
     StdoutPrinter, TokenKind, Value, conversion,
 };
 
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -146,7 +147,7 @@ impl Interpreter {
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        let assets_lib = StdAssetsLibrary::new(agent.clone(), Vec::new());
+        let assets_lib = StdAssetsLibrary::new(agent.clone(), Vec::new(), BTreeMap::new());
         self.inner.register_lib(assets_lib);
 
         self
@@ -166,7 +167,8 @@ impl Interpreter {
         mut self,
         agent: Arc<dyn Agent>,
         task_id: i64,
-        assets: Vec<String>,
+        remote_assets: Vec<String>,
+        embedded_assets: BTreeMap<String, Vec<u8>>,
     ) -> Self {
         let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(agent_lib);
@@ -177,7 +179,7 @@ impl Interpreter {
         let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::new(agent, assets);
+        let assets_lib = StdAssetsLibrary::new(agent, remote_assets, embedded_assets);
         self.inner.register_lib(assets_lib);
 
         self

@@ -1,4 +1,5 @@
 use super::AssetsLibrary;
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -6,54 +7,43 @@ use anyhow::Result;
 use eldritch_libagent::agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
-use rust_embed::RustEmbed;
 use std::io::Write;
-
-#[cfg(debug_assertions)]
-#[derive(RustEmbed)]
-#[folder = "../../../../../bin/embedded_files_test"]
-pub struct Asset;
-
-#[cfg(not(feature = "imix"))]
-#[cfg(not(debug_assertions))]
-#[derive(RustEmbed)]
-#[folder = "../../../../../implants/golem/embed_files_golem_prod"]
-pub struct Asset;
-
-#[cfg(feature = "imix")]
-#[cfg(not(debug_assertions))]
-#[derive(RustEmbed)]
-#[folder = "../../../../../implants/imix/install_scripts"]
-pub struct Asset;
 
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary {
     pub agent: Arc<dyn Agent>,
     pub remote_assets: Vec<String>,
+    pub embedded_assets: BTreeMap<String, Vec<u8>>,
 }
 
 impl core::fmt::Debug for StdAssetsLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAssetsLibrary")
             .field("remote_assets", &self.remote_assets)
+            .field("embedded_assets", &self.embedded_assets.keys())
             .finish()
     }
 }
 
 impl StdAssetsLibrary {
-    pub fn new(agent: Arc<dyn Agent>, remote_assets: Vec<String>) -> Self {
+    pub fn new(
+        agent: Arc<dyn Agent>,
+        remote_assets: Vec<String>,
+        embedded_assets: BTreeMap<String, Vec<u8>>,
+    ) -> Self {
         Self {
             agent,
             remote_assets,
+            embedded_assets,
         }
     }
 
     fn read_binary_embedded(&self, src: &str) -> Result<Vec<u8>> {
-        let src_file_bytes = match Asset::get(src) {
-            Some(local_src_file) => local_src_file.data,
-            None => return Err(anyhow::anyhow!("Embedded file {src} not found.")),
-        };
-        Ok(src_file_bytes.to_vec())
+        if let Some(data) = self.embedded_assets.get(src) {
+            Ok(data.clone())
+        } else {
+            Err(anyhow::anyhow!("Embedded file {src} not found."))
+        }
     }
 
     fn _read_binary(&self, name: &str) -> Result<Vec<u8>> {
@@ -85,7 +75,7 @@ impl AssetsLibrary for StdAssetsLibrary {
     }
 
     fn list(&self) -> Result<Vec<String>, String> {
-        let mut files: Vec<String> = Asset::iter().map(|f| f.as_ref().to_string()).collect();
+        let mut files: Vec<String> = self.embedded_assets.keys().cloned().collect();
         // Append remote assets to the list if they are not already there
         for remote in &self.remote_assets {
             if !files.contains(remote) {
@@ -100,10 +90,26 @@ impl AssetsLibrary for StdAssetsLibrary {
 mod tests {
     use super::*;
     use alloc::string::ToString;
-    use alloc::collections::BTreeMap;
     use eldritch_libagent::fake::AgentFake;
     use pb::c2;
+    use rust_embed::RustEmbed;
     use std::sync::Mutex;
+
+    #[cfg(debug_assertions)]
+    #[derive(RustEmbed)]
+    #[folder = "../../../../../bin/embedded_files_test"]
+    pub struct TestAsset;
+
+    // Helper to load test assets into map
+    fn get_test_assets() -> BTreeMap<String, Vec<u8>> {
+        let mut assets = BTreeMap::new();
+        for file in TestAsset::iter() {
+            let name = file.as_ref().to_string();
+            let content = TestAsset::get(&name).unwrap().data.to_vec();
+            assets.insert(name, content);
+        }
+        assets
+    }
 
     // Define a MockAgent that implements the Agent trait
     struct MockAgent {
@@ -159,12 +165,13 @@ mod tests {
         fn set_callback_interval(&self, _interval: u64) -> Result<(), String> { Ok(()) }
         fn list_tasks(&self) -> Result<Vec<c2::Task>, String> { Ok(Vec::new()) }
         fn stop_task(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
+        fn get_config(&self) -> Result<BTreeMap<String, String>, String> { Ok(BTreeMap::new()) }
     }
 
     #[test]
     fn test_read_binary_embedded_success() {
         let agent = Arc::new(AgentFake::default());
-        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        let lib = StdAssetsLibrary::new(agent, Vec::new(), get_test_assets());
         // Using an asset we know exists in bin/embedded_files_test
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
@@ -176,14 +183,14 @@ mod tests {
     #[test]
     fn test_read_binary_embedded_fail() {
         let agent = Arc::new(AgentFake::default());
-        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        let lib = StdAssetsLibrary::new(agent, Vec::new(), get_test_assets());
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
     }
 
     #[test]
     fn test_read_binary_remote_success() {
         let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
-        let lib = StdAssetsLibrary::new(agent, vec!["remote_file.txt".to_string()]);
+        let lib = StdAssetsLibrary::new(agent, vec!["remote_file.txt".to_string()], BTreeMap::new());
 
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
@@ -193,7 +200,7 @@ mod tests {
     #[test]
     fn test_read_binary_remote_fail() {
         let agent = Arc::new(MockAgent::new().should_fail());
-        let lib = StdAssetsLibrary::new(agent, vec!["remote_file.txt".to_string()]);
+        let lib = StdAssetsLibrary::new(agent, vec!["remote_file.txt".to_string()], BTreeMap::new());
 
         let result = lib.read_binary("remote_file.txt".to_string());
         assert!(result.is_err());
@@ -202,7 +209,7 @@ mod tests {
     #[test]
     fn test_read_embedded_success() {
         let agent = Arc::new(AgentFake::default());
-        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        let lib = StdAssetsLibrary::new(agent, Vec::new(), get_test_assets());
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), "print(\"This script just prints\")\n");
@@ -211,7 +218,7 @@ mod tests {
     #[test]
     fn test_copy_success() {
         let agent = Arc::new(AgentFake::default());
-        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        let lib = StdAssetsLibrary::new(agent, Vec::new(), get_test_assets());
 
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
@@ -227,7 +234,7 @@ mod tests {
     #[test]
     fn test_copy_fail_read() {
         let agent = Arc::new(AgentFake::default());
-        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        let lib = StdAssetsLibrary::new(agent, Vec::new(), BTreeMap::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
 
@@ -238,7 +245,7 @@ mod tests {
     #[test]
     fn test_copy_fail_write() {
         let agent = Arc::new(AgentFake::default());
-        let lib = StdAssetsLibrary::new(agent, Vec::new());
+        let lib = StdAssetsLibrary::new(agent, Vec::new(), get_test_assets());
 
         // Trying to write to a directory path instead of a file should fail
         let temp_dir = tempfile::tempdir().unwrap();
@@ -255,7 +262,7 @@ mod tests {
     fn test_list() {
         let agent = Arc::new(MockAgent::new());
         let remote_files = vec!["remote1.txt".to_string(), "remote2.txt".to_string()];
-        let lib = StdAssetsLibrary::new(agent, remote_files.clone());
+        let lib = StdAssetsLibrary::new(agent, remote_files.clone(), get_test_assets());
 
         let list = lib.list().unwrap();
 

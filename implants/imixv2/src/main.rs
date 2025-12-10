@@ -21,6 +21,7 @@ pub use pb::config::Config;
 pub use transport::{ActiveTransport, Transport};
 
 mod agent;
+mod assets;
 mod shell;
 mod task;
 #[cfg(test)]

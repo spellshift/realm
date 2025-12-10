@@ -5,6 +5,7 @@ use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
+use std::collections::BTreeMap;
 
 // Mock Agent specifically for TaskRegistry
 struct MockAgent {
@@ -80,6 +81,9 @@ impl Agent for MockAgent {
     }
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
+    }
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
+        Ok(BTreeMap::new())
     }
 }
 
