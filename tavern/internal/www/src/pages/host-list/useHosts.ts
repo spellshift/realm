@@ -67,7 +67,8 @@ const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCu
       "where": {
         ...id && {"id": id},
         ...filterInfo && filterInfo.hasBeaconWith.hasHostWith,
-        ...(filterInfo && filterInfo.hasBeaconWith.nameIn) && {"hasBeaconsWith": {"nameIn": filterInfo.hasBeaconWith.nameIn}}
+        ...(filterInfo && filterInfo.hasBeaconWith.nameIn) && {"hasBeaconsWith": {"nameIn": filterInfo.hasBeaconWith.nameIn}},
+        ...(filterInfo && filterInfo.hasBeaconWith.principalIn) && {"hasBeaconsWith": {"principalIn": filterInfo.hasBeaconWith.principalIn}}
       },
       ...(sort && {orderBy: [sort]})
     } as any;
