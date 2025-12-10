@@ -82,4 +82,8 @@ pub trait UnsafeTransport: Clone + Send {
     /// Returns true if the transport is fully initialized and active
     #[allow(dead_code)]
     fn is_active(&self) -> bool;
+
+    /// Returns the name of the transport protocol (e.g., "grpc", "http")
+    #[allow(dead_code)]
+    fn name(&self) -> &'static str;
 }

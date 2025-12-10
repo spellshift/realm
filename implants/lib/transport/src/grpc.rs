@@ -196,6 +196,10 @@ impl Transport for GRPC {
     fn is_active(&self) -> bool {
         self.grpc.is_some()
     }
+
+    fn name(&self) -> &'static str {
+        "grpc"
+    }
 }
 
 impl GRPC {
