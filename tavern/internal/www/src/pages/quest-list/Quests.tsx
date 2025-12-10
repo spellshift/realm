@@ -6,7 +6,7 @@ import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import QuestHeader from "./components/QuestHeader";
 import { QuestTable } from "./components/QuestTable";
 import { useQuests } from "./useQuests";
-import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import FilterControls, { FilterPageType } from "../../components/FilterControls";
 import SortingControls from "../../components/SortingControls";
 
 const Quests = () => {
