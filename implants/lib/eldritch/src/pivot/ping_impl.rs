@@ -8,7 +8,7 @@ use starlark::{
 use std::{net::IpAddr, time::Duration};
 use surge_ping::IcmpPacket;
 
-pub fn ping(starlark_heap: &Heap, target: String) -> anyhow::Result<Dict> {
+pub fn ping(starlark_heap: &'_ Heap, target: String) -> anyhow::Result<Dict<'_>> {
     let mut dict = Dict::new(SmallMap::new());
 
     let runtime = tokio::runtime::Builder::new_current_thread()
