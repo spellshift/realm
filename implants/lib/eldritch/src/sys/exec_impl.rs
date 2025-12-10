@@ -11,7 +11,7 @@ use std::process::Command;
 
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
-    nix::sys::wait::wait,
+    nix::sys::wait::waitpid,
     nix::unistd::{fork, setsid, ForkResult},
     std::process::{exit, Stdio},
 };
@@ -84,7 +84,7 @@ fn handle_exec(
                     return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
                 }
 
-                let _ = wait();
+                let _ = waitpid(child, None);
 
                 Ok(CommandOutput {
                     stdout: "".to_string(),
@@ -119,8 +119,9 @@ fn handle_exec(
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::Path, process, thread, time};
+    use std::{collections::HashMap, fs, path::Path, process, thread, time};
 
+    use starlark::values::Heap;
     use sysinfo::{PidExt, ProcessExt, System, SystemExt};
     use tempfile::NamedTempFile;
 
@@ -166,6 +167,64 @@ mod tests {
     }
 
     use super::*;
+
+    #[test]
+    fn test_exec_function_wrapper() {
+        let heap = Heap::new();
+        let path = if cfg!(target_os = "windows") {
+            "cmd.exe".to_string()
+        } else {
+            "sh".to_string()
+        };
+
+        let mut args = Vec::new();
+        if cfg!(target_os = "windows") {
+            args.push("/c".to_string());
+            args.push("echo hello".to_string());
+        } else {
+            args.push("-c".to_string());
+            args.push("echo hello".to_string());
+        }
+
+        // Test with disown=None (defaults to false) and env_vars=None
+        let res = exec(&heap, path, args, None, None);
+        if let Err(e) = &res {
+            println!("Exec failed: {:?}", e);
+        }
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_sys_exec_env_vars() -> anyhow::Result<()> {
+        let mut envs = HashMap::new();
+        envs.insert("MY_TEST_ENV".to_string(), "found_it".to_string());
+
+        let (cmd, args) = if cfg!(target_os = "windows") {
+            ("cmd.exe", vec!["/c", "echo %MY_TEST_ENV%"])
+        } else {
+            ("sh", vec!["-c", "echo $MY_TEST_ENV"])
+        };
+
+        let args_string = args.iter().map(|s| s.to_string()).collect();
+
+        let res = handle_exec(cmd.to_string(), args_string, envs, false)?;
+
+        // On Windows echo might output "found_it\r\n", on Linux "found_it\n"
+        assert!(res.stdout.contains("found_it"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_sys_exec_invalid_path() {
+        let res = handle_exec(
+            "non_existent_command_12345".to_string(),
+            vec![],
+            HashMap::new(),
+            false,
+        );
+        assert!(res.is_err());
+    }
+
     #[test]
     fn test_sys_exec_current_user() -> anyhow::Result<()> {
         if cfg!(target_os = "linux")
@@ -307,6 +366,36 @@ mod tests {
             .stdout
             .to_lowercase();
             assert!(res.contains("admin"));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_sys_exec_disown_windows() -> anyhow::Result<()> {
+        if cfg!(target_os = "windows") {
+            let tmp_file = NamedTempFile::new()?;
+            let path = String::from(tmp_file.path().to_str().unwrap());
+            tmp_file.close()?;
+
+            // We use cmd to echo into a file
+            let args = vec![
+                "/c".to_string(),
+                format!("echo. > \"{}\"", path),
+            ];
+
+            let _ = handle_exec(
+                "cmd.exe".to_string(),
+                args,
+                HashMap::new(),
+                true, // disown
+            )?;
+
+            // Give it a moment for the spawned process to execute
+            thread::sleep(time::Duration::from_secs(2));
+            assert!(Path::new(&path).exists());
+
+            // Cleanup if it exists
+            let _ = fs::remove_file(path);
         }
         Ok(())
     }
