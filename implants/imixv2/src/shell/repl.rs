@@ -127,8 +127,10 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                         }
                                     }
                                     Err(e) => {
-                                        let s = format!("Error: {e}\r\n");
-                                        let _ = stdout.write(s.as_bytes());
+                                        let s = format!("Error: {e}");
+                                        let s_crlf = s.replace('\n', "\r\n");
+                                        let final_s = format!("{s_crlf}\r\n");
+                                        let _ = stdout.write(final_s.as_bytes());
                                     }
                                 }
                                 let _ = render(&mut stdout, &repl);
