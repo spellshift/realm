@@ -12,6 +12,10 @@ name = "eldritch"
 path = "bin/repl.rs"
 required-features = ["stdlib"]
 
+[[bench]]
+name = "repl_bench"
+harness = false
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
@@ -36,3 +40,7 @@ eldritchv2 = { workspace = true, default-features = false, features = [
 [dependencies]
 eldritch-core = { workspace = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
+log = "0.4"
+
+[dev-dependencies]
+criterion = "0.5"
