@@ -43,24 +43,34 @@ pub fn render<W: std::io::Write>(
 ) -> std::io::Result<()> {
     let state = repl.get_render_state();
 
-    // Optimization: If we are just appending a single character to the end of the buffer,
-    // and no other state changes (like suggestions) are present, just print the character.
+    // Optimization: If we are appending characters to the end of the buffer (one or more),
+    // and no other state changes (like suggestions) are present, just print the new characters.
     // This avoids clearing and redrawing the whole line, which prevents duplication issues
-    // when the line wraps in the terminal (since we don't track terminal width).
+    // when the line wraps in the terminal (since we don't track terminal width) and avoids
+    // flickering when typing fast or pasting long strings.
     if let Some(old) = old_buffer {
-        if state.buffer.len() == old.len() + 1
+        if state.buffer.len() >= old.len()
             && state.buffer.starts_with(old)
             && state.cursor == state.buffer.len()
             && state.suggestions.is_none()
         {
-            if let Some(c) = state.buffer.chars().last() {
-                let s = c.to_string();
-                let s_crlf = s.replace('\n', "\r\n");
+            let added_len = state.buffer.len() - old.len();
+            if added_len > 0 {
+                let new_part = &state.buffer[old.len()..];
+                let s_crlf = new_part.replace('\n', "\r\n");
                 stdout.write_all(s_crlf.as_bytes())?;
                 // Clear any potential suggestions below (e.g. if we just typed a char that closed suggestions)
                 stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
                 stdout.flush()?;
                 return Ok(());
+            } else if added_len == 0 {
+                // Buffer hasn't changed size and we are at the end, maybe cursor move?
+                // If content is same, do nothing but clear suggestions
+                if state.buffer == *old {
+                    stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
+                    stdout.flush()?;
+                    return Ok(());
+                }
             }
         }
     }
@@ -151,8 +161,7 @@ pub fn render<W: std::io::Write>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eldritch_repl::Input;
-    use std::io::Write; // Needed here for the test helper vector write
+    use eldritch_repl::{Repl, Input};
 
     #[test]
     fn test_render_multi_line_history() {
@@ -177,5 +186,40 @@ mod tests {
         // "for i in range(5):\r\n    print(i)\r\n    print(i*2)"
 
         assert!(output.contains("for i in range(5):\r\n    print(i)\r\n    print(i*2)"));
+    }
+
+    #[test]
+    fn test_render_append_multi_char() {
+        let mut repl = Repl::new();
+        // Setup initial state: "abc"
+        repl.handle_input(Input::Char('a'));
+        repl.handle_input(Input::Char('b'));
+        repl.handle_input(Input::Char('c'));
+
+        // This is what old_buffer was
+        let old_buffer = "abc".to_string();
+
+        // Now append "def" (multiple chars)
+        repl.handle_input(Input::Char('d'));
+        repl.handle_input(Input::Char('e'));
+        repl.handle_input(Input::Char('f'));
+
+        // Current buffer is "abcdef"
+
+        let mut stdout = Vec::new();
+        render(&mut stdout, &repl, Some(&old_buffer)).unwrap();
+
+        let output = String::from_utf8_lossy(&stdout);
+
+        println!("Output: {:?}", output);
+
+        // If full redraw, we expect to see prompt color seq
+        let has_full_redraw = output.contains("\x1b[34m"); // Blue color for prompt
+
+        // We expect NO full redraw, only "def" + clear down
+        assert!(!has_full_redraw, "Should NOT fall back to full redraw for multi-char append. Output was: {:?}", output);
+
+        // Output should start with "def"
+        assert!(output.starts_with("def"));
     }
 }
