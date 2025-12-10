@@ -101,8 +101,8 @@ pub fn write_reg_hex(
 mod tests {
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn test_write_reg_hex() -> anyhow::Result<()> {
-        #[cfg(target_os = "windows")]
         {
             use super::*;
             use uuid::Uuid;
@@ -305,5 +305,19 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_write_reg_hex_non_windows() {
+        let res = super::write_reg_hex(
+            "HKEY_CURRENT_USER".into(),
+            "SOFTWARE".into(),
+            "foo".into(),
+            "REG_SZ".into(),
+            "deadbeef".into(),
+        );
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
     }
 }
