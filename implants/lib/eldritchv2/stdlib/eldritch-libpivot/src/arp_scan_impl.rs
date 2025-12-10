@@ -164,14 +164,9 @@ fn start_listener(
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn handle_arp_scan(
-    target_cidrs: Vec<String>,
-) -> Result<HashMap<Ipv4Addr, Option<ArpResponse>>> {
+pub fn parse_cidrs_for_arp_scan(target_cidrs: Vec<String>) -> Result<Vec<Ipv4Network>> {
     use anyhow::Context;
-
-    let listener_out: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
-    let target_cidrs = target_cidrs
+    target_cidrs
         .iter()
         .map(|cidr| {
             let (addr, prefix) = cidr.split_at(
@@ -198,8 +193,20 @@ pub fn handle_arp_scan(
             };
             Ok(network)
         })
-        .collect::<Result<Vec<Ipv4Network>>>()?;
-    for target_cidr in target_cidrs {
+        .collect::<Result<Vec<Ipv4Network>>>()
+}
+
+
+#[cfg(not(target_os = "windows"))]
+pub fn handle_arp_scan(
+    target_cidrs: Vec<String>,
+) -> Result<HashMap<Ipv4Addr, Option<ArpResponse>>> {
+    let listener_out: Arc<Mutex<HashMap<Ipv4Addr, Option<ArpResponse>>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+
+    let target_networks = parse_cidrs_for_arp_scan(target_cidrs)?;
+
+    for target_cidr in target_networks {
         for ip in target_cidr.iter() {
             match listener_out.lock() {
                 Ok(mut listener_lock) => {
@@ -257,4 +264,42 @@ pub fn arp_scan(target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>
 #[cfg(target_os = "windows")]
 pub fn arp_scan(_target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>> {
     Err(anyhow!("ARP Scanning is not available on Windows."))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn test_parse_cidrs() {
+        let cidrs = vec!["192.168.1.0/24".to_string(), "10.0.0.1/32".to_string()];
+        let networks = parse_cidrs_for_arp_scan(cidrs).unwrap();
+        assert_eq!(networks.len(), 2);
+        assert_eq!(networks[0].ip().to_string(), "192.168.1.0");
+        assert_eq!(networks[0].prefix(), 24);
+        assert_eq!(networks[1].ip().to_string(), "10.0.0.1");
+        assert_eq!(networks[1].prefix(), 32);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn test_parse_cidrs_invalid() {
+        let cidrs = vec!["invalid".to_string()];
+        assert!(parse_cidrs_for_arp_scan(cidrs).is_err());
+
+        let cidrs = vec!["192.168.1.0".to_string()]; // missing prefix
+        assert!(parse_cidrs_for_arp_scan(cidrs).is_err());
+
+        let cidrs = vec!["192.168.1.0/33".to_string()]; // invalid prefix
+        assert!(parse_cidrs_for_arp_scan(cidrs).is_err());
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_windows_unsupported() {
+        let res = arp_scan(vec!["1.1.1.1/32".to_string()]);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().to_string(), "ARP Scanning is not available on Windows.");
+    }
 }

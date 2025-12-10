@@ -36,8 +36,34 @@ impl std::io::Write for VtWriter {
     }
 }
 
-pub fn render<W: std::io::Write>(stdout: &mut W, repl: &Repl) -> std::io::Result<()> {
+pub fn render<W: std::io::Write>(
+    stdout: &mut W,
+    repl: &Repl,
+    old_buffer: Option<&str>,
+) -> std::io::Result<()> {
     let state = repl.get_render_state();
+
+    // Optimization: If we are just appending a single character to the end of the buffer,
+    // and no other state changes (like suggestions) are present, just print the character.
+    // This avoids clearing and redrawing the whole line, which prevents duplication issues
+    // when the line wraps in the terminal (since we don't track terminal width).
+    if let Some(old) = old_buffer {
+        if state.buffer.len() == old.len() + 1
+            && state.buffer.starts_with(old)
+            && state.cursor == state.buffer.len()
+            && state.suggestions.is_none()
+        {
+            if let Some(c) = state.buffer.chars().last() {
+                let s = c.to_string();
+                let s_crlf = s.replace('\n', "\r\n");
+                stdout.write_all(s_crlf.as_bytes())?;
+                // Clear any potential suggestions below (e.g. if we just typed a char that closed suggestions)
+                stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
+                stdout.flush()?;
+                return Ok(());
+            }
+        }
+    }
 
     // Clear everything below the current line to clear old suggestions
     stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
@@ -138,7 +164,7 @@ mod tests {
 
         // Render to buffer
         let mut stdout = Vec::new();
-        render(&mut stdout, &repl).unwrap();
+        render(&mut stdout, &repl, None).unwrap();
 
         let output = String::from_utf8_lossy(&stdout);
 
