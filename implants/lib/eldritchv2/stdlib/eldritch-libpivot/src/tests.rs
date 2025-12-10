@@ -2,7 +2,6 @@ use crate::{std::StdPivotLibrary, PivotLibrary};
 use eldritch_libagent::agent::Agent;
 use pb::c2;
 use std::sync::{Arc, Mutex};
-use std::panic::AssertUnwindSafe;
 use alloc::collections::BTreeMap;
 
 // Mock Agent
@@ -134,29 +133,3 @@ fn test_reverse_shell_repl_no_agent() {
     assert_eq!(result.unwrap_err(), "No agent available");
 }
 
-#[test]
-fn test_bind_proxy_unimplemented() {
-    let lib = StdPivotLibrary::default();
-    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        let _ = lib.bind_proxy("127.0.0.1".into(), 8080, "user".into(), "pass".into());
-    }));
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_port_forward_unimplemented() {
-    let lib = StdPivotLibrary::default();
-    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        let _ = lib.port_forward("127.0.0.1".into(), 8080, "1.1.1.1".into(), 80, "tcp".into());
-    }));
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_smb_exec_unimplemented() {
-    let lib = StdPivotLibrary::default();
-    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-        let _ = lib.smb_exec("127.0.0.1".into(), 445, "user".into(), "pass".into(), "hash".into(), "cmd".into());
-    }));
-    assert!(result.is_err());
-}

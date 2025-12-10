@@ -1704,20 +1704,6 @@ It supports:
     **Errors**
     - Returns an error string if copy fails.
 
-*   **`pivot.smb_exec`**
-    **Experimental**: Executes a command via SMB.
-    
-    **Parameters**
-    - `target` (`str`): Target host.
-    - `port` (`int`): SMB port.
-    - `username` (`str`): Username.
-    - `password` (`str`): Password.
-    - `hash` (`str`): NTLM hash.
-    - `command` (`str`): Command to execute.
-    
-    **Returns**
-    - `str`: Command output.
-
 *   **`pivot.port_scan`**
     Scans TCP/UDP ports on target hosts.
     
@@ -1740,19 +1726,6 @@ It supports:
     **Returns**
     - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
 
-*   **`pivot.port_forward`**
-    Sets up a port forwarding rule.
-    
-    **Parameters**
-    - `listen_address` (`str`): Local address to bind.
-    - `listen_port` (`int`): Local port to listen on.
-    - `forward_address` (`str`): Remote address to forward to.
-    - `forward_port` (`int`): Remote port.
-    - `protocol` (`str`): Protocol (tcp/udp).
-    
-    **Returns**
-    - `None`
-
 *   **`pivot.ncat`**
     Sends arbitrary data to a host via TCP or UDP and waits for a response.
     
@@ -1764,18 +1737,6 @@ It supports:
     
     **Returns**
     - `str`: The response data.
-
-*   **`pivot.bind_proxy`**
-    Starts a SOCKS5 proxy server on the agent.
-    
-    **Parameters**
-    - `listen_address` (`str`): Address to bind.
-    - `listen_port` (`int`): Port to listen on.
-    - `username` (`str`): Proxy username (for auth).
-    - `password` (`str`): Proxy password.
-    
-    **Returns**
-    - `None`
 
 ### Process
 

@@ -5,12 +5,9 @@ use eldritch_core::Value;
 use anyhow::Result;
 use crate::PivotLibrary;
 use crate::arp_scan_impl;
-use crate::bind_proxy_impl;
 use crate::ncat_impl;
-use crate::port_forward_impl;
 use crate::port_scan_impl;
 use crate::reverse_shell_pty_impl;
-use crate::smb_exec_impl;
 use crate::ssh_copy_impl;
 use crate::ssh_exec_impl;
 
@@ -94,18 +91,6 @@ impl PivotLibrary for StdPivotLibrary {
         ssh_copy_impl::ssh_copy(target, port as i32, src, dst, username, password, key, key_password, timeout.map(|t| t as u32)).map_err(|e| e.to_string())
     }
 
-    fn smb_exec(
-        &self,
-        target: String,
-        port: i64,
-        username: String,
-        password: String,
-        hash: String,
-        command: String,
-    ) -> Result<String, String> {
-        smb_exec_impl::smb_exec(target, port as i32, username, password, hash, command).map_err(|e| e.to_string())
-    }
-
     fn port_scan(
         &self,
         target_cidrs: Vec<String>,
@@ -122,17 +107,6 @@ impl PivotLibrary for StdPivotLibrary {
         arp_scan_impl::arp_scan(target_cidrs).map_err(|e| e.to_string())
     }
 
-    fn port_forward(
-        &self,
-        listen_address: String,
-        listen_port: i64,
-        forward_address: String,
-        forward_port: i64,
-        protocol: String,
-    ) -> Result<(), String> {
-        port_forward_impl::port_forward(listen_address, listen_port as i32, forward_address, forward_port as i32, protocol).map_err(|e| e.to_string())
-    }
-
     fn ncat(
         &self,
         address: String,
@@ -141,16 +115,6 @@ impl PivotLibrary for StdPivotLibrary {
         protocol: String,
     ) -> Result<String, String> {
         ncat_impl::ncat(address, port as i32, data, protocol).map_err(|e| e.to_string())
-    }
-
-    fn bind_proxy(
-        &self,
-        listen_address: String,
-        listen_port: i64,
-        username: String,
-        password: String,
-    ) -> Result<(), String> {
-        bind_proxy_impl::bind_proxy(listen_address, listen_port as i32, username, password).map_err(|e| e.to_string())
     }
 }
 
