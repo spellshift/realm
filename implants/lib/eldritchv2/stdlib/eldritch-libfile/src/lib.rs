@@ -136,7 +136,7 @@ pub trait FileLibrary {
     /// Supports globbing patterns (e.g., `/home/*/*.txt`).
     ///
     /// **Parameters**
-    /// - `path` (`str`): The directory path or glob pattern.
+    /// - `path` (`Option<str>`): The directory path or glob pattern. Defaults to current working directory.
     ///
     /// **Returns**
     /// - `List<Dict>`: A list of dictionaries containing file details:
@@ -151,7 +151,7 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if listing fails.
-    fn list(&self, path: String) -> Result<Vec<BTreeMap<String, Value>>, String>;
+    fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
     /// Creates a new directory.

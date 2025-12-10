@@ -655,7 +655,7 @@ fn call_function(
                 // Check if receiver is Foreign
                 if let Value::Foreign(foreign) = receiver.as_ref() {
                     foreign
-                        .call_method(&method_name, args_slice, &kw_args_val)
+                        .call_method(interp, &method_name, args_slice, &kw_args_val)
                         .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
                 } else {
                     if !kw_args_val.is_empty() {

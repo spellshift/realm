@@ -666,13 +666,13 @@ Checks if the path exists and is a file.
 - `bool`: `True` if it is a file, `False` otherwise.
 
 ### file.list
-`file.list(path: str) -> List<Dict>`
+`file.list(path: Option<str>) -> List<Dict>`
 Lists files and directories in the specified path.
 
 Supports globbing patterns (e.g., `/home/*/*.txt`).
 
 **Parameters**
-- `path` (`str`): The directory path or glob pattern.
+- `path` (`Option<str>`): The directory path or glob pattern. Defaults to current working directory.
 
 **Returns**
 - `List<Dict>`: A list of dictionaries containing file details:
