@@ -1,7 +1,7 @@
 use super::super::ast::{Environment, Expr, Value};
 use super::super::token::{Span, TokenKind};
 use super::core::Interpreter;
-use super::error::{runtime_error, EldritchError};
+use super::error::{EldritchError, EldritchErrorKind};
 use super::eval::evaluate;
 use super::introspection::{get_type_name, is_truthy};
 use alloc::boxed::Box;
@@ -139,7 +139,7 @@ where
 }
 
 pub(crate) fn apply_arithmetic_op(
-    _interp: &Interpreter,
+    interp: &Interpreter,
     a: &Value,
     op: &TokenKind,
     b: &Value,
@@ -151,7 +151,7 @@ pub(crate) fn apply_arithmetic_op(
         (Value::Int(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
         (Value::Int(a), TokenKind::Slash, Value::Int(b)) => {
             if *b == 0 {
-                return runtime_error(span, "divide by zero");
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
             }
             Ok(Value::Float((*a as f64) / (*b as f64)))
         }
@@ -241,7 +241,7 @@ pub(crate) fn apply_arithmetic_op(
 
         (Value::Int(a), TokenKind::SlashSlash, Value::Int(b)) => {
             if *b == 0 {
-                return runtime_error(span, "divide by zero");
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
             }
             let mut res = a / b;
             if (a % b != 0) && ((*a < 0) ^ (*b < 0)) {
@@ -251,13 +251,13 @@ pub(crate) fn apply_arithmetic_op(
         }
         (Value::Int(a), TokenKind::Percent, Value::Int(b)) => {
             if *b == 0 {
-                return runtime_error(span, "modulo by zero");
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "modulo by zero", span);
             }
             let res = ((a % b) + b) % b;
             Ok(Value::Int(res))
         }
 
-        _ => runtime_error(span, &format!("Unsupported operand types for {}: {} and {}",
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("Unsupported operand types for {}: {} and {}",
             match op {
                 TokenKind::Plus => "+",
                 TokenKind::Minus => "-",
@@ -268,15 +268,16 @@ pub(crate) fn apply_arithmetic_op(
                 _ => "?"
             },
             get_type_name(a), get_type_name(b))
-        ),
+        , span),
     }
 }
 
 pub(crate) fn apply_comparison_op(
+    interp: &Interpreter,
     a: &Value,
     op: &TokenKind,
     b: &Value,
-    _span: Span,
+    span: Span,
 ) -> Result<Value, EldritchError> {
     // Explicitly handle mixed Int/Float equality
     if matches!(op, TokenKind::Eq) {
@@ -324,11 +325,11 @@ pub(crate) fn apply_comparison_op(
                 _ => {
                     // Mismatched types
                     if core::mem::discriminant(a) != core::mem::discriminant(b) {
-                         return runtime_error(_span, &format!(
+                         return interp.error(EldritchErrorKind::TypeError, &format!(
                             "Type mismatch or unsortable types: {} <-> {}",
                             get_type_name(a),
                             get_type_name(b)
-                        ));
+                        ), span);
                     }
                     // Same types, use Ord
                     match a.cmp(b) {
@@ -343,6 +344,7 @@ pub(crate) fn apply_comparison_op(
 }
 
 pub(crate) fn apply_bitwise_op(
+    interp: &Interpreter,
     a: &Value,
     op: &TokenKind,
     b: &Value,
@@ -379,7 +381,7 @@ pub(crate) fn apply_bitwise_op(
                 Ok(Value::Set(Arc::new(RwLock::new(symmetric_difference))))
             }
             // Note: Minus is not bitwise, handled in arithmetic/sets
-            _ => runtime_error(span, "Invalid bitwise operator for sets"),
+            _ => interp.error(EldritchErrorKind::TypeError, "Invalid bitwise operator for sets", span),
         },
         (Value::Dictionary(a), Value::Dictionary(b)) if matches!(op, TokenKind::BitOr) => {
              // Dict union (merge)
@@ -389,9 +391,9 @@ pub(crate) fn apply_bitwise_op(
             }
             Ok(Value::Dictionary(Arc::new(RwLock::new(new_dict))))
         }
-        _ => runtime_error(span, &format!(
+        _ => interp.error(EldritchErrorKind::TypeError, &format!(
             "Unsupported operand types for bitwise op: {} and {}",
             get_type_name(a), get_type_name(b)
-        )),
+        ), span),
     }
 }

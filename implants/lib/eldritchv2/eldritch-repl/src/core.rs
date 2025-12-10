@@ -592,7 +592,9 @@ impl Repl {
                 }
             }
             Err(e) => {
-                if e.contains("Unterminated string literal") && !e.contains("(newline)") {
+                if e.message.contains("Unterminated string literal")
+                    && !e.message.contains("(newline)")
+                {
                     is_incomplete_string = true;
                 }
             }
@@ -638,8 +640,10 @@ fn expand_macros(code: &str) -> String {
             Ok(_) => {
                 break;
             }
-            Err(msg) => {
-                if let Some(line_num_str) = msg.strip_prefix("Unexpected character: ! on line ") {
+            Err(e) => {
+                if let Some(line_num_str) =
+                    e.message.strip_prefix("Unexpected character: ! on line ")
+                {
                     let line_num: usize = match line_num_str.trim().parse() {
                         Ok(n) => n,
                         Err(_) => break,

@@ -1,9 +1,8 @@
 use super::super::ast::{ExprKind, Stmt, StmtKind};
 use super::super::token::{Span, TokenKind};
+use super::super::interpreter::error::EldritchError;
 use super::Parser;
 
-use alloc::string::String;
-use alloc::string::ToString;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -13,7 +12,7 @@ impl Parser {
         Stmt { kind, span }
     }
 
-    pub(crate) fn declaration(&mut self) -> Result<Stmt, String> {
+    pub(crate) fn declaration(&mut self) -> Result<Stmt, EldritchError> {
         if self.match_token(&[TokenKind::Def]) {
             self.function_def()
         } else {
@@ -21,7 +20,7 @@ impl Parser {
         }
     }
 
-    fn function_def(&mut self) -> Result<Stmt, String> {
+    fn function_def(&mut self) -> Result<Stmt, EldritchError> {
         let start_span = self.tokens[self.current - 1].span;
 
         // FIX: Extract name string immediately to drop borrow
@@ -70,7 +69,7 @@ impl Parser {
         Ok(self.make_stmt(StmtKind::Def(name, params, return_annotation, body), start_span, end_span))
     }
 
-    pub(crate) fn parse_block_or_statement(&mut self) -> Result<Vec<Stmt>, String> {
+    pub(crate) fn parse_block_or_statement(&mut self) -> Result<Vec<Stmt>, EldritchError> {
         if self.match_token(&[TokenKind::Newline]) {
             self.consume(
                 |t| matches!(t, TokenKind::Indent),
@@ -97,7 +96,7 @@ impl Parser {
         }
     }
 
-    fn statement(&mut self) -> Result<Stmt, String> {
+    fn statement(&mut self) -> Result<Stmt, EldritchError> {
         let start = self.peek().span;
         if self.match_token(&[TokenKind::If]) {
             self.if_statement(start)
@@ -136,7 +135,7 @@ impl Parser {
         }
     }
 
-    fn for_statement(&mut self, start: Span) -> Result<Stmt, String> {
+    fn for_statement(&mut self, start: Span) -> Result<Stmt, EldritchError> {
         let mut vars = Vec::new();
         loop {
             let ident_token = self.consume(
@@ -174,7 +173,7 @@ impl Parser {
         Ok(self.make_stmt(StmtKind::For(vars, iterable, body), start, end))
     }
 
-    fn if_statement(&mut self, start: Span) -> Result<Stmt, String> {
+    fn if_statement(&mut self, start: Span) -> Result<Stmt, EldritchError> {
         let condition = self.expression()?;
         self.consume(
             |t| matches!(t, TokenKind::Colon),
@@ -210,7 +209,7 @@ impl Parser {
         ))
     }
 
-    fn return_statement(&mut self, start: Span) -> Result<Stmt, String> {
+    fn return_statement(&mut self, start: Span) -> Result<Stmt, EldritchError> {
         let mut value = None;
         let mut end = start;
         if !self.check(&TokenKind::Newline)
@@ -230,7 +229,7 @@ impl Parser {
         Ok(self.make_stmt(StmtKind::Return(value), start, end))
     }
 
-    fn assignment_or_expression_statement(&mut self) -> Result<Stmt, String> {
+    fn assignment_or_expression_statement(&mut self) -> Result<Stmt, EldritchError> {
         let mut expr = self.expression()?;
         let start = expr.span;
 
@@ -307,7 +306,7 @@ impl Parser {
             }
             return Ok(self.make_stmt(StmtKind::Assignment(expr, annotation, final_value), start, end));
         } else if annotation.is_some() {
-             return Err("Annotated variable must be assigned a value.".to_string());
+             return self.error("Annotated variable must be assigned a value.");
         }
 
         // Augmented assignment
@@ -321,10 +320,10 @@ impl Parser {
         ]) {
             // Augmented assignment does not support tuple unpacking
             if let ExprKind::Tuple(_) = expr.kind {
-                return Err("Augmented assignment does not support tuple unpacking".to_string());
+                return self.error("Augmented assignment does not support tuple unpacking");
             }
             if let ExprKind::List(_) = expr.kind {
-                return Err("Augmented assignment does not support list unpacking".to_string());
+                return self.error("Augmented assignment does not support list unpacking");
             }
 
             let op = self.tokens[self.current - 1].kind.clone();

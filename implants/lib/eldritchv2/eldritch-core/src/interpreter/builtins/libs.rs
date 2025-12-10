@@ -5,6 +5,10 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `libs()`: Lists all registered libraries.
+///
+/// Returns a list of strings representing the names of all libraries loaded
+/// in the current environment scope chain.
 pub fn builtin_libs(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if !args.is_empty() {
         return Err("libs() takes no arguments".to_string());
