@@ -1,3 +1,5 @@
+import { OrderDirection, QuestOrderField, TaskOrderField, HostOrderField, RepositoryOrderField } from "./enums";
+
 export type Cursor = string | null;
 
 export interface QueryPageInfo {
@@ -90,13 +92,6 @@ export interface GetQueryVariables {
     orderBy?: any[];
 }
 
-export interface TagContextProps {
-    beacons: Array<BeaconNode>;
-    groupTags: Array<TagNode>;
-    serviceTags: Array<TagNode>;
-    hosts: Array<HostNode>;
-}
-
 export interface UserQueryTopLevel {
     users: UserQueryResponse;
 }
@@ -166,6 +161,7 @@ export interface QuestNode {
     creator: UserNode;
     tome: TomeNode;
     parameters: string | null;
+    tasks: TaskQueryResponse;
     lastUpdatedTask?: LastUpdatedTaskConnection;
     tasksTotal?: TaskCountOnly;
     tasksOutput?: TaskCountOnly;
@@ -236,10 +232,15 @@ export interface QuestQueryTopLevel {
     quests: QuestQueryResponse;
 }
 
-export interface OrderByField {
-    direction: "ASC" | "DESC";
-    field: string;
+export interface OrderByField<T = string> {
+    direction: OrderDirection;
+    field: T;
 }
+
+export type QuestOrderBy = OrderByField<QuestOrderField>;
+export type TaskOrderBy = OrderByField<TaskOrderField>;
+export type HostOrderBy = OrderByField<HostOrderField>;
+export type RepositoryOrderBy = OrderByField<RepositoryOrderField>;
 
 export interface QuestWhereInput {
     id?: string;
@@ -309,5 +310,5 @@ export interface RepositoryQueryTopLevel {
 }
 
 export interface GetRepositoryQueryVariables {
-    orderBy?: OrderByField[];
+    orderBy?: RepositoryOrderBy[];
 }

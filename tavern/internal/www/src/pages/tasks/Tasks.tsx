@@ -6,9 +6,10 @@ import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enum
 import { useTasks } from "../../hooks/useTasks";
 import Button from "../../components/tavern-base-ui/button/Button";
 import TaskCard from "../../components/task-card/TaskCard";
-import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import FilterControls, { FilterPageType } from "../../components/FilterControls";
 import { TaskEdge } from "../../utils/interfacesQuery";
 import { EditablePageHeader } from "./EditablePageHeader";
+import SortingControls from "../../components/SortingControls";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -24,12 +25,11 @@ const Tasks = () => {
 
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>
-            <EditablePageHeader tasks={data?.tasks} />
-            <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
+            <EditablePageHeader />
+            <div className="flex md:flex-row md:gap-0 gap-2 flex-col justify-between md:items-center px-4 py-2 border-b border-gray-200 pb-5">
                 <h3 className="text-xl font-semibold leading-6 text-gray-900">{data?.tasks?.edges[0]?.node?.quest?.name || questId}</h3>
                 <div className="flex flex-row justify-end">
-                    {/* Sorting not added yet */}
-                    {/* <Button leftIcon={<Bars3BottomLeftIcon className="w-4" />} buttonVariant="ghost" buttonStyle={{ color: 'gray', size: "md" }} onClick={() => console.log("hi")}>Sort</Button> */}
+                    <SortingControls type={PageNavItem.tasks} />
                     <FilterControls type={FilterPageType.TASK} />
                 </div>
             </div>

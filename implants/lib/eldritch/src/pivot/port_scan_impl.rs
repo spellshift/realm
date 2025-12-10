@@ -369,12 +369,12 @@ async fn handle_port_scan(
 
 // Non-async wrapper for our async scan.
 pub fn port_scan(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     target_cidrs: Vec<String>,
     ports: Vec<i32>,
     protocol: String,
     timeout: i32,
-) -> Result<Vec<Dict>> {
+) -> Result<Vec<Dict<'_>>> {
     if protocol != TCP && protocol != UDP {
         return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."));
     }

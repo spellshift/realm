@@ -4,7 +4,7 @@ use starlark::values::dict::Dict;
 use starlark::values::Heap;
 use std::env;
 
-pub fn get_env(starlark_heap: &Heap) -> Result<Dict> {
+pub fn get_env(starlark_heap: &'_ Heap) -> Result<Dict<'_>> {
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
 
@@ -32,7 +32,7 @@ mod tests {
 
     #[test]
     fn test_get_env() -> Result<()> {
-        env::set_var("FOO", "BAR");
+        unsafe { env::set_var("FOO", "BAR") };
         let test_heap = Heap::new();
         let res = get_env(&test_heap)?;
         let val: Value<'_> = match res.get(const_frozen_string!("FOO").to_value()) {

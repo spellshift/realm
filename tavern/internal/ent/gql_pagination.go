@@ -397,6 +397,20 @@ var (
 			}
 		},
 	}
+	// BeaconOrderFieldNextSeenAt orders Beacon by next_seen_at.
+	BeaconOrderFieldNextSeenAt = &BeaconOrderField{
+		Value: func(b *Beacon) (ent.Value, error) {
+			return b.NextSeenAt, nil
+		},
+		column: beacon.FieldNextSeenAt,
+		toTerm: beacon.ByNextSeenAt,
+		toCursor: func(b *Beacon) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.NextSeenAt,
+			}
+		},
+	}
 	// BeaconOrderFieldInterval orders Beacon by interval.
 	BeaconOrderFieldInterval = &BeaconOrderField{
 		Value: func(b *Beacon) (ent.Value, error) {
@@ -423,6 +437,8 @@ func (f BeaconOrderField) String() string {
 		str = "LAST_MODIFIED_AT"
 	case BeaconOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
+	case BeaconOrderFieldNextSeenAt.column:
+		str = "NEXT_SEEN_AT"
 	case BeaconOrderFieldInterval.column:
 		str = "INTERVAL"
 	}
@@ -447,6 +463,8 @@ func (f *BeaconOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *BeaconOrderFieldLastModifiedAt
 	case "LAST_SEEN_AT":
 		*f = *BeaconOrderFieldLastSeenAt
+	case "NEXT_SEEN_AT":
+		*f = *BeaconOrderFieldNextSeenAt
 	case "INTERVAL":
 		*f = *BeaconOrderFieldInterval
 	default:
@@ -1169,6 +1187,20 @@ var (
 			}
 		},
 	}
+	// HostOrderFieldNextSeenAt orders Host by next_seen_at.
+	HostOrderFieldNextSeenAt = &HostOrderField{
+		Value: func(h *Host) (ent.Value, error) {
+			return h.NextSeenAt, nil
+		},
+		column: host.FieldNextSeenAt,
+		toTerm: host.ByNextSeenAt,
+		toCursor: func(h *Host) Cursor {
+			return Cursor{
+				ID:    h.ID,
+				Value: h.NextSeenAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1181,6 +1213,8 @@ func (f HostOrderField) String() string {
 		str = "LAST_MODIFIED_AT"
 	case HostOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
+	case HostOrderFieldNextSeenAt.column:
+		str = "NEXT_SEEN_AT"
 	}
 	return str
 }
@@ -1203,6 +1237,8 @@ func (f *HostOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *HostOrderFieldLastModifiedAt
 	case "LAST_SEEN_AT":
 		*f = *HostOrderFieldLastSeenAt
+	case "NEXT_SEEN_AT":
+		*f = *HostOrderFieldNextSeenAt
 	default:
 		return fmt.Errorf("%s is not a valid HostOrderField", str)
 	}
