@@ -122,9 +122,6 @@ pub struct AgentFake;
 
 #[cfg(feature = "stdlib")]
 impl Agent for AgentFake {
-    fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
-        Ok(BTreeMap::new())
-    }
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(Vec::new())
     }
