@@ -1369,7 +1369,7 @@ It supports:
     Supports globbing patterns (e.g., `/home/*/*.txt`).
     
     **Parameters**
-    - `path` (`str`): The directory path or glob pattern.
+    - `path` (`Option<str>`): The directory path or glob pattern. Defaults to current working directory.
     
     **Returns**
     - `List<Dict>`: A list of dictionaries containing file details:

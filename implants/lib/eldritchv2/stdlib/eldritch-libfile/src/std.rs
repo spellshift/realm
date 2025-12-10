@@ -76,7 +76,12 @@ impl FileLibrary for StdFileLibrary {
         Ok(Path::new(&path).is_file())
     }
 
-    fn list(&self, path: String) -> Result<Vec<BTreeMap<String, Value>>, String> {
+    fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let path = path.unwrap_or_else(|| {
+            ::std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| if cfg!(windows) { "C:\\".to_string() } else { "/".to_string() })
+        });
         list_impl(path).map_err(|e| e.to_string())
     }
 
@@ -943,7 +948,7 @@ mod tests {
         let tmp = NamedTempFile::new()?;
         let path = tmp.path().to_string_lossy().to_string();
 
-        let files = lib.list(path).unwrap();
+        let files = lib.list(Some(path)).unwrap();
         assert_eq!(files.len(), 1);
         let f = &files[0];
 
