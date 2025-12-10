@@ -28,6 +28,7 @@ pub trait Agent: Send + Sync {
     fn list_transports(&self) -> Result<Vec<String>, String>;
     fn get_callback_interval(&self) -> Result<u64, String>;
     fn set_callback_interval(&self, interval: u64) -> Result<(), String>;
+    fn set_callback_uri(&self, uri: String) -> Result<(), String>;
 
     // Task Management
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String>;

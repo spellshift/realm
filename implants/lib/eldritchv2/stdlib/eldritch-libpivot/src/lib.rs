@@ -14,17 +14,11 @@ pub mod std;
 #[cfg(feature = "stdlib")]
 pub mod arp_scan_impl;
 #[cfg(feature = "stdlib")]
-pub mod bind_proxy_impl;
-#[cfg(feature = "stdlib")]
 pub mod ncat_impl;
-#[cfg(feature = "stdlib")]
-pub mod port_forward_impl;
 #[cfg(feature = "stdlib")]
 pub mod port_scan_impl;
 #[cfg(feature = "stdlib")]
 pub mod reverse_shell_pty_impl;
-#[cfg(feature = "stdlib")]
-pub mod smb_exec_impl;
 #[cfg(feature = "stdlib")]
 pub mod ssh_copy_impl;
 #[cfg(feature = "stdlib")]
@@ -139,29 +133,6 @@ pub trait PivotLibrary {
     ) -> Result<String, String>;
 
     #[eldritch_method]
-    /// **Experimental**: Executes a command via SMB.
-    ///
-    /// **Parameters**
-    /// - `target` (`str`): Target host.
-    /// - `port` (`int`): SMB port.
-    /// - `username` (`str`): Username.
-    /// - `password` (`str`): Password.
-    /// - `hash` (`str`): NTLM hash.
-    /// - `command` (`str`): Command to execute.
-    ///
-    /// **Returns**
-    /// - `str`: Command output.
-    fn smb_exec(
-        &self,
-        target: String,
-        port: i64,
-        username: String,
-        password: String,
-        hash: String,
-        command: String,
-    ) -> Result<String, String>;
-
-    #[eldritch_method]
     /// Scans TCP/UDP ports on target hosts.
     ///
     /// **Parameters**
@@ -193,27 +164,6 @@ pub trait PivotLibrary {
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
-    /// Sets up a port forwarding rule.
-    ///
-    /// **Parameters**
-    /// - `listen_address` (`str`): Local address to bind.
-    /// - `listen_port` (`int`): Local port to listen on.
-    /// - `forward_address` (`str`): Remote address to forward to.
-    /// - `forward_port` (`int`): Remote port.
-    /// - `protocol` (`str`): Protocol (tcp/udp).
-    ///
-    /// **Returns**
-    /// - `None`
-    fn port_forward(
-        &self,
-        listen_address: String,
-        listen_port: i64,
-        forward_address: String,
-        forward_port: i64,
-        protocol: String,
-    ) -> Result<(), String>;
-
-    #[eldritch_method]
     /// Sends arbitrary data to a host via TCP or UDP and waits for a response.
     ///
     /// **Parameters**
@@ -231,23 +181,4 @@ pub trait PivotLibrary {
         data: String,
         protocol: String,
     ) -> Result<String, String>;
-
-    #[eldritch_method]
-    /// Starts a SOCKS5 proxy server on the agent.
-    ///
-    /// **Parameters**
-    /// - `listen_address` (`str`): Address to bind.
-    /// - `listen_port` (`int`): Port to listen on.
-    /// - `username` (`str`): Proxy username (for auth).
-    /// - `password` (`str`): Proxy password.
-    ///
-    /// **Returns**
-    /// - `None`
-    fn bind_proxy(
-        &self,
-        listen_address: String,
-        listen_port: i64,
-        username: String,
-        password: String,
-    ) -> Result<(), String>;
 }

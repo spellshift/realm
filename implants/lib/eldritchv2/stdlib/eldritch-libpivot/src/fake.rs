@@ -52,18 +52,6 @@ impl PivotLibrary for PivotLibraryFake {
         Ok("Success".into())
     }
 
-    fn smb_exec(
-        &self,
-        _target: String,
-        _port: i64,
-        _username: String,
-        _password: String,
-        _hash: String,
-        _command: String,
-    ) -> Result<String, String> {
-        Ok("Success".into())
-    }
-
     fn port_scan(
         &self,
         _target_cidrs: Vec<String>,
@@ -88,17 +76,6 @@ impl PivotLibrary for PivotLibraryFake {
         Ok(vec![map])
     }
 
-    fn port_forward(
-        &self,
-        _listen_address: String,
-        _listen_port: i64,
-        _forward_address: String,
-        _forward_port: i64,
-        _protocol: String,
-    ) -> Result<(), String> {
-        Ok(())
-    }
-
     fn ncat(
         &self,
         _address: String,
@@ -107,15 +84,5 @@ impl PivotLibrary for PivotLibraryFake {
         _protocol: String,
     ) -> Result<String, String> {
         Ok("fake response".into())
-    }
-
-    fn bind_proxy(
-        &self,
-        _listen_address: String,
-        _listen_port: i64,
-        _username: String,
-        _password: String,
-    ) -> Result<(), String> {
-        Ok(())
     }
 }
