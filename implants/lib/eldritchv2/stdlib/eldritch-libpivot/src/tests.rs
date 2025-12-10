@@ -2,18 +2,21 @@ use crate::{std::StdPivotLibrary, PivotLibrary};
 use eldritch_libagent::agent::Agent;
 use pb::c2;
 use std::sync::{Arc, Mutex};
+use std::panic::AssertUnwindSafe;
 
 // Mock Agent
 struct MockAgent {
     // TODO: Determine if this can be simplified
     #[allow(clippy::type_complexity)]
     start_calls: Arc<Mutex<Vec<(i64, Option<String>)>>>,
+    repl_calls: Arc<Mutex<Vec<i64>>>,
 }
 
 impl MockAgent {
     fn new() -> Self {
         Self {
             start_calls: Arc::new(Mutex::new(Vec::new())),
+            repl_calls: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
@@ -79,7 +82,7 @@ impl Agent for MockAgent {
     }
 
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
-        let _ = task_id;
+        self.repl_calls.lock().unwrap().push(task_id);
         Ok(())
     }
 }
@@ -105,4 +108,52 @@ fn test_reverse_shell_pty_no_agent() {
     let result = lib.reverse_shell_pty(None);
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), "No agent available");
+}
+
+#[test]
+fn test_reverse_shell_repl_delegation() {
+    let agent = Arc::new(MockAgent::new());
+    let task_id = 123;
+    let lib = StdPivotLibrary::new(agent.clone(), task_id);
+
+    lib.reverse_shell_repl().unwrap();
+
+    let calls = agent.repl_calls.lock().unwrap();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0], task_id);
+}
+
+#[test]
+fn test_reverse_shell_repl_no_agent() {
+    let lib = StdPivotLibrary::default();
+    let result = lib.reverse_shell_repl();
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), "No agent available");
+}
+
+#[test]
+fn test_bind_proxy_unimplemented() {
+    let lib = StdPivotLibrary::default();
+    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        let _ = lib.bind_proxy("127.0.0.1".into(), 8080, "user".into(), "pass".into());
+    }));
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_port_forward_unimplemented() {
+    let lib = StdPivotLibrary::default();
+    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        let _ = lib.port_forward("127.0.0.1".into(), 8080, "1.1.1.1".into(), 80, "tcp".into());
+    }));
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_smb_exec_unimplemented() {
+    let lib = StdPivotLibrary::default();
+    let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+        let _ = lib.smb_exec("127.0.0.1".into(), 445, "user".into(), "pass".into(), "hash".into(), "cmd".into());
+    }));
+    assert!(result.is_err());
 }
