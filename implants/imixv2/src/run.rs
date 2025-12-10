@@ -70,9 +70,9 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
 
     let transport = match ActiveTransport::new(callback_uri, proxy_uri) {
         Ok(t) => t,
-        Err(e) => {
+        Err(_e) => {
             #[cfg(debug_assertions)]
-            log::error!("Failed to create transport: {e:#}");
+            log::error!("Failed to create transport: {_e:#}");
             return;
         }
     };
@@ -105,9 +105,9 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
                 registry.spawn(task, Arc::new(agent.clone()));
             }
         }
-        Err(e) => {
+        Err(_e) => {
             #[cfg(debug_assertions)]
-            log::error!("Callback failed: {e:#}");
+            log::error!("Callback failed: {_e:#}");
         }
     }
 }

@@ -80,12 +80,12 @@ impl InputParser {
                             break;
                         }
                         let code = self.buffer[2];
-                        let seq = &self.buffer[0..3];
+                        let _seq = &self.buffer[0..3];
                         if let Some(input) = self.parse_ss3(code) {
                             inputs.push(input);
                         } else {
                             #[cfg(debug_assertions)]
-                            log::warn!("Ignored SS3 sequence: {seq:02x?}");
+                            log::warn!("Ignored SS3 sequence: {_seq:02x?}");
                         }
                         self.buffer.drain(0..3);
                     }
