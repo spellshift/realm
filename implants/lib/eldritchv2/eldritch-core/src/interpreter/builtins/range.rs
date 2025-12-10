@@ -4,6 +4,12 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `range(stop)` or `range(start, stop[, step])`: Returns a sequence of numbers.
+///
+/// **Parameters**
+/// - `start` (Int): The start value (inclusive). Defaults to 0.
+/// - `stop` (Int): The stop value (exclusive).
+/// - `step` (Int): The step size. Defaults to 1.
 pub fn builtin_range(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     let (start, end, step) = match args {
         [Value::Int(end)] => (0, *end, 1),

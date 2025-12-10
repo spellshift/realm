@@ -4,6 +4,9 @@ use alloc::sync::Arc;
 use alloc::string::String;
 use spin::RwLock;
 
+/// `type(object)`: Returns the type of the object.
+///
+/// Returns a string representation of the type of the object.
 pub fn builtin_type(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(String::from("type() expects exactly one argument"));

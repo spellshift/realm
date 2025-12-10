@@ -1,13 +1,13 @@
 use super::FileLibrary;
 use ::std::fs::{self, File, OpenOptions};
-use ::std::io::{Read, Write};
+use ::std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use ::std::path::Path;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use anyhow::{Context, Result as AnyhowResult};
-use eldritch_core::Value;
+use eldritch_core::{Interpreter, Value};
 use eldritch_macros::eldritch_library_impl;
 
 #[cfg(unix)]
@@ -25,6 +25,9 @@ use tar::{Archive, Builder, HeaderMode};
 use tempfile::NamedTempFile;
 #[cfg(feature = "stdlib")]
 use tera::{Context as TeraContext, Tera};
+
+#[cfg(feature = "stdlib")]
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
@@ -61,8 +64,8 @@ impl FileLibrary for StdFileLibrary {
         Ok(Path::new(&path).exists())
     }
 
-    fn follow(&self, _path: String, _fn_val: Value) -> Result<(), String> {
-        Err("follow is not yet implemented for V2 stdlib".to_string())
+    fn follow(&self, path: String, fn_val: Value) -> Result<(), String> {
+        follow_impl(path, fn_val).map_err(|e| e.to_string())
     }
 
     fn is_dir(&self, path: String) -> Result<bool, String> {
@@ -156,8 +159,15 @@ impl FileLibrary for StdFileLibrary {
         template_impl(template_path, dst, args, autoescape).map_err(|e| e.to_string())
     }
 
-    fn timestomp(&self, _src: String, _dst: String) -> Result<(), String> {
-        Err("timestomp is unimplemented".to_string())
+    fn timestomp(
+        &self,
+        path: String,
+        mtime: Option<Value>,
+        atime: Option<Value>,
+        ctime: Option<Value>,
+        ref_file: Option<String>,
+    ) -> Result<(), String> {
+        timestomp_impl(path, mtime, atime, ctime, ref_file).map_err(|e| e.to_string())
     }
 
     fn write(&self, path: String, content: String) -> Result<(), String> {
@@ -186,6 +196,94 @@ impl FileLibrary for StdFileLibrary {
 }
 
 // Implementations
+
+#[cfg(feature = "stdlib")]
+fn follow_impl(path: String, fn_val: Value) -> AnyhowResult<()> {
+    // get pos to end of file
+    let mut file = File::open(&path)?;
+    let mut pos = fs::metadata(&path)?.len();
+
+    // set up watcher
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut watcher = RecommendedWatcher::new(tx, Config::default())?;
+    watcher.watch(Path::new(&path), RecursiveMode::NonRecursive)?;
+
+    // We need an interpreter to run the callback.
+    // If it's a user function, it captures its environment (closure).
+    // If it's native (like print), it needs an environment with a printer.
+    // We try to re-use the printer from the closure if available, else default.
+
+    let mut printer = None;
+    if let Value::Function(f) = &fn_val {
+        printer = Some(f.closure.read().printer.clone());
+    }
+
+    // Since this is blocking, we can create one interpreter instance and reuse it
+    let mut interp = if let Some(p) = printer {
+        Interpreter::new_with_printer(p)
+    } else {
+        Interpreter::new()
+    };
+
+    // watch
+    for _event in rx.into_iter().flatten() {
+        // ignore any event that didn't change the pos
+        if let Ok(meta) = file.metadata() {
+            if meta.len() == pos {
+                continue;
+            }
+        } else {
+            continue;
+        }
+
+        // read from pos to end of file
+        file.seek(SeekFrom::Start(pos))?;
+
+        let mut reader = BufReader::new(&file);
+        let mut bytes_read = 0;
+
+        loop {
+            let mut line = String::new();
+            // read_line includes the delimiter
+            let n = reader.read_line(&mut line)?;
+            if n == 0 {
+                break;
+            }
+            bytes_read += n as u64;
+
+            // Trim trailing newline for consistency with lines() which strips it?
+            // V1 used `reader.lines()` which strips newline.
+            // read_line keeps it. We should strip it.
+            if line.ends_with('\n') {
+                line.pop();
+                if line.ends_with('\r') {
+                    line.pop();
+                }
+            }
+
+            let line_val = Value::String(line);
+
+            // Execute callback
+            // We use define_variable + interpret as a robust way to call without internal API access
+            interp.define_variable("_follow_cb", fn_val.clone());
+            interp.define_variable("_follow_line", line_val);
+
+            match interp.interpret("_follow_cb(_follow_line)") {
+                Ok(_) => {}
+                Err(e) => return Err(anyhow::anyhow!(e)),
+            }
+        }
+
+        // update pos based on actual bytes read
+        pos += bytes_read;
+    }
+    Ok(())
+}
+
+#[cfg(not(feature = "stdlib"))]
+fn follow_impl(_path: String, _fn_val: Value) -> AnyhowResult<()> {
+    Err(anyhow::anyhow!("follow not supported in no_std or without stdlib feature"))
+}
 
 fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
     let src_path = Path::new(&src);
@@ -575,6 +673,187 @@ fn check_path(
     Ok(true)
 }
 
+// Timestomp Implementation
+fn timestomp_impl(
+    path: String,
+    mtime: Option<Value>,
+    atime: Option<Value>,
+    ctime: Option<Value>,
+    ref_file: Option<String>,
+) -> AnyhowResult<()> {
+    let mut final_mtime: Option<::std::time::SystemTime> = None;
+    let mut final_atime: Option<::std::time::SystemTime> = None;
+    let mut final_ctime: Option<::std::time::SystemTime> = None;
+
+    // 1. If ref_file is provided, read its times
+    if let Some(ref_path) = ref_file {
+        let meta = fs::metadata(&ref_path).context("Failed to stat ref_file")?;
+        final_mtime = meta.modified().ok();
+        final_atime = meta.accessed().ok();
+        final_ctime = meta.created().ok();
+    }
+
+    // 2. Parse explicit times (override ref_file)
+    if let Some(m) = mtime {
+        final_mtime = Some(parse_time(m)?);
+    }
+    if let Some(a) = atime {
+        final_atime = Some(parse_time(a)?);
+    }
+    if let Some(c) = ctime {
+        final_ctime = Some(parse_time(c)?);
+    }
+
+    // 3. Platform specific apply
+    apply_timestamps(&path, final_mtime, final_atime, final_ctime)
+}
+
+fn parse_time(val: Value) -> AnyhowResult<::std::time::SystemTime> {
+    match val {
+        Value::Int(i) => {
+             // Epoch seconds
+             Ok(::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(i as u64))
+        }
+        Value::String(s) => {
+            // Try ISO 8601 first
+            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&s) {
+                 return Ok(dt.into());
+            }
+            // Try naive? chrono supports various.
+            // Let's also support a simpler format "YYYY-MM-DD HH:MM:SS"
+            if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S") {
+                // Assume local? No, let's assume UTC for consistency unless offset provided
+                return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(dt, chrono::Utc).into());
+            }
+            // Try just YYYY-MM-DD
+            if let Ok(d) = chrono::NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
+                 let dt = d.and_hms_opt(0, 0, 0).unwrap();
+                 return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(dt, chrono::Utc).into());
+            }
+
+            anyhow::bail!("Failed to parse date string: {}", s)
+        }
+        _ => anyhow::bail!("Invalid time value type (must be Int or String)"),
+    }
+}
+
+#[cfg(unix)]
+fn apply_timestamps(
+    path: &str,
+    mtime: Option<::std::time::SystemTime>,
+    atime: Option<::std::time::SystemTime>,
+    _ctime: Option<::std::time::SystemTime>, // Not supported on standard Linux
+) -> AnyhowResult<()> {
+    use nix::sys::time::TimeVal;
+
+    // We need both atime and mtime for utimes. If one is missing, we should probably read the current one?
+    // Or if ref_file wasn't provided, use current time?
+    // The spec "touch" logic: if only one specified, update that one.
+    // `utimensat` allows UTIME_OMIT to ignore. But `nix` wrapper might differ.
+
+    // Let's get current times if needed
+    let meta = fs::metadata(path).context("Failed to stat target file")?;
+
+    // Helper to convert SystemTime to TimeVal
+    fn system_time_to_timeval(t: ::std::time::SystemTime) -> TimeVal {
+        let d = t.duration_since(::std::time::UNIX_EPOCH).unwrap_or(::std::time::Duration::ZERO);
+        TimeVal::new(d.as_secs() as i64, d.subsec_micros() as i64)
+    }
+
+    let a_tv = if let Some(a) = atime {
+        system_time_to_timeval(a)
+    } else {
+        meta.accessed().ok().map(system_time_to_timeval).unwrap_or_else(|| {
+             // Fallback if accessed() not supported? Use current time or 0?
+             // Using current time is safer than 0.
+             system_time_to_timeval(::std::time::SystemTime::now())
+        })
+    };
+
+    let m_tv = if let Some(m) = mtime {
+        system_time_to_timeval(m)
+    } else {
+        meta.modified().ok().map(system_time_to_timeval).unwrap_or_else(|| {
+             system_time_to_timeval(::std::time::SystemTime::now())
+        })
+    };
+
+    nix::sys::stat::utimes(path, &a_tv, &m_tv)
+        .context("Failed to set file times (utimes)")?;
+
+    // ctime is ignored/unsupported
+    Ok(())
+}
+
+#[cfg(windows)]
+fn apply_timestamps(
+    path: &str,
+    mtime: Option<::std::time::SystemTime>,
+    atime: Option<::std::time::SystemTime>,
+    ctime: Option<::std::time::SystemTime>,
+) -> AnyhowResult<()> {
+    use windows_sys::Win32::Foundation::{FILETIME, HANDLE, INVALID_HANDLE_VALUE, CloseHandle};
+    use windows_sys::Win32::Storage::FileSystem::{
+        CreateFileA, SetFileTime, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS
+    };
+    use std::os::windows::prelude::OsStrExt;
+
+    // We need to open the file handle
+    // windows-sys takes raw pointers.
+    // Convert path to wide string (actually windows-sys might prefer wide or ANSI depending on fn. SetFileTime needs Handle. CreateFileW needs wide.)
+    // Wait, I imported CreateFileA (ANSI). Let's use W.
+
+    // Actually, std::fs::File can give us the handle?
+    // std::fs::File::open might not give WRITE_ATTRIBUTES access if we just open for read/write?
+    // Let's use OpenOptions to open for write?
+    // fs::OpenOptions doesn't expose FILE_WRITE_ATTRIBUTES directly.
+    // Calling `SetFileTime` requires a handle with `FILE_WRITE_ATTRIBUTES`.
+    // Opening with `write(true)` gives `GENERIC_WRITE` which includes `FILE_WRITE_ATTRIBUTES`.
+
+    let file = OpenOptions::new().write(true).open(path)?;
+    use std::os::windows::io::AsRawHandle;
+    let handle = file.as_raw_handle() as HANDLE;
+
+    fn to_filetime(t: ::std::time::SystemTime) -> FILETIME {
+        let since_epoch = t.duration_since(::std::time::UNIX_EPOCH).unwrap_or(::std::time::Duration::ZERO);
+        // Windows epoch is 1601-01-01. Unix is 1970-01-01.
+        // Difference is 11644473600 seconds.
+        // Ticks are 100ns.
+        let intervals = since_epoch.as_nanos() / 100 + 116444736000000000;
+        FILETIME {
+            dwLowDateTime: (intervals & 0xFFFFFFFF) as u32,
+            dwHighDateTime: (intervals >> 32) as u32,
+        }
+    }
+
+    let ft_creation = ctime.map(to_filetime);
+    let ft_access = atime.map(to_filetime);
+    let ft_write = mtime.map(to_filetime);
+
+    let p_creation = ft_creation.as_ref().map(|p| p as *const FILETIME).unwrap_or(std::ptr::null());
+    let p_access = ft_access.as_ref().map(|p| p as *const FILETIME).unwrap_or(std::ptr::null());
+    let p_write = ft_write.as_ref().map(|p| p as *const FILETIME).unwrap_or(std::ptr::null());
+
+    let res = unsafe { SetFileTime(handle, p_creation, p_access, p_write) };
+
+    if res == 0 {
+         anyhow::bail!("SetFileTime failed");
+    }
+
+    Ok(())
+}
+
+#[cfg(not(any(unix, windows)))]
+fn apply_timestamps(
+    _path: &str,
+    _mtime: Option<::std::time::SystemTime>,
+    _atime: Option<::std::time::SystemTime>,
+    _ctime: Option<::std::time::SystemTime>,
+) -> AnyhowResult<()> {
+    anyhow::bail!("timestomp not supported on this platform")
+}
+
+
 // Tests
 #[cfg(test)]
 mod tests {
@@ -684,6 +963,107 @@ mod tests {
             panic!("absolute_path is not a string");
         }
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_follow() -> AnyhowResult<()> {
+        // We verify that follow can be called and executes callback.
+        // Since it's blocking, we use a callback that throws an error to exit the loop.
+        let lib = StdFileLibrary;
+        let tmp = NamedTempFile::new()?;
+        let path = tmp.path().to_string_lossy().to_string();
+
+        // Write initial content
+        lib.write(path.clone(), "line1\n".to_string()).unwrap();
+
+        // Create a thread to update file after a delay, to trigger watcher
+        let path_clone = path.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            // Append line
+             let mut file = OpenOptions::new()
+                .append(true)
+                .open(path_clone)
+                .unwrap();
+            file.write_all(b"line2\n").unwrap();
+        });
+
+        // Define a native function value that simulates a callback throwing an error on specific input
+        // Since we can't easily construct a Value::Function here without parsing (unless we use Interpreter to make one),
+        // we can use Interpreter to create the value.
+
+        let mut interp = Interpreter::new();
+        let code = r#"
+def cb(line):
+    if line == "line2":
+        fail("STOP")
+cb
+"#;
+        let fn_val = interp.interpret(code).map_err(|e| anyhow::anyhow!(e))?;
+
+        // Call follow. It should block until "line2" is written, then cb is called, throws error, and follow returns Err.
+        let res = lib.follow(path, fn_val);
+
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("STOP"));
+    }
+  
+    fn test_timestomp() -> AnyhowResult<()> {
+        // Initial stat
+        let initial_meta = fs::metadata(&path)?;
+        let _initial_mtime = initial_meta.modified()?;
+
+        // Wait a bit to ensure time difference
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // 1. Set specific mtime (Int)
+        let target_time = std::time::SystemTime::now();
+        let target_secs = target_time.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+
+        lib.timestomp(path.clone(), Some(Value::Int(target_secs as i64)), None, None, None).unwrap();
+
+        let new_meta = fs::metadata(&path)?;
+        let new_mtime = new_meta.modified()?;
+        let new_secs = new_mtime.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+
+        // Allow small skew if file system has low resolution (e.g. some only support seconds)
+        // But since we use same secs, should be equal or close.
+        assert!( (new_secs as i64 - target_secs as i64).abs() <= 1 );
+
+        // 2. Set specific atime (String)
+        let time_str = "2020-01-01 12:00:00"; // UTC implied
+        lib.timestomp(path.clone(), None, Some(Value::String(time_str.to_string())), None, None).unwrap();
+
+        let meta2 = fs::metadata(&path)?;
+        let atime2 = meta2.accessed()?;
+        let atime_secs = atime2.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+
+        // 2020-01-01 12:00:00 UTC = 1577880000
+        assert_eq!(atime_secs, 1577880000);
+
+        // 3. Ref file
+        let ref_tmp = NamedTempFile::new()?;
+        let ref_path = ref_tmp.path().to_string_lossy().to_string();
+
+        // Set ref file time to something old
+        // Actually we can't easily set ref file time without using our own lib,
+        // but we can just use the current time of ref file (which is fresh)
+        // vs the target file which we just set to 2020.
+
+        // Wait and touch ref file (re-write)
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        fs::write(&ref_path, "update")?;
+        let ref_meta = fs::metadata(&ref_path)?;
+        let ref_mtime = ref_meta.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+
+        lib.timestomp(path.clone(), None, None, None, Some(ref_path)).unwrap();
+
+        let final_meta = fs::metadata(&path)?;
+        let final_mtime = final_meta.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+
+        assert_eq!(final_mtime, ref_mtime);
         Ok(())
     }
 }

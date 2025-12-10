@@ -6,6 +6,10 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `dir([object])`: Returns a list of valid attributes for the object.
+///
+/// Without arguments, return the list of names in the current local scope.
+/// With an argument, attempt to return a list of valid attributes for that object.
 pub fn builtin_dir(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         let mut symbols = BTreeSet::new();

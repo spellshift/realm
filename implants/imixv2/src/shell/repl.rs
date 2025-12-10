@@ -14,7 +14,7 @@ use std::sync::Arc;
 use transport::Transport;
 
 use crate::agent::ImixAgent;
-use eldritch_repl::parser::InputParser;
+use crate::shell::parser::InputParser;
 use crate::shell::terminal::{render, VtWriter};
 
 pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(

@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use spin::RwLock;
 
 use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs};
-use super::error::{runtime_error, EldritchError};
+use super::error::{EldritchError, EldritchErrorKind, StackFrame};
 use super::eval;
 use super::exec;
 use super::methods::get_native_methods;
@@ -29,6 +29,8 @@ pub struct Interpreter {
     pub env: Arc<RwLock<Environment>>,
     pub flow: Flow,
     pub depth: usize,
+    pub call_stack: Vec<StackFrame>,
+    pub current_func_name: String,
 }
 
 impl Default for Interpreter {
@@ -54,6 +56,8 @@ impl Interpreter {
             env,
             flow: Flow::Next,
             depth: 0,
+            call_stack: Vec::new(),
+            current_func_name: "<module>".to_string(),
         };
 
         interpreter.load_builtins();
@@ -105,6 +109,55 @@ impl Interpreter {
             .insert(name, Value::Foreign(Arc::new(val)));
     }
 
+    // Helper to create errors from interpreter context
+    pub fn error<T>(&self, kind: EldritchErrorKind, msg: &str, span: Span) -> Result<T, EldritchError> {
+        // Construct the error with the current call stack
+        let mut err = EldritchError::new(kind, msg, span);
+        // We attach the full stack of callers.
+        // We also want to include the current frame's context as the final location if not already in stack?
+        // No, the traceback convention is:
+        // Stack Frame 0 (bottom): <module> line X
+        // ...
+        // Current: <func> line Y (error location)
+
+        let mut full_stack = self.call_stack.clone();
+        full_stack.push(StackFrame {
+            name: self.current_func_name.clone(),
+            filename: "<script>".to_string(),
+            line: span.line,
+        });
+
+        err = err.with_stack(full_stack);
+        Err(err)
+    }
+
+    // Legacy support wrapper
+    pub fn runtime_error<T>(&self, msg: &str, span: Span) -> Result<T, EldritchError> {
+        self.error(EldritchErrorKind::RuntimeError, msg, span)
+    }
+
+    pub fn push_frame(&mut self, name: &str, span: Span) {
+        // Push the CURRENT context onto the stack before entering new function.
+        // `name` is the name of the function being CALLED (new context).
+        // `span` is the call site in the CURRENT context.
+
+        self.call_stack.push(StackFrame {
+            name: self.current_func_name.clone(),
+            filename: "<script>".to_string(),
+            line: span.line,
+        });
+        self.current_func_name = name.to_string();
+    }
+
+    pub fn pop_frame(&mut self) {
+        if let Some(frame) = self.call_stack.pop() {
+            self.current_func_name = frame.name;
+        } else {
+            // Should not happen if push/pop balanced correctly, but fallback safe
+            self.current_func_name = "<module>".to_string();
+        }
+    }
+
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
         let mut lexer = Lexer::new(input.to_string());
         let tokens = match lexer.scan_tokens() {
@@ -119,22 +172,38 @@ impl Interpreter {
 
         let mut last_val = Value::None;
 
+        // Reset state for fresh run
+        self.call_stack.clear();
+        self.current_func_name = "<module>".to_string();
+
         for stmt in stmts {
             match &stmt.kind {
                 // Special case: if top-level statement is an expression, return its value
                 // This matches behavior of typical REPLs / starlark-like exec
                 super::super::ast::StmtKind::Expression(expr) => {
-                    last_val =
-                        eval::evaluate(self, expr).map_err(|e| self.format_error(input, e))?;
+                    let res = eval::evaluate(self, expr);
+                    match res {
+                        Ok(v) => last_val = v,
+                        Err(e) => {
+                            return Err(self.format_error(input, e));
+                        }
+                    }
                 }
                 _ => {
-                    exec::execute(self, &stmt).map_err(|e| self.format_error(input, e))?;
-                    if let Flow::Return(v) = &self.flow {
-                        let ret = v.clone();
-                        self.flow = Flow::Next;
-                        return Ok(ret);
+                    let res = exec::execute(self, &stmt);
+                    match res {
+                         Ok(_) => {
+                            if let Flow::Return(v) = &self.flow {
+                                let ret = v.clone();
+                                self.flow = Flow::Next;
+                                return Ok(ret);
+                            }
+                            last_val = Value::None;
+                         }
+                         Err(e) => {
+                             return Err(self.format_error(input, e));
+                         }
                     }
-                    last_val = Value::None;
                 }
             }
         }
@@ -142,19 +211,20 @@ impl Interpreter {
     }
 
     pub(crate) fn format_error(&self, source: &str, error: EldritchError) -> String {
+        // combine formatted traceback with source snippet
+        let mut output = error.to_string();
+
         let lines: Vec<&str> = source.lines().collect();
         if error.span.line > 0 && error.span.line <= lines.len() {
             let line_idx = error.span.line - 1;
             let line_content = lines[line_idx];
-            format!(
-                "{}\n  at line {}:\n    {}\n    ^-- here",
-                error.message,
+            output.push_str(&format!(
+                "\n\nError location:\n  at line {}:\n    {}\n    ^-- here",
                 error.span.line,
                 line_content.trim()
-            )
-        } else {
-            format!("Error: {}", error.message)
+            ));
         }
+        output
     }
 
     pub(crate) fn assign_variable(&mut self, name: &str, value: Value) {
@@ -187,7 +257,8 @@ impl Interpreter {
             }
             current_env = env_ref.parent.clone();
         }
-        runtime_error(span, &format!("Undefined variable: '{name}'"))
+        // Replace helper call with method call
+        self.error(EldritchErrorKind::NameError, &format!("Undefined variable: '{name}'"), span)
     }
 
     pub fn complete(&self, code: &str, cursor: usize) -> (usize, Vec<String>) {

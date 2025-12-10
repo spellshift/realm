@@ -7,6 +7,11 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `bytes(source)`: Creates a bytes object.
+///
+/// If source is an integer, the array will have that size and will be initialized with null bytes.
+/// If source is a string, it will be converted using UTF-8 encoding.
+/// If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256, which are used as the initial contents of the array.
 pub fn builtin_bytes(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Ok(Value::Bytes(Vec::new()));

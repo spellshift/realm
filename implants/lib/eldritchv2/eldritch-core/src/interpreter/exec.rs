@@ -3,7 +3,7 @@ use super::super::ast::{
 };
 use super::super::token::TokenKind;
 use super::core::{Flow, Interpreter};
-use super::error::{runtime_error, EldritchError};
+use super::error::{EldritchError, EldritchErrorKind};
 use super::eval::{apply_binary_op_pub, evaluate};
 use super::introspection::{get_type_name, is_truthy};
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -73,11 +73,12 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
                 Value::Bytes(b) => b.iter().map(|&byte| Value::Int(byte as i64)).collect(),
                 Value::Dictionary(d) => d.read().keys().cloned().collect(),
-                _ => return runtime_error(
-                    iterable.span,
+                _ => return interp.error(
+                    EldritchErrorKind::TypeError,
                     &format!(
                         "'for' loop can only iterate over lists/iterables. Found {iterable_val:?}"
                     ),
+                    iterable.span,
                 ),
             };
 
@@ -102,13 +103,13 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                         Value::Tuple(t) => t.clone(),
                         _ => {
                             interp.env = parent_env;
-                            return runtime_error(stmt.span, "Cannot unpack non-iterable");
+                            return interp.error(EldritchErrorKind::TypeError, "Cannot unpack non-iterable", stmt.span);
                         }
                     };
 
                     if parts.len() != idents.len() {
                         interp.env = parent_env;
-                        return runtime_error(stmt.span, &format!("ValueError: too many/not enough values to unpack (expected {}, got {})", idents.len(), parts.len()));
+                        return interp.error(EldritchErrorKind::ValueError, &format!("ValueError: too many/not enough values to unpack (expected {}, got {})", idents.len(), parts.len()), stmt.span);
                     }
 
                     for (var, val) in idents.iter().zip(parts.into_iter()) {
@@ -163,21 +164,23 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                 Value::List(l) => l.read().clone(),
                 Value::Tuple(t) => t.clone(),
                 _ => {
-                    return runtime_error(
-                        target.span,
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
                         &format!("cannot unpack non-iterable {:?}", get_type_name(&value)),
+                        target.span,
                     )
                 }
             };
 
             if elements.len() != values.len() {
-                return runtime_error(
-                    target.span,
+                return interp.error(
+                    EldritchErrorKind::ValueError,
                     &format!(
                         "ValueError: too many/not enough values to unpack (expected {}, got {})",
                         elements.len(),
                         values.len()
                     ),
+                    target.span,
                 );
             }
 
@@ -194,7 +197,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                     let idx_int = match index {
                         Value::Int(i) => i,
                         _ => {
-                            return runtime_error(index_expr.span, "List indices must be integers")
+                            return interp.error(EldritchErrorKind::TypeError, "List indices must be integers", index_expr.span)
                         }
                     };
                     let mut list = l.write();
@@ -204,7 +207,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                         idx_int
                     };
                     if true_idx < 0 || true_idx as usize >= list.len() {
-                        return runtime_error(target.span, "List assignment index out of range");
+                        return interp.error(EldritchErrorKind::IndexError, "List assignment index out of range", target.span);
                     }
                     list[true_idx as usize] = value;
                     Ok(())
@@ -213,10 +216,10 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                     d.write().insert(index, value);
                     Ok(())
                 }
-                _ => runtime_error(target.span, "Object does not support item assignment"),
+                _ => interp.error(EldritchErrorKind::TypeError, "Object does not support item assignment", target.span),
             }
         }
-        _ => runtime_error(target.span, "cannot assign to this expression"),
+        _ => interp.error(EldritchErrorKind::SyntaxError, "cannot assign to this expression", target.span),
     }
 }
 
@@ -244,6 +247,8 @@ fn execute_augmented_assignment(
                 EldritchError {
                     span,
                     message: "Unknown augmented assignment operator".to_string(),
+                    kind: EldritchErrorKind::SyntaxError,
+                    stack: Vec::new(),
                 }
             })?;
 
@@ -273,7 +278,7 @@ fn execute_augmented_assignment(
                     let idx_int = match index {
                         Value::Int(i) => i,
                         _ => {
-                            return runtime_error(index_expr.span, "List indices must be integers")
+                            return interp.error(EldritchErrorKind::TypeError, "List indices must be integers", index_expr.span)
                         }
                     };
                     let list = l.read();
@@ -283,7 +288,7 @@ fn execute_augmented_assignment(
                         idx_int
                     };
                     if true_idx < 0 || true_idx as usize >= list.len() {
-                        return runtime_error(span, "List index out of range");
+                        return interp.error(EldritchErrorKind::IndexError, "List index out of range", span);
                     }
                     list[true_idx as usize].clone()
                 }
@@ -291,10 +296,10 @@ fn execute_augmented_assignment(
                     let dict = d.read();
                     match dict.get(&index) {
                         Some(v) => v.clone(),
-                        None => return runtime_error(span, "KeyError"),
+                        None => return interp.error(EldritchErrorKind::KeyError, "KeyError", span),
                     }
                 }
-                _ => return runtime_error(span, "Object does not support item assignment"),
+                _ => return interp.error(EldritchErrorKind::TypeError, "Object does not support item assignment", span),
             };
 
             if let TokenKind::PlusAssign = op {
@@ -307,6 +312,8 @@ fn execute_augmented_assignment(
                 EldritchError {
                     span,
                     message: "Unknown augmented assignment operator".to_string(),
+                    kind: EldritchErrorKind::SyntaxError,
+                    stack: Vec::new(),
                 }
             })?;
 
@@ -344,7 +351,7 @@ fn execute_augmented_assignment(
                 _ => unreachable!(),
             }
         }
-        _ => runtime_error(span, "Illegal target for augmented assignment"),
+        _ => interp.error(EldritchErrorKind::SyntaxError, "Illegal target for augmented assignment", span),
     }
 }
 

@@ -1,3 +1,4 @@
+pub mod parser;
 pub mod pty;
 pub mod repl;
 pub mod terminal;
