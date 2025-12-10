@@ -7,6 +7,11 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `max(iterable)` or `max(arg1, arg2, *args)`: Returns the largest item.
+///
+/// **Parameters**
+/// - `iterable` (Iterable): An iterable to search.
+/// - `arg1, arg2, *args` (Any): Two or more arguments to compare.
 pub fn builtin_max(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.is_empty() {
         return Err("max expected at least 1 argument, got 0".to_string());

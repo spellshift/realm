@@ -17,10 +17,18 @@ glob = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
+chrono = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(unix)'.dependencies]
-nix = { workspace = true, features = ["user"] }
+nix = { workspace = true, features = ["user", "fs"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_SystemServices",
+] }
 
 [features]
 default = ["stdlib"]
@@ -33,5 +41,6 @@ stdlib = [
     "dep:regex",
     "dep:anyhow",
     "dep:serde_json",
+    "dep:chrono",
 ]
 fake_bindings = []
