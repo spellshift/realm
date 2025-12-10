@@ -83,6 +83,7 @@ write_systemd_service()
 
 The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
+- `agent` - Used for meta-style interactions with the agent itself.
 - `assets` - Used to interact with files stored natively in the agent.
 - `crypto` - Used to encrypt/decrypt or hash data.
 - `file` - Used to interact with files on the system.
@@ -115,6 +116,37 @@ Instead we recommend using more descriptive names like:
 for user_home_dir in file.list("/home/"):
     print(user_home_dir["file_name"])
 ```
+
+---
+
+## Agent
+
+### agent.eval
+
+`agent.eval(script: str) -> None`
+
+The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
+executes it in the runtime environment of the executing tome. This means that
+any `print`s or `eprint`s or output from the script will be merged with that
+of the broader tome.
+
+### agent.set_callback_interval
+
+`agent.set_callback_interval(new_interval: int) -> None`
+
+The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
+running agent's callback interval to the passed value as seconds. This configuration change will
+not persist across agent reboots.
+
+### agent.set_callback_uri
+
+`agent.set_callback_uri(new_uri: str) -> None`
+
+The <b>agent.set_callback_uri</b> method takes an string and changes the
+running agent's callback uri to the passed value. This configuration change will
+not persist across agent reboots. NOTE: please ensure the passed URI path is correct
+for the underlying `Transport` being used, as a URI can take many forms and we make no
+assumptions on `Transport` requirements no gut checks are applied to the passed string.
 
 ---
 
@@ -210,16 +242,21 @@ crypto.from_json("{\"foo\":\"bar\"}")
 }
 ```
 
-### crypto.hash_file
+### crypto.is_json
 
-`crypto.hash_file(file: str, algo: str) -> str`
+`crypto.is_json(content: str) -> bool`
 
-The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+The <b>crypto.is_json</b> tests if JSON is valid.
 
-- MD5
-- SHA1
-- SHA256
-- SHA512
+```python
+crypto.is_json("{\"foo\":\"bar\"}")
+True
+```
+
+```python
+crypto.is_json("foobar")
+False
+```
 
 ### crypto.to_json
 
@@ -231,6 +268,17 @@ The <b>crypto.to_json</b> method converts given type to JSON text.
 crypto.to_json({"foo": "bar"})
 "{\"foo\":\"bar\"}"
 ```
+
+### crypto.hash_file
+
+`crypto.hash_file(file: str, algo: str) -> str`
+
+The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256
+- SHA512
 
 ---
 
@@ -253,6 +301,18 @@ The <b>file.compress</b> method compresses a file using the gzip algorithm. If t
 `file.copy(src: str, dst: str) -> None`
 
 The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
+
+### file.decompress
+
+`file.decompress(src: str, dst: str) -> None`
+
+The <b>file.decompress</b> method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
+
+```python
+file.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
+file.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')
+# Files will exist in /tmp/bob_ssh_output/.ssh/*
+```
 
 ### file.exists
 
@@ -365,6 +425,19 @@ file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the 
 file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
+### file.read_binary
+
+`file.read(path: str) -> List<int>`
+
+The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+This function supports globbing with `*` for example:
+
+```python
+file.read_binary("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
+file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
+file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
+```
+
 ### file.remove
 
 `file.remove(path: str) -> None`
@@ -409,7 +482,8 @@ Unimplemented.
 `file.write(path: str, content: str) -> None`
 
 The <b>file.write</b> method writes to a given file path with the given content.
-If a file or directory already exists at this path, the method will fail.
+If a file already exists at this path, the method will overwite it. If a directory
+already exists at the path the method will error.
 
 ### file.find
 
@@ -552,36 +626,30 @@ The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move 
 
 ### pivot.ssh_copy
 
-`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> None`
+`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
 
-The <b>pivot.ssh_copy</b> method copies a local file to a remote system. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
+The <b>pivot.ssh_copy</b> method copies a local file to a remote system.
+ssh_copy will return `"Sucess"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
 If the connection is successful but the copy writes a file error will be returned.
-
-ssh_copy will first delete the remote file and then write to its location.
+ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
 
 ### pivot.ssh_exec
 
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
-The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell. If no password or key is specified the function will error out with:
-`Failed to run handle_ssh_exec: Failed to authenticate to host`
-If the connection is successful but the command fails no output will be returned but the status code will be set.
-Not returning stderr is a limitation of the way we're performing execution. Since it's not using the SSH shell directive we're limited on the return output we can capture.
+The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
+Stdout returns the string result from the command output.
+Stderr will return any errors from the SSH connection but not the command being executed.
+Status will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.
 
 ```json
 {
     "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
+    "stderr":"",
     "status": 0
 }
 ```
-
-### pivot.ssh_password_spray
-
-`pivot.ssh_password_spray(targets: List<str>, port: int, credentials: List<str>, keys: List<str>, command: str, shell_path: str) -> List<str>`
-
-The <b>pivot.ssh_password_spray</b> method is being proposed to allow users a way to test found credentials against neighboring targets. It will iterate over the targets list and try each credential set. Credentials will be a formatted list of usernames and passwords Eg. "username:password". The function will return a formatted list of "target:username:password". command and shell_path is intended to give more flexibility but may be adding complexity.
 
 ---
 
@@ -791,10 +859,12 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
-Disown will run the process in the background disowned from the agent. This is done through double forking and only works on *nix systems.
+On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
+On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
+The `env_vars` will be a map of environment variables to be added to the process of the execution.
 
 ```python
 sys.exec("/bin/bash",["-c", "whoami"])
@@ -833,20 +903,22 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
 
 ```json
 [
-    {
-        "name": "eth0",
-        "ips": [
-            "172.17.0.2/24"
-        ],
-        "mac": "02:42:ac:11:00:02"
-    },
-    {
-        "name": "lo",
-        "ips": [
-            "127.0.0.1/8"
-        ],
-        "mac": "00:00:00:00:00:00"
-    }
+  {
+    "name": "lo0",
+    "ip": "127.0.0.1"
+  },
+  {
+    "name": "lo0",
+    "ip": "::1"
+  },
+  {
+    "name": "en0",
+    "ip": "fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15"
+  },
+  {
+    "name": "en0",
+    "ip": "10.0.124.42"
+  }
 ]
 ```
 

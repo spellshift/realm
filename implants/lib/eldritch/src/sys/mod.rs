@@ -18,6 +18,7 @@ mod write_reg_int_impl;
 mod write_reg_str_impl;
 
 use starlark::{
+    collections::SmallMap,
     environment::MethodsBuilder,
     starlark_module,
     values::{dict::Dict, list::UnpackList, none::NoneType, starlark_value, Heap},
@@ -43,8 +44,8 @@ crate::eldritch_lib!(SysLibrary, "sys_library");
 #[allow(clippy::needless_lifetimes, clippy::type_complexity, clippy::too_many_arguments)]
 fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
-    fn exec<'v>(this: &SysLibrary, starlark_heap: &'v Heap, path: String, args: UnpackList<String>, disown: Option<bool>) -> anyhow::Result<Dict<'v>> {
-        exec_impl::exec(starlark_heap, path, args.items, disown)
+    fn exec<'v>(this: &SysLibrary, starlark_heap: &'v Heap, path: String, args: UnpackList<String>, disown: Option<bool>, env_vars: Option<SmallMap<String, String>>) -> anyhow::Result<Dict<'v>> {
+        exec_impl::exec(starlark_heap, path, args.items, disown, env_vars)
     }
 
     #[allow(unused_variables)]

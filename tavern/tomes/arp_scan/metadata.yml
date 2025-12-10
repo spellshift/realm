@@ -1,5 +1,0 @@
-name: ARP Scan
-description: ARP Scan all networks that the host has access to
-author: hulto
-support_model: FIRST_PARTY
-tactic: RECON

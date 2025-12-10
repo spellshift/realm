@@ -13,9 +13,17 @@ query: |
       name
       kind
       hosts {
-        id
-        beacons {
-          id
+        edges {
+          node {
+            id
+            beacons {
+              edges {
+                node {
+                  id
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -28,9 +36,13 @@ variables:
       - 1010
 expected:
   createTag:
-    name: "TestTag"
-    kind: "group"
     hosts:
-      - id: "1010"
-        beacons:
-        - id: "1337"
+      edges:
+        - node:
+            beacons:
+              edges:
+                - node:
+                    id: "1337"
+            id: "1010"
+    kind: "group"
+    name: "TestTag"

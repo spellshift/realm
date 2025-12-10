@@ -1,57 +1,51 @@
-import { ApolloError } from "@apollo/client";
-import { CloseIcon } from "@chakra-ui/icons";
 import { FC } from "react";
-import { Link } from "react-router-dom";
-import { CreateQuestDropdown } from "../../features/create-quest-dropdown";
-import Button from "../../components/tavern-base-ui/button/Button";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import { useParams } from "react-router-dom";
+import { GET_QUEST_QUERY } from "../../utils/queries";
+import { useQuery } from "@apollo/client";
+import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
+import { QuestQueryTopLevel, } from "../../utils/interfacesQuery";
 
-type EditablePageHeaderProps = {
-    questId?: string;
-    data: any;
-    error?: ApolloError | undefined;
-    loading: boolean;
-}
-export const EditablePageHeader: FC<EditablePageHeaderProps> = ({ questId, data, error, loading }) => {
+export const EditablePageHeader: FC = () => {
+    const { questId } = useParams();
+
+    const { data } = useQuery<QuestQueryTopLevel>(GET_QUEST_QUERY, {
+        variables: {
+            where: {
+                id: questId
+            },
+            first: 1
+        },
+        skip: !questId
+    });
+
+    const questData = data?.quests?.edges?.[0]?.node;
+
+    const BreadcrumbsList = [
+        {
+            label: "Quests",
+            link: "/quests"
+        },
+        {
+            label: questData?.name || "Quest",
+            link: `/tasks/${questId}`
+        }
+    ]
 
     return (
-        <div className="flex flex-row justify-between w-full">
-            <div className="flex flex-row gap-2 items-center">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">
-                    Quest tasks for
-                </h3>
-                {data?.quests?.edges[0]?.node?.name &&
-                    <Link to="/quests">
-                        <Button
-                            buttonStyle={{ color: "purple", size: "xs" }}
-                            buttonVariant="outline"
-                            rightIcon={<CloseIcon />}
-
-                        >
-                            {data?.quests?.edges[0]?.node?.name}
-                        </Button>
-                    </Link>
-                }
-                {(error || (!data?.quests?.edges[0]?.node?.name && !loading)) &&
-                    <Link to="/quests">
-                        <Button
-                            rightIcon={<CloseIcon />}
-                            buttonStyle={{ color: "purple", size: "xs" }}
-                            buttonVariant="outline"
-                        >
-                            {questId}
-                        </Button>
-                    </Link>
-                }
+        <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-row justify-between w-full items-center gap-2">
+                <Breadcrumbs pages={BreadcrumbsList} />
+                {questData && questData.tasks.edges && (
+                    <CreateQuestDropdown
+                        showLabel={true}
+                        name={questData.name}
+                        originalParms={questData.parameters || ""}
+                        tome={questData.tome}
+                        tasks={questData.tasks}
+                    />
+                )}
             </div>
-            {(questId && data?.quests?.edges && data.quests?.edges.length > 0) &&
-                <CreateQuestDropdown
-                    showLabel={true}
-                    name={data?.quests?.edges[0]?.node?.name}
-                    originalParms={data?.quests?.edges[0]?.node?.parameters}
-                    tome={data?.quests?.edges[0]?.node?.tome}
-                    tasks={data?.quests?.edges[0]?.node?.tasksTotal}
-                />
-            }
         </div>
     );
 };

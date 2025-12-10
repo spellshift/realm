@@ -3,13 +3,8 @@ use uuid::Uuid;
 
 use crate::HostIDSelector;
 
+#[derive(Default)]
 pub struct Env {}
-
-impl Default for Env {
-    fn default() -> Self {
-        Env {}
-    }
-}
 
 impl HostIDSelector for Env {
     fn get_name(&self) -> String {

@@ -42,7 +42,7 @@ pub fn ssh_copy(
     key: Option<String>,
     key_password: Option<String>,
     timeout: Option<u32>,
-) -> Result<()> {
+) -> Result<String> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -63,14 +63,11 @@ pub fn ssh_copy(
     )) {
         Ok(local_res) => local_res,
         Err(local_err) => {
-            return Err(anyhow::anyhow!(
-                "Failed to run handle_ssh_exec: {}",
-                local_err.to_string()
-            ))
+            return Ok(format!("Failed to run handle_ssh_copy: {}", local_err));
         }
     };
 
-    Ok(())
+    Ok("Sucess".to_string())
 }
 
 #[cfg(test)]

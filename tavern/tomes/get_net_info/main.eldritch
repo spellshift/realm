@@ -14,15 +14,15 @@ def print_table(rows: list[list]):
             row.append(rpad(c, counts[i]+2))
         print("".join(row))
 
+
 def ifconfig():
-    print("HOSTNAME "+ sys.hostname())
-    rows = [["IFACE", "IP", "MAC"]]
+    print("HOSTNAME " + sys.hostname())
+    rows = [["IFACE", "IP"]]
     ip_res = sys.get_ip()
     for interface in ip_res:
-        for ip in interface['ips']:
-            rows.append([interface['name'], ip, interface['mac']])
+        rows.append([interface['name'], interface['ip']])
+
     print_table(rows)
 
-time.sleep(1)
 
 ifconfig()

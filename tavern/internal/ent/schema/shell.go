@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -51,6 +52,10 @@ func (Shell) Edges() []ent.Edge {
 			Required().
 			Comment("User that created the shell"),
 		edge.To("active_users", User.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
 			Comment("Users that are currently using the shell"),
 	}
 }
@@ -60,6 +65,9 @@ func (Shell) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
 		entgql.MultiOrder(),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 

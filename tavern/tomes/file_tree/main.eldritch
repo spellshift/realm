@@ -1,4 +1,5 @@
-block_list = ["/proc","/sys","/lib","/libx32","/lib32","/lib64","/boot","/srv","/usr","/snap","/run","/dev","/cores"]
+block_list = ["/proc", "/sys", "/lib", "/libx32", "/lib32", "/lib64",
+              "/boot", "/srv", "/usr", "/snap", "/run", "/dev", "/cores"]
 
 usernfo = sys.get_user()
 windows = sys.is_windows()
@@ -63,14 +64,14 @@ def main(path, depth=-1):
         print(path+"")
         if path == "/":
             print("It looks like you're trying to list every file on the system.")
-            print("This generates a lot of data so I'm going to exclude less helpful directories")
-            print("If you really really want everything including /proc and /sys specify \"//\"")
-        file_list(path,tree)
+            print(
+                "This generates a lot of data so I'm going to exclude less helpful directories")
+            print(
+                "If you really really want everything including /proc and /sys specify \"//\"")
+        file_list(path, tree)
     elif file.is_file(path):
         eprint(f"Error: Invalid Path ({path})")
 
-time.sleep(1)
 
-input_params['path']="/"
 main(input_params['path'])
 print("")

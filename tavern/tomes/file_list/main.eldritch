@@ -6,6 +6,7 @@ name = {
     "Link": "Link"
 }
 
+
 def print_file(f):
     """Pretty Print a file"""
     perms = f['permissions']
@@ -18,6 +19,7 @@ def print_file(f):
 
     print(f"{perms}\t{owner}\t{group}\t{size}\t{modified}\t{ftype}\t{absolute_path}")
 
+
 def file_list(path):
     res = file.list(path)
     if len(res) > 0:
@@ -26,5 +28,5 @@ def file_list(path):
     else:
         eprint(f"No files found at '{path}'")
 
-time.sleep(1)
+
 file_list(input_params['path'])

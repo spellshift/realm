@@ -4,3 +4,8 @@ codecov:
     after_n_builds: 6
 ignore:
   - "**/*.pb.go" # Ignore Generated Protobufs
+  - "**/*.generated.go" # Ignore Generated Code
+  - tavern/internal/graphql/models/gqlgen_models.go
+  - implants/lib/pb/src/generated/*.rs # Ignore Generated Protobufs
+  - tavern/internal/ent/ # Ignore Ent Generated Code
+  - tavern/internal/c2/c2test # Ignore test util package

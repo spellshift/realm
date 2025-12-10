@@ -1,5 +1,6 @@
 use super::drain::drain;
 use crate::{
+    agent::AgentLibrary,
     assets::AssetsLibrary,
     crypto::CryptoLibrary,
     file::FileLibrary,
@@ -11,7 +12,10 @@ use crate::{
     report::ReportLibrary,
     runtime::{
         eprint_impl,
-        messages::{reduce, Message, ReportErrorMessage, ReportFinishMessage, ReportStartMessage},
+        messages::{
+            reduce, AsyncMessage, Message, ReportErrorMessage, ReportFinishMessage,
+            ReportStartMessage,
+        },
         Environment,
     },
     sys::SysLibrary,
@@ -40,13 +44,13 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at
         let start = Utc::now();
-        match env.send(ReportStartMessage {
+        match env.send(AsyncMessage::from(ReportStartMessage {
             id,
             exec_started_at: Timestamp {
                 seconds: start.timestamp(),
                 nanos: start.timestamp_subsec_nanos() as i32,
             },
-        }) {
+        })) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
@@ -62,7 +66,7 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
         log::info!("evaluating tome (task_id={})", id);
 
         // Run Tome
-        match run_impl(&env, &tome) {
+        match Runtime::run(&env, &tome) {
             Ok(_) => {
                 #[cfg(debug_assertions)]
                 log::info!("tome evaluation successful (task_id={})", id);
@@ -77,10 +81,10 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
                 );
 
                 // Report evaluation errors
-                match env.send(ReportErrorMessage {
+                match env.send(AsyncMessage::from(ReportErrorMessage {
                     id,
                     error: format!("{:?}", err),
-                }) {
+                })) {
                     Ok(_) => {}
                     Err(_send_err) => {
                         #[cfg(debug_assertions)]
@@ -97,13 +101,13 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
 
         // Send exec_finished_at
         let finish = Utc::now();
-        match env.send(ReportFinishMessage {
+        match env.send(AsyncMessage::from(ReportFinishMessage {
             id,
             exec_finished_at: Timestamp {
                 seconds: finish.timestamp(),
                 nanos: finish.timestamp_subsec_nanos() as i32,
             },
-        }) {
+        })) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
@@ -115,20 +119,6 @@ pub async fn start(id: i64, tome: Tome) -> Runtime {
     Runtime {
         handle: Some(handle),
         rx,
-    }
-}
-
-fn run_impl(env: &Environment, tome: &Tome) -> Result<()> {
-    let ast = Runtime::parse(tome).context("failed to parse tome")?;
-    let module = Runtime::alloc_module(tome).context("failed to allocate module")?;
-    let globals = Runtime::globals();
-    let mut eval: Evaluator = Evaluator::new(&module);
-    eval.extra = Some(env);
-    eval.set_print_handler(env);
-
-    match eval.eval_module(ast, &globals) {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.into_anyhow().context("failed to evaluate tome")),
     }
 }
 
@@ -173,6 +163,7 @@ impl Runtime {
             const report: ReportLibrary = ReportLibrary;
             const regex: RegexLibrary = RegexLibrary;
             const http: HTTPLibrary = HTTPLibrary;
+            const agent: AgentLibrary = AgentLibrary;
         }
 
         GlobalsBuilder::extended_by(&[
@@ -193,6 +184,27 @@ impl Runtime {
         .with(eldritch)
         .with(error_handler)
         .build()
+    }
+
+    /*
+     * Parse an Eldritch tome into a starlark Abstract Syntax Tree (AST) Module,
+     * then allocate a module for the tome, and finally use the passed Environment
+     * to evaluate the module+AST.
+     */
+    pub fn run(env: &Environment, tome: &Tome) -> Result<()> {
+        let ast = Runtime::parse(tome).context("failed to parse tome")?;
+        let module = Runtime::alloc_module(tome).context("failed to allocate module")?;
+        let globals = Runtime::globals();
+        let mut eval: Evaluator = Evaluator::new(&module);
+        eval.extra = Some(env);
+        eval.set_print_handler(env);
+
+        match eval.eval_module(ast, &globals) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err
+                .into_anyhow()
+                .context("failed to evaluate eldritch script")),
+        }
     }
 
     /*
@@ -227,8 +239,8 @@ impl Runtime {
                 Err(local_error) => {
                     return Err(anyhow::anyhow!(
                         "[eldritch] Failed to create hashed key for key {}: {}",
-                        new_key.to_string(),
-                        local_error.to_string()
+                        new_key,
+                        local_error
                     ))
                 }
             };

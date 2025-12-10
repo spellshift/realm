@@ -8,6 +8,7 @@ import '@xterm/xterm/css/xterm.css';
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import Button from "../../components/tavern-base-ui/button/Button";
 import Badge from "../../components/tavern-base-ui/badge/Badge";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 const Shell = () => {
     const { shellId } = useParams();
@@ -24,7 +25,7 @@ const Shell = () => {
     useEffect(() => {
         if (!ws.current) {
             const scheme = window.location.protocol === "https:" ? 'wss' : 'ws';
-            const socket = new WebSocket(`${scheme}://${window.location.hostname}/shell/ws?shell_id=${shellId}`);
+            const socket = new WebSocket(`${scheme}://${window.location.host}/shell/ws?shell_id=${shellId}`);
 
             socket.onopen = (e) => {
                 setWsIsOpen(true);
@@ -69,6 +70,10 @@ const Shell = () => {
     //TODO: Expand to fetch active users for this page
     return (
         <PageWrapper>
+            <Breadcrumbs pages={[{
+                label: "Shell",
+                link: "/shell"
+            }]} />
             <div className="border-b-2 border-gray-200 pb-6 sm:flex flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-row gap-4 items-center">
@@ -77,7 +82,7 @@ const Shell = () => {
                     </div>
                     <p className="max-w-2xl text-sm">Start by clicking inside the terminal, you may need to enter a newline to see the terminal prompt.</p>
                 </div>
-                <a title="Report a Bug" target="_blank" href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Reverse%20Shell%3A%20%3CYOUR%20ISSUE%3E">
+                <a title="Report a Bug" target="_blank" href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Reverse%20Shell%3A%20%3CYOUR%20ISSUE%3E" rel="noreferrer">
                     <Button buttonStyle={{ color: "gray", size: "md" }}>
                         Report a bug
                     </Button>

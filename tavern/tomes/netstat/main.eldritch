@@ -53,6 +53,4 @@ def netstat():
     print_table(rows)
 
 
-time.sleep(1)
-
 netstat()

@@ -79,7 +79,13 @@ func (HostProcess) Edges() []ent.Edge {
 
 // Annotations describes additional information for the ent.
 func (HostProcess) Annotations() []schema.Annotation {
-	return []schema.Annotation{}
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
+	}
 }
 
 // Mixin defines common shared properties for the ent.

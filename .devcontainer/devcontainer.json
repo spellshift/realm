@@ -1,21 +1,15 @@
 {
-	"name": "Debian",
+	"name": "Realm",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
 		}
 	},
+	"hostRequirements": {
+		"cpus": 4
+	},
 	"features": {
-		"ghcr.io/devcontainers/features/common-utils:2": {
-			"installZsh": true,
-			"configureZshAsDefaultShell": true,
-			"installOhMyZsh": true,
-			"installOhMyZshConfig": true,
-			"username": "vscode",
-			"userUid": "1001",
-			"userGid": "automatic"
-		},
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "1.23"
 		},
@@ -24,13 +18,13 @@
 			"version": "3.12"
 		},
 		"ghcr.io/devcontainers/features/rust:1": {
-			"version": "1.76",
+			"version": "1.87",
 			"profile": "minimal",
-			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu"
+			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,x86_64-pc-windows-msvc,aarch64-apple-darwin,x86_64-apple-darwin"
 		},
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
-		}
+		},
 	},
 	"customizations": {
 		"vscode": {
@@ -42,6 +36,9 @@
 				"go.goroot": "/usr/local/go",
 				// RUST
 				"rust-analyzer.check.command": "clippy",
+				"[rust]": {
+					"editor.defaultFormatter": "rust-lang.rust-analyzer"
+				},
 				// Formatting
 				"editor.formatOnSave": true,
 				"files.trimTrailingWhitespace": true,
@@ -52,28 +49,21 @@
 			},
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"DavidAnson.vscode-markdownlint",
 				"golang.Go",
 				"graphql.vscode-graphql",
 				"GraphQL.vscode-graphql-syntax",
 				"HashiCorp.terraform",
-				"rust-lang.rust-analyzer",
-				"sourcegraph.sourcegraph",
-				"xaver.clang-format",
-				"zxh404.vscode-proto3",
-				"tamasfe.even-better-toml"
+				"rust-lang.rust-analyzer"
 			]
 		}
 	},
-	"appPort": [
-		"127.0.0.1:80:80"
-	],
 	"remoteUser": "vscode",
-	"workspaceMount": "source=realm,target=/workspaces/realm,type=volume",
-	"workspaceFolder": "/workspaces/realm",
-	"postCreateCommand": "sudo chown -R vscode:vscode /workspaces && cd /workspaces && git clone https://github.com/spellshift/realm.git",
-	"mounts": [
-		"source=realm-bashhistory,target=/commandhistory,type=volume"
-	]
-
+	// Setup MacOS cross compilation first need to copy MacOS SDK:
+	// Rancher doesn't allow you to mount outside /tmp/ or /Users/ so we need to copy the SDK somewhere.
+	// sudo cp -r $(readlink -f $(xcrun --sdk macosx --show-sdk-path)) ~/MacOSX.sdk
+	// Uncomment the mount bellow to enable cross compilation on apple hardware.
+	// "mounts": [
+	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
+	// ],
+	"postAttachCommand": "cargo install cargo-zigbuild && cargo install xwin --target x86_64-unknown-linux-gnu"
 }

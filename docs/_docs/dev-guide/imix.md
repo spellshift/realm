@@ -25,6 +25,8 @@ Out of the box realm comes with two options `File` and `Env` to determine what h
 
 `Env` will read from the agent environment variables looking for `IMIX_HOST_ID` if it's set it will use the UUID4 string set there.
 
+There is a third option available on Windows systems to store the UUID value inside a registry key. Follow the steps below to update `lib.rs` to include `Registry` as a default before `File` to enable it. On hosts that are not Windows, imix will simply skip `Registry`.
+
 If no selectors succeed a random UUID4 ID will be generated and used for the bot. This should be avoided.
 
 ## Develop A Host Uniqueness Selector
@@ -86,3 +88,140 @@ pub use mac_address::MacAddress;
 ```
 
 - Update the `defaults()` function to include your implementation. N.B. The order from left to right is the order engines will be evaluated.
+
+## Develop a New Transport
+
+We've tried to make Imix super extensible for transport development. In fact, all of the transport specific logic is complete abstracted from how Imix operates for callbacks/tome excution. For Imix all Transports live in the `realm/implants/lib/transport/src` directory.
+
+If creating a new Transport create a new file in the directory and name it after the protocol you plan to use. For example, if writing a DNS Transport then call your file `dns.rs`. Then define your public struct where any connection state/clients will be. For example,
+
+```rust
+#[derive(Debug, Clone)]
+pub struct DNS {
+    dns_client: Option<hickory_dns::Client>
+}
+```
+
+NOTE: Depending on the struct you build, you may need to derive certain features, see above we derive `Debug` and `Clone`.
+
+Next, we need to implement the Transport trait for our new struct. This will look like:
+
+```rust
+impl Transport for DNS {
+    fn init() -> Self {
+        DNS{ dns_client: None }
+    }
+    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
+        // TODO: setup connection/client hook in proxy, anything else needed
+        // before fuctions get called.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
+        // TODO: How you wish to handle the `claim_tasks` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn fetch_asset(
+        &mut self,
+        request: FetchAssetRequest,
+        tx: std::sync::mpsc::Sender<FetchAssetResponse>,
+    ) -> Result<()> {
+        // TODO: How you wish to handle the `fetch_asset` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn report_credential(
+        &mut self,
+        request: ReportCredentialRequest,
+    ) -> Result<ReportCredentialResponse> {
+        // TODO: How you wish to handle the `report_credential` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn report_file(
+        &mut self,
+        request: std::sync::mpsc::Receiver<ReportFileRequest>,
+    ) -> Result<ReportFileResponse> {
+        // TODO: How you wish to handle the `report_file` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn report_process_list(
+        &mut self,
+        request: ReportProcessListRequest,
+    ) -> Result<ReportProcessListResponse> {
+        // TODO: How you wish to handle the `report_process_list` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn report_task_output(
+        &mut self,
+        request: ReportTaskOutputRequest,
+    ) -> Result<ReportTaskOutputResponse> {
+        // TODO: How you wish to handle the `report_task_output` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+    async fn reverse_shell(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+    ) -> Result<()> {
+        // TODO: How you wish to handle the `reverse_shell` method.
+        Err(anyhow!("Unimplemented!"))
+    }
+}
+```
+
+NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/reciever while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currenlty it would just result in performance loss/less maintainable code.
+
+After you implement all the functions/write in a decent error message for operators to understad why the function call failed then you need to import the Transport to the broader lib scope. To do this open up `realm/implants/lib/transport/src/lib.rs` and add in your new Transport like so:
+
+```rust
+// more stuff above
+
+#[cfg(feature = "dns")]
+mod dns;
+#[cfg(feature = "dns")]
+pub use dns::DNS;
+
+// more stuff below
+```
+
+Also add your new feature to the Transport Cargo.toml at `realm/implants/lib/transport/Cargo.toml`.
+
+```toml
+# more stuff above
+
+[features]
+default = []
+grpc = []
+dns = [] # <-- see here
+mock = ["dep:mockall"]
+
+# more stuff below
+```
+
+And that's it! Well, unless you want to _use_ the new transport. In which case you need to swap out the chosen transport being compiled for Imix in it's Cargo.toml (`/workspaces/realm/implants/lib/transport/Cargo.toml`) like so
+
+```toml
+# more stuff above
+
+[dependencies]
+eldritch = { workspace = true, features = ["imix"] }
+pb = { workspace = true }
+transport = { workspace = true, features = ["dns"] } # <-- see here
+host_unique = { workspace = true }
+
+# more stuff below
+```
+
+Then just swap which Transport gets intialized on Imix's `run` function in run.rs (`/workspaces/realm/implants/imix/src/run.rs`) accordingly,
+
+```rust
+// more stuff above
+
+async fn run(cfg: Config) -> anyhow::Result<()> {
+    let mut agent = Agent::new(cfg, DNS::init())?; // <-- changed this (also imported it)
+    agent.callback_loop().await?;
+    Ok(())
+}
+
+// more stuff below
+```
+
+And that's all that is needed for Imix to use a new Transport! Now all there is to do is setup some sort of tavern proxy for your new protocol and test!

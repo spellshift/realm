@@ -44,7 +44,7 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
                     }
                 }
                 if !invalid {
-                    match out_file.write(&block[..(16 - last_byte) as usize]) {
+                    match out_file.write_all(&block[..(16 - last_byte) as usize]) {
                         Ok(_) => {}
                         Err(_err) => {
                             #[cfg(debug_assertions)]
@@ -55,7 +55,7 @@ pub fn decrypt_file(src: String, dst: String, key: String) -> Result<()> {
                 }
             }
         }
-        match out_file.write(&block) {
+        match out_file.write_all(&block) {
             Ok(_) => {}
             Err(_err) => {
                 #[cfg(debug_assertions)]
@@ -92,7 +92,7 @@ mod tests {
         let test_dec_path = tmp_dir.path().join("test.txt.dec");
         {
             let mut tmp_file = File::create(test_path.clone())?;
-            match tmp_file.write(&lorem_encrypted) {
+            match tmp_file.write_all(&lorem_encrypted) {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]
@@ -155,7 +155,7 @@ mod tests {
         let test_path = tmp_dir.path().join("test.txt");
         {
             let mut tmp_file = File::create(test_path.clone())?;
-            match tmp_file.write(&[0u8; 15]) {
+            match tmp_file.write_all(&[0u8; 15]) {
                 Ok(_) => {}
                 Err(_err) => {
                     #[cfg(debug_assertions)]

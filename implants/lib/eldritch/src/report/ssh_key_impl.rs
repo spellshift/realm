@@ -1,22 +1,25 @@
-use crate::runtime::{messages::ReportCredentialMessage, Environment};
+use crate::runtime::{
+    messages::{AsyncMessage, ReportCredentialMessage},
+    Environment,
+};
 use anyhow::Result;
 use pb::eldritch::{credential::Kind, Credential};
 
 pub fn ssh_key(env: &Environment, username: String, key: String) -> Result<()> {
-    env.send(ReportCredentialMessage {
+    env.send(AsyncMessage::from(ReportCredentialMessage {
         id: env.id(),
         credential: Credential {
             principal: username,
             secret: key,
             kind: Kind::SshKey.into(),
         },
-    })?;
+    }))?;
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::{credential::Kind, Credential, Tome};
     use std::collections::HashMap;
 
@@ -34,7 +37,7 @@ mod test {
                 // Read Messages
                 let mut found = false;
                 for msg in runtime.messages() {
-                    if let Message::ReportCredential(m) = msg {
+                    if let Message::Async(AsyncMessage::ReportCredential(m)) = msg {
                         assert_eq!(tc.want_credential, m.credential);
                         found = true;
                     }

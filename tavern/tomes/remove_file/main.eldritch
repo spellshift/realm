@@ -1,4 +1,2 @@
 file.remove(input_params['path'])
 print("")
-
-time.sleep(1)

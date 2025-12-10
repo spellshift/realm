@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -52,6 +53,9 @@ func (HostFile) Fields() []ent.Field {
 			Comment("A SHA3-256 digest of the content field"),
 		field.Bytes("content").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
+			}).
 			Annotations(
 				entgql.Skip(), // Don't return file content in GraphQL queries
 			).
@@ -82,7 +86,13 @@ func (HostFile) Edges() []ent.Edge {
 
 // Annotations describes additional information for the ent.
 func (HostFile) Annotations() []schema.Annotation {
-	return []schema.Annotation{}
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
+	}
 }
 
 // Mixin defines common shared properties for the ent.

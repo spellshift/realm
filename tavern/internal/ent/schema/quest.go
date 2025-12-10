@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -72,6 +73,7 @@ func (Quest) Edges() []ent.Edge {
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput),
 				entgql.RelayConnection(),
+				entgql.MultiOrder(),
 			).
 			Comment("Tasks tracking the status and output of individual tome execution on targets"),
 		edge.To("creator", User.Type).
@@ -91,6 +93,9 @@ func (Quest) Annotations() []schema.Annotation {
 		entgql.Mutations(
 			entgql.MutationCreate(),
 		),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
 	}
 }
 

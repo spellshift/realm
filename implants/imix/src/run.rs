@@ -2,8 +2,11 @@ use clap::Command;
 use std::time::Duration;
 
 pub use crate::agent::Agent;
-pub use crate::config::Config;
 pub use crate::install::install;
+use crate::version::VERSION;
+pub use pb::config::Config;
+
+use transport::{ActiveTransport, Transport};
 
 pub async fn handle_main() {
     if let Some(("install", _)) = Command::new("imix")
@@ -16,10 +19,12 @@ pub async fn handle_main() {
     }
 
     loop {
-        let cfg = Config::default();
+        let cfg = Config::default_with_imix_verison(VERSION);
         let retry_interval = cfg.retry_interval;
         #[cfg(debug_assertions)]
         log::info!("agent config initialized {:#?}", cfg.clone());
+
+        let run_once = cfg.run_once;
 
         match run(cfg).await {
             Ok(_) => {}
@@ -30,11 +35,15 @@ pub async fn handle_main() {
                 tokio::time::sleep(Duration::from_secs(retry_interval)).await;
             }
         }
+
+        if run_once {
+            break;
+        }
     }
 }
 
 async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg)?;
+    let mut agent = Agent::new(cfg, ActiveTransport::init())?;
     agent.callback_loop().await?;
     Ok(())
 }

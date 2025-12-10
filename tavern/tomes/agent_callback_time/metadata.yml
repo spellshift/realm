@@ -1,0 +1,10 @@
+name: Set agent callback time
+description: Modify the agents callback interval.
+author: hulto
+tactic: DEFENSE_EVASION
+support_model: FIRST_PARTY
+paramdefs:
+- name: time
+  type: string
+  label: Callback time in seconds
+  placeholder: "128"

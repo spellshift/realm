@@ -1,6 +1,6 @@
 mod drain;
 mod environment;
-mod eprint_impl;
+pub mod eprint_impl;
 mod eval;
 pub mod messages;
 
@@ -10,7 +10,7 @@ pub use messages::Message;
 
 #[cfg(test)]
 mod tests {
-    use crate::runtime::Message;
+    use crate::runtime::{messages::AsyncMessage, Message};
     use pb::eldritch::Tome;
     use std::collections::HashMap;
     use tempfile::NamedTempFile;
@@ -28,8 +28,13 @@ mod tests {
                 let mut text = Vec::new();
                 for msg in runtime.messages() {
                     match msg {
-                        Message::ReportText(m) => text.push(m.text),
-                        Message::ReportError(m) => assert_eq!(tc.want_error, Some(m.error)),
+                        Message::Async(am) => {
+                            match am {
+                                AsyncMessage::ReportText(m) => text.push(m.text),
+                                AsyncMessage::ReportError(m) => assert_eq!(tc.want_error, Some(m.error)),
+                                _ => {},
+                            }
+                        },
                         _ => {},
                     };
                 }
@@ -89,7 +94,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["append", "compress", "copy", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write"]"#),
+            want_text: format!("{}\n", r#"["append", "compress", "copy", "decompress", "exists", "find", "follow", "is_dir", "is_file", "list", "mkdir", "moveto", "parent_dir", "read", "read_binary", "remove", "replace", "replace_all", "temp_file", "template", "timestomp", "write"]"#),
             want_error: None,
         },
         process_bindings: TestCase {
@@ -119,7 +124,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "reverse_shell_pty", "smb_exec", "ssh_copy", "ssh_exec", "ssh_password_spray"]"#),
+            want_text: format!("{}\n", r#"["arp_scan", "bind_proxy", "ncat", "port_forward", "port_scan", "reverse_shell_pty", "smb_exec", "ssh_copy", "ssh_exec"]"#),
             want_error: None,
         },
         assets_bindings: TestCase {
@@ -139,7 +144,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "to_json"]"#),
+            want_text: format!("{}\n", r#"["aes_decrypt_file", "aes_encrypt_file", "decode_b64", "encode_b64", "from_json", "hash_file", "is_json", "to_json"]"#),
             want_error: None,
         },
         time_bindings: TestCase {
@@ -190,6 +195,16 @@ mod tests {
                 file_names: Vec::new(),
             },
             want_text: format!("{}\n", r#"["download", "get", "post"]"#),
+            want_error: None,
+        },
+        agent_bindings: TestCase {
+            id: 123,
+            tome: Tome {
+                eldritch: String::from("print(dir(agent))"),
+                parameters: HashMap::new(),
+                file_names: Vec::new(),
+            },
+            want_text: format!("{}\n", r#"["eval", "set_callback_interval", "set_callback_uri"]"#),
             want_error: None,
         },
     }

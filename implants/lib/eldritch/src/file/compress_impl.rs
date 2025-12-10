@@ -78,10 +78,7 @@ pub fn compress(src: String, dst: String) -> Result<()> {
 
     // If our source is a dir create a tarball and update the src file to the tar ball.
     if src_path.is_dir() {
-        tmp_src = match tar_dir(tmp_src, tmp_tar_file_src_path) {
-            Ok(new_file_path) => new_file_path,
-            Err(err) => return Err(err),
-        }
+        tmp_src = tar_dir(tmp_src, tmp_tar_file_src_path)?
     } else {
         let _ = tmp_tar_file_src.close();
     }
