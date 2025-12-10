@@ -317,9 +317,6 @@ mod tests {
         // and returns a result (even empty).
         let res = lib.netstat();
         assert!(res.is_ok());
-        let connections = res.unwrap();
-        // Just print length to ensure it ran
-        println!("Found {} connections", connections.len());
     }
 
     #[test]
