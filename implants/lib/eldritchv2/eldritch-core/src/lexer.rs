@@ -1,4 +1,5 @@
 use super::token::{Span, Token, TokenKind};
+use super::interpreter::error::{EldritchError, EldritchErrorKind};
 use alloc::collections::VecDeque;
 use alloc::format;
 use alloc::string::String;
@@ -70,6 +71,14 @@ impl Lexer {
         }
     }
 
+    fn error<T>(&self, message: &str) -> Result<T, EldritchError> {
+        Err(EldritchError::new(
+            EldritchErrorKind::SyntaxError,
+            message,
+            Span::new(self.start, self.current, self.line),
+        ))
+    }
+
     fn skip_comment(&mut self) {
         while self.peek() != '\n' && !self.is_at_end() {
             self.advance();
@@ -116,7 +125,7 @@ impl Lexer {
         quote_char: char,
         is_fstring: bool,
         is_bytes: bool,
-    ) -> Result<Token, String> {
+    ) -> Result<Token, EldritchError> {
         if is_fstring || is_bytes {
             self.start = self.current;
         } else {
@@ -136,7 +145,7 @@ impl Lexer {
 
         loop {
             if self.is_at_end() {
-                return Err(format!("Unterminated string literal on line {}", self.line));
+                return self.error(&format!("Unterminated string literal on line {}", self.line));
             }
 
             let c = self.peek();
@@ -160,7 +169,7 @@ impl Lexer {
 
             if c == '\n' {
                 if !is_triple {
-                    return Err(format!(
+                    return self.error(&format!(
                         "Unterminated string literal (newline) on line {}",
                         self.line
                     ));
@@ -182,7 +191,7 @@ impl Lexer {
             if c == '\\' {
                 self.advance();
                 if self.is_at_end() {
-                    return Err("Unterminated string literal".into());
+                    return self.error("Unterminated string literal");
                 }
                 let escaped = self.advance();
                 match escaped {
@@ -222,7 +231,7 @@ impl Lexer {
         }
     }
 
-    fn tokenize_fstring_expression(&mut self) -> Result<Vec<Token>, String> {
+    fn tokenize_fstring_expression(&mut self) -> Result<Vec<Token>, EldritchError> {
         let mut tokens = Vec::new();
         let initial_start = self.current;
         let mut nesting_level = 1;
@@ -239,7 +248,7 @@ impl Lexer {
         }
 
         if nesting_level > 0 {
-            return Err(format!(
+            return self.error(&format!(
                 "Unmatched '{{' in f-string expression starting at line {}",
                 self.line
             ));
@@ -269,7 +278,7 @@ impl Lexer {
         Ok(final_tokens)
     }
 
-    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, String> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, EldritchError> {
         let mut tokens = Vec::new();
         loop {
             match self.next_token() {
@@ -289,7 +298,7 @@ impl Lexer {
         }
     }
 
-    fn next_token(&mut self) -> Result<Token, String> {
+    fn next_token(&mut self) -> Result<Token, EldritchError> {
         if let Some(token) = self.pending_tokens.pop_front() {
             return Ok(token);
         }
@@ -323,7 +332,7 @@ impl Lexer {
                         dedents.push(self.add_token(TokenKind::Dedent));
                     }
                     if *self.indent_stack.last().unwrap() != indent_count {
-                        return Err(format!("Inconsistent indentation on line {}", self.line));
+                        return self.error(&format!("Inconsistent indentation on line {}", self.line));
                     }
                     self.current = self.start + indent_count;
                     if !dedents.is_empty() {
@@ -474,7 +483,7 @@ impl Lexer {
             '!' => Ok(if self.match_char('=') {
                 self.add_token(TokenKind::NotEq)
             } else {
-                return Err(format!("Unexpected character: {} on line {}", c, self.line));
+                return self.error(&format!("Unexpected character: {} on line {}", c, self.line));
             }),
             '#' => {
                 self.skip_comment();
@@ -507,7 +516,7 @@ impl Lexer {
             }
             _ if c.is_ascii_digit() => Ok(self.number()),
             _ if c.is_alphabetic() || c == '_' => Ok(self.identifier()),
-            _ => Err(format!("Unexpected character: {} on line {}", c, self.line)),
+            _ => self.error(&format!("Unexpected character: {} on line {}", c, self.line)),
         }
     }
 }

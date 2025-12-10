@@ -1,9 +1,9 @@
 use super::super::ast::{Argument, Expr, ExprKind, FStringSegment, Param, Value};
 use super::super::token::{Span, Token, TokenKind};
+use super::super::interpreter::error::EldritchError;
 use super::Parser;
 use alloc::boxed::Box;
 use alloc::format;
-use alloc::string::String;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -15,17 +15,8 @@ impl Parser {
         Expr { kind, span }
     }
 
-    pub(crate) fn expression(&mut self) -> Result<Expr, String> {
+    pub(crate) fn expression(&mut self) -> Result<Expr, EldritchError> {
         // Handle ternary if expression: x if cond else y
-        // It has lower precedence than lambda? No, Python: lambda : x if y else z
-        // So we parse lambda first, but inside lambda body we can have if-expr.
-        // But lambda is parsed specially.
-        // Actually precedence:
-        // lambda
-        // if-else
-        // or
-        // ...
-
         if self.match_token(&[TokenKind::Lambda]) {
             return self.lambda_expression();
         }
@@ -52,7 +43,7 @@ impl Parser {
         Ok(expr)
     }
 
-    pub(crate) fn lambda_expression(&mut self) -> Result<Expr, String> {
+    pub(crate) fn lambda_expression(&mut self) -> Result<Expr, EldritchError> {
         let start_span = self.tokens[self.current - 1].span;
         // Lambda params do not support type annotations in Python (and usually in dynamic languages)
         // because the colon is used to separate params from body.
@@ -78,7 +69,7 @@ impl Parser {
         &mut self,
         terminator: TokenKind,
         allow_annotations: bool,
-    ) -> Result<Vec<Param>, String> {
+    ) -> Result<Vec<Param>, EldritchError> {
         let mut params = Vec::new();
         if !self.check(&terminator) {
             loop {
@@ -152,8 +143,8 @@ impl Parser {
 
                         // Only an error if we haven't seen *args yet.
                         if has_default && !has_star {
-                            return Err(
-                                "Non-default argument follows default argument.".to_string()
+                            return self.error(
+                                "Non-default argument follows default argument."
                             );
                         }
 
@@ -173,7 +164,7 @@ impl Parser {
         Ok(params)
     }
 
-    fn logic_or(&mut self) -> Result<Expr, String> {
+    fn logic_or(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.logic_and()?;
         while self.match_token(&[TokenKind::Or]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -189,7 +180,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn logic_and(&mut self) -> Result<Expr, String> {
+    fn logic_and(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.logic_not()?;
         while self.match_token(&[TokenKind::And]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -205,7 +196,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn logic_not(&mut self) -> Result<Expr, String> {
+    fn logic_not(&mut self) -> Result<Expr, EldritchError> {
         if self.match_token(&[TokenKind::Not]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.logic_not()?;
@@ -220,7 +211,7 @@ impl Parser {
         self.equality()
     }
 
-    fn equality(&mut self) -> Result<Expr, String> {
+    fn equality(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.comparison()?;
         while self.match_token(&[TokenKind::Eq, TokenKind::NotEq]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -236,7 +227,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, String> {
+    fn comparison(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.bitwise_or()?;
 
         loop {
@@ -278,7 +269,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn bitwise_or(&mut self) -> Result<Expr, String> {
+    fn bitwise_or(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.bitwise_xor()?;
         while self.match_token(&[TokenKind::BitOr]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -294,7 +285,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn bitwise_xor(&mut self) -> Result<Expr, String> {
+    fn bitwise_xor(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.bitwise_and()?;
         while self.match_token(&[TokenKind::BitXor]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -310,7 +301,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn bitwise_and(&mut self) -> Result<Expr, String> {
+    fn bitwise_and(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.shift()?;
         while self.match_token(&[TokenKind::BitAnd]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -326,7 +317,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn shift(&mut self) -> Result<Expr, String> {
+    fn shift(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.term()?;
         while self.match_token(&[TokenKind::LShift, TokenKind::RShift]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -342,7 +333,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, String> {
+    fn term(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.factor()?;
         while self.match_token(&[TokenKind::Minus, TokenKind::Plus]) {
             let operator = self.tokens[self.current - 1].clone();
@@ -358,7 +349,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, String> {
+    fn factor(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.unary_expr()?;
         while self.match_token(&[
             TokenKind::Slash,
@@ -379,7 +370,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary_expr(&mut self) -> Result<Expr, String> {
+    fn unary_expr(&mut self) -> Result<Expr, EldritchError> {
         if self.match_token(&[TokenKind::Minus, TokenKind::BitNot]) {
             let operator = self.tokens[self.current - 1].clone();
             let right = self.unary_expr()?;
@@ -394,7 +385,7 @@ impl Parser {
         self.call()
     }
 
-    fn call(&mut self) -> Result<Expr, String> {
+    fn call(&mut self) -> Result<Expr, EldritchError> {
         let mut expr = self.primary()?;
 
         loop {
@@ -494,7 +485,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn finish_call(&mut self, callee: Expr) -> Result<Expr, String> {
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, EldritchError> {
         let start = callee.span;
         let mut args = Vec::new();
         if !self.check(&TokenKind::RParen) {
@@ -544,7 +535,7 @@ impl Parser {
         Ok(self.make_expr(ExprKind::Call(Box::new(callee), args), start, end_span))
     }
 
-    fn primary(&mut self) -> Result<Expr, String> {
+    fn primary(&mut self) -> Result<Expr, EldritchError> {
         let token = self.peek().clone();
         let span = token.span;
 
@@ -825,14 +816,14 @@ impl Parser {
             }
         }
 
-        Err(format!("Expect expression. Found {:?}", self.peek()))
+        self.error(&format!("Expect expression. Found {:?}", self.peek()))
     }
 
     fn parse_fstring_content(
         &mut self,
         fstring_tokens: Vec<Token>,
         start_span: Span,
-    ) -> Result<Expr, String> {
+    ) -> Result<Expr, EldritchError> {
         let mut tokens_with_eof = fstring_tokens;
         // Use start_span to create a dummy EOF if needed, though FStringContent tokens should have valid spans
         let eof_span = if let Some(last) = tokens_with_eof.last() {
@@ -860,7 +851,7 @@ impl Parser {
                     "Expected ')' to close f-string embedded expression.",
                 )?;
             } else {
-                return Err(format!(
+                return internal_parser.error(&format!(
                     "Unexpected token in f-string content: {:?}",
                     internal_parser.peek()
                 ));
