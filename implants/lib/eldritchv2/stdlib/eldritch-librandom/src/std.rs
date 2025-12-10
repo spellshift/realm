@@ -105,10 +105,34 @@ mod tests {
     }
 
     #[test]
+    fn test_bytes_negative() {
+        let lib = StdRandomLibrary;
+        let b = lib.bytes(-1);
+        assert!(b.is_err());
+        assert_eq!(b.err().unwrap(), "Length cannot be negative");
+    }
+
+    #[test]
     fn test_int() {
         let lib = StdRandomLibrary;
         let val = lib.int(0, 10).unwrap();
         assert!((0..10).contains(&val));
+    }
+
+    #[test]
+    fn test_int_invalid_range() {
+        let lib = StdRandomLibrary;
+        let val = lib.int(10, 5);
+        assert!(val.is_err());
+        assert_eq!(val.err().unwrap(), "Invalid range");
+    }
+
+    #[test]
+    fn test_int_equal_range() {
+        let lib = StdRandomLibrary;
+        let val = lib.int(10, 10);
+        assert!(val.is_err());
+        assert_eq!(val.err().unwrap(), "Invalid range");
     }
 
     #[test]
@@ -119,10 +143,35 @@ mod tests {
     }
 
     #[test]
+    fn test_string_negative() {
+        let lib = StdRandomLibrary;
+        let s = lib.string(-1, None);
+        assert!(s.is_err());
+        assert_eq!(s.err().unwrap(), "Length cannot be negative");
+    }
+
+    #[test]
     fn test_string_charset() {
         let lib = StdRandomLibrary;
         let s = lib.string(5, Some("a".to_string())).unwrap();
         assert_eq!(s, "aaaaa");
+    }
+
+    #[test]
+    fn test_string_charset_empty() {
+        let lib = StdRandomLibrary;
+        let s = lib.string(5, Some("".to_string()));
+        assert!(s.is_err());
+        assert_eq!(s.err().unwrap(), "Charset cannot be empty");
+    }
+
+    #[test]
+    fn test_string_charset_unicode() {
+        let lib = StdRandomLibrary;
+        let charset = "🦀";
+        let s = lib.string(5, Some(charset.to_string())).unwrap();
+        assert_eq!(s.chars().count(), 5);
+        assert!(s.chars().all(|c| c == '🦀'));
     }
 
     #[test]
