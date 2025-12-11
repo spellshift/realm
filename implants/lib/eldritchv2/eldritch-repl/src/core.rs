@@ -144,6 +144,10 @@ impl Repl {
     }
 
     pub fn get_render_state(&self) -> RenderState {
+        // Calculate UTF-16 code units count for cursor position for JS compatibility
+        // The `cursor` field tracks byte offset in UTF-8 buffer.
+        // We also want to provide something that helps frontend align cursor.
+        // But for now, we keep cursor as byte index, and we fix the REPL logic first.
         RenderState {
             prompt: self.current_prompt(),
             buffer: self.buffer.clone(),
@@ -372,7 +376,7 @@ impl Repl {
 
     fn insert_char(&mut self, c: char) -> ReplAction {
         self.buffer.insert(self.cursor, c);
-        self.cursor += 1;
+        self.cursor += c.len_utf8();
         ReplAction::Render
     }
 
@@ -384,9 +388,14 @@ impl Repl {
 
     fn backspace(&mut self) -> ReplAction {
         if self.cursor > 0 {
-            self.cursor -= 1;
-            self.buffer.remove(self.cursor);
-            ReplAction::Render
+            // Traverse backwards from cursor
+            if let Some(c) = self.buffer[..self.cursor].chars().next_back() {
+                self.cursor -= c.len_utf8();
+                self.buffer.remove(self.cursor);
+                ReplAction::Render
+            } else {
+                ReplAction::None
+            }
         } else {
             ReplAction::None
         }
@@ -394,6 +403,9 @@ impl Repl {
 
     fn delete(&mut self) -> ReplAction {
         if self.cursor < self.buffer.len() {
+            // Remove char at cursor
+            // remove() takes byte index and removes the char at that index.
+            // We just need to make sure cursor is at char boundary, which we maintain.
             self.buffer.remove(self.cursor);
             ReplAction::Render
         } else {
@@ -403,8 +415,12 @@ impl Repl {
 
     fn move_left(&mut self) -> ReplAction {
         if self.cursor > 0 {
-            self.cursor -= 1;
-            ReplAction::Render
+            if let Some(c) = self.buffer[..self.cursor].chars().next_back() {
+                self.cursor -= c.len_utf8();
+                ReplAction::Render
+            } else {
+                ReplAction::None
+            }
         } else {
             ReplAction::None
         }
@@ -412,8 +428,12 @@ impl Repl {
 
     fn move_right(&mut self) -> ReplAction {
         if self.cursor < self.buffer.len() {
-            self.cursor += 1;
-            ReplAction::Render
+             if let Some(c) = self.buffer[self.cursor..].chars().next() {
+                self.cursor += c.len_utf8();
+                ReplAction::Render
+             } else {
+                 ReplAction::None
+             }
         } else {
             ReplAction::None
         }
