@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use eldritch_core::{Interpreter, Value};
 use eldritch_macros::{eldritch_library, eldritch_method};
 
-use alloc::collections::BTreeMap;
+use alloc::collections::{BTreeMap, BTreeSet};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -238,20 +238,6 @@ pub trait AgentLibrary {
     /// **Errors**
     /// - Returns an error string if the transport is unknown or cannot be activated.
     fn set_transport(&self, transport: String) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Adds or updates a transport configuration.
-    ///
-    /// **Parameters**
-    /// - `transport` (`str`): The name of the transport.
-    /// - `config` (`str`): The configuration string (e.g., URL or connection string).
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the transport configuration fails.
-    fn add_transport(&self, transport: String, config: String) -> Result<(), String>;
 
     #[eldritch_method]
     /// Returns a list of available transport names.

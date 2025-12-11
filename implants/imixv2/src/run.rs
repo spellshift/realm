@@ -73,6 +73,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
         Err(_e) => {
             #[cfg(debug_assertions)]
             log::error!("Failed to create transport: {_e:#}");
+            agent.rotate_callback_uri().await;
             return;
         }
     };
@@ -108,6 +109,7 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
         Err(_e) => {
             #[cfg(debug_assertions)]
             log::error!("Callback failed: {_e:#}");
+            agent.rotate_callback_uri().await;
         }
     }
 }
