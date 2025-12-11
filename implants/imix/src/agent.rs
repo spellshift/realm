@@ -48,7 +48,7 @@ impl<T: Transport + 'static> Agent<T> {
                 }
             };
 
-            let runtime = eldritch::start(task.id, tome).await;
+            let runtime = eldritch::start(task.id, tome, self.cfg.clone()).await;
             self.handles.push(TaskHandle::new(task.id, runtime));
 
             #[cfg(debug_assertions)]
@@ -88,7 +88,8 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
+        let uri = self.cfg.active_uri().ok_or_else(|| anyhow::anyhow!("no active callback uri"))?;
+        self.t = T::new(uri, self.cfg.proxy_uri.clone())?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
         self.t = T::init(); // re-init to make sure no active connections during sleep
@@ -113,6 +114,12 @@ impl<T: Transport + 'static> Agent<T> {
                 Err(_err) => {
                     #[cfg(debug_assertions)]
                     log::error!("callback failed: {}", _err);
+
+                    // Rotate on failure
+                    let len = self.cfg.callback_uris.len() as u64;
+                    if len > 0 {
+                        self.cfg.active_callback_uri_idx = (self.cfg.active_callback_uri_idx + 1) % len;
+                    }
                 }
             };
 

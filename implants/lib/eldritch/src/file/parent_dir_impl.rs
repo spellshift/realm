@@ -24,7 +24,7 @@ mod test {
                 let tc: TestCase = $value;
 
                 // Run Eldritch (until finished)
-                let mut runtime = crate::start(tc.id, tc.tome).await;
+                let mut runtime = crate::start(tc.id, tc.tome, pb::config::Config::default_with_imix_verison("0.0.0")).await;
                 runtime.finish().await;
 
                 // Read Messages

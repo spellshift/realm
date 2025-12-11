@@ -12,6 +12,8 @@ mock! {
     impl super::Transport for Transport {
         fn init() -> Self;
 
+        fn scheme(&self) -> &'static str;
+
         fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
 
         async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;

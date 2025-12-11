@@ -11,6 +11,8 @@ mod report_text;
 mod reverse_shell_pty;
 mod set_callback_interval;
 mod set_callback_uri;
+mod add_callback_uri;
+mod remove_callback_uri;
 
 pub use fetch_asset::FetchAssetMessage;
 pub use pb::config::Config;
@@ -25,6 +27,8 @@ pub use report_text::ReportTextMessage;
 pub use reverse_shell_pty::ReverseShellPTYMessage;
 pub use set_callback_interval::SetCallbackIntervalMessage;
 pub use set_callback_uri::SetCallbackUriMessage;
+pub use add_callback_uri::AddCallbackUriMessage;
+pub use remove_callback_uri::RemoveCallbackUriMessage;
 pub use transport::Transport;
 
 use anyhow::Result;
@@ -126,6 +130,12 @@ pub enum SyncMessage {
 
     #[display(fmt = "SetCallbackUri")]
     SetCallbackUri(SetCallbackUriMessage),
+
+    #[display(fmt = "AddCallbackUri")]
+    AddCallbackUri(AddCallbackUriMessage),
+
+    #[display(fmt = "RemoveCallbackUri")]
+    RemoveCallbackUri(RemoveCallbackUriMessage),
 }
 
 impl SyncDispatcher for SyncMessage {
@@ -136,6 +146,8 @@ impl SyncDispatcher for SyncMessage {
         match self {
             Self::SetCallbackInterval(msg) => msg.dispatch(transport, cfg),
             Self::SetCallbackUri(msg) => msg.dispatch(transport, cfg),
+            Self::AddCallbackUri(msg) => msg.dispatch(transport, cfg),
+            Self::RemoveCallbackUri(msg) => msg.dispatch(transport, cfg),
         }
     }
 }

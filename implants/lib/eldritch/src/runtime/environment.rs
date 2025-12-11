@@ -1,17 +1,19 @@
 use super::messages::{AsyncMessage, Message, ReportTextMessage};
 use anyhow::{Context, Result};
-
+use pb::config::Config;
 use starlark::{
     values::{AnyLifetime, ProvidesStaticType},
     PrintHandler,
 };
 use std::sync::mpsc::Sender;
+use std::sync::{Arc, RwLock};
 
 #[allow(clippy::needless_lifetimes)]
 #[derive(ProvidesStaticType)]
 pub struct Environment {
     pub(super) id: i64,
     pub(super) tx: Sender<Message>,
+    pub(super) config: Arc<RwLock<Config>>,
 }
 
 impl Environment {
@@ -36,7 +38,21 @@ impl Environment {
 
     #[cfg(test)]
     pub fn mock(id: i64, tx: Sender<Message>) -> Self {
-        Self { id, tx }
+        use pb::config::CALLBACK_URI;
+        let cfg = Config {
+            info: None,
+            callback_uris: vec![String::from(CALLBACK_URI)],
+            proxy_uri: None,
+            retry_interval: 5,
+            run_once: false,
+            active_callback_uri_idx: 0,
+            transport_schemes: Vec::new(),
+        };
+        Self {
+            id,
+            tx,
+            config: Arc::new(RwLock::new(cfg)),
+        }
     }
 }
 

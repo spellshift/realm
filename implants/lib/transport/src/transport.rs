@@ -8,6 +8,9 @@ pub trait UnsafeTransport: Clone + Send {
     #[allow(dead_code)]
     fn init() -> Self;
 
+    #[allow(dead_code)]
+    fn scheme(&self) -> &'static str;
+
     // New will create a new instance of the transport using the provided URI.
     #[allow(dead_code)]
     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;

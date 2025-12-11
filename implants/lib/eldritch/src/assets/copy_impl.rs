@@ -131,6 +131,7 @@ mod tests {
                 parameters: HashMap::from([("test_output".to_string(), path_dst)]),
                 file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
 
@@ -209,6 +210,7 @@ mod tests {
                 ]),
                 file_names: Vec::from(["test_tome/test_file.txt".to_string()]),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
 

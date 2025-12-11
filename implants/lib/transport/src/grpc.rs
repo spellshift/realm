@@ -34,6 +34,10 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
+    fn scheme(&self) -> &'static str {
+        "grpc"
+    }
+
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 

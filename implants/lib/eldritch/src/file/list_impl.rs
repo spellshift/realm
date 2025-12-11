@@ -238,6 +238,7 @@ mod tests {
                 parameters: HashMap::from([(String::from("path"), path.clone())]),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
         runtime.finish().await;
@@ -291,6 +292,7 @@ for f in file.list(input_params['path']):
                 parameters: HashMap::from([(String::from("path"), path.clone())]),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
         runtime.finish().await;
@@ -347,6 +349,7 @@ for f in file.list(input_params['path']):
                 )]),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
         runtime.finish().await;

@@ -192,6 +192,7 @@ mod tests {
                 parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         ).await;
         runtime.finish().await;
 
@@ -222,6 +223,7 @@ mod tests {
                 parameters: HashMap::from([("dir_path".to_string(), dir.path().to_str().unwrap().to_string())]),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
         runtime.finish().await;
@@ -258,6 +260,8 @@ mod tests {
                 )]),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
         runtime.finish().await;

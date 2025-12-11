@@ -1,6 +1,12 @@
+mod add_callback_uri_impl;
 mod eval_impl;
+mod get_active_callback_uri_impl;
+mod get_next_callback_uri_impl;
+mod list_callback_uris_impl;
+mod list_transports_impl;
+mod remove_callback_uri_impl;
+mod set_active_callback_uri_impl;
 mod set_callback_interval_impl;
-mod set_callback_uri_impl;
 
 use starlark::{
     environment::MethodsBuilder,
@@ -35,9 +41,41 @@ fn methods(builder: &mut MethodsBuilder) {
         Ok(NoneType{})
     }
     #[allow(unused_variables)]
-    fn set_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, new_uri: String) -> anyhow::Result<NoneType> {
+    fn list_transports(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<Vec<String>> {
         let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
-        set_callback_uri_impl::set_callback_uri(env, new_uri)?;
+        list_transports_impl::list_transports(env)
+    }
+    #[allow(unused_variables)]
+    fn list_callback_uris(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<Vec<String>> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        list_callback_uris_impl::list_callback_uris(env)
+    }
+    #[allow(unused_variables)]
+    fn get_active_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<String> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        get_active_callback_uri_impl::get_active_callback_uri(env)
+    }
+    #[allow(unused_variables)]
+    fn get_next_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>) -> anyhow::Result<String> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        get_next_callback_uri_impl::get_next_callback_uri(env)
+    }
+    #[allow(unused_variables)]
+    fn add_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, uri: String) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        add_callback_uri_impl::add_callback_uri(env, uri)?;
+        Ok(NoneType{})
+    }
+    #[allow(unused_variables)]
+    fn remove_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, uri: String) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        remove_callback_uri_impl::remove_callback_uri(env, uri)?;
+        Ok(NoneType{})
+    }
+    #[allow(unused_variables)]
+    fn set_active_callback_uri(this: &AgentLibrary, starlark_eval: &mut Evaluator<'v, '_>, uri: String) -> anyhow::Result<NoneType> {
+        let env = crate::runtime::Environment::from_extra(starlark_eval.extra)?;
+        set_active_callback_uri_impl::set_active_callback_uri(env, uri)?;
         Ok(NoneType{})
     }
 }

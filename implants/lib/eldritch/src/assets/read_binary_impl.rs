@@ -99,7 +99,7 @@ mod tests {
         };
 
         // Run Eldritch (in it's own thread)
-        let mut runtime = crate::start(123, tc.clone()).await;
+        let mut runtime = crate::start(123, tc.clone(), pb::config::Config::default_with_imix_verison("0.0.0")).await;
 
         // We now mock the agent, looping until eldritch requests a file
         // We omit the sleep performed by the agent, just to save test time

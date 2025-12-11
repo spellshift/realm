@@ -42,8 +42,10 @@ pub async fn handle_main() {
     }
 }
 
-async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg, ActiveTransport::init())?;
+async fn run(mut cfg: Config) -> anyhow::Result<()> {
+    let t = ActiveTransport::init();
+    cfg.transport_schemes = vec![t.scheme().to_string()];
+    let mut agent = Agent::new(cfg, t)?;
     agent.callback_loop().await?;
     Ok(())
 }

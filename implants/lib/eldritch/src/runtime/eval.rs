@@ -23,6 +23,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use chrono::Utc;
+use pb::config::Config;
 use pb::eldritch::Tome;
 use prost_types::Timestamp;
 use starlark::{
@@ -34,12 +35,17 @@ use starlark::{
     values::{dict::Dict, none::NoneType, AllocValue},
 };
 use std::sync::mpsc::{channel, Receiver};
+use std::sync::{Arc, RwLock};
 use tokio::task::JoinHandle;
 
-pub async fn start(id: i64, tome: Tome) -> Runtime {
+pub async fn start(id: i64, tome: Tome, cfg: Config) -> Runtime {
     let (tx, rx) = channel::<Message>();
 
-    let env = Environment { id, tx };
+    let env = Environment {
+        id,
+        tx,
+        config: Arc::new(RwLock::new(cfg)),
+    };
 
     let handle = tokio::task::spawn_blocking(move || {
         // Send exec_started_at

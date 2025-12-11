@@ -5,14 +5,18 @@ use uuid::Uuid;
 pub struct Config {
     #[prost(message, optional, tag = "1")]
     pub info: ::core::option::Option<crate::c2::Beacon>,
-    #[prost(string, tag = "2")]
-    pub callback_uri: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "2")]
+    pub callback_uris: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "3")]
     pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(uint64, tag = "4")]
     pub retry_interval: u64,
     #[prost(bool, tag = "5")]
     pub run_once: bool,
+    #[prost(uint64, tag = "6")]
+    pub active_callback_uri_idx: u64,
+    #[prost(string, repeated, tag = "7")]
+    pub transport_schemes: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 
 macro_rules! callback_uri {
@@ -48,7 +52,7 @@ macro_rules! callback_interval {
         }
     };
 }
-/* Compile-time constant for the agent retry interval, derived from the IMIX_RETRY_INTERVAL environment variable during compilation.
+/* Compile-time constant for the agent retry interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
  * Defaults to 5 if unset.
  */
 pub const CALLBACK_INTERVAL: &str = callback_interval!();
@@ -120,7 +124,7 @@ impl Config {
 
         Config {
             info: Some(info),
-            callback_uri: String::from(CALLBACK_URI),
+            callback_uris: vec![String::from(CALLBACK_URI)],
             proxy_uri: get_system_proxy(),
             retry_interval: match RETRY_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
@@ -134,6 +138,8 @@ impl Config {
                 }
             },
             run_once: RUN_ONCE,
+            active_callback_uri_idx: 0,
+            transport_schemes: Vec::new(),
         }
     }
     pub fn refresh_primary_ip(&mut self) {
@@ -159,6 +165,12 @@ impl Config {
                 }
             }
         }
+    }
+
+    pub fn active_uri(&self) -> Option<String> {
+        self.callback_uris
+            .get(self.active_callback_uri_idx as usize)
+            .cloned()
     }
 }
 

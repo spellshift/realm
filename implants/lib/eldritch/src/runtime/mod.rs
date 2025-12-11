@@ -22,7 +22,7 @@ mod tests {
             async fn $name() {
                 let tc: TestCase = $value;
 
-                let mut runtime = crate::start(tc.id, tc.tome).await;
+                let mut runtime = crate::start(tc.id, tc.tome, pb::config::Config::default_with_imix_verison("0.0.0")).await;
                 runtime.finish().await;
 
                 let mut text = Vec::new();
@@ -204,7 +204,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
-            want_text: format!("{}\n", r#"["eval", "set_callback_interval", "set_callback_uri"]"#),
+            want_text: format!("{}\n", r#"["add_callback_uri", "eval", "get_active_callback_uri", "get_next_callback_uri", "list_callback_uris", "list_transports", "remove_callback_uri", "set_active_callback_uri", "set_callback_interval"]"#),
             want_error: None,
         },
     }
@@ -225,6 +225,7 @@ mod tests {
                 parameters: HashMap::new(),
                 file_names: Vec::new(),
             },
+            pb::config::Config::default_with_imix_verison("0.0.0"),
         )
         .await;
         runtime.finish().await;
