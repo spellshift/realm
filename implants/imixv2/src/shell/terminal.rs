@@ -49,6 +49,7 @@ pub fn render<W: std::io::Write>(
     // when the line wraps in the terminal (since we don't track terminal width) and avoids
     // flickering when typing fast or pasting long strings.
     if let Some(old) = old_buffer {
+        // Append optimization
         if state.buffer.len() >= old.len()
             && state.buffer.starts_with(old)
             && state.cursor == state.buffer.len()
@@ -71,6 +72,30 @@ pub fn render<W: std::io::Write>(
                     stdout.flush()?;
                     return Ok(());
                 }
+            }
+        }
+
+        // Backspace at the end optimization
+        // If we removed characters from the end of the buffer, and we are at the end,
+        // we can just emit backspaces instead of clearing the line.
+        // This is critical for handling long lines that have wrapped, because we don't know
+        // the terminal width and clearing the current line only clears the last wrapped segment.
+        if state.buffer.len() < old.len()
+            && old.starts_with(&state.buffer)
+            && state.cursor == state.buffer.len()
+            && state.suggestions.is_none()
+        {
+            let removed_part = &old[state.buffer.len()..];
+            // Only optimize if we haven't removed any newlines (which would involve moving cursor up)
+            if !removed_part.contains('\n') {
+                for _ in removed_part.chars() {
+                    // Backspace, Space, Backspace to erase character visually
+                    stdout.write_all(b"\x08 \x08")?;
+                }
+                // Clear any potential suggestions below
+                stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown))?;
+                stdout.flush()?;
+                return Ok(());
             }
         }
     }
@@ -221,5 +246,39 @@ mod tests {
 
         // Output should start with "def"
         assert!(output.starts_with("def"));
+    }
+
+    #[test]
+    fn test_render_backspace_at_end() {
+        let mut repl = Repl::new();
+        // Setup initial state: "abc"
+        repl.handle_input(Input::Char('a'));
+        repl.handle_input(Input::Char('b'));
+        repl.handle_input(Input::Char('c'));
+
+        // This is what old_buffer was
+        let old_buffer = "abc".to_string();
+
+        // Now backspace
+        repl.handle_input(Input::Backspace);
+
+        // Current buffer is "ab"
+
+        let mut stdout = Vec::new();
+        render(&mut stdout, &repl, Some(&old_buffer)).unwrap();
+
+        let output = String::from_utf8_lossy(&stdout);
+
+        println!("Output: {:?}", output);
+
+        // If full redraw, we expect to see prompt color seq
+        let has_full_redraw = output.contains("\x1b[34m"); // Blue color for prompt
+
+        // We expect NO full redraw, only backspaces
+        assert!(!has_full_redraw, "Should NOT fall back to full redraw for backspace at end. Output was: {:?}", output);
+
+        // Output should contain backspace sequence "\x08 \x08" (BS Space BS)
+        // Note: crossterm or manual writing might differ, but we expect manual backspace handling
+        assert!(output.contains("\x08 \x08"), "Should contain backspace sequence. Output: {:?}", output);
     }
 }
