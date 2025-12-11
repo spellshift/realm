@@ -4,6 +4,7 @@ import { BeaconFilterBar } from "./beacon-filter-bar";
 import { ButtonDialogPopover } from "./ButtonDialogPopover";
 import FreeTextSearch from "./tavern-base-ui/FreeTextSearch";
 import { Switch } from "@chakra-ui/react";
+import { TomeFilterBar } from "./TomeFilterBar";
 
 export enum FilterPageType {
     QUEST = 'Quest',
@@ -16,12 +17,13 @@ export enum FilterFieldType {
     BEACON_FIELDS = 'beaconFields',
     TASK_OUTPUT = 'taskOutput',
     QUEST_NAME = 'questName',
+    TOME_FIELDS = 'tomeFields'
 };
 
 const filterConfig: Record<FilterPageType, FilterFieldType[]> = {
-    [FilterPageType.QUEST]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
+    [FilterPageType.QUEST]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT, FilterFieldType.TOME_FIELDS],
     [FilterPageType.TASK]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TASK_OUTPUT],
-    [FilterPageType.HOST_TASK]: [FilterFieldType.TASK_OUTPUT],
+    [FilterPageType.HOST_TASK]: [FilterFieldType.TASK_OUTPUT, FilterFieldType.TOME_FIELDS],
     [FilterPageType.HOST]: [FilterFieldType.BEACON_FIELDS],
 };
 
@@ -38,6 +40,9 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
         }
         if (field === FilterFieldType.BEACON_FIELDS && filters.beaconFields.length > 0) {
             return filters.beaconFields.length;
+        }
+        if (field === FilterFieldType.TOME_FIELDS && filters.tomeFields.length > 0) {
+            return filters.tomeFields.length;
         }
         return 0;
     }
@@ -88,6 +93,18 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
                         defaultValue={filters.taskOutput}
                         setSearch={(newValue) => updateFilters({ 'taskOutput': newValue })}
                         placeholder="Search by output"
+                    />
+                </div>
+            );
+        }
+        else if (field === FilterFieldType.TOME_FIELDS) {
+            return (
+                <div key={field}>
+                    <TomeFilterBar
+                        key={field}
+                        setFiltersSelected={(newValue) => updateFilters({ 'tomeFields': newValue })}
+                        filtersSelected={filters.tomeFields}
+                        isDisabled={!filters.filtersEnabled}
                     />
                 </div>
             );

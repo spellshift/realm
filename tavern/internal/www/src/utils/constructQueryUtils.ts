@@ -1,6 +1,6 @@
 import { Filters } from "../context/FilterContext";
 import { FilterBarOption } from "./interfacesUI";
-import { getFilterNameByTypes } from "./utils";
+import { getBeaconFilterNameByTypes, getTomeFilterNameByTypes } from "./utils";
 
 export function constructTagQueryFormat(
     kind: string,
@@ -48,7 +48,7 @@ export function constructHostFieldQuery(
 };
 
 export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>){
-    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP} = getFilterNameByTypes(beaconFields);
+    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP} = getBeaconFilterNameByTypes(beaconFields);
     const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP);
 
     if(beacons.length < 1 && principal.length < 1 && !hostFiledQuery){
@@ -64,14 +64,33 @@ export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>)
     };
 
 };
-export function constructTaskFilterQuery(filter: Filters){
-    const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
 
-    if(!filter.taskOutput && !beaconFilterQuery){
+export function constructTomeFilterQuery(tomeFields: Array<FilterBarOption>){
+    const { Tactic, SupportModel } = getTomeFilterNameByTypes(tomeFields);
+
+    if(Tactic.length < 1 && SupportModel.length < 1){
       return null;
     }
 
     return {
+      "hasTomeWith": {
+        "tacticIn": Tactic,
+        "supportModelIn": SupportModel
+      }
+    };
+
+};
+
+export function constructTaskFilterQuery(filter: Filters){
+    const tomeFilterQuery = constructTomeFilterQuery(filter.tomeFields);
+    const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
+
+    if(!filter.taskOutput && !beaconFilterQuery && !tomeFilterQuery){
+      return null;
+    }
+
+    return {
+      // ...(tomeFilterQuery && constructTomeFilterQuery),
       "hasTasksWith": {
         ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
         ...(beaconFilterQuery && beaconFilterQuery)

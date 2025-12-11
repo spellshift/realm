@@ -1,20 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { FilterBarOption } from '../utils/interfacesUI'
 
-const STORAGE_KEY = 'realm-filters-v1.0'
+const STORAGE_KEY = 'realm-filters-v1.1'
 
 export type Filters = {
     filtersEnabled: boolean,
     questName: string,
     taskOutput: string,
     beaconFields: Array<FilterBarOption>,
+    tomeFields: Array<FilterBarOption>,
+    tomeMultiSearch: string,
 }
 
 const defaultFilters: Filters = {
     filtersEnabled: true,
     questName: "",
     taskOutput: "",
-    beaconFields: []
+    beaconFields: [],
+    tomeFields: [],
+    tomeMultiSearch: ""
 }
 
 type FilterContextType = {

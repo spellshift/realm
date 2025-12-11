@@ -3,7 +3,7 @@ import { PrincipalAdminTypes } from "../../../utils/enums";
 import { useFilters } from "../../../context/FilterContext";
 import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
 import { SelectedBeacons } from "../../../utils/interfacesUI";
-import { getFilterNameByTypes } from "../../../utils/utils";
+import { getBeaconFilterNameByTypes } from "../../../utils/utils";
 
 export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: SelectedBeacons) => {
     const {filters} = useFilters();
@@ -22,7 +22,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             return filteredBeacons;
         }
 
-        const searchTypes = getFilterNameByTypes(typeFilters);
+        const searchTypes = getBeaconFilterNameByTypes(typeFilters);
 
         return filteredBeacons.filter( (beacon: BeaconNode) => {
             let group = beacon?.host?.tags ? (beacon?.host?.tags?.edges).find( (obj : TagEdge) => {
