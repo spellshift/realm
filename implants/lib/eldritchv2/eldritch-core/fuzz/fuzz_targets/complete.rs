@@ -1,5 +1,6 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
+use arbitrary::Unstructured;
 use eldritch_core::{Interpreter, Printer, Span};
 use std::sync::Arc;
 
@@ -11,20 +12,22 @@ impl Printer for NoOpPrinter {
     fn print_err(&self, _span: &Span, _s: &str) {}
 }
 
-fuzz_target!(|data: &str| {
-    // Generate a random cursor position based on data length
-    // Since fuzz_target gives us data, we can't easily get a separate random number for cursor
-    // unless we split data.
-    // Let's take the first byte as the relative cursor position ratio.
-
-    if data.len() < 1 {
+fuzz_target!(|data: &[u8]| {
+    let mut u = Unstructured::new(data);
+    let code: String = match u.arbitrary() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+    if code.is_empty() {
         return;
     }
 
-    let ratio = data.as_bytes()[0] as usize;
-    // ratio is 0..255. map to 0..data.len()
-    let cursor = (data.len() * ratio) / 255;
+    // Generate a valid cursor position within the string bounds
+    let cursor = match u.int_in_range(0..=code.len()) {
+        Ok(i) => i,
+        Err(_) => return,
+    };
 
     let interpreter = Interpreter::new_with_printer(Arc::new(NoOpPrinter));
-    let _ = interpreter.complete(data, cursor);
+    let _ = interpreter.complete(&code, cursor);
 });
