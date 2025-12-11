@@ -1,7 +1,7 @@
 import { add } from "date-fns";
 import { BeaconEdge, BeaconNode } from "./interfacesQuery";
-import { PrincipalAdminTypes } from "./enums";
-import { FilterBarOption, OnlineOfflineStatus, FieldInputParams } from "./interfacesUI";
+import { PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
+import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -24,7 +24,7 @@ export const safelyJsonParse = (value: string) => {
     return { error, params };
 };
 
-export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
+export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
     "beacon": Array<string>,
     "service":  Array<string>,
     "group":  Array<string>,
@@ -65,6 +65,22 @@ export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
             "platform": [],
             "principal": [],
             "primaryIP": []
+        });
+};
+
+export function getTomeFilterNameByTypes(typeFilters: Array<FilterBarOption>): TomeFiltersByType {
+    return typeFilters.reduce((accumulator: any, currentValue: any) => {
+        if (currentValue.kind === TomeFilterFieldKind.SupportModel) {
+            accumulator[TomeFilterFieldKind.SupportModel].push(currentValue.value);
+        }
+        else if (currentValue.kind === TomeFilterFieldKind.Tactic) {
+            accumulator[TomeFilterFieldKind.Tactic].push(currentValue.value);
+        }
+        return accumulator;
+    },
+        {
+            [TomeFilterFieldKind.SupportModel]: [],
+            [TomeFilterFieldKind.Tactic]: []
         });
 };
 
@@ -193,3 +209,13 @@ export function groupBy<T>(collection: T[], key: keyof T): { [key: string]: T[] 
     }, {} as any);
     return groupedResult
 }
+
+export const mapEnumToUIOptionField = (enumObj: Record<string, string>, kind: string) => {
+    return Object.entries(enumObj).map(([key, value]) => ({
+        id: key,
+        name: value,
+        value: key,
+        label: value,
+        kind: kind
+    }));
+};
