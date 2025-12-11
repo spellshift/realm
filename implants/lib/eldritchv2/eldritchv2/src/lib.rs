@@ -147,7 +147,7 @@ impl Interpreter {
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        let assets_lib = StdAssetsLibrary::new(agent.clone(), Vec::new(), BTreeMap::new());
+        let assets_lib = StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
         self.inner.register_lib(assets_lib);
 
         self
@@ -163,12 +163,11 @@ impl Interpreter {
     }
 
     #[cfg(feature = "stdlib")]
-    pub fn with_task_context(
+    pub fn with_task_context<A: crate::assets::RustEmbed + Send + Sync + 'static>(
         mut self,
         agent: Arc<dyn Agent>,
         task_id: i64,
         remote_assets: Vec<String>,
-        embedded_assets: BTreeMap<String, Vec<u8>>,
     ) -> Self {
         let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(agent_lib);
@@ -179,7 +178,7 @@ impl Interpreter {
         let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::new(agent, remote_assets, embedded_assets);
+        let assets_lib = StdAssetsLibrary::<A>::new(agent, remote_assets);
         self.inner.register_lib(assets_lib);
 
         self

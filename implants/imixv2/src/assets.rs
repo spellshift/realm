@@ -1,18 +1,16 @@
-use alloc::collections::BTreeMap;
-use alloc::string::ToString;
 use rust_embed::RustEmbed;
+use std::borrow::Cow;
 
 #[derive(RustEmbed)]
 #[folder = "../imix/install_scripts"]
 pub struct Asset;
 
-pub fn get_embedded_assets() -> BTreeMap<String, Vec<u8>> {
-    let mut assets = BTreeMap::new();
-    for file in Asset::iter() {
-        let name = file.as_ref().to_string();
-        if let Some(content) = Asset::get(&name) {
-            assets.insert(name, content.data.to_vec());
-        }
+impl eldritch_libassets::RustEmbed for Asset {
+    fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile> {
+        <Asset as rust_embed::RustEmbed>::get(file_path)
     }
-    assets
+
+    fn iter() -> impl Iterator<Item = Cow<'static, str>> {
+        <Asset as rust_embed::RustEmbed>::iter()
+    }
 }
