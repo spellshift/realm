@@ -1,14 +1,14 @@
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     use crate::agent::Agent;
     use crate::std::StdAgentLibrary;
     use crate::AgentLibrary;
     use eldritch_core::Value;
     use alloc::sync::Arc;
     use alloc::collections::{BTreeMap, BTreeSet};
-    use std::sync::{RwLock, Mutex};
+    use std::sync::RwLock;
     use std::thread;
 
     #[derive(Clone)]

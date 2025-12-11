@@ -188,15 +188,15 @@ impl Agent for AgentFake {
         Ok(String::new())
     }
 
-    fn add_callback_uri(&self, uri: String) -> Result<(), String> {
+    fn add_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
 
-    fn remove_callback_uri(&self, uri: String) -> Result<(), String> {
+    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
 
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
+    fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
 }

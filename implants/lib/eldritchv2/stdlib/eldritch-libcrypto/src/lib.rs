@@ -189,6 +189,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the JSON is invalid.
+    #[allow(clippy::wrong_self_convention)]
     fn from_json(&self, content: String) -> Result<Value, String>;
 
     #[eldritch_method]
