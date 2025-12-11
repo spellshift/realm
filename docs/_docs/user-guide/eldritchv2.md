@@ -953,19 +953,6 @@ It allows you to:
     **Errors**
     - Returns an error string if the transport is unknown or cannot be activated.
 
-*   **`agent.add_transport`**
-    Adds or updates a transport configuration.
-    
-    **Parameters**
-    - `transport` (`str`): The name of the transport.
-    - `config` (`str`): The configuration string (e.g., URL or connection string).
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the transport configuration fails.
-
 *   **`agent.list_transports`**
     Returns a list of available transport names.
     

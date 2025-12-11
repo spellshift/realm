@@ -32,20 +32,6 @@ Use with extreme caution.
 **Errors**
 - This function is unlikely to return an error, as it terminates the process.
 
-### agent.add_transport
-`agent.add_transport(transport: str, config: str) -> None`
-Adds or updates a transport configuration.
-
-**Parameters**
-- `transport` (`str`): The name of the transport.
-- `config` (`str`): The configuration string (e.g., URL or connection string).
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the transport configuration fails.
-
 ### agent.claim_tasks
 `agent.claim_tasks() -> List<TaskWrapper>`
 Manually triggers a check-in to claim pending tasks from the C2 server.

