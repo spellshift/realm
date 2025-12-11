@@ -5,6 +5,12 @@ pub struct InputParser {
     pub buffer: Vec<u8>,
 }
 
+impl Default for InputParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InputParser {
     pub fn new() -> Self {
         Self { buffer: Vec::new() }

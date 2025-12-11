@@ -83,7 +83,7 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
     for col in &columns_vec {
         let w = widths.get(col).unwrap();
         let dash_count = *w;
-        output.push_str(" ");
+        output.push(' ');
         output.push_str(&"-".repeat(dash_count));
         output.push_str(" |");
     }

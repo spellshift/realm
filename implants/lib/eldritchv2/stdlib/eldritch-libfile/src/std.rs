@@ -469,13 +469,14 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     );
 
     // Times
-    if let Ok(m) = metadata.modified() {
-        if let Ok(d) = m.duration_since(::std::time::UNIX_EPOCH) {
-            dict.insert(
-                "modified".to_string(),
-                Value::String(d.as_secs().to_string()),
-            );
-        }
+    if let Ok(d) = metadata.modified().and_then(|m| {
+        m.duration_since(::std::time::UNIX_EPOCH)
+            .map_err(|e| std::io::Error::other(e))
+    }) {
+        dict.insert(
+            "modified".to_string(),
+            Value::String(d.as_secs().to_string()),
+        );
     }
 
     Ok(dict)
@@ -659,19 +660,31 @@ fn check_path(
 
     if let Some(mt) = modified_time {
         let meta = path.metadata()?;
-        if let Ok(t) = meta.modified() {
-            if t.duration_since(::std::time::UNIX_EPOCH)?.as_secs() as i64 != mt {
-                return Ok(false);
-            }
+        if meta
+            .modified()
+            .and_then(|t| {
+                t.duration_since(::std::time::UNIX_EPOCH)
+                    .map_err(std::io::Error::other)
+            })
+            .map(|d| d.as_secs() as i64)
+            .map_or(false, |secs| secs != mt)
+        {
+            return Ok(false);
         }
     }
 
     if let Some(ct) = create_time {
         let meta = path.metadata()?;
-        if let Ok(t) = meta.created() {
-            if t.duration_since(::std::time::UNIX_EPOCH)?.as_secs() as i64 != ct {
-                return Ok(false);
-            }
+        if meta
+            .created()
+            .and_then(|t| {
+                t.duration_since(::std::time::UNIX_EPOCH)
+                    .map_err(std::io::Error::other)
+            })
+            .map(|d| d.as_secs() as i64)
+            .map_or(false, |secs| secs != ct)
+        {
+            return Ok(false);
         }
     }
 

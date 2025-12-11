@@ -1,26 +1,9 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
-use arbitrary::{Arbitrary, Unstructured, Result};
+use arbitrary::{Unstructured, Result};
 use eldritch_core::{Interpreter, Value, Printer, Span};
 use std::sync::Arc;
 use std::collections::{BTreeMap, BTreeSet};
-
-// We need to re-import RwLock from spin or use a compatible one.
-// Since eldritch-core uses spin::RwLock, we should try to match it or use the constructor from Value which wraps it.
-// Value fields are public, so we can construct them.
-// But we need `spin` crate here?
-// eldritch-core re-exports nothing related to spin.
-// However, `Value::List(Arc<RwLock<...>>)` requires `RwLock`.
-// If we can't import `RwLock` from `eldritch-core`, we must depend on `spin` in fuzz/Cargo.toml.
-
-// Let's check if we can add spin to fuzz/Cargo.toml or if we can rely on `eldritch-core` public API to construct Values.
-// `eldritch-core` has no public constructors for List/Dict/Set that are exposed in a way that helps us avoid `spin` import if we construct manually.
-// But we can depend on `spin` in fuzz crate.
-
-// Wait, I need to add `spin` to `fuzz/Cargo.toml` if I want to use `spin::RwLock`.
-// But `eldritch-core` uses `spin = "0.10.0"`.
-
-// Actually, let's just add `spin` to `fuzz/Cargo.toml`.
 
 #[derive(Debug)]
 struct NoOpPrinter;
@@ -77,7 +60,6 @@ fn arbitrary_value(u: &mut Unstructured, depth: usize) -> Result<Value> {
                 for _ in 0..len {
                     let k = arbitrary_value(u, depth - 1)?;
                     let v = arbitrary_value(u, depth - 1)?;
-                    // Keys must be comparable, Value implements Ord.
                     map.insert(k, v);
                 }
                 Ok(Value::Dictionary(Arc::new(spin::RwLock::new(map))))
@@ -95,7 +77,7 @@ fn arbitrary_value(u: &mut Unstructured, depth: usize) -> Result<Value> {
     }
 }
 
-fn arbitrary_operator(u: &mut Unstructured) -> Result<&'static str> {
+fn arbitrary_binary_operator(u: &mut Unstructured) -> Result<&'static str> {
     let ops = [
         "+", "-", "*", "/", "//", "%",
         "&", "|", "^", "<<", ">>",
@@ -106,31 +88,54 @@ fn arbitrary_operator(u: &mut Unstructured) -> Result<&'static str> {
     Ok(ops[idx])
 }
 
+fn arbitrary_unary_operator(u: &mut Unstructured) -> Result<&'static str> {
+    let ops = ["not", "-", "+", "~"];
+    let idx = u.int_in_range(0..=ops.len() - 1)?;
+    Ok(ops[idx])
+}
+
 fuzz_target!(|data: &[u8]| {
     let mut u = Unstructured::new(data);
-
-    // Generate two values
-    let val_a = match arbitrary_value(&mut u, 3) {
-        Ok(v) => v,
-        Err(_) => return,
-    };
-    let val_b = match arbitrary_value(&mut u, 3) {
-        Ok(v) => v,
-        Err(_) => return,
-    };
-
-    let op = match arbitrary_operator(&mut u) {
-        Ok(o) => o,
-        Err(_) => return,
-    };
-
-    // Construct interpreter and run
     let mut interpreter = Interpreter::new_with_printer(Arc::new(NoOpPrinter));
 
-    // Inject values
-    interpreter.define_variable("a", val_a);
-    interpreter.define_variable("b", val_b);
+    // Determine whether to fuzz a unary or binary operation.
+    // Let's say 2/3 chance for binary, 1/3 for unary.
+    let is_binary = u.ratio(2, 3).unwrap_or(true);
 
-    let code = format!("a {} b", op);
-    let _ = interpreter.interpret(&code);
+    if is_binary {
+        let val_a = match arbitrary_value(&mut u, 3) {
+            Ok(v) => v,
+            Err(_) => return,
+        };
+        let val_b = match arbitrary_value(&mut u, 3) {
+            Ok(v) => v,
+            Err(_) => return,
+        };
+        let op = match arbitrary_binary_operator(&mut u) {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+
+        interpreter.define_variable("a", val_a);
+        interpreter.define_variable("b", val_b);
+
+        let code = format!("a {} b", op);
+        let _ = interpreter.interpret(&code);
+    } else {
+        let val_a = match arbitrary_value(&mut u, 3) {
+            Ok(v) => v,
+            Err(_) => return,
+        };
+        let op = match arbitrary_unary_operator(&mut u) {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+
+        interpreter.define_variable("a", val_a);
+
+        // For unary ops, standard syntax is "op a", but for some (like post-fix) it might be different.
+        // Eldritch only has prefix unary ops in the list above.
+        let code = format!("{} a", op);
+        let _ = interpreter.interpret(&code);
+    }
 });
