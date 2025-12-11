@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 eldritchv2 = { workspace = true, features = ["fake_bindings"] }
 eldritch-core = { workspace = true, default-features = false }
-anyhow = "1.0"
-glob = "0.3"
-serde = { version = "1.0", features = ["derive"] }
+anyhow = { workspace = true }
+glob = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_yaml = "0.9"
-spin = "0.10"
-log = "0.4"
+spin = { version = "0.10.0", features = ["rwlock"] }
+log = { workspace = true }

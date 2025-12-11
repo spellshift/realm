@@ -10,12 +10,7 @@ crate-type = ["cdylib"]
 win_service = []
 
 [dependencies]
-tokio = { workspace = true, features = [
-    "rt-multi-thread",
-    "macros",
-    "sync",
-    "time",
-] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
@@ -30,8 +25,8 @@ eldritch-libagent = { workspace = true, features = ["stdlib"] }
 eldritch-libassets = { workspace = true, features = ["stdlib"] }
 transport = { workspace = true, features = ["grpc", "http1"] }
 pb = { workspace = true, features = ["imix"] }
-portable-pty.workspace = true
-rust-embed = "8.0"
+portable-pty = { workspace = true }
+rust-embed = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
