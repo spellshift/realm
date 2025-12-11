@@ -237,10 +237,8 @@ fn execute_augmented_assignment(
         ExprKind::Identifier(name) => {
             let left = interp.lookup_variable(name, span)?;
 
-            if let TokenKind::PlusAssign = op {
-                if try_inplace_add(&left, &right) {
-                    return Ok(());
-                }
+            if matches!(op, TokenKind::PlusAssign) && try_inplace_add(&left, &right) {
+                return Ok(());
             }
 
             let bin_op = augmented_op_to_binary(op).ok_or_else(|| {
@@ -302,10 +300,8 @@ fn execute_augmented_assignment(
                 _ => return interp.error(EldritchErrorKind::TypeError, "Object does not support item assignment", span),
             };
 
-            if let TokenKind::PlusAssign = op {
-                if try_inplace_add(&current_val, &right) {
-                    return Ok(());
-                }
+            if matches!(op, TokenKind::PlusAssign) && try_inplace_add(&current_val, &right) {
+                return Ok(());
             }
 
             let bin_op = augmented_op_to_binary(op).ok_or_else(|| {
