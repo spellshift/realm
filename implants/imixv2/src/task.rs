@@ -9,8 +9,6 @@ use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
 
-use crate::assets::get_embedded_assets;
-
 #[derive(Debug)]
 struct StreamPrinter {
     tx: UnboundedSender<String>,
@@ -155,8 +153,7 @@ fn setup_interpreter(
 
     // Register Task Context (Agent, Report, Assets)
     let remote_assets = tome.file_names.clone();
-    let embedded_assets = get_embedded_assets();
-    interp = interp.with_task_context(agent, task_id, remote_assets, embedded_assets);
+    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, remote_assets);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome

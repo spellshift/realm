@@ -14,7 +14,6 @@ use std::sync::Arc;
 use transport::Transport;
 
 use crate::agent::ImixAgent;
-use crate::assets::get_embedded_assets;
 use crate::shell::parser::InputParser;
 use crate::shell::terminal::{render, VtWriter};
 
@@ -64,10 +63,9 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
-        let embedded_assets = get_embedded_assets();
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_task_context(Arc::new(agent), task_id, Vec::new(), embedded_assets);
+            .with_task_context::<crate::assets::Asset>(Arc::new(agent), task_id, Vec::new());
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),

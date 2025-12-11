@@ -10,6 +10,17 @@ use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
 
+pub struct EmptyAssets;
+
+impl crate::RustEmbed for EmptyAssets {
+    fn get(_: &str) -> Option<rust_embed::EmbeddedFile> {
+        None
+    }
+    fn iter() -> impl Iterator<Item = alloc::borrow::Cow<'static, str>> {
+        alloc::vec::Vec::<alloc::string::String>::new().into_iter().map(alloc::borrow::Cow::from)
+    }
+}
+
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync + 'static> {
     pub agent: Arc<dyn Agent>,
