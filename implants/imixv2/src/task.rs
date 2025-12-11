@@ -129,8 +129,10 @@ fn execute_task(
     // Spawn output consumer task
     let consumer_join_handle = spawn_output_consumer(task_id, agent.clone(), runtime_handle.clone(), rx);
 
-    // Run Interpreter
-    let result = interp.interpret(&tome.eldritch);
+    // Run Interpreter with panic protection
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        interp.interpret(&tome.eldritch)
+    }));
 
     // Explicitly drop interp and printer to close channel
     drop(printer);
@@ -139,8 +141,13 @@ fn execute_task(
     // Wait for consumer to finish processing all messages
     let _ = runtime_handle.block_on(consumer_join_handle);
 
-    // Report Result
-    report_result(task_id, result, &agent);
+    // Handle result
+    match result {
+        Ok(exec_result) => report_result(task_id, exec_result, &agent),
+        Err(_) => {
+             report_panic(task_id, &agent);
+        }
+    }
 }
 
 fn setup_interpreter(
@@ -200,10 +207,22 @@ fn spawn_output_consumer(
     })
 }
 
+fn report_panic(task_id: i64, agent: &Arc<dyn Agent>) {
+    let _ = agent.report_task_output(ReportTaskOutputRequest {
+        output: Some(TaskOutput {
+            id: task_id,
+            output: String::new(),
+            error: Some(TaskError { msg: "Task execution panicked".to_string() }),
+            exec_started_at: None,
+            exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+        }),
+    });
+}
+
 fn report_result(task_id: i64, result: Result<eldritch_core::Value, String>, agent: &Arc<dyn Agent>) {
     match result {
         Ok(v) => {
-            log::info!("Task Success: {v}");
+            // Report task completion FIRST before any potential panics from logging
             let _ = agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
@@ -213,6 +232,7 @@ fn report_result(task_id: i64, result: Result<eldritch_core::Value, String>, age
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
             });
+            log::info!("Task Success: {v}");
         }
         Err(e) => {
             let _ = agent.report_task_output(ReportTaskOutputRequest {

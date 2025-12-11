@@ -122,6 +122,15 @@ async fn test_task_registry_spawn() {
             .unwrap_or(false)
     });
     assert!(has_output, "Should have found report containing 'Hello World'");
+
+    // Check completion
+    let has_finished = reports.iter().any(|r| {
+        r.output
+            .as_ref()
+            .map(|o| o.exec_finished_at.is_some())
+            .unwrap_or(false)
+    });
+    assert!(has_finished, "Should have marked task as finished");
 }
 
 #[tokio::test]
