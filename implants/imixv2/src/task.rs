@@ -33,8 +33,6 @@ impl Printer for StreamPrinter {
 }
 
 struct TaskHandle {
-    #[allow(dead_code)] // Keep for future use/tracking
-    start_time: SystemTime,
     quest: String,
 }
 
@@ -85,7 +83,6 @@ impl TaskRegistry {
         tasks.insert(
             task.id,
             TaskHandle {
-                start_time: SystemTime::now(),
                 quest: task.quest_name.clone(),
             },
         );

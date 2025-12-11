@@ -40,7 +40,7 @@ pub async fn run_agent() -> Result<()> {
             break;
         }
 
-        sleep_until_next_cycle(&agent, start);
+        sleep_until_next_cycle(&agent, start).await;
     }
 
     #[cfg(debug_assertions)]
@@ -53,10 +53,10 @@ pub fn init_logger() {
     #[cfg(debug_assertions)]
     {
         use pretty_env_logger;
-        pretty_env_logger::formatted_timed_builder()
+        let _ = pretty_env_logger::formatted_timed_builder()
             .filter_level(log::LevelFilter::Info)
             .parse_env("IMIX_LOG")
-            .init();
+            .try_init();
         log::info!("Starting imixv2 agent");
     }
 }
@@ -114,7 +114,7 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
     }
 }
 
-fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) {
+async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) {
     let interval = agent.get_callback_interval_u64();
     let delay = match interval.checked_sub(start.elapsed().as_secs()) {
         Some(secs) => Duration::from_secs(secs),
@@ -126,5 +126,5 @@ fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) {
         start.elapsed().as_secs(),
         delay.as_secs()
     );
-    std::thread::sleep(delay);
+    tokio::time::sleep(delay).await;
 }
