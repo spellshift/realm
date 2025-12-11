@@ -6,6 +6,20 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:aes",
+    "dep:md5",
+    "dep:sha1",
+    "dep:sha2",
+    "dep:hex-literal",
+    "dep:base64",
+    "dep:serde",
+    "dep:serde_json",
+]
+fake_bindings = []
+
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
@@ -21,17 +35,3 @@ serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-
-[features]
-default = ["stdlib"]
-stdlib = [
-    "dep:aes",
-    "dep:md5",
-    "dep:sha1",
-    "dep:sha2",
-    "dep:hex-literal",
-    "dep:base64",
-    "dep:serde",
-    "dep:serde_json",
-]
-fake_bindings = []

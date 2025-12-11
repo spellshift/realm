@@ -6,6 +6,22 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:flate2",
+    "dep:tar",
+    "dep:tera",
+    "dep:tempfile",
+    "dep:glob",
+    "dep:regex",
+    "dep:anyhow",
+    "dep:serde_json",
+    "dep:notify",
+    "dep:chrono",
+]
+fake_bindings = []
+
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
@@ -30,19 +46,3 @@ windows-sys = { workspace = true, features = [
     "Win32_Storage_FileSystem",
     "Win32_System_SystemServices",
 ] }
-
-[features]
-default = ["stdlib"]
-stdlib = [
-    "dep:flate2",
-    "dep:tar",
-    "dep:tera",
-    "dep:tempfile",
-    "dep:glob",
-    "dep:regex",
-    "dep:anyhow",
-    "dep:serde_json",
-    "dep:notify",
-    "dep:chrono",
-]
-fake_bindings = []
