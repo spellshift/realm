@@ -159,21 +159,39 @@ pub(crate) fn apply_arithmetic_op(
         (Value::Float(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float(a + b)),
         (Value::Float(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float(a - b)),
         (Value::Float(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float(a * b)),
-        (Value::Float(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float(a / b)),
+        (Value::Float(a), TokenKind::Slash, Value::Float(b)) => {
+            if *b == 0.0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
+            }
+            Ok(Value::Float(a / b))
+        }
 
         // Mixed
         (Value::Int(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float((*a as f64) + b)),
         (Value::Int(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float((*a as f64) - b)),
         (Value::Int(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float((*a as f64) * b)),
-        (Value::Int(a), TokenKind::Slash, Value::Float(b)) => Ok(Value::Float((*a as f64) / b)),
+        (Value::Int(a), TokenKind::Slash, Value::Float(b)) => {
+            if *b == 0.0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
+            }
+            Ok(Value::Float((*a as f64) / b))
+        }
 
         (Value::Float(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Float(a + (*b as f64))),
         (Value::Float(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Float(a - (*b as f64))),
         (Value::Float(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Float(a * (*b as f64))),
-        (Value::Float(a), TokenKind::Slash, Value::Int(b)) => Ok(Value::Float(a / (*b as f64))),
+        (Value::Float(a), TokenKind::Slash, Value::Int(b)) => {
+            if *b == 0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
+            }
+            Ok(Value::Float(a / (*b as f64)))
+        }
 
         // Floor Div and Modulo
         (Value::Float(a), TokenKind::SlashSlash, Value::Float(b)) => {
+            if *b == 0.0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
+            }
             #[cfg(feature = "std")]
             {
                 Ok(Value::Float(a.div_euclid(*b)))
@@ -184,6 +202,9 @@ pub(crate) fn apply_arithmetic_op(
             }
         }
         (Value::Int(a), TokenKind::SlashSlash, Value::Float(b)) => {
+            if *b == 0.0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
+            }
             #[cfg(feature = "std")]
             {
                 Ok(Value::Float((*a as f64).div_euclid(*b)))
@@ -194,6 +215,9 @@ pub(crate) fn apply_arithmetic_op(
             }
         }
         (Value::Float(a), TokenKind::SlashSlash, Value::Int(b)) => {
+            if *b == 0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
+            }
             #[cfg(feature = "std")]
             {
                 Ok(Value::Float(a.div_euclid(*b as f64)))
@@ -204,6 +228,9 @@ pub(crate) fn apply_arithmetic_op(
             }
         }
         (Value::Float(a), TokenKind::Percent, Value::Float(b)) => {
+            if *b == 0.0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "modulo by zero", span);
+            }
             #[cfg(feature = "std")]
             {
                 Ok(Value::Float(a.rem_euclid(*b)))
@@ -215,6 +242,9 @@ pub(crate) fn apply_arithmetic_op(
             }
         }
         (Value::Int(a), TokenKind::Percent, Value::Float(b)) => {
+            if *b == 0.0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "modulo by zero", span);
+            }
             #[cfg(feature = "std")]
             {
                 Ok(Value::Float((*a as f64).rem_euclid(*b)))
@@ -227,6 +257,9 @@ pub(crate) fn apply_arithmetic_op(
             }
         }
         (Value::Float(a), TokenKind::Percent, Value::Int(b)) => {
+            if *b == 0 {
+                return interp.error(EldritchErrorKind::ZeroDivisionError, "modulo by zero", span);
+            }
             #[cfg(feature = "std")]
             {
                 Ok(Value::Float(a.rem_euclid(*b as f64)))
