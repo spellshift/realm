@@ -1,6 +1,7 @@
 mod arp_scan_impl;
 mod bind_proxy_impl;
 mod ncat_impl;
+mod ping_impl;
 mod port_forward_impl;
 mod port_scan_impl;
 mod reverse_shell_pty_impl;
@@ -54,6 +55,11 @@ fn methods(builder: &mut MethodsBuilder) {
     #[allow(unused_variables)]
     fn smb_exec(this: &PivotLibrary, target: String, port: i32, username: String, password: String, hash: String, command: String) ->  anyhow::Result<String> {
         smb_exec_impl::smb_exec(target, port, username, password, hash, command)
+    }
+
+    #[allow(unused_variables)]
+    fn ping<'v>(this: &PivotLibrary,  starlark_heap: &'v Heap, target: String) -> anyhow::Result<Dict<'v>> {
+        ping_impl::ping(starlark_heap, target)
     }
 
     #[allow(unused_variables)]
