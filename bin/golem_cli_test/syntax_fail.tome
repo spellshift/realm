@@ -1,4 +1,0 @@
-def test():
-    retorn "win"
-
-print(test())

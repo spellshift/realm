@@ -31,6 +31,10 @@ type Beacon implements Node {
   """
   lastSeenAt: Time
   """
+  Timestamp of when a beacon is expected to check for tasks next.
+  """
+  nextSeenAt: Time
+  """
   Duration until next callback, in seconds.
   """
   interval: Uint64
@@ -151,6 +155,7 @@ enum BeaconOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
   INTERVAL
 }
 """
@@ -275,6 +280,19 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """
   interval field predicates
   """
@@ -634,6 +652,10 @@ type Host implements Node {
   Timestamp of when a task was last claimed or updated for the host.
   """
   lastSeenAt: Time
+  """
+  Timestamp of when a task is next expected to be claimed or updated for the host.
+  """
+  nextSeenAt: Time
   tags(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -1267,6 +1289,7 @@ enum HostOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
 }
 """
 HostPlatform is enum for the field platform
@@ -1721,6 +1744,19 @@ input HostWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """
   tags edge predicates
   """

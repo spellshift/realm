@@ -1,6 +1,6 @@
 [package]
 name = "eldritch"
-version = "0.2.0"
+version = "0.3.1"
 edition = "2021"
 
 [features]
@@ -13,7 +13,6 @@ pb = { workspace = true }
 transport = { workspace = true }
 
 generic-array = "=0.14.7"
-neli = "=0.7.1" # Lock because downstream rustls error `error[E0658]: `let` expressions in this position are unstable`
 aes = { workspace = true }
 allocative = { workspace = true }
 anyhow = { workspace = true }

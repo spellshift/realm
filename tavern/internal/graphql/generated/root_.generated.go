@@ -54,6 +54,7 @@ type ComplexityRoot struct {
 		LastModifiedAt  func(childComplexity int) int
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
+		NextSeenAt      func(childComplexity int) int
 		Principal       func(childComplexity int) int
 		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
@@ -102,6 +103,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		LastSeenAt     func(childComplexity int) int
 		Name           func(childComplexity int) int
+		NextSeenAt     func(childComplexity int) int
 		Platform       func(childComplexity int) int
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
@@ -480,6 +482,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Beacon.Name(childComplexity), true
 
+	case "Beacon.nextSeenAt":
+		if e.complexity.Beacon.NextSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Beacon.NextSeenAt(childComplexity), true
+
 	case "Beacon.principal":
 		if e.complexity.Beacon.Principal == nil {
 			break
@@ -719,6 +728,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Host.Name(childComplexity), true
+
+	case "Host.nextSeenAt":
+		if e.complexity.Host.NextSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Host.NextSeenAt(childComplexity), true
 
 	case "Host.platform":
 		if e.complexity.Host.Platform == nil {
@@ -2404,6 +2420,10 @@ type Beacon implements Node {
   """
   lastSeenAt: Time
   """
+  Timestamp of when a beacon is expected to check for tasks next.
+  """
+  nextSeenAt: Time
+  """
   Duration until next callback, in seconds.
   """
   interval: Uint64
@@ -2524,6 +2544,7 @@ enum BeaconOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
   INTERVAL
 }
 """
@@ -2648,6 +2669,19 @@ input BeaconWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """
   interval field predicates
   """
@@ -3007,6 +3041,10 @@ type Host implements Node {
   Timestamp of when a task was last claimed or updated for the host.
   """
   lastSeenAt: Time
+  """
+  Timestamp of when a task is next expected to be claimed or updated for the host.
+  """
+  nextSeenAt: Time
   tags(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -3640,6 +3678,7 @@ enum HostOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
 }
 """
 HostPlatform is enum for the field platform
@@ -4094,6 +4133,19 @@ input HostWhereInput {
   lastSeenAtLTE: Time
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
+  """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
   """
   tags edge predicates
   """
