@@ -96,3 +96,63 @@ pub fn get_dir_attributes(value: &Value) -> Vec<String> {
     attrs.sort();
     attrs
 }
+
+// Basic Levenshtein distance implementation
+fn levenshtein_distance(s1: &str, s2: &str) -> usize {
+    let s1_chars: Vec<char> = s1.chars().collect();
+    let s2_chars: Vec<char> = s2.chars().collect();
+    let m = s1_chars.len();
+    let n = s2_chars.len();
+
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+
+    for i in 0..=m {
+        dp[i][0] = i;
+    }
+    for j in 0..=n {
+        dp[0][j] = j;
+    }
+
+    for i in 1..=m {
+        for j in 1..=n {
+            let cost = if s1_chars[i - 1] == s2_chars[j - 1] {
+                0
+            } else {
+                1
+            };
+            dp[i][j] = core::cmp::min(
+                core::cmp::min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), // insertion, deletion
+                dp[i - 1][j - 1] + cost,                            // substitution
+            );
+        }
+    }
+
+    dp[m][n]
+}
+
+pub fn find_best_match(target: &str, candidates: &[String]) -> Option<String> {
+    let mut best_match: Option<String> = None;
+    let mut min_dist = usize::MAX;
+
+    // Threshold logic:
+    // Allow a distance of up to 4, or half the string length + 1.
+    // This allows "config" (6) -> "get_config" (10) (dist 4, threshold 4)
+    // "apend" (5) -> "append" (6) (dist 1, threshold 3)
+    let threshold = core::cmp::max(1, core::cmp::min(4, target.len() / 2 + 1));
+
+    for candidate in candidates {
+        // Optimization: Skip if lengths differ too much
+        let len_diff = (candidate.len() as isize - target.len() as isize).abs() as usize;
+        if len_diff > threshold {
+            continue;
+        }
+
+        let dist = levenshtein_distance(target, candidate);
+        if dist <= threshold && dist < min_dist {
+            min_dist = dist;
+            best_match = Some(candidate.clone());
+        }
+    }
+
+    best_match
+}
