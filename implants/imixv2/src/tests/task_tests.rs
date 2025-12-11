@@ -5,7 +5,7 @@ use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
-use alloc::collections::BTreeMap;
+use alloc::collections::{BTreeMap, BTreeSet};
 
 // Mock Agent specifically for TaskRegistry
 struct MockAgent {
@@ -58,21 +58,13 @@ impl Agent for MockAgent {
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         Ok(c2::ClaimTasksResponse { tasks: vec![] })
     }
-
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
         Ok(BTreeMap::new())
     }
-    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
-        Ok(())
-    }
-
     fn get_transport(&self) -> Result<String, String> {
         Ok("mock".to_string())
     }
     fn set_transport(&self, _transport: String) -> Result<(), String> {
-        Ok(())
-    }
-    fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
         Ok(())
     }
     fn list_transports(&self) -> Result<Vec<String>, String> {
@@ -90,6 +82,13 @@ impl Agent for MockAgent {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
+    fn set_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> { Ok((BTreeSet::new())) }
+    fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
+    fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
+    fn add_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn remove_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn set_active_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
 }
 
 #[tokio::test]
