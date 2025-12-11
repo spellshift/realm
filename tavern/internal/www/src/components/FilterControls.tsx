@@ -17,13 +17,14 @@ export enum FilterFieldType {
     BEACON_FIELDS = 'beaconFields',
     TASK_OUTPUT = 'taskOutput',
     QUEST_NAME = 'questName',
-    TOME_FIELDS = 'tomeFields'
+    TOME_FIELDS = 'tomeFields',
+    TOME_MULTI_SEARCH = "tomeMultiSearch"
 };
 
 const filterConfig: Record<FilterPageType, FilterFieldType[]> = {
-    [FilterPageType.QUEST]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
+    [FilterPageType.QUEST]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
     [FilterPageType.TASK]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TASK_OUTPUT],
-    [FilterPageType.HOST_TASK]: [FilterFieldType.TOME_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
+    [FilterPageType.HOST_TASK]: [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
     [FilterPageType.HOST]: [FilterFieldType.BEACON_FIELDS],
 };
 
@@ -35,13 +36,16 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
         if (field === FilterFieldType.QUEST_NAME && filters.questName !== "") {
             return 1;
         }
-        if (field === FilterFieldType.TASK_OUTPUT && filters.taskOutput !== "") {
+        else if (field === FilterFieldType.TASK_OUTPUT && filters.taskOutput !== "") {
             return 1;
         }
-        if (field === FilterFieldType.BEACON_FIELDS && filters.beaconFields.length > 0) {
+        else if (field === FilterFieldType.TOME_MULTI_SEARCH && filters.tomeMultiSearch !== "") {
+            return 1;
+        }
+        else if (field === FilterFieldType.BEACON_FIELDS && filters.beaconFields.length > 0) {
             return filters.beaconFields.length;
         }
-        if (field === FilterFieldType.TOME_FIELDS && filters.tomeFields.length > 0) {
+        else if (field === FilterFieldType.TOME_FIELDS && filters.tomeFields.length > 0) {
             return filters.tomeFields.length;
         }
         return 0;
@@ -79,7 +83,7 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
                         isDisabled={!filters.filtersEnabled}
                         defaultValue={filters.questName}
                         setSearch={(newValue) => updateFilters({ 'questName': newValue })}
-                        placeholder="Search by quest"
+                        placeholder="Quest name"
                     />
                 </div>
             )
@@ -92,7 +96,7 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
                         isDisabled={!filters.filtersEnabled}
                         defaultValue={filters.taskOutput}
                         setSearch={(newValue) => updateFilters({ 'taskOutput': newValue })}
-                        placeholder="Search by output"
+                        placeholder="Task output"
                     />
                 </div>
             );
@@ -105,6 +109,19 @@ export default function FilterControls({ type }: { type: FilterPageType }) {
                         setFiltersSelected={(newValue) => updateFilters({ 'tomeFields': newValue })}
                         filtersSelected={filters.tomeFields}
                         isDisabled={!filters.filtersEnabled}
+                    />
+                </div>
+            );
+        }
+        else if (field === FilterFieldType.TOME_MULTI_SEARCH) {
+            return (
+                <div key={field}>
+                    <FreeTextSearch
+                        key={field}
+                        isDisabled={!filters.filtersEnabled}
+                        defaultValue={filters.tomeMultiSearch}
+                        setSearch={(newValue) => updateFilters({ 'tomeMultiSearch': newValue })}
+                        placeholder="Tome definition & values"
                     />
                 </div>
             );

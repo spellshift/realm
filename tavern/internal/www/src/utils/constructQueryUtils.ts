@@ -65,17 +65,24 @@ export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>)
 
 };
 
-export function constructTomeFilterQuery(tomeFields: Array<FilterBarOption>){
-    const { Tactic, SupportModel } = getTomeFilterNameByTypes(tomeFields);
+export function constructTomeFilterQuery(filter: Filters){
+    const { Tactic, SupportModel } = getTomeFilterNameByTypes(filter.tomeFields);
 
-    if(Tactic.length < 1 && SupportModel.length < 1){
+    if(filter.tomeMultiSearch === "" && Tactic.length < 1 && SupportModel.length < 1){
       return null;
     }
 
     return {
       "hasTomeWith": {
-        "tacticIn": Tactic,
-        "supportModelIn": SupportModel
+        ...(filter.tomeMultiSearch && {
+          "or": [
+            {"paramDefsContains": filter.tomeMultiSearch},
+            {"nameContains": filter.tomeMultiSearch},
+            {"descriptionContains": filter.tomeMultiSearch}
+          ]
+        }),
+        ...(Tactic.length && {"tacticIn": Tactic}),
+        ...(SupportModel.length && {"supportModelIn": SupportModel})
       }
     };
 
@@ -97,23 +104,38 @@ export function constructTaskFilterQuery(filter: Filters){
 
 };
 
+export function constructQuestFilterQuery(filter: Filters){
+  const tomeFilterQuery = constructTomeFilterQuery(filter);
+
+  if(!filter.questName && !filter.tomeMultiSearch){
+    return null;
+  }
+
+  return {
+      ...(filter.questName && {"nameContains": filter.questName}),
+      ...(tomeFilterQuery && {
+        "or": [
+          {"parametersContains": filter.tomeMultiSearch},
+          ...[tomeFilterQuery],
+        ]
+      })
+    }
+}
+
 export function constructHostTaskFilterQuery(filter: Filters){
     const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
-    const tomeFilterQuery = constructTomeFilterQuery(filter.tomeFields);
+    const questFilterQuery =constructQuestFilterQuery(filter);
 
-    if(!filter.taskOutput && !beaconFilterQuery && filter.questName && tomeFilterQuery){
+    if(!filter.taskOutput && !beaconFilterQuery && !questFilterQuery){
       return null;
     }
 
     return {
       "hasTasksWith": {
-          "hasQuestWith": {
-            "nameContains": filter.questName,
-            ...(tomeFilterQuery && tomeFilterQuery)
-          },
-        },
+        ...(questFilterQuery && {"hasQuestWith": questFilterQuery}),
         ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
         ...(beaconFilterQuery && beaconFilterQuery)
+      }
     };
 
 };
