@@ -63,8 +63,8 @@ impl CryptoLibrary for CryptoLibraryFake {
     }
 
     fn decode_b64(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
-        if content.starts_with("B64:") {
-            Ok(content[4..].into())
+        if let Some(stripped) = content.strip_prefix("B64:") {
+            Ok(stripped.into())
         } else {
             Ok(content)
         }

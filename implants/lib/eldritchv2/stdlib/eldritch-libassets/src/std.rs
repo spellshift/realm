@@ -9,7 +9,7 @@ use eldritch_libagent::agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
-use std::collections::BTreeSet;
+
 
 pub struct EmptyAssets;
 
@@ -105,6 +105,7 @@ mod tests {
     use std::borrow::Cow;
     use std::sync::Mutex;
     use alloc::collections::BTreeMap;
+    use std::collections::BTreeSet;
 
     use rust_embed::RustEmbed as CrateRustEmbed;
     use crate::RustEmbed as LocalRustEmbed;
@@ -175,13 +176,13 @@ mod tests {
         fn set_callback_interval(&self, _interval: u64) -> Result<(), String> { Ok(()) }
         fn list_tasks(&self) -> Result<Vec<c2::Task>, String> { Ok(Vec::new()) }
         fn stop_task(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
-        fn set_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-        fn list_callback_uris(&self) -> std::result::Result<std::collections::BTreeSet<String>, String> { Ok((BTreeSet::new())) }
+        fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn list_callback_uris(&self) -> std::result::Result<std::collections::BTreeSet<String>, String> { Ok(BTreeSet::new()) }
         fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
         fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-        fn add_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-        fn remove_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-        fn set_active_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
     }
 
     #[test]

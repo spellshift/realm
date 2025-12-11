@@ -83,13 +83,13 @@ impl Agent for MockAgent {
         self.repl_calls.lock().unwrap().push(task_id);
         Ok(())
     }
-    fn set_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> { Ok((BTreeSet::new())) }
+    fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> { Ok(BTreeSet::new()) }
     fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
     fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-    fn add_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn remove_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn set_active_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
 }
 
 #[test]
