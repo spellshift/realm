@@ -7,7 +7,7 @@ mod tests {
     use crate::AgentLibrary;
     use eldritch_core::Value;
     use alloc::sync::Arc;
-    use alloc::collections::BTreeMap;
+    use alloc::collections::{BTreeMap, BTreeSet};
     use std::sync::{RwLock, Mutex};
     use std::thread;
 
@@ -50,10 +50,15 @@ mod tests {
         fn claim_tasks(&self, _: pb::c2::ClaimTasksRequest) -> Result<pb::c2::ClaimTasksResponse, String> { Err("".into()) }
         fn get_transport(&self) -> Result<String, String> { Err("".into()) }
         fn set_transport(&self, _: String) -> Result<(), String> { Err("".into()) }
-        fn add_transport(&self, _: String, _: String) -> Result<(), String> { Err("".into()) }
         fn list_transports(&self) -> Result<Vec<String>, String> { Err("".into()) }
         fn get_callback_interval(&self) -> Result<u64, String> { Err("".into()) }
         fn set_callback_uri(&self, _: String) -> Result<(), String> { Err("".into()) }
+        fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> { Err("".into()) }
+        fn get_active_callback_uri(&self) -> Result<String, String> { Err("".into()) }
+        fn get_next_callback_uri(&self) -> Result<String, String> { Err("".into()) }
+        fn add_callback_uri(&self, _: String) -> Result<(), String> { Err("".into()) }
+        fn remove_callback_uri(&self, _: String) -> Result<(), String> { Err("".into()) }
+        fn set_active_callback_uri(&self, _: String) -> Result<(), String> { Err("".into()) }
         fn list_tasks(&self) -> Result<Vec<pb::c2::Task>, String> { Err("".into()) }
         fn stop_task(&self, _: i64) -> Result<(), String> { Err("".into()) }
     }

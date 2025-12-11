@@ -144,10 +144,6 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.set_transport(transport)
     }
 
-    fn add_transport(&self, transport: String, config: String) -> Result<(), String> {
-        self.agent.add_transport(transport, config)
-    }
-
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.agent.list_transports()
     }
