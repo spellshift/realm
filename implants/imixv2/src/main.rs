@@ -27,6 +27,8 @@ mod run;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    run::init_logger();
+
     #[cfg(feature = "win_service")]
     match windows_service::service_dispatcher::start("imixv2", ffi_service_main) {
         Ok(_) => {
