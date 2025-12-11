@@ -9,6 +9,7 @@ use eldritch_libagent::agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
+use std::collections::BTreeSet;
 
 pub struct EmptyAssets;
 
@@ -169,12 +170,18 @@ mod tests {
         fn get_config(&self) -> Result<BTreeMap<String, String>, String> { Ok(BTreeMap::new()) }
         fn get_transport(&self) -> Result<String, String> { Ok("mock".into()) }
         fn set_transport(&self, _transport: String) -> Result<(), String> { Ok(()) }
-        fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> { Ok(()) }
         fn list_transports(&self) -> Result<Vec<String>, String> { Ok(Vec::new()) }
         fn get_callback_interval(&self) -> Result<u64, String> { Ok(10) }
         fn set_callback_interval(&self, _interval: u64) -> Result<(), String> { Ok(()) }
         fn list_tasks(&self) -> Result<Vec<c2::Task>, String> { Ok(Vec::new()) }
         fn stop_task(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
+        fn set_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn list_callback_uris(&self) -> std::result::Result<std::collections::BTreeSet<String>, String> { Ok((BTreeSet::new())) }
+        fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
+        fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
+        fn add_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn remove_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn set_active_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
     }
 
     #[test]

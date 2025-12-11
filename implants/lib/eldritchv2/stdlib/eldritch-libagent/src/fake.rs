@@ -4,7 +4,8 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use super::AgentLibrary;
-// use super::conversion_fake::*; // Removed, we use the crate root imports if accessible
+use std::collections::BTreeSet;
+
 
 #[cfg(feature = "stdlib")]
 use super::conversion::*;
@@ -84,10 +85,6 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 
-    fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
-        Ok(())
-    }
-
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(alloc::vec!["http".into()])
     }
@@ -153,9 +150,6 @@ impl Agent for AgentFake {
     fn set_transport(&self, _transport: String) -> Result<(), String> {
         Ok(())
     }
-    fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
-        Ok(())
-    }
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(alloc::vec!["http".into()])
     }
@@ -179,5 +173,30 @@ impl Agent for AgentFake {
         let mut map = BTreeMap::new();
         map.insert("test".to_string(), "config".to_string());
         Ok(map)
+    }
+
+    fn list_callback_uris(&self) -> Result<std::collections::BTreeSet<String>, String> {
+
+        Ok(BTreeSet::new())
+    }
+
+    fn get_active_callback_uri(&self) -> Result<String, String> {
+        Ok(String::new())
+    }
+
+    fn get_next_callback_uri(&self) -> Result<String, String> {
+        Ok(String::new())
+    }
+
+    fn add_callback_uri(&self, uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn remove_callback_uri(&self, uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
+        Ok(())
     }
 }

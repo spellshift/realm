@@ -2,7 +2,7 @@ use crate::{std::StdPivotLibrary, PivotLibrary};
 use eldritch_libagent::agent::Agent;
 use pb::c2;
 use std::sync::{Arc, Mutex};
-use alloc::collections::BTreeMap;
+use alloc::collections::{BTreeMap, BTreeSet};
 
 // Mock Agent
 struct MockAgent {
@@ -64,9 +64,6 @@ impl Agent for MockAgent {
     fn set_transport(&self, _transport: String) -> Result<(), String> {
         Ok(())
     }
-    fn add_transport(&self, _transport: String, _config: String) -> Result<(), String> {
-        Ok(())
-    }
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(vec![])
     }
@@ -82,11 +79,17 @@ impl Agent for MockAgent {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
-
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
         self.repl_calls.lock().unwrap().push(task_id);
         Ok(())
     }
+    fn set_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> { Ok((BTreeSet::new())) }
+    fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
+    fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
+    fn add_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn remove_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn set_active_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
 }
 
 #[test]
@@ -132,4 +135,3 @@ fn test_reverse_shell_repl_no_agent() {
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), "No agent available");
 }
-
