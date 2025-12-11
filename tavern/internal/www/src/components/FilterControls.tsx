@@ -21,9 +21,9 @@ export enum FilterFieldType {
 };
 
 const filterConfig: Record<FilterPageType, FilterFieldType[]> = {
-    [FilterPageType.QUEST]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT, FilterFieldType.TOME_FIELDS],
+    [FilterPageType.QUEST]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
     [FilterPageType.TASK]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TASK_OUTPUT],
-    [FilterPageType.HOST_TASK]: [FilterFieldType.TASK_OUTPUT, FilterFieldType.TOME_FIELDS],
+    [FilterPageType.HOST_TASK]: [FilterFieldType.TOME_FIELDS, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
     [FilterPageType.HOST]: [FilterFieldType.BEACON_FIELDS],
 };
 

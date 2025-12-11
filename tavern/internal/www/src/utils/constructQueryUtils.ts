@@ -82,19 +82,38 @@ export function constructTomeFilterQuery(tomeFields: Array<FilterBarOption>){
 };
 
 export function constructTaskFilterQuery(filter: Filters){
-    const tomeFilterQuery = constructTomeFilterQuery(filter.tomeFields);
     const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
 
-    if(!filter.taskOutput && !beaconFilterQuery && !tomeFilterQuery){
+    if(!filter.taskOutput && !beaconFilterQuery){
       return null;
     }
 
     return {
-      // ...(tomeFilterQuery && constructTomeFilterQuery),
       "hasTasksWith": {
         ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
         ...(beaconFilterQuery && beaconFilterQuery)
       }
+    };
+
+};
+
+export function constructHostTaskFilterQuery(filter: Filters){
+    const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
+    const tomeFilterQuery = constructTomeFilterQuery(filter.tomeFields);
+
+    if(!filter.taskOutput && !beaconFilterQuery && filter.questName && tomeFilterQuery){
+      return null;
+    }
+
+    return {
+      "hasTasksWith": {
+          "hasQuestWith": {
+            "nameContains": filter.questName,
+            ...(tomeFilterQuery && tomeFilterQuery)
+          },
+        },
+        ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
+        ...(beaconFilterQuery && beaconFilterQuery)
     };
 
 };

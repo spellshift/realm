@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { Filters, useFilters } from "../../context/FilterContext";
-import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
+import { constructTaskFilterQuery, constructTomeFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, GetQuestQueryVariables, OrderByField, QuestQueryTopLevel } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
 
@@ -14,29 +14,31 @@ export const useQuests = (pagination: boolean) => {
 
     const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters, sort?: OrderByField): GetQuestQueryVariables => {
         const defaultRowLimit = TableRowLimit.QuestRowLimit;
-        const filterQueryFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
+        const filterQueryTaskFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
+        const filterQueryTomeFields = (currentFilters?.beaconFields) ? constructTomeFilterQuery(currentFilters.tomeFields) : null;
 
         const query: GetQuestQueryVariables = {
           where: {
             ...(currentFilters?.filtersEnabled && currentFilters.questName && {
               nameContains: currentFilters.questName
             }),
-            ...(filterQueryFields || {})
+            ...(filterQueryTomeFields || {}),
+            ...(filterQueryTaskFields || {})
           },
           whereTotalTask: {
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           whereFinishedTask: {
             execFinishedAtNotNil: true,
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           whereOutputTask: {
             outputSizeGT: 0,
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           whereErrorTask: {
             errorNotNil: true,
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           firstTask: 1,
           ...(sort && {orderBy: [sort]})
