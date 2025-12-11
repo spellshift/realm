@@ -19,6 +19,8 @@ pub use token::{Span, TokenKind};
 
 // Public API exports
 pub mod conversion;
+// Re-export introspection for macros and tests
+pub use interpreter::introspection;
 
 // Expose Parser for tests (restricted visibility not strictly enforced by test crate unless we re-export it)
 // Tests integration via `tests/` directory sees `eldritch_core` as an external crate.

@@ -1,5 +1,5 @@
 use super::super::ast::Value;
-use super::introspection::{get_type_name, is_truthy};
+use super::introspection::{find_best_match, get_type_name, is_truthy};
 use super::operations::compare_values;
 use alloc::collections::BTreeSet;
 use alloc::format;
@@ -671,10 +671,18 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             Ok(Value::Bool(cased))
         }
 
-        _ => Err(format!(
-            "Object of type '{}' has no method '{}'",
-            get_type_name(receiver),
-            method
-        )),
+        _ => {
+            let mut msg = format!(
+                "Object of type '{}' has no method '{}'",
+                get_type_name(receiver),
+                method
+            );
+            // Suggest similar methods
+            let candidates = get_native_methods(receiver);
+            if let Some(suggestion) = find_best_match(method, &candidates) {
+                msg.push_str(&format!("\nDid you mean '{suggestion}'?"));
+            }
+            Err(msg)
+        },
     }
 }
