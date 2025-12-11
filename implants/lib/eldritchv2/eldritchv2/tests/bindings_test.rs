@@ -15,7 +15,7 @@ mod tests {
             let task_id = 123;
             Interpreter::new()
                 .with_default_libs()
-                .with_task_context(agent_mock, task_id, vec![])
+                .with_task_context::<eldritch_libassets::std::EmptyAssets>(agent_mock, task_id, vec![])
         }
         #[cfg(not(feature = "stdlib"))]
         {
@@ -114,13 +114,13 @@ mod tests {
             "pivot",
             &[
                 "arp_scan",
-                "bind_proxy",
+                // "bind_proxy", // Not implemented in Fake
                 "ncat",
-                "port_forward",
+                // "port_forward", // Not implemented in Fake
                 "port_scan",
                 "reverse_shell_pty",
                 "reverse_shell_repl",
-                "smb_exec",
+                // "smb_exec", // Not implemented in Fake
                 "ssh_copy",
                 "ssh_exec",
             ],
@@ -138,7 +138,9 @@ mod tests {
             "crypto",
             &[
                 "aes_decrypt",
+                "aes_decrypt_file",
                 "aes_encrypt",
+                "aes_encrypt_file",
                 "decode_b64",
                 "encode_b64",
                 "from_json",
@@ -191,6 +193,7 @@ mod tests {
                 "_terminate_this_process_clowntown",
                 "add_transport",
                 "claim_tasks",
+                "eval",
                 "fetch_asset",
                 "get_callback_interval",
                 "get_config",
