@@ -41,6 +41,12 @@ pub struct TaskRegistry {
     tasks: Arc<Mutex<BTreeMap<i64, TaskHandle>>>,
 }
 
+impl Default for TaskRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TaskRegistry {
     pub fn new() -> Self {
         Self {
