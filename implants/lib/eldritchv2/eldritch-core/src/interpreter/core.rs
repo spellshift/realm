@@ -373,6 +373,7 @@ impl Interpreter {
                 // Case 2: Cursor is at an Identifier (completing current word)
                 // e.g. "fo" or "foo.b"
                 else if let TokenKind::Identifier(name) = &last_token.kind {
+                    #[allow(clippy::collapsible_if)]
                     if is_touching {
                         prefix = name.clone();
 
@@ -446,14 +447,12 @@ impl Interpreter {
             let mut is_dot_access = false;
             if !meaningful_tokens.is_empty() {
                 let last = meaningful_tokens[meaningful_tokens.len() - 1];
-                if last.kind == TokenKind::Dot {
+                if last.kind == TokenKind::Dot
+                    || (matches!(last.kind, TokenKind::Identifier(_))
+                        && meaningful_tokens.len() >= 2
+                        && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot)
+                {
                     is_dot_access = true;
-                } else if let TokenKind::Identifier(_) = last.kind {
-                    if meaningful_tokens.len() >= 2
-                        && meaningful_tokens[meaningful_tokens.len() - 2].kind == TokenKind::Dot
-                    {
-                        is_dot_access = true;
-                    }
                 }
             }
 
