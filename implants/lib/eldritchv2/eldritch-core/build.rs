@@ -46,7 +46,7 @@ fn generate_docs(user_guide_path: &std::path::Path, core_path: &str) -> std::io:
     let parts: Vec<&str> = current_content.split(split_token).collect();
 
     if parts.len() < 2 {
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Could not find '## Built-in Functions' section in user guide"));
+        return Err(std::io::Error::other("Could not find '## Built-in Functions' section in user guide"));
     }
 
     doc_content.push_str(parts[0]);
@@ -162,24 +162,23 @@ fn parse_methods_doc(path: &std::path::Path) -> std::io::Result<String> {
 
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("//: ") {
-            doc.push_str(&trimmed[4..]);
+        if let Some(content) = trimmed.strip_prefix("//: ") {
+            doc.push_str(content);
             doc.push('\n');
-        } else if trimmed.starts_with("// ") && !trimmed.starts_with("//: ") {
-             // Treat as markdown header or text if it looks like it
-             // Actually, my `methods.rs` structure uses `// Header` and `//: content`
-             if trimmed.starts_with("// ") {
-                 // Check if it's a header
-                 let text = &trimmed[3..];
-                 if text.chars().all(|c| c == '=') {
-                      // It's a separator line, ignore
-                 } else if text.chars().any(|c| c.is_alphanumeric()) {
-                      // Likely a header
-                      if !doc.ends_with("## ") { // Avoid double headers
-                          doc.push_str(&format!("### {}\n\n", text));
-                      }
-                 }
-             }
+        } else if let Some(text) = trimmed.strip_prefix("// ") {
+            // Treat as markdown header or text if it looks like it
+            // Actually, my `methods.rs` structure uses `// Header` and `//: content`
+
+            // Check if it's a header
+            if text.chars().all(|c| c == '=') {
+                // It's a separator line, ignore
+            } else if text.chars().any(|c| c.is_alphanumeric()) {
+                // Likely a header
+                if !doc.ends_with("## ") {
+                    // Avoid double headers
+                    doc.push_str(&format!("### {}\n\n", text));
+                }
+            }
         }
     }
 
@@ -320,7 +319,6 @@ fn extract_library_name(content: &str) -> Option<String> {
 fn extract_library_doc(content: &str) -> String {
     // Extract comments above `pub trait`
     let mut doc = String::new();
-    let mut capture = false;
     let mut buffer = Vec::new();
 
     for line in content.lines() {

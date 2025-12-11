@@ -384,6 +384,7 @@ fn evaluate_getattr(
 
     // Support dot access for dictionary keys (useful for modules)
     if let Value::Dictionary(d) = &obj_val {
+        #[allow(clippy::collapsible_if)]
         if let Some(val) = d.read().get(&Value::String(name.clone())) {
             return Ok(val.clone());
         }
@@ -657,13 +658,11 @@ fn call_function(
                     foreign
                         .call_method(interp, &method_name, args_slice, &kw_args_val)
                         .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
+                } else if !kw_args_val.is_empty() {
+                    Err(EldritchError::new(EldritchErrorKind::TypeError, "BoundMethod does not accept keyword arguments", span).with_stack(interp.call_stack.clone()))
                 } else {
-                    if !kw_args_val.is_empty() {
-                        Err(EldritchError::new(EldritchErrorKind::TypeError, "BoundMethod does not accept keyword arguments", span).with_stack(interp.call_stack.clone()))
-                    } else {
-                        call_bound_method(&receiver, &method_name, args_slice)
-                            .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
-                    }
+                    call_bound_method(&receiver, &method_name, args_slice)
+                        .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
                 }
             };
             interp.pop_frame();
