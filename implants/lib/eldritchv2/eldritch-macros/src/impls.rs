@@ -107,7 +107,15 @@ pub fn expand_eldritch_library(
         ) -> Result<eldritch_core::Value, alloc::string::String> {
             match name {
                 #(#method_dispatches)*
-                _ => Err(alloc::format!("Method '{}' not found or not exposed", name)),
+                _ => {
+                    let mut msg = alloc::format!("Method '{}' not found or not exposed", name);
+                    let candidates = self._eldritch_method_names();
+                    if let Some(suggestion) = eldritch_core::introspection::find_best_match(name, &candidates) {
+                        use core::fmt::Write;
+                        let _ = write!(msg, "\nDid you mean '{}'?", suggestion);
+                    }
+                    Err(msg)
+                }
             }
         }
     });

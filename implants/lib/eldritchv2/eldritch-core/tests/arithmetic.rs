@@ -180,3 +180,17 @@ fn test_string_interpolation() {
     assert_eq("%d%%" % 100, "100%")
     "#);
 }
+
+#[test]
+fn test_div_zero_checks() {
+    assert::fail("1.0 / 0", "divide by zero");
+    assert::fail("1 / 0.0", "divide by zero");
+    assert::fail("1.0 / 0.0", "divide by zero");
+
+    // Also check floor div and modulo as implemented in the fix
+    assert::fail("1.0 // 0", "divide by zero");
+    assert::fail("1 // 0.0", "divide by zero");
+
+    assert::fail("1.0 % 0", "modulo by zero");
+    assert::fail("1 % 0.0", "modulo by zero");
+}

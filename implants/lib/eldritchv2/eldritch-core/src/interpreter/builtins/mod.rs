@@ -33,6 +33,7 @@ mod min;
 mod repr;
 mod reversed;
 mod set;
+mod tprint;
 mod tuple;
 mod zip;
 
@@ -42,6 +43,7 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("print", print::builtin_print as BuiltinFn),
         ("eprint", eprint::builtin_eprint as BuiltinFn),
         ("pprint", pprint::builtin_pprint as BuiltinFn),
+        ("tprint", tprint::builtin_tprint as BuiltinFn),
         ("len", len::builtin_len as BuiltinFn),
         ("range", range::builtin_range as BuiltinFn),
         ("type", type_::builtin_type as BuiltinFn),
