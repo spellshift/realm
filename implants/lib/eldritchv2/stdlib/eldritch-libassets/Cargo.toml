@@ -14,9 +14,8 @@ rust-embed = { version = "8.0" }
 [features]
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
-fake_bindings = []
+fake_bindings = ["eldritch-libagent/fake_bindings"]
 stdlib = ["eldritch-libagent/stdlib"]
 
 [dev-dependencies]
 tempfile = "3.3"
-eldritch-libagent = { workspace = true, features = ["fake_bindings", "stdlib"] }
