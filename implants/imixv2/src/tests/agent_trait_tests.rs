@@ -167,11 +167,7 @@ async fn test_imix_agent_claim_tasks() {
     let agent = ImixAgent::new(config, transport, handle, registry);
 
     let agent_clone = agent.clone();
-    std::thread::spawn(move || {
-        let _ = agent_clone.claim_tasks();
-    })
-    .join()
-    .unwrap();
+    let _ = agent_clone.claim_tasks().await.unwrap();
 }
 
 #[tokio::test]

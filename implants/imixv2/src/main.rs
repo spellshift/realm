@@ -18,13 +18,13 @@ pub use transport::{ActiveTransport, Transport};
 
 mod agent;
 mod assets;
+mod install;
+mod run;
 mod shell;
 mod task;
 #[cfg(test)]
 mod tests;
 mod version;
-mod run;
-mod install;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -32,12 +32,15 @@ async fn main() -> Result<()> {
 
     #[cfg(feature = "install")]
     {
+        #[cfg(debug_assertions)]
+        log::info!("beginning installation");
+
         if std::env::args().any(|arg| arg == "install") {
             return install::install().await;
         }
     }
 
-    #[cfg(feature = "win_service")]
+    #[cfg(all(feature = "win_service", windows))]
     match windows_service::service_dispatcher::start("imixv2", ffi_service_main) {
         Ok(_) => {
             return Ok(());
@@ -52,14 +55,10 @@ async fn main() -> Result<()> {
 }
 
 // ============ Windows Service =============
-
-#[cfg(all(feature = "win_service", not(target_os = "windows")))]
-compile_error!("Feature win_service is only available on windows targets");
-
-#[cfg(feature = "win_service")]
+#[cfg(all(feature = "win_service", windows))]
 define_windows_service!(ffi_service_main, service_main);
 
-#[cfg(feature = "win_service")]
+#[cfg(all(feature = "win_service", windows))]
 #[tokio::main]
 async fn service_main(arguments: Vec<std::ffi::OsString>) {
     crate::win_service::handle_service_main(arguments);

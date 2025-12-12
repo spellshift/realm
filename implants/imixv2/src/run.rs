@@ -1,13 +1,13 @@
 use anyhow::Result;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
+use crate::version::VERSION;
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
-use crate::version::VERSION;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
@@ -28,6 +28,9 @@ pub async fn run_agent() -> Result<()> {
         handle,
         task_registry.clone(),
     ));
+
+    #[cfg(debug_assertions)]
+    log::info!("Agent initialized");
 
     while !SHUTDOWN.load(Ordering::Relaxed) {
         let start = Instant::now();
@@ -122,7 +125,7 @@ async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Insta
     };
     #[cfg(debug_assertions)]
     log::info!(
-        "callback complete (duration={}s, sleep={}s)",
+        "Callback complete (duration={}s, sleep={}s)",
         start.elapsed().as_secs(),
         delay.as_secs()
     );

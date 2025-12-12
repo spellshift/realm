@@ -631,7 +631,7 @@ fn check_path(
     path: &Path,
     name: &Option<String>,
     file_type: &Option<String>,
-    permissions: Option<i64>,
+    _permissions: Option<i64>,
     modified_time: Option<i64>,
     create_time: Option<i64>,
 ) -> AnyhowResult<bool> {
@@ -655,14 +655,12 @@ fn check_path(
     }
 
     // Note: Permissions check on V1 was strict (==).
-    if let Some(p) = permissions {
-        #[cfg(unix)]
-        {
-            use ::std::os::unix::fs::PermissionsExt;
-            let meta = path.metadata()?;
-            if (meta.permissions().mode() & 0o777) as i64 != p {
-                return Ok(false);
-            }
+    #[cfg(unix)]
+    if let Some(p) = _permissions {
+        use ::std::os::unix::fs::PermissionsExt;
+        let meta = path.metadata()?;
+        if (meta.permissions().mode() & 0o777) as i64 != p {
+            return Ok(false);
         }
     }
 
@@ -831,12 +829,8 @@ fn apply_timestamps(
     atime: Option<::std::time::SystemTime>,
     ctime: Option<::std::time::SystemTime>,
 ) -> AnyhowResult<()> {
-    use std::os::windows::prelude::OsStrExt;
-    use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, INVALID_HANDLE_VALUE};
-    use windows_sys::Win32::Storage::FileSystem::{
-        CreateFileA, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_READ, FILE_SHARE_WRITE,
-        FILE_WRITE_ATTRIBUTES, OPEN_EXISTING, SetFileTime,
-    };
+    use windows_sys::Win32::Foundation::{FILETIME, HANDLE};
+    use windows_sys::Win32::Storage::FileSystem::SetFileTime;
 
     // We need to open the file handle
     // windows-sys takes raw pointers.

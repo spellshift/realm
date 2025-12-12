@@ -2,8 +2,6 @@
 use anyhow::Result;
 #[cfg(feature = "install")]
 use eldritchv2::Interpreter;
-#[cfg(feature = "install")]
-use eldritch_libassets::RustEmbed;
 
 #[cfg(feature = "install")]
 pub async fn install() -> Result<()> {
@@ -35,11 +33,11 @@ pub async fn install() -> Result<()> {
             match interpreter.interpret(&content) {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
-                    log::info!("Successfully executed {}", embedded_file_path);
-                },
-                Err(e) => {
+                    log::info!("Successfully executed {embedded_file_path}");
+                }
+                Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("Failed to execute {}: {}", embedded_file_path, e);
+                    log::error!("Failed to execute {embedded_file_path}: {_e}");
                 }
             }
         }
@@ -49,10 +47,10 @@ pub async fn install() -> Result<()> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "install")]
 mod tests {
     use super::*;
 
-    #[cfg(feature = "install")]
     #[tokio::test]
     async fn test_install_execution() {
         let result = install().await;
