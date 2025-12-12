@@ -1,8 +1,4 @@
-#[cfg(target_os = "windows")]
-use alloc::format;
 use alloc::string::String;
-#[cfg(target_os = "windows")]
-use alloc::string::ToString;
 #[cfg(target_os = "windows")]
 use alloc::vec::Vec;
 use anyhow::Result;
@@ -22,7 +18,7 @@ pub fn write_reg_hex(
 
     #[cfg(target_os = "windows")]
     {
-        use winreg::{enums::*, RegKey, RegValue};
+        use winreg::{RegKey, RegValue, enums::*};
 
         let ihive: isize = match reghive.as_ref() {
             "HKEY_CLASSES_ROOT" => HKEY_CLASSES_ROOT,
@@ -35,8 +31,11 @@ pub fn write_reg_hex(
             "HKEY_CURRENT_CONFIG" => HKEY_CURRENT_CONFIG,
             "HKEY_DYN_DATA" => HKEY_DYN_DATA,
             "HKEY_CURRENT_USER_LOCAL_SETTINGS" => HKEY_CURRENT_USER_LOCAL_SETTINGS,
-            _ => return Err(anyhow::anyhow!("RegHive can only be one of the following values - HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS ")),
-
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "RegHive can only be one of the following values - HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS "
+                ));
+            }
         };
 
         let hive = RegKey::predef(ihive);
@@ -45,52 +44,77 @@ pub fn write_reg_hex(
         match regtype.as_ref() {
             "REG_NONE" => {
                 nkey.set_value(regname, &regvalue)?;
-            },
+            }
             "REG_SZ" => nkey.set_value(regname, &regvalue)?,
             "REG_EXPAND_SZ" => nkey.set_value(regname, &regvalue)?,
             "REG_BINARY" => {
                 let parsed_value: Vec<u8> = hex::decode(regvalue)?;
-                let data = RegValue{ vtype: REG_BINARY, bytes: parsed_value};
+                let data = RegValue {
+                    vtype: REG_BINARY,
+                    bytes: parsed_value,
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
+            }
             "REG_DWORD" => {
                 let parsed_value: Vec<u8> = hex::decode(regvalue)?;
-                let data = RegValue{ vtype: REG_DWORD, bytes: parsed_value};
+                let data = RegValue {
+                    vtype: REG_DWORD,
+                    bytes: parsed_value,
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
+            }
             "REG_DWORD_BIG_ENDIAN" => {
                 let parsed_value: u32 = u32::from_str_radix(&regvalue, 16)?;
-                let data = RegValue{ vtype: REG_DWORD_BIG_ENDIAN, bytes: parsed_value.to_be_bytes().to_vec()};
+                let data = RegValue {
+                    vtype: REG_DWORD_BIG_ENDIAN,
+                    bytes: parsed_value.to_be_bytes().to_vec(),
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
+            }
             "REG_LINK" => {
                 nkey.set_value(regname, &regvalue)?;
-            },
+            }
             "REG_MULTI_SZ" => {
                 let parsed_value: Vec<&str> = regvalue.split(',').collect();
                 nkey.set_value(regname, &parsed_value)?;
-            },
+            }
             "REG_RESOURCE_LIST" => {
                 let parsed_value: Vec<u8> = hex::decode(regvalue)?;
-                let data = RegValue{ vtype: REG_RESOURCE_LIST, bytes: parsed_value};
+                let data = RegValue {
+                    vtype: REG_RESOURCE_LIST,
+                    bytes: parsed_value,
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
+            }
             "REG_FULL_RESOURCE_DESCRIPTOR" => {
                 let parsed_value: Vec<u8> = hex::decode(regvalue)?;
-                let data = RegValue{ vtype: REG_FULL_RESOURCE_DESCRIPTOR, bytes: parsed_value};
+                let data = RegValue {
+                    vtype: REG_FULL_RESOURCE_DESCRIPTOR,
+                    bytes: parsed_value,
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
+            }
             "REG_RESOURCE_REQUIREMENTS_LIST" => {
                 let parsed_value: Vec<u8> = hex::decode(regvalue)?;
-                let data = RegValue{ vtype: REG_RESOURCE_REQUIREMENTS_LIST, bytes: parsed_value};
+                let data = RegValue {
+                    vtype: REG_RESOURCE_REQUIREMENTS_LIST,
+                    bytes: parsed_value,
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
+            }
             "REG_QWORD" => {
                 let parsed_value: u64 = u64::from_str_radix(&regvalue, 16)?;
-                let data = RegValue{ vtype: REG_QWORD, bytes: parsed_value.to_le_bytes().to_vec()};
+                let data = RegValue {
+                    vtype: REG_QWORD,
+                    bytes: parsed_value.to_le_bytes().to_vec(),
+                };
                 nkey.set_raw_value(regname, &data)?;
-            },
-            _ => return Err(anyhow::anyhow!("RegType can only be one of the following values - REG_NONE, REG_SZ, REG_EXPAND_SZ, REG_BINARY, REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_LINK, REG_MULTI_SZ, REG_RESOURCE_LIST, REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR, REG_QWORD. ")),
+            }
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "RegType can only be one of the following values - REG_NONE, REG_SZ, REG_EXPAND_SZ, REG_BINARY, REG_DWORD, REG_DWORD_BIG_ENDIAN, REG_LINK, REG_MULTI_SZ, REG_RESOURCE_LIST, REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR, REG_QWORD. "
+                ));
+            }
         };
 
         Ok(true)
@@ -105,8 +129,9 @@ mod tests {
     fn test_write_reg_hex() -> anyhow::Result<()> {
         {
             use super::*;
+            use alloc::format;
             use uuid::Uuid;
-            use winreg::{enums::*, RegKey};
+            use winreg::{RegKey, enums::*};
 
             let id = Uuid::new_v4();
 
@@ -318,6 +343,10 @@ mod tests {
             "deadbeef".into(),
         );
         assert!(res.is_err());
-        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
+        assert!(
+            res.unwrap_err()
+                .to_string()
+                .contains("Only windows systems are supported")
+        );
     }
 }

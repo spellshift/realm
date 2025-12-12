@@ -6,6 +6,7 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
@@ -32,6 +33,18 @@ pub struct Interpreter {
     pub depth: usize,
     pub call_stack: Vec<StackFrame>,
     pub current_func_name: String,
+    pub is_scope_owner: bool,
+}
+
+impl Drop for Interpreter {
+    fn drop(&mut self) {
+        if self.is_scope_owner {
+            // Break reference cycles by clearing the environment values.
+            // This drops all variables including functions, which may hold references back to the environment.
+            self.env.write().values.clear();
+            self.env.write().parent = None;
+        }
+    }
 }
 
 impl Default for Interpreter {
@@ -59,6 +72,7 @@ impl Interpreter {
             depth: 0,
             call_stack: Vec::new(),
             current_func_name: "<module>".to_string(),
+            is_scope_owner: true,
         };
 
         interpreter.load_builtins();
@@ -95,10 +109,7 @@ impl Interpreter {
     pub fn register_module(&mut self, name: &str, module: Value) {
         // Ensure the value is actually a dictionary or structurally appropriate for a module
         // We accept any Value, but practically it should be a Dictionary of functions
-        self.env
-            .write()
-            .values
-            .insert(name.to_string(), module);
+        self.env.write().values.insert(name.to_string(), module);
     }
 
     pub fn register_lib(&mut self, val: impl ForeignValue + 'static) {
@@ -383,9 +394,7 @@ impl Interpreter {
                         match &obj_token.kind {
                             TokenKind::Identifier(name) => {
                                 // Resolve variable
-                                if let Ok(val) =
-                                    self.lookup_variable(name, Span::new(0, 0, 0))
-                                {
+                                if let Ok(val) = self.lookup_variable(name, Span::new(0, 0, 0)) {
                                     target_val = Some(val);
                                 }
                             }
@@ -412,10 +421,9 @@ impl Interpreter {
                                 let obj_token = meaningful_tokens[meaningful_tokens.len() - 3];
                                 match &obj_token.kind {
                                     TokenKind::Identifier(obj_name) => {
-                                        if let Ok(val) = self.lookup_variable(
-                                            obj_name,
-                                            Span::new(0, 0, 0),
-                                        ) {
+                                        if let Ok(val) =
+                                            self.lookup_variable(obj_name, Span::new(0, 0, 0))
+                                        {
                                             target_val = Some(val);
                                         }
                                     }

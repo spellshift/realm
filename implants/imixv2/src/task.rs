@@ -4,7 +4,7 @@ use std::thread;
 use std::time::SystemTime;
 
 use eldritch_libagent::agent::Agent;
-use eldritchv2::{conversion::ToValue, Interpreter, Printer, Span};
+use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
@@ -67,6 +67,9 @@ impl TaskRegistry {
         let runtime_handle = tokio::runtime::Handle::current();
 
         // 2. Spawn thread
+        #[cfg(debug_assertions)]
+        log::info!("Spawning Task: {task_id}");
+
         thread::spawn(move || {
             if let Some(tome) = task.tome {
                 execute_task(task_id, tome, agent, runtime_handle);
@@ -130,7 +133,8 @@ fn execute_task(
     report_start(task_id, &agent);
 
     // Spawn output consumer task
-    let consumer_join_handle = spawn_output_consumer(task_id, agent.clone(), runtime_handle.clone(), rx);
+    let consumer_join_handle =
+        spawn_output_consumer(task_id, agent.clone(), runtime_handle.clone(), rx);
 
     // Run Interpreter with panic protection
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -148,7 +152,7 @@ fn execute_task(
     match result {
         Ok(exec_result) => report_result(task_id, exec_result, &agent),
         Err(_) => {
-             report_panic(task_id, &agent);
+            report_panic(task_id, &agent);
         }
     }
 }
@@ -178,6 +182,9 @@ fn setup_interpreter(
 }
 
 fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
+    #[cfg(debug_assertions)]
+    log::info!("task={task_id} Started execution");
+
     let _ = agent.report_task_output(ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
@@ -196,6 +203,9 @@ fn spawn_output_consumer(
     mut rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
+        #[cfg(debug_assertions)]
+        log::info!("task={task_id} Started output stream");
+
         while let Some(msg) = rx.recv().await {
             let _ = agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
@@ -215,17 +225,25 @@ fn report_panic(task_id: i64, agent: &Arc<dyn Agent>) {
         output: Some(TaskOutput {
             id: task_id,
             output: String::new(),
-            error: Some(TaskError { msg: "Task execution panicked".to_string() }),
+            error: Some(TaskError {
+                msg: "Task execution panicked".to_string(),
+            }),
             exec_started_at: None,
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
     });
 }
 
-fn report_result(task_id: i64, result: Result<eldritch_core::Value, String>, agent: &Arc<dyn Agent>) {
+fn report_result(
+    task_id: i64,
+    result: Result<eldritch_core::Value, String>,
+    agent: &Arc<dyn Agent>,
+) {
     match result {
         Ok(v) => {
-            // Report task completion FIRST before any potential panics from logging
+            #[cfg(debug_assertions)]
+            log::info!("task={task_id} Success: {v}");
+
             let _ = agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
@@ -235,9 +253,11 @@ fn report_result(task_id: i64, result: Result<eldritch_core::Value, String>, age
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
             });
-            log::info!("Task Success: {v}");
         }
         Err(e) => {
+            #[cfg(debug_assertions)]
+            log::info!("task={task_id} Error: {e}");
+
             let _ = agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,

