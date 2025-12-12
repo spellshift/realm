@@ -205,19 +205,6 @@ where
     }
 }
 
-// Function trait and adapter
-pub trait EldritchFunction<Marker> {
-    fn call(&self, args: &[Value]) -> Result<Value, String>;
-}
-
-// Call stub helper
-pub fn call_stub<Marker, F>(f: F, args: &[Value]) -> Result<Value, String>
-where
-    F: EldritchFunction<Marker>,
-{
-    f.call(args)
-}
-
 // Helper to get type name (duplicate from utils but avoids public exposure of utils)
 fn get_type_name(v: &Value) -> &'static str {
     match v {
@@ -239,45 +226,3 @@ fn get_type_name(v: &Value) -> &'static str {
     }
 }
 
-// Macro to implement EldritchFunction for tuples of arguments
-macro_rules! impl_eldritch_fn {
-    ($($arg:ident),*) => {
-        #[allow(non_snake_case)]
-        #[allow(unused_mut)]
-        #[allow(unused_variables)]
-        impl<Func, Ret, $($arg),*> EldritchFunction<($($arg,)*)> for Func
-        where
-            Func: Fn($($arg),*) -> Ret,
-            Ret: IntoEldritchResult,
-            $($arg: FromValue),*
-        {
-            fn call(&self, args: &[Value]) -> Result<Value, String> {
-                // Count args
-                let expected_len = 0 $( + { let _ = stringify!($arg); 1 } )*;
-                if args.len() != expected_len {
-                    return Err(format!("Expected {} arguments, got {}", expected_len, args.len()));
-                }
-
-                let mut args_iter = args.iter();
-                // We use a closure to capture errors during extraction
-                let res = self(
-                    $(
-                        match $arg::from_value(args_iter.next().unwrap()) {
-                            Ok(v) => v,
-                            Err(e) => return Err(e),
-                        },
-                    )*
-                );
-                res.into_eldritch_result()
-            }
-        }
-    }
-}
-
-impl_eldritch_fn!();
-impl_eldritch_fn!(A);
-impl_eldritch_fn!(A, B);
-impl_eldritch_fn!(A, B, C);
-impl_eldritch_fn!(A, B, C, D);
-impl_eldritch_fn!(A, B, C, D, E);
-impl_eldritch_fn!(A, B, C, D, E, F);
