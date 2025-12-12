@@ -8,6 +8,7 @@ crate-type = ["cdylib"]
 
 [features]
 win_service = []
+install = []
 
 [dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
