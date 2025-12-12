@@ -73,7 +73,7 @@ fn test_core_builtins() {
     "#,
     );
 
-    assert::fail("len(1)", "not defined for type");
+    assert::fail("len(1)", "object of type 'int' has no len()");
 }
 
 #[test]
@@ -165,8 +165,8 @@ fn test_type_regression() {
     assert::pass(r#"
         assert(type(1) == "int")
     "#);
-    assert::fail("type()", "expects exactly one argument");
-    assert::fail("type(1, 2)", "expects exactly one argument");
+    assert::fail("type()", "takes exactly 1 argument");
+    assert::fail("type(1, 2)", "takes exactly 1 argument");
 }
 
 #[test]

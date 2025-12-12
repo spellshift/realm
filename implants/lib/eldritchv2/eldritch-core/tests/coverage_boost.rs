@@ -57,7 +57,7 @@ fn test_coverage_utils() {
 #[test]
 fn test_coverage_builtins() {
     assert::fail("int([])", "argument must be a string, bytes or number");
-    assert::fail("range()", "Range expects 1-3 integer arguments");
+    assert::fail("range()", "range expects 1-3 integer arguments");
     // This now works because range supports 1, 2, or 3 args
     // assert::fail("range(1, 2, 3)", "Range expects one or two integer arguments");
     assert::pass("range(1, 2, 3)");
@@ -71,7 +71,7 @@ fn test_coverage_builtins() {
         assert(len((1, 2, 3)) == 3)
     "#,
     );
-    assert::fail("len(1)", "is not defined for type");
+    assert::fail("len(1)", "object of type 'int' has no len()");
 
     assert::pass(
         r#"
@@ -165,14 +165,14 @@ fn test_coverage_interpreter_edge_cases() {
 
     // Slice step 0
     assert::fail("[][::0]", "slice step cannot be zero");
-    assert::fail("[][::'a']", "Slice step must be integer");
-    assert::fail("[][:'a']", "Slice stop must be integer");
-    assert::fail("[][ 'a':]", "Slice start must be integer");
-    assert::fail("1[::]", "Type not sliceable");
+    assert::fail("[][::'a']", "slice step must be an integer");
+    assert::fail("[][:'a']", "slice stop must be an integer");
+    assert::fail("[][ 'a':]", "slice start must be an integer");
+    assert::fail("1[::]", "'int' object is not subscriptable");
 
     // Indexing
-    assert::fail("1[0]", "Type not subscriptable");
-    assert::fail("[][ 'a' ]", "List indices must be integers");
+    assert::fail("1[0]", "'int' object is not subscriptable");
+    assert::fail("[][ 'a' ]", "list indices must be integers");
     // assert::fail("{}[ 1 ]", "Dictionary keys must be strings");
 
     // Dot access tests
@@ -188,9 +188,9 @@ fn test_coverage_interpreter_edge_cases() {
     assert::fail("{}.a()", "has no method 'a'");
 
     // Augmented assignment errors
-    assert::fail("a = 1; a += 's'", "Unsupported binary op");
-    assert::fail("l=[1]; l[0] += 's'", "Unsupported binary op");
-    assert::fail("d={'a':1}; d['a'] += 's'", "Unsupported binary op");
+    assert::fail("a = 1; a += 's'", "unsupported operand type(s) for +: 'int' and 'string'");
+    assert::fail("l=[1]; l[0] += 's'", "unsupported operand type(s) for +: 'int' and 'string'");
+    assert::fail("d={'a':1}; d['a'] += 's'", "unsupported operand type(s) for +: 'int' and 'string'");
 }
 
 #[test]
