@@ -35,10 +35,10 @@ impl RegexLibrary for StdRegexLibrary {
                 "only 1 capture group is supported but {num_capture_groups} given",
             ));
         }
-        if let Some(captures) = re.captures(&haystack) {
-            if let Some(m) = captures.get(1) {
-                return Ok(String::from(m.as_str()));
-            }
+        if let Some(captures) = re.captures(&haystack)
+            && let Some(m) = captures.get(1)
+        {
+            return Ok(String::from(m.as_str()));
         }
         Ok(String::new())
     }

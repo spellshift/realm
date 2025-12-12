@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use crate::Interpreter;
     use eldritch_core::Value;
-    use eldritchv2::Interpreter;
     use spin::RwLock;
     use std::collections::BTreeMap;
     use std::sync::Arc;

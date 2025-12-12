@@ -211,3 +211,9 @@ impl Interpreter {
         self.inner.complete(code, cursor)
     }
 }
+
+#[cfg(all(test, feature = "fake_bindings"))]
+mod bindings_test;
+
+#[cfg(all(test, feature = "fake_bindings"))]
+mod input_params_test;
