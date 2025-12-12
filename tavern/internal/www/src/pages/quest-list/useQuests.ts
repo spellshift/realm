@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { Filters, useFilters } from "../../context/FilterContext";
-import { constructQuestFilterQuery, constructTaskFilterQuery, constructTomeFilterQuery } from "../../utils/constructQueryUtils";
+import { constructQuestFilterQuery, constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, GetQuestQueryVariables, OrderByField, QuestQueryTopLevel } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
 
