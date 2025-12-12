@@ -26,7 +26,7 @@ fn test_eval_index_out_of_bounds() {
     // Eldritch doesn't seem to support string indexing in eval.rs yet?
     // Wait, evaluate_index only handles List, Tuple, Dictionary.
     // Let's verify this failure.
-    assert::fail("'abc'[0]", "Type not subscriptable");
+    assert::fail("'abc'[0]", "'string' object is not subscriptable");
 }
 
 #[test]
@@ -34,7 +34,7 @@ fn test_string_format_errors() {
     assert::fail("'%d' % 's'", "%d format: a number is required");
     assert::fail("'%s' % (1, 2)", "not all arguments converted");
     assert::fail("'%' % 1", "incomplete format");
-    assert::fail("'%q' % 1", "Unsupported format specifier");
+    assert::fail("'%q' % 1", "unsupported format character 'q'");
 }
 
 #[test]

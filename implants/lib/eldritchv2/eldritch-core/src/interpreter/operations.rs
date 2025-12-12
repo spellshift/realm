@@ -290,7 +290,7 @@ pub(crate) fn apply_arithmetic_op(
             Ok(Value::Int(res))
         }
 
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("Unsupported operand types for {}: {} and {}",
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("unsupported operand type(s) for {}: '{}' and '{}'",
             match op {
                 TokenKind::Plus => "+",
                 TokenKind::Minus => "-",
@@ -359,7 +359,14 @@ pub(crate) fn apply_comparison_op(
                     // Mismatched types
                     if core::mem::discriminant(a) != core::mem::discriminant(b) {
                          return interp.error(EldritchErrorKind::TypeError, &format!(
-                            "Type mismatch or unsortable types: {} <-> {}",
+                            "'{}' not supported between instances of '{}' and '{}'",
+                            match op {
+                                TokenKind::Lt => "<",
+                                TokenKind::Gt => ">",
+                                TokenKind::LtEq => "<=",
+                                TokenKind::GtEq => ">=",
+                                _ => unreachable!(),
+                            },
                             get_type_name(a),
                             get_type_name(b)
                         ), span);
@@ -425,7 +432,15 @@ pub(crate) fn apply_bitwise_op(
             Ok(Value::Dictionary(Arc::new(RwLock::new(new_dict))))
         }
         _ => interp.error(EldritchErrorKind::TypeError, &format!(
-            "Unsupported operand types for bitwise op: {} and {}",
+            "unsupported operand type(s) for {}: '{}' and '{}'",
+            match op {
+                TokenKind::BitAnd => "&",
+                TokenKind::BitOr => "|",
+                TokenKind::BitXor => "^",
+                TokenKind::LShift => "<<",
+                TokenKind::RShift => ">>",
+                _ => "?",
+            },
             get_type_name(a), get_type_name(b)
         ), span),
     }

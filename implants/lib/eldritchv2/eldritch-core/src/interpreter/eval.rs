@@ -220,7 +220,7 @@ fn evaluate_index(
         Value::List(l) => {
             let idx_int = match idx_val {
                 Value::Int(i) => i,
-                _ => return interp.error(EldritchErrorKind::TypeError, "List indices must be integers", index.span),
+                _ => return interp.error(EldritchErrorKind::TypeError, "list indices must be integers", index.span),
             };
             let list = l.read();
             let true_idx = if idx_int < 0 {
@@ -236,7 +236,7 @@ fn evaluate_index(
         Value::Tuple(t) => {
             let idx_int = match idx_val {
                 Value::Int(i) => i,
-                _ => return interp.error(EldritchErrorKind::TypeError, "Tuple indices must be integers", index.span),
+                _ => return interp.error(EldritchErrorKind::TypeError, "tuple indices must be integers", index.span),
             };
             let true_idx = if idx_int < 0 {
                 t.len() as i64 + idx_int
@@ -255,7 +255,7 @@ fn evaluate_index(
                 None => interp.error(EldritchErrorKind::KeyError, &format!("KeyError: '{idx_val}'"), span),
             }
         }
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("Type not subscriptable: {obj_val:?}"), obj.span),
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("'{}' object is not subscriptable", get_type_name(&obj_val)), obj.span),
     }
 }
 
@@ -272,7 +272,7 @@ fn evaluate_slice(
     let step_val = if let Some(s) = step {
         match evaluate(interp, s)? {
             Value::Int(i) => i,
-            _ => return interp.error(EldritchErrorKind::TypeError, "Slice step must be integer", s.span),
+            _ => return interp.error(EldritchErrorKind::TypeError, "slice step must be an integer", s.span),
         }
     } else {
         1
@@ -285,7 +285,7 @@ fn evaluate_slice(
     let start_val_opt = if let Some(s) = start {
         match evaluate(interp, s)? {
             Value::Int(i) => Some(i),
-            _ => return interp.error(EldritchErrorKind::TypeError, "Slice start must be integer", s.span),
+            _ => return interp.error(EldritchErrorKind::TypeError, "slice start must be an integer", s.span),
         }
     } else {
         None
@@ -294,7 +294,7 @@ fn evaluate_slice(
     let stop_val_opt = if let Some(s) = stop {
         match evaluate(interp, s)? {
             Value::Int(i) => Some(i),
-            _ => return interp.error(EldritchErrorKind::TypeError, "Slice stop must be integer", s.span),
+            _ => return interp.error(EldritchErrorKind::TypeError, "slice stop must be an integer", s.span),
         }
     } else {
         None
@@ -371,7 +371,7 @@ fn evaluate_slice(
             }
             Ok(Value::String(result_chars.into_iter().collect()))
         }
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("Type not sliceable: {obj_val:?}"), obj.span),
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("'{}' object is not subscriptable", get_type_name(&obj_val)), obj.span),
     }
 }
 
@@ -511,7 +511,10 @@ fn call_function(
                  interp.push_frame("<native>", span);
             }
 
-            let res = f(&interp.env, args_slice).map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+            let res = f(&interp.env, args_slice).map_err(|e| {
+                let (kind, msg) = parse_error_kind(&e);
+                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+            });
             interp.pop_frame();
             res
         }
@@ -522,7 +525,10 @@ fn call_function(
             } else {
                  interp.push_frame("<native>", span);
             }
-            let res = f(&interp.env, args_slice, &kw_args_val).map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+            let res = f(&interp.env, args_slice, &kw_args_val).map_err(|e| {
+                let (kind, msg) = parse_error_kind(&e);
+                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+            });
             interp.pop_frame();
             res
         }
@@ -624,7 +630,7 @@ fn call_function(
                     keys.sort();
                     return interp.error(
                         EldritchErrorKind::TypeError,
-                        &format!("Function '{name}' got unexpected keyword arguments: {keys:?}"),
+                        &format!("{}() got an unexpected keyword argument '{}'", name, keys[0]),
                         span,
                     );
                 }
@@ -657,12 +663,18 @@ fn call_function(
                 if let Value::Foreign(foreign) = receiver.as_ref() {
                     foreign
                         .call_method(interp, &method_name, args_slice, &kw_args_val)
-                        .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
+                        .map_err(|e| {
+                            let (kind, msg) = parse_error_kind(&e);
+                            EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                        })
                 } else if !kw_args_val.is_empty() {
                     Err(EldritchError::new(EldritchErrorKind::TypeError, "BoundMethod does not accept keyword arguments", span).with_stack(interp.call_stack.clone()))
                 } else {
                     call_bound_method(&receiver, &method_name, args_slice)
-                        .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
+                        .map_err(|e| {
+                            let (kind, msg) = parse_error_kind(&e);
+                            EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                        })
                 }
             };
             interp.pop_frame();
@@ -875,7 +887,10 @@ fn call_value(
              // Push stack frame
              // Native function name?
              interp.push_frame("<native>", span);
-            let res = f(&interp.env, args).map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+            let res = f(&interp.env, args).map_err(|e| {
+                let (kind, msg) = parse_error_kind(&e);
+                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+            });
             interp.pop_frame();
             res
         }
@@ -913,11 +928,14 @@ fn call_value(
         Value::BoundMethod(receiver, method_name) => {
              interp.push_frame(method_name, span);
              let res = call_bound_method(receiver, method_name, args)
-                .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()));
+                .map_err(|e| {
+                    let (kind, msg) = parse_error_kind(&e);
+                    EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                });
              interp.pop_frame();
              res
         },
-        _ => interp.error(EldritchErrorKind::TypeError, "not callable", span),
+        _ => interp.error(EldritchErrorKind::TypeError, &format!("'{}' object is not callable", get_type_name(func)), span),
     }
 }
 
@@ -1278,7 +1296,25 @@ fn apply_binary_op(
             }
         }
 
-        _ => interp.error(EldritchErrorKind::TypeError, "Unsupported binary op", span),
+        (val_a, op_kind, val_b) => interp.error(EldritchErrorKind::TypeError, &format!(
+            "unsupported operand type(s) for {}: '{}' and '{}'",
+            match op_kind {
+                 TokenKind::Plus => "+",
+                 TokenKind::Minus => "-",
+                 TokenKind::Star => "*",
+                 TokenKind::Slash => "/",
+                 TokenKind::SlashSlash => "//",
+                 TokenKind::Percent => "%",
+                 TokenKind::BitAnd => "&",
+                 TokenKind::BitOr => "|",
+                 TokenKind::BitXor => "^",
+                 TokenKind::LShift => "<<",
+                 TokenKind::RShift => ">>",
+                 _ => "binary op",
+            },
+            get_type_name(&val_a),
+            get_type_name(&val_b)
+        ), span),
     }
 }
 
@@ -1359,13 +1395,13 @@ fn string_modulo_format(
                     _ => {
                         return interp.error(
                             EldritchErrorKind::ValueError,
-                            &format!("Unsupported format specifier: %{next}"),
+                            &format!("unsupported format character '{}' (0x{:x})", next, next as u32),
                             span,
                         );
                     }
                 }
             } else {
-                return interp.error(EldritchErrorKind::ValueError, "incomplete format", span);
+                return interp.error(EldritchErrorKind::ValueError, "incomplete format key", span);
             }
         } else {
             result.push(c);
@@ -1387,7 +1423,7 @@ fn to_int_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) -> R
         _ => interp.error(
             EldritchErrorKind::TypeError,
             &format!(
-                "%{} format: a number is required, not {:?}",
+                "%{} format: a number is required, not {}",
                 spec,
                 get_type_name(v)
             ),
@@ -1404,7 +1440,7 @@ fn to_float_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) ->
         _ => interp.error(
             EldritchErrorKind::TypeError,
             &format!(
-                "%{} format: a number is required, not {:?}",
+                "%{} format: a number is required, not {}",
                 spec,
                 get_type_name(v)
             ),
@@ -1487,4 +1523,22 @@ pub(crate) fn apply_binary_op_pub(
     span: Span,
 ) -> Result<Value, EldritchError> {
     apply_binary_op(interp, left, op, right, span)
+}
+
+fn parse_error_kind(msg: &str) -> (EldritchErrorKind, &str) {
+    if let Some(rest) = msg.strip_prefix("TypeError: ") {
+        (EldritchErrorKind::TypeError, rest)
+    } else if let Some(rest) = msg.strip_prefix("ValueError: ") {
+        (EldritchErrorKind::ValueError, rest)
+    } else if let Some(rest) = msg.strip_prefix("IndexError: ") {
+        (EldritchErrorKind::IndexError, rest)
+    } else if let Some(rest) = msg.strip_prefix("KeyError: ") {
+        (EldritchErrorKind::KeyError, rest)
+    } else if let Some(rest) = msg.strip_prefix("AttributeError: ") {
+        (EldritchErrorKind::AttributeError, rest)
+    } else if let Some(rest) = msg.strip_prefix("NameError: ") {
+        (EldritchErrorKind::NameError, rest)
+    } else {
+        (EldritchErrorKind::RuntimeError, msg)
+    }
 }
