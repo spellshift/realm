@@ -1,11 +1,30 @@
 [workspace]
 members = [
     "imix",
+    "imixv2",
     "golem",
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
     "lib/host_unique",
+    "lib/eldritchv2/eldritch-core",
+    "lib/eldritchv2/eldritch-macros",
+    "lib/eldritchv2/eldritch-repl",
+    "lib/eldritchv2/stdlib/eldritch-libagent",
+    "lib/eldritchv2/stdlib/eldritch-libassets",
+    "lib/eldritchv2/stdlib/eldritch-libcrypto",
+    "lib/eldritchv2/stdlib/eldritch-libfile",
+    "lib/eldritchv2/stdlib/eldritch-libhttp",
+    "lib/eldritchv2/stdlib/eldritch-libpivot",
+    "lib/eldritchv2/stdlib/eldritch-libprocess",
+    "lib/eldritchv2/stdlib/eldritch-librandom",
+    "lib/eldritchv2/stdlib/eldritch-libregex",
+    "lib/eldritchv2/stdlib/eldritch-libreport",
+    "lib/eldritchv2/stdlib/eldritch-libsys",
+    "lib/eldritchv2/stdlib/eldritch-libtime",
+    "lib/eldritchv2/stdlib/tests",
+    "lib/eldritchv2/stdlib/migration",
+    "lib/eldritchv2/eldritchv2",
 ]
 resolver = "2"
 
@@ -14,6 +33,24 @@ transport = { path = "./lib/transport" }
 eldritch = { path = "./lib/eldritch" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
+
+# Eldritch V2
+eldritch-core = {path = "lib/eldritchv2/eldritch-core", default-features = false }
+eldritch-macros = {path = "lib/eldritchv2/eldritch-macros", default-features = false}
+eldritch-repl = {path = "lib/eldritchv2/eldritch-repl", default-features = false}
+eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
+eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
+eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
+eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
+eldritch-libfile = {path = "lib/eldritchv2/stdlib/eldritch-libfile",default-features = false }
+eldritch-libhttp = {path = "lib/eldritchv2/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libpivot = {path = "lib/eldritchv2/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libprocess = {path = "lib/eldritchv2/stdlib/eldritch-libprocess",default-features = false }
+eldritch-librandom = {path = "lib/eldritchv2/stdlib/eldritch-librandom", default-features = false }
+eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-features = false }
+eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
+eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
 
 aes = "0.8.3"
 allocative = "0.3.2"
@@ -93,6 +130,9 @@ chacha20poly1305 = "0.10.1"
 bytes = "1.6.0"
 x25519-dalek = "2.0.1"
 lru = "0.16.0"
+crossterm = "0.27"
+futures = "0.3"
+lazy_static = "1.4.0"
 
 
 [profile.release]

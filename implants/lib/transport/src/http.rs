@@ -101,6 +101,7 @@ where
     pb::xchacha::decode_with_chacha::<Req, Resp>(data)
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub struct HTTP {
     client: hyper::Client<hyper::client::HttpConnector>,
@@ -419,6 +420,18 @@ impl Transport for HTTP {
         Err(anyhow::anyhow!(
             "http/1.1 transport does not support reverse shell"
         ))
+    }
+
+    fn is_active(&self) -> bool {
+        !self.base_url.is_empty()
+    }
+
+    fn name(&self) -> &'static str {
+        "http"
+    }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["http".to_string()]
     }
 }
 

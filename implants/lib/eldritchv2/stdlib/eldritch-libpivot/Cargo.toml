@@ -22,7 +22,7 @@ tokio = { workspace = true, features = [
     "fs",
 ], optional = true }
 pnet = { workspace = true, optional = true }
-pb = { workspace = true, optional = true }
+pb = { workspace = true }
 
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
 listeners = { workspace = true, optional = true }
@@ -45,6 +45,5 @@ stdlib = [
     "russh-keys",
     "tokio",
     "pnet",
-    "pb",
 ]
 fake_bindings = []

@@ -55,7 +55,6 @@ stdlib = [
 
 [dev-dependencies]
 httptest = "0.16"
-eldritchv2 = { workspace = true }
 
 [build-dependencies]
 regex = "1.10"
