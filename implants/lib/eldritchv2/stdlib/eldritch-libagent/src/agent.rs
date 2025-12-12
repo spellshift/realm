@@ -3,7 +3,7 @@ use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
-use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::collections::BTreeMap;
 #[cfg(feature = "stdlib")]
 use pb::c2;
 
@@ -15,7 +15,7 @@ pub trait Agent: Send + Sync {
     fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(&self, req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String>;
     fn report_task_output(&self, req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse, String>;
-    fn reverse_shell(&self) -> Result<(), String>;
+    // Consolidated reverse shell start methods
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String>;
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String>;
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String>;
@@ -27,13 +27,8 @@ pub trait Agent: Send + Sync {
     fn list_transports(&self) -> Result<Vec<String>, String>;
     fn get_callback_interval(&self) -> Result<u64, String>;
     fn set_callback_interval(&self, interval: u64) -> Result<(), String>;
+    // Consolidated callback URI setter
     fn set_callback_uri(&self, uri: String) -> Result<(), String>;
-    fn list_callback_uris(&self) -> Result<BTreeSet<String>, String>;
-    fn get_active_callback_uri(&self) -> Result<String, String>;
-    fn get_next_callback_uri(&self) -> Result<String, String>;
-    fn add_callback_uri(&self, uri: String) -> Result<(), String>;
-    fn remove_callback_uri(&self, uri: String) -> Result<(), String>;
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String>;
 
     // Task Management
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String>;

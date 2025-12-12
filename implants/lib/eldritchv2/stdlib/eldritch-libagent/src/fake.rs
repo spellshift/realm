@@ -67,10 +67,6 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
-    }
-
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
         Ok(Vec::new())
     }
@@ -113,8 +109,6 @@ use pb::c2;
 #[derive(Debug, Default)]
 pub struct AgentFake;
 
-use alloc::collections::BTreeSet;
-
 #[cfg(feature = "stdlib")]
 impl Agent for AgentFake {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
@@ -140,9 +134,6 @@ impl Agent for AgentFake {
         _req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse::default())
-    }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
     }
     fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
         Ok(())
@@ -182,29 +173,5 @@ impl Agent for AgentFake {
         let mut map = BTreeMap::new();
         map.insert("test".to_string(), "config".to_string());
         Ok(map)
-    }
-
-    fn list_callback_uris(&self) -> Result<std::collections::BTreeSet<String>, String> {
-        Ok(BTreeSet::new())
-    }
-
-    fn get_active_callback_uri(&self) -> Result<String, String> {
-        Ok(String::new())
-    }
-
-    fn get_next_callback_uri(&self) -> Result<String, String> {
-        Ok(String::new())
-    }
-
-    fn add_callback_uri(&self, _uri: String) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> {
-        Ok(())
     }
 }

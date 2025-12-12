@@ -30,10 +30,7 @@ use conversion_fake::*;
 #[cfg(test)]
 mod tests;
 
-// Re-export wrappers so modules can use them (but they are internal to crate if not pub)
-// Wait, `conversion` and `conversion_fake` define public structs.
-// We need to make sure they are accessible.
-
+// Re-export wrappers so modules can use them
 #[eldritch_library("agent")]
 /// The `agent` library provides capabilities for interacting with the agent's internal state, configuration, and task management.
 ///
@@ -192,18 +189,6 @@ pub trait AgentLibrary {
     /// **Errors**
     /// - Returns an error string if the reporting fails.
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Initiates a reverse shell session.
-    ///
-    /// This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the reverse shell cannot be started.
-    fn reverse_shell(&self) -> Result<(), String>;
 
     #[eldritch_method]
     /// Manually triggers a check-in to claim pending tasks from the C2 server.

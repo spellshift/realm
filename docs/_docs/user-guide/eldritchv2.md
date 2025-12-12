@@ -912,17 +912,6 @@ It allows you to:
     **Errors**
     - Returns an error string if the reporting fails.
 
-*   **`agent.reverse_shell`**
-    Initiates a reverse shell session.
-    
-    This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the reverse shell cannot be started.
-
 *   **`agent.claim_tasks`**
     Manually triggers a check-in to claim pending tasks from the C2 server.
     

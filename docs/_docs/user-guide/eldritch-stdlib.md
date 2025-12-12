@@ -201,18 +201,6 @@ This is used to send stdout/stderr or errors back to the controller.
 **Errors**
 - Returns an error string if the reporting fails.
 
-### agent.reverse_shell
-`agent.reverse_shell() -> None`
-Initiates a reverse shell session.
-
-This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reverse shell cannot be started.
-
 ### agent.set_callback_interval
 `agent.set_callback_interval(interval: int) -> None`
 Sets the callback interval for the agent.

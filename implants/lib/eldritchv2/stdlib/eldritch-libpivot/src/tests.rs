@@ -2,7 +2,7 @@ use crate::{std::StdPivotLibrary, PivotLibrary};
 use eldritch_libagent::agent::Agent;
 use pb::c2;
 use std::sync::{Arc, Mutex};
-use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::collections::BTreeMap;
 
 // Mock Agent
 struct MockAgent {
@@ -46,9 +46,6 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse {})
     }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
-    }
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         self.start_calls.lock().unwrap().push((task_id, cmd));
         Ok(())
@@ -84,12 +81,6 @@ impl Agent for MockAgent {
         Ok(())
     }
     fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> { Ok(BTreeSet::new()) }
-    fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-    fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-    fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
 }
 
 #[test]

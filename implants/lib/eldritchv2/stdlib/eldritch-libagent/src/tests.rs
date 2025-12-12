@@ -2,7 +2,7 @@
 use crate::AgentLibrary;
 use crate::agent::Agent;
 use crate::std::StdAgentLibrary;
-use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use eldritch_core::Value;
 use std::sync::RwLock;
@@ -63,9 +63,6 @@ impl Agent for MockAgent {
     ) -> Result<pb::c2::ReportTaskOutputResponse, String> {
         Err("".into())
     }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("".into())
-    }
     fn start_reverse_shell(&self, _: i64, _: Option<String>) -> Result<(), String> {
         Err("".into())
     }
@@ -91,24 +88,6 @@ impl Agent for MockAgent {
         Err("".into())
     }
     fn set_callback_uri(&self, _: String) -> Result<(), String> {
-        Err("".into())
-    }
-    fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
-        Err("".into())
-    }
-    fn get_active_callback_uri(&self) -> Result<String, String> {
-        Err("".into())
-    }
-    fn get_next_callback_uri(&self) -> Result<String, String> {
-        Err("".into())
-    }
-    fn add_callback_uri(&self, _: String) -> Result<(), String> {
-        Err("".into())
-    }
-    fn remove_callback_uri(&self, _: String) -> Result<(), String> {
-        Err("".into())
-    }
-    fn set_active_callback_uri(&self, _: String) -> Result<(), String> {
         Err("".into())
     }
     fn list_tasks(&self) -> Result<Vec<pb::c2::Task>, String> {
