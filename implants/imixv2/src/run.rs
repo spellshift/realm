@@ -92,7 +92,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
 }
 
 async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegistry) {
-    match agent.fetch_tasks().await {
+    match agent.claim_tasks().await {
         Ok(tasks) => {
             if tasks.is_empty() {
                 #[cfg(debug_assertions)]

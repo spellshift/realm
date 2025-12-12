@@ -136,8 +136,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         Ok(t)
     }
 
-    // Helper to fetch tasks and return them, so main can spawn
-    pub async fn fetch_tasks(&self) -> Result<Vec<pb::c2::Task>> {
+    // Helper to claim tasks and return them, so main can spawn
+    pub async fn claim_tasks(&self) -> Result<Vec<pb::c2::Task>> {
         let mut transport = self.transport.write().await;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
