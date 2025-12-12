@@ -237,6 +237,7 @@ fn execute_augmented_assignment(
         ExprKind::Identifier(name) => {
             let left = interp.lookup_variable(name, span)?;
 
+            #[allow(clippy::collapsible_if)]
             if let TokenKind::PlusAssign = op {
                 if try_inplace_add(&left, &right) {
                     return Ok(());
@@ -302,6 +303,7 @@ fn execute_augmented_assignment(
                 _ => return interp.error(EldritchErrorKind::TypeError, "Object does not support item assignment", span),
             };
 
+            #[allow(clippy::collapsible_if)]
             if let TokenKind::PlusAssign = op {
                 if try_inplace_add(&current_val, &right) {
                     return Ok(());

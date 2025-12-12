@@ -25,7 +25,6 @@ pub use eldritch_core::{
     StdoutPrinter, TokenKind, Value, conversion,
 };
 
-use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;

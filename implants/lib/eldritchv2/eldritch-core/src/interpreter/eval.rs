@@ -383,6 +383,7 @@ fn evaluate_getattr(
     let obj_val = evaluate(interp, obj)?;
 
     // Support dot access for dictionary keys (useful for modules)
+    #[allow(clippy::collapsible_if)]
     if let Value::Dictionary(d) = &obj_val {
         if let Some(val) = d.read().get(&Value::String(name.clone())) {
             return Ok(val.clone());
@@ -658,6 +659,7 @@ fn call_function(
                         .call_method(interp, &method_name, args_slice, &kw_args_val)
                         .map_err(|e| EldritchError::new(EldritchErrorKind::RuntimeError, &e, span).with_stack(interp.call_stack.clone()))
                 } else {
+                    #[allow(clippy::collapsible_else_if)]
                     if !kw_args_val.is_empty() {
                         Err(EldritchError::new(EldritchErrorKind::TypeError, "BoundMethod does not accept keyword arguments", span).with_stack(interp.call_stack.clone()))
                     } else {

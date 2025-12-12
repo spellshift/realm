@@ -9,7 +9,6 @@ use eldritch_libagent::agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
-use std::collections::BTreeSet;
 
 pub struct EmptyAssets;
 
@@ -105,6 +104,7 @@ mod tests {
     use std::borrow::Cow;
     use std::sync::Mutex;
     use alloc::collections::BTreeMap;
+    use std::collections::BTreeSet;
 
     use rust_embed::RustEmbed as CrateRustEmbed;
     use crate::RustEmbed as LocalRustEmbed;

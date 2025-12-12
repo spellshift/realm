@@ -1,8 +1,7 @@
 use regex::Regex;
-use std::collections::BTreeMap;
 use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::WalkDir;
 
 struct MethodDoc {
@@ -13,7 +12,7 @@ struct MethodDoc {
 
 struct LibraryDoc {
     name: String, // "file", "agent", etc.
-    trait_name: String, // "FileLibrary"
+    _trait_name: String, // "FileLibrary"
     docs: String,
     methods: Vec<MethodDoc>,
 }
@@ -101,7 +100,7 @@ fn parse_libraries(root: &Path) -> Vec<LibraryDoc> {
 
                 libraries.push(LibraryDoc {
                     name: lib_name,
-                    trait_name,
+                    _trait_name: trait_name,
                     docs: full_doc.trim().to_string(),
                     methods,
                 });
@@ -117,8 +116,8 @@ fn clean_docs(raw: &str) -> String {
     raw.lines()
        .filter_map(|l| {
            let trimmed = l.trim();
-           if trimmed.starts_with("///") {
-               let content = trimmed[3..].trim();
+           if let Some(stripped) = trimmed.strip_prefix("///") {
+               let content = stripped.trim();
                // We keep empty lines (content is empty string)
                Some(content)
            } else {
@@ -251,7 +250,7 @@ fn generate_markdown(libs: &[LibraryDoc], out_path: &Path) {
             if !method.docs.is_empty() {
                 content.push_str(&format!("{}\n\n", method.docs));
             } else {
-                content.push_str("\n");
+                content.push('\n');
             }
         }
     }

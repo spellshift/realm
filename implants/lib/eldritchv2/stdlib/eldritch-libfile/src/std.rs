@@ -469,6 +469,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     );
 
     // Times
+    #[allow(clippy::collapsible_if)]
     if let Ok(m) = metadata.modified() {
         if let Ok(d) = m.duration_since(::std::time::UNIX_EPOCH) {
             dict.insert(
@@ -657,6 +658,7 @@ fn check_path(
         }
     }
 
+    #[allow(clippy::collapsible_if)]
     if let Some(mt) = modified_time {
         let meta = path.metadata()?;
         if let Ok(t) = meta.modified() {
@@ -666,6 +668,7 @@ fn check_path(
         }
     }
 
+    #[allow(clippy::collapsible_if)]
     if let Some(ct) = create_time {
         let meta = path.metadata()?;
         if let Ok(t) = meta.created() {

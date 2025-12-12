@@ -70,6 +70,7 @@ impl CryptoLibrary for StdCryptoLibrary {
         }
 
         // Unpad (PKCS#7) manually to match v1 logic
+        #[allow(clippy::collapsible_if)]
         if let Some(&last_byte) = output.last() {
             if last_byte <= 16 && last_byte > 0 {
                 let len = output.len();
@@ -101,7 +102,7 @@ impl CryptoLibrary for StdCryptoLibrary {
             return Err("Key size must be 16 bytes".into());
         }
         let key_arr = GenericArray::from_slice(key_bytes);
-        let cipher = Aes128::new(&key_arr);
+        let cipher = Aes128::new(key_arr);
 
         let mut input = std::fs::File::open(src).map_err(|e| e.to_string())?;
         let len = input.metadata().map_err(|e| e.to_string())?.len();
@@ -114,7 +115,7 @@ impl CryptoLibrary for StdCryptoLibrary {
         let mut next_block = [0u8; 16];
 
         // Read first block
-        if let Err(_) = input.read_exact(&mut block) {
+        if input.read_exact(&mut block).is_err() {
             return Err("Input file is empty or too short".into());
         }
 
@@ -170,7 +171,7 @@ impl CryptoLibrary for StdCryptoLibrary {
             return Err("Key size must be 16 bytes".into());
         }
         let key_arr = GenericArray::from_slice(key_bytes);
-        let cipher = Aes128::new(&key_arr);
+        let cipher = Aes128::new(key_arr);
 
         let mut input = std::fs::File::open(src).map_err(|e| e.to_string())?;
         let mut output = std::fs::File::create(dst).map_err(|e| e.to_string())?;
@@ -198,8 +199,8 @@ impl CryptoLibrary for StdCryptoLibrary {
             } else {
                 // Last block (partial or empty). Pad.
                 let padding_byte = (16 - chunk_len) as u8;
-                for i in chunk_len..16 {
-                    temp_buf[i] = padding_byte;
+                for item in temp_buf.iter_mut().skip(chunk_len) {
+                    *item = padding_byte;
                 }
                 let mut block = GenericArray::clone_from_slice(&temp_buf);
                 cipher.encrypt_block(&mut block);
@@ -351,6 +352,7 @@ fn convert_json_to_value(json: serde_json::Value) -> Result<Value, String> {
             Ok(res.to_value())
         }
         serde_json::Value::Object(map) => {
+            #[allow(clippy::mutable_key_type)]
             let mut res = BTreeMap::new();
             for (k, v) in map {
                 res.insert(Value::String(k), convert_json_to_value(v)?);
@@ -369,7 +371,7 @@ fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {
         Value::String(s) => Ok(serde_json::Value::String(s.clone())),
         Value::Bytes(_b) => {
              // Bytes are not natively JSON serializable.
-             Err(format!("Object of type 'bytes' is not JSON serializable"))
+             Err("Object of type 'bytes' is not JSON serializable".to_string())
         },
         Value::List(l) => {
             let list = l.read();
@@ -399,7 +401,7 @@ fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {
             }
             Ok(serde_json::Value::Object(res))
         },
-        Value::Set(_) => Err(format!("Object of type 'set' is not JSON serializable")),
+        Value::Set(_) => Err("Object of type 'set' is not JSON serializable".to_string()),
         Value::Function(_) | Value::NativeFunction(_, _) | Value::NativeFunctionWithKwargs(_, _) | Value::BoundMethod(_, _) | Value::Foreign(_) => {
              Err(format!("Object of type '{:?}' is not JSON serializable", val))
         },

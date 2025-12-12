@@ -10,4 +10,5 @@ pub mod introspection;
 
 pub use self::core::Interpreter;
 pub use self::printer::{BufferPrinter, Printer, StdoutPrinter};
+#[allow(unused_imports)]
 pub use self::error::{EldritchError, EldritchErrorKind};

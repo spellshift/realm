@@ -172,6 +172,7 @@ fn is_option_type(ty: &Type) -> bool {
     false
 }
 
+#[allow(clippy::collapsible_if)]
 fn is_interpreter_type(ty: &Type) -> bool {
     // Check if type is `Interpreter`, `&Interpreter`, or `&mut Interpreter`
     // Or fully qualified `eldritch_core::Interpreter`

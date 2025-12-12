@@ -106,11 +106,11 @@ fn levenshtein_distance(s1: &str, s2: &str) -> usize {
 
     let mut dp = vec![vec![0; n + 1]; m + 1];
 
-    for i in 0..=m {
-        dp[i][0] = i;
+    for (i, item) in dp.iter_mut().enumerate().take(m + 1) {
+        item[0] = i;
     }
-    for j in 0..=n {
-        dp[0][j] = j;
+    for (j, item) in dp[0].iter_mut().enumerate().take(n + 1) {
+        *item = j;
     }
 
     for i in 1..=m {
@@ -138,11 +138,11 @@ pub fn find_best_match(target: &str, candidates: &[String]) -> Option<String> {
     // Allow a distance of up to 4, or half the string length + 1.
     // This allows "config" (6) -> "get_config" (10) (dist 4, threshold 4)
     // "apend" (5) -> "append" (6) (dist 1, threshold 3)
-    let threshold = core::cmp::max(1, core::cmp::min(4, target.len() / 2 + 1));
+    let threshold = (target.len() / 2 + 1).clamp(1, 4);
 
     for candidate in candidates {
         // Optimization: Skip if lengths differ too much
-        let len_diff = (candidate.len() as isize - target.len() as isize).abs() as usize;
+        let len_diff = (candidate.len() as isize - target.len() as isize).unsigned_abs();
         if len_diff > threshold {
             continue;
         }

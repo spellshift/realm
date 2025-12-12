@@ -178,6 +178,7 @@ pub trait CryptoLibrary {
     /// - `bool`: `True` if valid JSON, `False` otherwise.
     fn is_json(&self, content: String) -> Result<bool, String>;
 
+    #[allow(clippy::wrong_self_convention)]
     #[eldritch_method]
     /// Parses a JSON string into an Eldritch value (Dict, List, etc.).
     ///
