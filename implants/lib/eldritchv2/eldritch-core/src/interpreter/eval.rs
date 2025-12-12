@@ -9,7 +9,7 @@ use super::introspection::{get_type_name, is_truthy};
 use super::methods::call_bound_method;
 use super::operations::{
     adjust_slice_indices, apply_arithmetic_op, apply_bitwise_op, apply_comparison_op,
-    evaluate_comprehension_generic,
+    evaluate_comprehension_generic, values_equal,
 };
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -1028,9 +1028,9 @@ fn evaluate_in(
     match collection {
         Value::List(l) => {
             let list = l.read();
-            Ok(Value::Bool(list.contains(item)))
+            Ok(Value::Bool(list.iter().any(|x| values_equal(x, item))))
         }
-        Value::Tuple(t) => Ok(Value::Bool(t.contains(item))),
+        Value::Tuple(t) => Ok(Value::Bool(t.iter().any(|x| values_equal(x, item)))),
         Value::Dictionary(d) => {
             let dict = d.read();
             // Check keys

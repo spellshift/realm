@@ -76,6 +76,16 @@ pub fn adjust_slice_indices(
     (start_val, stop_val)
 }
 
+pub(crate) fn values_equal(a: &Value, b: &Value) -> bool {
+    if a == b {
+        return true;
+    }
+    match (a, b) {
+        (Value::Float(f1), Value::Float(f2)) => f1.is_nan() && f2.is_nan(),
+        _ => false,
+    }
+}
+
 pub fn compare_values(a: &Value, b: &Value) -> Result<Ordering, String> {
     // This function is kept for backward compatibility or explicit usage,
     // but Value now implements Ord so we can just use a.cmp(b) if types match
