@@ -90,90 +90,8 @@ pub enum Value {
 // Implement repr-like behavior for Debug
 impl fmt::Debug for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Value::None => write!(f, "None"),
-            Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
-            Value::Int(i) => write!(f, "{i}"),
-            Value::Float(fl) => write!(f, "{fl:?}"),
-            Value::String(s) => write!(f, "{s:?}"), // Quoted string
-            Value::Bytes(b) => {
-                // Heuristic: if all bytes are printable ASCII, print as b"...", else [...]
-                // Or just stick to python's repr(bytes) which uses hex escapes for non-printable.
-                // For simplicity and correctness with existing types, let's use the Rust debug for byte literal if possible,
-                // or just `b` prefix.
-                // `write!(f, "b{:?}", b)` prints `b[1, 2]`. We want `b"..."`.
-                // We can convert to string with escaping.
-                // Simple version:
-                write!(f, "b\"")?;
-                for byte in b {
-                    match byte {
-                        b'\n' => write!(f, "\\n")?,
-                        b'\r' => write!(f, "\\r")?,
-                        b'\t' => write!(f, "\\t")?,
-                        b'\\' => write!(f, "\\\\")?,
-                        b'"' => write!(f, "\\\"")?,
-                        0x20..=0x7E => write!(f, "{}", *byte as char)?,
-                        _ => write!(f, "\\x{byte:02x}")?,
-                    }
-                }
-                write!(f, "\"")
-            }
-            Value::List(l) => {
-                write!(f, "[")?;
-                let list = l.read();
-                for (i, v) in list.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{v:?}")?;
-                }
-                write!(f, "]")
-            }
-            Value::Tuple(t) => {
-                write!(f, "(")?;
-                for (i, v) in t.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{v:?}")?;
-                }
-                if t.len() == 1 {
-                    write!(f, ",")?;
-                }
-                write!(f, ")")
-            }
-            Value::Dictionary(d) => {
-                write!(f, "{{")?;
-                let dict = d.read();
-                for (i, (k, v)) in dict.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{k:?}: {v:?}")?;
-                }
-                write!(f, "}}")
-            }
-            Value::Set(s) => {
-                let set = s.read();
-                if set.is_empty() {
-                    write!(f, "set()")
-                } else {
-                    write!(f, "{{")?;
-                    for (i, v) in set.iter().enumerate() {
-                        if i > 0 {
-                            write!(f, ", ")?;
-                        }
-                        write!(f, "{v:?}")?;
-                    }
-                    write!(f, "}}")
-                }
-            }
-            Value::Function(func) => write!(f, "<function {}>", func.name),
-            Value::NativeFunction(name, _) => write!(f, "<native function {name}>"),
-            Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {name}>"),
-            Value::BoundMethod(_, name) => write!(f, "<bound method {name}>"),
-            Value::Foreign(obj) => write!(f, "<{}>", obj.type_name()),
-        }
+        let mut visited = BTreeSet::new();
+        self.fmt_helper(f, &mut visited)
     }
 }
 
@@ -303,6 +221,121 @@ impl Value {
             Value::NativeFunctionWithKwargs(_, _) => 12,
             Value::BoundMethod(_, _) => 13,
             Value::Foreign(_) => 14,
+        }
+    }
+
+    fn fmt_helper(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        visited: &mut BTreeSet<usize>,
+    ) -> fmt::Result {
+        match self {
+            Value::None => write!(f, "None"),
+            Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
+            Value::Int(i) => write!(f, "{i}"),
+            Value::Float(fl) => write!(f, "{fl:?}"),
+            Value::String(s) => write!(f, "{s:?}"),
+            Value::Bytes(b) => {
+                write!(f, "b\"")?;
+                for byte in b {
+                    match byte {
+                        b'\n' => write!(f, "\\n")?,
+                        b'\r' => write!(f, "\\r")?,
+                        b'\t' => write!(f, "\\t")?,
+                        b'\\' => write!(f, "\\\\")?,
+                        b'"' => write!(f, "\\\"")?,
+                        0x20..=0x7E => write!(f, "{}", *byte as char)?,
+                        _ => write!(f, "\\x{byte:02x}")?,
+                    }
+                }
+                write!(f, "\"")
+            }
+            Value::List(l) => {
+                let ptr = Arc::as_ptr(l) as usize;
+                if visited.contains(&ptr) {
+                    return write!(f, "[...]");
+                }
+                visited.insert(ptr);
+
+                write!(f, "[")?;
+                let list = l.read();
+                for (i, v) in list.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    v.fmt_helper(f, visited)?;
+                }
+                write!(f, "]")?;
+
+                visited.remove(&ptr);
+                Ok(())
+            }
+            Value::Tuple(t) => {
+                write!(f, "(")?;
+                for (i, v) in t.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    v.fmt_helper(f, visited)?;
+                }
+                if t.len() == 1 {
+                    write!(f, ",")?;
+                }
+                write!(f, ")")
+            }
+            Value::Dictionary(d) => {
+                let ptr = Arc::as_ptr(d) as usize;
+                if visited.contains(&ptr) {
+                    return write!(f, "{{...}}");
+                }
+                visited.insert(ptr);
+
+                write!(f, "{{")?;
+                let dict = d.read();
+                for (i, (k, v)) in dict.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    k.fmt_helper(f, visited)?;
+                    write!(f, ": ")?;
+                    v.fmt_helper(f, visited)?;
+                }
+                write!(f, "}}")?;
+
+                visited.remove(&ptr);
+                Ok(())
+            }
+            Value::Set(s) => {
+                let ptr = Arc::as_ptr(s) as usize;
+                if visited.contains(&ptr) {
+                    // Similar to python set(...)
+                    // But if we want consistent {...} style:
+                    return write!(f, "{{...}}");
+                }
+                visited.insert(ptr);
+
+                let set = s.read();
+                if set.is_empty() {
+                    write!(f, "set()")?;
+                } else {
+                    write!(f, "{{")?;
+                    for (i, v) in set.iter().enumerate() {
+                        if i > 0 {
+                            write!(f, ", ")?;
+                        }
+                        v.fmt_helper(f, visited)?;
+                    }
+                    write!(f, "}}")?;
+                }
+
+                visited.remove(&ptr);
+                Ok(())
+            }
+            Value::Function(func) => write!(f, "<function {}>", func.name),
+            Value::NativeFunction(name, _) => write!(f, "<native function {name}>"),
+            Value::NativeFunctionWithKwargs(name, _) => write!(f, "<native function {name}>"),
+            Value::BoundMethod(_, name) => write!(f, "<bound method {name}>"),
+            Value::Foreign(obj) => write!(f, "<{}>", obj.type_name()),
         }
     }
 }

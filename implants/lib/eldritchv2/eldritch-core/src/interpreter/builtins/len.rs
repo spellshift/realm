@@ -11,7 +11,7 @@ use spin::RwLock;
 pub fn builtin_len(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(
-            "len() takes exactly one argument ({} given)",
+            "TypeError: len() takes exactly one argument ({} given)",
             args.len()
         ));
     }
@@ -22,6 +22,6 @@ pub fn builtin_len(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         Value::Dictionary(d) => Ok(Value::Int(d.read().len() as i64)),
         Value::Tuple(t) => Ok(Value::Int(t.len() as i64)),
         Value::Set(s) => Ok(Value::Int(s.read().len() as i64)),
-        _ => Err(format!("'len()' is not defined for type: {:?}", args[0])),
+        _ => Err(format!("TypeError: object of type '{}' has no len()", crate::interpreter::introspection::get_type_name(&args[0]))),
     }
 }

@@ -24,10 +24,18 @@ mod task;
 mod tests;
 mod version;
 mod run;
+mod install;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     run::init_logger();
+
+    #[cfg(feature = "install")]
+    {
+        if std::env::args().any(|arg| arg == "install") {
+            return install::install().await;
+        }
+    }
 
     #[cfg(feature = "win_service")]
     match windows_service::service_dispatcher::start("imixv2", ffi_service_main) {
