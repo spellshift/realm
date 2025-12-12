@@ -1,32 +1,7 @@
 codecov:
   notify:
     wait_for_ci: yes
-    after_n_builds: 9  # Updated: 3 implants (ubuntu, macos, windows) + 1 tavern + 1 ui-tests = 5, being conservative with 9
-
-coverage:
-  status:
-    project:
-      default:
-        target: auto
-        threshold: 1%
-    patch:
-      default:
-        target: auto
-        threshold: 1%
-
-flags:
-  tavern:
-    paths:
-      - tavern/
-    carryforward: false
-  implants:
-    paths:
-      - implants/
-    carryforward: false
-  ui-tests:
-    paths:
-      - tavern/internal/www/src/
-    carryforward: false
+    after_n_builds: 6
 
 ignore:
   - "**/*.pb.go" # Ignore Generated Protobufs
