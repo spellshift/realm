@@ -15,10 +15,10 @@ pub fn builtin_range(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
         [Value::Int(end)] => (0, *end, 1),
         [Value::Int(start), Value::Int(end)] => (*start, *end, 1),
         [Value::Int(start), Value::Int(end), Value::Int(step)] => (*start, *end, *step),
-        _ => return Err("Range expects 1-3 integer arguments.".to_string()),
+        _ => return Err("TypeError: range expects 1-3 integer arguments".to_string()),
     };
     if step == 0 {
-        return Err("range() arg 3 must not be zero".to_string());
+        return Err("ValueError: range() arg 3 must not be zero".to_string());
     }
 
     let mut list = Vec::new();
