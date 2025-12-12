@@ -868,6 +868,7 @@ fn builtin_eval(
         depth: interp.depth + 1,
         call_stack: interp.call_stack.clone(),
         current_func_name: "<eval>".to_string(),
+        is_scope_owner: false,
     };
 
     match temp_interp.interpret(&code) {

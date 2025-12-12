@@ -168,7 +168,7 @@ async fn test_imix_agent_claim_tasks() {
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
-        let _ = agent_clone.claim_tasks(c2::ClaimTasksRequest { beacon: None });
+        let _ = agent_clone.claim_tasks();
     })
     .join()
     .unwrap();

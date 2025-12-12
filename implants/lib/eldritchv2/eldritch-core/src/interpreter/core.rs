@@ -32,6 +32,18 @@ pub struct Interpreter {
     pub depth: usize,
     pub call_stack: Vec<StackFrame>,
     pub current_func_name: String,
+    pub is_scope_owner: bool,
+}
+
+impl Drop for Interpreter {
+    fn drop(&mut self) {
+        if self.is_scope_owner {
+            // Break reference cycles by clearing the environment values.
+            // This drops all variables including functions, which may hold references back to the environment.
+            self.env.write().values.clear();
+            self.env.write().parent = None;
+        }
+    }
 }
 
 impl Default for Interpreter {
@@ -59,6 +71,7 @@ impl Interpreter {
             depth: 0,
             call_stack: Vec::new(),
             current_func_name: "<module>".to_string(),
+            is_scope_owner: true,
         };
 
         interpreter.load_builtins();
