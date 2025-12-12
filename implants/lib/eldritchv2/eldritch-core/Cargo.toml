@@ -1,0 +1,28 @@
+[package]
+name = "eldritch-core"
+version = "0.3.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+no_std = []
+std = []
+
+[dependencies]
+lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
+libm = "0.2.15"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "interpreter"
+harness = false
+
+[[bench]]
+name = "builtins"
+harness = false

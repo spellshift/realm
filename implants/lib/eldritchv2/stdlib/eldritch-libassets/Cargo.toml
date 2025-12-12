@@ -1,0 +1,22 @@
+[package]
+name = "eldritch-libassets"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch-libagent = { workspace = true }
+pb = { workspace = true, optional = true }
+anyhow = { version = "1.0", optional = true }
+rust-embed = { version = "8.0", optional = true }
+
+[features]
+default = ["std", "stdlib"]
+std = ["eldritch-core/std"]
+fake_bindings = []
+stdlib = ["eldritch-libagent/stdlib", "dep:pb", "dep:anyhow", "dep:rust-embed"]
+
+[dev-dependencies]
+tempfile = "3.3"
+eldritch-libagent = { workspace = true, features = ["fake_bindings", "stdlib"] }

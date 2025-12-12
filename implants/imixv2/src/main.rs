@@ -1,0 +1,59 @@
+#![cfg_attr(
+    all(not(debug_assertions), not(feature = "win_service")),
+    windows_subsystem = "windows"
+)]
+
+extern crate alloc;
+
+use anyhow::Result;
+
+#[cfg(all(feature = "win_service", windows))]
+#[macro_use]
+extern crate windows_service;
+#[cfg(all(feature = "win_service", windows))]
+mod win_service;
+
+pub use pb::config::Config;
+pub use transport::{ActiveTransport, Transport};
+
+mod agent;
+mod assets;
+mod shell;
+mod task;
+#[cfg(test)]
+mod tests;
+mod version;
+mod run;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    run::init_logger();
+
+    #[cfg(feature = "win_service")]
+    match windows_service::service_dispatcher::start("imixv2", ffi_service_main) {
+        Ok(_) => {
+            return Ok(());
+        }
+        Err(_err) => {
+            #[cfg(debug_assertions)]
+            log::error!("Failed to start service (running as exe?): {_err}");
+        }
+    }
+
+    run::run_agent().await
+}
+
+// ============ Windows Service =============
+
+#[cfg(all(feature = "win_service", not(target_os = "windows")))]
+compile_error!("Feature win_service is only available on windows targets");
+
+#[cfg(feature = "win_service")]
+define_windows_service!(ffi_service_main, service_main);
+
+#[cfg(feature = "win_service")]
+#[tokio::main]
+async fn service_main(arguments: Vec<std::ffi::OsString>) {
+    crate::win_service::handle_service_main(arguments);
+    let _ = run::run_agent().await;
+}
