@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_crypto_fake() {
-        let crypto = CryptoLibraryFake::default();
+        let crypto = CryptoLibraryFake;
         let data = vec![1, 2, 3];
         let enc = crypto.aes_encrypt(vec![], vec![], data.clone()).unwrap();
         let dec = crypto.aes_decrypt(vec![], vec![], enc).unwrap();

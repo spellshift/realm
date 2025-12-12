@@ -3,12 +3,12 @@ mod tests {
     use anyhow::Result;
     use eldritchv2::{Interpreter, Value};
     use glob::glob;
+    use serde::Deserialize;
+    use spin::RwLock;
+    use std::collections::BTreeMap;
     use std::fs;
     use std::path::PathBuf;
-    use serde::Deserialize;
-    use std::collections::BTreeMap;
     use std::sync::Arc;
-    use spin::RwLock;
 
     #[derive(Deserialize)]
     struct Metadata {
@@ -23,14 +23,14 @@ mod tests {
     }
 
     fn register_fake_libs(interp: &mut Interpreter) {
-        interp.register_lib(eldritchv2::agent::fake::AgentLibraryFake::default());
+        interp.register_lib(eldritchv2::agent::fake::AgentLibraryFake);
         interp.register_lib(eldritchv2::assets::fake::FakeAssetsLibrary);
         interp.register_lib(eldritchv2::file::fake::FileLibraryFake::default());
-        interp.register_lib(eldritchv2::http::fake::HttpLibraryFake::default());
-        interp.register_lib(eldritchv2::pivot::fake::PivotLibraryFake::default());
-        interp.register_lib(eldritchv2::process::fake::ProcessLibraryFake::default());
-        interp.register_lib(eldritchv2::report::fake::ReportLibraryFake::default());
-        interp.register_lib(eldritchv2::sys::fake::SysLibraryFake::default());
+        interp.register_lib(eldritchv2::http::fake::HttpLibraryFake);
+        interp.register_lib(eldritchv2::pivot::fake::PivotLibraryFake);
+        interp.register_lib(eldritchv2::process::fake::ProcessLibraryFake);
+        interp.register_lib(eldritchv2::report::fake::ReportLibraryFake);
+        interp.register_lib(eldritchv2::sys::fake::SysLibraryFake);
     }
 
     fn register_default_libs(interp: &mut Interpreter) {
@@ -53,15 +53,29 @@ mod tests {
 
         for entry in entries {
             let path = entry?;
-            println!("Testing tome: {:?}", path.parent().unwrap().file_name().unwrap());
+            println!(
+                "Testing tome: {:?}",
+                path.parent().unwrap().file_name().unwrap()
+            );
             if let Err(e) = run_tome_test(&path) {
-                println!("FAILED: {:?} - {}", path.parent().unwrap().file_name().unwrap(), e);
+                println!(
+                    "FAILED: {:?} - {}",
+                    path.parent().unwrap().file_name().unwrap(),
+                    e
+                );
                 errors.push((path, e));
             }
         }
 
         if !errors.is_empty() {
-            panic!("{} tomes failed: {:?}", errors.len(), errors.iter().map(|(p, _)| p.parent().unwrap().file_name().unwrap()).collect::<Vec<_>>());
+            panic!(
+                "{} tomes failed: {:?}",
+                errors.len(),
+                errors
+                    .iter()
+                    .map(|(p, _)| p.parent().unwrap().file_name().unwrap())
+                    .collect::<Vec<_>>()
+            );
         }
         Ok(())
     }
@@ -85,40 +99,40 @@ mod tests {
         register_default_libs(&mut interp);
 
         // Prepare input_params
+        #[allow(clippy::mutable_key_type)]
         let mut input_params = BTreeMap::new();
         if let Some(params) = metadata.paramdefs {
-             for param in params {
-                 // Logic to handle specific params to avoid crashes
-                 let val = if param.name.contains("path") || param.type_ == "file" {
-                     Value::String("/tmp".to_string())
-                 } else if param.name.contains("port") { // covers "ports"
-                     Value::String("80,443".to_string())
-                 } else if param.name == "time" || param.name == "interval" {
-                     Value::String("10".to_string()) // Some tomes expect string and convert to int
-                 } else {
-                     match param.type_.as_str() {
-                         "string" => Value::String("test_val".to_string()),
-                         "int" | "integer" => Value::Int(1),
-                         // Some tomes treat boolean as string "true"/"false" and call .lower()
-                         // To be safe, let's provide string "true".
-                         // If the tome treats it as bool, it might fail if it expects bool ops.
-                         // But most use cases seen so far are .lower().
-                         "bool" | "boolean" => Value::String("true".to_string()),
-                         "float" => Value::Float(1.0),
-                         _ => Value::String("default".to_string()),
-                     }
-                 };
-                 input_params.insert(Value::String(param.name), val);
-             }
+            for param in params {
+                // Logic to handle specific params to avoid crashes
+                let val = if param.name.contains("path") || param.type_ == "file" {
+                    Value::String("/tmp".to_string())
+                } else if param.name.contains("port") {
+                    // covers "ports"
+                    Value::String("80,443".to_string())
+                } else if param.name == "time" || param.name == "interval" {
+                    Value::String("10".to_string()) // Some tomes expect string and convert to int
+                } else {
+                    match param.type_.as_str() {
+                        "string" => Value::String("test_val".to_string()),
+                        "int" | "integer" => Value::Int(1),
+                        // Some tomes treat boolean as string "true"/"false" and call .lower()
+                        // To be safe, let's provide string "true".
+                        // If the tome treats it as bool, it might fail if it expects bool ops.
+                        // But most use cases seen so far are .lower().
+                        "bool" | "boolean" => Value::String("true".to_string()),
+                        "float" => Value::Float(1.0),
+                        _ => Value::String("default".to_string()),
+                    }
+                };
+                input_params.insert(Value::String(param.name), val);
+            }
         }
         let input_params_val = Value::Dictionary(Arc::new(RwLock::new(input_params)));
         interp.define_variable("input_params", input_params_val);
 
         match interp.interpret(&code) {
             Ok(_) => Ok(()),
-            Err(e) => {
-                Err(anyhow::anyhow!("Eldritch error: {}", e))
-            }
+            Err(e) => Err(anyhow::anyhow!("Eldritch error: {}", e)),
         }
     }
 }

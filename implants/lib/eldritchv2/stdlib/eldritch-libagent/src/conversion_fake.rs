@@ -1,6 +1,5 @@
-use alloc::vec::Vec;
-use alloc::string::String;
 use alloc::collections::BTreeMap;
+use alloc::string::String;
 use alloc::sync::Arc;
 use eldritch_core::Value;
 use eldritch_core::conversion::{FromValue, ToValue};
@@ -40,7 +39,10 @@ impl ToValue for TaskWrapper {
     fn to_value(self) -> Value {
         let mut map = BTreeMap::new();
         map.insert(Value::String("id".to_string()), Value::Int(0));
-        map.insert(Value::String("quest_name".to_string()), Value::String("fake".to_string()));
+        map.insert(
+            Value::String("quest_name".to_string()),
+            Value::String("fake".to_string()),
+        );
         Value::Dictionary(Arc::new(RwLock::new(map)))
     }
 }

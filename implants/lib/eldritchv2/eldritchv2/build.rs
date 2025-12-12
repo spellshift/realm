@@ -1,8 +1,7 @@
 use regex::Regex;
-use std::collections::BTreeMap;
 use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::WalkDir;
 
 struct MethodDoc {
@@ -13,7 +12,10 @@ struct MethodDoc {
 
 struct LibraryDoc {
     name: String, // "file", "agent", etc.
+
+    #[allow(unused)]
     trait_name: String, // "FileLibrary"
+
     docs: String,
     methods: Vec<MethodDoc>,
 }
@@ -23,7 +25,8 @@ fn main() {
 
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let stdlib_path = Path::new(&manifest_dir).join("../stdlib");
-    let docs_path = Path::new(&manifest_dir).join("../../../../docs/_docs/user-guide/eldritch-stdlib.md");
+    let docs_path =
+        Path::new(&manifest_dir).join("../../../../docs/_docs/user-guide/eldritch-stdlib.md");
 
     let libraries = parse_libraries(&stdlib_path);
     generate_markdown(&libraries, &docs_path);
@@ -77,11 +80,12 @@ fn parse_libraries(root: &Path) -> Vec<LibraryDoc> {
 
                     let mut final_name = fn_name.to_string();
                     if !m_attr_content.is_empty() {
-                         // Extract name from ("name")
-                         let trimmed = m_attr_content.trim_matches(|c| c == '(' || c == ')' || c == '"');
-                         if !trimmed.is_empty() {
-                             final_name = trimmed.to_string();
-                         }
+                        // Extract name from ("name")
+                        let trimmed =
+                            m_attr_content.trim_matches(|c| c == '(' || c == ')' || c == '"');
+                        if !trimmed.is_empty() {
+                            final_name = trimmed.to_string();
+                        }
                     }
 
                     final_name = final_name.replace("r#", "");
@@ -115,19 +119,13 @@ fn parse_libraries(root: &Path) -> Vec<LibraryDoc> {
 
 fn clean_docs(raw: &str) -> String {
     raw.lines()
-       .filter_map(|l| {
-           let trimmed = l.trim();
-           if trimmed.starts_with("///") {
-               let content = trimmed[3..].trim();
-               // We keep empty lines (content is empty string)
-               Some(content)
-           } else {
-               None
-           }
-       })
-       .filter(|l| !l.contains("pub trait"))
-       .collect::<Vec<_>>()
-       .join("\n")
+        .filter_map(|l| {
+            let trimmed = l.trim();
+            trimmed.strip_prefix("///").map(|content| content.trim())
+        })
+        .filter(|l| !l.contains("pub trait"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn split_args(args_raw: &str) -> Vec<String> {
@@ -140,11 +138,11 @@ fn split_args(args_raw: &str) -> Vec<String> {
             '<' => {
                 depth += 1;
                 current.push(c);
-            },
+            }
             '>' => {
                 depth -= 1;
                 current.push(c);
-            },
+            }
             ',' => {
                 if depth == 0 {
                     args.push(current.trim().to_string());
@@ -152,7 +150,7 @@ fn split_args(args_raw: &str) -> Vec<String> {
                 } else {
                     current.push(c);
                 }
-            },
+            }
             _ => current.push(c),
         }
     }
@@ -164,7 +162,8 @@ fn split_args(args_raw: &str) -> Vec<String> {
 }
 
 fn format_signature(name: &str, args_raw: &str, ret_raw: &str) -> String {
-    let args: Vec<String> = split_args(args_raw).into_iter()
+    let args: Vec<String> = split_args(args_raw)
+        .into_iter()
         .filter(|s| !s.is_empty() && s != "&self")
         .map(|s| {
             let parts: Vec<&str> = s.splitn(2, ':').collect();
@@ -184,41 +183,47 @@ fn format_signature(name: &str, args_raw: &str, ret_raw: &str) -> String {
 fn map_type(t: &str) -> String {
     let t = t.trim();
     // Basic cleanup
-    let t = t.replace("alloc::string::", "")
-             .replace("alloc::vec::", "")
-             .replace("alloc::collections::", "")
-             .replace("eldritch_core::", "")
-             .replace("std::collections::", "")
-             .replace("super::", ""); // remove super:: if present
+    let t = t
+        .replace("alloc::string::", "")
+        .replace("alloc::vec::", "")
+        .replace("alloc::collections::", "")
+        .replace("eldritch_core::", "")
+        .replace("std::collections::", "")
+        .replace("super::", ""); // remove super:: if present
 
-    if t == "String" { "str".to_string() }
-    else if t == "i64" { "int".to_string() }
-    else if t == "bool" { "bool".to_string() }
-    else if t == "Vec<u8>" { "Bytes".to_string() }
-    else if t.starts_with("Vec<") {
-        let inner = &t[4..t.len()-1];
+    if t == "String" {
+        "str".to_string()
+    } else if t == "i64" {
+        "int".to_string()
+    } else if t == "bool" {
+        "bool".to_string()
+    } else if t == "Vec<u8>" {
+        "Bytes".to_string()
+    } else if t.starts_with("Vec<") {
+        let inner = &t[4..t.len() - 1];
         format!("List<{}>", map_type(inner))
-    }
-    else if t.starts_with("BTreeMap<") {
+    } else if t.starts_with("BTreeMap<") {
         if t.contains("Value") {
             "Dict".to_string() // Simplify generalized dicts
         } else {
-             let content = &t[9..t.len()-1];
-             let parts = split_args(content);
-             if parts.len() == 2 {
-                 format!("Dict<{}, {}>", map_type(&parts[0]), map_type(&parts[1]))
-             } else {
-                 "Dict".to_string()
-             }
+            let content = &t[9..t.len() - 1];
+            let parts = split_args(content);
+            if parts.len() == 2 {
+                format!("Dict<{}, {}>", map_type(&parts[0]), map_type(&parts[1]))
+            } else {
+                "Dict".to_string()
+            }
         }
-    }
-    else if t.starts_with("Option<") {
-        let inner = &t[7..t.len()-1];
+    } else if t.starts_with("Option<") {
+        let inner = &t[7..t.len() - 1];
         format!("Option<{}>", map_type(inner))
+    } else if t == "Value" {
+        "Value".to_string()
+    } else if t == "()" {
+        "None".to_string()
+    } else {
+        t
     }
-    else if t == "Value" { "Value".to_string() }
-    else if t == "()" { "None".to_string() }
-    else { t }
 }
 
 fn generate_markdown(libs: &[LibraryDoc], out_path: &Path) {
@@ -242,7 +247,7 @@ fn generate_markdown(libs: &[LibraryDoc], out_path: &Path) {
 
         content.push_str(&format!("## {} Library\n", title_name));
         if !lib.docs.is_empty() {
-             content.push_str(&format!("{}\n\n", lib.docs));
+            content.push_str(&format!("{}\n\n", lib.docs));
         }
 
         for method in &lib.methods {
@@ -251,7 +256,7 @@ fn generate_markdown(libs: &[LibraryDoc], out_path: &Path) {
             if !method.docs.is_empty() {
                 content.push_str(&format!("{}\n\n", method.docs));
             } else {
-                content.push_str("\n");
+                content.push('\n');
             }
         }
     }

@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_sys_fake() {
-        let sys = SysLibraryFake::default();
+        let sys = SysLibraryFake;
         assert_eq!(sys.get_pid().unwrap(), 1337);
         assert!(sys.is_linux().unwrap());
         assert!(!sys.is_windows().unwrap());

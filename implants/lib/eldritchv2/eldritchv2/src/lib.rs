@@ -25,7 +25,6 @@ pub use eldritch_core::{
     StdoutPrinter, TokenKind, Value, conversion,
 };
 
-use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -119,15 +118,15 @@ impl Interpreter {
 
         #[cfg(feature = "fake_bindings")]
         {
-            self.inner.register_lib(CryptoLibraryFake::default());
+            self.inner.register_lib(CryptoLibraryFake);
             self.inner.register_lib(FileLibraryFake::default());
-            self.inner.register_lib(HttpLibraryFake::default());
-            self.inner.register_lib(PivotLibraryFake::default());
-            self.inner.register_lib(ProcessLibraryFake::default());
-            self.inner.register_lib(RandomLibraryFake::default());
-            self.inner.register_lib(RegexLibraryFake::default());
-            self.inner.register_lib(SysLibraryFake::default());
-            self.inner.register_lib(TimeLibraryFake::default());
+            self.inner.register_lib(HttpLibraryFake);
+            self.inner.register_lib(PivotLibraryFake);
+            self.inner.register_lib(ProcessLibraryFake);
+            self.inner.register_lib(RandomLibraryFake);
+            self.inner.register_lib(RegexLibraryFake);
+            self.inner.register_lib(SysLibraryFake);
+            self.inner.register_lib(TimeLibraryFake);
         }
 
         self
@@ -147,7 +146,8 @@ impl Interpreter {
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        let assets_lib = StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
+        let assets_lib =
+            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
         self.inner.register_lib(assets_lib);
 
         self

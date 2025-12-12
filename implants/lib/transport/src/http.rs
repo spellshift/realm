@@ -101,6 +101,7 @@ where
     pb::xchacha::decode_with_chacha::<Req, Resp>(data)
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub struct HTTP {
     client: hyper::Client<hyper::client::HttpConnector>,

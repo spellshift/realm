@@ -1,12 +1,11 @@
-
-use eldritchv2::{Interpreter, BufferPrinter};
-use std::sync::Arc;
-use std::path::PathBuf;
-use std::fs;
-use anyhow::{Result, Context};
-use eldritch::runtime::{Message, messages::AsyncMessage};
+use anyhow::{Context, Result};
+use eldritch::runtime::{messages::AsyncMessage, Message};
+use eldritchv2::{BufferPrinter, Interpreter};
 use pb::eldritch::Tome;
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 #[test]
 fn run_migration_tests() -> Result<()> {
@@ -20,7 +19,7 @@ fn run_migration_tests() -> Result<()> {
         .context("Failed to read script directory")?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.extension().map_or(false, |ext| ext == "eld"))
+        .filter(|p| p.extension().is_some_and(|ext| ext == "eld"))
         .collect();
 
     entries.sort();
@@ -62,8 +61,7 @@ fn run_v2(code: &str) -> Result<String> {
     // Based on `eldritchv2/src/lib.rs`, `with_default_libs` registers fake libs if `fake_bindings` feature is on.
     // `with_fake_agent` is separate.
 
-    let mut interp = Interpreter::new_with_printer(printer.clone())
-        .with_default_libs();
+    let mut interp = Interpreter::new_with_printer(printer.clone()).with_default_libs();
 
     // Check if we can register fake agent too
     #[cfg(feature = "fake_bindings")]
@@ -98,23 +96,20 @@ async fn run_v1(code: &str) -> Result<String> {
     // Let's check V1 tests again. `for msg in runtime.messages()`.
 
     for msg in runtime.messages() {
-        match msg {
-            Message::Async(am) => {
-                match am {
-                    AsyncMessage::ReportText(m) => {
-                        output.push_str(&m.text());
-                        // output.push('\n'); // ReportText usually has newline? Or maybe not.
-                        // V1 tests show: want_text: format!("{}\n", "2") for print(1+1).
-                        // So print adds newline.
-                        // `ReportText` struct likely contains the text.
-                    },
-                    AsyncMessage::ReportError(m) => {
-                        output.push_str(&format!("Error: {}\n", m.error));
-                    },
-                    _ => {},
+        if let Message::Async(am) = msg {
+            match am {
+                AsyncMessage::ReportText(m) => {
+                    output.push_str(&m.text());
+                    // output.push('\n'); // ReportText usually has newline? Or maybe not.
+                    // V1 tests show: want_text: format!("{}\n", "2") for print(1+1).
+                    // So print adds newline.
+                    // `ReportText` struct likely contains the text.
                 }
-            },
-            _ => {},
+                AsyncMessage::ReportError(m) => {
+                    output.push_str(&format!("Error: {}\n", m.error));
+                }
+                _ => {}
+            }
         }
     }
 

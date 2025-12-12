@@ -24,6 +24,7 @@ static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
 static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub struct GRPC {
     grpc: Option<tonic::client::Grpc<tonic::transport::Channel>>,

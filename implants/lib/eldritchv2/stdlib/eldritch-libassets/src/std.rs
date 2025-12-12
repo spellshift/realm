@@ -1,15 +1,14 @@
 use super::AssetsLibrary;
 use crate::RustEmbed;
-use core::marker::PhantomData;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
+use core::marker::PhantomData;
 use eldritch_libagent::agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
-
 
 pub struct EmptyAssets;
 
@@ -18,7 +17,9 @@ impl crate::RustEmbed for EmptyAssets {
         None
     }
     fn iter() -> impl Iterator<Item = alloc::borrow::Cow<'static, str>> {
-        alloc::vec::Vec::<alloc::string::String>::new().into_iter().map(alloc::borrow::Cow::from)
+        alloc::vec::Vec::<alloc::string::String>::new()
+            .into_iter()
+            .map(alloc::borrow::Cow::from)
     }
 }
 
@@ -99,16 +100,16 @@ impl<A: RustEmbed + Send + Sync + 'static> AssetsLibrary for StdAssetsLibrary<A>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::collections::BTreeMap;
     use alloc::string::ToString;
     use eldritch_libagent::fake::AgentFake;
     use pb::c2;
     use std::borrow::Cow;
-    use std::sync::Mutex;
-    use alloc::collections::BTreeMap;
     use std::collections::BTreeSet;
+    use std::sync::Mutex;
 
-    use rust_embed::RustEmbed as CrateRustEmbed;
     use crate::RustEmbed as LocalRustEmbed;
+    use rust_embed::RustEmbed as CrateRustEmbed;
 
     #[cfg(debug_assertions)]
     #[derive(CrateRustEmbed)]
@@ -138,7 +139,10 @@ mod tests {
         }
 
         fn with_asset(self, name: &str, content: &[u8]) -> Self {
-            self.assets.lock().unwrap().insert(name.to_string(), content.to_vec());
+            self.assets
+                .lock()
+                .unwrap()
+                .insert(name.to_string(), content.to_vec());
             self
         }
 
@@ -160,45 +164,111 @@ mod tests {
             }
         }
 
-        fn report_credential(&self, _req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse, String> { Ok(c2::ReportCredentialResponse::default()) }
-        fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> { Ok(c2::ReportFileResponse::default()) }
-        fn report_process_list(&self, _req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String> { Ok(c2::ReportProcessListResponse::default()) }
-        fn report_task_output(&self, _req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse, String> { Ok(c2::ReportTaskOutputResponse::default()) }
-        fn reverse_shell(&self) -> Result<(), String> { Ok(()) }
-        fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> { Ok(()) }
-        fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
-        fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> { Ok(c2::ClaimTasksResponse::default()) }
-        fn get_config(&self) -> Result<BTreeMap<String, String>, String> { Ok(BTreeMap::new()) }
-        fn get_transport(&self) -> Result<String, String> { Ok("mock".into()) }
-        fn set_transport(&self, _transport: String) -> Result<(), String> { Ok(()) }
-        fn list_transports(&self) -> Result<Vec<String>, String> { Ok(Vec::new()) }
-        fn get_callback_interval(&self) -> Result<u64, String> { Ok(10) }
-        fn set_callback_interval(&self, _interval: u64) -> Result<(), String> { Ok(()) }
-        fn list_tasks(&self) -> Result<Vec<c2::Task>, String> { Ok(Vec::new()) }
-        fn stop_task(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
-        fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
-        fn list_callback_uris(&self) -> std::result::Result<std::collections::BTreeSet<String>, String> { Ok(BTreeSet::new()) }
-        fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-        fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-        fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
-        fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
-        fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> { Ok(()) }
+        fn report_credential(
+            &self,
+            _req: c2::ReportCredentialRequest,
+        ) -> Result<c2::ReportCredentialResponse, String> {
+            Ok(c2::ReportCredentialResponse::default())
+        }
+        fn report_file(
+            &self,
+            _req: c2::ReportFileRequest,
+        ) -> Result<c2::ReportFileResponse, String> {
+            Ok(c2::ReportFileResponse::default())
+        }
+        fn report_process_list(
+            &self,
+            _req: c2::ReportProcessListRequest,
+        ) -> Result<c2::ReportProcessListResponse, String> {
+            Ok(c2::ReportProcessListResponse::default())
+        }
+        fn report_task_output(
+            &self,
+            _req: c2::ReportTaskOutputRequest,
+        ) -> Result<c2::ReportTaskOutputResponse, String> {
+            Ok(c2::ReportTaskOutputResponse::default())
+        }
+        fn reverse_shell(&self) -> Result<(), String> {
+            Ok(())
+        }
+        fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
+            Ok(())
+        }
+        fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
+            Ok(())
+        }
+        fn claim_tasks(
+            &self,
+            _req: c2::ClaimTasksRequest,
+        ) -> Result<c2::ClaimTasksResponse, String> {
+            Ok(c2::ClaimTasksResponse::default())
+        }
+        fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
+            Ok(BTreeMap::new())
+        }
+        fn get_transport(&self) -> Result<String, String> {
+            Ok("mock".into())
+        }
+        fn set_transport(&self, _transport: String) -> Result<(), String> {
+            Ok(())
+        }
+        fn list_transports(&self) -> Result<Vec<String>, String> {
+            Ok(Vec::new())
+        }
+        fn get_callback_interval(&self) -> Result<u64, String> {
+            Ok(10)
+        }
+        fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
+            Ok(())
+        }
+        fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+            Ok(Vec::new())
+        }
+        fn stop_task(&self, _task_id: i64) -> Result<(), String> {
+            Ok(())
+        }
+        fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+            Ok(())
+        }
+        fn list_callback_uris(
+            &self,
+        ) -> std::result::Result<std::collections::BTreeSet<String>, String> {
+            Ok(BTreeSet::new())
+        }
+        fn get_active_callback_uri(&self) -> std::result::Result<String, String> {
+            Ok(String::new())
+        }
+        fn get_next_callback_uri(&self) -> std::result::Result<String, String> {
+            Ok(String::new())
+        }
+        fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+            Ok(())
+        }
+        fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+            Ok(())
+        }
+        fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+            Ok(())
+        }
     }
 
     #[test]
     fn test_read_binary_embedded_success() {
-        let agent = Arc::new(AgentFake::default());
+        let agent = Arc::new(AgentFake);
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
-        assert!(content.len() > 0);
-        assert_eq!(std::str::from_utf8(&content).unwrap(), "print(\"This script just prints\")\n");
+        assert!(!content.is_empty());
+        assert_eq!(
+            std::str::from_utf8(&content).unwrap(),
+            "print(\"This script just prints\")\n"
+        );
     }
 
     #[test]
     fn test_read_binary_embedded_fail() {
-        let agent = Arc::new(AgentFake::default());
+        let agent = Arc::new(AgentFake);
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
     }
@@ -222,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_read_embedded_success() {
-        let agent = Arc::new(AgentFake::default());
+        let agent = Arc::new(AgentFake);
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
@@ -231,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_copy_success() {
-        let agent = Arc::new(AgentFake::default());
+        let agent = Arc::new(AgentFake);
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
@@ -244,21 +314,30 @@ mod tests {
 
     #[test]
     fn test_copy_fail_read() {
-        let agent = Arc::new(AgentFake::default());
+        let agent = Arc::new(AgentFake);
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
-        let result = lib.copy("nonexistent".to_string(), dest_path.to_str().unwrap().to_string());
+        let result = lib.copy(
+            "nonexistent".to_string(),
+            dest_path.to_str().unwrap().to_string(),
+        );
         assert!(result.is_err());
     }
 
     #[test]
     fn test_copy_fail_write() {
-        let agent = Arc::new(AgentFake::default());
+        let agent = Arc::new(AgentFake);
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let _dest_str = temp_dir.path().to_str().unwrap().to_string();
-        let invalid_dest = temp_dir.path().join("nonexistent_dir").join("file.txt").to_str().unwrap().to_string();
+        let invalid_dest = temp_dir
+            .path()
+            .join("nonexistent_dir")
+            .join("file.txt")
+            .to_str()
+            .unwrap()
+            .to_string();
         let result = lib.copy("print/main.eldritch".to_string(), invalid_dest);
         assert!(result.is_err());
     }

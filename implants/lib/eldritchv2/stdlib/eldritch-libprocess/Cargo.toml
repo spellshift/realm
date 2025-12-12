@@ -3,9 +3,6 @@ name = "eldritch-libprocess"
 version = "0.3.0"
 edition = "2024"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }

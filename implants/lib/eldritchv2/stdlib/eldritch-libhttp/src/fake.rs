@@ -1,12 +1,11 @@
-
-use eldritch_core::Value;
+use super::HttpLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use spin::RwLock;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
-use super::HttpLibrary;
+use spin::RwLock;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(HttpLibrary)]
@@ -31,7 +30,10 @@ impl HttpLibrary for HttpLibraryFake {
 
         // Mock headers
         let mut headers_map = BTreeMap::new();
-        headers_map.insert(Value::String("Content-Type".into()), Value::String("text/plain".into()));
+        headers_map.insert(
+            Value::String("Content-Type".into()),
+            Value::String("text/plain".into()),
+        );
         map.insert(
             "headers".into(),
             Value::Dictionary(Arc::new(RwLock::new(headers_map))),
@@ -81,7 +83,7 @@ mod tests {
 
     #[test]
     fn test_http_fake_get() {
-        let http = HttpLibraryFake::default();
+        let http = HttpLibraryFake;
         let resp = http.get("http://example.com".into(), None).unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(200));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
@@ -96,15 +98,17 @@ mod tests {
 
     #[test]
     fn test_http_fake_post() {
-        let http = HttpLibraryFake::default();
+        let http = HttpLibraryFake;
         let resp = http
             .post("http://example.com".into(), Some(vec![1, 2, 3]), None)
             .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(201));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
-            assert!(String::from_utf8(b.clone())
-                .unwrap()
-                .contains("received 3 bytes"));
+            assert!(
+                String::from_utf8(b.clone())
+                    .unwrap()
+                    .contains("received 3 bytes")
+            );
         } else {
             panic!("Body should be bytes");
         }

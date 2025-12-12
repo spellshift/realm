@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use eldritch_repl::parser::InputParser;
 use eldritch_repl::{Input, Repl};
 
@@ -44,7 +44,7 @@ fn benchmark_repl_handle_input(c: &mut Criterion) {
     // Benchmark typing speed
     group.bench_function("typing_speed", |b| {
         b.iter_batched(
-            || Repl::new(),
+            Repl::new,
             |mut repl| {
                 for c in "print('hello')".chars() {
                     repl.handle_input(Input::Char(c));

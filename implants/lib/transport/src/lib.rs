@@ -43,29 +43,33 @@ impl Transport for ActiveTransport {
                 return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, proxy_uri)?));
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
-            },
+            }
 
             // 2. gRPC: Rewrite (Order: longest match 'grpcs' first)
             s if s.starts_with("grpc://") || s.starts_with("grpcs://") => {
                 #[cfg(feature = "grpc")]
                 {
-                    let new = s.replacen("grpcs://", "https://", 1).replacen("grpc://", "http://", 1);
-                    return Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, proxy_uri)?));
+                    let new = s
+                        .replacen("grpcs://", "https://", 1)
+                        .replacen("grpc://", "http://", 1);
+                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, proxy_uri)?))
                 }
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
-            },
+            }
 
             // 3. HTTP1: Rewrite
             s if s.starts_with("http1://") || s.starts_with("https1://") => {
                 #[cfg(feature = "http1")]
                 {
-                    let new = s.replacen("https1://", "https://", 1).replacen("http1://", "http://", 1);
-                    return Ok(ActiveTransport::Http(http::HTTP::new(new, proxy_uri)?));
+                    let new = s
+                        .replacen("https1://", "https://", 1)
+                        .replacen("http1://", "http://", 1);
+                    Ok(ActiveTransport::Http(http::HTTP::new(new, proxy_uri)?))
                 }
                 #[cfg(not(feature = "http1"))]
                 return Err(anyhow!("http1 transport not enabled"));
-            },
+            }
 
             _ => Err(anyhow!("Could not determine transport from URI: {}", uri)),
         }
@@ -199,6 +203,7 @@ impl Transport for ActiveTransport {
         }
     }
 
+    #[allow(clippy::vec_init_then_push)]
     fn list_available(&self) -> Vec<String> {
         let mut list = Vec::new();
         #[cfg(feature = "grpc")]
@@ -244,10 +249,7 @@ mod tests {
     #[cfg(not(feature = "http1"))]
     async fn test_routes_to_http1_transport() {
         // All these prefixes should result in the Http1 variant
-        let inputs = vec![
-            "http1://127.0.0.1:8080",
-            "https1://127.0.0.1:8080",
-        ];
+        let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
 
         for uri in inputs {
             let result = ActiveTransport::new(uri.to_string(), None);
@@ -266,19 +268,18 @@ mod tests {
         // If the feature is off, these should error out
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
         for uri in inputs {
-             let result = ActiveTransport::new(uri.to_string(), None);
-             assert!(result.is_err(), "Expected error for '{}' when gRPC feature is disabled", uri);
+            let result = ActiveTransport::new(uri.to_string(), None);
+            assert!(
+                result.is_err(),
+                "Expected error for '{}' when gRPC feature is disabled",
+                uri
+            );
         }
     }
 
     #[tokio::test]
     async fn test_unknown_transport_errors() {
-        let inputs = vec![
-            "ftp://example.com",
-            "ws://example.com",
-            "random-string",
-            "",
-        ];
+        let inputs = vec!["ftp://example.com", "ws://example.com", "random-string", ""];
 
         for uri in inputs {
             let result = ActiveTransport::new(uri.to_string(), None);

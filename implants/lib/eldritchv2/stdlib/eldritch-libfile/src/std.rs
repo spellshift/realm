@@ -80,7 +80,13 @@ impl FileLibrary for StdFileLibrary {
         let path = path.unwrap_or_else(|| {
             ::std::env::current_dir()
                 .map(|p| p.to_string_lossy().to_string())
-                .unwrap_or_else(|_| if cfg!(windows) { "C:\\".to_string() } else { "/".to_string() })
+                .unwrap_or_else(|_| {
+                    if cfg!(windows) {
+                        "C:\\".to_string()
+                    } else {
+                        "/".to_string()
+                    }
+                })
         });
         list_impl(path).map_err(|e| e.to_string())
     }
@@ -287,7 +293,9 @@ fn follow_impl(path: String, fn_val: Value) -> AnyhowResult<()> {
 
 #[cfg(not(feature = "stdlib"))]
 fn follow_impl(_path: String, _fn_val: Value) -> AnyhowResult<()> {
-    Err(anyhow::anyhow!("follow not supported in no_std or without stdlib feature"))
+    Err(anyhow::anyhow!(
+        "follow not supported in no_std or without stdlib feature"
+    ))
 }
 
 fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
@@ -471,7 +479,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     // Times
     if let Ok(d) = metadata.modified().and_then(|m| {
         m.duration_since(::std::time::UNIX_EPOCH)
-            .map_err(|e| std::io::Error::other(e))
+            .map_err(std::io::Error::other)
     }) {
         dict.insert(
             "modified".to_string(),
@@ -667,7 +675,7 @@ fn check_path(
                     .map_err(std::io::Error::other)
             })
             .map(|d| d.as_secs() as i64)
-            .map_or(false, |secs| secs != mt)
+            .is_ok_and(|secs| secs != mt)
         {
             return Ok(false);
         }
@@ -682,7 +690,7 @@ fn check_path(
                     .map_err(std::io::Error::other)
             })
             .map(|d| d.as_secs() as i64)
-            .map_or(false, |secs| secs != ct)
+            .is_ok_and(|secs| secs != ct)
         {
             return Ok(false);
         }
@@ -729,24 +737,32 @@ fn timestomp_impl(
 fn parse_time(val: Value) -> AnyhowResult<::std::time::SystemTime> {
     match val {
         Value::Int(i) => {
-             // Epoch seconds
-             Ok(::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(i as u64))
+            // Epoch seconds
+            Ok(::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(i as u64))
         }
         Value::String(s) => {
             // Try ISO 8601 first
             if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&s) {
-                 return Ok(dt.into());
+                return Ok(dt.into());
             }
             // Try naive? chrono supports various.
             // Let's also support a simpler format "YYYY-MM-DD HH:MM:SS"
             if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S") {
                 // Assume local? No, let's assume UTC for consistency unless offset provided
-                return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(dt, chrono::Utc).into());
+                return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                    dt,
+                    chrono::Utc,
+                )
+                .into());
             }
             // Try just YYYY-MM-DD
             if let Ok(d) = chrono::NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
-                 let dt = d.and_hms_opt(0, 0, 0).unwrap();
-                 return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(dt, chrono::Utc).into());
+                let dt = d.and_hms_opt(0, 0, 0).unwrap();
+                return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+                    dt,
+                    chrono::Utc,
+                )
+                .into());
             }
 
             anyhow::bail!("Failed to parse date string: {}", s)
@@ -774,30 +790,35 @@ fn apply_timestamps(
 
     // Helper to convert SystemTime to TimeVal
     fn system_time_to_timeval(t: ::std::time::SystemTime) -> TimeVal {
-        let d = t.duration_since(::std::time::UNIX_EPOCH).unwrap_or(::std::time::Duration::ZERO);
+        let d = t
+            .duration_since(::std::time::UNIX_EPOCH)
+            .unwrap_or(::std::time::Duration::ZERO);
         TimeVal::new(d.as_secs() as i64, d.subsec_micros() as i64)
     }
 
     let a_tv = if let Some(a) = atime {
         system_time_to_timeval(a)
     } else {
-        meta.accessed().ok().map(system_time_to_timeval).unwrap_or_else(|| {
-             // Fallback if accessed() not supported? Use current time or 0?
-             // Using current time is safer than 0.
-             system_time_to_timeval(::std::time::SystemTime::now())
-        })
+        meta.accessed()
+            .ok()
+            .map(system_time_to_timeval)
+            .unwrap_or_else(|| {
+                // Fallback if accessed() not supported? Use current time or 0?
+                // Using current time is safer than 0.
+                system_time_to_timeval(::std::time::SystemTime::now())
+            })
     };
 
     let m_tv = if let Some(m) = mtime {
         system_time_to_timeval(m)
     } else {
-        meta.modified().ok().map(system_time_to_timeval).unwrap_or_else(|| {
-             system_time_to_timeval(::std::time::SystemTime::now())
-        })
+        meta.modified()
+            .ok()
+            .map(system_time_to_timeval)
+            .unwrap_or_else(|| system_time_to_timeval(::std::time::SystemTime::now()))
     };
 
-    nix::sys::stat::utimes(path, &a_tv, &m_tv)
-        .context("Failed to set file times (utimes)")?;
+    nix::sys::stat::utimes(path, &a_tv, &m_tv).context("Failed to set file times (utimes)")?;
 
     // ctime is ignored/unsupported
     Ok(())
@@ -810,11 +831,12 @@ fn apply_timestamps(
     atime: Option<::std::time::SystemTime>,
     ctime: Option<::std::time::SystemTime>,
 ) -> AnyhowResult<()> {
-    use windows_sys::Win32::Foundation::{FILETIME, HANDLE, INVALID_HANDLE_VALUE, CloseHandle};
-    use windows_sys::Win32::Storage::FileSystem::{
-        CreateFileA, SetFileTime, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS
-    };
     use std::os::windows::prelude::OsStrExt;
+    use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, INVALID_HANDLE_VALUE};
+    use windows_sys::Win32::Storage::FileSystem::{
+        CreateFileA, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_READ, FILE_SHARE_WRITE,
+        FILE_WRITE_ATTRIBUTES, OPEN_EXISTING, SetFileTime,
+    };
 
     // We need to open the file handle
     // windows-sys takes raw pointers.
@@ -833,7 +855,9 @@ fn apply_timestamps(
     let handle = file.as_raw_handle() as HANDLE;
 
     fn to_filetime(t: ::std::time::SystemTime) -> FILETIME {
-        let since_epoch = t.duration_since(::std::time::UNIX_EPOCH).unwrap_or(::std::time::Duration::ZERO);
+        let since_epoch = t
+            .duration_since(::std::time::UNIX_EPOCH)
+            .unwrap_or(::std::time::Duration::ZERO);
         // Windows epoch is 1601-01-01. Unix is 1970-01-01.
         // Difference is 11644473600 seconds.
         // Ticks are 100ns.
@@ -848,14 +872,23 @@ fn apply_timestamps(
     let ft_access = atime.map(to_filetime);
     let ft_write = mtime.map(to_filetime);
 
-    let p_creation = ft_creation.as_ref().map(|p| p as *const FILETIME).unwrap_or(std::ptr::null());
-    let p_access = ft_access.as_ref().map(|p| p as *const FILETIME).unwrap_or(std::ptr::null());
-    let p_write = ft_write.as_ref().map(|p| p as *const FILETIME).unwrap_or(std::ptr::null());
+    let p_creation = ft_creation
+        .as_ref()
+        .map(|p| p as *const FILETIME)
+        .unwrap_or(std::ptr::null());
+    let p_access = ft_access
+        .as_ref()
+        .map(|p| p as *const FILETIME)
+        .unwrap_or(std::ptr::null());
+    let p_write = ft_write
+        .as_ref()
+        .map(|p| p as *const FILETIME)
+        .unwrap_or(std::ptr::null());
 
     let res = unsafe { SetFileTime(handle, p_creation, p_access, p_write) };
 
     if res == 0 {
-         anyhow::bail!("SetFileTime failed");
+        anyhow::bail!("SetFileTime failed");
     }
 
     Ok(())
@@ -870,7 +903,6 @@ fn apply_timestamps(
 ) -> AnyhowResult<()> {
     anyhow::bail!("timestomp not supported on this platform")
 }
-
 
 // Tests
 #[cfg(test)]
@@ -1000,10 +1032,7 @@ mod tests {
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_millis(200));
             // Append line
-             let mut file = OpenOptions::new()
-                .append(true)
-                .open(path_clone)
-                .unwrap();
+            let mut file = OpenOptions::new().append(true).open(path_clone).unwrap();
             file.write_all(b"line2\n").unwrap();
         });
 
@@ -1047,7 +1076,14 @@ cb
         let target_time = std::time::SystemTime::now();
         let target_secs = target_time.duration_since(std::time::UNIX_EPOCH)?.as_secs();
 
-        lib.timestomp(path.clone(), Some(Value::Int(target_secs as i64)), None, None, None).unwrap();
+        lib.timestomp(
+            path.clone(),
+            Some(Value::Int(target_secs as i64)),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
 
         let new_meta = fs::metadata(&path)?;
         let new_mtime = new_meta.modified()?;
@@ -1055,11 +1091,18 @@ cb
 
         // Allow small skew if file system has low resolution (e.g. some only support seconds)
         // But since we use same secs, should be equal or close.
-        assert!( (new_secs as i64 - target_secs as i64).abs() <= 1 );
+        assert!((new_secs as i64 - target_secs as i64).abs() <= 1);
 
         // 2. Set specific atime (String)
         let time_str = "2020-01-01 12:00:00"; // UTC implied
-        lib.timestomp(path.clone(), None, Some(Value::String(time_str.to_string())), None, None).unwrap();
+        lib.timestomp(
+            path.clone(),
+            None,
+            Some(Value::String(time_str.to_string())),
+            None,
+            None,
+        )
+        .unwrap();
 
         let meta2 = fs::metadata(&path)?;
         let atime2 = meta2.accessed()?;
@@ -1081,12 +1124,19 @@ cb
         std::thread::sleep(std::time::Duration::from_secs(1));
         fs::write(&ref_path, "update")?;
         let ref_meta = fs::metadata(&ref_path)?;
-        let ref_mtime = ref_meta.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+        let ref_mtime = ref_meta
+            .modified()?
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs();
 
-        lib.timestomp(path.clone(), None, None, None, Some(ref_path)).unwrap();
+        lib.timestomp(path.clone(), None, None, None, Some(ref_path))
+            .unwrap();
 
         let final_meta = fs::metadata(&path)?;
-        let final_mtime = final_meta.modified()?.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+        let final_mtime = final_meta
+            .modified()?
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs();
 
         assert_eq!(final_mtime, ref_mtime);
         Ok(())
@@ -1111,7 +1161,9 @@ cb
         let base_path_str = base_path.to_string_lossy().to_string();
 
         // 1. Basic list all
-        let res = lib.find(base_path_str.clone(), None, None, None, None, None).unwrap();
+        let res = lib
+            .find(base_path_str.clone(), None, None, None, None, None)
+            .unwrap();
         // Should contain file1, file2, file3. Might contain dir1 too.
         // Logic says: `if path.is_dir() { recurse } if check_path() { push }`
         // check_path without filters returns true. So it should return dirs too.
@@ -1120,17 +1172,44 @@ cb
         assert!(res.iter().any(|p| p.contains("dir1")));
 
         // 2. Name filter
-        let res = lib.find(base_path_str.clone(), Some(".txt".to_string()), None, None, None, None).unwrap();
+        let res = lib
+            .find(
+                base_path_str.clone(),
+                Some(".txt".to_string()),
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
         assert!(res.iter().any(|p| p.contains("file1.txt")));
         assert!(res.iter().any(|p| p.contains("file3.txt")));
         assert!(!res.iter().any(|p| p.contains("file2.log")));
 
         // 3. Type filter
-        let res = lib.find(base_path_str.clone(), None, Some("file".to_string()), None, None, None).unwrap();
+        let res = lib
+            .find(
+                base_path_str.clone(),
+                None,
+                Some("file".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
         assert!(res.iter().all(|p| !Path::new(p).is_dir()));
         assert!(res.iter().any(|p| p.contains("file1.txt")));
 
-        let res = lib.find(base_path_str.clone(), None, Some("dir".to_string()), None, None, None).unwrap();
+        let res = lib
+            .find(
+                base_path_str.clone(),
+                None,
+                Some("dir".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
         assert!(res.iter().all(|p| Path::new(p).is_dir()));
         assert!(res.iter().any(|p| p.contains("dir1")));
 
@@ -1146,12 +1225,14 @@ cb
         fs::write(&path, "hello world hello universe")?;
 
         // Replace first
-        lib.replace(path.clone(), "hello".to_string(), "hi".to_string()).unwrap();
+        lib.replace(path.clone(), "hello".to_string(), "hi".to_string())
+            .unwrap();
         let content = fs::read_to_string(&path)?;
         assert_eq!(content, "hi world hello universe");
 
         // Replace all
-        lib.replace_all(path.clone(), "hello".to_string(), "hi".to_string()).unwrap();
+        lib.replace_all(path.clone(), "hello".to_string(), "hi".to_string())
+            .unwrap();
         let content = fs::read_to_string(&path)?;
         assert_eq!(content, "hi world hi universe");
 
@@ -1185,7 +1266,9 @@ cb
         let base_path = tmp_dir.path();
         let file_path = base_path.join("test.txt");
 
-        let parent = lib.parent_dir(file_path.to_string_lossy().to_string()).unwrap();
+        let parent = lib
+            .parent_dir(file_path.to_string_lossy().to_string())
+            .unwrap();
         // parent_dir returns string of parent path
         // On temp dir, it might be complex, but let's check it ends with what we expect or is equal
         assert_eq!(parent, base_path.to_string_lossy().to_string());
@@ -1222,7 +1305,11 @@ cb
 
         fs::write(&src, "move me")?;
 
-        lib.move_(src.to_string_lossy().to_string(), dst.to_string_lossy().to_string()).unwrap();
+        lib.move_(
+            src.to_string_lossy().to_string(),
+            dst.to_string_lossy().to_string(),
+        )
+        .unwrap();
 
         assert!(!src.exists());
         assert!(dst.exists());
@@ -1240,7 +1327,11 @@ cb
 
         fs::write(&src, "copy me")?;
 
-        lib.copy(src.to_string_lossy().to_string(), dst.to_string_lossy().to_string()).unwrap();
+        lib.copy(
+            src.to_string_lossy().to_string(),
+            dst.to_string_lossy().to_string(),
+        )
+        .unwrap();
 
         assert!(src.exists());
         assert!(dst.exists());

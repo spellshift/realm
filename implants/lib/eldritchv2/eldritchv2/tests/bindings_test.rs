@@ -11,15 +11,19 @@ mod tests {
     fn create_interp() -> Interpreter {
         #[cfg(feature = "stdlib")]
         {
-            let agent_mock = Arc::new(AgentFake::default());
+            let agent_mock = Arc::new(AgentFake);
             let task_id = 123;
             Interpreter::new()
                 .with_default_libs()
-                .with_task_context::<eldritch_libassets::std::EmptyAssets>(agent_mock, task_id, vec![])
+                .with_task_context::<eldritch_libassets::std::EmptyAssets>(
+                    agent_mock,
+                    task_id,
+                    vec![],
+                )
         }
         #[cfg(not(feature = "stdlib"))]
         {
-             Interpreter::new().with_default_libs()
+            Interpreter::new().with_default_libs()
         }
     }
 

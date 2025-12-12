@@ -21,7 +21,9 @@ mod tests {
 
     #[test]
     fn test_get_env() -> Result<()> {
-        env::set_var("FOO", "BAR");
+        unsafe {
+            env::set_var("FOO", "BAR");
+        }
         let res = get_env()?;
         let val = res.get("FOO").unwrap();
         assert_eq!(val, "BAR");

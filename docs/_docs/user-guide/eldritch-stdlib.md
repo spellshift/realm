@@ -451,19 +451,6 @@ Encodes a string to Base64.
 **Errors**
 - Returns an error string if the encoding type is invalid.
 
-### crypto.from_json
-`crypto.from_json(content: str) -> Value`
-Parses a JSON string into an Eldritch value (Dict, List, etc.).
-
-**Parameters**
-- `content` (`str`): The JSON string.
-
-**Returns**
-- `Value`: The parsed value.
-
-**Errors**
-- Returns an error string if the JSON is invalid.
-
 ### crypto.hash_file
 `crypto.hash_file(file: str, algo: str) -> str`
 Calculates the hash of a file on disk.

@@ -30,10 +30,13 @@ mod tests {
 
     #[test]
     fn test_time_fake() {
-        let time = TimeLibraryFake::default();
+        let time = TimeLibraryFake;
         assert_eq!(time.now().unwrap(), 1600000000);
         assert_eq!(time.format_to_epoch("any".into(), "any".into()).unwrap(), 0);
-        assert_eq!(time.format_to_readable(123, "any".into()).unwrap(), "1970-01-01 00:00:00");
+        assert_eq!(
+            time.format_to_readable(123, "any".into()).unwrap(),
+            "1970-01-01 00:00:00"
+        );
         assert!(time.sleep(10).is_ok());
     }
 }

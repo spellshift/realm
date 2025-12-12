@@ -3,9 +3,6 @@ name = "eldritch-libfile"
 version = "0.3.0"
 edition = "2024"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [features]
 default = ["stdlib"]
 stdlib = [

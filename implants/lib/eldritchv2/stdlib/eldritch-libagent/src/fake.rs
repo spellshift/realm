@@ -1,11 +1,9 @@
-use eldritch_core::{Interpreter, Value};
-use eldritch_macros::eldritch_library_impl;
+use super::AgentLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use super::AgentLibrary;
-use std::collections::BTreeSet;
-
+use eldritch_core::{Interpreter, Value};
+use eldritch_macros::eldritch_library_impl;
 
 #[cfg(feature = "stdlib")]
 use super::conversion::*;
@@ -115,21 +113,32 @@ use pb::c2;
 #[derive(Debug, Default)]
 pub struct AgentFake;
 
+use alloc::collections::BTreeSet;
+
 #[cfg(feature = "stdlib")]
 impl Agent for AgentFake {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(Vec::new())
     }
-    fn report_credential(&self, _req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse, String> {
+    fn report_credential(
+        &self,
+        _req: c2::ReportCredentialRequest,
+    ) -> Result<c2::ReportCredentialResponse, String> {
         Ok(c2::ReportCredentialResponse::default())
     }
     fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse::default())
     }
-    fn report_process_list(&self, _req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String> {
+    fn report_process_list(
+        &self,
+        _req: c2::ReportProcessListRequest,
+    ) -> Result<c2::ReportProcessListResponse, String> {
         Ok(c2::ReportProcessListResponse::default())
     }
-    fn report_task_output(&self, _req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse, String> {
+    fn report_task_output(
+        &self,
+        _req: c2::ReportTaskOutputRequest,
+    ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse::default())
     }
     fn reverse_shell(&self) -> Result<(), String> {
@@ -176,7 +185,6 @@ impl Agent for AgentFake {
     }
 
     fn list_callback_uris(&self) -> Result<std::collections::BTreeSet<String>, String> {
-
         Ok(BTreeSet::new())
     }
 

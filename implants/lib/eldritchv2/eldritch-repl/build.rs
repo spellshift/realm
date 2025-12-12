@@ -15,11 +15,7 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
     // Check if wasm-pack is installed
-    if Command::new("wasm-pack")
-        .arg("--version")
-        .output()
-        .is_err()
-    {
+    if Command::new("wasm-pack").arg("--version").output().is_err() {
         println!("cargo:warning=wasm-pack not found. Skipping WASM REPL build.");
         return;
     }
@@ -31,7 +27,7 @@ fn main() {
     // wasm-pack build --target web --out-dir www/pkg --no-typescript -- --features fake_bindings
     let status = Command::new("wasm-pack")
         .current_dir(root)
-        .args(&[
+        .args([
             "build",
             "--target",
             "web",
@@ -80,10 +76,10 @@ fn main() {
     if let Ok(entries) = fs::read_dir(&src_pkg) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_file() {
-                if let Some(name) = path.file_name() {
-                    let _ = fs::copy(&path, dest_pkg.join(name));
-                }
+            if path.is_file()
+                && let Some(name) = path.file_name()
+            {
+                let _ = fs::copy(&path, dest_pkg.join(name));
             }
         }
     }

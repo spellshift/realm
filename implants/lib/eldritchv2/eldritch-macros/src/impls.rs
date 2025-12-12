@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    parse_quote, FnArg, ItemStruct, ItemTrait, Lit, Meta, NestedMeta, Signature, TraitItem, Type,
-    TypeReference,
+    FnArg, ItemStruct, ItemTrait, Lit, Meta, NestedMeta, Signature, TraitItem, Type, TypeReference,
+    parse_quote,
 };
 
 /// Expands the `#[eldritch_library]` attribute.
@@ -175,19 +175,16 @@ fn is_option_type(ty: &Type) -> bool {
 fn is_interpreter_type(ty: &Type) -> bool {
     // Check if type is `Interpreter`, `&Interpreter`, or `&mut Interpreter`
     // Or fully qualified `eldritch_core::Interpreter`
-    if let Type::Reference(type_ref) = ty {
-        if let Type::Path(type_path) = &*type_ref.elem {
-            if let Some(segment) = type_path.path.segments.last() {
-                return segment.ident == "Interpreter";
-            }
-        }
+    if let Type::Reference(type_ref) = ty
+        && let Type::Path(type_path) = &*type_ref.elem
+        && let Some(segment) = type_path.path.segments.last()
+    {
+        return segment.ident == "Interpreter";
     }
     false
 }
 
-fn generate_args_parsing(
-    sig: &Signature,
-) -> Result<(TokenStream, TokenStream), syn::Error> {
+fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), syn::Error> {
     let mut parsing = Vec::new();
     let mut call_args = Vec::new();
     let mut arg_idx = 0usize;

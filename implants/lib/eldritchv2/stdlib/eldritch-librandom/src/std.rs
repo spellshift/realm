@@ -2,8 +2,8 @@ use super::RandomLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
-use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
 use rand::Rng;
+use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
 use rand_chacha::rand_core::SeedableRng;
 
 #[derive(Default, Debug)]
@@ -13,7 +13,7 @@ pub struct StdRandomLibrary;
 impl RandomLibrary for StdRandomLibrary {
     fn bool(&self) -> Result<bool, String> {
         let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
-        Ok(rng.gen::<bool>())
+        Ok(rng.r#gen::<bool>())
     }
 
     fn bytes(&self, len: i64) -> Result<Vec<u8>, String> {

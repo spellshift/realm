@@ -1,11 +1,11 @@
 use super::super::task::TaskRegistry;
+use alloc::collections::{BTreeMap, BTreeSet};
 use eldritch_libagent::agent::Agent;
 use pb::c2;
 use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
-use alloc::collections::{BTreeMap, BTreeSet};
 
 // Mock Agent specifically for TaskRegistry
 struct MockAgent {
@@ -82,13 +82,27 @@ impl Agent for MockAgent {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
-    fn set_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> { Ok((BTreeSet::new())) }
-    fn get_active_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-    fn get_next_callback_uri(&self) -> std::result::Result<String, String> { Ok(String::new()) }
-    fn add_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn remove_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
-    fn set_active_callback_uri(&self, uri: String) -> std::result::Result<(), String> { Ok(()) }
+    fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+        Ok(())
+    }
+    fn list_callback_uris(&self) -> std::result::Result<BTreeSet<String>, String> {
+        Ok(BTreeSet::new())
+    }
+    fn get_active_callback_uri(&self) -> std::result::Result<String, String> {
+        Ok(String::new())
+    }
+    fn get_next_callback_uri(&self) -> std::result::Result<String, String> {
+        Ok(String::new())
+    }
+    fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+        Ok(())
+    }
+    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+        Ok(())
+    }
+    fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+        Ok(())
+    }
 }
 
 #[tokio::test]
@@ -120,7 +134,10 @@ async fn test_task_registry_spawn() {
             .map(|o| o.output.contains("Hello World"))
             .unwrap_or(false)
     });
-    assert!(has_output, "Should have found report containing 'Hello World'");
+    assert!(
+        has_output,
+        "Should have found report containing 'Hello World'"
+    );
 
     // Check completion
     let has_finished = reports.iter().any(|r| {
@@ -162,12 +179,13 @@ async fn test_task_streaming_output() {
         println!("Report: {:?}", r);
     }
 
-    let outputs: Vec<String> = reports.iter()
+    let outputs: Vec<String> = reports
+        .iter()
         .filter_map(|r| r.output.as_ref().map(|o| o.output.clone()))
         .filter(|s| !s.is_empty())
         .collect();
 
-    assert!(outputs.len() >= 1, "Should have at least one output.");
+    assert!(!outputs.is_empty(), "Should have at least one output.");
 
     let combined = outputs.join("");
     assert!(combined.contains("Chunk 1"), "Missing Chunk 1");
@@ -203,16 +221,23 @@ async fn test_task_streaming_error() {
         println!("Report: {:?}", r);
     }
 
-    let outputs: Vec<String> = reports.iter()
+    let outputs: Vec<String> = reports
+        .iter()
         .filter_map(|r| r.output.as_ref().map(|o| o.output.clone()))
         .filter(|s| !s.is_empty())
         .collect();
 
-    assert!(outputs.iter().any(|s| s.contains("Before Error")), "Should contain pre-error output");
+    assert!(
+        outputs.iter().any(|s| s.contains("Before Error")),
+        "Should contain pre-error output"
+    );
 
     // Check for error report
     let error_report = reports.iter().find(|r| {
-        r.output.as_ref().map(|o| o.error.is_some()).unwrap_or(false)
+        r.output
+            .as_ref()
+            .map(|o| o.error.is_some())
+            .unwrap_or(false)
     });
     assert!(error_report.is_some(), "Should report error");
 }

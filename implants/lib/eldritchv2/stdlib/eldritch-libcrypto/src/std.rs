@@ -1,14 +1,14 @@
 use super::CryptoLibrary;
-use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt, KeyInit};
 use aes::Aes128;
+use aes::cipher::{BlockDecrypt, BlockEncrypt, KeyInit, generic_array::GenericArray};
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use base64::{engine::general_purpose, Engine};
-use eldritch_core::conversion::ToValue;
+use base64::{Engine, engine::general_purpose};
 use eldritch_core::Value;
+use eldritch_core::conversion::ToValue;
 use eldritch_macros::eldritch_library_impl;
 use md5::Context as Md5Context;
 use sha1::Sha1;
@@ -70,24 +70,25 @@ impl CryptoLibrary for StdCryptoLibrary {
         }
 
         // Unpad (PKCS#7) manually to match v1 logic
-        if let Some(&last_byte) = output.last() {
-            if last_byte <= 16 && last_byte > 0 {
-                let len = output.len();
-                let start_padding = len - (last_byte as usize);
-                if start_padding < len {
-                    // Check bound
-                    let suspected_padding = &output[start_padding..];
-                    let mut valid_padding = true;
-                    for &byte in suspected_padding {
-                        if byte != last_byte {
-                            valid_padding = false;
-                            break;
-                        }
+        if let Some(&last_byte) = output.last()
+            && last_byte <= 16
+            && last_byte > 0
+        {
+            let len = output.len();
+            let start_padding = len - (last_byte as usize);
+            if start_padding < len {
+                // Check bound
+                let suspected_padding = &output[start_padding..];
+                let mut valid_padding = true;
+                for &byte in suspected_padding {
+                    if byte != last_byte {
+                        valid_padding = false;
+                        break;
                     }
+                }
 
-                    if valid_padding {
-                        output.truncate(start_padding);
-                    }
+                if valid_padding {
+                    output.truncate(start_padding);
                 }
             }
         }
@@ -316,14 +317,15 @@ impl CryptoLibrary for StdCryptoLibrary {
     }
 
     fn from_json(&self, content: String) -> Result<Value, String> {
-        let json_data: serde_json::Value = serde_json::from_str(&content)
-            .map_err(|e| format!("Error parsing json: {:?}", e))?;
+        let json_data: serde_json::Value =
+            serde_json::from_str(&content).map_err(|e| format!("Error parsing json: {:?}", e))?;
         convert_json_to_value(json_data)
     }
 
     fn to_json(&self, content: Value) -> Result<String, String> {
         let json_value = convert_value_to_json(&content)?;
-        serde_json::to_string(&json_value).map_err(|e| format!("Error serializing to json: {:?}", e))
+        serde_json::to_string(&json_value)
+            .map_err(|e| format!("Error serializing to json: {:?}", e))
     }
 }
 
@@ -367,9 +369,9 @@ fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {
         Value::Float(f) => Ok(serde_json::json!(f)),
         Value::String(s) => Ok(serde_json::Value::String(s.clone())),
         Value::Bytes(_b) => {
-             // Bytes are not natively JSON serializable.
-             Err("Object of type 'bytes' is not JSON serializable".to_string())
-        },
+            // Bytes are not natively JSON serializable.
+            Err("Object of type 'bytes' is not JSON serializable".to_string())
+        }
         Value::List(l) => {
             let list = l.read();
             let mut res = Vec::with_capacity(list.len());
@@ -377,14 +379,14 @@ fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {
                 res.push(convert_value_to_json(item)?);
             }
             Ok(serde_json::Value::Array(res))
-        },
+        }
         Value::Tuple(t) => {
             let mut res = Vec::with_capacity(t.len());
             for item in t.iter() {
                 res.push(convert_value_to_json(item)?);
             }
             Ok(serde_json::Value::Array(res))
-        },
+        }
         Value::Dictionary(d) => {
             let dict = d.read();
             let mut res = serde_json::Map::new();
@@ -392,16 +394,21 @@ fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {
                 if let Value::String(s) = k {
                     res.insert(s.clone(), convert_value_to_json(v)?);
                 } else {
-                     // JSON keys must be strings
-                     return Err(format!("Keys must be strings, got {:?}", k));
+                    // JSON keys must be strings
+                    return Err(format!("Keys must be strings, got {:?}", k));
                 }
             }
             Ok(serde_json::Value::Object(res))
-        },
+        }
         Value::Set(_) => Err("Object of type 'set' is not JSON serializable".to_string()),
-        Value::Function(_) | Value::NativeFunction(_, _) | Value::NativeFunctionWithKwargs(_, _) | Value::BoundMethod(_, _) | Value::Foreign(_) => {
-             Err(format!("Object of type '{:?}' is not JSON serializable", val))
-        },
+        Value::Function(_)
+        | Value::NativeFunction(_, _)
+        | Value::NativeFunctionWithKwargs(_, _)
+        | Value::BoundMethod(_, _)
+        | Value::Foreign(_) => Err(format!(
+            "Object of type '{:?}' is not JSON serializable",
+            val
+        )),
     }
 }
 
@@ -495,7 +502,7 @@ mod tests {
 
         // Modify last byte to make padding invalid
         if let Some(last) = encrypted.last_mut() {
-             *last = *last ^ 0xFF; // Flip bits
+            *last ^= 0xFF; // Flip bits
         }
 
         // The current implementation returns the decrypted data with invalid padding attached,
@@ -587,9 +594,10 @@ mod tests {
     #[test]
     fn test_hash_file_not_found() {
         let lib = StdCryptoLibrary;
-        assert!(lib
-            .hash_file("/non/existent/file".to_string(), "md5".to_string())
-            .is_err());
+        assert!(
+            lib.hash_file("/non/existent/file".to_string(), "md5".to_string())
+                .is_err()
+        );
     }
 
     #[test]
@@ -698,6 +706,7 @@ mod tests {
         let lib = StdCryptoLibrary;
         let res = lib.from_json(r#"{"test": "test"}"#.to_string())?;
         // Construct expected value
+        #[allow(clippy::mutable_key_type)]
         let mut map = BTreeMap::new();
         map.insert("test".to_string().to_value(), "test".to_string().to_value());
         let expected = map.to_value();
@@ -711,11 +720,12 @@ mod tests {
         let lib = StdCryptoLibrary;
         let res = lib.from_json(r#"[1, "foo", false, null]"#.to_string())?;
 
-        let mut vec = Vec::new();
-        vec.push(1i64.to_value());
-        vec.push("foo".to_string().to_value());
-        vec.push(false.to_value());
-        vec.push(Value::None);
+        let vec = vec![
+            1i64.to_value(),
+            "foo".to_string().to_value(),
+            false.to_value(),
+            Value::None,
+        ];
         let expected = vec.to_value();
 
         assert_eq!(res, expected);
@@ -725,8 +735,8 @@ mod tests {
     #[test]
     fn test_from_json_float() -> Result<(), String> {
         let lib = StdCryptoLibrary;
-        let res = lib.from_json(r#"3.14"#.to_string())?;
-        assert_eq!(res, Value::Float(3.14));
+        let res = lib.from_json(r#"13.37"#.to_string())?;
+        assert_eq!(res, Value::Float(13.37));
         Ok(())
     }
 
@@ -740,6 +750,7 @@ mod tests {
     #[test]
     fn to_json_object() -> Result<(), String> {
         let lib = StdCryptoLibrary;
+        #[allow(clippy::mutable_key_type)]
         let mut map = BTreeMap::new();
         map.insert("test".to_string().to_value(), "test".to_string().to_value());
         let val = map.to_value();
@@ -768,9 +779,9 @@ mod tests {
     #[test]
     fn to_json_float() -> Result<(), String> {
         let lib = StdCryptoLibrary;
-        let val = Value::Float(3.14);
+        let val = Value::Float(13.37);
         let res = lib.to_json(val)?;
-        assert_eq!(res, "3.14");
+        assert_eq!(res, "13.37");
         Ok(())
     }
 
@@ -795,7 +806,9 @@ mod tests {
     #[test]
     fn to_json_invalid_set() {
         let lib = StdCryptoLibrary;
-        let val = Value::Set(alloc::sync::Arc::new(spin::RwLock::new(alloc::collections::BTreeSet::new())));
+        let val = Value::Set(alloc::sync::Arc::new(spin::RwLock::new(
+            alloc::collections::BTreeSet::new(),
+        )));
         let res = lib.to_json(val);
         assert!(res.is_err());
     }
@@ -803,6 +816,7 @@ mod tests {
     #[test]
     fn to_json_invalid_dict_keys() {
         let lib = StdCryptoLibrary;
+        #[allow(clippy::mutable_key_type)]
         let mut map = BTreeMap::new();
         map.insert(1i64.to_value(), "test".to_string().to_value());
         let val = map.to_value();
@@ -820,7 +834,9 @@ mod tests {
         // Value::Function requires AST.
         // But we covered Bytes and Set, which is good.
         // Let's verify Set behavior again.
-        let val = Value::Set(alloc::sync::Arc::new(spin::RwLock::new(alloc::collections::BTreeSet::new())));
+        let val = Value::Set(alloc::sync::Arc::new(spin::RwLock::new(
+            alloc::collections::BTreeSet::new(),
+        )));
         assert!(lib.to_json(val).is_err());
     }
 
@@ -835,9 +851,7 @@ mod tests {
 
         // Write src
         let mut src_file = NamedTempFile::new().map_err(|e| e.to_string())?;
-        src_file
-            .write_all(&data)
-            .map_err(|e| e.to_string())?;
+        src_file.write_all(&data).map_err(|e| e.to_string())?;
         let src_path = src_file.path().to_str().unwrap().to_string();
 
         let dst_file = NamedTempFile::new().map_err(|e| e.to_string())?;
@@ -878,7 +892,8 @@ mod tests {
         let dst_file = NamedTempFile::new().unwrap();
         let dst_path = dst_file.path().to_str().unwrap().to_string();
 
-        lib.aes_encrypt_file(src_path, dst_path.clone(), key).unwrap();
+        lib.aes_encrypt_file(src_path, dst_path.clone(), key)
+            .unwrap();
 
         // Empty file padded to 1 block
         let dst_len = std::fs::metadata(&dst_path).unwrap().len();
@@ -890,9 +905,10 @@ mod tests {
     #[test]
     fn test_aes_file_decrypt_invalid_key() {
         let lib = StdCryptoLibrary;
-        assert!(lib
-            .aes_decrypt_file("s".into(), "d".into(), "short".into())
-            .is_err());
+        assert!(
+            lib.aes_decrypt_file("s".into(), "d".into(), "short".into())
+                .is_err()
+        );
     }
 
     #[test]
