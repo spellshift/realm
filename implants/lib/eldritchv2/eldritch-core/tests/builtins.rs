@@ -73,7 +73,7 @@ fn test_core_builtins() {
     "#,
     );
 
-    assert::fail("len(1)", "not defined for type");
+    assert::fail("len(1)", "not defined for type: int");
 }
 
 #[test]

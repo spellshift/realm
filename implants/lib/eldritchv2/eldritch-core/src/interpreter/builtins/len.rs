@@ -1,4 +1,5 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::introspection::get_type_name;
 use alloc::format;
 use alloc::sync::Arc;
 use alloc::string::String;
@@ -22,6 +23,6 @@ pub fn builtin_len(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         Value::Dictionary(d) => Ok(Value::Int(d.read().len() as i64)),
         Value::Tuple(t) => Ok(Value::Int(t.len() as i64)),
         Value::Set(s) => Ok(Value::Int(s.read().len() as i64)),
-        _ => Err(format!("'len()' is not defined for type: {:?}", args[0])),
+        v => Err(format!("'len()' is not defined for type: {}", get_type_name(v))),
     }
 }
