@@ -15,7 +15,7 @@ export const useQuests = (pagination: boolean) => {
     const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters, sort?: OrderByField): GetQuestQueryVariables => {
         const defaultRowLimit = TableRowLimit.QuestRowLimit;
         const filterQueryTaskFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
-        const questFilterFields = (currentFilters?.beaconFields) ? constructQuestFilterQuery(currentFilters) : null;
+        const questFilterFields = (currentFilters?.filtersEnabled) ? constructQuestFilterQuery(currentFilters) : null;
 
         const query: GetQuestQueryVariables = {
           where: {
