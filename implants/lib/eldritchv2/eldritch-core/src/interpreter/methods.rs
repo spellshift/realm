@@ -1,6 +1,6 @@
 use super::super::ast::Value;
 use super::introspection::{find_best_match, get_type_name, is_truthy};
-use super::operations::compare_values;
+use super::operations::{compare_values, values_equal};
 use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -158,7 +158,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             let target = &args[0];
             let mut vec = l.write();
-            if let Some(pos) = vec.iter().position(|x| x == target) {
+            if let Some(pos) = vec.iter().position(|x| values_equal(x, target)) {
                 vec.remove(pos);
                 Ok(Value::None)
             } else {
@@ -171,7 +171,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             }
             let target = &args[0];
             let vec = l.read();
-            if let Some(pos) = vec.iter().position(|x| x == target) {
+            if let Some(pos) = vec.iter().position(|x| values_equal(x, target)) {
                 Ok(Value::Int(pos as i64))
             } else {
                 Err("ValueError: list.index(x): x not in list".into())

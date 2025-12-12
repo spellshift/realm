@@ -281,3 +281,71 @@ fn test_set_addition() {
     "#,
     );
 }
+
+#[test]
+fn test_nan_remove_issue_1293() {
+    assert::pass(
+        r#"
+        # Reproduction of issue #1293 using float("nan")
+
+        # This confirms we can create NaN
+        nan_val = float("nan")
+
+        # Case 1: Simple remove
+        l = [nan_val]
+        # This should remove the element if we fix the bug.
+        # Currently it fails because NaN != NaN.
+        l.remove(nan_val)
+
+        assert_eq(len(l), 0)
+
+        # Case 2: The loop scenario from the issue
+        my_list = [1, 2, nan_val]
+
+        for i in my_list:
+             if i % 2 != 0:
+                 my_list.remove(i)
+
+        # 1 % 2 != 0 -> remove(1). List becomes [2, nan_val].
+        # Next iter: 2. 2 % 2 == 0. Skip.
+        # Next iter: nan_val. nan_val % 2 is nan_val. nan_val != 0 is True.
+        # remove(nan_val) -> Should work.
+
+        # Check final list content
+        # 1 removed. 2 kept. nan_val removed.
+        # Expected: [2]
+
+        # Wait, does removing elements during iteration skip elements?
+        # Initial: [1, 2, nan_val]
+        # i=1. Remove 1. List=[2, nan_val].
+        # Next index is 1. Element at index 1 is nan_val.
+        # So 2 is skipped?
+        # If 2 is skipped, it remains in the list.
+        # i=nan_val. Remove nan_val. List=[2].
+
+        assert_eq(my_list, [2])
+
+        # Test index() consistency
+        l2 = [nan_val]
+        idx = l2.index(nan_val)
+        assert_eq(idx, 0)
+    "#,
+    );
+}
+
+#[test]
+fn test_nan_in_check() {
+    assert::pass(
+        r#"
+        nan = float("nan")
+        l = [nan]
+        assert(nan in l)
+
+        t = (nan,)
+        assert(nan in t)
+
+        nan2 = float("nan")
+        assert(nan2 in l)
+    "#,
+    );
+}
