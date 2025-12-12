@@ -41,7 +41,7 @@ mod tests;
 /// - Modify agent configuration (callback intervals, transports).
 /// - Manage background tasks.
 /// - Report data back to the C2 server (though the `report` library is often preferred for high-level reporting).
-/// - Control agent execution (sleep, termination).
+/// - Control agent execution (termination).
 pub trait AgentLibrary {
     #[eldritch_method]
     /// Returns the current configuration of the agent as a dictionary.
@@ -98,22 +98,6 @@ pub trait AgentLibrary {
     /// **Errors**
     /// - Returns an error string if the configuration cannot be updated or is not implemented.
     fn set_config(&self, config: BTreeMap<String, Value>) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Pauses execution of the current thread for the specified number of seconds.
-    ///
-    /// This is a blocking call and will prevent other operations in the same thread
-    /// from executing for the duration.
-    ///
-    /// **Parameters**
-    /// - `secs` (`int`): The number of seconds to sleep.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the sleep operation fails (unlikely).
-    fn sleep(&self, secs: i64) -> Result<(), String>;
 
     #[eldritch_method]
     fn set_callback_uri(&self, uri: String) -> Result<(), String>;

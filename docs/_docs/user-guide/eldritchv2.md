@@ -772,7 +772,7 @@ It allows you to:
 - Modify agent configuration (callback intervals, transports).
 - Manage background tasks.
 - Report data back to the C2 server (though the `report` library is often preferred for high-level reporting).
-- Control agent execution (sleep, termination).
+- Control agent execution (termination).
 
 
 *   **`agent.get_config`**
@@ -825,21 +825,6 @@ It allows you to:
     
     **Errors**
     - Returns an error string if the configuration cannot be updated or is not implemented.
-
-*   **`agent.sleep`**
-    Pauses execution of the current thread for the specified number of seconds.
-    
-    This is a blocking call and will prevent other operations in the same thread
-    from executing for the duration.
-    
-    **Parameters**
-    - `secs` (`int`): The number of seconds to sleep.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the sleep operation fails (unlikely).
 
 *   **`agent.set_callback_uri`**
 

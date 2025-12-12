@@ -35,10 +35,6 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 
-    fn sleep(&self, _seconds: i64) -> Result<(), String> {
-        Ok(())
-    }
-
     fn set_callback_interval(&self, _interval: i64) -> Result<(), String> {
         Ok(())
     }
