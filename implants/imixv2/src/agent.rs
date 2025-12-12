@@ -42,13 +42,17 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
-    pub fn get_callback_interval_u64(&self) -> u64 {
+    pub fn get_callback_interval_u64(&self) -> Result<u64> {
         // Blocks on read, but it's fast
-        if let Ok(cfg) = self.config.try_read() {
-            cfg.info.as_ref().map(|b| b.interval).unwrap_or(5)
-        } else {
-            5
-        }
+        let cfg = self
+            .config
+            .try_read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
+        let info = cfg
+            .info
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
+        Ok(info.interval)
     }
 
     // Triggers config.refresh_primary_ip() in a write lock
@@ -343,7 +347,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {
-        Ok(self.get_callback_interval_u64())
+        self.get_callback_interval_u64().map_err(|e| e.to_string())
     }
 
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
