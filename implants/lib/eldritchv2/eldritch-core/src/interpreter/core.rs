@@ -224,10 +224,36 @@ impl Interpreter {
         if error.span.line > 0 && error.span.line <= lines.len() {
             let line_idx = error.span.line - 1;
             let line_content = lines[line_idx];
+
+            // Calculate column offset relative to trimmed line
+            let leading_whitespace = line_content.len() - line_content.trim_start().len();
+
+            // Calculate line start byte offset
+            let mut line_start = error.span.start;
+            let source_bytes = source.as_bytes();
+            // Walk backwards from error start to find newline
+            // If error.span.start is beyond source len (shouldn't happen for valid error), clamp it.
+            if line_start > source_bytes.len() {
+                line_start = source_bytes.len();
+            }
+            while line_start > 0 && source_bytes[line_start - 1] != b'\n' {
+                line_start -= 1;
+            }
+
+            // Calculate raw column (byte offset from start of line)
+            let raw_col = error.span.start.saturating_sub(line_start);
+
+            // Calculate display column relative to trimmed string
+            let display_col = raw_col.saturating_sub(leading_whitespace);
+
+            // Create dynamic padding
+            let padding = format!("{:>width$}", "", width = display_col);
+
             output.push_str(&format!(
-                "\n\nError location:\n  at line {}:\n    {}\n    ^-- here",
+                "\n\nError location:\n  at line {}:\n    {}\n    {}^-- here",
                 error.span.line,
-                line_content.trim()
+                line_content.trim(),
+                padding
             ));
         }
         output
