@@ -67,11 +67,6 @@ impl AgentLibrary for StdAgentLibrary {
         Err("set_config not implemented".to_string())
     }
 
-    fn sleep(&self, secs: i64) -> Result<(), String> {
-        ::std::thread::sleep(::std::time::Duration::from_secs(secs as u64));
-        Ok(())
-    }
-
     fn set_callback_interval(&self, interval: i64) -> Result<(), String> {
         self.agent.set_callback_interval(interval as u64)
     }
