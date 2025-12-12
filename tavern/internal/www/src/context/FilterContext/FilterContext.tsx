@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { FilterBarOption } from '../utils/interfacesUI'
+import { FilterBarOption } from '../../utils/interfacesUI'
 
 const STORAGE_KEY = 'realm-filters-v1.1'
 
@@ -21,6 +21,58 @@ const defaultFilters: Filters = {
     tomeMultiSearch: ""
 }
 
+function isValidFilterBarOption(item: any): item is FilterBarOption {
+    return (
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.kind === 'string' &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        (item.label === undefined || typeof item.label === 'string') &&
+        (item.value === undefined || typeof item.value === 'string')
+    )
+}
+
+function validateStoredFilters(data: any): Filters {
+    if (!data || typeof data !== 'object') {
+        return defaultFilters
+    }
+
+    const schema: Record<keyof Filters, (value: any) => boolean> = {
+        filtersEnabled: (v) => typeof v === 'boolean',
+        questName: (v) => typeof v === 'string',
+        taskOutput: (v) => typeof v === 'string',
+        tomeMultiSearch: (v) => typeof v === 'string',
+        beaconFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
+        tomeFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
+    }
+
+    for (const [key, validator] of Object.entries(schema)) {
+        if (!(key in data) || !validator(data[key])) {
+            return defaultFilters
+        }
+    }
+
+    return data as Filters
+}
+
+function loadFiltersFromStorage(): Filters {
+    if (typeof window === 'undefined') {
+        return defaultFilters
+    }
+
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (!stored) {
+        return defaultFilters
+    }
+
+    try {
+        return validateStoredFilters(JSON.parse(stored))
+    } catch {
+        return defaultFilters
+    }
+}
+
 type FilterContextType = {
     filters: Filters
     updateFilters: (updates: Partial<Filters>) => void
@@ -31,13 +83,7 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
 
-    const [filters, setFilters] = useState<Filters>(() => {
-        if (typeof window !== 'undefined') {
-            const stored = sessionStorage.getItem(STORAGE_KEY)
-            return stored ? JSON.parse(stored) : defaultFilters
-        }
-        return defaultFilters
-    });
+    const [filters, setFilters] = useState<Filters>(loadFiltersFromStorage);
 
     const updateFilters = (updates: Partial<Filters>) => {
         setFilters(prevFilters => ({
@@ -60,7 +106,7 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const handleStorage = (event: StorageEvent) => {
             if (event.key === STORAGE_KEY && event.newValue) {
-                setFilters(JSON.parse(event.newValue))
+                setFilters(validateStoredFilters(JSON.parse(event.newValue)))
             }
         }
         window.addEventListener('storage', handleStorage)

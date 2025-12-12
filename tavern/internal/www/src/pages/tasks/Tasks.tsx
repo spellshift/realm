@@ -6,10 +6,10 @@ import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { useTasks } from "./useTasks";
 import Button from "../../components/tavern-base-ui/button/Button";
 import TaskCard from "../../components/task-card/TaskCard";
-import FilterControls, { FilterPageType } from "../../components/FilterControls";
+import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
 import { TaskEdge } from "../../utils/interfacesQuery";
 import { EditablePageHeader } from "./EditablePageHeader";
-import SortingControls from "../../components/SortingControls";
+import { SortingControls } from "../../context/SortContext/index";
 
 const Tasks = () => {
     const { questId } = useParams();

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../utils/enums'
-import { OrderByField } from '../utils/interfacesQuery'
+import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../utils/enums'
+import { OrderByField } from '../../utils/interfacesQuery'
 
 const STORAGE_KEY = 'realm-sorting-v1.0'
 
@@ -25,6 +25,55 @@ const defaultSorts: Sorts = {
     }
 }
 
+function isValidOrderByField(item: any): item is OrderByField {
+    return (
+        typeof item === 'object' &&
+        item !== null &&
+        'direction' in item &&
+        'field' in item &&
+        typeof item.direction === 'string' &&
+        typeof item.field === 'string' &&
+        Object.values(OrderDirection).includes(item.direction)
+    )
+}
+
+function validateStoredSorts(data: any): Sorts {
+    if (!data || typeof data !== 'object') {
+        return defaultSorts
+    }
+
+    const schema: Record<keyof Sorts, (value: any) => boolean> = {
+        [PageNavItem.hosts]: isValidOrderByField,
+        [PageNavItem.quests]: isValidOrderByField,
+        [PageNavItem.tasks]: isValidOrderByField,
+    }
+
+    for (const [key, validator] of Object.entries(schema)) {
+        if (!(key in data) || !validator(data[key])) {
+            return defaultSorts
+        }
+    }
+
+    return data as Sorts
+}
+
+function loadSortsFromStorage(): Sorts {
+    if (typeof window === 'undefined') {
+        return defaultSorts
+    }
+
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (!stored) {
+        return defaultSorts
+    }
+
+    try {
+        return validateStoredSorts(JSON.parse(stored))
+    } catch {
+        return defaultSorts
+    }
+}
+
 type SortsContextType = {
     sorts: Sorts
     updateSorts: (updates: Partial<Sorts>) => void
@@ -35,13 +84,7 @@ const SortsContext = createContext<SortsContextType | undefined>(undefined)
 
 export function SortsProvider({ children }: { children: React.ReactNode }) {
 
-    const [sorts, setSorts] = useState<Sorts>(() => {
-        if (typeof window !== 'undefined') {
-            const stored = sessionStorage.getItem(STORAGE_KEY)
-            return stored ? JSON.parse(stored) : defaultSorts
-        }
-        return defaultSorts
-    });
+    const [sorts, setSorts] = useState<Sorts>(loadSortsFromStorage);
 
     const updateSorts = (updates: Partial<Sorts>) => {
         setSorts(prevSorts => ({

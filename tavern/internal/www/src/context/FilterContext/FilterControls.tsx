@@ -1,10 +1,10 @@
 import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
-import { useFilters } from "../context/FilterContext";
-import { BeaconFilterBar } from "./beacon-filter-bar";
-import { ButtonDialogPopover } from "./ButtonDialogPopover";
-import FreeTextSearch from "./tavern-base-ui/FreeTextSearch";
+import { useFilters } from "./FilterContext";
+import { BeaconFilterBar } from "../../components/beacon-filter-bar";
+import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
+import FreeTextSearch from "../../components/tavern-base-ui/FreeTextSearch";
 import { Switch } from "@chakra-ui/react";
-import { TomeFilterBar } from "./TomeFilterBar";
+import { TomeFilterBar } from "../../components/TomeFilterBar";
 
 export enum FilterPageType {
     QUEST = 'Quest',

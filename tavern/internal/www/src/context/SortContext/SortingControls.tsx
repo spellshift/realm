@@ -1,8 +1,8 @@
 import { BarsArrowDownIcon, BarsArrowUpIcon } from "@heroicons/react/24/outline";
-import { useSorts } from "../context/SortContext";
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from "../utils/enums";
-import { ButtonDialogPopover } from "./ButtonDialogPopover";
-import SingleDropdownSelector, { Option } from "./tavern-base-ui/SingleDropdownSelector";
+import { useSorts } from "./SortContext";
+import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from "../../utils/enums";
+import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
+import SingleDropdownSelector, { Option } from "../../components/tavern-base-ui/SingleDropdownSelector";
 import { ReactElement } from "react";
 
 const orderFieldOptionsMap = {
