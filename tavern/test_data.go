@@ -72,8 +72,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
-				SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-				SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
@@ -88,7 +86,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
@@ -100,7 +97,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				testBeacons = append(testBeacons,
 					client.Beacon.Create().
 						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-						SetNextSeenAt(time.Now().Add(-30*time.Second).Add(600000*time.Second)).
 						SetIdentifier(newRandomIdentifier()).
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
@@ -113,7 +109,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
-					SetNextSeenAt(time.Now().Add(-10*time.Second).Add(1000*time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
@@ -125,7 +120,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			testBeacons = append(testBeacons,
 				client.Beacon.Create().
 					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
-					SetNextSeenAt(time.Now().Add(-1*time.Hour).Add(4*time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).

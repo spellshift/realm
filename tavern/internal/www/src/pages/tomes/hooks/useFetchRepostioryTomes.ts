@@ -55,8 +55,8 @@ export const useFetchRepositoryTome = (handleOnSuccess?:()=>void, showToast?: bo
 
     const [createRepositoryLinkMutation, {loading}] = useMutation(IMPORT_REPOSITORY_TOMES_MUTATION, {onCompleted: handleSuccess, onError: handleError,
         refetchQueries: [
-            GET_REPOSITORY_QUERY,
-            'GetRepository'
+            GET_REPOSITORY_QUERY, // DocumentNode object parsed with gql
+            'GetRepository' // Query name
         ]
     });
 

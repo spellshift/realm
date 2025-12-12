@@ -10,7 +10,7 @@ const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test/";
 #[test]
 fn test_golem_main_file_not_found() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
-    cmd.arg("nonexistentdir/run.eldritch");
+    cmd.arg("nonexistentdir/run.tome");
     #[cfg(target_os = "linux")]
     cmd.assert()
         .failure()
@@ -27,7 +27,7 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
 fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.eldritch"));
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.tome"));
     cmd.assert().failure().stderr(predicate::str::contains(
         r#"Parse error: unexpected string literal"#.to_string(),
     ));
@@ -39,7 +39,7 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.eldritch"));
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.tome"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"HELLO"#));
@@ -51,7 +51,7 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
 fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}eldritch_test.eldritch"));
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}eldritch_test.tome"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"["append", "compress""#));
@@ -63,7 +63,7 @@ fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
 fn test_golem_main_basic_async() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}download_test.eldritch"));
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}download_test.tome"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"OKAY!"#));

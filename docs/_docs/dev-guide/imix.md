@@ -169,7 +169,7 @@ impl Transport for DNS {
 
 NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/reciever while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currenlty it would just result in performance loss/less maintainable code.
 
-After you implement all the functions/write in a decent error message for operators to understand why the function call failed then you need to import the Transport to the broader lib scope. To do this open up `realm/implants/lib/transport/src/lib.rs` and add in your new Transport like so:
+After you implement all the functions/write in a decent error message for operators to understad why the function call failed then you need to import the Transport to the broader lib scope. To do this open up `realm/implants/lib/transport/src/lib.rs` and add in your new Transport like so:
 
 ```rust
 // more stuff above
@@ -177,7 +177,7 @@ After you implement all the functions/write in a decent error message for operat
 #[cfg(feature = "dns")]
 mod dns;
 #[cfg(feature = "dns")]
-pub use dns::DNS as ActiveTransport;
+pub use dns::DNS;
 
 // more stuff below
 ```
@@ -196,17 +196,32 @@ mock = ["dep:mockall"]
 # more stuff below
 ```
 
-Then make sure the feature flag is populated down from the imix crate `realm/implants/imix/Cargo.toml`
+And that's it! Well, unless you want to _use_ the new transport. In which case you need to swap out the chosen transport being compiled for Imix in it's Cargo.toml (`/workspaces/realm/implants/lib/transport/Cargo.toml`) like so
+
 ```toml
 # more stuff above
 
-[features]
-default = ["transport/grpc"]
-http1 = ["transport/http1"]
-dns = ["transport/dns"]
-transport-grpc-doh = ["transport/grpc-doh"]
+[dependencies]
+eldritch = { workspace = true, features = ["imix"] }
+pb = { workspace = true }
+transport = { workspace = true, features = ["dns"] } # <-- see here
+host_unique = { workspace = true }
 
 # more stuff below
 ```
 
-And that's all that is needed for Imix to use a new Transport! Now all there is to do is setup the Tarver redirector see the [tavern dev docs here](/dev-guide/tavern#transport-development)
+Then just swap which Transport gets intialized on Imix's `run` function in run.rs (`/workspaces/realm/implants/imix/src/run.rs`) accordingly,
+
+```rust
+// more stuff above
+
+async fn run(cfg: Config) -> anyhow::Result<()> {
+    let mut agent = Agent::new(cfg, DNS::init())?; // <-- changed this (also imported it)
+    agent.callback_loop().await?;
+    Ok(())
+}
+
+// more stuff below
+```
+
+And that's all that is needed for Imix to use a new Transport! Now all there is to do is setup some sort of tavern proxy for your new protocol and test!

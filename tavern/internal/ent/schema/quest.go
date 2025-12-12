@@ -73,7 +73,6 @@ func (Quest) Edges() []ent.Edge {
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput),
 				entgql.RelayConnection(),
-				entgql.MultiOrder(),
 			).
 			Comment("Tasks tracking the status and output of individual tome execution on targets"),
 		edge.To("creator", User.Type).

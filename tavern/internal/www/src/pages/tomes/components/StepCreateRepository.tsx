@@ -2,13 +2,13 @@ import { useFormik } from "formik";
 import { FC } from "react";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
 import FormTextField from "../../../components/tavern-base-ui/FormTextField";
-import { RepositoryNode } from "../../../utils/interfacesQuery";
+import { RepositoryType } from "../../../utils/consts";
 import { useCreateRepositoryLink } from "../hooks/useCreateRepositoryLink";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
 type StepCreateRepositoryProps = {
     setCurrStep: (step: number) => void;
-    setNewRepository: (repository: RepositoryNode) => void;
+    setNewRepository: (repository: RepositoryType) => void;
 }
 
 const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setNewRepository }) => {

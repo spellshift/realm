@@ -10,15 +10,9 @@ requestor:
 query: |
   query Tags {
     tags(where: {id: 4000}) {
-      edges {
-        node {
-          id
-        }
-      }
+      id
     }
   }
 expected:
   tags:
-    edges:
-      - node:
-          id: "4000"
+    - id: "4000"

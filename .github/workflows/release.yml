@@ -54,7 +54,7 @@ jobs:
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.91.1'
+          toolchain: '1.87.0'
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
@@ -88,7 +88,7 @@ jobs:
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.91.1'
+          toolchain: '1.87.0'
           default: true
           profile: minimal
       - name: 🔨 Build Imix
@@ -117,7 +117,7 @@ jobs:
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.91.1'
+          toolchain: '1.87.0'
           default: true
           profile: minimal
           target: x86_64-pc-windows-gnu
@@ -184,7 +184,7 @@ jobs:
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.91.1'
+          toolchain: '1.87.0'
           default: true
           profile: minimal
       - name: ⚡ Setup Rust (x86_64-unknown-linux-musl)
@@ -218,7 +218,7 @@ jobs:
       - name: 🛠️ Setup Rust Toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: '1.91.1'
+          toolchain: '1.87.0'
           default: true
           profile: minimal
       - name: 🔨 Build Golem
@@ -247,7 +247,7 @@ jobs:
         - name: 🛠️ Setup Rust Toolchain
           uses: actions-rs/toolchain@v1
           with:
-            toolchain: '1.91.1'
+            toolchain: '1.87.0'
             default: true
             profile: minimal
             target: x86_64-pc-windows-gnu

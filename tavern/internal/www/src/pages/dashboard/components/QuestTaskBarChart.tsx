@@ -1,3 +1,4 @@
+import React from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 import EmptyStateNoQuests from '../../../components/empty-states/EmptyStateNoQuests';

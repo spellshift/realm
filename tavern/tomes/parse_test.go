@@ -29,7 +29,7 @@ func TestUploadTomes(t *testing.T) {
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))
 	assert.Equal(t, `An example tome!`, testTome.Description)
 	assert.Equal(t, `[{"name":"msg","label":"Message","type":"string","placeholder":"Something to print"}]`, testTome.ParamDefs)
-	testTomeFiles, err := testTome.QueryFiles().All(ctx)
+	testTomeFiles, err := testTome.Files(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, testTomeFiles, 1)
 	assert.Equal(t, "example/linux/test-file", testTomeFiles[0].Name)

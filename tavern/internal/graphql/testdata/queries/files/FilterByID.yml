@@ -11,16 +11,10 @@ requestor:
 query: |
   query Files {
     files(where: {id: 3000}) {
-      edges {
-        node {
-          id
-        }
-      }
+      id
     }
   }
 
 expected:
   files:
-    edges:
-      - node:
-          id: "3000"
+    - id: "3000"

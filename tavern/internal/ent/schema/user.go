@@ -26,9 +26,6 @@ func (User) Fields() []ent.Field {
 		field.String("name").
 			MinLen(3).
 			MaxLen(25).
-			Annotations(
-				entgql.OrderField("NAME"),
-			).
 			Comment("The name displayed for the user"),
 		field.String("oauth_id").
 			Sensitive().
@@ -70,17 +67,9 @@ func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("tomes", Tome.Type).
 			Ref("uploader").
-			Annotations(
-				entgql.RelayConnection(),
-				entgql.MultiOrder(),
-			).
 			Comment("Tomes uploaded by the user."),
 		edge.From("active_shells", Shell.Type).
 			Ref("active_users").
-			Annotations(
-				entgql.RelayConnection(),
-				entgql.MultiOrder(),
-			).
 			Comment("Shells actively used by the user"),
 	}
 }
@@ -88,8 +77,6 @@ func (User) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (User) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.RelayConnection(),
-		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),

@@ -1,65 +1,26 @@
 block_list = ["/proc", "/sys", "/lib", "/libx32", "/lib32", "/lib64",
               "/boot", "/srv", "/usr", "/snap", "/run", "/dev", "/cores"]
 
-usernfo = sys.get_user()
-windows = sys.is_windows()
 
-def can_read(f):
-    """Return true if the user can read this dir/file
-    """
-    # Bypass until windows perms are implemented
-    if windows:
-        return True
-    
-    PERM_READ = 4
-    f_user = int(f["permissions"][-3]) # User byte
-    f_group = int(f["permissions"][-2]) # Group byte
-    
-    # Check world byte first so it hopefully is fast
-    if int(f["permissions"][-1]) & PERM_READ:
-        return True
-    
-    # Are we root?
-    root = usernfo["euid"]["uid"] == 0
-    
-    # If the user isnt root and the user doesnt own the file, clear the user byte   
-    if not root and f["owner"] not in (usernfo["euid"]["name"], usernfo["uid"]["name"]):
-        f_user = 0
-    
-    # TODO: https://github.com/spellshift/realm/issues/570
-    # Will NOT match any group other than primary until #570 is fixed
-
-    # If the user isnt root and the group doesnt own the file, clear the group byte    
-    if not root and f["group"] not in (str(usernfo["egid"]), str(usernfo["gid"])):
-        f_group = 0
-
-    if (f_group & PERM_READ) | (f_user & PERM_READ):
-        return True
-    return False
-
-def file_list(path,tree, depth=-1):
-    tree="|\t"+tree
-    if depth == 0:
-        return
-
+def file_list(path, tree):
+    tree = f"|\t{tree}"
     files = file.list(path)
     for f in files:
         file_name = f['file_name']
         if path+f['file_name'] in block_list:
-            print("Skipping: "+path+f['file_name'])
+            print(f"Skipping: {path}/{file_name}")
             continue
         if f['type'] == "Directory":
-            print(tree+"|---"+f['file_name']+"/")
-            if can_read(f):
-                file_list(path+"/"+f['file_name'],tree, depth=depth-1)
+            print(f"{tree}|---{path}/{file_name}")
+            file_list(f"{path}/{file_name}", tree)
         if f['type'] == "Link":
-            print(tree+"|---"+f['file_name'])
+            print(f"{tree}|---{file_name}")
         if f['type'] == "File":
-            print(tree+"|---"+f['file_name'])
+            print(f"{tree}|---{file_name}")
 
-def main(path, depth=-1):
-    tree=""
-    depth=int(depth)
+
+def main(path):
+    tree = ""
     if file.is_dir(path):
         print(path+"")
         if path == "/":

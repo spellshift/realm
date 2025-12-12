@@ -1,0 +1,57 @@
+[package]
+name = "eldritchv2"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { path = "../eldritch-core", default-features = false }
+spin = "0.10"
+
+# Libs
+eldritch-libagent = { path = "../stdlib/eldritch-libagent", default-features = false }
+eldritch-libassets = { path = "../stdlib/eldritch-libassets", default-features = false }
+eldritch-libcrypto = { path = "../stdlib/eldritch-libcrypto", default-features = false }
+eldritch-libfile = { path = "../stdlib/eldritch-libfile", default-features = false }
+eldritch-libhttp = { path = "../stdlib/eldritch-libhttp", default-features = false }
+eldritch-libpivot = { path = "../stdlib/eldritch-libpivot", default-features = false }
+eldritch-libprocess = { path = "../stdlib/eldritch-libprocess", default-features = false }
+eldritch-librandom = { path = "../stdlib/eldritch-librandom", default-features = false }
+eldritch-libregex = { path = "../stdlib/eldritch-libregex", default-features = false }
+eldritch-libreport = { path = "../stdlib/eldritch-libreport", default-features = false }
+eldritch-libsys = { path = "../stdlib/eldritch-libsys", default-features = false }
+eldritch-libtime = { path = "../stdlib/eldritch-libtime", default-features = false }
+
+[features]
+default = ["std", "stdlib"]
+std = ["eldritch-core/std"]
+fake_bindings = [
+    "eldritch-libagent/fake_bindings",
+    "eldritch-libassets/fake_bindings",
+    "eldritch-libcrypto/fake_bindings",
+    "eldritch-libfile/fake_bindings",
+    "eldritch-libhttp/fake_bindings",
+    "eldritch-libpivot/fake_bindings",
+    "eldritch-libprocess/fake_bindings",
+    "eldritch-librandom/fake_bindings",
+    "eldritch-libregex/fake_bindings",
+    "eldritch-libreport/fake_bindings",
+    "eldritch-libsys/fake_bindings",
+    "eldritch-libtime/fake_bindings",
+]
+stdlib = [
+    "eldritch-libagent/stdlib",
+    "eldritch-libassets/stdlib",
+    "eldritch-libcrypto/stdlib",
+    "eldritch-libfile/stdlib",
+    "eldritch-libhttp/stdlib",
+    "eldritch-libpivot/stdlib",
+    "eldritch-libprocess/stdlib",
+    "eldritch-librandom/stdlib",
+    "eldritch-libregex/stdlib",
+    "eldritch-libreport/stdlib",
+    "eldritch-libsys/stdlib",
+    "eldritch-libtime/stdlib",
+]
+
+[dev-dependencies]
+httptest = "0.16"

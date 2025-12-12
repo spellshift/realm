@@ -1,33 +1,20 @@
 import { useState } from "react";
 import EmptyStateNoBeacon from "../../../components/empty-states/EmptyStateNoBeacon";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
+import { useHostAcitvityData } from "../hook/useHostActivityData";
 import DashboardStatistic from "./DashboardStatistic";
 import AccessHostActivityTable from "./AccessHostActivityTable";
 import SingleDropdownSelector from "../../../components/tavern-base-ui/SingleDropdownSelector";
-import { HostActivityByKind } from "../types";
 
-interface AccessCardProps {
-    hostActivity: HostActivityByKind;
-    onlineHostCount: number;
-    offlineHostCount: number;
-    loading: boolean;
-}
+const AccessCard = ({ hosts }: { hosts: any }) => {
+    const { loading, hostActivity, onlineHostCount, offlineHostCount } = useHostAcitvityData(hosts);
 
-type HostActivityKind = keyof HostActivityByKind;
-
-interface AccessOption {
-    label: string;
-    value: HostActivityKind;
-}
-
-const AccessCard = ({ hostActivity, onlineHostCount, offlineHostCount, loading }: AccessCardProps) => {
-
-    const [selectedOption, setSelectedOption] = useState<AccessOption>({
+    const [selectedOption, setSelectedOption] = useState({
         "label": "Group",
         "value": "group"
     });
 
-    const accessOptions: AccessOption[] = [
+    const accessOptions = [
         {
             label: "Group",
             value: "group",
@@ -42,8 +29,8 @@ const AccessCard = ({ hostActivity, onlineHostCount, offlineHostCount, loading }
         }
     ];
 
-    if (!hostActivity || (hostActivity.group?.length === 0 && hostActivity.service?.length === 0 && hostActivity.platform?.length === 0)) {
-        return <EmptyStateNoBeacon />
+    if (!hosts && hosts?.length < 1) {
+        <EmptyStateNoBeacon />
     }
 
     return (

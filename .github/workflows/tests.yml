@@ -52,7 +52,7 @@ jobs:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: '1.91.1'
+        toolchain: '1.87.0'
         default: true
         profile: minimal
         components: rustfmt, clippy
@@ -60,10 +60,10 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       if: matrix.os == 'windows-latest'
       with:
-        toolchain: 'nightly-2025-11-27'
+        toolchain: 'nightly-2025-01-31'
         default: false
         profile: minimal
-        components: rust-src, rustfmt
+        components: rust-src
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
@@ -73,7 +73,7 @@ jobs:
       name: Build reflective loader
       run: |
         cd ./bin/reflective_loader/
-        cargo +nightly-2025-11-27 build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+        cargo +nightly-2025-01-31 build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
     - name: Install latest nextest & cargo-llvm-cov release
       uses: taiki-e/install-action@v2
       with:

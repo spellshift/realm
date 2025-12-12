@@ -112,7 +112,7 @@ mutation newCreateTomeTest($input: CreateTomeInput!) {
 			assert.NotZero(t, testTome.Hash)
 			assert.NotZero(t, testTome.CreatedAt)
 			assert.NotZero(t, testTome.LastModifiedAt)
-			testTomeFiles, err := testTome.QueryFiles().All(ctx)
+			testTomeFiles, err := testTome.Files(ctx)
 			require.NoError(t, err)
 			assert.Len(t, testTomeFiles, 2)
 			assert.Equal(t, expectedFileIDs[0], testTomeFiles[0].ID)

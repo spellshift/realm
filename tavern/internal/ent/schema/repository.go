@@ -69,8 +69,6 @@ func (Repository) Edges() []ent.Edge {
 			Ref("repository").
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
-				entgql.RelayConnection(),
-				entgql.MultiOrder(),
 			).
 			Comment("Tomes imported using this repository."),
 		edge.To("owner", User.Type).

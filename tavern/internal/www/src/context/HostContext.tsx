@@ -1,16 +1,18 @@
-import React, { createContext, useContext } from "react";
-import { ApolloError, useQuery } from "@apollo/client";
+import React, { createContext } from "react";
+import { useQuery } from "@apollo/client";
+import { HostType } from "../utils/consts";
 import { GET_HOST_QUERY } from "../utils/queries";
 import { useParams } from "react-router-dom";
-import { HostNode } from "../utils/interfacesQuery";
 
 export type HostContextQueryType = {
-    data: HostNode | undefined;
+    data: undefined | HostType;
     loading: boolean;
-    error: ApolloError | undefined;
+    error: any;
 }
 
-export const HostContext = createContext<HostContextQueryType | undefined>(undefined);
+const defaultValue = { data: undefined, loading: false, error: undefined } as HostContextQueryType;
+
+export const HostContext = createContext(defaultValue);
 
 export const HostContextProvider = ({ children }: { children: React.ReactNode }) => {
     const { hostId } = useParams();
@@ -23,19 +25,11 @@ export const HostContextProvider = ({ children }: { children: React.ReactNode })
         }
     });
 
-    const host = data?.hosts?.edges?.[0]?.node;
+    const host = data?.hosts?.edges && data?.hosts?.edges.length > 0 ? data.hosts?.edges[0]?.node : undefined as HostType | undefined;
 
     return (
         <HostContext.Provider value={{ data: host, loading, error }}>
             {children}
         </HostContext.Provider>
     );
-};
-
-export const useHost = () => {
-    const context = useContext(HostContext);
-    if (context === undefined) {
-        throw new Error('useHost must be used within a HostContextProvider');
-    }
-    return context;
 };

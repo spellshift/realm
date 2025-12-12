@@ -1,5 +1,8 @@
 import React, { createContext, useState } from "react";
 
+// If this expands we will want to change how we store state/pass state
+// In the future we could store preferences for light/dark theme
+
 type UserPreferencesType = {
     sidebarMinimized: boolean
     setSidebarMinimized: React.Dispatch<React.SetStateAction<boolean>>

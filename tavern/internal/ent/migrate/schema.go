@@ -19,7 +19,6 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
-		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
@@ -31,7 +30,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "beacons_hosts_host",
-				Columns:    []*schema.Column{BeaconsColumns[10]},
+				Columns:    []*schema.Column{BeaconsColumns[9]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -64,7 +63,6 @@ var (
 		{Name: "external_ip", Type: field.TypeString, Nullable: true},
 		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
-		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
 	HostsTable = &schema.Table{

@@ -238,7 +238,7 @@ pub fn handle_arp_scan(
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn arp_scan(starlark_heap: &'_ Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict<'_>>> {
+pub fn arp_scan(starlark_heap: &Heap, target_cidrs: Vec<String>) -> Result<Vec<Dict<'_>>> {
     let mut out: Vec<Dict> = Vec::new();
     let final_listener_output = handle_arp_scan(target_cidrs)?;
     for (ipaddr, res) in final_listener_output {
@@ -268,7 +268,7 @@ pub fn arp_scan(starlark_heap: &'_ Heap, target_cidrs: Vec<String>) -> Result<Ve
 }
 
 #[cfg(target_os = "windows")]
-pub fn arp_scan(_starlark_heap: &'_ Heap, _target_cidrs: Vec<String>) -> Result<Vec<Dict<'_>>> {
+pub fn arp_scan(_starlark_heap: &Heap, _target_cidrs: Vec<String>) -> Result<Vec<Dict<'_>>> {
     Err(anyhow!("ARP Scanning is not available on Windows."))
 }
 

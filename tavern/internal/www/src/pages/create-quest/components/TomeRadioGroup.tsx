@@ -1,22 +1,21 @@
 import { useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Heading } from '@chakra-ui/react'
+import { TomeParams } from '../../../utils/consts'
 import { safelyJsonParse } from '../../../utils/utils'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 import { CodeBlock, tomorrow } from 'react-code-blocks'
 import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/EmptyState'
 import FreeTextSearch from '../../../components/tavern-base-ui/FreeTextSearch'
-import { FieldInputParams } from '../../../utils/interfacesUI'
-import { TomeNode } from '../../../utils/interfacesQuery'
 
-type TomeRadioGroupProps = {
-    label: string;
-    data: TomeNode[];
-    selected: TomeNode | null;
-    setSelected: (tome: TomeNode) => void;
-}
-
-const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupProps) => {
+const TomeRadioGroup = (
+    { label, data, selected, setSelected }: {
+        label: string;
+        data: Array<any>;
+        selected: any,
+        setSelected: (arg: any) => void;
+    }
+) => {
     const [filteredData, setFilteredData] = useState(data);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -33,7 +32,7 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
         <div className="w-full">
             <div className="mx-auto w-full flex flex-col gap-2">
                 <FreeTextSearch placeholder='Search by tome name' setSearch={handleSearch} />
-                <RadioGroup value={selected || undefined} onChange={setSelected} className="flex flex-col gap-3">
+                <RadioGroup value={selected} onChange={setSelected} className="flex flex-col gap-3">
                     <RadioGroup.Label className="sr-only">
                         <Heading size="sm" >{label}</Heading>
                     </RadioGroup.Label>
@@ -55,7 +54,7 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
                             >
                                 {({ active, checked }) => {
                                     const isSavedInForm = selected?.id === tome?.id;
-                                    const { params } = safelyJsonParse(tome?.paramDefs || "");
+                                    const { params } = safelyJsonParse(tome?.paramDefs);
                                     const handleAccordionClick = (expandedIndex: number, checked: boolean) => {
                                         if (checked) {
                                             setIsExpanded(expandedIndex >= 0 ? true : false);
@@ -92,7 +91,7 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
                                                                     {params &&
                                                                         <div className="flex flex-row flex-wrap gap-1">
                                                                             Parameters:
-                                                                            {params && params.map((element: FieldInputParams, index: number) => {
+                                                                            {params && params.map((element: TomeParams, index: number) => {
                                                                                 return <div key={`${index}_${element.name}`}>{element.label}{index < (params.length - 1) && ","}</div>
                                                                             })}
                                                                         </div>
@@ -112,10 +111,12 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
                                                 {tome.eldritch &&
                                                     <AccordionPanel pb={4} pl={12}>
                                                         <CodeBlock
+                                                            className="w-full"
                                                             text={tome.eldritch}
                                                             language={"python"}
                                                             showLineNumbers={false}
                                                             theme={tomorrow}
+                                                            codeBlock
                                                         />
                                                     </AccordionPanel>
                                                 }

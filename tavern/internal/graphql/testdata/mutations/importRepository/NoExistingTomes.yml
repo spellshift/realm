@@ -12,13 +12,9 @@ query: |
       url
       publicKey
       tomes {
-        edges {
-          node {
-            name
-            author
-            eldritch
-          }
-        }
+        name
+        author
+        eldritch
       }
       owner {
           id
@@ -31,10 +27,8 @@ expected:
     url: "ssh://code.google.com/my/repo"
     publicKey: "--PUBLIC KEY--"
     tomes:
-      edges:
-        - node:
-            name: "expected_tome"
-            author: "expected_author"
-            eldritch: print("expected")
+      - name: "expected_tome"
+        author: "expected_author"
+        eldritch: print("expected")
     owner:
       id: "5"

@@ -13,17 +13,11 @@ requestor:
 query: |
   query Users {
     users {
-      edges {
-        node {
-          id
-        }
-      }
+      id
     }
   }
 
 # Ensure the GraphQL query returns exactly one user, the initial one we created
 expected:
   users:
-    edges:
-      - node:
-          id: "5"
+    - id: "5"

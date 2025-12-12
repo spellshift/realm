@@ -7,7 +7,7 @@ use starlark::values::Heap;
 use std::process;
 use sysinfo::{Pid, ProcessExt, System, SystemExt, UserExt};
 
-pub fn get_user(starlark_heap: &'_ Heap) -> Result<Dict<'_>> {
+pub fn get_user(starlark_heap: &Heap) -> Result<Dict<'_>> {
     let res = SmallMap::new();
     let mut dict_res = Dict::new(res);
     let user = SmallMap::new();

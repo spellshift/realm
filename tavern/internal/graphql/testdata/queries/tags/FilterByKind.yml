@@ -10,11 +10,7 @@ requestor:
 query: |
   query Tags($where: TagWhereInput!) {
     tags(where: $where) {
-      edges {
-        node {
-          id
-        }
-      }
+      id
     }
   }
 variables:
@@ -22,6 +18,4 @@ variables:
     kind: "service"
 expected:
   tags:
-    edges:
-      - node:
-          id: "4000"
+    - id: "4000"

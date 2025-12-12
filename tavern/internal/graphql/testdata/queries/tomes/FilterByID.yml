@@ -11,15 +11,9 @@ requestor:
 query: |
   query Tomes {
     tomes(where: {id: 2000}) {
-      edges {
-        node {
-          id
-        }
-      }
+      id
     }
   }
 expected:
   tomes:
-    edges:
-      - node:
-          id: "2000"
+    - id: "2000"

@@ -8,7 +8,7 @@ use starlark::{
 use std::process::id;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
-pub fn info(starlark_heap: &'_ Heap, pid: Option<usize>) -> Result<Dict<'_>> {
+pub fn info(starlark_heap: &Heap, pid: Option<usize>) -> Result<Dict<'_>> {
     let map: SmallMap<Value, Value> = SmallMap::new();
     // Create Dict type.
     let mut dict = Dict::new(map);

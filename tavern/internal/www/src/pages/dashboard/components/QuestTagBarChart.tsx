@@ -4,12 +4,10 @@ import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 
 import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/EmptyState';
 import { TaskChartKeys } from '../../../utils/enums';
-import { useFilters } from '../../../context/FilterContext';
 
 
 const TagBarChart = ({ data, loading, tagKind, children }: { data: Array<any>, loading: boolean, tagKind: string, children?: React.ReactNode }) => {
     const navigation = useNavigate();
-    const { filters, updateFilters } = useFilters();
 
     if (loading) {
         return <EmptyState type={EmptyStateType.loading} label="Formatting group data..." />
@@ -22,17 +20,14 @@ const TagBarChart = ({ data, loading, tagKind, children }: { data: Array<any>, l
         if (item.name === "undefined") {
             return null;
         }
-        if (filters.beaconFields.findIndex((field) => field.id === item?.id) === -1) {
-            const newFilter = {
+        navigation("/quests", {
+            state: [{
                 'label': item?.name,
                 'kind': tagKind,
                 'name': item?.name,
-                'value': item?.id,
-                'id': item?.id
-            };
-            updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter] })
-        }
-        navigation("/quests")
+                'value': item?.id
+            }]
+        })
     };
 
     return (

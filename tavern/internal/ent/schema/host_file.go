@@ -87,8 +87,6 @@ func (HostFile) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (HostFile) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.RelayConnection(),
-		entgql.MultiOrder(),
 		entsql.Annotation{
 			Collation: "utf8mb4_general_ci",
 		},

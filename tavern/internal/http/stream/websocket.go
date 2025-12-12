@@ -27,7 +27,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 256 * 1024 // 256KB
+	maxMessageSize = 512
 )
 
 type connector struct {

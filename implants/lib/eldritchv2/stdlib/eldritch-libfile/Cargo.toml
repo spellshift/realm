@@ -1,0 +1,37 @@
+[package]
+name = "eldritch-libfile"
+version = "0.3.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eldritch-core = { path = "../../eldritch-core" }
+eldritch-macros = { path = "../../eldritch-macros" }
+flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
+tar = { workspace = true, optional = true }
+tera = { workspace = true, optional = true }
+tempfile = { workspace = true, optional = true }
+glob = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+
+[target.'cfg(not(windows))'.dependencies]
+nix = { workspace = true, features = ["user"] }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:flate2",
+    "dep:tar",
+    "dep:tera",
+    "dep:tempfile",
+    "dep:glob",
+    "dep:regex",
+    "dep:anyhow",
+    "dep:serde_json",
+]
+fake_bindings = []

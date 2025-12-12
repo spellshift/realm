@@ -1,10 +1,11 @@
 import EmptyStateNoBeacon from "../../../components/empty-states/EmptyStateNoBeacon";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import BeaconTable from "./BeaconTable";
-import { useHost } from "../../../context/HostContext";
+import { useContext } from "react";
+import { HostContext } from "../../../context/HostContext";
 
 const BeaconTab = () => {
-    const { data: host, loading, error } = useHost();
+    const { data: host, loading, error } = useContext(HostContext);
 
     if (loading) {
         return <EmptyState type={EmptyStateType.loading} label="Loading beacons..." />
@@ -12,11 +13,17 @@ const BeaconTab = () => {
     else if (error) {
         return <EmptyState type={EmptyStateType.error} label="Error loading beacons..." />
     }
-    else if (host?.beacons?.edges && host?.beacons?.edges?.length > 0) {
-        return <div className="py-4"><BeaconTable beacons={host.beacons?.edges} /></div>
-    }
     else {
-        return <div className="py-4"><EmptyStateNoBeacon /></div>
+        return (
+            <div className="py-4">
+                {host?.beacons && host?.beacons?.length > 0 ? (
+                    <BeaconTable beacons={host.beacons} />
+                )
+                    : (
+                        <EmptyStateNoBeacon />
+                    )}
+            </div>
+        )
     }
 }
 export default BeaconTab;

@@ -138,18 +138,6 @@ type BeaconWhereInput struct {
 	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
 	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
 
-	// "next_seen_at" field predicates.
-	NextSeenAt       *time.Time  `json:"nextSeenAt,omitempty"`
-	NextSeenAtNEQ    *time.Time  `json:"nextSeenAtNEQ,omitempty"`
-	NextSeenAtIn     []time.Time `json:"nextSeenAtIn,omitempty"`
-	NextSeenAtNotIn  []time.Time `json:"nextSeenAtNotIn,omitempty"`
-	NextSeenAtGT     *time.Time  `json:"nextSeenAtGT,omitempty"`
-	NextSeenAtGTE    *time.Time  `json:"nextSeenAtGTE,omitempty"`
-	NextSeenAtLT     *time.Time  `json:"nextSeenAtLT,omitempty"`
-	NextSeenAtLTE    *time.Time  `json:"nextSeenAtLTE,omitempty"`
-	NextSeenAtIsNil  bool        `json:"nextSeenAtIsNil,omitempty"`
-	NextSeenAtNotNil bool        `json:"nextSeenAtNotNil,omitempty"`
-
 	// "interval" field predicates.
 	Interval       *uint64  `json:"interval,omitempty"`
 	IntervalNEQ    *uint64  `json:"intervalNEQ,omitempty"`
@@ -515,36 +503,6 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	}
 	if i.LastSeenAtNotNil {
 		predicates = append(predicates, beacon.LastSeenAtNotNil())
-	}
-	if i.NextSeenAt != nil {
-		predicates = append(predicates, beacon.NextSeenAtEQ(*i.NextSeenAt))
-	}
-	if i.NextSeenAtNEQ != nil {
-		predicates = append(predicates, beacon.NextSeenAtNEQ(*i.NextSeenAtNEQ))
-	}
-	if len(i.NextSeenAtIn) > 0 {
-		predicates = append(predicates, beacon.NextSeenAtIn(i.NextSeenAtIn...))
-	}
-	if len(i.NextSeenAtNotIn) > 0 {
-		predicates = append(predicates, beacon.NextSeenAtNotIn(i.NextSeenAtNotIn...))
-	}
-	if i.NextSeenAtGT != nil {
-		predicates = append(predicates, beacon.NextSeenAtGT(*i.NextSeenAtGT))
-	}
-	if i.NextSeenAtGTE != nil {
-		predicates = append(predicates, beacon.NextSeenAtGTE(*i.NextSeenAtGTE))
-	}
-	if i.NextSeenAtLT != nil {
-		predicates = append(predicates, beacon.NextSeenAtLT(*i.NextSeenAtLT))
-	}
-	if i.NextSeenAtLTE != nil {
-		predicates = append(predicates, beacon.NextSeenAtLTE(*i.NextSeenAtLTE))
-	}
-	if i.NextSeenAtIsNil {
-		predicates = append(predicates, beacon.NextSeenAtIsNil())
-	}
-	if i.NextSeenAtNotNil {
-		predicates = append(predicates, beacon.NextSeenAtNotNil())
 	}
 	if i.Interval != nil {
 		predicates = append(predicates, beacon.IntervalEQ(*i.Interval))
@@ -1118,18 +1076,6 @@ type HostWhereInput struct {
 	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
 	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
 
-	// "next_seen_at" field predicates.
-	NextSeenAt       *time.Time  `json:"nextSeenAt,omitempty"`
-	NextSeenAtNEQ    *time.Time  `json:"nextSeenAtNEQ,omitempty"`
-	NextSeenAtIn     []time.Time `json:"nextSeenAtIn,omitempty"`
-	NextSeenAtNotIn  []time.Time `json:"nextSeenAtNotIn,omitempty"`
-	NextSeenAtGT     *time.Time  `json:"nextSeenAtGT,omitempty"`
-	NextSeenAtGTE    *time.Time  `json:"nextSeenAtGTE,omitempty"`
-	NextSeenAtLT     *time.Time  `json:"nextSeenAtLT,omitempty"`
-	NextSeenAtLTE    *time.Time  `json:"nextSeenAtLTE,omitempty"`
-	NextSeenAtIsNil  bool        `json:"nextSeenAtIsNil,omitempty"`
-	NextSeenAtNotNil bool        `json:"nextSeenAtNotNil,omitempty"`
-
 	// "tags" edge predicates.
 	HasTags     *bool            `json:"hasTags,omitempty"`
 	HasTagsWith []*TagWhereInput `json:"hasTagsWith,omitempty"`
@@ -1509,36 +1455,6 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	}
 	if i.LastSeenAtNotNil {
 		predicates = append(predicates, host.LastSeenAtNotNil())
-	}
-	if i.NextSeenAt != nil {
-		predicates = append(predicates, host.NextSeenAtEQ(*i.NextSeenAt))
-	}
-	if i.NextSeenAtNEQ != nil {
-		predicates = append(predicates, host.NextSeenAtNEQ(*i.NextSeenAtNEQ))
-	}
-	if len(i.NextSeenAtIn) > 0 {
-		predicates = append(predicates, host.NextSeenAtIn(i.NextSeenAtIn...))
-	}
-	if len(i.NextSeenAtNotIn) > 0 {
-		predicates = append(predicates, host.NextSeenAtNotIn(i.NextSeenAtNotIn...))
-	}
-	if i.NextSeenAtGT != nil {
-		predicates = append(predicates, host.NextSeenAtGT(*i.NextSeenAtGT))
-	}
-	if i.NextSeenAtGTE != nil {
-		predicates = append(predicates, host.NextSeenAtGTE(*i.NextSeenAtGTE))
-	}
-	if i.NextSeenAtLT != nil {
-		predicates = append(predicates, host.NextSeenAtLT(*i.NextSeenAtLT))
-	}
-	if i.NextSeenAtLTE != nil {
-		predicates = append(predicates, host.NextSeenAtLTE(*i.NextSeenAtLTE))
-	}
-	if i.NextSeenAtIsNil {
-		predicates = append(predicates, host.NextSeenAtIsNil())
-	}
-	if i.NextSeenAtNotNil {
-		predicates = append(predicates, host.NextSeenAtNotNil())
 	}
 
 	if i.HasTags != nil {

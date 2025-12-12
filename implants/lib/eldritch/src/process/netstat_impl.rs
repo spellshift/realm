@@ -2,12 +2,12 @@ use anyhow::Result;
 use starlark::values::{dict::Dict, Heap};
 
 #[cfg(target_os = "freebsd")]
-pub fn netstat(_: &Heap) -> Result<Vec<Dict>> {
+pub fn netstat(_: &Heap) -> Result<Vec<Dict<'_>>> {
     Err(anyhow::anyhow!("Not implemented for FreeBSD"))
 }
 
 #[cfg(not(target_os = "freebsd"))]
-pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
+pub fn netstat(starlark_heap: &Heap) -> Result<Vec<Dict<'_>>> {
     use super::super::insert_dict_kv;
     use starlark::{collections::SmallMap, const_frozen_string, values::Value};
 

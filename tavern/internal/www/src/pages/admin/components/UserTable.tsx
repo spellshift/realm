@@ -1,15 +1,15 @@
 import { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/tavern-base-ui/Table";
 import UserImageAndName from "../../../components/UserImageAndName";
-import Button from "../../../components/tavern-base-ui/button/Button";
-import { UserEdge, UserNode } from "../../../utils/interfacesQuery";
-import { useUpdateUser } from "../hooks/useUpdateUser";
+import { useUpdateUser } from "../hooks/userMutations";
+import { UserType } from "../../../utils/consts";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 
 type Props = {
-    data: UserEdge[];
-    currentUser: UserNode;
+    data: UserType[];
+    currentUser: UserType;
 }
 const UserTable = (props: Props) => {
     const { data, currentUser } = props;
@@ -19,7 +19,7 @@ const UserTable = (props: Props) => {
         {
             id: "name",
             header: 'Name',
-            accessorFn: (row: UserEdge) => row.node,
+            accessorFn: row => row,
             footer: props => props.column.id,
             maxSize: 50,
             enableSorting: true,
@@ -33,7 +33,7 @@ const UserTable = (props: Props) => {
         {
             id: "status",
             header: "Status",
-            accessorFn: (row: UserEdge) => row.node,
+            accessorFn: row => row,
             footer: props => props.column.id,
             maxSize: 100,
             enableSorting: false,
@@ -41,20 +41,15 @@ const UserTable = (props: Props) => {
                 const rowData = cellData.getValue();
                 return (
                     <div className="flex flex-row flex-wrap gap-1">
-                        {rowData?.isActivated &&
-                            <Badge badgeStyle={{ color: "green" }}>
-                                <div>Activated</div>
-                            </Badge>}
-                        {!rowData?.isActivated &&
-                            <Badge>
-                                <div>Pending</div>
-                            </Badge>
-                        }
-                        {rowData?.isAdmin &&
-                            <Badge badgeStyle={{ color: "purple" }}>
-                                <div>Administrator</div>
-                            </Badge>
-                        }
+                        {rowData?.isActivated && <Badge>
+                            <div>Activated</div>
+                        </Badge>}
+                        {!rowData?.isActivated && <Badge>
+                            <div>Pending</div>
+                        </Badge>}
+                        {rowData?.isAdmin && <Badge>
+                            <div>Administrator</div>
+                        </Badge>}
                     </div>
                 );
             }
@@ -62,7 +57,7 @@ const UserTable = (props: Props) => {
         {
             id: "actions",
             header: "Actions",
-            accessorFn: (row: UserEdge) => row.node,
+            accessorFn: row => row,
             footer: props => props.column.id,
             maxSize: 100,
             enableSorting: false,
@@ -77,7 +72,7 @@ const UserTable = (props: Props) => {
                         {rowData?.isActivated && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "red", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": false, "admin": false })}>
                             Deactivate
                         </Button>}
-                        {rowData?.isActivated && !rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "purple", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": true, "admin": true })}>
+                        {rowData?.isActivated && !rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "gray", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": true, "admin": true })}>
                             Promote
                         </Button>}
                         {rowData?.isActivated && rowData?.isAdmin && <Button disabled={isDisabled} buttonVariant="outline" buttonStyle={{ color: "red", size: "sm" }} onClick={() => submitUpdateUser({ "id": rowData.id, "activated": true, "admin": false })}>

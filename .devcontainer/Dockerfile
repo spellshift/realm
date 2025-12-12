@@ -24,4 +24,4 @@ RUN apt-get update && apt-get install -y gnupg && echo "deb [arch=$(dpkg --print
 
 RUN wget "https://ziglang.org/builds/zig-$(uname -m)-linux-$ZIG_VERSION.tar.xz" -O /tmp/zig.tar.xz && \
     mkdir /usr/local/bin/zig && tar -xvf "/tmp/zig.tar.xz" --strip-components=1 -C /usr/local/bin/zig && \
-    echo "export PATH=\"\$PATH:/usr/local/bin/zig/\"" >> /etc/bash.bashrc
+    echo "export PATH=$PATH:/usr/local/bin/zig/" >> /etc/bash.bashrc

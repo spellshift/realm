@@ -53,9 +53,9 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
             String::from(String::from_utf8(response_buffer.to_vec())?.trim_matches(char::from(0)));
         Ok(result_string)
     } else {
-        Err(anyhow::anyhow!(
+        return Err(anyhow::anyhow!(
             "Protocol not supported please use: udp or tcp."
-        ))
+        ));
     }
 }
 

@@ -1,11 +1,10 @@
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box } from "@chakra-ui/react";
 import { CodeBlock, tomorrow } from "react-code-blocks";
-import { TomeNode } from "../utils/interfacesQuery";
-import { FieldInputParams } from "../utils/interfacesUI";
+import { Tome, TomeParams } from "../utils/consts";
 
 type Props = {
-    tome: TomeNode,
-    params: Array<FieldInputParams>,
+    tome: Tome,
+    params: Array<TomeParams>,
     noParamValues?: boolean
 }
 const TomeAccordion = (props: Props) => {
@@ -29,7 +28,7 @@ const TomeAccordion = (props: Props) => {
                                     {params && params.length > 0 &&
                                         <div className="flex flex-col md:flex-row gap-1">
                                             Parameters:
-                                            {params && params.map((element: FieldInputParams, index: number) => {
+                                            {params && params.map((element: TomeParams, index: number) => {
                                                 return <div key={`${index}_${element.name}`}>{element.label}{index < (params.length - 1) && ","}</div>
                                             })}
                                         </div>
@@ -51,7 +50,7 @@ const TomeAccordion = (props: Props) => {
                     <AccordionPanel pb={4} pl={4} className="flex flex-col gap-2">
                         {params && params.length > 0 && (
                             <div className="flex flex-row gap-8 flex-wrap">
-                                {params.map((paramDef: FieldInputParams) => {
+                                {params.map((paramDef: TomeParams) => {
                                     if (paramDef.value) {
                                         return (
                                             <div className="flex flex-col gap-0 text-sm px-2" key={paramDef.name}>
@@ -60,15 +59,16 @@ const TomeAccordion = (props: Props) => {
                                             </div>
                                         )
                                     }
-                                    return null;
                                 })}
                             </div>
                         )}
                         <CodeBlock
+                            className="w-full"
                             text={tome.eldritch}
                             language={"python"}
                             showLineNumbers={false}
                             theme={tomorrow}
+                            codeBlock
                         />
                     </AccordionPanel>
                 }

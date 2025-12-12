@@ -5,14 +5,12 @@ import { formatDistance } from "date-fns";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Table from "../../../components/tavern-base-ui/Table";
 import TomeAccordion from "../../../components/TomeAccordion";
-import { TomeNode } from "../../../utils/interfacesQuery";
+import { RepositoryRow, Tome } from "../../../utils/consts";
 import { constructTomeParams } from "../../../utils/utils";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import UserImageAndName from "../../../components/UserImageAndName";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
-import { RepositoryRow } from "../../../utils/interfacesUI";
-
 
 const RepositoryTable = ({ repositories }: {
     repositories: Array<RepositoryRow>
@@ -26,7 +24,7 @@ const RepositoryTable = ({ repositories }: {
     const renderSubComponent = ({ row }: { row: Row<RepositoryRow> }) => {
         return (
             <div className="px-8">
-                {row?.original?.node?.tomes.map((tome: TomeNode) => {
+                {row?.original?.node?.tomes.map((tome: Tome) => {
                     const params = constructTomeParams("[]", tome.paramDefs);
                     return (
                         <div key={tome.id}>

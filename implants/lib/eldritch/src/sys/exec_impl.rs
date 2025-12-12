@@ -17,7 +17,7 @@ use {
 };
 
 pub fn exec(
-    starlark_heap: &'_ Heap,
+    starlark_heap: &Heap,
     path: String,
     args: Vec<String>,
     disown: Option<bool>,

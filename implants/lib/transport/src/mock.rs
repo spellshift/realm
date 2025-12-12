@@ -47,5 +47,7 @@ mock! {
             rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
             tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
         ) -> Result<()>;
+
+        fn is_active(&self) -> bool;
     }
 }

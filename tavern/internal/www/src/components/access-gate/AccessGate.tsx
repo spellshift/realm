@@ -1,12 +1,12 @@
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
-import { useAuthorization } from "../../context/AuthorizationContext";
-import { ReactNode } from "react";
+import { AuthorizationContext } from "../../context/AuthorizationContext";
+import { ReactNode, useContext } from "react";
 
 type Props = {
     children: ReactNode;
 }
 export const AccessGate = ({ children }: Props) => {
-    const { data, isLoading, error } = useAuthorization();
+    const { data, isLoading, error } = useContext(AuthorizationContext);
     const userData = data?.me || null;
 
 

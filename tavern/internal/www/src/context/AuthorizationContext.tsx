@@ -1,20 +1,21 @@
-import React, { createContext, useContext } from "react";
-import { ApolloError, gql, useQuery } from "@apollo/client";
-import { UserNode } from "../utils/interfacesQuery";
+import React, { createContext } from "react";
+import { gql, useQuery } from "@apollo/client";
+import { UserType } from "../utils/consts";
 
 export type AuthorizationContextType = {
-    me: UserNode;
+    me: UserType;
 }
-
 export type AuthorizationContextQueryType = {
-    data: AuthorizationContextType | undefined;
+    data: undefined | AuthorizationContextType;
     isLoading: boolean;
-    error: ApolloError | undefined;
+    error: any;
 }
 
-export const AuthorizationContext = createContext<AuthorizationContextQueryType | undefined>(undefined);
+const defaultValue = {data: undefined, isLoading: false, error: undefined} as AuthorizationContextQueryType;
 
-export const AuthorizationContextProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthorizationContext = createContext(defaultValue);
+
+export const AuthorizationContextProvider = ({children}: {children: React.ReactNode}) => {
 
     const GET_USER_INFO = gql`
         query GetMe{
@@ -31,16 +32,8 @@ export const AuthorizationContextProvider = ({ children }: { children: React.Rea
     const { loading: isLoading, error, data } = useQuery(GET_USER_INFO);
 
     return (
-        <AuthorizationContext.Provider value={{ data, isLoading, error }}>
-            {children}
-        </AuthorizationContext.Provider>
+      <AuthorizationContext.Provider value={{ data, isLoading, error }}>
+        {children}
+      </AuthorizationContext.Provider>
     );
-};
-
-export const useAuthorization = () => {
-    const context = useContext(AuthorizationContext);
-    if (context === undefined) {
-        throw new Error('useAuthorization must be used within an AuthorizationContextProvider');
-    }
-    return context;
 };

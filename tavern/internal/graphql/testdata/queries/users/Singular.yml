@@ -6,15 +6,9 @@ requestor:
 query: |
   query Users {
     users {
-      edges {
-        node {
-          id
-        }
-      }
+      id
     }
   }
 expected:
   users:
-    edges:
-      - node:
-          id: "5"
+    - id: "5"

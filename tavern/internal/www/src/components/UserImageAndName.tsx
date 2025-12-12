@@ -1,10 +1,10 @@
 import { FC } from "react";
+import { UserType } from "../utils/consts";
 import { Image } from "@chakra-ui/react";
 
 import PlaceholderUser from "../assets/PlaceholderUser.png";
-import { UserNode } from "../utils/interfacesQuery";
 
-const UserImageAndName: FC<{ userData: UserNode | null | undefined }> = ({ userData }) => {
+const UserImageAndName: FC<{ userData: UserType | null | undefined }> = ({ userData }) => {
     const creatorImage = (userData?.photoURL && userData?.photoURL !== "") ? userData.photoURL : PlaceholderUser;
 
     return (

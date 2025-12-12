@@ -13,13 +13,10 @@ Imix is an offensive security implant designed for stealthy communication and ad
 
 Imix has compile-time configuration, that may be specified using environment variables during `cargo build`.
 
-**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
-Building in the dev container limits variables that might cause issues and is the most tested way to compile.
-
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:8000` | No |
-| IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | automatic | Yes |
+| IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | - | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
@@ -101,15 +98,6 @@ These flags are passed to cargo build Eg.:
 - `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
 - `--features http1 --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
 
-## Setting encryption key
-
-By default imix will automatically collect the IMIX_CALLBACK_URI server's public key during the build process. This can be overridden by manually setinng the `IMIX_SERVER_PUBKEY` environment variable but should only be necesarry when using redirectors. Redirectors have no visibliity into the realm encryption by design, this means that agents must be compiled with the upstream tavern instance's public key.
-
-A server's public key can be found using:
-```bash
-export IMIX_SERVER_PUBKEY="$(curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey')"
-```
-
 ### Linux
 
 ```bash
@@ -119,6 +107,9 @@ sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
 export IMIX_CALLBACK_URI="http://localhost"
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
@@ -153,7 +144,9 @@ Modify .devcontainer/devcontainer.json by uncommenting the MacOSX.sdk mount. Thi
 cd realm/implants/imix/
 # Tell the linker to use the MacOSX.sdk
 export RUSTFLAGS="-Clink-arg=-isysroot -Clink-arg=/MacOSX.sdk -Clink-arg=-F/MacOSX.sdk/System/Library/Frameworks -Clink-arg=-L/MacOSX.sdk/usr/lib -Clink-arg=-lresolv"
-
+export IMIX_CALLBACK_URI="http://localhost"
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
 export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 cargo zigbuild  --release --target aarch64-apple-darwin
@@ -167,6 +160,9 @@ cargo zigbuild  --release --target aarch64-apple-darwin
 cd realm/implants/imix/
 
 export IMIX_CALLBACK_URI="http://localhost"
+# To get a servers pubkey:
+# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 # Build imix.exe
  cargo build --release --target=x86_64-pc-windows-gnu

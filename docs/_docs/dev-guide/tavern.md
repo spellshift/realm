@@ -152,38 +152,6 @@ If you wish to develop an agent using a different transport method (e.g. DNS), y
 3. Report available output from [Task](/user-guide/terminology#task) execution
 4. Sleep for an interval and repeat
 
-## Transport Development
-
-The tavern transport recieves traffic from an agent over one of the defined protocols (GRPC, HTTP1, DNS) and translates / relays it to the upstream tavern server using grpc.
-
-Add your redirector implementation to: `tavern/internal/redirectors/dns/dns.go`
-
-It should inculed the following:
-```go
-package grpc
-
-// Register the redirector in the global redirector map.
-func init() {
-	redirectors.Register("dns", &Redirect{})
-}
-
-// Redirector is a gRPC redirector.
-type Redirect struct{}
-
-// Redirect implements the redirectors.Redirector interface.
-func (r *Redirect) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
-    // Setup a connection to the upstream server using `upstream.NewStream()`
-    // Use the `grpc.CallContentSubtype("raw")` option to create a grpc client that operates on raw bytes.
-    // It's important that the grpc client use raw bytes since transports are unable to read the encrypted
-    // messages sent by the agent.
-
-    // Setup a server listener that reads requests from the transport
-
-    // It may help to split requests by unary, server streaming, client streaming, and bi-directional streaming.
-}
-```
-
-
 ## Custom oauth2 backend
 
 If you can't use the default google oauth2 backend Realm has a flexible implementation that allows you to implement your own backends.

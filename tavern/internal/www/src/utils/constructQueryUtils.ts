@@ -1,6 +1,6 @@
 import { Filters } from "../context/FilterContext";
-import { FilterBarOption } from "./interfacesUI";
-import { getBeaconFilterNameByTypes, getTomeFilterNameByTypes } from "./utils";
+import { FilterBarOption } from "./consts";
+import { getFilterNameByTypes } from "./utils";
 
 export function constructTagQueryFormat(
     kind: string,
@@ -30,10 +30,9 @@ export function constructHostFieldQuery(
     groups: Array<string>,
     services: Array<string>,
     platforms: Array<string>,
-    hosts: Array<string>,
-    primaryIP: Array<string>
+    hosts: Array<string>
   ){
-    if(hosts.length < 1 && groups.length < 1 && services.length < 1 && platforms.length < 1 && primaryIP.length < 1){
+    if(hosts.length < 1 && groups.length < 1 && services.length < 1 && platforms.length < 1){
       return null;
     }
 
@@ -41,53 +40,27 @@ export function constructHostFieldQuery(
       "hasHostWith": {
         "and": constructTagFieldsQuery(groups, services),
         ...(hosts.length > 0) && {"nameIn": hosts},
-        ...(platforms.length > 0) && {"platformIn": platforms},
-        ...(primaryIP.length > 0) && {"primaryIPIn": primaryIP}
+        ...(platforms.length > 0) && {"platformIn": platforms}
       }
     }
 };
 
 export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>){
-    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP} = getBeaconFilterNameByTypes(beaconFields);
-    const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP);
+    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts} = getFilterNameByTypes(beaconFields);
+    const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts);
 
-    if(beacons.length < 1 && principal.length < 1 && !hostFiledQuery){
+    if(beacons.length < 1 && !hostFiledQuery){
       return null;
     }
 
     return {
       "hasBeaconWith": {
           ...(beacons.length > 0 && {"nameIn": beacons}),
-          ...(principal.length > 0 && {"principalIn": principal}),
           ...hostFiledQuery
       }
     };
 
 };
-
-export function constructTomeFilterQuery(filter: Filters){
-    const { Tactic, SupportModel } = getTomeFilterNameByTypes(filter.tomeFields);
-
-    if(filter.tomeMultiSearch === "" && Tactic.length < 1 && SupportModel.length < 1){
-      return null;
-    }
-
-    return {
-      "hasTomeWith": {
-        ...(filter.tomeMultiSearch && {
-          "or": [
-            {"paramDefsContains": filter.tomeMultiSearch},
-            {"nameContains": filter.tomeMultiSearch},
-            {"descriptionContains": filter.tomeMultiSearch}
-          ]
-        }),
-        ...(Tactic.length && {"tacticIn": Tactic}),
-        ...(SupportModel.length && {"supportModelIn": SupportModel})
-      }
-    };
-
-};
-
 export function constructTaskFilterQuery(filter: Filters){
     const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
 
@@ -97,42 +70,6 @@ export function constructTaskFilterQuery(filter: Filters){
 
     return {
       "hasTasksWith": {
-        ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
-        ...(beaconFilterQuery && beaconFilterQuery)
-      }
-    };
-
-};
-
-export function constructQuestFilterQuery(filter: Filters){
-  const tomeFilterQuery = constructTomeFilterQuery(filter);
-
-  if(!filter.questName && !filter.tomeMultiSearch){
-    return null;
-  }
-
-  return {
-      ...(filter.questName && {"nameContains": filter.questName}),
-      ...(tomeFilterQuery && {
-        "or": [
-          {"parametersContains": filter.tomeMultiSearch},
-          ...[tomeFilterQuery],
-        ]
-      })
-    }
-}
-
-export function constructHostTaskFilterQuery(filter: Filters){
-    const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields);
-    const questFilterQuery =constructQuestFilterQuery(filter);
-
-    if(!filter.taskOutput && !beaconFilterQuery && !questFilterQuery){
-      return null;
-    }
-
-    return {
-      "hasTasksWith": {
-        ...(questFilterQuery && {"hasQuestWith": questFilterQuery}),
         ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
         ...(beaconFilterQuery && beaconFilterQuery)
       }

@@ -1,7 +1,5 @@
 import { add } from "date-fns";
-import { BeaconEdge, BeaconNode } from "./interfacesQuery";
-import { PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
-import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
+import { BeaconType, FilterBarOption, QuestParam, TomeParams, TomeTag } from "./consts";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -9,6 +7,9 @@ export function classNames(...classes: string[]) {
 
 export const convertArrayToObject = (array: Array<any>) =>
     array.reduce((acc, curr) => (acc[curr] = curr, acc), {});
+
+export const convertArrayOfObjectsToObject = (array: Array<any>, key: string) =>
+    array.reduce((acc, curr) => (acc[curr[key]] = curr, acc), {});
 
 export const safelyJsonParse = (value: string) => {
     let error = false;
@@ -24,14 +25,12 @@ export const safelyJsonParse = (value: string) => {
     return { error, params };
 };
 
-export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
+export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
     "beacon": Array<string>,
     "service":  Array<string>,
     "group":  Array<string>,
     "host":  Array<string>,
-    "platform": Array<string>,
-    "principal": Array<string>,
-    "primaryIP": Array<string>
+    "platform": Array<string>
 } {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
@@ -49,12 +48,6 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
         else if (currentValue.kind === "host") {
             accumulator.host.push(currentValue.name);
         }
-        else if (currentValue.kind === "principal"){
-            accumulator.principal.push(currentValue.name);
-        }
-        else if (currentValue.kind === "primaryIP"){
-            accumulator.primaryIP.push(currentValue.name);
-        }
         return accumulator;
     },
         {
@@ -62,48 +55,14 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             "service": [],
             "group": [],
             "host": [],
-            "platform": [],
-            "principal": [],
-            "primaryIP": []
+            "platform": []
         });
 };
 
-export function getTomeFilterNameByTypes(typeFilters: Array<FilterBarOption>): TomeFiltersByType {
-    return typeFilters.reduce((accumulator: any, currentValue: any) => {
-        if (currentValue.kind === TomeFilterFieldKind.SupportModel) {
-            accumulator[TomeFilterFieldKind.SupportModel].push(currentValue.value);
-        }
-        else if (currentValue.kind === TomeFilterFieldKind.Tactic) {
-            accumulator[TomeFilterFieldKind.Tactic].push(currentValue.value);
-        }
-        return accumulator;
-    },
-        {
-            [TomeFilterFieldKind.SupportModel]: [],
-            [TomeFilterFieldKind.Tactic]: []
-        });
-};
-
-export const getFormatForPrincipal = (beacons: BeaconEdge[]) => {
-    const uniqueListOFPrincipals = beacons.reduce((acc: any, curr: BeaconEdge) => (acc[curr.node["principal"]] = curr, acc), {});
-    const princialUserList = Object.values(PrincipalAdminTypes) as Array<string>;
-    const finalList = [] as Array<string>;
-    for (const property in uniqueListOFPrincipals) {
-        if(princialUserList.indexOf(property) !== -1){
-            finalList.unshift(property);
-        }
-        else{
-            finalList.push(property);
-        }
-    }
-    return finalList;
-};
-
-
-export const getOfflineOnlineStatus = (beacons: BeaconEdge[]) : OnlineOfflineStatus => {
+export const getOfflineOnlineStatus = (beacons: any) : {online: number, offline: number} => {
     return beacons.reduce(
-        (accumulator: OnlineOfflineStatus, currentValue: BeaconEdge) => {
-            const beaconOffline = checkIfBeaconOffline(currentValue.node);
+        (accumulator: any, currentValue: any) => {
+            const beaconOffline = checkIfBeaconOffline(currentValue);
             if (beaconOffline) {
                 accumulator.offline += 1;
             }
@@ -119,9 +78,9 @@ export const getOfflineOnlineStatus = (beacons: BeaconEdge[]) : OnlineOfflineSta
     );
 };
 
-export function getOnlineBeacons(beacons: Array<BeaconNode>): Array<BeaconNode> {
+export function getOnlineBeacons(beacons: Array<BeaconType>): Array<BeaconType> {
     const currentDate = new Date();
-    return beacons.filter((beacon: BeaconNode) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
+    return beacons.filter((beacon: BeaconType) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
 }
 export function checkIfBeaconOffline(beacon: { lastSeenAt: string, interval: number }): boolean {
     const currentDate = new Date();
@@ -170,7 +129,7 @@ export function getTacticColor(tactic: string) {
             return "#4b5563";
     }
 }
-export function constructTomeParams(questParamamters?: string | null, tomeParameters?: string | null): Array<FieldInputParams> {
+export function constructTomeParams(questParamamters?: string, tomeParameters?: string): Array<QuestParam> {
     if (!questParamamters || !tomeParameters) {
         return [];
     }
@@ -178,7 +137,7 @@ export function constructTomeParams(questParamamters?: string | null, tomeParame
     const paramValues = JSON.parse(questParamamters) || {};
     const paramFields = JSON.parse(tomeParameters || "") || [];
 
-    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
+    const fieldWithValue = paramFields.map((field: TomeParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
@@ -187,8 +146,8 @@ export function constructTomeParams(questParamamters?: string | null, tomeParame
 
     return fieldWithValue;
 }
-export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<FieldInputParams>): Array<FieldInputParams> {
-    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
+export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<TomeParams>): Array<QuestParam> {
+    const fieldWithValue = paramFields.map((field: TomeParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
@@ -209,13 +168,3 @@ export function groupBy<T>(collection: T[], key: keyof T): { [key: string]: T[] 
     }, {} as any);
     return groupedResult
 }
-
-export const mapEnumToUIOptionField = (enumObj: Record<string, string>, kind: string) => {
-    return Object.entries(enumObj).map(([key, value]) => ({
-        id: key,
-        name: value,
-        value: key,
-        label: value,
-        kind: kind
-    }));
-};

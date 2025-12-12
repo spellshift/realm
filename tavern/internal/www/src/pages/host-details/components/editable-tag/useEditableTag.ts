@@ -1,14 +1,46 @@
 import { gql, useMutation } from "@apollo/client";
-import { useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { KindOfTag, TagContextType, TagOptionType, TomeTag } from "../../../../utils/consts";
+import { TagContext } from "../../../../context/TagContext";
 import { GET_HOST_QUERY, GET_TAG_FILTERS } from "../../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
-import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 export const useEditableTag = (kind: KindOfTag) => {
     const toast = useToast();
-    const [loading, setLoading] = useState(false);
+    const { data: allTagData } = useContext(TagContext);
+    const [options, setOptions ] = useState<Array<TagOptionType> | undefined>(undefined);
+    const [loading, setLoading] = useState(true);
     const [displayEditTag, setDisplayEditTag] = useState(false);
-    const [tagValue, setTagValue] = useState<FilterBarOption | null>(null);
+    const [tagValue, setTagValue] = useState<TagOptionType | null>(null);
+
+    const getDefaultTags = useCallback( (kind: KindOfTag, allTagData?: TagContextType)=> {
+        switch (kind) {
+            case 'group':
+                return formatTagOptions(allTagData?.groupTags || []);
+            case 'service':
+                return formatTagOptions(allTagData?.serviceTags || []);
+            default:
+                return [];
+        }
+    },[]);
+
+    useEffect(()=>{
+        if(allTagData && !options){
+            setOptions(getDefaultTags(kind, allTagData));
+            setLoading(false);
+        }
+    },[allTagData, kind, options, getDefaultTags]);
+
+    function formatTagOptions(tags: Array<TomeTag>){
+        return tags.map(function (tag: TomeTag) {
+            return {
+                ...tag,
+                value: tag?.id,
+                label: tag?.name,
+                kind: tag?.kind
+            };
+        });
+    };
 
     const CREATE_TAG_MUTATION = gql`
         mutation CreateTag($input: CreateTagInput!){
@@ -37,7 +69,7 @@ export const useEditableTag = (kind: KindOfTag) => {
         ],
       });
 
-    const handleCreateOption = async (inputValue: string | null, hostId?: string, previousTag?: FilterBarOption) => {
+    const handleCreateOption = async (inputValue: string | null, hostId?: string, previousTag?: TomeTag) => {
         if(!inputValue){
             return
         }
@@ -77,7 +109,7 @@ export const useEditableTag = (kind: KindOfTag) => {
         setLoading(false);
     };
 
-    const handleSelectOption = async (selectedTag: FilterBarOption  | null, hostId?: string, previousTag?: FilterBarOption) => {
+    const handleSelectOption = async (selectedTag: TagOptionType | null, hostId?: string, previousTag?: TomeTag) => {
         setLoading(true);
 
         const formatVariables = {
@@ -120,6 +152,7 @@ export const useEditableTag = (kind: KindOfTag) => {
 
     return {
         tagValue,
+        options: options || [],
         loading,
         displayEditTag,
         handleSelectOption,

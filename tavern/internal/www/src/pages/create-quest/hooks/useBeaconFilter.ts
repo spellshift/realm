@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
+import { BeaconType } from "../../../utils/consts";
 import { PrincipalAdminTypes } from "../../../utils/enums";
 import { useFilters } from "../../../context/FilterContext";
-import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
-import { SelectedBeacons } from "../../../utils/interfacesUI";
-import { getBeaconFilterNameByTypes } from "../../../utils/utils";
 
-export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: SelectedBeacons) => {
+export const useBeaconFilter = (beacons: Array<BeaconType>, selectedBeacons: any) => {
     const {filters} = useFilters();
     const initialFilters = (filters.filtersEnabled && filters.beaconFields) ? filters.beaconFields : [];
 
@@ -17,20 +15,48 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
 
     const [viewOnlyOnePerHost, setViewOnlyOnePerHost] = useState(false);
 
-    const filterByTypes = useCallback((filteredBeacons: Array<BeaconNode>) => {
+    function getSearchTypes(typeFilters: any){
+        return typeFilters.reduce((accumulator:any, currentValue:any) => {
+            if(currentValue.kind === "beacon"){
+                accumulator.beacon.push(currentValue.value);
+            }
+            else if(currentValue.kind === "platform"){
+                accumulator.platform.push(currentValue.value);
+            }
+            else if(currentValue.kind === "service"){
+                accumulator.service.push(currentValue.value);
+            }
+            else if(currentValue.kind === "group"){
+                accumulator.group.push(currentValue.value);
+            }
+            else if(currentValue.kind === "host"){
+                accumulator.host.push(currentValue.value);
+            }
+            return accumulator;
+        },
+        {
+            "beacon": [],
+            "service": [],
+            "host": [],
+            "group": [],
+            "platform": []
+        });
+    };
+
+    const filterByTypes = useCallback((filteredBeacons: Array<BeaconType>) => {
         if(typeFilters.length < 1){
             return filteredBeacons;
         }
 
-        const searchTypes = getBeaconFilterNameByTypes(typeFilters);
+        const searchTypes = getSearchTypes(typeFilters);
 
-        return filteredBeacons.filter( (beacon: BeaconNode) => {
-            let group = beacon?.host?.tags ? (beacon?.host?.tags?.edges).find( (obj : TagEdge) => {
-                return obj?.node.kind === "group"
+        return filteredBeacons.filter( (beacon) => {
+            let group = beacon?.host?.tags ? (beacon?.host?.tags).find( (obj : any) => {
+                return obj?.kind === "group"
             }) : null;
 
-            let service = beacon?.host?.tags ? (beacon?.host?.tags?.edges).find( (obj : TagEdge) => {
-                return obj?.node.kind === "service"
+            let service = beacon?.host?.tags ? (beacon?.host?.tags).find( (obj : any) => {
+                return obj?.kind === "service"
             }) : null;
 
             let match = true;
@@ -45,17 +71,8 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
                 }
             }
 
-            if(searchTypes.principal.length > 0){
-                if(searchTypes.principal.indexOf(beacon.principal) > -1){
-                    match = true;
-                }
-                else{
-                    return false;
-                }
-            }
-
             if(searchTypes.host.length > 0){
-                if(beacon?.host?.id && searchTypes.host.indexOf(beacon?.host?.id) > -1){
+                if(searchTypes.host.indexOf(beacon?.host?.id) > -1){
                     match = true;
                 }
                 else{
@@ -64,7 +81,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             }
 
             if(searchTypes.service.length > 0){
-                if(service && searchTypes.service.indexOf(service?.node.name) > -1){
+                if(service && searchTypes.service.indexOf(service?.id) > -1){
                     match = true;
                 }
                 else{
@@ -73,7 +90,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             }
 
             if(searchTypes.group.length > 0){
-                if(group && searchTypes.group.indexOf(group?.node.name) > -1){
+                if(group && searchTypes.group.indexOf(group?.id) > -1){
                     match = true;
                 }
                 else{
@@ -82,16 +99,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             }
 
             if(searchTypes.platform.length > 0){
-                if(beacon?.host?.platform && searchTypes.platform.indexOf(beacon?.host?.platform) > -1){
-                    match = true;
-                }
-                else{
-                    return false;
-                }
-            }
-
-            if(searchTypes.primaryIP.length > 0){
-                if(beacon?.host?.primaryIP && searchTypes.primaryIP.indexOf(beacon?.host?.primaryIP) > -1){
+                if(searchTypes.platform.indexOf(beacon?.host?.platform) > -1){
                     match = true;
                 }
                 else{
@@ -103,27 +111,27 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
         });
     },[typeFilters]);
 
-    const filterBySelected = useCallback((beacons: Array<BeaconNode>, selectedBeacons: SelectedBeacons) => {
+    const filterBySelected = useCallback((beacons: Array<BeaconType>, selectedBeacons: any) => {
         if(viewOnlySelected){
-            return beacons.filter((beacon: BeaconNode)=> selectedBeacons[beacon?.id]);
+            return beacons.filter((beacon: BeaconType)=> selectedBeacons[beacon?.id]);
         }
         else{
             return beacons;
         }
     },[viewOnlySelected]);
 
-    const filterByOnePerHost = useCallback((beacons: Array<BeaconNode>) => {
+    const filterByOnePerHost = useCallback((beacons: Array<BeaconType>) => {
         if(viewOnlyOnePerHost){
-            const principals = Object.values(PrincipalAdminTypes) as Array<string>;
-            const hosts = {} as {[key: string]: BeaconNode};
+            const princials = Object.values(PrincipalAdminTypes) as Array<string>;
+            const hosts = {} as {[key: string]: BeaconType};
 
             for(let beaconIndex in beacons){
-                const hostId = beacons[beaconIndex]?.host?.id;
+                const hostId = beacons[beaconIndex].host.id;
 
-                if( hostId && !(hostId in hosts) ){
+                if( !(hostId in hosts) ){
                     hosts[hostId] = beacons[beaconIndex];
                 }
-                else if(hostId && (principals.indexOf(hosts[hostId].principal) === -1) && (principals.indexOf(beacons[beaconIndex].principal) !== -1)){
+                else if((princials.indexOf(hosts[hostId].principal) === -1) && (princials.indexOf(beacons[beaconIndex].principal) !== -1)){
                     hosts[hostId] = beacons[beaconIndex];
                 }
             }
@@ -141,7 +149,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
        setFilteredBeacons(
         filteredBeacons
        );
-    },[beacons, selectedBeacons, typeFilters, viewOnlySelected, viewOnlyOnePerHost, filterBySelected, filterByOnePerHost, filterByTypes]);
+    },[beacons, selectedBeacons, typeFilters, viewOnlySelected, viewOnlyOnePerHost]);
 
     return {
         filteredBeacons,

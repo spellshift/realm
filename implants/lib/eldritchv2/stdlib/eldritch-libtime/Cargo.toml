@@ -1,0 +1,18 @@
+[package]
+name = "eldritch-libtime"
+version = "0.3.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eldritch-core = { path = "../../eldritch-core" }
+eldritch-macros = { path = "../../eldritch-macros" }
+chrono = { version = "0.4", optional = true }
+anyhow = { version = "1.0", optional = true }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:chrono", "dep:anyhow"]
+fake_bindings = []
