@@ -133,7 +133,6 @@ lru = "0.16.0"
 crossterm = "0.27"
 futures = "0.3"
 
-
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
 opt-level = "z"   # Optimize for size.

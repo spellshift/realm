@@ -11,7 +11,12 @@ win_service = []
 install = []
 
 [dependencies]
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+] }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }

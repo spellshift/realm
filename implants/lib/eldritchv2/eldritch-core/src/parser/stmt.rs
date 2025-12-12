@@ -1,8 +1,9 @@
 use super::super::ast::{ExprKind, Stmt, StmtKind};
-use super::super::token::{Span, TokenKind};
 use super::super::interpreter::error::EldritchError;
+use super::super::token::{Span, TokenKind};
 use super::Parser;
 
+use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -66,7 +67,11 @@ impl Parser {
             start_span
         };
 
-        Ok(self.make_stmt(StmtKind::Def(name, params, return_annotation, body), start_span, end_span))
+        Ok(self.make_stmt(
+            StmtKind::Def(name, params, return_annotation, body),
+            start_span,
+            end_span,
+        ))
     }
 
     pub(crate) fn parse_block_or_statement(&mut self) -> Result<Vec<Stmt>, EldritchError> {
@@ -304,9 +309,13 @@ impl Parser {
                     "Expected newline after assignment.",
                 )?;
             }
-            return Ok(self.make_stmt(StmtKind::Assignment(expr, annotation, final_value), start, end));
+            return Ok(self.make_stmt(
+                StmtKind::Assignment(expr, annotation, final_value),
+                start,
+                end,
+            ));
         } else if annotation.is_some() {
-             return self.error("Annotated variable must be assigned a value.");
+            return self.error("Annotated variable must be assigned a value.");
         }
 
         // Augmented assignment
