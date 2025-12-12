@@ -56,7 +56,14 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     agent: ImixAgent<T>,
 ) {
-    let _ = tokio::task::spawn_blocking(move || {
+    // We use std::thread::spawn here to ensure the REPL loop runs in a dedicated thread
+    // that is completely outside of the Tokio runtime's worker pool. This is critical because
+    // the REPL may execute code that calls back into `ImixAgent` methods, which use `block_on`
+    // to bridge back to async code. Calling `block_on` from within a thread managed by Tokio
+    // (even via `spawn_blocking`) can cause panics or deadlocks.
+    let (done_tx, done_rx) = tokio::sync::oneshot::channel();
+
+    std::thread::spawn(move || {
         let printer = Arc::new(ShellPrinter {
             tx: output_tx.clone(),
             task_id,
@@ -115,7 +122,10 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                         }
 
                         match other {
-                            ReplAction::Quit => return,
+                            ReplAction::Quit => {
+                                let _ = done_tx.send(());
+                                return;
+                            }
                             ReplAction::Submit { code, .. } => {
                                 // Move to next line
                                 let _ = stdout.write_all(b"\r\n");
@@ -172,8 +182,10 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                 }
             }
         }
-    })
-    .await;
+        let _ = done_tx.send(());
+    });
+
+    let _ = done_rx.await;
 }
 
 struct ShellPrinter<T: Transport> {
