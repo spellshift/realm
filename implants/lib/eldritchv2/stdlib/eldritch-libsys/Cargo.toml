@@ -38,3 +38,6 @@ fake_bindings = []
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }
