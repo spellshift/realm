@@ -116,5 +116,5 @@ fn test_function_errors() {
     assert::fail("1()", "Cannot call value");
     assert::fail("def f(x): pass; f()", "Missing required argument");
     assert::fail("def f(): pass; f(1)", "too many positional arguments");
-    assert::fail("def f(): pass; f(a=1)", "unexpected keyword arguments");
+    assert::fail("def f(): pass; f(a=1)", "got an unexpected keyword argument 'a'");
 }

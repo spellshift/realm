@@ -1,13 +1,13 @@
 use anyhow::Result;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
+use crate::version::VERSION;
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
-use crate::version::VERSION;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
@@ -29,6 +29,9 @@ pub async fn run_agent() -> Result<()> {
         task_registry.clone(),
     ));
 
+    #[cfg(debug_assertions)]
+    log::info!("Agent initialized");
+
     while !SHUTDOWN.load(Ordering::Relaxed) {
         let start = Instant::now();
         let agent_ref = agent.clone();
@@ -40,7 +43,12 @@ pub async fn run_agent() -> Result<()> {
             break;
         }
 
-        sleep_until_next_cycle(&agent, start).await;
+        if let Err(e) = sleep_until_next_cycle(&agent, start).await {
+            #[cfg(debug_assertions)]
+            log::error!("Failed to sleep: {e:#}");
+            // Prevent tight loop on config read failure
+            tokio::time::sleep(Duration::from_secs(5)).await;
+        }
     }
 
     #[cfg(debug_assertions)]
@@ -92,7 +100,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
 }
 
 async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegistry) {
-    match agent.fetch_tasks().await {
+    match agent.claim_tasks().await {
         Ok(tasks) => {
             if tasks.is_empty() {
                 #[cfg(debug_assertions)]
@@ -114,17 +122,18 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
     }
 }
 
-async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) {
-    let interval = agent.get_callback_interval_u64();
+async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) -> Result<()> {
+    let interval = agent.get_callback_interval_u64()?;
     let delay = match interval.checked_sub(start.elapsed().as_secs()) {
         Some(secs) => Duration::from_secs(secs),
         None => Duration::from_secs(0),
     };
     #[cfg(debug_assertions)]
     log::info!(
-        "callback complete (duration={}s, sleep={}s)",
+        "Callback complete (duration={}s, sleep={}s)",
         start.elapsed().as_secs(),
         delay.as_secs()
     );
     tokio::time::sleep(delay).await;
+    Ok(())
 }

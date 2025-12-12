@@ -43,12 +43,12 @@ pub fn to_wstring(str: impl AsRef<Path>) -> Vec<u16> {
 #[cfg(target_os = "windows")]
 pub unsafe fn os_string_from_wide_ptr(ptr: *const u16) -> OsString {
     let mut len = 0;
-    while *ptr.offset(len) != 0 {
+    while unsafe { *ptr.offset(len) } != 0 {
         len += 1;
     }
 
     // Push it onto the list.
-    let buf = slice::from_raw_parts(ptr, len as usize);
+    let buf = unsafe { slice::from_raw_parts(ptr, len as usize) };
     OsStringExt::from_wide(buf)
 }
 

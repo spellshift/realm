@@ -7,9 +7,13 @@ use super::introspection::{get_type_name, is_truthy};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
+use alloc::string::String;
 use alloc::sync::Arc;
 use core::cmp::Ordering;
 use spin::RwLock;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 pub fn adjust_slice_indices(
     length: i64,
@@ -300,18 +304,24 @@ pub(crate) fn apply_arithmetic_op(
             Ok(Value::Int(res))
         }
 
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("Unsupported operand types for {}: {} and {}",
-            match op {
-                TokenKind::Plus => "+",
-                TokenKind::Minus => "-",
-                TokenKind::Star => "*",
-                TokenKind::Slash => "/",
-                TokenKind::SlashSlash => "//",
-                TokenKind::Percent => "%",
-                _ => "?"
-            },
-            get_type_name(a), get_type_name(b))
-        , span),
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!(
+                "unsupported operand type(s) for {}: '{}' and '{}'",
+                match op {
+                    TokenKind::Plus => "+",
+                    TokenKind::Minus => "-",
+                    TokenKind::Star => "*",
+                    TokenKind::Slash => "/",
+                    TokenKind::SlashSlash => "//",
+                    TokenKind::Percent => "%",
+                    _ => "?",
+                },
+                get_type_name(a),
+                get_type_name(b)
+            ),
+            span,
+        ),
     }
 }
 
@@ -354,7 +364,7 @@ pub(crate) fn apply_comparison_op(
                         TokenKind::GtEq => Ok(Value::Bool(f1 >= *f2)),
                         _ => unreachable!(),
                     }
-                },
+                }
                 (Value::Float(f1), Value::Int(i2)) => {
                     let f2 = *i2 as f64;
                     match op {
@@ -364,21 +374,41 @@ pub(crate) fn apply_comparison_op(
                         TokenKind::GtEq => Ok(Value::Bool(*f1 >= f2)),
                         _ => unreachable!(),
                     }
-                },
+                }
                 _ => {
                     // Mismatched types
                     if core::mem::discriminant(a) != core::mem::discriminant(b) {
-                         return interp.error(EldritchErrorKind::TypeError, &format!(
-                            "Type mismatch or unsortable types: {} <-> {}",
-                            get_type_name(a),
-                            get_type_name(b)
-                        ), span);
+                        return interp.error(
+                            EldritchErrorKind::TypeError,
+                            &format!(
+                                "'{}' not supported between instances of '{}' and '{}'",
+                                match op {
+                                    TokenKind::Lt => "<",
+                                    TokenKind::Gt => ">",
+                                    TokenKind::LtEq => "<=",
+                                    TokenKind::GtEq => ">=",
+                                    _ => unreachable!(),
+                                },
+                                get_type_name(a),
+                                get_type_name(b)
+                            ),
+                            span,
+                        );
                     }
                     // Same types, use Ord
                     match a.cmp(b) {
-                         core::cmp::Ordering::Less => Ok(Value::Bool(matches!(op, TokenKind::Lt | TokenKind::LtEq | TokenKind::NotEq))),
-                         core::cmp::Ordering::Equal => Ok(Value::Bool(matches!(op, TokenKind::LtEq | TokenKind::GtEq | TokenKind::Eq))),
-                         core::cmp::Ordering::Greater => Ok(Value::Bool(matches!(op, TokenKind::Gt | TokenKind::GtEq | TokenKind::NotEq))),
+                        core::cmp::Ordering::Less => Ok(Value::Bool(matches!(
+                            op,
+                            TokenKind::Lt | TokenKind::LtEq | TokenKind::NotEq
+                        ))),
+                        core::cmp::Ordering::Equal => Ok(Value::Bool(matches!(
+                            op,
+                            TokenKind::LtEq | TokenKind::GtEq | TokenKind::Eq
+                        ))),
+                        core::cmp::Ordering::Greater => Ok(Value::Bool(matches!(
+                            op,
+                            TokenKind::Gt | TokenKind::GtEq | TokenKind::NotEq
+                        ))),
                     }
                 }
             }
@@ -416,27 +446,41 @@ pub(crate) fn apply_bitwise_op(
             }
             TokenKind::BitXor => {
                 #[allow(clippy::mutable_key_type)]
-                let symmetric_difference: BTreeSet<Value> = a
-                    .read()
-                    .symmetric_difference(&b.read())
-                    .cloned()
-                    .collect();
+                let symmetric_difference: BTreeSet<Value> =
+                    a.read().symmetric_difference(&b.read()).cloned().collect();
                 Ok(Value::Set(Arc::new(RwLock::new(symmetric_difference))))
             }
             // Note: Minus is not bitwise, handled in arithmetic/sets
-            _ => interp.error(EldritchErrorKind::TypeError, "Invalid bitwise operator for sets", span),
+            _ => interp.error(
+                EldritchErrorKind::TypeError,
+                "Invalid bitwise operator for sets",
+                span,
+            ),
         },
         (Value::Dictionary(a), Value::Dictionary(b)) if matches!(op, TokenKind::BitOr) => {
-             // Dict union (merge)
+            // Dict union (merge)
             let mut new_dict = a.read().clone();
             for (k, v) in b.read().iter() {
                 new_dict.insert(k.clone(), v.clone());
             }
             Ok(Value::Dictionary(Arc::new(RwLock::new(new_dict))))
         }
-        _ => interp.error(EldritchErrorKind::TypeError, &format!(
-            "Unsupported operand types for bitwise op: {} and {}",
-            get_type_name(a), get_type_name(b)
-        ), span),
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!(
+                "unsupported operand type(s) for {}: '{}' and '{}'",
+                match op {
+                    TokenKind::BitAnd => "&",
+                    TokenKind::BitOr => "|",
+                    TokenKind::BitXor => "^",
+                    TokenKind::LShift => "<<",
+                    TokenKind::RShift => ">>",
+                    _ => "?",
+                },
+                get_type_name(a),
+                get_type_name(b)
+            ),
+            span,
+        ),
     }
 }

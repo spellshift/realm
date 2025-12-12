@@ -4,6 +4,12 @@ use alloc::sync::Arc;
 use core::fmt;
 use spin::Mutex;
 
+#[cfg(feature = "std")]
+extern crate std;
+
+#[cfg(feature = "std")]
+use std::{eprintln, println};
+
 /// Trait for handling output from the interpreter.
 /// It must be Send + Sync to be safe in threaded environments.
 /// It must implement Debug to satisfy AST derivation requirements.

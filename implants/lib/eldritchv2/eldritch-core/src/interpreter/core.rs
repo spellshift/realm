@@ -6,6 +6,7 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
@@ -32,6 +33,18 @@ pub struct Interpreter {
     pub depth: usize,
     pub call_stack: Vec<StackFrame>,
     pub current_func_name: String,
+    pub is_scope_owner: bool,
+}
+
+impl Drop for Interpreter {
+    fn drop(&mut self) {
+        if self.is_scope_owner {
+            // Break reference cycles by clearing the environment values.
+            // This drops all variables including functions, which may hold references back to the environment.
+            self.env.write().values.clear();
+            self.env.write().parent = None;
+        }
+    }
 }
 
 impl Default for Interpreter {
@@ -59,6 +72,7 @@ impl Interpreter {
             depth: 0,
             call_stack: Vec::new(),
             current_func_name: "<module>".to_string(),
+            is_scope_owner: true,
         };
 
         interpreter.load_builtins();
@@ -95,10 +109,7 @@ impl Interpreter {
     pub fn register_module(&mut self, name: &str, module: Value) {
         // Ensure the value is actually a dictionary or structurally appropriate for a module
         // We accept any Value, but practically it should be a Dictionary of functions
-        self.env
-            .write()
-            .values
-            .insert(name.to_string(), module);
+        self.env.write().values.insert(name.to_string(), module);
     }
 
     pub fn register_lib(&mut self, val: impl ForeignValue + 'static) {
@@ -224,10 +235,36 @@ impl Interpreter {
         if error.span.line > 0 && error.span.line <= lines.len() {
             let line_idx = error.span.line - 1;
             let line_content = lines[line_idx];
+
+            // Calculate column offset relative to trimmed line
+            let leading_whitespace = line_content.len() - line_content.trim_start().len();
+
+            // Calculate line start byte offset
+            let mut line_start = error.span.start;
+            let source_bytes = source.as_bytes();
+            // Walk backwards from error start to find newline
+            // If error.span.start is beyond source len (shouldn't happen for valid error), clamp it.
+            if line_start > source_bytes.len() {
+                line_start = source_bytes.len();
+            }
+            while line_start > 0 && source_bytes[line_start - 1] != b'\n' {
+                line_start -= 1;
+            }
+
+            // Calculate raw column (byte offset from start of line)
+            let raw_col = error.span.start.saturating_sub(line_start);
+
+            // Calculate display column relative to trimmed string
+            let display_col = raw_col.saturating_sub(leading_whitespace);
+
+            // Create dynamic padding
+            let padding = format!("{:>width$}", "", width = display_col);
+
             output.push_str(&format!(
-                "\n\nError location:\n  at line {}:\n    {}\n    ^-- here",
+                "\n\nError location:\n  at line {}:\n    {}\n    {}^-- here",
                 error.span.line,
-                line_content.trim()
+                line_content.trim(),
+                padding
             ));
         }
         output
@@ -357,9 +394,7 @@ impl Interpreter {
                         match &obj_token.kind {
                             TokenKind::Identifier(name) => {
                                 // Resolve variable
-                                if let Ok(val) =
-                                    self.lookup_variable(name, Span::new(0, 0, 0))
-                                {
+                                if let Ok(val) = self.lookup_variable(name, Span::new(0, 0, 0)) {
                                     target_val = Some(val);
                                 }
                             }
@@ -386,10 +421,9 @@ impl Interpreter {
                                 let obj_token = meaningful_tokens[meaningful_tokens.len() - 3];
                                 match &obj_token.kind {
                                     TokenKind::Identifier(obj_name) => {
-                                        if let Ok(val) = self.lookup_variable(
-                                            obj_name,
-                                            Span::new(0, 0, 0),
-                                        ) {
+                                        if let Ok(val) =
+                                            self.lookup_variable(obj_name, Span::new(0, 0, 0))
+                                        {
                                             target_val = Some(val);
                                         }
                                     }

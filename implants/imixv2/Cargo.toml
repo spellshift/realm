@@ -8,13 +8,18 @@ crate-type = ["cdylib"]
 
 [features]
 win_service = []
+install = []
 
 [dependencies]
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+] }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
-lazy_static = { workspace = true }
 crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
