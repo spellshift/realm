@@ -1,7 +1,7 @@
 use super::get_all_builtins;
 use crate::ast::{Environment, Value};
-use alloc::sync::Arc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 

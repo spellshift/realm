@@ -1,12 +1,11 @@
 use anyhow::Result;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::{Read, Write};
 use transport::Transport;
 
 #[cfg(not(target_os = "windows"))]
 use std::path::Path;
-
 
 pub async fn run_reverse_shell_pty<T: Transport>(
     task_id: i64,

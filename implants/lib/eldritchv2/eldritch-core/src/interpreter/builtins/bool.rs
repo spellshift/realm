@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::is_truthy;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `bool(x)`: Converts a value to a Boolean.

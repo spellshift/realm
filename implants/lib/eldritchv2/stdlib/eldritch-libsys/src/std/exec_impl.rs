@@ -9,8 +9,8 @@ use std::process::Command;
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
     nix::sys::wait::wait,
-    nix::unistd::{fork, setsid, ForkResult},
-    std::process::{exit, Stdio},
+    nix::unistd::{ForkResult, fork, setsid},
+    std::process::{Stdio, exit},
 };
 
 struct CommandOutput {
@@ -125,7 +125,10 @@ mod tests {
     #[test]
     fn test_exec_simple() -> Result<()> {
         #[cfg(target_os = "windows")]
-        let (cmd, args) = ("cmd.exe".to_string(), vec!["/C".to_string(), "echo".to_string(), "hello".to_string()]);
+        let (cmd, args) = (
+            "cmd.exe".to_string(),
+            vec!["/C".to_string(), "echo".to_string(), "hello".to_string()],
+        );
         #[cfg(not(target_os = "windows"))]
         let (cmd, args) = ("echo".to_string(), vec!["hello".to_string()]);
 
@@ -142,10 +145,16 @@ mod tests {
 
     #[test]
     fn test_exec_env() -> Result<()> {
-         #[cfg(target_os = "windows")]
-        let (cmd, args) = ("cmd.exe".to_string(), vec!["/C".to_string(), "echo".to_string(), "%MY_VAR%".to_string()]);
+        #[cfg(target_os = "windows")]
+        let (cmd, args) = (
+            "cmd.exe".to_string(),
+            vec!["/C".to_string(), "echo".to_string(), "%MY_VAR%".to_string()],
+        );
         #[cfg(not(target_os = "windows"))]
-        let (cmd, args) = ("sh".to_string(), vec!["-c".to_string(), "echo $MY_VAR".to_string()]);
+        let (cmd, args) = (
+            "sh".to_string(),
+            vec!["-c".to_string(), "echo $MY_VAR".to_string()],
+        );
 
         let mut env = BTreeMap::new();
         env.insert("MY_VAR".to_string(), "my_value".to_string());

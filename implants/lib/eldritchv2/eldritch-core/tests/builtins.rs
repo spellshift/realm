@@ -162,9 +162,11 @@ fn test_bytes_builtin() {
 
 #[test]
 fn test_type_regression() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
         assert(type(1) == "int")
-    "#);
+    "#,
+    );
     assert::fail("type()", "takes exactly 1 argument");
     assert::fail("type(1, 2)", "takes exactly 1 argument");
 }
@@ -179,7 +181,8 @@ fn test_min_max_args() {
         assert_eq(max(1, 2, 3), 3)
         assert_eq(max(3, 2, 1), 3)
         assert_eq(max(1, 3, 2), 3)
-    "#);
+    "#,
+    );
 
     // Min with multiple args
     assert::pass(
@@ -189,21 +192,24 @@ fn test_min_max_args() {
         assert_eq(min(1, 2, 3), 1)
         assert_eq(min(3, 2, 1), 1)
         assert_eq(min(1, 3, 2), 1)
-    "#);
+    "#,
+    );
 
     // Existing behavior (iterable)
     assert::pass(
         r#"
         assert_eq(max([1, 2, 3]), 3)
         assert_eq(min([1, 2, 3]), 1)
-    "#);
+    "#,
+    );
 
     // Mixed types (float vs int)
     assert::pass(
         r#"
         assert_eq(max(1, 2.5), 2.5)
         assert_eq(min(1, 2.5), 1)
-    "#);
+    "#,
+    );
 
     // Errors
     assert::fail("max()", "expected at least 1 argument");
@@ -215,27 +221,36 @@ fn test_min_max_args() {
 
 #[test]
 fn test_eval() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
         x = 1
         eval("x = 2")
         assert_eq(x, 2)
-    "#);
+    "#,
+    );
 
-    assert::pass(r#"
+    assert::pass(
+        r#"
         res = eval("1 + 1")
         assert_eq(res, 2)
-    "#);
+    "#,
+    );
 
-    assert::pass(r#"
+    assert::pass(
+        r#"
         # Nested eval
         res = eval("eval('1 + 2')")
         assert_eq(res, 3)
-    "#);
+    "#,
+    );
 
     // Recursion limit check
-    assert::fail(r#"
+    assert::fail(
+        r#"
         def f():
             eval("f()")
         f()
-    "#, "Recursion limit exceeded");
+    "#,
+        "Recursion limit exceeded",
+    );
 }

@@ -224,11 +224,7 @@ impl Value {
         }
     }
 
-    fn fmt_helper(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-        visited: &mut BTreeSet<usize>,
-    ) -> fmt::Result {
+    fn fmt_helper(&self, f: &mut fmt::Formatter<'_>, visited: &mut BTreeSet<usize>) -> fmt::Result {
         match self {
             Value::None => write!(f, "None"),
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),

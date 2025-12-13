@@ -53,7 +53,7 @@ pub fn builtin_dict(
                 return Err(format!(
                     "'{}' object is not iterable",
                     get_type_name(iterable)
-                ))
+                ));
             }
         }
     }
@@ -98,7 +98,7 @@ fn process_pair(
         _ => {
             return Err(format!(
                 "cannot convert dictionary update sequence element #{index} to a sequence"
-            ))
+            ));
         }
     }
     Ok(())

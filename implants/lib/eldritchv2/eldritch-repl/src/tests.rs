@@ -2,11 +2,11 @@ extern crate alloc;
 
 #[cfg(test)]
 use crate::{Input, Repl, ReplAction};
-use eldritch_core::{Interpreter, Value, Environment};
-use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::string::ToString;
+use alloc::sync::Arc;
 use alloc::vec;
+use eldritch_core::{Environment, Interpreter, Value};
 use spin::RwLock;
 
 #[test]

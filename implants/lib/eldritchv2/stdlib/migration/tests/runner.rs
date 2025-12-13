@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use eldritch::runtime::{messages::AsyncMessage, Message};
+use eldritch::runtime::{Message, messages::AsyncMessage};
 use eldritchv2::{BufferPrinter, Interpreter};
 use pb::eldritch::Tome;
 use std::collections::HashMap;

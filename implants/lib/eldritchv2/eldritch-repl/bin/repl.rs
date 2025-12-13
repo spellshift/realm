@@ -1,13 +1,12 @@
 use crossterm::{
-    cursor,
+    ExecutableCommand, QueueableCommand, cursor,
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     style::Stylize,
     terminal::{self, ClearType},
-    ExecutableCommand, QueueableCommand,
 };
 use eldritch_core::Value;
-use eldritchv2::Interpreter;
 use eldritch_repl::{Input, Repl, ReplAction};
+use eldritchv2::Interpreter;
 use std::io::{self, Write};
 use std::time::Duration;
 
@@ -36,20 +35,22 @@ fn main() -> io::Result<()> {
         interpreter.inner.register_lib(CryptoLibraryFake::default());
     }
 
-
     let mut repl = Repl::new();
 
     // Register STD-dependent builtins
-    interpreter.register_module("input", Value::NativeFunction("input".to_string(), |_env, _| {
-        terminal::disable_raw_mode().unwrap();
-        let mut input = String::new();
-        let res = match std::io::stdin().read_line(&mut input) {
-            Ok(_) => Ok(Value::String(input.trim().to_string())),
-            Err(e) => Err(format!("Input error: {e}")),
-        };
-        terminal::enable_raw_mode().unwrap();
-        res
-    }));
+    interpreter.register_module(
+        "input",
+        Value::NativeFunction("input".to_string(), |_env, _| {
+            terminal::disable_raw_mode().unwrap();
+            let mut input = String::new();
+            let res = match std::io::stdin().read_line(&mut input) {
+                Ok(_) => Ok(Value::String(input.trim().to_string())),
+                Err(e) => Err(format!("Input error: {e}")),
+            };
+            terminal::enable_raw_mode().unwrap();
+            res
+        }),
+    );
     // Note: register_function became register_module? No, eldritchv2 wrapped register_module but not register_function directly?
     // Let me check my implementation of eldritchv2::Interpreter.
     // I did NOT expose register_function. I exposed register_module.
@@ -119,7 +120,8 @@ fn main() -> io::Result<()> {
                         }
                         ReplAction::Complete => {
                             let state = repl.get_render_state();
-                            let (start, completions) = interpreter.complete(&state.buffer, state.cursor);
+                            let (start, completions) =
+                                interpreter.complete(&state.buffer, state.cursor);
                             repl.set_suggestions(completions, start);
                             render(&mut stdout, &repl)?;
                         }

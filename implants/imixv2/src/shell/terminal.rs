@@ -1,7 +1,7 @@
 use crossterm::{
-    cursor,
+    QueueableCommand, cursor,
     style::{Color, SetForegroundColor},
-    terminal, QueueableCommand,
+    terminal,
 };
 use eldritch_repl::Repl;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
@@ -186,7 +186,7 @@ pub fn render<W: std::io::Write>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eldritch_repl::{Repl, Input};
+    use eldritch_repl::{Input, Repl};
 
     #[test]
     fn test_render_multi_line_history() {
@@ -242,7 +242,11 @@ mod tests {
         let has_full_redraw = output.contains("\x1b[34m"); // Blue color for prompt
 
         // We expect NO full redraw, only "def" + clear down
-        assert!(!has_full_redraw, "Should NOT fall back to full redraw for multi-char append. Output was: {:?}", output);
+        assert!(
+            !has_full_redraw,
+            "Should NOT fall back to full redraw for multi-char append. Output was: {:?}",
+            output
+        );
 
         // Output should start with "def"
         assert!(output.starts_with("def"));
@@ -275,10 +279,18 @@ mod tests {
         let has_full_redraw = output.contains("\x1b[34m"); // Blue color for prompt
 
         // We expect NO full redraw, only backspaces
-        assert!(!has_full_redraw, "Should NOT fall back to full redraw for backspace at end. Output was: {:?}", output);
+        assert!(
+            !has_full_redraw,
+            "Should NOT fall back to full redraw for backspace at end. Output was: {:?}",
+            output
+        );
 
         // Output should contain backspace sequence "\x08 \x08" (BS Space BS)
         // Note: crossterm or manual writing might differ, but we expect manual backspace handling
-        assert!(output.contains("\x08 \x08"), "Should contain backspace sequence. Output: {:?}", output);
+        assert!(
+            output.contains("\x08 \x08"),
+            "Should contain backspace sequence. Output: {:?}",
+            output
+        );
     }
 }

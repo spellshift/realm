@@ -58,7 +58,6 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("libs", libs::builtin_libs as BuiltinFn),
         ("builtins", builtins_fn::builtin_builtins as BuiltinFn),
         ("bytes", bytes::builtin_bytes as BuiltinFn),
-
         // New
         ("abs", abs::builtin_abs as BuiltinFn),
         ("any", any::builtin_any as BuiltinFn),

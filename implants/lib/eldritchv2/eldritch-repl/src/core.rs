@@ -428,12 +428,12 @@ impl Repl {
 
     fn move_right(&mut self) -> ReplAction {
         if self.cursor < self.buffer.len() {
-             if let Some(c) = self.buffer[self.cursor..].chars().next() {
+            if let Some(c) = self.buffer[self.cursor..].chars().next() {
                 self.cursor += c.len_utf8();
                 ReplAction::Render
-             } else {
-                 ReplAction::None
-             }
+            } else {
+                ReplAction::None
+            }
         } else {
             ReplAction::None
         }

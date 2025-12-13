@@ -1,4 +1,3 @@
-use anyhow::Result;
 use alloc::string::String;
 use alloc::sync::Arc;
 use transport::SyncTransport;

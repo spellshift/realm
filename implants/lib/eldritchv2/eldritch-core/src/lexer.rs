@@ -1,5 +1,5 @@
-use super::token::{Span, Token, TokenKind};
 use super::interpreter::error::{EldritchError, EldritchErrorKind};
+use super::token::{Span, Token, TokenKind};
 use alloc::collections::VecDeque;
 use alloc::format;
 use alloc::string::String;
@@ -145,7 +145,10 @@ impl Lexer {
 
         loop {
             if self.is_at_end() {
-                return self.error(&format!("Unterminated string literal on line {}", self.line));
+                return self.error(&format!(
+                    "Unterminated string literal on line {}",
+                    self.line
+                ));
             }
 
             let c = self.peek();
@@ -332,7 +335,8 @@ impl Lexer {
                         dedents.push(self.add_token(TokenKind::Dedent));
                     }
                     if *self.indent_stack.last().unwrap() != indent_count {
-                        return self.error(&format!("Inconsistent indentation on line {}", self.line));
+                        return self
+                            .error(&format!("Inconsistent indentation on line {}", self.line));
                     }
                     self.current = self.start + indent_count;
                     if !dedents.is_empty() {
@@ -483,7 +487,10 @@ impl Lexer {
             '!' => Ok(if self.match_char('=') {
                 self.add_token(TokenKind::NotEq)
             } else {
-                return self.error(&format!("Unexpected character: {} on line {}", c, self.line));
+                return self.error(&format!(
+                    "Unexpected character: {} on line {}",
+                    c, self.line
+                ));
             }),
             '#' => {
                 self.skip_comment();
@@ -516,7 +523,10 @@ impl Lexer {
             }
             _ if c.is_ascii_digit() => Ok(self.number()),
             _ if c.is_alphabetic() || c == '_' => Ok(self.identifier()),
-            _ => self.error(&format!("Unexpected character: {} on line {}", c, self.line)),
+            _ => self.error(&format!(
+                "Unexpected character: {} on line {}",
+                c, self.line
+            )),
         }
     }
 }

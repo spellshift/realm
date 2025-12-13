@@ -9,9 +9,9 @@ use alloc::sync::Arc;
 #[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
-use eldritch_core::conversion::{FromValue, ToValue};
-#[cfg(feature = "stdlib")]
 use eldritch_core::Value;
+#[cfg(feature = "stdlib")]
+use eldritch_core::conversion::{FromValue, ToValue};
 #[cfg(feature = "stdlib")]
 use pb::c2;
 #[cfg(feature = "stdlib")]

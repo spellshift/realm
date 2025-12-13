@@ -1,8 +1,8 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
@@ -36,7 +36,7 @@ pub fn builtin_enumerate(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Res
             return Err(format!(
                 "Type '{:?}' is not iterable",
                 get_type_name(iterable)
-            ))
+            ));
         }
     };
     let mut pairs = Vec::new();

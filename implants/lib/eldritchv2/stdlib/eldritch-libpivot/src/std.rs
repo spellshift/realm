@@ -1,8 +1,3 @@
-use alloc::collections::BTreeMap;
-use alloc::string::String;
-use alloc::vec::Vec;
-use eldritch_core::Value;
-use anyhow::Result;
 use crate::PivotLibrary;
 use crate::ReplHandler;
 use crate::arp_scan_impl;
@@ -11,10 +6,17 @@ use crate::port_scan_impl;
 use crate::reverse_shell_pty_impl;
 use crate::ssh_copy_impl;
 use crate::ssh_exec_impl;
+use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec::Vec;
+use anyhow::Result;
+use eldritch_core::Value;
 
 // SSH Client utils
+use alloc::string::ToString;
 use async_trait::async_trait;
-use russh::{client, Disconnect};
+use eldritch_macros::eldritch_library_impl;
+use russh::{Disconnect, client};
 use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
 use std::sync::Arc;
@@ -33,8 +35,8 @@ pub struct StdPivotLibrary {
 impl core::fmt::Debug for StdPivotLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdPivotLibrary")
-         .field("task_id", &self.task_id)
-         .finish()
+            .field("task_id", &self.task_id)
+            .finish()
     }
 }
 
@@ -74,7 +76,17 @@ impl PivotLibrary for StdPivotLibrary {
         key_password: Option<String>,
         timeout: Option<i64>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        ssh_exec_impl::ssh_exec(target, port as i32, command, username, password, key, key_password, timeout.map(|t| t as u32)).map_err(|e| e.to_string())
+        ssh_exec_impl::ssh_exec(
+            target,
+            port as i32,
+            command,
+            username,
+            password,
+            key,
+            key_password,
+            timeout.map(|t| t as u32),
+        )
+        .map_err(|e| e.to_string())
     }
 
     fn ssh_copy(
@@ -89,7 +101,18 @@ impl PivotLibrary for StdPivotLibrary {
         key_password: Option<String>,
         timeout: Option<i64>,
     ) -> Result<String, String> {
-        ssh_copy_impl::ssh_copy(target, port as i32, src, dst, username, password, key, key_password, timeout.map(|t| t as u32)).map_err(|e| e.to_string())
+        ssh_copy_impl::ssh_copy(
+            target,
+            port as i32,
+            src,
+            dst,
+            username,
+            password,
+            key,
+            key_password,
+            timeout.map(|t| t as u32),
+        )
+        .map_err(|e| e.to_string())
     }
 
     fn port_scan(
@@ -101,7 +124,8 @@ impl PivotLibrary for StdPivotLibrary {
         fd_limit: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
         let ports_i32: Vec<i32> = ports.into_iter().map(|p| p as i32).collect();
-        port_scan_impl::port_scan(target_cidrs, ports_i32, protocol, timeout as i32, fd_limit).map_err(|e| e.to_string())
+        port_scan_impl::port_scan(target_cidrs, ports_i32, protocol, timeout as i32, fd_limit)
+            .map_err(|e| e.to_string())
     }
 
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {

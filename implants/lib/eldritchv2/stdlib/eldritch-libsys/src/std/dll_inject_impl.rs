@@ -12,7 +12,7 @@ use windows_sys::Win32::{
     System::{
         Diagnostics::Debug::WriteProcessMemory,
         LibraryLoader::{GetModuleHandleA, GetProcAddress},
-        Memory::{VirtualAllocEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE},
+        Memory::{MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE, VirtualAllocEx},
         Threading::{CreateRemoteThread, OpenProcess, PROCESS_ALL_ACCESS},
     },
 };
@@ -149,6 +149,10 @@ mod tests {
     fn test_dll_inject_non_windows() {
         let res = dll_inject("foo".to_string(), 123);
         assert!(res.is_err());
-        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
+        assert!(
+            res.unwrap_err()
+                .to_string()
+                .contains("Only windows systems are supported")
+        );
     }
 }

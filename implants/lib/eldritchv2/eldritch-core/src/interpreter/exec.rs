@@ -49,7 +49,9 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 match param {
                     Param::Normal(n, _type) => runtime_params.push(RuntimeParam::Normal(n.clone())),
                     Param::Star(n, _type) => runtime_params.push(RuntimeParam::Star(n.clone())),
-                    Param::StarStar(n, _type) => runtime_params.push(RuntimeParam::StarStar(n.clone())),
+                    Param::StarStar(n, _type) => {
+                        runtime_params.push(RuntimeParam::StarStar(n.clone()))
+                    }
                     Param::WithDefault(n, _type, default_expr) => {
                         let val = evaluate(interp, default_expr)?;
                         runtime_params.push(RuntimeParam::WithDefault(n.clone(), val));
@@ -103,7 +105,11 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                         Value::Tuple(t) => t.clone(),
                         _ => {
                             interp.env = parent_env;
-                            return interp.error(EldritchErrorKind::TypeError, "Cannot unpack non-iterable", stmt.span);
+                            return interp.error(
+                                EldritchErrorKind::TypeError,
+                                "Cannot unpack non-iterable",
+                                stmt.span,
+                            );
                         }
                     };
 
@@ -168,7 +174,7 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                         EldritchErrorKind::TypeError,
                         &format!("cannot unpack non-iterable {:?}", get_type_name(&value)),
                         target.span,
-                    )
+                    );
                 }
             };
 
@@ -197,7 +203,11 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                     let idx_int = match index {
                         Value::Int(i) => i,
                         _ => {
-                            return interp.error(EldritchErrorKind::TypeError, "List indices must be integers", index_expr.span)
+                            return interp.error(
+                                EldritchErrorKind::TypeError,
+                                "List indices must be integers",
+                                index_expr.span,
+                            );
                         }
                     };
                     let mut list = l.write();
@@ -207,7 +217,11 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                         idx_int
                     };
                     if true_idx < 0 || true_idx as usize >= list.len() {
-                        return interp.error(EldritchErrorKind::IndexError, "List assignment index out of range", target.span);
+                        return interp.error(
+                            EldritchErrorKind::IndexError,
+                            "List assignment index out of range",
+                            target.span,
+                        );
                     }
                     list[true_idx as usize] = value;
                     Ok(())
@@ -216,10 +230,18 @@ fn assign(interp: &mut Interpreter, target: &Expr, value: Value) -> Result<(), E
                     d.write().insert(index, value);
                     Ok(())
                 }
-                _ => interp.error(EldritchErrorKind::TypeError, "Object does not support item assignment", target.span),
+                _ => interp.error(
+                    EldritchErrorKind::TypeError,
+                    "Object does not support item assignment",
+                    target.span,
+                ),
             }
         }
-        _ => interp.error(EldritchErrorKind::SyntaxError, "cannot assign to this expression", target.span),
+        _ => interp.error(
+            EldritchErrorKind::SyntaxError,
+            "cannot assign to this expression",
+            target.span,
+        ),
     }
 }
 
@@ -241,13 +263,11 @@ fn execute_augmented_assignment(
                 return Ok(());
             }
 
-            let bin_op = augmented_op_to_binary(op).ok_or_else(|| {
-                EldritchError {
-                    span,
-                    message: "Unknown augmented assignment operator".to_string(),
-                    kind: EldritchErrorKind::SyntaxError,
-                    stack: Vec::new(),
-                }
+            let bin_op = augmented_op_to_binary(op).ok_or_else(|| EldritchError {
+                span,
+                message: "Unknown augmented assignment operator".to_string(),
+                kind: EldritchErrorKind::SyntaxError,
+                stack: Vec::new(),
             })?;
 
             // Construct dummy expressions for apply_binary_op call to reuse logic
@@ -276,7 +296,11 @@ fn execute_augmented_assignment(
                     let idx_int = match index {
                         Value::Int(i) => i,
                         _ => {
-                            return interp.error(EldritchErrorKind::TypeError, "List indices must be integers", index_expr.span)
+                            return interp.error(
+                                EldritchErrorKind::TypeError,
+                                "List indices must be integers",
+                                index_expr.span,
+                            );
                         }
                     };
                     let list = l.read();
@@ -286,7 +310,11 @@ fn execute_augmented_assignment(
                         idx_int
                     };
                     if true_idx < 0 || true_idx as usize >= list.len() {
-                        return interp.error(EldritchErrorKind::IndexError, "List index out of range", span);
+                        return interp.error(
+                            EldritchErrorKind::IndexError,
+                            "List index out of range",
+                            span,
+                        );
                     }
                     list[true_idx as usize].clone()
                 }
@@ -297,20 +325,24 @@ fn execute_augmented_assignment(
                         None => return interp.error(EldritchErrorKind::KeyError, "KeyError", span),
                     }
                 }
-                _ => return interp.error(EldritchErrorKind::TypeError, "Object does not support item assignment", span),
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "Object does not support item assignment",
+                        span,
+                    );
+                }
             };
 
             if matches!(op, TokenKind::PlusAssign) && try_inplace_add(&current_val, &right) {
                 return Ok(());
             }
 
-            let bin_op = augmented_op_to_binary(op).ok_or_else(|| {
-                EldritchError {
-                    span,
-                    message: "Unknown augmented assignment operator".to_string(),
-                    kind: EldritchErrorKind::SyntaxError,
-                    stack: Vec::new(),
-                }
+            let bin_op = augmented_op_to_binary(op).ok_or_else(|| EldritchError {
+                span,
+                message: "Unknown augmented assignment operator".to_string(),
+                kind: EldritchErrorKind::SyntaxError,
+                stack: Vec::new(),
             })?;
 
             let left_expr = Expr {
@@ -347,7 +379,11 @@ fn execute_augmented_assignment(
                 _ => unreachable!(),
             }
         }
-        _ => interp.error(EldritchErrorKind::SyntaxError, "Illegal target for augmented assignment", span),
+        _ => interp.error(
+            EldritchErrorKind::SyntaxError,
+            "Illegal target for augmented assignment",
+            span,
+        ),
     }
 }
 

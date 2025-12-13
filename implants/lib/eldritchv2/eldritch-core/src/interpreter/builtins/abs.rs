@@ -1,8 +1,8 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `abs(x)`: Returns the absolute value of a number.

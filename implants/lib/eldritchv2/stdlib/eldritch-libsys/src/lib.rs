@@ -115,7 +115,7 @@ pub trait SysLibrary {
     /// **Returns**
     /// - `Dict<str, str>`: A dictionary of registry keys and values.
     fn get_reg(&self, reghive: String, regpath: String)
-        -> Result<BTreeMap<String, String>, String>;
+    -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
     /// Returns information about the current user.

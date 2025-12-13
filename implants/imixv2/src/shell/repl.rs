@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossterm::{cursor, terminal, QueueableCommand};
+use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch_core::Value;
 use eldritch_libagent::agent::Agent;
 use eldritch_repl::{Repl, ReplAction};
@@ -15,7 +15,7 @@ use transport::Transport;
 
 use crate::agent::ImixAgent;
 use crate::shell::parser::InputParser;
-use crate::shell::terminal::{render, VtWriter};
+use crate::shell::terminal::{VtWriter, render};
 
 pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     task_id: i64,

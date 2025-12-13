@@ -1,3 +1,5 @@
+use crate::run::SHUTDOWN;
+use std::sync::atomic::Ordering;
 use std::{ffi::OsString, time::Duration};
 use windows_service::{
     service::{
@@ -6,8 +8,6 @@ use windows_service::{
     },
     service_control_handler::{self, ServiceControlHandlerResult},
 };
-use crate::run::SHUTDOWN;
-use std::sync::atomic::Ordering;
 
 pub fn handle_service_main(_arguments: Vec<OsString>) {
     let event_handler = move |control_event| -> ServiceControlHandlerResult {

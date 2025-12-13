@@ -1,10 +1,10 @@
 use crate::ast::{Environment, Value};
 use crate::token::Span;
+use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
-use alloc::vec::Vec;
-use alloc::collections::{BTreeSet, BTreeMap};
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use spin::RwLock;
 
 /// `tprint(list_of_dicts)`: Prints a list of dictionaries as a markdown table.
@@ -37,9 +37,7 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
                     let key_str = k.to_string();
                     columns.insert(key_str.clone());
 
-                    let val_str = v.to_string()
-                        .replace('\n', "\\n")
-                        .replace('|', "\\|");
+                    let val_str = v.to_string().replace('\n', "\\n").replace('|', "\\|");
                     row_map.insert(key_str, val_str);
                 }
                 rows.push(row_map);
@@ -49,7 +47,7 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
     }
 
     if columns.is_empty() {
-         return Ok(Value::None);
+        return Ok(Value::None);
     }
 
     let columns_vec: Vec<String> = columns.into_iter().collect();

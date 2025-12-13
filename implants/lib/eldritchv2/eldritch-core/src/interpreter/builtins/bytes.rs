@@ -1,8 +1,8 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
@@ -39,7 +39,7 @@ pub fn builtin_bytes(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
                         return Err(format!(
                             "bytes() list items must be integers, got {}",
                             get_type_name(item)
-                        ))
+                        ));
                     }
                 }
             }

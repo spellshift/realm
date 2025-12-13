@@ -27,12 +27,15 @@ fn main() {
 
     if let Some(path) = user_guide_path {
         if path.exists() {
-             match generate_docs(&path, &manifest_dir) {
-                 Ok(_) => println!("cargo:warning=Documentation updated successfully."),
-                 Err(e) => println!("cargo:warning=Failed to update documentation: {}", e),
-             }
+            match generate_docs(&path, &manifest_dir) {
+                Ok(_) => println!("cargo:warning=Documentation updated successfully."),
+                Err(e) => println!("cargo:warning=Failed to update documentation: {}", e),
+            }
         } else {
-             println!("cargo:warning=User guide not found at expected path: {:?}", path);
+            println!(
+                "cargo:warning=User guide not found at expected path: {:?}",
+                path
+            );
         }
     }
 }
@@ -46,12 +49,16 @@ fn generate_docs(user_guide_path: &std::path::Path, core_path: &str) -> std::io:
     let parts: Vec<&str> = current_content.split(split_token).collect();
 
     if parts.len() < 2 {
-        return Err(std::io::Error::other("Could not find '## Built-in Functions' section in user guide"));
+        return Err(std::io::Error::other(
+            "Could not find '## Built-in Functions' section in user guide",
+        ));
     }
 
     doc_content.push_str(parts[0]);
     doc_content.push_str("## Built-in Functions\n\n");
-    doc_content.push_str("Eldritch V2 provides a rich set of built-in functions available in the global scope.\n\n");
+    doc_content.push_str(
+        "Eldritch V2 provides a rich set of built-in functions available in the global scope.\n\n",
+    );
 
     // 2. Generate Builtins Docs
     let builtins_dir = std::path::Path::new(core_path).join("src/interpreter/builtins");
@@ -73,7 +80,10 @@ fn generate_docs(user_guide_path: &std::path::Path, core_path: &str) -> std::io:
     doc_content.push_str("## Standard Library\n\n");
     doc_content.push_str("The standard library provides powerful capabilities for interacting with the host system.\n\n");
 
-    let stdlib_dir = std::path::Path::new(core_path).parent().unwrap().join("stdlib");
+    let stdlib_dir = std::path::Path::new(core_path)
+        .parent()
+        .unwrap()
+        .join("stdlib");
     let stdlib_doc = parse_stdlib(&stdlib_dir)?;
     doc_content.push_str(&stdlib_doc);
 
@@ -99,22 +109,46 @@ fn parse_builtins(dir: &std::path::Path) -> std::io::Result<String> {
 
     // Let's rely on a simple map for grouping based on filename
     let groups = [
-        ("Core", vec!["print", "pprint", "len", "type_", "dir", "libs", "builtins", "fail", "assert", "assert_eq"]),
-        ("Type Constructors & Conversion", vec!["bool", "int", "float", "str", "bytes", "list", "dict", "set", "tuple"]),
+        (
+            "Core",
+            vec![
+                "print",
+                "pprint",
+                "len",
+                "type_",
+                "dir",
+                "libs",
+                "builtins",
+                "fail",
+                "assert",
+                "assert_eq",
+            ],
+        ),
+        (
+            "Type Constructors & Conversion",
+            vec![
+                "bool", "int", "float", "str", "bytes", "list", "dict", "set", "tuple",
+            ],
+        ),
         ("Math & Logic", vec!["abs", "max", "min", "range"]),
-        ("Iteration", vec!["all", "any", "enumerate", "reversed", "sorted", "zip"]),
+        (
+            "Iteration",
+            vec!["all", "any", "enumerate", "reversed", "sorted", "zip"],
+        ),
     ];
 
     for (group_name, files) in groups.iter() {
         doc.push_str(&format!("### {}\n\n", group_name));
 
         for name in files.iter() {
-            let filename = if *name == "type_" { "type_.rs" } else {
-                 // Handle cases where filename matches
-                 // We need to construct the path
-                 // This is a bit hacky, but works for the known set
-                 // Ideally we scan files and read their docs
-                 ""
+            let filename = if *name == "type_" {
+                "type_.rs"
+            } else {
+                // Handle cases where filename matches
+                // We need to construct the path
+                // This is a bit hacky, but works for the known set
+                // Ideally we scan files and read their docs
+                ""
             };
 
             let file_path = if filename.is_empty() {
@@ -124,31 +158,31 @@ fn parse_builtins(dir: &std::path::Path) -> std::io::Result<String> {
             };
 
             if file_path.exists() {
-                 let content = std::fs::read_to_string(&file_path)?;
-                 let parsed_doc = extract_doc_comments(&content);
+                let content = std::fs::read_to_string(&file_path)?;
+                let parsed_doc = extract_doc_comments(&content);
 
-                 // If no doc, skip or put placeholder
-                 if !parsed_doc.is_empty() {
-                      // Format: * **`name(...)`**: Description
-                      // We need to extract the signature and description
-                      // Let's assume the doc comments are formatted like:
-                      // /// `name(args)`: Description
-                      // or just Description.
+                // If no doc, skip or put placeholder
+                if !parsed_doc.is_empty() {
+                    // Format: * **`name(...)`**: Description
+                    // We need to extract the signature and description
+                    // Let's assume the doc comments are formatted like:
+                    // /// `name(args)`: Description
+                    // or just Description.
 
-                      // I'll define a convention: First line is signature, rest is description.
-                      let mut lines = parsed_doc.lines();
-                      if let Some(sig) = lines.next() {
-                           let desc: String = lines.collect::<Vec<&str>>().join("\n    ");
-                           // Remove leading ` if present in signature for clean formatting
-                           let clean_sig = sig.trim().trim_matches('`');
+                    // I'll define a convention: First line is signature, rest is description.
+                    let mut lines = parsed_doc.lines();
+                    if let Some(sig) = lines.next() {
+                        let desc: String = lines.collect::<Vec<&str>>().join("\n    ");
+                        // Remove leading ` if present in signature for clean formatting
+                        let clean_sig = sig.trim().trim_matches('`');
 
-                           doc.push_str(&format!("*   **`{}`**\n    {}\n\n", clean_sig, desc));
-                      }
-                 } else {
-                     // If no comments, try to match existing manual docs or just name
-                     let display_name = if *name == "type_" { "type" } else { name };
-                     doc.push_str(&format!("*   **`{}`**\n\n", display_name));
-                 }
+                        doc.push_str(&format!("*   **`{}`**\n    {}\n\n", clean_sig, desc));
+                    }
+                } else {
+                    // If no comments, try to match existing manual docs or just name
+                    let display_name = if *name == "type_" { "type" } else { name };
+                    doc.push_str(&format!("*   **`{}`**\n\n", display_name));
+                }
             }
         }
     }
@@ -199,30 +233,30 @@ fn parse_methods_doc(path: &std::path::Path) -> std::io::Result<String> {
     for line in content.lines() {
         let trimmed = line.trim();
         if let Some(stripped) = trimmed.strip_prefix("//: ") {
-             if !stripped.is_empty() {
-                 if current_entry.is_empty() && stripped.contains('.') {
-                     // New entry start, e.g., "list.append"
-                     current_entry = stripped.to_string();
-                     output.push_str(&format!("*   **`{}`**\n", current_entry));
-                 } else {
-                     output.push_str("    ");
-                     output.push_str(stripped);
-                     output.push('\n');
-                 }
-             } else {
-                 output.push('\n');
-             }
+            if !stripped.is_empty() {
+                if current_entry.is_empty() && stripped.contains('.') {
+                    // New entry start, e.g., "list.append"
+                    current_entry = stripped.to_string();
+                    output.push_str(&format!("*   **`{}`**\n", current_entry));
+                } else {
+                    output.push_str("    ");
+                    output.push_str(stripped);
+                    output.push('\n');
+                }
+            } else {
+                output.push('\n');
+            }
         } else if let Some(stripped) = trimmed.strip_prefix("// ") {
             if stripped.chars().all(|c| c == '=') {
                 continue;
             }
-             if stripped.ends_with(" methods") {
-                  output.push_str(&format!("### {}\n\n", stripped));
-             }
-             // Reset current entry when hitting non-doc comment
-             current_entry.clear();
+            if stripped.ends_with(" methods") {
+                output.push_str(&format!("### {}\n\n", stripped));
+            }
+            // Reset current entry when hitting non-doc comment
+            current_entry.clear();
         } else {
-             current_entry.clear();
+            current_entry.clear();
         }
     }
 
@@ -248,36 +282,36 @@ fn parse_stdlib(dir: &std::path::Path) -> std::io::Result<String> {
                 // and doc comments above `pub trait ...`
 
                 if let Some(lib_name) = extract_library_name(&content) {
-                     // Capitalize first letter
-                     let title = if lib_name == "http" || lib_name == "ssh" {
-                         lib_name.to_uppercase()
-                     } else {
-                         let mut c = lib_name.chars();
-                         match c.next() {
-                             None => String::new(),
-                             Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-                         }
-                     };
+                    // Capitalize first letter
+                    let title = if lib_name == "http" || lib_name == "ssh" {
+                        lib_name.to_uppercase()
+                    } else {
+                        let mut c = lib_name.chars();
+                        match c.next() {
+                            None => String::new(),
+                            Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                        }
+                    };
 
-                     doc.push_str(&format!("### {}\n\n", title));
+                    doc.push_str(&format!("### {}\n\n", title));
 
-                     // Extract library level docs
-                     let lib_doc = extract_library_doc(&content);
-                     doc.push_str(&lib_doc);
-                     doc.push_str("\n\n");
+                    // Extract library level docs
+                    let lib_doc = extract_library_doc(&content);
+                    doc.push_str(&lib_doc);
+                    doc.push_str("\n\n");
 
-                     // Extract methods
-                     // Look for `#[eldritch_method...]`
-                     let methods = extract_methods(&content);
-                     for (name, sig_doc) in methods {
-                         doc.push_str(&format!("*   **`{}.{}`**\n", lib_name, name));
-                         for line in sig_doc.lines() {
-                              doc.push_str("    ");
-                              doc.push_str(line);
-                              doc.push('\n');
-                         }
-                         doc.push('\n');
-                     }
+                    // Extract methods
+                    // Look for `#[eldritch_method...]`
+                    let methods = extract_methods(&content);
+                    for (name, sig_doc) in methods {
+                        doc.push_str(&format!("*   **`{}.{}`**\n", lib_name, name));
+                        for line in sig_doc.lines() {
+                            doc.push_str("    ");
+                            doc.push_str(line);
+                            doc.push('\n');
+                        }
+                        doc.push('\n');
+                    }
                 }
             }
         }
@@ -295,11 +329,11 @@ fn extract_doc_comments(content: &str) -> String {
             doc.push_str(comment);
             doc.push('\n');
         } else if !doc.is_empty() && !trimmed.starts_with("#[") && !trimmed.is_empty() {
-             // Stop extracting if we hit code, but allow attributes or blank lines
-             if !trimmed.starts_with("pub fn") {
-                 // heuristic to stop
-             }
-             break;
+            // Stop extracting if we hit code, but allow attributes or blank lines
+            if !trimmed.starts_with("pub fn") {
+                // heuristic to stop
+            }
+            break;
         }
     }
     doc
@@ -324,7 +358,11 @@ fn extract_library_doc(content: &str) -> String {
     for line in content.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("///") {
-            let comment = trimmed.strip_prefix("///").unwrap().strip_prefix(" ").unwrap_or(trimmed.strip_prefix("///").unwrap());
+            let comment = trimmed
+                .strip_prefix("///")
+                .unwrap()
+                .strip_prefix(" ")
+                .unwrap_or(trimmed.strip_prefix("///").unwrap());
             buffer.push(comment.to_string());
         } else if trimmed.contains("pub trait") && trimmed.contains("Library") {
             // Found the trait, use the buffered comments
@@ -350,15 +388,19 @@ fn extract_methods(content: &str) -> Vec<(String, String)> {
     for line in content.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("///") {
-            let comment = trimmed.strip_prefix("///").unwrap().strip_prefix(" ").unwrap_or(trimmed.strip_prefix("///").unwrap());
+            let comment = trimmed
+                .strip_prefix("///")
+                .unwrap()
+                .strip_prefix(" ")
+                .unwrap_or(trimmed.strip_prefix("///").unwrap());
             buffer.push(comment.to_string());
         } else if trimmed.starts_with("#[eldritch_method") {
             is_method = true;
             if trimmed.contains("(\"") {
-                 // extract alias
-                 let start = trimmed.find('"').unwrap() + 1;
-                 let end = trimmed.rfind('"').unwrap();
-                 method_name = trimmed[start..end].to_string();
+                // extract alias
+                let start = trimmed.find('"').unwrap() + 1;
+                let end = trimmed.rfind('"').unwrap();
+                method_name = trimmed[start..end].to_string();
             }
         } else if is_method && trimmed.starts_with("fn ") {
             // extract function name if alias wasn't present
@@ -387,9 +429,9 @@ fn extract_methods(content: &str) -> Vec<(String, String)> {
             is_method = false;
             method_name.clear();
         } else if !trimmed.starts_with("#[") && !trimmed.is_empty() {
-             buffer.clear();
-             is_method = false;
-             method_name.clear();
+            buffer.clear();
+            is_method = false;
+            method_name.clear();
         }
     }
     methods

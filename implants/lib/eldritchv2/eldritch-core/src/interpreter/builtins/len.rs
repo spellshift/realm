@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `len(s)`: Returns the length of an object.
@@ -22,6 +22,9 @@ pub fn builtin_len(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         Value::Dictionary(d) => Ok(Value::Int(d.read().len() as i64)),
         Value::Tuple(t) => Ok(Value::Int(t.len() as i64)),
         Value::Set(s) => Ok(Value::Int(s.read().len() as i64)),
-        _ => Err(format!("TypeError: object of type '{}' has no len()", crate::interpreter::introspection::get_type_name(&args[0]))),
+        _ => Err(format!(
+            "TypeError: object of type '{}' has no len()",
+            crate::interpreter::introspection::get_type_name(&args[0])
+        )),
     }
 }

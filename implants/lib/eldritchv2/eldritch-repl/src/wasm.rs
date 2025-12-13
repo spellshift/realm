@@ -1,10 +1,10 @@
 use super::{Input, Repl, ReplAction};
-use eldritch_core::{BufferPrinter, Interpreter, Value};
 use alloc::format;
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use eldritch_core::{BufferPrinter, Interpreter, Value};
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
