@@ -4,6 +4,8 @@ import { useHost } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
 import TagModal from "./TagModal";
 import EditableTag from "./editable-tag/EditableTag";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import { Globe, Network } from "lucide-react";
 
 const HostDetailsSection = () => {
     const [isOpen, setOpen] = useState(false);
@@ -25,14 +27,12 @@ const HostDetailsSection = () => {
                             </h4>
                         </div>
                         <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center gap-1">
-                            <div>
-                                <span className="font-medium">Internal: </span>
-                                {host?.primaryIP}
-                            </div>
-                            <div>
-                                <span className="font-medium">External: </span>
-                                {host?.externalIP}
-                            </div>
+                            {host?.primaryIP && (
+                                <Badge leftIcon={<Network className="h-3 w-3" />}>{host?.primaryIP}</Badge>
+                            )}
+                            {host?.externalIP && (
+                                <Badge leftIcon={<Globe className="h-3 w-3" />}>{host?.externalIP}</Badge>
+                            )}
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">
@@ -43,9 +43,9 @@ const HostDetailsSection = () => {
                             </h4>
                         </div>
                         <div className="text-gray-600 text-sm ml-6  min-h-[38px] flex flex-col justify-center">
-                            <div>
-                                {(host && host?.platform ? host?.platform : '-')}
-                            </div>
+                            {host?.platform && (
+                                <Badge>{host?.platform}</Badge>
+                            )}
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">
