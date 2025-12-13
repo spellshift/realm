@@ -27,6 +27,10 @@ pub mod ssh_exec_impl;
 #[cfg(test)]
 mod tests;
 
+// Re-export trait for injection
+#[cfg(feature = "stdlib")]
+pub use std::ReplHandler;
+
 #[eldritch_library("pivot")]
 /// The `pivot` library provides tools for lateral movement, scanning, and tunneling.
 ///

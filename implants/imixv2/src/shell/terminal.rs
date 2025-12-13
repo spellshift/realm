@@ -7,14 +7,14 @@ use eldritch_repl::Repl;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
 
 pub struct VtWriter {
-    pub tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
+    pub tx: std::sync::mpsc::Sender<ReverseShellRequest>,
     pub task_id: i64,
 }
 
 impl std::io::Write for VtWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let data = buf.to_vec();
-        match self.tx.blocking_send(ReverseShellRequest {
+        match self.tx.send(ReverseShellRequest {
             kind: ReverseShellMessageKind::Data.into(),
             data,
             task_id: self.task_id,
@@ -25,7 +25,7 @@ impl std::io::Write for VtWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        match self.tx.blocking_send(ReverseShellRequest {
+        match self.tx.send(ReverseShellRequest {
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
             task_id: self.task_id,

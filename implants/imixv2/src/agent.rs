@@ -7,7 +7,6 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use transport::{Transport, SyncTransportAdapter};
 
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 #[derive(Clone)]
@@ -193,37 +192,6 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         })
     }
 
-    // Helper to spawn a background subtask (like a reverse shell)
-    fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
-    where
-        F: FnOnce(T) -> Fut + Send + 'static,
-        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
-    {
-        let subtasks = self.subtasks.clone();
-        let agent = self.clone();
-
-        let handle = self.runtime_handle.spawn(async move {
-            // We need a transport for the subtask. Get it asynchronously.
-            match agent.get_usable_transport().await {
-                Ok(transport) => {
-                    if let Err(_e) = action(transport).await {
-                        #[cfg(debug_assertions)]
-                        log::error!("Subtask {} error: {_e:#}", task_id);
-                    }
-                }
-                Err(_e) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("Subtask {} failed to get transport: {_e:#}", task_id);
-                }
-            }
-        });
-
-        if let Ok(mut map) = subtasks.lock() {
-            map.insert(task_id, handle);
-        }
-
-        Ok(())
-    }
 }
 
 // Implement the Eldritch Agent Trait

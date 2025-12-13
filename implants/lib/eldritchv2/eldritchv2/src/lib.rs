@@ -172,6 +172,7 @@ impl Interpreter {
         transport: Arc<dyn SyncTransport>,
         task_id: i64,
         remote_assets: Vec<String>,
+        repl_handler: Option<Arc<dyn crate::pivot::ReplHandler>>, // Inject repl handler
     ) -> Self {
         let agent_lib = StdAgentLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(agent_lib);
@@ -179,7 +180,10 @@ impl Interpreter {
         let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), task_id);
+        let mut pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), task_id);
+        if let Some(h) = repl_handler {
+            pivot_lib = pivot_lib.with_repl_handler(h);
+        }
         self.inner.register_lib(pivot_lib);
 
         let assets_lib = StdAssetsLibrary::<A>::new(agent, transport.clone(), remote_assets);

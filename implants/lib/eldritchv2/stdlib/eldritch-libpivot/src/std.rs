@@ -24,12 +24,18 @@ use eldritch_macros::eldritch_library_impl;
 use eldritch_libagent::agent::Agent;
 use transport::SyncTransport;
 
+// Trait for starting REPL reverse shell (injected)
+pub trait ReplHandler: Send + Sync {
+    fn run_repl(&self, task_id: i64, transport: Arc<dyn SyncTransport>) -> Result<()>;
+}
+
 #[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
 pub struct StdPivotLibrary {
     pub agent: Option<Arc<dyn Agent>>,
     pub transport: Option<Arc<dyn SyncTransport>>,
     pub task_id: Option<i64>,
+    pub repl_handler: Option<Arc<dyn ReplHandler>>,
 }
 
 impl core::fmt::Debug for StdPivotLibrary {
@@ -46,7 +52,13 @@ impl StdPivotLibrary {
             agent: Some(agent),
             transport: Some(transport),
             task_id: Some(task_id),
+            repl_handler: None,
         }
+    }
+
+    pub fn with_repl_handler(mut self, handler: Arc<dyn ReplHandler>) -> Self {
+        self.repl_handler = Some(handler);
+        self
     }
 }
 
@@ -58,10 +70,14 @@ impl PivotLibrary for StdPivotLibrary {
     }
 
     fn reverse_shell_repl(&self) -> Result<(), String> {
-        // Not implemented fully yet as per instructions, or should use transport too.
-        // User didn't specify repl logic changes but implied pivot handles it.
-        // Assuming similar to PTY for now but might need separate impl.
-        Err("REPL reverse shell not fully migrated".to_string())
+        let transport = self.transport.as_ref().ok_or_else(|| "No transport available".to_string())?;
+        let task_id = self.task_id.ok_or_else(|| "No task_id available".to_string())?;
+
+        if let Some(handler) = &self.repl_handler {
+            handler.run_repl(task_id, transport.clone()).map_err(|e| e.to_string())
+        } else {
+            Err("REPL handler not configured".to_string())
+        }
     }
 
     fn ssh_exec(

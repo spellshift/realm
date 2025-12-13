@@ -164,6 +164,16 @@ fn execute_task<T: Transport + Sync + Send + Clone + 'static>(
 }
 
 use transport::SyncTransport;
+use eldritchv2::pivot::ReplHandler;
+use anyhow::Result;
+
+struct ImixReplHandler;
+
+impl ReplHandler for ImixReplHandler {
+    fn run_repl(&self, task_id: i64, transport: Arc<dyn SyncTransport>) -> Result<()> {
+        crate::shell::run_repl_reverse_shell(task_id, transport)
+    }
+}
 
 fn setup_interpreter(
     task_id: i64,
@@ -176,7 +186,8 @@ fn setup_interpreter(
 
     // Register Task Context (Agent, Report, Assets)
     let remote_assets = tome.file_names.clone();
-    interp = interp.with_task_context::<crate::assets::Asset>(agent, transport, task_id, remote_assets);
+    let repl_handler: Option<Arc<dyn ReplHandler>> = Some(Arc::new(ImixReplHandler));
+    interp = interp.with_task_context::<crate::assets::Asset>(agent, transport, task_id, remote_assets, repl_handler);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
