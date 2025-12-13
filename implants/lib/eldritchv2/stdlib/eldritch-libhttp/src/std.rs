@@ -175,9 +175,9 @@ impl HttpLibrary for StdHttpLibrary {
 mod tests {
     use super::*;
     use httptest::{
+        Expectation, Server,
         matchers::{all_of, contains, request},
         responders::status_code,
-        Expectation, Server,
     };
     use std::fs::read_to_string;
     use tempfile::NamedTempFile;
@@ -219,7 +219,10 @@ mod tests {
 
         let res = lib.download(url, path);
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("Download failed with status: 404"));
+        assert!(
+            res.unwrap_err()
+                .contains("Download failed with status: 404")
+        );
     }
 
     #[test]
@@ -241,7 +244,11 @@ mod tests {
         assert!(res.is_err());
         // Exact error message depends on OS, but should be a file creation error
         let err = res.unwrap_err();
-        assert!(err.contains("Failed to create file") || err.contains("Is a directory") || err.contains("Access is denied"));
+        assert!(
+            err.contains("Failed to create file")
+                || err.contains("Is a directory")
+                || err.contains("Access is denied")
+        );
     }
 
     #[test]

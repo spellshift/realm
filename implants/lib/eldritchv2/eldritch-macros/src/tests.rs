@@ -50,7 +50,10 @@ fn test_expand_library_missing_name() {
 
     let result = expand_eldritch_library(attr, item);
     assert!(result.is_err());
-    assert_eq!(result.err().unwrap().to_string(), "Expected string literal for library name");
+    assert_eq!(
+        result.err().unwrap().to_string(),
+        "Expected string literal for library name"
+    );
 }
 
 #[test]

@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tokio::net::{TcpStream, UdpSocket};
 use tokio::sync::Semaphore;
 use tokio::task;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
@@ -145,28 +145,44 @@ async fn tcp_connect_scan_socket(
 ) -> Result<(String, i32, String, String)> {
     match TcpStream::connect(format!("{}:{}", target_host.clone(), target_port.clone())).await {
         Ok(_) => Ok((target_host, target_port, TCP.to_string(), OPEN.to_string())),
-        Err(err) => {
-            match err.to_string().as_str() {
-                "Connection refused (os error 111)" if cfg!(target_os = "linux") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                "No connection could be made because the target machine actively refused it. (os error 10061)" if cfg!(target_os = "windows") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                "Connection refused (os error 61)" if cfg!(target_os = "macos") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                _ => {
-                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{err}"))
-                },
-
+        Err(err) => match err.to_string().as_str() {
+            "Connection refused (os error 111)" if cfg!(target_os = "linux") => Ok((
+                target_host,
+                target_port,
+                TCP.to_string(),
+                CLOSED.to_string(),
+            )),
+            "No connection could be made because the target machine actively refused it. (os error 10061)"
+                if cfg!(target_os = "windows") =>
+            {
+                Ok((
+                    target_host,
+                    target_port,
+                    TCP.to_string(),
+                    CLOSED.to_string(),
+                ))
             }
+            "Connection refused (os error 61)" if cfg!(target_os = "macos") => Ok((
+                target_host,
+                target_port,
+                TCP.to_string(),
+                CLOSED.to_string(),
+            )),
+            "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => Ok((
+                target_host,
+                target_port,
+                TCP.to_string(),
+                CLOSED.to_string(),
+            )),
+            "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => Ok((
+                target_host,
+                target_port,
+                TCP.to_string(),
+                CLOSED.to_string(),
+            )),
+            _ => Err(anyhow::anyhow!(
+                "Unexpeceted error occured during scan:\n{err}"
+            )),
         },
     }
 }
@@ -199,18 +215,31 @@ async fn udp_scan_socket(
             match err.to_string().as_str() {
                 // Windows throws a weird error when scanning on localhost.
                 // Considering the port closed.
-                "An existing connection was forcibly closed by the remote host. (os error 10054)" if cfg!(target_os = "windows") => {
-                    Ok((target_host, target_port, UDP.to_string(), CLOSED.to_string()))
-                },
-                "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => {
-                    Ok((target_host, target_port, TCP.to_string(), CLOSED.to_string()))
-                },
-                _ => {
-                    Err(anyhow::anyhow!("Unexpeceted error occured during scan:\n{err}"))
-                },
+                "An existing connection was forcibly closed by the remote host. (os error 10054)"
+                    if cfg!(target_os = "windows") =>
+                {
+                    Ok((
+                        target_host,
+                        target_port,
+                        UDP.to_string(),
+                        CLOSED.to_string(),
+                    ))
+                }
+                "Connection reset by peer (os error 54)" if cfg!(target_os = "macos") => Ok((
+                    target_host,
+                    target_port,
+                    TCP.to_string(),
+                    CLOSED.to_string(),
+                )),
+                "Host is unreachable (os error 113)" if cfg!(target_os = "linux") => Ok((
+                    target_host,
+                    target_port,
+                    TCP.to_string(),
+                    CLOSED.to_string(),
+                )),
+                _ => Err(anyhow::anyhow!(
+                    "Unexpeceted error occured during scan:\n{err}"
+                )),
             }
         }
     }
@@ -235,16 +264,21 @@ async fn handle_scan(
                         // So a sleep can run and the port/host retried.
                         "Address already in use (os error 98)" if cfg!(target_os = "linux") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
-                        },
+                        }
                         "Too many open files (os error 24)" if cfg!(target_os = "macos") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
-                        },
-                        "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)" if cfg!(target_os = "windows") => {
+                        }
+                        "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)"
+                            if cfg!(target_os = "windows") =>
+                        {
                             return Err(anyhow::anyhow!("Low resources try again"));
-                        },
+                        }
                         _ => {
-                            return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
-                        },
+                            return Err(anyhow::anyhow!(format!(
+                                "{}:\n---\n{}\n---\n",
+                                "Unexpected error", err_str
+                            )));
+                        }
                     }
                 }
             }
@@ -256,26 +290,33 @@ async fn handle_scan(
                 Err(err) => {
                     // let err_str = String::from(format!("{}", err.to_string())).as_str();
                     let err_str = err.to_string();
-                    match  err_str.as_str() {
+                    match err_str.as_str() {
                         // If OS runs out file handles of raise a common error to `handle_port_scan_timeout`
                         // So a sleep can run and the port/host retried.
                         "Too many open files (os error 24)" if cfg!(target_os = "linux") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
-                        },
+                        }
                         "Too many open files (os error 24)" if cfg!(target_os = "macos") => {
                             return Err(anyhow::anyhow!("Low resources try again"));
-                        },
+                        }
                         // This appears to be how windows tells us it has run out of TCP sockets to bind.
-                        "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)" if cfg!(target_os = "windows") => {
-                           return Err(anyhow::anyhow!("Low resources try again"));
-                        },
-                        // This is also be a way windows can tell us it has run out of TCP sockets to bind.
-                        "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)" if cfg!(target_os = "windows") => {
+                        "An attempt was made to access a socket in a way forbidden by its access permissions. (os error 10013)"
+                            if cfg!(target_os = "windows") =>
+                        {
                             return Err(anyhow::anyhow!("Low resources try again"));
-                        },
+                        }
+                        // This is also be a way windows can tell us it has run out of TCP sockets to bind.
+                        "An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full. (os error 10055)"
+                            if cfg!(target_os = "windows") =>
+                        {
+                            return Err(anyhow::anyhow!("Low resources try again"));
+                        }
                         _ => {
-                            return  Err(anyhow::anyhow!(format!("{}:\n---\n{}\n---\n", "Unexpected error", err_str)));
-                        },
+                            return Err(anyhow::anyhow!(format!(
+                                "{}:\n---\n{}\n---\n",
+                                "Unexpected error", err_str
+                            )));
+                        }
                     }
                 }
             }
@@ -283,7 +324,7 @@ async fn handle_scan(
         _ => {
             return Err(anyhow::anyhow!(
                 "protocol not supported. Use 'udp' or 'tcp'."
-            ))
+            ));
         }
     }
     Ok(result)
@@ -324,7 +365,7 @@ async fn handle_port_scan_timeout(
         }
         // If our timeout timer has expired set the port state to timeout and return.
         Err(_timer_elapsed) => {
-            return Ok((target.clone(), port, protocol.clone(), TIMEOUT.to_string()))
+            return Ok((target.clone(), port, protocol.clone(), TIMEOUT.to_string()));
         }
     }
 }
@@ -594,7 +635,7 @@ mod tests {
                 Err(inner_error) => {
                     return Err(anyhow::anyhow!(
                         "error unwrapping scan result\n{inner_error}"
-                    ))
+                    ));
                 }
             },
             Err(error) => return Err(anyhow::anyhow!("error unwrapping async result\n{error}")),

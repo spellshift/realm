@@ -1,9 +1,9 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::string::ToString;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
@@ -26,11 +26,7 @@ pub fn builtin_zip(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             Value::Tuple(t) => t.clone(),
             Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
             Value::Set(s) => s.read().iter().cloned().collect(),
-            Value::Dictionary(d) => d
-                .read()
-                .keys()
-                .cloned()
-                .collect(),
+            Value::Dictionary(d) => d.read().keys().cloned().collect(),
             _ => return Err(format!("'{}' object is not iterable", get_type_name(arg))),
         };
         iterators.push(items);

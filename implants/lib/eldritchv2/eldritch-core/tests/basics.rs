@@ -118,7 +118,13 @@ fn test_introspection() {
 fn test_basic_errors() {
     assert::fail("1 / 0", "divide by zero");
     assert::fail("undefined_var", "Undefined variable");
-    assert::fail("1 + 'string'", "unsupported operand type(s) for +: 'int' and 'string'");
+    assert::fail(
+        "1 + 'string'",
+        "unsupported operand type(s) for +: 'int' and 'string'",
+    );
     // Verify type mismatch in comparison
-    assert::fail("1 < 'a'", "'<' not supported between instances of 'int' and 'string'");
+    assert::fail(
+        "1 < 'a'",
+        "'<' not supported between instances of 'int' and 'string'",
+    );
 }

@@ -96,22 +96,35 @@ impl fmt::Display for EldritchError {
         // Add helpful advice based on error kind
         match self.kind {
             EldritchErrorKind::NameError => {
-                if let Some(var_name) = self.message.strip_prefix("Undefined variable: '").and_then(|s| s.strip_suffix("'")) {
+                if let Some(var_name) = self
+                    .message
+                    .strip_prefix("Undefined variable: '")
+                    .and_then(|s| s.strip_suffix("'"))
+                {
                     // Simple heuristic for advice
-                     write!(f, "\nDid you mean to define '{}' or import it?", var_name)?;
+                    write!(f, "\nDid you mean to define '{}' or import it?", var_name)?;
                 }
             }
             EldritchErrorKind::TypeError => {
-                 if self.message.contains("not iterable") {
-                     write!(f, "\nEnsure you are iterating over a List, Tuple, Set, Dictionary, or String.")?;
-                 } else if self.message.contains("not subscriptable") {
-                     write!(f, "\nEnsure you are accessing an index on a List, Tuple, or Dictionary.")?;
-                 }
+                if self.message.contains("not iterable") {
+                    write!(
+                        f,
+                        "\nEnsure you are iterating over a List, Tuple, Set, Dictionary, or String."
+                    )?;
+                } else if self.message.contains("not subscriptable") {
+                    write!(
+                        f,
+                        "\nEnsure you are accessing an index on a List, Tuple, or Dictionary."
+                    )?;
+                }
             }
             EldritchErrorKind::KeyError => {
-                 write!(f, "\nThe key does not exist in the dictionary. Use .get() to avoid this error.")?;
+                write!(
+                    f,
+                    "\nThe key does not exist in the dictionary. Use .get() to avoid this error."
+                )?;
             }
-             _ => {}
+            _ => {}
         }
 
         Ok(())
@@ -121,5 +134,9 @@ impl fmt::Display for EldritchError {
 // Helper to create errors (Legacy support, mapped to RuntimeError or similar)
 // We will deprecate this usage over time in favor of specific errors.
 pub fn runtime_error<T>(span: Span, msg: &str) -> Result<T, EldritchError> {
-    Err(EldritchError::new(EldritchErrorKind::RuntimeError, msg, span))
+    Err(EldritchError::new(
+        EldritchErrorKind::RuntimeError,
+        msg,
+        span,
+    ))
 }

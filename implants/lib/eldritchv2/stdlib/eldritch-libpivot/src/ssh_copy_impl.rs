@@ -333,9 +333,19 @@ mod tests {
         let test_server_task = task::spawn(test_ssh_server(ssh_host.clone(), ssh_port));
 
         let key_pass = "test123";
-        let ssh_client_task = task::spawn(
-            handle_ssh_copy(ssh_host.clone(), ssh_port, path_src, path_dst.clone(), "root".to_string(), Some("some_password".to_string()), Some(String::from("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----")), Some(key_pass), Some(2))
-        );
+        let ssh_client_task = task::spawn(handle_ssh_copy(
+            ssh_host.clone(),
+            ssh_port,
+            path_src,
+            path_dst.clone(),
+            "root".to_string(),
+            Some("some_password".to_string()),
+            Some(String::from(
+                "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----",
+            )),
+            Some(key_pass),
+            Some(2),
+        ));
 
         let (_a, actual_response) = tokio::join!(test_server_task, ssh_client_task);
         actual_response??;

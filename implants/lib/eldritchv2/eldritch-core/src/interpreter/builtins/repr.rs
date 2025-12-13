@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 pub fn builtin_repr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {

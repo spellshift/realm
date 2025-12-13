@@ -45,7 +45,10 @@ fn format_to_epoch_impl(input: String, fmt: String) -> AnyhowResult<i64> {
 }
 
 fn format_to_readable_impl(input: i64, fmt: String) -> AnyhowResult<String> {
-    let dt = Utc.timestamp_opt(input, 0).single().ok_or_else(|| anyhow::anyhow!("Invalid timestamp"))?;
+    let dt = Utc
+        .timestamp_opt(input, 0)
+        .single()
+        .ok_or_else(|| anyhow::anyhow!("Invalid timestamp"))?;
     Ok(dt.format(&fmt).to_string())
 }
 
@@ -74,7 +77,9 @@ mod tests {
         let date_str = "2021/01/01 00:00:00";
         let fmt = "%Y/%m/%d %H:%M:%S";
 
-        let epoch = lib.format_to_epoch(date_str.to_string(), fmt.to_string()).unwrap();
+        let epoch = lib
+            .format_to_epoch(date_str.to_string(), fmt.to_string())
+            .unwrap();
         assert_eq!(epoch, ts);
     }
 
@@ -126,7 +131,9 @@ mod tests {
         let fmt = "%Y-%m-%dT%H:%M:%S%z";
         let ts = 1609459200;
 
-        let epoch = lib.format_to_epoch(input.to_string(), fmt.to_string()).unwrap();
+        let epoch = lib
+            .format_to_epoch(input.to_string(), fmt.to_string())
+            .unwrap();
         assert_eq!(epoch, ts);
     }
 }

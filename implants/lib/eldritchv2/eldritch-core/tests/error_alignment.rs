@@ -30,7 +30,11 @@ fn test_error_caret_alignment() {
             let last_line = lines.last().expect("Error message empty");
             // "        ^-- here"
             // 8 spaces + ^
-            assert!(last_line.starts_with("        ^-- here"), "Incorrect alignment: '{}'", last_line);
+            assert!(
+                last_line.starts_with("        ^-- here"),
+                "Incorrect alignment: '{}'",
+                last_line
+            );
         }
     }
 
@@ -44,7 +48,11 @@ fn test_error_caret_alignment() {
             let lines: Vec<&str> = msg.lines().collect();
             let last_line = lines.last().expect("Error message empty");
             // "    ^-- here" (4 spaces indent)
-            assert!(last_line.starts_with("    ^-- here"), "Incorrect alignment for start of line: '{}'", last_line);
+            assert!(
+                last_line.starts_with("    ^-- here"),
+                "Incorrect alignment for start of line: '{}'",
+                last_line
+            );
         }
     }
 }

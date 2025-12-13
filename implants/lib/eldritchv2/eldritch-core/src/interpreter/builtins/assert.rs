@@ -1,8 +1,8 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::is_truthy;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `assert(condition)`: Aborts if the condition is false.

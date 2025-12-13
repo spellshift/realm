@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `str(object)`: Returns a string containing a nicely printable representation of an object.

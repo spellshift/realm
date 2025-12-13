@@ -90,11 +90,7 @@ fn get_set_elements(v: &Value) -> Result<BTreeSet<Value>, String> {
         Value::Set(s) => Ok(s.read().clone()),
         Value::List(l) => Ok(l.read().iter().cloned().collect()),
         Value::Tuple(t) => Ok(t.iter().cloned().collect()),
-        Value::Dictionary(d) => Ok(d
-            .read()
-            .keys()
-            .cloned()
-            .collect()),
+        Value::Dictionary(d) => Ok(d.read().keys().cloned().collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
         _ => Err(format!("'{}' object is not iterable", get_type_name(v))),
     }
@@ -128,7 +124,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                     return Err(format!(
                         "extend() expects an iterable, got {}",
                         get_type_name(iterable)
-                    ))
+                    ));
                 }
             }
             Ok(Value::None)
@@ -191,11 +187,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
         }
 
         (Value::Dictionary(d), "keys") => {
-            let keys: Vec<Value> = d
-                .read()
-                .keys()
-                .cloned()
-                .collect();
+            let keys: Vec<Value> = d.read().keys().cloned().collect();
             Ok(Value::List(Arc::new(RwLock::new(keys))))
         }
         (Value::Dictionary(d), "values") => {
@@ -340,11 +332,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 return Err("symmetric_difference() takes exactly one argument".into());
             }
             let other_set = get_set_elements(&args[0])?;
-            let sym: BTreeSet<Value> = s
-                .read()
-                .symmetric_difference(&other_set)
-                .cloned()
-                .collect();
+            let sym: BTreeSet<Value> = s.read().symmetric_difference(&other_set).cloned().collect();
             Ok(Value::Set(Arc::new(RwLock::new(sym))))
         }
         (Value::Set(s), "union") => {
@@ -683,6 +671,6 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
                 msg.push_str(&format!("\nDid you mean '{suggestion}'?"));
             }
             Err(msg)
-        },
+        }
     }
 }

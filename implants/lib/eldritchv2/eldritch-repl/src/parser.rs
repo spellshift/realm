@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 use crate::Input;
+use alloc::vec::Vec;
 
 /// A robust VT100/ANSI input parser that logs incoming bytes and swallows unknown sequences.
 pub struct InputParser {

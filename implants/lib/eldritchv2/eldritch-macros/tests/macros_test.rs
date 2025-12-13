@@ -152,7 +152,8 @@ mod tests {
         }
 
         fn get_var(&self, interp: &mut Interpreter, name: &str) -> Result<i64, String> {
-            let val = interp.lookup_variable(name, eldritch_core::Span::new(0, 0, 0))
+            let val = interp
+                .lookup_variable(name, eldritch_core::Span::new(0, 0, 0))
                 .map_err(|e| e.to_string())?;
             match val {
                 Value::Int(i) => Ok(i),
@@ -272,8 +273,14 @@ mod tests {
 
             if let Value::Dictionary(d) = res {
                 let dict = d.read();
-                assert_eq!(dict.get(&Value::String("one".to_string())).unwrap(), &Value::Int(1));
-                assert_eq!(dict.get(&Value::String("two".to_string())).unwrap(), &Value::Int(2));
+                assert_eq!(
+                    dict.get(&Value::String("one".to_string())).unwrap(),
+                    &Value::Int(1)
+                );
+                assert_eq!(
+                    dict.get(&Value::String("two".to_string())).unwrap(),
+                    &Value::Int(2)
+                );
             } else {
                 panic!("Expected Dictionary, got {res:?}");
             }
@@ -314,7 +321,9 @@ mod tests {
             interp.interpret(code).unwrap();
 
             // Check var existence in environment
-            let val = interp.lookup_variable("my_var", eldritch_core::Span::new(0, 0, 0)).unwrap();
+            let val = interp
+                .lookup_variable("my_var", eldritch_core::Span::new(0, 0, 0))
+                .unwrap();
             assert_eq!(val, Value::Int(42));
 
             // Get var via library

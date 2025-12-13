@@ -2,7 +2,9 @@ use eldritch_core::Lexer;
 use eldritch_core::Parser;
 
 fn parse(code: &str) -> Result<(), String> {
-    let tokens = Lexer::new(code.to_string()).scan_tokens().map_err(|e| e.to_string())?;
+    let tokens = Lexer::new(code.to_string())
+        .scan_tokens()
+        .map_err(|e| e.to_string())?;
     let mut parser = Parser::new(tokens);
     parser.parse().map(|_| ()).map_err(|e| e.to_string())
 }

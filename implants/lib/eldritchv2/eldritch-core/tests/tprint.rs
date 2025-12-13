@@ -1,14 +1,15 @@
 extern crate alloc;
 
 use alloc::sync::Arc;
-use eldritch_core::{Interpreter, BufferPrinter};
+use eldritch_core::{BufferPrinter, Interpreter};
 
 fn check_output_contains(code: &str, expected: &[&str]) {
     let printer = Arc::new(BufferPrinter::new());
     let mut interp = Interpreter::new_with_printer(printer.clone());
 
     // Simple indentation stripping
-    let code_trimmed = code.lines()
+    let code_trimmed = code
+        .lines()
         .map(|l| l.trim())
         .collect::<alloc::vec::Vec<_>>()
         .join("\n");
@@ -21,7 +22,10 @@ fn check_output_contains(code: &str, expected: &[&str]) {
 
     for fragment in expected {
         if !output.contains(fragment) {
-             panic!("Output did not contain '{}'. Output was:\n{}", fragment, output);
+            panic!(
+                "Output did not contain '{}'. Output was:\n{}",
+                fragment, output
+            );
         }
     }
 }
@@ -29,10 +33,16 @@ fn check_output_contains(code: &str, expected: &[&str]) {
 fn check_error(code: &str, error_fragment: &str) {
     let mut interp = Interpreter::new();
     match interp.interpret(code) {
-        Ok(_) => panic!("Expected error containing '{}', but succeeded.", error_fragment),
+        Ok(_) => panic!(
+            "Expected error containing '{}', but succeeded.",
+            error_fragment
+        ),
         Err(e) => {
             if !e.contains(error_fragment) {
-                panic!("Expected error containing '{}', but got: '{}'", error_fragment, e);
+                panic!(
+                    "Expected error containing '{}', but got: '{}'",
+                    error_fragment, e
+                );
             }
         }
     }
@@ -47,11 +57,14 @@ fn test_tprint_basic() {
     ])
     "#;
 
-    check_output_contains(code, &[
-        "| age | city | name  |",
-        "| 30  |      | Alice |",
-        "| 25  | NY   | Bob   |",
-    ]);
+    check_output_contains(
+        code,
+        &[
+            "| age | city | name  |",
+            "| 30  |      | Alice |",
+            "| 25  | NY   | Bob   |",
+        ],
+    );
 }
 
 #[test]
@@ -70,12 +83,15 @@ fn test_tprint_missing_keys() {
     ])
     "#;
 
-    check_output_contains(code, &[
-        "| a | b | c |",
-        "| 1 |   |   |",
-        "|   | 2 |   |",
-        "| 3 | 4 | 5 |"
-    ]);
+    check_output_contains(
+        code,
+        &[
+            "| a | b | c |",
+            "| 1 |   |   |",
+            "|   | 2 |   |",
+            "| 3 | 4 | 5 |",
+        ],
+    );
 }
 
 #[test]
@@ -106,13 +122,7 @@ fn test_tprint_types() {
 
     // Let's just check for content without strict whitespace counting, or check for trimmed content.
     // Or just be less strict about exact padding in the test.
-    check_output_contains(code, &[
-        "| 123",
-        "| 45.67",
-        "| True",
-        "| None",
-        "| [1, 2]"
-    ]);
+    check_output_contains(code, &["| 123", "| 45.67", "| True", "| None", "| [1, 2]"]);
 }
 
 #[test]
@@ -124,10 +134,7 @@ fn test_tprint_escaping() {
     ])
     "#;
 
-    check_output_contains(code, &[
-        "| hello\\nworld |",
-        "| a\\|b         |"
-    ]);
+    check_output_contains(code, &["| hello\\nworld |", "| a\\|b         |"]);
 }
 
 #[test]

@@ -1,9 +1,9 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
 use alloc::string::ToString;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `reversed(seq)`: Returns a reverse iterator.
@@ -29,7 +29,7 @@ pub fn builtin_reversed(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Resu
             return Err(format!(
                 "'{}' object is not reversible",
                 get_type_name(&args[0])
-            ))
+            ));
         }
     };
 

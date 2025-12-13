@@ -4,7 +4,7 @@ use super::super::ast::{
 };
 use super::super::token::{Span, TokenKind};
 use super::core::{Flow, Interpreter};
-use super::error::{runtime_error, EldritchError, EldritchErrorKind};
+use super::error::{EldritchError, EldritchErrorKind, runtime_error};
 use super::introspection::{get_type_name, is_truthy};
 use super::methods::call_bound_method;
 use super::operations::{
@@ -220,7 +220,13 @@ fn evaluate_index(
         Value::List(l) => {
             let idx_int = match idx_val {
                 Value::Int(i) => i,
-                _ => return interp.error(EldritchErrorKind::TypeError, "list indices must be integers", index.span),
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "list indices must be integers",
+                        index.span,
+                    );
+                }
             };
             let list = l.read();
             let true_idx = if idx_int < 0 {
@@ -229,14 +235,24 @@ fn evaluate_index(
                 idx_int
             };
             if true_idx < 0 || true_idx as usize >= list.len() {
-                return interp.error(EldritchErrorKind::IndexError, "List index out of range", span);
+                return interp.error(
+                    EldritchErrorKind::IndexError,
+                    "List index out of range",
+                    span,
+                );
             }
             Ok(list[true_idx as usize].clone())
         }
         Value::Tuple(t) => {
             let idx_int = match idx_val {
                 Value::Int(i) => i,
-                _ => return interp.error(EldritchErrorKind::TypeError, "tuple indices must be integers", index.span),
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "tuple indices must be integers",
+                        index.span,
+                    );
+                }
             };
             let true_idx = if idx_int < 0 {
                 t.len() as i64 + idx_int
@@ -244,7 +260,11 @@ fn evaluate_index(
                 idx_int
             };
             if true_idx < 0 || true_idx as usize >= t.len() {
-                return interp.error(EldritchErrorKind::IndexError, "Tuple index out of range", span);
+                return interp.error(
+                    EldritchErrorKind::IndexError,
+                    "Tuple index out of range",
+                    span,
+                );
             }
             Ok(t[true_idx as usize].clone())
         }
@@ -252,10 +272,18 @@ fn evaluate_index(
             let dict = d.read();
             match dict.get(&idx_val) {
                 Some(v) => Ok(v.clone()),
-                None => interp.error(EldritchErrorKind::KeyError, &format!("KeyError: '{idx_val}'"), span),
+                None => interp.error(
+                    EldritchErrorKind::KeyError,
+                    &format!("KeyError: '{idx_val}'"),
+                    span,
+                ),
             }
         }
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("'{}' object is not subscriptable", get_type_name(&obj_val)), obj.span),
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!("'{}' object is not subscriptable", get_type_name(&obj_val)),
+            obj.span,
+        ),
     }
 }
 
@@ -272,20 +300,36 @@ fn evaluate_slice(
     let step_val = if let Some(s) = step {
         match evaluate(interp, s)? {
             Value::Int(i) => i,
-            _ => return interp.error(EldritchErrorKind::TypeError, "slice step must be an integer", s.span),
+            _ => {
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "slice step must be an integer",
+                    s.span,
+                );
+            }
         }
     } else {
         1
     };
 
     if step_val == 0 {
-        return interp.error(EldritchErrorKind::ValueError, "slice step cannot be zero", span);
+        return interp.error(
+            EldritchErrorKind::ValueError,
+            "slice step cannot be zero",
+            span,
+        );
     }
 
     let start_val_opt = if let Some(s) = start {
         match evaluate(interp, s)? {
             Value::Int(i) => Some(i),
-            _ => return interp.error(EldritchErrorKind::TypeError, "slice start must be an integer", s.span),
+            _ => {
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "slice start must be an integer",
+                    s.span,
+                );
+            }
         }
     } else {
         None
@@ -294,7 +338,13 @@ fn evaluate_slice(
     let stop_val_opt = if let Some(s) = stop {
         match evaluate(interp, s)? {
             Value::Int(i) => Some(i),
-            _ => return interp.error(EldritchErrorKind::TypeError, "slice stop must be an integer", s.span),
+            _ => {
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "slice stop must be an integer",
+                    s.span,
+                );
+            }
         }
     } else {
         None
@@ -371,7 +421,11 @@ fn evaluate_slice(
             }
             Ok(Value::String(result_chars.into_iter().collect()))
         }
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("'{}' object is not subscriptable", get_type_name(&obj_val)), obj.span),
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!("'{}' object is not subscriptable", get_type_name(&obj_val)),
+            obj.span,
+        ),
     }
 }
 
@@ -463,7 +517,7 @@ fn call_function(
                                 get_type_name(&val)
                             ),
                             expr.span,
-                        )
+                        );
                     }
                 }
             }
@@ -477,7 +531,13 @@ fn call_function(
                                 Value::String(s) => {
                                     kw_args_val.insert(s.clone(), v.clone());
                                 }
-                                _ => return interp.error(EldritchErrorKind::TypeError, "Keywords must be strings", expr.span),
+                                _ => {
+                                    return interp.error(
+                                        EldritchErrorKind::TypeError,
+                                        "Keywords must be strings",
+                                        expr.span,
+                                    );
+                                }
                             }
                         }
                     }
@@ -489,7 +549,7 @@ fn call_function(
                                 get_type_name(&val)
                             ),
                             expr.span,
-                        )
+                        );
                     }
                 }
             }
@@ -501,14 +561,18 @@ fn call_function(
     match callee_val {
         Value::NativeFunction(_, f) => {
             if !kw_args_val.is_empty() {
-                return interp.error(EldritchErrorKind::TypeError, "NativeFunction does not accept keyword arguments", span);
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "NativeFunction does not accept keyword arguments",
+                    span,
+                );
             }
             // Ensure stack frame for native call
             // Native function name?
             if let ExprKind::Identifier(name) = &callee.kind {
-                 interp.push_frame(name, span);
+                interp.push_frame(name, span);
             } else {
-                 interp.push_frame("<native>", span);
+                interp.push_frame("<native>", span);
             }
 
             let res = f(&interp.env, args_slice).map_err(|e| {
@@ -519,11 +583,11 @@ fn call_function(
             res
         }
         Value::NativeFunctionWithKwargs(_, f) => {
-             // Ensure stack frame for native call
+            // Ensure stack frame for native call
             if let ExprKind::Identifier(name) = &callee.kind {
-                 interp.push_frame(name, span);
+                interp.push_frame(name, span);
             } else {
-                 interp.push_frame("<native>", span);
+                interp.push_frame("<native>", span);
             }
             let res = f(&interp.env, args_slice, &kw_args_val).map_err(|e| {
                 let (kind, msg) = parse_error_kind(&e);
@@ -542,7 +606,11 @@ fn call_function(
             let _ = name; // Silence unused name warning if any
 
             if interp.depth >= MAX_RECURSION_DEPTH {
-                return interp.error(EldritchErrorKind::RecursionError, "Recursion limit exceeded", span);
+                return interp.error(
+                    EldritchErrorKind::RecursionError,
+                    "Recursion limit exceeded",
+                    span,
+                );
             }
             interp.depth += 1;
 
@@ -622,7 +690,11 @@ fn call_function(
                 }
 
                 if pos_idx < pos_args_val.len() {
-                    return interp.error(EldritchErrorKind::TypeError, "Function got too many positional arguments.", span);
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "Function got too many positional arguments.",
+                        span,
+                    );
                 }
 
                 if !kw_args_val.is_empty() {
@@ -630,7 +702,10 @@ fn call_function(
                     keys.sort();
                     return interp.error(
                         EldritchErrorKind::TypeError,
-                        &format!("{}() got an unexpected keyword argument '{}'", name, keys[0]),
+                        &format!(
+                            "{}() got an unexpected keyword argument '{}'",
+                            name, keys[0]
+                        ),
                         span,
                     );
                 }
@@ -656,7 +731,7 @@ fn call_function(
             result
         }
         Value::BoundMethod(receiver, method_name) => {
-             // Push stack frame
+            // Push stack frame
             interp.push_frame(&method_name, span);
             let res = {
                 // Check if receiver is Foreign
@@ -665,22 +740,31 @@ fn call_function(
                         .call_method(interp, &method_name, args_slice, &kw_args_val)
                         .map_err(|e| {
                             let (kind, msg) = parse_error_kind(&e);
-                            EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                            EldritchError::new(kind, msg, span)
+                                .with_stack(interp.call_stack.clone())
                         })
                 } else if !kw_args_val.is_empty() {
-                    Err(EldritchError::new(EldritchErrorKind::TypeError, "BoundMethod does not accept keyword arguments", span).with_stack(interp.call_stack.clone()))
+                    Err(EldritchError::new(
+                        EldritchErrorKind::TypeError,
+                        "BoundMethod does not accept keyword arguments",
+                        span,
+                    )
+                    .with_stack(interp.call_stack.clone()))
                 } else {
-                    call_bound_method(&receiver, &method_name, args_slice)
-                        .map_err(|e| {
-                            let (kind, msg) = parse_error_kind(&e);
-                            EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
-                        })
+                    call_bound_method(&receiver, &method_name, args_slice).map_err(|e| {
+                        let (kind, msg) = parse_error_kind(&e);
+                        EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                    })
                 }
             };
             interp.pop_frame();
             res
         }
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("Cannot call value of type: {callee_val:?}"), span),
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!("Cannot call value of type: {callee_val:?}"),
+            span,
+        ),
     }
 }
 
@@ -690,7 +774,11 @@ fn builtin_map(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() != 2 {
-        return interp.error(EldritchErrorKind::TypeError, "map() takes exactly 2 arguments", span);
+        return interp.error(
+            EldritchErrorKind::TypeError,
+            "map() takes exactly 2 arguments",
+            span,
+        );
     }
     let func_val = evaluate_arg(interp, &args[0])?;
     let iterable_val = evaluate_arg(interp, &args[1])?;
@@ -712,7 +800,11 @@ fn builtin_filter(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() != 2 {
-        return interp.error(EldritchErrorKind::TypeError, "filter() takes exactly 2 arguments", span);
+        return interp.error(
+            EldritchErrorKind::TypeError,
+            "filter() takes exactly 2 arguments",
+            span,
+        );
     }
     let func_val = evaluate_arg(interp, &args[0])?;
     let iterable_val = evaluate_arg(interp, &args[1])?;
@@ -739,7 +831,11 @@ fn builtin_reduce(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() < 2 || args.len() > 3 {
-        return interp.error(EldritchErrorKind::TypeError, "reduce() takes 2 or 3 arguments", span);
+        return interp.error(
+            EldritchErrorKind::TypeError,
+            "reduce() takes 2 or 3 arguments",
+            span,
+        );
     }
     let func_val = evaluate_arg(interp, &args[0])?;
     let iterable_val = evaluate_arg(interp, &args[1])?;
@@ -750,7 +846,13 @@ fn builtin_reduce(
     } else {
         match items.next() {
             Some(v) => v,
-            None => return interp.error(EldritchErrorKind::TypeError, "reduce() of empty sequence with no initial value", span),
+            None => {
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "reduce() of empty sequence with no initial value",
+                    span,
+                );
+            }
         }
     };
 
@@ -775,7 +877,11 @@ fn builtin_sorted(
                 if iterable_arg.is_none() {
                     iterable_arg = Some(e);
                 } else {
-                    return interp.error(EldritchErrorKind::TypeError, "sorted() takes only 1 positional argument", span);
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "sorted() takes only 1 positional argument",
+                        span,
+                    );
                 }
             }
             Argument::Keyword(name, e) => match name.as_str() {
@@ -786,7 +892,7 @@ fn builtin_sorted(
                         EldritchErrorKind::TypeError,
                         &format!("sorted() got an unexpected keyword argument '{name}'"),
                         span,
-                    )
+                    );
                 }
             },
             _ => {
@@ -794,13 +900,19 @@ fn builtin_sorted(
                     EldritchErrorKind::TypeError,
                     "sorted() does not support *args or **kwargs unpacking",
                     span,
-                )
+                );
             }
         }
     }
 
     let iterable_expr = iterable_arg.ok_or_else(|| {
-        interp.error::<()>(EldritchErrorKind::TypeError, "sorted() missing 1 required positional argument: 'iterable'", span).unwrap_err()
+        interp
+            .error::<()>(
+                EldritchErrorKind::TypeError,
+                "sorted() missing 1 required positional argument: 'iterable'",
+                span,
+            )
+            .unwrap_err()
     })?;
 
     let iterable_val = evaluate(interp, iterable_expr)?;
@@ -847,17 +959,31 @@ fn builtin_eval(
     span: Span,
 ) -> Result<Value, EldritchError> {
     if args.len() != 1 {
-        return interp.error(EldritchErrorKind::TypeError, "eval() takes exactly 1 argument", span);
+        return interp.error(
+            EldritchErrorKind::TypeError,
+            "eval() takes exactly 1 argument",
+            span,
+        );
     }
 
     let code_val = evaluate_arg(interp, &args[0])?;
     let code = match code_val {
         Value::String(s) => s,
-        _ => return interp.error(EldritchErrorKind::TypeError, "eval() argument must be a string", span),
+        _ => {
+            return interp.error(
+                EldritchErrorKind::TypeError,
+                "eval() argument must be a string",
+                span,
+            );
+        }
     };
 
     if interp.depth >= MAX_RECURSION_DEPTH {
-        return interp.error(EldritchErrorKind::RecursionError, "Recursion limit exceeded", span);
+        return interp.error(
+            EldritchErrorKind::RecursionError,
+            "Recursion limit exceeded",
+            span,
+        );
     }
 
     // Create a new interpreter instance that shares the environment
@@ -885,9 +1011,9 @@ fn call_value(
 ) -> Result<Value, EldritchError> {
     match func {
         Value::NativeFunction(_, f) => {
-             // Push stack frame
-             // Native function name?
-             interp.push_frame("<native>", span);
+            // Push stack frame
+            // Native function name?
+            interp.push_frame("<native>", span);
             let res = f(&interp.env, args).map_err(|e| {
                 let (kind, msg) = parse_error_kind(&e);
                 EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
@@ -902,7 +1028,11 @@ fn call_value(
             closure: _,
         }) => {
             if interp.depth >= MAX_RECURSION_DEPTH {
-                return interp.error(EldritchErrorKind::RecursionError, "Recursion limit exceeded", span);
+                return interp.error(
+                    EldritchErrorKind::RecursionError,
+                    "Recursion limit exceeded",
+                    span,
+                );
             }
             interp.depth += 1;
 
@@ -927,16 +1057,19 @@ fn call_value(
             res
         }
         Value::BoundMethod(receiver, method_name) => {
-             interp.push_frame(method_name, span);
-             let res = call_bound_method(receiver, method_name, args)
-                .map_err(|e| {
-                    let (kind, msg) = parse_error_kind(&e);
-                    EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
-                });
-             interp.pop_frame();
-             res
-        },
-        _ => interp.error(EldritchErrorKind::TypeError, &format!("'{}' object is not callable", get_type_name(func)), span),
+            interp.push_frame(method_name, span);
+            let res = call_bound_method(receiver, method_name, args).map_err(|e| {
+                let (kind, msg) = parse_error_kind(&e);
+                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+            });
+            interp.pop_frame();
+            res
+        }
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!("'{}' object is not callable", get_type_name(func)),
+            span,
+        ),
     }
 }
 
@@ -983,14 +1116,26 @@ fn apply_unary_op(
         TokenKind::Minus => match val {
             Value::Int(i) => Ok(Value::Int(-i)),
             Value::Float(f) => Ok(Value::Float(-f)),
-            _ => interp.error(EldritchErrorKind::TypeError, "Unary '-' only valid for numbers", span),
+            _ => interp.error(
+                EldritchErrorKind::TypeError,
+                "Unary '-' only valid for numbers",
+                span,
+            ),
         },
         TokenKind::Not => Ok(Value::Bool(!is_truthy(&val))),
         TokenKind::BitNot => match val {
             Value::Int(i) => Ok(Value::Int(!i)),
-            _ => interp.error(EldritchErrorKind::TypeError, "Bitwise '~' only valid for integers", span),
+            _ => interp.error(
+                EldritchErrorKind::TypeError,
+                "Bitwise '~' only valid for integers",
+                span,
+            ),
         },
-        _ => interp.error(EldritchErrorKind::SyntaxError, "Invalid unary operator", span),
+        _ => interp.error(
+            EldritchErrorKind::SyntaxError,
+            "Invalid unary operator",
+            span,
+        ),
     }
 }
 
@@ -1015,7 +1160,11 @@ fn apply_logical_op(
             }
             evaluate(interp, right)
         }
-        _ => interp.error(EldritchErrorKind::SyntaxError, "Invalid logical operator", span),
+        _ => interp.error(
+            EldritchErrorKind::SyntaxError,
+            "Invalid logical operator",
+            span,
+        ),
     }
 }
 
@@ -1043,7 +1192,13 @@ fn evaluate_in(
         Value::String(s) => {
             let sub = match item {
                 Value::String(ss) => ss,
-                _ => return interp.error(EldritchErrorKind::TypeError, "'in <string>' requires string as left operand", span),
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "'in <string>' requires string as left operand",
+                        span,
+                    );
+                }
             };
             Ok(Value::Bool(s.contains(sub)))
         }
@@ -1297,25 +1452,29 @@ fn apply_binary_op(
             }
         }
 
-        (val_a, op_kind, val_b) => interp.error(EldritchErrorKind::TypeError, &format!(
-            "unsupported operand type(s) for {}: '{}' and '{}'",
-            match op_kind {
-                 TokenKind::Plus => "+",
-                 TokenKind::Minus => "-",
-                 TokenKind::Star => "*",
-                 TokenKind::Slash => "/",
-                 TokenKind::SlashSlash => "//",
-                 TokenKind::Percent => "%",
-                 TokenKind::BitAnd => "&",
-                 TokenKind::BitOr => "|",
-                 TokenKind::BitXor => "^",
-                 TokenKind::LShift => "<<",
-                 TokenKind::RShift => ">>",
-                 _ => "binary op",
-            },
-            get_type_name(&val_a),
-            get_type_name(&val_b)
-        ), span),
+        (val_a, op_kind, val_b) => interp.error(
+            EldritchErrorKind::TypeError,
+            &format!(
+                "unsupported operand type(s) for {}: '{}' and '{}'",
+                match op_kind {
+                    TokenKind::Plus => "+",
+                    TokenKind::Minus => "-",
+                    TokenKind::Star => "*",
+                    TokenKind::Slash => "/",
+                    TokenKind::SlashSlash => "//",
+                    TokenKind::Percent => "%",
+                    TokenKind::BitAnd => "&",
+                    TokenKind::BitOr => "|",
+                    TokenKind::BitXor => "^",
+                    TokenKind::LShift => "<<",
+                    TokenKind::RShift => ">>",
+                    _ => "binary op",
+                },
+                get_type_name(&val_a),
+                get_type_name(&val_b)
+            ),
+            span,
+        ),
     }
 }
 
@@ -1346,7 +1505,11 @@ fn string_modulo_format(
                 chars.next(); // Consume specifier
 
                 if val_idx >= vals.len() {
-                    return interp.error(EldritchErrorKind::TypeError, "not enough arguments for format string", span);
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "not enough arguments for format string",
+                        span,
+                    );
                 }
                 let v = &vals[val_idx];
                 val_idx += 1;
@@ -1396,7 +1559,10 @@ fn string_modulo_format(
                     _ => {
                         return interp.error(
                             EldritchErrorKind::ValueError,
-                            &format!("unsupported format character '{}' (0x{:x})", next, next as u32),
+                            &format!(
+                                "unsupported format character '{}' (0x{:x})",
+                                next, next as u32
+                            ),
                             span,
                         );
                     }
@@ -1410,13 +1576,22 @@ fn string_modulo_format(
     }
 
     if val_idx < vals.len() {
-        return interp.error(EldritchErrorKind::TypeError, "not all arguments converted during string formatting", span);
+        return interp.error(
+            EldritchErrorKind::TypeError,
+            "not all arguments converted during string formatting",
+            span,
+        );
     }
 
     Ok(Value::String(result))
 }
 
-fn to_int_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) -> Result<i64, EldritchError> {
+fn to_int_or_error(
+    interp: &Interpreter,
+    v: &Value,
+    spec: char,
+    span: Span,
+) -> Result<i64, EldritchError> {
     match v {
         Value::Int(i) => Ok(*i),
         Value::Float(f) => Ok(*f as i64),
@@ -1433,7 +1608,12 @@ fn to_int_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) -> R
     }
 }
 
-fn to_float_or_error(interp: &Interpreter, v: &Value, spec: char, span: Span) -> Result<f64, EldritchError> {
+fn to_float_or_error(
+    interp: &Interpreter,
+    v: &Value,
+    spec: char,
+    span: Span,
+) -> Result<f64, EldritchError> {
     match v {
         Value::Int(i) => Ok(*i as f64),
         Value::Float(f) => Ok(*f),

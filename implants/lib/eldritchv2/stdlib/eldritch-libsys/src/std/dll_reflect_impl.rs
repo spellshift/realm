@@ -9,12 +9,12 @@ use {
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
     windows_sys::Win32::{
-        Foundation::{GetLastError, BOOL, FALSE, HANDLE},
+        Foundation::{BOOL, FALSE, GetLastError, HANDLE},
         System::{
             Diagnostics::Debug::WriteProcessMemory,
             Memory::{
-                VirtualAllocEx, MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE,
-                PAGE_PROTECTION_FLAGS, VIRTUAL_ALLOCATION_TYPE,
+                MEM_COMMIT, MEM_RESERVE, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS,
+                VIRTUAL_ALLOCATION_TYPE, VirtualAllocEx,
             },
             Threading::{OpenProcess, PROCESS_ACCESS_RIGHTS, PROCESS_ALL_ACCESS},
         },
@@ -352,9 +352,11 @@ mod tests {
         let res = super::dll_reflect(Vec::new(), 0, "Garbage".to_string());
         match res {
             Ok(_) => return Err(anyhow::anyhow!("dll_reflect should have errored out.")),
-            Err(local_err) => assert!(local_err
-                .to_string()
-                .contains("This OS isn't supported by the dll_reflect")),
+            Err(local_err) => assert!(
+                local_err
+                    .to_string()
+                    .contains("This OS isn't supported by the dll_reflect")
+            ),
         }
         Ok(())
     }

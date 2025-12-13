@@ -1,14 +1,12 @@
-
-use eldritch_core::Value;
+use super::FileLibrary;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use spin::Mutex;
-use super::FileLibrary;
-
 
 #[derive(Debug, Clone)]
 enum FsEntry {
@@ -365,9 +363,11 @@ mod tests {
 
         // List
         let items = file.list(Some("/home/user".into())).unwrap();
-        assert!(items
-            .iter()
-            .any(|x| x.get("file_name").unwrap().to_string() == "notes.txt"));
+        assert!(
+            items
+                .iter()
+                .any(|x| x.get("file_name").unwrap().to_string() == "notes.txt")
+        );
 
         // Mkdir
         file.mkdir("/home/user/docs".into(), None).unwrap();

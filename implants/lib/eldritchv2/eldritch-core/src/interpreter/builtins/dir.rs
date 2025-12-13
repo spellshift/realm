@@ -1,8 +1,8 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_dir_attributes;
 use alloc::collections::BTreeSet;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 

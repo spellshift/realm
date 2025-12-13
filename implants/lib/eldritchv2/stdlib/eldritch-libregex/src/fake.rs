@@ -42,9 +42,11 @@ mod tests {
     #[test]
     fn test_regex_fake() {
         let regex = RegexLibraryFake;
-        assert!(regex
-            .match_all("foo".into(), "bar".into())
-            .unwrap()
-            .is_empty());
+        assert!(
+            regex
+                .match_all("foo".into(), "bar".into())
+                .unwrap()
+                .is_empty()
+        );
     }
 }

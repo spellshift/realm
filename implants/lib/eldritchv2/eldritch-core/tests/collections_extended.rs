@@ -2,7 +2,8 @@ mod assert;
 
 #[test]
 fn test_list_extended_methods() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
     l = [1, 2, 3]
     # Append
     l.append(4)
@@ -47,7 +48,8 @@ fn test_list_extended_methods() {
     l = [3, 1, 2]
     l.sort()
     assert_eq(l, [1, 2, 3])
-    "#);
+    "#,
+    );
 
     // Fail cases
     assert::fail("l=[1]; l.remove(2)", "ValueError");
@@ -59,7 +61,8 @@ fn test_list_extended_methods() {
 
 #[test]
 fn test_list_operations_builtins() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
     l1 = [1, 2]
     l2 = [3, 4]
 
@@ -96,12 +99,14 @@ fn test_list_operations_builtins() {
     # reversed returns list in Eldritch (based on sorted returning list, safer to assume iterable/list)
     r = reversed(l)
     assert_eq(list(r), [2, 1])
-    "#);
+    "#,
+    );
 }
 
 #[test]
 fn test_dict_extended() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
     d = {"a": 1, "b": 2}
 
     # Keys/Values/Items
@@ -135,7 +140,8 @@ fn test_dict_extended() {
     d3 = d1 + d2
     assert_eq(d3["a"], 1)
     assert_eq(d3["b"], 2)
-    "#);
+    "#,
+    );
 
     // Fail
     assert::fail("d={}; d.popitem()", "empty");
@@ -143,7 +149,8 @@ fn test_dict_extended() {
 
 #[test]
 fn test_set_extended() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
     s = {1, 2}
 
     # Add
@@ -192,14 +199,16 @@ fn test_set_extended() {
     # Update (in place)
     s1.update(s2)
     assert_eq(len(s1), 3)
-    "#);
+    "#,
+    );
 
     assert::fail("s={1}; s.remove(99)", "KeyError");
 }
 
 #[test]
 fn test_interplay() {
-    assert::pass(r#"
+    assert::pass(
+        r#"
     # List <-> Set
     l = [1, 2, 2, 3]
     s = set(l)
@@ -236,7 +245,8 @@ fn test_interplay() {
 
     d = {"inner": {"a": 1}}
     assert_eq(d["inner"]["a"], 1)
-    "#);
+    "#,
+    );
 }
 
 #[test]

@@ -2,9 +2,9 @@ extern crate alloc;
 
 pub mod agent;
 pub mod assets;
+pub mod run;
 pub mod shell;
 pub mod task;
-pub mod run;
 pub mod version;
 
 #[unsafe(no_mangle)]

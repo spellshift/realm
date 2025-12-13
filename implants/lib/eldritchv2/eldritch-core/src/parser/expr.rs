@@ -1,6 +1,6 @@
 use super::super::ast::{Argument, Expr, ExprKind, FStringSegment, Param, Value};
-use super::super::token::{Span, Token, TokenKind};
 use super::super::interpreter::error::EldritchError;
+use super::super::token::{Span, Token, TokenKind};
 use super::Parser;
 use alloc::boxed::Box;
 use alloc::format;
@@ -136,16 +136,15 @@ impl Parser {
                         params.push(Param::WithDefault(param_name, annotation, default_val));
                     } else {
                         // Check if a normal parameter follows a default parameter
-                        let has_default = params.iter().any(|p| matches!(p, Param::WithDefault(..)));
-                        let has_star = params
-                            .iter()
-                            .any(|p| matches!(p, Param::Star(..)) || matches!(p, Param::StarStar(..)));
+                        let has_default =
+                            params.iter().any(|p| matches!(p, Param::WithDefault(..)));
+                        let has_star = params.iter().any(|p| {
+                            matches!(p, Param::Star(..)) || matches!(p, Param::StarStar(..))
+                        });
 
                         // Only an error if we haven't seen *args yet.
                         if has_default && !has_star {
-                            return self.error(
-                                "Non-default argument follows default argument."
-                            );
+                            return self.error("Non-default argument follows default argument.");
                         }
 
                         params.push(Param::Normal(param_name, annotation));
@@ -426,7 +425,11 @@ impl Parser {
                         // Create a tuple expression for the index
                         let tuple_start = elements[0].span;
                         let tuple_end = elements.last().unwrap().span;
-                        start = Some(Box::new(self.make_expr(ExprKind::Tuple(elements), tuple_start, tuple_end)));
+                        start = Some(Box::new(self.make_expr(
+                            ExprKind::Tuple(elements),
+                            tuple_start,
+                            tuple_end,
+                        )));
                     } else {
                         start = Some(Box::new(first_expr));
                         if self.match_token(&[TokenKind::Colon]) {
@@ -434,7 +437,9 @@ impl Parser {
                             if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::RBracket) {
                                 stop = Some(Box::new(self.expression()?));
                             }
-                            if self.match_token(&[TokenKind::Colon]) && !self.check(&TokenKind::RBracket) {
+                            if self.match_token(&[TokenKind::Colon])
+                                && !self.check(&TokenKind::RBracket)
+                            {
                                 step = Some(Box::new(self.expression()?));
                             }
                         }

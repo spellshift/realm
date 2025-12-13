@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
 use alloc::format;
-use alloc::sync::Arc;
 use alloc::string::String;
+use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `fail(message)`: Aborts execution with an error message.

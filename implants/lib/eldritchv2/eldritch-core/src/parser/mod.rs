@@ -1,6 +1,6 @@
 use super::ast::Stmt;
-use super::token::{Span, Token, TokenKind};
 use super::interpreter::error::{EldritchError, EldritchErrorKind};
+use super::token::{Span, Token, TokenKind};
 use alloc::vec::Vec;
 
 pub mod expr;
@@ -43,16 +43,20 @@ impl Parser {
 
     pub(crate) fn error<T>(&self, msg: &str) -> Result<T, EldritchError> {
         let span = if self.current < self.tokens.len() {
-             self.tokens[self.current].span
+            self.tokens[self.current].span
         } else {
-             // Use last token span or dummy
-             if let Some(last) = self.tokens.last() {
-                 last.span
-             } else {
-                 Span::new(0,0,0)
-             }
+            // Use last token span or dummy
+            if let Some(last) = self.tokens.last() {
+                last.span
+            } else {
+                Span::new(0, 0, 0)
+            }
         };
-        Err(EldritchError::new(EldritchErrorKind::SyntaxError, msg, span))
+        Err(EldritchError::new(
+            EldritchErrorKind::SyntaxError,
+            msg,
+            span,
+        ))
     }
 
     pub(crate) fn consume<F>(&mut self, check_fn: F, msg: &str) -> Result<&Token, EldritchError>
@@ -98,7 +102,10 @@ impl Parser {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    pub(crate) fn validate_assignment_target(&self, expr: &super::ast::Expr) -> Result<(), EldritchError> {
+    pub(crate) fn validate_assignment_target(
+        &self,
+        expr: &super::ast::Expr,
+    ) -> Result<(), EldritchError> {
         use super::ast::ExprKind;
         match &expr.kind {
             ExprKind::Identifier(_) => Ok(()),
@@ -111,7 +118,11 @@ impl Parser {
                 }
                 Ok(())
             }
-            _ => Err(EldritchError::new(EldritchErrorKind::SyntaxError, "Invalid assignment target", expr.span)),
+            _ => Err(EldritchError::new(
+                EldritchErrorKind::SyntaxError,
+                "Invalid assignment target",
+                expr.span,
+            )),
         }
     }
 }

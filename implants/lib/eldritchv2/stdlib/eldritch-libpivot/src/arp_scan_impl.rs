@@ -3,11 +3,11 @@ use {
     alloc::string::ToString,
     ipnetwork::{IpNetwork, Ipv4Network},
     pnet::{
-        datalink::{self, channel, Channel::Ethernet, NetworkInterface},
+        datalink::{self, Channel::Ethernet, NetworkInterface, channel},
         packet::{
+            Packet,
             arp::{ArpOperations, ArpPacket, MutableArpPacket},
             ethernet::{EtherType, EthernetPacket, MutableEthernetPacket},
-            Packet,
         },
         util::MacAddr,
     },
@@ -21,7 +21,7 @@ use {
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use eldritch_core::Value;
 
 #[cfg(not(target_os = "windows"))]
@@ -196,7 +196,6 @@ pub fn parse_cidrs_for_arp_scan(target_cidrs: Vec<String>) -> Result<Vec<Ipv4Net
         .collect::<Result<Vec<Ipv4Network>>>()
 }
 
-
 #[cfg(not(target_os = "windows"))]
 pub fn handle_arp_scan(
     target_cidrs: Vec<String>,
@@ -300,6 +299,9 @@ mod tests {
     fn test_windows_unsupported() {
         let res = arp_scan(vec!["1.1.1.1/32".to_string()]);
         assert!(res.is_err());
-        assert_eq!(res.unwrap_err().to_string(), "ARP Scanning is not available on Windows.");
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "ARP Scanning is not available on Windows."
+        );
     }
 }

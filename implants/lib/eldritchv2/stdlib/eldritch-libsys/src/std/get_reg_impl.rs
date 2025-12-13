@@ -13,7 +13,7 @@ pub fn get_reg(_reghive: String, _regpath: String) -> Result<BTreeMap<String, St
 pub fn get_reg(reghive: String, regpath: String) -> Result<BTreeMap<String, String>> {
     let mut tmp_res = BTreeMap::new();
 
-    use winreg::{enums::*, RegKey, RegValue};
+    use winreg::{RegKey, RegValue, enums::*};
     //Accepted values for reghive :
     //HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS
 
@@ -28,8 +28,11 @@ pub fn get_reg(reghive: String, regpath: String) -> Result<BTreeMap<String, Stri
         "HKEY_CURRENT_CONFIG" => HKEY_CURRENT_CONFIG,
         "HKEY_DYN_DATA" => HKEY_DYN_DATA,
         "HKEY_CURRENT_USER_LOCAL_SETTINGS" => HKEY_CURRENT_USER_LOCAL_SETTINGS,
-        _ => return Err(anyhow::anyhow!("RegHive can only be one of the following values - HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS ")),
-
+        _ => {
+            return Err(anyhow::anyhow!(
+                "RegHive can only be one of the following values - HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS "
+            ));
+        }
     };
 
     let hive = RegKey::predef(ihive);
@@ -49,7 +52,7 @@ mod tests {
     #[cfg(target_os = "windows")]
     use uuid::Uuid;
     #[cfg(target_os = "windows")]
-    use winreg::{enums::*, RegKey};
+    use winreg::{RegKey, enums::*};
 
     #[test]
     #[cfg(target_os = "windows")]
@@ -75,6 +78,10 @@ mod tests {
     fn test_get_reg_non_windows() {
         let res = super::get_reg("HKEY_CURRENT_USER".into(), "SOFTWARE".into());
         assert!(res.is_err());
-        assert!(res.unwrap_err().to_string().contains("Only windows systems are supported"));
+        assert!(
+            res.unwrap_err()
+                .to_string()
+                .contains("Only windows systems are supported")
+        );
     }
 }
