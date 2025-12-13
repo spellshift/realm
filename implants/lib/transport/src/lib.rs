@@ -1,6 +1,12 @@
 #[cfg(all(feature = "grpc", feature = "http1"))]
 compile_error!("only one transport may be selected");
+#[cfg(all(feature = "grpc", feature = "dns"))]
+compile_error!("only one transport may be selected");
+#[cfg(all(feature = "http1", feature = "dns"))]
+compile_error!("only one transport may be selected");
 #[cfg(all(feature = "grpc-doh", feature = "http1"))]
+compile_error!("grpc-doh is only supported by the grpc transport");
+#[cfg(all(feature = "grpc-doh", feature = "dns"))]
 compile_error!("grpc-doh is only supported by the grpc transport");
 
 #[cfg(feature = "grpc")]
@@ -15,6 +21,11 @@ mod dns_resolver;
 mod http;
 #[cfg(feature = "http1")]
 pub use http::HTTP as ActiveTransport;
+
+#[cfg(feature = "dns")]
+mod dns;
+#[cfg(feature = "dns")]
+pub use dns::DNS as ActiveTransport;
 
 #[cfg(feature = "mock")]
 mod mock;
