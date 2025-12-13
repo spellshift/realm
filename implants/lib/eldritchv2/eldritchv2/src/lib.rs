@@ -30,6 +30,9 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 #[cfg(feature = "stdlib")]
+use transport::SyncTransport;
+
+#[cfg(feature = "stdlib")]
 use crate::agent::{agent::Agent, std::StdAgentLibrary};
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
@@ -133,21 +136,21 @@ impl Interpreter {
     }
 
     #[cfg(feature = "stdlib")]
-    pub fn with_agent(mut self, agent: Arc<dyn Agent>) -> Self {
+    pub fn with_agent(mut self, agent: Arc<dyn Agent>, transport: Arc<dyn SyncTransport>) -> Self {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
-        let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
+        let agent_lib = StdAgentLibrary::new(agent.clone(), transport.clone(), 0);
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), 0);
+        let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), 0);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), 0);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), 0);
         self.inner.register_lib(pivot_lib);
 
         // Assets library
         let assets_lib =
-            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
+            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), transport.clone(), Vec::new());
         self.inner.register_lib(assets_lib);
 
         self
@@ -166,19 +169,20 @@ impl Interpreter {
     pub fn with_task_context<A: crate::assets::RustEmbed + Send + Sync + 'static>(
         mut self,
         agent: Arc<dyn Agent>,
+        transport: Arc<dyn SyncTransport>,
         task_id: i64,
         remote_assets: Vec<String>,
     ) -> Self {
-        let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
+        let agent_lib = StdAgentLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), task_id);
+        let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::<A>::new(agent, remote_assets);
+        let assets_lib = StdAssetsLibrary::<A>::new(agent, transport.clone(), remote_assets);
         self.inner.register_lib(assets_lib);
 
         self

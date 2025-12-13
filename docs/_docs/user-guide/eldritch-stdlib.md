@@ -17,7 +17,7 @@ It allows you to:
 - Modify agent configuration (callback intervals, transports).
 - Manage background tasks.
 - Report data back to the C2 server (though the `report` library is often preferred for high-level reporting).
-- Control agent execution (sleep, termination).
+- Control agent execution (termination).
 
 ### agent._terminate_this_process_clowntown
 `agent._terminate_this_process_clowntown() -> None`
@@ -31,16 +31,6 @@ Use with extreme caution.
 
 **Errors**
 - This function is unlikely to return an error, as it terminates the process.
-
-### agent.claim_tasks
-`agent.claim_tasks() -> List<TaskWrapper>`
-Manually triggers a check-in to claim pending tasks from the C2 server.
-
-**Returns**
-- `List<Task>`: A list of tasks retrieved from the server.
-
-**Errors**
-- Returns an error string if the check-in fails.
 
 ### agent.eval
 `agent.eval(interp: &mut Interpreter, code: str) -> Value`
@@ -56,21 +46,6 @@ This method allows the agent to execute dynamic code within the current context.
 
 **Errors**
 - Returns an error string if the code execution fails.
-
-### agent.fetch_asset
-`agent.fetch_asset(name: str) -> Bytes`
-Fetches an asset (file) from the C2 server by name.
-
-This method requests the asset content from the server.
-
-**Parameters**
-- `name` (`str`): The name of the asset to fetch.
-
-**Returns**
-- `Bytes`: The content of the asset as a byte array.
-
-**Errors**
-- Returns an error string if the asset cannot be fetched or communication fails.
 
 ### agent.get_callback_interval
 `agent.get_callback_interval() -> int`
@@ -142,77 +117,6 @@ Returns a list of available transport names.
 **Errors**
 - Returns an error string if the list cannot be retrieved.
 
-### agent.report_credential
-`agent.report_credential(credential: CredentialWrapper) -> None`
-Reports a captured credential to the C2 server.
-
-**Parameters**
-- `credential` (`Credential`): The credential object to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_file
-`agent.report_file(file: FileWrapper) -> None`
-Reports a file (chunk) to the C2 server.
-
-This is typically used internally by `report.file`.
-
-**Parameters**
-- `file` (`File`): The file chunk wrapper to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_process_list
-`agent.report_process_list(list: ProcessListWrapper) -> None`
-Reports a list of processes to the C2 server.
-
-This is typically used internally by `report.process_list`.
-
-**Parameters**
-- `list` (`ProcessList`): The process list wrapper to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_task_output
-`agent.report_task_output(output: str, error: Option<str>) -> None`
-Reports the output of a task to the C2 server.
-
-This is used to send stdout/stderr or errors back to the controller.
-
-**Parameters**
-- `output` (`str`): The standard output content.
-- `error` (`Option<str>`): Optional error message.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.reverse_shell
-`agent.reverse_shell() -> None`
-Initiates a reverse shell session.
-
-This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reverse shell cannot be started.
-
 ### agent.set_callback_interval
 `agent.set_callback_interval(interval: int) -> None`
 Sets the callback interval for the agent.
@@ -256,22 +160,6 @@ Switches the agent to use the specified transport.
 
 **Errors**
 - Returns an error string if the transport is unknown or cannot be activated.
-
-### agent.sleep
-`agent.sleep(secs: int) -> None`
-Pauses execution of the current thread for the specified number of seconds.
-
-This is a blocking call and will prevent other operations in the same thread
-from executing for the duration.
-
-**Parameters**
-- `secs` (`int`): The number of seconds to sleep.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the sleep operation fails (unlikely).
 
 ### agent.stop_task
 `agent.stop_task(task_id: int) -> None`

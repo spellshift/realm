@@ -8,6 +8,7 @@ use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
+use transport::Transport;
 
 #[derive(Debug)]
 struct StreamPrinter {
@@ -54,7 +55,7 @@ impl TaskRegistry {
         }
     }
 
-    pub fn spawn(&self, task: Task, agent: Arc<dyn Agent>) {
+    pub fn spawn<T: Transport + Sync + Send + Clone + 'static>(&self, task: Task, agent: Arc<ImixAgent<T>>) {
         let task_id = task.id;
 
         // 1. Register logic
@@ -118,16 +119,21 @@ impl TaskRegistry {
     }
 }
 
-fn execute_task(
+use crate::agent::ImixAgent;
+
+fn execute_task<T: Transport + Sync + Send + Clone + 'static>(
     task_id: i64,
     tome: pb::eldritch::Tome,
-    agent: Arc<dyn Agent>,
+    agent: Arc<ImixAgent<T>>,
     runtime_handle: tokio::runtime::Handle,
 ) {
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx));
-    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), printer.clone());
+
+    // We need to pass both agent and sync transport
+    let sync_transport = agent.get_sync_transport();
+    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), sync_transport, printer.clone());
 
     // Report Start
     report_start(task_id, &agent);
@@ -157,17 +163,20 @@ fn execute_task(
     }
 }
 
+use transport::SyncTransport;
+
 fn setup_interpreter(
     task_id: i64,
     tome: &pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
+    transport: Arc<dyn SyncTransport>,
     printer: Arc<StreamPrinter>,
 ) -> Interpreter {
     let mut interp = Interpreter::new_with_printer(printer).with_default_libs();
 
     // Register Task Context (Agent, Report, Assets)
     let remote_assets = tome.file_names.clone();
-    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, remote_assets);
+    interp = interp.with_task_context::<crate::assets::Asset>(agent, transport, task_id, remote_assets);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
@@ -181,11 +190,12 @@ fn setup_interpreter(
     interp
 }
 
-fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
+fn report_start<T: Transport + Send + Sync + 'static>(task_id: i64, agent: &Arc<ImixAgent<T>>) {
     #[cfg(debug_assertions)]
     log::info!("task={task_id} Started execution");
 
-    let _ = agent.report_task_output(ReportTaskOutputRequest {
+    // Buffer output locally using ImixAgent's buffer
+    let req = ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
             output: String::new(),
@@ -193,12 +203,16 @@ fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
             exec_started_at: Some(Timestamp::from(SystemTime::now())),
             exec_finished_at: None,
         }),
-    });
+    };
+
+    if let Ok(mut buffer) = agent.output_buffer.lock() {
+        buffer.push(req);
+    }
 }
 
-fn spawn_output_consumer(
+fn spawn_output_consumer<T: Transport + Send + Sync + 'static>(
     task_id: i64,
-    agent: Arc<dyn Agent>,
+    agent: Arc<ImixAgent<T>>,
     runtime_handle: tokio::runtime::Handle,
     mut rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
@@ -207,7 +221,7 @@ fn spawn_output_consumer(
         log::info!("task={task_id} Started output stream");
 
         while let Some(msg) = rx.recv().await {
-            let _ = agent.report_task_output(ReportTaskOutputRequest {
+            let req = ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
                     output: msg,
@@ -215,13 +229,16 @@ fn spawn_output_consumer(
                     exec_started_at: None,
                     exec_finished_at: None,
                 }),
-            });
+            };
+             if let Ok(mut buffer) = agent.output_buffer.lock() {
+                buffer.push(req);
+            }
         }
     })
 }
 
-fn report_panic(task_id: i64, agent: &Arc<dyn Agent>) {
-    let _ = agent.report_task_output(ReportTaskOutputRequest {
+fn report_panic<T: Transport + Send + Sync + 'static>(task_id: i64, agent: &Arc<ImixAgent<T>>) {
+    let req = ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
             output: String::new(),
@@ -231,20 +248,23 @@ fn report_panic(task_id: i64, agent: &Arc<dyn Agent>) {
             exec_started_at: None,
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
-    });
+    };
+    if let Ok(mut buffer) = agent.output_buffer.lock() {
+        buffer.push(req);
+    }
 }
 
-fn report_result(
+fn report_result<T: Transport + Send + Sync + 'static>(
     task_id: i64,
     result: Result<eldritch_core::Value, String>,
-    agent: &Arc<dyn Agent>,
+    agent: &Arc<ImixAgent<T>>,
 ) {
     match result {
         Ok(v) => {
             #[cfg(debug_assertions)]
             log::info!("task={task_id} Success: {v}");
 
-            let _ = agent.report_task_output(ReportTaskOutputRequest {
+            let req = ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
                     output: String::new(),
@@ -252,13 +272,16 @@ fn report_result(
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
-            });
+            };
+            if let Ok(mut buffer) = agent.output_buffer.lock() {
+                buffer.push(req);
+            }
         }
         Err(e) => {
             #[cfg(debug_assertions)]
             log::info!("task={task_id} Error: {e}");
 
-            let _ = agent.report_task_output(ReportTaskOutputRequest {
+            let req = ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
                     output: String::new(),
@@ -266,7 +289,10 @@ fn report_result(
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
-            });
+            };
+            if let Ok(mut buffer) = agent.output_buffer.lock() {
+                buffer.push(req);
+            }
         }
     }
 }

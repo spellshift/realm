@@ -10,12 +10,13 @@ eldritch-libagent = { workspace = true }
 pb = { workspace = true }
 anyhow = { version = "1.0" }
 rust-embed = { version = "8.0" }
+transport = { workspace = true, optional = true }
 
 [features]
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = ["eldritch-libagent/fake_bindings"]
-stdlib = ["eldritch-libagent/stdlib"]
+stdlib = ["eldritch-libagent/stdlib", "transport"]
 
 [dev-dependencies]
 tempfile = "3.3"

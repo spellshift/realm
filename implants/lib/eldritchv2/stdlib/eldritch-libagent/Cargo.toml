@@ -12,8 +12,9 @@ pb = { path = "../../../pb", optional = true }
 prost = { workspace = true, optional = true }
 prost-types = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
+transport = { workspace = true, optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types"]
+stdlib = ["dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types", "transport"]
 fake_bindings = []

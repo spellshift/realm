@@ -19,6 +19,9 @@ pub use mock::MockTransport;
 mod transport;
 pub use transport::Transport;
 
+mod sync;
+pub use sync::{SyncTransport, SyncTransportAdapter};
+
 #[derive(Clone)]
 pub enum ActiveTransport {
     #[cfg(feature = "grpc")]

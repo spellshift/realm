@@ -6,6 +6,7 @@ use alloc::vec::Vec;
 use anyhow::Result;
 use core::marker::PhantomData;
 use eldritch_libagent::agent::Agent;
+use transport::SyncTransport;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
@@ -26,6 +27,7 @@ impl crate::RustEmbed for EmptyAssets {
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync + 'static> {
     pub agent: Arc<dyn Agent>,
+    pub transport: Arc<dyn SyncTransport>,
     pub remote_assets: Vec<String>,
     _phantom: PhantomData<A>,
 }
@@ -41,9 +43,10 @@ impl<A: RustEmbed + Send + Sync + 'static> core::fmt::Debug for StdAssetsLibrary
 }
 
 impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
-    pub fn new(agent: Arc<dyn Agent>, remote_assets: Vec<String>) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, transport: Arc<dyn SyncTransport>, remote_assets: Vec<String>) -> Self {
         Self {
             agent,
+            transport,
             remote_assets,
             _phantom: PhantomData,
         }
@@ -62,7 +65,7 @@ impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
             let req = FetchAssetRequest {
                 name: name.to_string(),
             };
-            return self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
+            return self.transport.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
         }
         self.read_binary_embedded(name)
     }
