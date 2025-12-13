@@ -4,14 +4,14 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+transport = { path = "../../../transport" }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-libagent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
-transport = { workspace = true, optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-libagent", "eldritch-libagent/stdlib", "transport"]
+stdlib = ["dep:pb", "dep:eldritch-libagent", "eldritch-libagent/stdlib"]
 fake_bindings = []

@@ -4,6 +4,8 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+transport = { path = "../../../transport" }
+portable-pty = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-libagent = { workspace = true }
@@ -23,8 +25,6 @@ tokio = { workspace = true, features = [
 ], optional = true }
 pnet = { workspace = true, optional = true }
 pb = { workspace = true }
-portable-pty = { workspace = true, optional = true }
-transport = { workspace = true, optional = true }
 
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
 listeners = { workspace = true, optional = true }
@@ -47,7 +47,5 @@ stdlib = [
     "russh-keys",
     "tokio",
     "pnet",
-    "portable-pty",
-    "transport",
 ]
 fake_bindings = []

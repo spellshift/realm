@@ -5,16 +5,13 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::{Interpreter, Value};
 use eldritch_macros::eldritch_library_impl;
+use transport::SyncTransport;
 
-use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
+use crate::{TaskWrapper};
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
-use transport::SyncTransport;
-#[cfg(feature = "stdlib")]
-use pb::c2;
 
-// We need manual Debug impl, and we need to put the macro on the struct.
 #[eldritch_library_impl(AgentLibrary)]
 pub struct StdAgentLibrary {
     pub agent: Arc<dyn Agent>,
@@ -41,7 +38,6 @@ impl AgentLibrary for StdAgentLibrary {
         let config = self.agent.get_config()?;
         let mut result = BTreeMap::new();
         for (k, v) in config {
-            // Try to parse numbers, otherwise keep as string
             if let Ok(i) = v.parse::<i64>() {
                 result.insert(k, Value::Int(i));
             } else if let Ok(b) = v.parse::<bool>() {
@@ -77,7 +73,6 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.set_callback_uri(uri)
     }
 
-    // Agent Configuration
     fn get_transport(&self) -> Result<String, String> {
         self.agent.get_transport()
     }
@@ -94,7 +89,6 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.get_callback_interval().map(|i| i as i64)
     }
 
-    // Task Management
     fn list_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
         let tasks = self.agent.list_tasks()?;
         Ok(tasks.into_iter().map(TaskWrapper).collect())

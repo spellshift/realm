@@ -28,8 +28,6 @@ pub use eldritch_core::{
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-
-#[cfg(feature = "stdlib")]
 use transport::SyncTransport;
 
 #[cfg(feature = "stdlib")]
@@ -142,15 +140,15 @@ impl Interpreter {
         let agent_lib = StdAgentLibrary::new(agent.clone(), transport.clone(), 0);
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), 0);
+        let report_lib = StdReportLibrary::new(transport.clone(), 0);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), 0);
+        let pivot_lib = StdPivotLibrary::new(transport.clone(), None, 0);
         self.inner.register_lib(pivot_lib);
 
         // Assets library
         let assets_lib =
-            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), transport.clone(), Vec::new());
+            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(transport, Vec::new());
         self.inner.register_lib(assets_lib);
 
         self
@@ -170,23 +168,20 @@ impl Interpreter {
         mut self,
         agent: Arc<dyn Agent>,
         transport: Arc<dyn SyncTransport>,
+        repl_handler: Option<Arc<dyn eldritch_libpivot::ReplHandler>>,
         task_id: i64,
         remote_assets: Vec<String>,
-        repl_handler: Option<Arc<dyn crate::pivot::ReplHandler>>, // Inject repl handler
     ) -> Self {
         let agent_lib = StdAgentLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), task_id);
+        let report_lib = StdReportLibrary::new(transport.clone(), task_id);
         self.inner.register_lib(report_lib);
 
-        let mut pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), task_id);
-        if let Some(h) = repl_handler {
-            pivot_lib = pivot_lib.with_repl_handler(h);
-        }
+        let pivot_lib = StdPivotLibrary::new(transport.clone(), repl_handler, task_id);
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::<A>::new(agent, transport.clone(), remote_assets);
+        let assets_lib = StdAssetsLibrary::<A>::new(transport, remote_assets);
         self.inner.register_lib(assets_lib);
 
         self

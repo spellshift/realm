@@ -4,6 +4,7 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+transport = { path = "../../../transport" }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
@@ -12,9 +13,8 @@ pb = { path = "../../../pb", optional = true }
 prost = { workspace = true, optional = true }
 prost-types = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
-transport = { workspace = true, optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types", "transport"]
+stdlib = ["dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types"]
 fake_bindings = []

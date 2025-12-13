@@ -766,155 +766,36 @@ The standard library provides powerful capabilities for interacting with the hos
 
 ### Agent
 
-The `agent` library provides capabilities for interacting with the agent's internal state, configuration, and task management.
-
-It allows you to:
-- Modify agent configuration (callback intervals, transports).
-- Manage background tasks.
-- Report data back to the C2 server (though the `report` library is often preferred for high-level reporting).
-- Control agent execution (termination).
+The `agent` library provides capabilities for interacting with the agent's internal state and configuration.
 
 
 *   **`agent.get_config`**
-    Returns the current configuration of the agent as a dictionary.
-    
-    **Returns**
-    - `Dict<String, Value>`: A dictionary containing configuration keys and values.
-    
-    **Errors**
-    - Returns an error string if the configuration cannot be retrieved or is not implemented.
 
 *   **`agent.get_id`**
-    Returns the unique identifier (ID) of the agent.
-    
-    **Returns**
-    - `str`: The agent's ID.
-    
-    **Errors**
-    - Returns an error string if the ID cannot be retrieved or is not implemented.
 
 *   **`agent.get_platform`**
-    Returns the platform identifier the agent is running on.
-    
-    **Returns**
-    - `str`: The platform string (e.g., "linux", "windows").
-    
-    **Errors**
-    - Returns an error string if the platform cannot be determined or is not implemented.
 
 *   **`agent._terminate_this_process_clowntown`**
-    **DANGER**: Terminates the agent process immediately.
-    
-    This method calls `std::process::exit(0)`, effectively killing the agent.
-    Use with extreme caution.
-    
-    **Returns**
-    - `None` (Does not return as the process exits).
-    
-    **Errors**
-    - This function is unlikely to return an error, as it terminates the process.
 
 *   **`agent.set_config`**
-    Updates the agent's configuration with the provided dictionary.
-    
-    **Parameters**
-    - `config` (`Dict<String, Value>`): A dictionary of configuration keys and values to update.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the configuration cannot be updated or is not implemented.
 
 *   **`agent.set_callback_uri`**
 
 *   **`agent.get_transport`**
-    Returns the name of the currently active transport.
-    
-    **Returns**
-    - `str`: The name of the transport (e.g., "http", "grpc").
-    
-    **Errors**
-    - Returns an error string if the transport cannot be identified.
 
 *   **`agent.set_transport`**
-    Switches the agent to use the specified transport.
-    
-    **Parameters**
-    - `transport` (`str`): The name of the transport to switch to.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the transport is unknown or cannot be activated.
 
 *   **`agent.list_transports`**
-    Returns a list of available transport names.
-    
-    **Returns**
-    - `List<str>`: A list of transport names.
-    
-    **Errors**
-    - Returns an error string if the list cannot be retrieved.
 
 *   **`agent.get_callback_interval`**
-    Returns the current callback interval in seconds.
-    
-    **Returns**
-    - `int`: The interval in seconds.
-    
-    **Errors**
-    - Returns an error string if the interval cannot be retrieved.
 
 *   **`agent.set_callback_interval`**
-    Sets the callback interval for the agent.
-    
-    This configuration change is typically transient and may not persist across reboots.
-    
-    **Parameters**
-    - `interval` (`int`): The new interval in seconds.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the interval cannot be set.
 
 *   **`agent.list_tasks`**
-    Lists the currently running or queued background tasks on the agent.
-    
-    **Returns**
-    - `List<Task>`: A list of task objects.
-    
-    **Errors**
-    - Returns an error string if the task list cannot be retrieved.
 
 *   **`agent.stop_task`**
-    Stops a specific background task by its ID.
-    
-    **Parameters**
-    - `task_id` (`int`): The ID of the task to stop.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the task cannot be stopped or does not exist.
 
 *   **`agent.eval`**
-    Evaluates the provided Eldritch code using the current interpreter instance.
-    
-    This method allows the agent to execute dynamic code within the current context.
-    
-    **Parameters**
-    - `code` (`str`): The Eldritch code to evaluate.
-    
-    **Returns**
-    - `Value`: The result of the evaluation.
-    
-    **Errors**
-    - Returns an error string if the code execution fails.
 
 ### Assets
 
@@ -1534,117 +1415,21 @@ It supports:
 
 ### Pivot
 
-The `pivot` library provides tools for lateral movement, scanning, and tunneling.
-
-It supports:
-- Reverse shells (PTY and REPL).
-- SSH execution and file copy.
-- Network scanning (ARP, Port).
-- Traffic tunneling (Port forwarding, Bind proxy).
-- Simple network interaction (Ncat).
-- SMB execution (Stubbed/Proposed).
 
 
 *   **`pivot.reverse_shell_pty`**
-    Spawns a reverse shell with a PTY (Pseudo-Terminal) attached.
-    
-    This provides a full interactive shell experience over the agent's C2 channel.
-    
-    **Parameters**
-    - `cmd` (`Option<str>`): The shell command to run (e.g., `/bin/bash`, `cmd.exe`). If `None`, defaults to system shell.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the shell cannot be spawned.
 
 *   **`pivot.reverse_shell_repl`**
-    Spawns a basic REPL-style reverse shell.
-    
-    Useful if PTY is not available.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if failure occurs.
 
 *   **`pivot.ssh_exec`**
-    Executes a command on a remote host via SSH.
-    
-    **Parameters**
-    - `target` (`str`): The remote host IP or hostname.
-    - `port` (`int`): The SSH port (usually 22).
-    - `command` (`str`): The command to execute.
-    - `username` (`str`): SSH username.
-    - `password` (`Option<str>`): SSH password (optional).
-    - `key` (`Option<str>`): SSH private key (optional).
-    - `key_password` (`Option<str>`): Password for the private key (optional).
-    - `timeout` (`Option<int>`): Connection timeout in seconds (optional).
-    
-    **Returns**
-    - `Dict`: A dictionary containing command output:
-      - `stdout` (`str`)
-      - `stderr` (`str`)
-      - `status` (`int`): Exit code.
-    
-    **Errors**
-    - Returns an error string if connection fails.
 
 *   **`pivot.ssh_copy`**
-    Copies a file to a remote host via SSH (SCP/SFTP).
-    
-    **Parameters**
-    - `target` (`str`): The remote host IP or hostname.
-    - `port` (`int`): The SSH port.
-    - `src` (`str`): Local source file path.
-    - `dst` (`str`): Remote destination file path.
-    - `username` (`str`): SSH username.
-    - `password` (`Option<str>`): SSH password.
-    - `key` (`Option<str>`): SSH private key.
-    - `key_password` (`Option<str>`): Key password.
-    - `timeout` (`Option<int>`): Connection timeout.
-    
-    **Returns**
-    - `str`: "Success" message or error detail.
-    
-    **Errors**
-    - Returns an error string if copy fails.
 
 *   **`pivot.port_scan`**
-    Scans TCP/UDP ports on target hosts.
-    
-    **Parameters**
-    - `target_cidrs` (`List<str>`): List of CIDRs to scan (e.g., `["192.168.1.0/24"]`).
-    - `ports` (`List<int>`): List of ports to scan.
-    - `protocol` (`str`): "tcp" or "udp".
-    - `timeout` (`int`): Timeout per port in seconds.
-    - `fd_limit` (`Option<int>`): Maximum concurrent file descriptors/sockets (defaults to 64).
-    
-    **Returns**
-    - `List<Dict>`: List of open ports/results.
 
 *   **`pivot.arp_scan`**
-    Performs an ARP scan to discover live hosts on the local network.
-    
-    **Parameters**
-    - `target_cidrs` (`List<str>`): List of CIDRs to scan.
-    
-    **Returns**
-    - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
 
 *   **`pivot.ncat`**
-    Sends arbitrary data to a host via TCP or UDP and waits for a response.
-    
-    **Parameters**
-    - `address` (`str`): Target address.
-    - `port` (`int`): Target port.
-    - `data` (`str`): Data to send.
-    - `protocol` (`str`): "tcp" or "udp".
-    
-    **Returns**
-    - `str`: The response data.
 
 ### Process
 

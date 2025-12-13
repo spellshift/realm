@@ -2,10 +2,10 @@ extern crate alloc;
 
 pub mod agent;
 pub mod assets;
+pub mod shell;
 pub mod task;
 pub mod run;
 pub mod version;
-pub mod shell;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn lib_entry() {

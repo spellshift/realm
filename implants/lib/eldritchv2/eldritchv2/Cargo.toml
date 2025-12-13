@@ -4,9 +4,9 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+transport = { workspace = true }
 eldritch-core = { workspace = true, default-features = false }
 spin = "0.10"
-transport = { workspace = true, optional = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }
@@ -52,7 +52,6 @@ stdlib = [
     "eldritch-libreport/stdlib",
     "eldritch-libsys/stdlib",
     "eldritch-libtime/stdlib",
-    "transport",
 ]
 
 [dev-dependencies]

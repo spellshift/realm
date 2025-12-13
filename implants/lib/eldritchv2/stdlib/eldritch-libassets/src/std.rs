@@ -5,11 +5,10 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
 use core::marker::PhantomData;
-use eldritch_libagent::agent::Agent;
-use transport::SyncTransport;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
+use transport::SyncTransport;
 
 pub struct EmptyAssets;
 
@@ -26,7 +25,6 @@ impl crate::RustEmbed for EmptyAssets {
 
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync + 'static> {
-    pub agent: Arc<dyn Agent>,
     pub transport: Arc<dyn SyncTransport>,
     pub remote_assets: Vec<String>,
     _phantom: PhantomData<A>,
@@ -43,9 +41,8 @@ impl<A: RustEmbed + Send + Sync + 'static> core::fmt::Debug for StdAssetsLibrary
 }
 
 impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
-    pub fn new(agent: Arc<dyn Agent>, transport: Arc<dyn SyncTransport>, remote_assets: Vec<String>) -> Self {
+    pub fn new(transport: Arc<dyn SyncTransport>, remote_assets: Vec<String>) -> Self {
         Self {
-            agent,
             transport,
             remote_assets,
             _phantom: PhantomData,
@@ -110,6 +107,7 @@ mod tests {
     use std::borrow::Cow;
     use std::collections::BTreeSet;
     use std::sync::Mutex;
+    use transport::SyncTransport;
 
     use crate::RustEmbed as LocalRustEmbed;
     use rust_embed::RustEmbed as CrateRustEmbed;
@@ -128,12 +126,12 @@ mod tests {
         }
     }
 
-    struct MockAgent {
+    struct MockTransport {
         assets: Mutex<BTreeMap<String, Vec<u8>>>,
         should_fail_fetch: bool,
     }
 
-    impl MockAgent {
+    impl MockTransport {
         fn new() -> Self {
             Self {
                 assets: Mutex::new(BTreeMap::new()),
@@ -155,7 +153,7 @@ mod tests {
         }
     }
 
-    impl Agent for MockAgent {
+    impl SyncTransport for MockTransport {
         fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
             if self.should_fail_fetch {
                 return Err("Failed to fetch asset".to_string());
@@ -206,59 +204,12 @@ mod tests {
         ) -> Result<c2::ClaimTasksResponse, String> {
             Ok(c2::ClaimTasksResponse::default())
         }
-        fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
-            Ok(BTreeMap::new())
-        }
-        fn get_transport(&self) -> Result<String, String> {
-            Ok("mock".into())
-        }
-        fn set_transport(&self, _transport: String) -> Result<(), String> {
-            Ok(())
-        }
-        fn list_transports(&self) -> Result<Vec<String>, String> {
-            Ok(Vec::new())
-        }
-        fn get_callback_interval(&self) -> Result<u64, String> {
-            Ok(10)
-        }
-        fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
-            Ok(())
-        }
-        fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-            Ok(Vec::new())
-        }
-        fn stop_task(&self, _task_id: i64) -> Result<(), String> {
-            Ok(())
-        }
-        fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
-        fn list_callback_uris(
-            &self,
-        ) -> std::result::Result<std::collections::BTreeSet<String>, String> {
-            Ok(BTreeSet::new())
-        }
-        fn get_active_callback_uri(&self) -> std::result::Result<String, String> {
-            Ok(String::new())
-        }
-        fn get_next_callback_uri(&self) -> std::result::Result<String, String> {
-            Ok(String::new())
-        }
-        fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
-        fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
-        fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
     }
 
     #[test]
     fn test_read_binary_embedded_success() {
-        let agent = Arc::new(AgentFake);
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let transport = Arc::new(MockTransport::new());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, Vec::new());
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
@@ -271,15 +222,15 @@ mod tests {
 
     #[test]
     fn test_read_binary_embedded_fail() {
-        let agent = Arc::new(AgentFake);
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let transport = Arc::new(MockTransport::new());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, Vec::new());
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
     }
 
     #[test]
     fn test_read_binary_remote_success() {
-        let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, vec!["remote_file.txt".to_string()]);
+        let transport = Arc::new(MockTransport::new().with_asset("remote_file.txt", b"remote content"));
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, vec!["remote_file.txt".to_string()]);
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), b"remote content");
@@ -287,16 +238,16 @@ mod tests {
 
     #[test]
     fn test_read_binary_remote_fail() {
-        let agent = Arc::new(MockAgent::new().should_fail());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, vec!["remote_file.txt".to_string()]);
+        let transport = Arc::new(MockTransport::new().should_fail());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, vec!["remote_file.txt".to_string()]);
         let result = lib.read_binary("remote_file.txt".to_string());
         assert!(result.is_err());
     }
 
     #[test]
     fn test_read_embedded_success() {
-        let agent = Arc::new(AgentFake);
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let transport = Arc::new(MockTransport::new());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, Vec::new());
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), "print(\"This script just prints\")\n");
@@ -304,8 +255,8 @@ mod tests {
 
     #[test]
     fn test_copy_success() {
-        let agent = Arc::new(AgentFake);
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let transport = Arc::new(MockTransport::new());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
         let dest_str = dest_path.to_str().unwrap().to_string();
@@ -317,8 +268,8 @@ mod tests {
 
     #[test]
     fn test_copy_fail_read() {
-        let agent = Arc::new(AgentFake);
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let transport = Arc::new(MockTransport::new());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
         let result = lib.copy(
@@ -330,8 +281,8 @@ mod tests {
 
     #[test]
     fn test_copy_fail_write() {
-        let agent = Arc::new(AgentFake);
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let transport = Arc::new(MockTransport::new());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let _dest_str = temp_dir.path().to_str().unwrap().to_string();
         let invalid_dest = temp_dir
@@ -347,9 +298,9 @@ mod tests {
 
     #[test]
     fn test_list() {
-        let agent = Arc::new(MockAgent::new());
+        let transport = Arc::new(MockTransport::new());
         let remote_files = vec!["remote1.txt".to_string(), "remote2.txt".to_string()];
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, remote_files.clone());
+        let lib = StdAssetsLibrary::<TestAsset>::new(transport, remote_files.clone());
         let list = lib.list().unwrap();
         assert!(list.iter().any(|f| f.contains("print/main.eldritch")));
         assert!(list.contains(&"remote1.txt".to_string()));

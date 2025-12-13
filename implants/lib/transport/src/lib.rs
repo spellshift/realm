@@ -19,7 +19,7 @@ pub use mock::MockTransport;
 mod transport;
 pub use transport::Transport;
 
-mod sync;
+pub mod sync;
 pub use sync::{SyncTransport, SyncTransportAdapter};
 
 #[derive(Clone)]

