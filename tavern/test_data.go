@@ -93,6 +93,19 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetPrincipal("root").
 					SaveX(ctx),
 			)
+			if i == 3 {
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(600).
+						SetPrincipal("janet").
+						SaveX(ctx),
+				)
+			}
 			if groupNum == 1 {
 				testBeacons = append(testBeacons,
 					client.Beacon.Create().
