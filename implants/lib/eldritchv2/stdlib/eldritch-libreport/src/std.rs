@@ -46,7 +46,10 @@ impl ReportLibrary for StdReportLibrary {
             chunk: Some(file_msg),
         };
 
-        self.transport.report_file(req).map(|_| ()).map_err(|e| e.to_string())
+        self.transport
+            .report_file(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {
@@ -103,7 +106,10 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             list: Some(eldritch::ProcessList { list: processes }),
         };
-        self.transport.report_process_list(req).map(|_| ()).map_err(|e| e.to_string())
+        self.transport
+            .report_process_list(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn ssh_key(&self, username: String, key: String) -> Result<(), String> {
@@ -116,7 +122,10 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             credential: Some(cred),
         };
-        self.transport.report_credential(req).map(|_| ()).map_err(|e| e.to_string())
+        self.transport
+            .report_credential(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn user_password(&self, username: String, password: String) -> Result<(), String> {
@@ -129,6 +138,9 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             credential: Some(cred),
         };
-        self.transport.report_credential(req).map(|_| ()).map_err(|e| e.to_string())
+        self.transport
+            .report_credential(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 }

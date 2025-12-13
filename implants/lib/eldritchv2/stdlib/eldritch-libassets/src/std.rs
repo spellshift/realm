@@ -62,7 +62,10 @@ impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
             let req = FetchAssetRequest {
                 name: name.to_string(),
             };
-            return self.transport.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
+            return self
+                .transport
+                .fetch_asset(req)
+                .map_err(|e| anyhow::anyhow!(e));
         }
         self.read_binary_embedded(name)
     }
@@ -229,8 +232,10 @@ mod tests {
 
     #[test]
     fn test_read_binary_remote_success() {
-        let transport = Arc::new(MockTransport::new().with_asset("remote_file.txt", b"remote content"));
-        let lib = StdAssetsLibrary::<TestAsset>::new(transport, vec!["remote_file.txt".to_string()]);
+        let transport =
+            Arc::new(MockTransport::new().with_asset("remote_file.txt", b"remote content"));
+        let lib =
+            StdAssetsLibrary::<TestAsset>::new(transport, vec!["remote_file.txt".to_string()]);
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), b"remote content");
@@ -239,7 +244,8 @@ mod tests {
     #[test]
     fn test_read_binary_remote_fail() {
         let transport = Arc::new(MockTransport::new().should_fail());
-        let lib = StdAssetsLibrary::<TestAsset>::new(transport, vec!["remote_file.txt".to_string()]);
+        let lib =
+            StdAssetsLibrary::<TestAsset>::new(transport, vec!["remote_file.txt".to_string()]);
         let result = lib.read_binary("remote_file.txt".to_string());
         assert!(result.is_err());
     }

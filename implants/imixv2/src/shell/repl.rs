@@ -60,17 +60,18 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         });
 
         let sync_transport = agent.get_sync_transport();
-        let repl_handler: Option<Arc<dyn eldritchv2::pivot::ReplHandler>> = Some(Arc::new(agent.clone()));
+        let repl_handler: Option<Arc<dyn eldritchv2::pivot::ReplHandler>> =
+            Some(Arc::new(agent.clone()));
 
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
             .with_task_context::<crate::assets::Asset>(
-                Arc::new(agent.clone()),
-                sync_transport,
-                repl_handler,
-                task_id,
-                Vec::new()
-            );
+            Arc::new(agent.clone()),
+            sync_transport,
+            repl_handler,
+            task_id,
+            Vec::new(),
+        );
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),

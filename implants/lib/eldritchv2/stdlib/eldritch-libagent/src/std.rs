@@ -7,7 +7,7 @@ use eldritch_core::{Interpreter, Value};
 use eldritch_macros::eldritch_library_impl;
 use transport::SyncTransport;
 
-use crate::{TaskWrapper};
+use crate::TaskWrapper;
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
@@ -29,7 +29,11 @@ impl core::fmt::Debug for StdAgentLibrary {
 
 impl StdAgentLibrary {
     pub fn new(agent: Arc<dyn Agent>, transport: Arc<dyn SyncTransport>, task_id: i64) -> Self {
-        Self { agent, transport, task_id }
+        Self {
+            agent,
+            transport,
+            task_id,
+        }
     }
 }
 

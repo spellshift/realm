@@ -9,9 +9,16 @@ pub trait SyncTransport: Send + Sync {
     fn fetch_asset(&self, req: FetchAssetRequest) -> Result<Vec<u8>>;
     fn report_credential(&self, req: ReportCredentialRequest) -> Result<ReportCredentialResponse>;
     fn report_file(&self, req: ReportFileRequest) -> Result<ReportFileResponse>;
-    fn report_process_list(&self, req: ReportProcessListRequest) -> Result<ReportProcessListResponse>;
+    fn report_process_list(
+        &self,
+        req: ReportProcessListRequest,
+    ) -> Result<ReportProcessListResponse>;
     fn report_task_output(&self, req: ReportTaskOutputRequest) -> Result<ReportTaskOutputResponse>;
-    fn reverse_shell(&self, rx: Receiver<ReverseShellRequest>, tx: Sender<ReverseShellResponse>) -> Result<()>;
+    fn reverse_shell(
+        &self,
+        rx: Receiver<ReverseShellRequest>,
+        tx: Sender<ReverseShellResponse>,
+    ) -> Result<()>;
     fn claim_tasks(&self, req: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 }
 
@@ -22,10 +29,7 @@ pub struct SyncTransportAdapter<T: Transport> {
 
 impl<T: Transport> SyncTransportAdapter<T> {
     pub fn new(transport: Arc<tokio::sync::RwLock<T>>, runtime: tokio::runtime::Handle) -> Self {
-        Self {
-            transport,
-            runtime,
-        }
+        Self { transport, runtime }
     }
 
     fn block_on<F, R>(&self, future: F) -> Result<R>
@@ -63,7 +67,7 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
 
     fn report_file(&self, req: ReportFileRequest) -> Result<ReportFileResponse> {
         self.block_on(async {
-             let t_guard = self.transport.read().await;
+            let t_guard = self.transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
             let (tx, rx) = std::sync::mpsc::channel();
@@ -73,9 +77,12 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
         })
     }
 
-    fn report_process_list(&self, req: ReportProcessListRequest) -> Result<ReportProcessListResponse> {
+    fn report_process_list(
+        &self,
+        req: ReportProcessListRequest,
+    ) -> Result<ReportProcessListResponse> {
         self.block_on(async {
-             let t_guard = self.transport.read().await;
+            let t_guard = self.transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
             t.report_process_list(req).await
@@ -84,14 +91,18 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
 
     fn report_task_output(&self, req: ReportTaskOutputRequest) -> Result<ReportTaskOutputResponse> {
         self.block_on(async {
-             let t_guard = self.transport.read().await;
+            let t_guard = self.transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
             t.report_task_output(req).await
         })
     }
 
-    fn reverse_shell(&self, rx: Receiver<ReverseShellRequest>, tx: Sender<ReverseShellResponse>) -> Result<()> {
+    fn reverse_shell(
+        &self,
+        rx: Receiver<ReverseShellRequest>,
+        tx: Sender<ReverseShellResponse>,
+    ) -> Result<()> {
         let transport = self.transport.clone();
         self.runtime.spawn(async move {
             let t_guard = transport.read().await;
@@ -101,12 +112,16 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
             let (tokio_tx_resp, mut tokio_rx_resp) = tokio::sync::mpsc::channel(32);
             let rx_bridge = tokio::task::spawn_blocking(move || {
                 while let Ok(msg) = rx.recv() {
-                    if tokio_tx_req.blocking_send(msg).is_err() { break; }
+                    if tokio_tx_req.blocking_send(msg).is_err() {
+                        break;
+                    }
                 }
             });
             let tx_bridge = tokio::spawn(async move {
                 while let Some(msg) = tokio_rx_resp.recv().await {
-                    if tx.send(msg).is_err() { break; }
+                    if tx.send(msg).is_err() {
+                        break;
+                    }
                 }
             });
             if let Err(_e) = t.reverse_shell(tokio_rx_req, tokio_tx_resp).await {
@@ -121,7 +136,7 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
 
     fn claim_tasks(&self, req: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
         self.block_on(async {
-             let t_guard = self.transport.read().await;
+            let t_guard = self.transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
             t.claim_tasks(req).await

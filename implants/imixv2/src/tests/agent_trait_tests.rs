@@ -156,7 +156,8 @@ async fn test_imix_agent_claim_tasks() {
     transport.expect_is_active().returning(|| true);
 
     // Expect on main transport because claim_tasks uses it directly
-    transport.expect_claim_tasks()
+    transport
+        .expect_claim_tasks()
         .times(1)
         .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
 

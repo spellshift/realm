@@ -54,7 +54,13 @@ impl TaskRegistry {
         }
     }
 
-    pub fn spawn(&self, task: Task, agent: Arc<dyn Agent>, transport: Arc<dyn SyncTransport>, repl_handler: Option<Arc<dyn ReplHandler>>) {
+    pub fn spawn(
+        &self,
+        task: Task,
+        agent: Arc<dyn Agent>,
+        transport: Arc<dyn SyncTransport>,
+        repl_handler: Option<Arc<dyn ReplHandler>>,
+    ) {
         let task_id = task.id;
 
         if !self.register_task(&task) {
@@ -69,7 +75,14 @@ impl TaskRegistry {
 
         thread::spawn(move || {
             if let Some(tome) = task.tome {
-                execute_task(task_id, tome, agent, transport, repl_handler, runtime_handle);
+                execute_task(
+                    task_id,
+                    tome,
+                    agent,
+                    transport,
+                    repl_handler,
+                    runtime_handle,
+                );
             } else {
                 log::warn!("Task {task_id} has no tome");
             }
@@ -124,7 +137,14 @@ fn execute_task(
 ) {
     let (tx, rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx));
-    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), transport.clone(), repl_handler, printer.clone());
+    let mut interp = setup_interpreter(
+        task_id,
+        &tome,
+        agent.clone(),
+        transport.clone(),
+        repl_handler,
+        printer.clone(),
+    );
 
     report_start(task_id, &transport);
 
@@ -164,7 +184,7 @@ fn setup_interpreter(
         transport,
         repl_handler,
         task_id,
-        remote_assets
+        remote_assets,
     );
 
     let params_map: BTreeMap<String, String> = tome

