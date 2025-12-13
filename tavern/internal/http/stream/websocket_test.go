@@ -103,16 +103,22 @@ func TestNewShellHandler(t *testing.T) {
 
 	_, p, err := ws.ReadMessage()
 	assert.NoError(t, err)
-	assert.Equal(t, testMessage, p)
+
+	expectedJSON := `{"type":"data","data":"aGVsbG8gZnJvbSBzZXJ2ZXI="}` // base64 "hello from server"
+	assert.Equal(t, []byte(expectedJSON), p)
 
 	// Test reading from the websocket (shell -> server)
-	readMessage := []byte("hello from shell")
-	err = ws.WriteMessage(websocket.BinaryMessage, readMessage)
+	// Client sends JSON
+	readMessage := []byte(`{"type":"data","data":"aGVsbG8gZnJvbSBzaGVsbA=="}`) // base64 "hello from shell"
+	err = ws.WriteMessage(websocket.TextMessage, readMessage)
 	require.NoError(t, err)
 
 	// Now, we expect the message on the input subscription
 	msg, err := inputSub.Receive(ctx)
 	require.NoError(t, err, "timed out waiting for message from websocket")
-	assert.Equal(t, readMessage, msg.Body)
+
+	// The body sent to pubsub should be the raw bytes
+	assert.Equal(t, []byte("hello from shell"), msg.Body)
+	assert.Equal(t, "data", msg.Metadata[stream.MetadataMsgKind])
 	msg.Ack()
 }

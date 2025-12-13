@@ -26,6 +26,9 @@ const (
 	// This should never be sent if there is more than one producer for the stream (e.g. only send from gRPC, not from websockets).
 	MetadataStreamClose = "stream-close"
 
+	// MetadataMsgKind defines the kind of message (data, ping)
+	MetadataMsgKind = "msg_kind"
+
 	// maxStreamMsgBufSize defines the maximum number of messages that can be buffered for a stream before causing the Mux to block.
 	maxStreamMsgBufSize = 1024
 

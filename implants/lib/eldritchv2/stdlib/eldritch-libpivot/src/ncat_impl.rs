@@ -1,0 +1,173 @@
+use std::net::Ipv4Addr;
+
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
+use anyhow::Result;
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{TcpStream, UdpSocket};
+
+// Since we cannot go from async (test) -> sync (ncat) `block_on` -> async (handle_ncat) without getting an error "cannot create runtime in current runtime since current thread is calling async code."
+async fn handle_ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
+    // If the response is longer than 4096 bytes it will be  truncated.
+    let mut response_buffer: Vec<u8> = Vec::new();
+    let result_string: String;
+
+    let address_and_port = format!("{address}:{port}");
+
+    if protocol == "tcp" {
+        // Connect to remote host
+        let mut connection = TcpStream::connect(&address_and_port).await?;
+
+        // Write our meessage
+        connection.write_all(data.as_bytes()).await?;
+
+        // Read server response
+        let mut read_stream = BufReader::new(connection);
+        read_stream.read_buf(&mut response_buffer).await?;
+
+        // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
+        // To remove the null bytes we're using trim_matches.
+        result_string = String::from(
+            String::from_utf8_lossy(&response_buffer)
+                .to_string()
+                .trim_matches(char::from(0)),
+        );
+        Ok(result_string)
+    } else if protocol == "udp" {
+        // Connect to remote host
+
+        // Setting the bind address to unspecified should leave it up to the OS to decide.
+        // https://stackoverflow.com/a/67084977
+        let sock = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0)).await?;
+
+        // Send bytes to remote host
+        let _bytes_sent = sock
+            .send_to(data.as_bytes(), address_and_port.clone())
+            .await?;
+
+        // Recieve any response from remote host
+        let mut response_buffer = [0; 1024];
+        let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
+
+        // We  need to take a buffer of bytes, turn it into a String but that string has null bytes.
+        // To remove the null bytes we're using trim_matches.
+        result_string =
+            String::from(String::from_utf8(response_buffer.to_vec())?.trim_matches(char::from(0)));
+        Ok(result_string)
+    } else {
+        Err(anyhow::anyhow!(
+            "Protocol not supported please use: udp or tcp."
+        ))
+    }
+}
+
+// We do not want to make this async since it would require we make all of the starlark bindings async.
+// Instead we have a handle_ncat function that we call with block_on
+pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+
+    runtime.block_on(handle_ncat(address, port, data, protocol))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use tokio::io::copy;
+    use tokio::net::TcpListener;
+    use tokio::net::UdpSocket;
+    use tokio::task;
+
+    // Tests run concurrently so each test needs a unique port.
+    async fn setup_test_listener(
+        address: String,
+        protocol: String,
+    ) -> anyhow::Result<(i32, task::JoinHandle<anyhow::Result<()>>)> {
+        let port: i32;
+        let listener_handle;
+
+        if protocol == "tcp" {
+            let listener = TcpListener::bind(format!("{address}:0")).await?;
+            port = listener.local_addr().unwrap().port().into();
+            listener_handle = task::spawn(async move {
+                let mut i = 0;
+                while i < 5 {
+                    let (mut socket, _) = listener.accept().await?;
+                    let (mut reader, mut writer) = socket.split();
+                    let bytes_copied = copy(&mut reader, &mut writer).await?;
+                    if bytes_copied > 1 {
+                        break;
+                    }
+                    i += 1;
+                }
+                Ok(())
+            });
+        } else if protocol == "udp" {
+            let sock = UdpSocket::bind(format!("{address}:0")).await?;
+            port = sock.local_addr().unwrap().port().into();
+            listener_handle = task::spawn(async move {
+                let mut buf = [0; 1024];
+                let mut i = 0;
+                while i < 5 {
+                    println!("Accepting connections");
+                    let (bytes_copied, addr) = sock.recv_from(&mut buf).await?;
+                    let bytes_copied = sock.send_to(&buf[..bytes_copied], addr).await?;
+                    if bytes_copied > 1 {
+                        break;
+                    }
+                    i += 1;
+                }
+                Ok(())
+            });
+        } else {
+            return Err(anyhow::anyhow!("Unrecognized protocol"));
+        }
+        Ok((port, listener_handle))
+    }
+
+    #[tokio::test]
+    async fn test_ncat_send_tcp() -> anyhow::Result<()> {
+        let expected_response = String::from("Hello world!");
+
+        let (test_port, listen_task) =
+            setup_test_listener(String::from("127.0.0.1"), String::from("tcp")).await?;
+
+        // Setup a sender
+        let send_task = task::spawn(handle_ncat(
+            String::from("127.0.0.1"),
+            test_port,
+            expected_response.clone(),
+            String::from("tcp"),
+        ));
+
+        let (_a, actual_response) = tokio::join!(listen_task, send_task);
+
+        // Verify our data
+        assert_eq!(expected_response, actual_response.unwrap().unwrap());
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_ncat_send_udp() -> anyhow::Result<()> {
+        let expected_response = String::from("Hello world!");
+
+        let (test_port, listen_task) =
+            setup_test_listener(String::from("127.0.0.1"), String::from("udp")).await?;
+
+        // Setup a sender
+        let send_task = task::spawn(handle_ncat(
+            String::from("127.0.0.1"),
+            test_port,
+            expected_response.clone(),
+            String::from("udp"),
+        ));
+
+        let (_a, actual_response) = tokio::join!(listen_task, send_task);
+
+        // Verify our data
+        assert_eq!(expected_response, actual_response.unwrap().unwrap());
+        Ok(())
+    }
+}

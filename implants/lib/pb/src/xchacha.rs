@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
 use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
+#[cfg(feature = "imix")]
 use const_decoder::Decoder as const_decode;
 use lru::LruCache;
 use prost::Message;

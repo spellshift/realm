@@ -1,0 +1,11 @@
+{
+  "name": "eldritch-repl-www",
+  "version": "1.0.0",
+  "description": "Eldritch REPL Web Interface Tests",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}

@@ -1,0 +1,14 @@
+[package]
+name = "eldritch-stdlib-tests"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritchv2 = { workspace = true, features = ["fake_bindings"] }
+eldritch-core = { workspace = true, default-features = false }
+anyhow = { workspace = true }
+glob = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = "0.9"
+spin = { version = "0.10.0", features = ["rwlock"] }
+log = { workspace = true }

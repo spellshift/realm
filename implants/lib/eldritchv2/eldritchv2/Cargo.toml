@@ -1,0 +1,61 @@
+[package]
+name = "eldritchv2"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true, default-features = false }
+spin = "0.10"
+
+# Libs
+eldritch-libagent = { workspace = true, default-features = false }
+eldritch-libassets = { workspace = true, default-features = false }
+eldritch-libcrypto = { workspace = true, default-features = false }
+eldritch-libfile = { workspace = true, default-features = false }
+eldritch-libhttp = { workspace = true, default-features = false }
+eldritch-libpivot = { workspace = true, default-features = false }
+eldritch-libprocess = { workspace = true, default-features = false }
+eldritch-librandom = { workspace = true, default-features = false }
+eldritch-libregex = { workspace = true, default-features = false }
+eldritch-libreport = { workspace = true, default-features = false }
+eldritch-libsys = { workspace = true, default-features = false }
+eldritch-libtime = { workspace = true, default-features = false }
+
+[features]
+default = ["std", "stdlib"]
+std = ["eldritch-core/std"]
+fake_bindings = [
+    "eldritch-libagent/fake_bindings",
+    "eldritch-libassets/fake_bindings",
+    "eldritch-libcrypto/fake_bindings",
+    "eldritch-libfile/fake_bindings",
+    "eldritch-libhttp/fake_bindings",
+    "eldritch-libpivot/fake_bindings",
+    "eldritch-libprocess/fake_bindings",
+    "eldritch-librandom/fake_bindings",
+    "eldritch-libregex/fake_bindings",
+    "eldritch-libreport/fake_bindings",
+    "eldritch-libsys/fake_bindings",
+    "eldritch-libtime/fake_bindings",
+]
+stdlib = [
+    "eldritch-libagent/stdlib",
+    "eldritch-libassets/stdlib",
+    "eldritch-libcrypto/stdlib",
+    "eldritch-libfile/stdlib",
+    "eldritch-libhttp/stdlib",
+    "eldritch-libpivot/stdlib",
+    "eldritch-libprocess/stdlib",
+    "eldritch-librandom/stdlib",
+    "eldritch-libregex/stdlib",
+    "eldritch-libreport/stdlib",
+    "eldritch-libsys/stdlib",
+    "eldritch-libtime/stdlib",
+]
+
+[dev-dependencies]
+httptest = "0.16"
+
+[build-dependencies]
+regex = "1.10"
+walkdir = "2.3"

@@ -1,0 +1,25 @@
+[package]
+name = "eldritch-libhttp"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+spin = { version = "0.10.0", features = ["rwlock"] }
+reqwest = { version = "0.11", default-features = false, features = [
+    "blocking",
+    "rustls-tls",
+    "stream",
+], optional = true }
+tokio = { version = "1", features = ["rt", "macros"], optional = true }
+futures = { version = "0.3", optional = true }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:reqwest", "dep:tokio", "dep:futures"]
+fake_bindings = []
+
+[dev-dependencies]
+httptest = "0.16"
+tempfile = "3.20.0"

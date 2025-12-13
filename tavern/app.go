@@ -286,6 +286,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/shell/ws": tavernhttp.Endpoint{
 			Handler: stream.NewShellHandler(client, wsShellMux),
 		},
+		"/shell/ping": tavernhttp.Endpoint{
+			Handler: stream.NewPingHandler(client, wsShellMux),
+		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
 			LoginRedirectURI: "/oauth/login",
