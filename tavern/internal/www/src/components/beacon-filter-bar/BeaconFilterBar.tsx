@@ -10,11 +10,15 @@ type Props = {
 }
 export const BeaconFilterBar = (props: Props) => {
     const { data } = useTags();
-    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms } = data;
+    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms, onlineOfflineStatus } = data;
 
     const { setFiltersSelected, filtersSelected, isDisabled, initialFilters } = props;
 
     const options = useMemo(() => [
+        {
+            label: "Online/Offline Status",
+            options: onlineOfflineStatus,
+        },
         {
             label: "Platform",
             options: platforms
@@ -43,7 +47,7 @@ export const BeaconFilterBar = (props: Props) => {
             label: "Beacon",
             options: beacons
         }
-    ], [platforms, serviceTags, groupTags, principals, primaryIPs, hosts, beacons]);
+    ], [platforms, serviceTags, groupTags, principals, primaryIPs, hosts, beacons, onlineOfflineStatus]);
 
 
     return (

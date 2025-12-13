@@ -31,7 +31,9 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
     "host":  Array<string>,
     "platform": Array<string>,
     "principal": Array<string>,
-    "primaryIP": Array<string>
+    "primaryIP": Array<string>,
+    "hostStatus": Array<string>,
+    "beaconStatus": Array<string>,
 } {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
@@ -55,6 +57,12 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
         else if (currentValue.kind === "primaryIP"){
             accumulator.primaryIP.push(currentValue.name);
         }
+        else if (currentValue.kind === "hostStatus"){
+            accumulator.hostStatus.push(currentValue.value)
+        }
+        else if (currentValue.kind === "beaconStatus"){
+            accumulator.beaconStatus.push(currentValue.value)
+        }
         return accumulator;
     },
         {
@@ -64,7 +72,9 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             "host": [],
             "platform": [],
             "principal": [],
-            "primaryIP": []
+            "primaryIP": [],
+            "hostStatus": [],
+            "beaconStatus": []
         });
 };
 
@@ -219,3 +229,34 @@ export const mapEnumToUIOptionField = (enumObj: Record<string, string>, kind: st
         kind: kind
     }));
 };
+
+export const OnlineOfflineOptions = [
+    {
+        id: "onlineBeacons",
+        name: "Has online beacons",
+        value: "onlineBeacons",
+        label: "Has online beacons",
+        kind: "beaconStatus"
+    },
+    {
+        id: 'offlineBeacons',
+        name: "Has offline beacons",
+        value: 'offlineBeacons',
+        label: "Has offline beacons",
+        kind: "beaconStatus"
+    },
+    // {
+    //     id: 'offlineHost',
+    //     name: "Host is offline",
+    //     value: "offlineHost",
+    //     label: "Host is offline",
+    //     kind: "hostStatus"
+    // },
+    {
+        id: 'recentlyLostBeacons',
+        name: "Recently lost beacons",
+        value: "recentlyLostBeacons",
+        label: "Recently lost beacons",
+        kind: "beaconStatus"
+    },
+] as FilterBarOption[]
