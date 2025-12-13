@@ -21,6 +21,7 @@ export enum SupportedPlatforms {
     BSD='PLATFORM_BSD',
     Unknown='PLATFORM_UNSPECIFIED'
 }
+
 export enum TableRowLimit {
     QuestRowLimit=8,
     TaskRowLimit=8,

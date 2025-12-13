@@ -4,11 +4,13 @@ import { GET_TAG_FILTERS } from "../utils/queries";
 import { BeaconEdge, BeaconNode, HostEdge, HostNode, TagContextQueryResponse, TagEdge, TagNode } from "../utils/interfacesQuery";
 import { FilterBarOption, TagContextProps } from "../utils/interfacesUI";
 import { SupportedPlatforms } from "../utils/enums";
+import { OnlineOfflineOptions } from "../utils/utils";
 
 type TagContextType = {
     data: TagContextProps;
     isLoading: boolean;
     error: ApolloError | undefined;
+    lastFetchedTimestamp: Date;
 };
 
 export const TagContext = createContext<TagContextType | undefined>(undefined);
@@ -21,8 +23,10 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         hosts: [],
         principals: [],
         primaryIPs: [],
-        platforms: []
+        platforms: [],
+        onlineOfflineStatus: [],
     });
+    const [lastFetchedTimestamp, setLastFetchedTimestamp] = useState<Date>(new Date());
 
     const PARAMS = {
         variables: {
@@ -124,7 +128,8 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             hosts,
             principals,
             primaryIPs,
-            platforms
+            platforms,
+            onlineOfflineStatus: OnlineOfflineOptions
         };
         setTags(tags);
     }, []);
@@ -138,13 +143,14 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
 
     useEffect(() => {
         if (data) {
-            getTags(data)
+            getTags(data);
+            setLastFetchedTimestamp(new Date());
         }
     }, [data, getTags])
 
 
     return (
-        <TagContext.Provider value={{ data: tags, isLoading, error }}>
+        <TagContext.Provider value={{ data: tags, isLoading, error, lastFetchedTimestamp }}>
             {children}
         </TagContext.Provider>
     );

@@ -3,9 +3,10 @@ import { ApolloError, useQuery } from "@apollo/client";
 import { GET_HOST_QUERY } from "../../utils/queries";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { Filters, useFilters } from "../../context/FilterContext";
-import { constructBeaconFilterQuery, } from "../../utils/constructQueryUtils";
+import { constructBeaconFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, HostQueryTopLevel, OrderByField } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
+import { useTags } from "../../context/TagContext";
 
 interface HostsHook {
     data: HostQueryTopLevel
@@ -21,10 +22,11 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
     const {filters} = useFilters();
     const {sorts} = useSorts();
     const hostSort = sorts[PageNavItem.hosts];
+    const {lastFetchedTimestamp} = useTags();
 
     const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-        return getDefaultHostQuery(pagination, afterCursor, beforeCursor, id, filters, hostSort);
-    },[pagination, id, filters, hostSort]);
+        return getDefaultHostQuery(pagination, afterCursor, beforeCursor, id, filters, hostSort, lastFetchedTimestamp);
+    },[pagination, id, filters, hostSort, lastFetchedTimestamp]);
 
     const { loading, data, error, refetch } = useQuery(
         GET_HOST_QUERY, {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true}
@@ -59,16 +61,20 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
     }
 };
 
-const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCursor?: Cursor, id?: string | undefined, filters?: Filters, sort?: OrderByField) => {
+const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCursor?: Cursor, id?: string | undefined, filters?: Filters, sort?: OrderByField, lastFetchedTimestamp?: Date) => {
     const defaultRowLimit = TableRowLimit.HostRowLimit;
-    const filterInfo = (filters && filters.filtersEnabled) && constructBeaconFilterQuery(filters.beaconFields);
+    const filterInfo = (filters && filters.filtersEnabled) && constructBeaconFilterQuery(filters.beaconFields, lastFetchedTimestamp);
+
+    // Separate host fields from beacon fields
+    const hostFields = (filterInfo && filterInfo.hasBeaconWith?.hasHostWith) || {};
+    const beaconFields = (filterInfo && filterInfo.hasBeaconWith) ? { ...filterInfo.hasBeaconWith } : {};
+    delete beaconFields.hasHostWith; // Remove host fields from beacon fields
 
     const query = {
       "where": {
         ...id && {"id": id},
-        ...filterInfo && filterInfo.hasBeaconWith.hasHostWith,
-        ...(filterInfo && filterInfo.hasBeaconWith.nameIn) && {"hasBeaconsWith": {"nameIn": filterInfo.hasBeaconWith.nameIn}},
-        ...(filterInfo && filterInfo.hasBeaconWith.principalIn) && {"hasBeaconsWith": {"principalIn": filterInfo.hasBeaconWith.principalIn}}
+        ...hostFields,
+        ...(Object.keys(beaconFields).length > 0) && {"hasBeaconsWith": beaconFields}
       },
       ...(sort && {orderBy: [sort]})
     } as any;
