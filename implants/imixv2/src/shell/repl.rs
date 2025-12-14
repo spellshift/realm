@@ -1,7 +1,6 @@
 use anyhow::Result;
 use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
 use eldritch_repl::{Repl, ReplAction};
 use eldritchv2::{Interpreter, Printer, Span};
 use pb::c2::{

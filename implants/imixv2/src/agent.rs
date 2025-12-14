@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
-use eldritch_libagent::agent::Agent;
-use eldritchv2::pivot::ReplHandler;
+use eldritchv2::{Agent, pivot::ReplHandler};
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};

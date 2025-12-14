@@ -25,13 +25,18 @@ pub use eldritch_core::{
     StdoutPrinter, TokenKind, Value, conversion,
 };
 
+// Re-export dependency traits
+pub use eldritch_libagent::agent::Agent;
+pub use eldritch_libassets::RustEmbed;
+pub use eldritch_libpivot::ReplHandler;
+
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use transport::SyncTransport;
 
 #[cfg(feature = "stdlib")]
-use crate::agent::{agent::Agent, std::StdAgentLibrary};
+use crate::agent::std::StdAgentLibrary;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
 #[cfg(feature = "stdlib")]

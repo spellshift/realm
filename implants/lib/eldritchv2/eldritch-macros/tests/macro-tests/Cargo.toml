@@ -1,0 +1,12 @@
+[package]
+name = "eldritch-macro-tests"
+version = "0.3.0"
+edition = "2024"
+publish = false               # Important: prevents accidental publish
+
+[dependencies]
+# Depend on the macro crate to test it
+eldritch-macros = { workspace = true }
+
+# Depend on the core to use the types
+eldritch-core = { workspace = true }

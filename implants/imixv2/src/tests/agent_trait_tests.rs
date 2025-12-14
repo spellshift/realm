@@ -1,6 +1,6 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
-use eldritch_libagent::agent::Agent;
+use eldritchv2::Agent;
 use pb::c2;
 use pb::config::Config;
 use std::sync::Arc;

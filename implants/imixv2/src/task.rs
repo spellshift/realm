@@ -3,9 +3,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::SystemTime;
 
-use eldritch_libagent::agent::Agent;
 use eldritchv2::pivot::ReplHandler;
-use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
+use eldritchv2::{Agent, Interpreter, Printer, Span, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};

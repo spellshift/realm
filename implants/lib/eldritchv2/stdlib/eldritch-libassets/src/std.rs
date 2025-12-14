@@ -105,10 +105,8 @@ mod tests {
     use super::*;
     use alloc::collections::BTreeMap;
     use alloc::string::ToString;
-    use eldritch_libagent::fake::AgentFake;
     use pb::c2;
     use std::borrow::Cow;
-    use std::collections::BTreeSet;
     use std::sync::Mutex;
     use transport::SyncTransport;
 

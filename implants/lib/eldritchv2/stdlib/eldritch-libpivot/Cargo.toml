@@ -4,12 +4,10 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-transport = { path = "../../../transport" }
+transport = { workspace = true }
 portable-pty = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
-eldritch-libagent = { workspace = true }
-
 anyhow = { workspace = true, optional = true }
 async-recursion = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
@@ -31,12 +29,10 @@ listeners = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-eldritch-libagent = { workspace = true, features = ["stdlib"] }
 
 [features]
 default = ["stdlib"]
 stdlib = [
-    "eldritch-libagent/stdlib",
     "anyhow",
     "async-recursion",
     "async-trait",
