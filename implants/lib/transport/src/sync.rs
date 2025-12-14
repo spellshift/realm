@@ -104,7 +104,7 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
         tx: Sender<ReverseShellResponse>,
     ) -> Result<()> {
         let transport = self.transport.clone();
-        self.runtime.spawn(async move {
+        self.block_on(async move {
             let t_guard = transport.read().await;
             let mut t = t_guard.clone();
             drop(t_guard);
@@ -130,8 +130,8 @@ impl<T: Transport + Clone + Sync + 'static> SyncTransport for SyncTransportAdapt
             }
             rx_bridge.abort();
             tx_bridge.abort();
-        });
-        Ok(())
+            Ok(())
+        })
     }
 
     fn claim_tasks(&self, req: ClaimTasksRequest) -> Result<ClaimTasksResponse> {

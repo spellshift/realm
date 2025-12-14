@@ -1,5 +1,4 @@
 use crate::{PivotLibrary, ReplHandler, std::StdPivotLibrary};
-use alloc::collections::{BTreeMap, BTreeSet};
 use pb::c2;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -7,11 +6,18 @@ use transport::SyncTransport;
 
 struct MockTransport {
     calls: Arc<Mutex<Vec<String>>>,
+    // Add a latch to simulate blocking if needed, but for now simple logging is enough
+    // to check delegation. To verify it blocks, we'd need more complex threading logic
+    // in the test. But primarily we want to ensure it calls the method.
+    // The bug was in SyncTransportAdapter, not SyncTransport trait itself.
+    // However, we want to ensure reverse_shell_pty works with a blocking transport.
+    should_block: bool,
 }
 impl MockTransport {
     fn new() -> Self {
         Self {
             calls: Arc::new(Mutex::new(Vec::new())),
+            should_block: false,
         }
     }
 }
@@ -46,6 +52,10 @@ impl SyncTransport for MockTransport {
         _tx: Sender<c2::ReverseShellResponse>,
     ) -> anyhow::Result<()> {
         self.calls.lock().unwrap().push("reverse_shell".to_string());
+        if self.should_block {
+             // Simulate a short session
+             std::thread::sleep(std::time::Duration::from_millis(100));
+        }
         Ok(())
     }
     fn claim_tasks(&self, _r: c2::ClaimTasksRequest) -> anyhow::Result<c2::ClaimTasksResponse> {
@@ -64,13 +74,29 @@ impl ReplHandler for MockReplHandler {
 }
 
 #[test]
-#[ignore]
 fn test_reverse_shell_pty_delegation() {
-    let transport = Arc::new(MockTransport::new());
+    let mut transport_mock = MockTransport::new();
+    transport_mock.should_block = true;
+    let transport = Arc::new(transport_mock);
     let task_id = 999;
     let lib = StdPivotLibrary::new(transport.clone(), None, task_id);
 
-    let res = lib.reverse_shell_pty(Some("echo test".to_string()));
+    // Use "sh" (or similar) which should exist. We don't need it to do anything specific,
+    // just start and eventually be killed or exit when we close channels.
+    // Since we mock the transport to close after 100ms (by returning from reverse_shell),
+    // the input loop in reverse_shell_pty_impl will eventually see a channel close (when in_tx is dropped)
+    // or we rely on child.kill() at the end.
+    // Actually, if we pass a shell, it waits for input.
+    // If we use "true", it exits immediately.
+    #[cfg(not(target_os = "windows"))]
+    let cmd = "true";
+    #[cfg(target_os = "windows")]
+    let cmd = "cmd.exe /c exit 0";
+
+    let res = lib.reverse_shell_pty(Some(cmd.to_string()));
+    if let Err(e) = &res {
+        println!("Error: {:?}", e);
+    }
     assert!(res.is_ok());
 
     let calls = transport.calls.lock().unwrap();
