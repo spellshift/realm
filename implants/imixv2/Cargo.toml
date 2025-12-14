@@ -39,3 +39,4 @@ static_vcruntime = { workspace = true }
 
 [dev-dependencies]
 transport = { workspace = true, features = ["mock", "grpc"] }
+mockall = { workspace = true }

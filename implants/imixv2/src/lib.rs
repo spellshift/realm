@@ -4,6 +4,7 @@ pub mod agent;
 pub mod assets;
 pub mod run;
 pub mod shell;
+pub mod sync_transport;
 pub mod task;
 pub mod version;
 

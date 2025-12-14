@@ -21,6 +21,7 @@ mod assets;
 mod install;
 mod run;
 mod shell;
+mod sync_transport;
 mod task;
 #[cfg(test)]
 mod tests;

@@ -6,9 +6,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
-use transport::{SyncTransport, SyncTransportAdapter, Transport};
+use transport::{SyncTransport, Transport};
 
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
+use crate::shell::run_repl_reverse_shell;
+use crate::sync_transport::ImixSyncTransport;
 use crate::task::TaskRegistry;
 
 #[derive(Clone)]
@@ -111,7 +112,7 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
         }
     }
 
-    async fn get_usable_transport(&self) -> Result<T> {
+    pub(crate) async fn get_usable_transport(&self) -> Result<T> {
         {
             let guard = self.transport.read().await;
             if guard.is_active() {
@@ -138,7 +139,7 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
         Ok(response.tasks)
     }
 
-    fn block_on<F, R>(&self, future: F) -> Result<R, String>
+    pub(crate) fn block_on<F, R>(&self, future: F) -> Result<R, String>
     where
         F: std::future::Future<Output = Result<R, String>>,
     {
@@ -146,23 +147,8 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     }
 
     pub fn get_sync_transport(&self) -> Arc<dyn SyncTransport> {
-        Arc::new(SyncTransportAdapter::new(
-            self.transport.clone(),
-            self.runtime_handle.clone(),
-        ))
-    }
-
-    fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
-    where
-        F: FnOnce(T) -> Fut,
-        Fut: std::future::Future<Output = Result<R, anyhow::Error>>,
-    {
-        self.block_on(async {
-            let t = self
-                .get_usable_transport()
-                .await
-                .map_err(|e| e.to_string())?;
-            action(t).await.map_err(|e| e.to_string())
+        Arc::new(ImixSyncTransport {
+            agent: Arc::new(self.clone()),
         })
     }
 
