@@ -73,7 +73,11 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Duration until next callback, in seconds."),
-	}
+		field.Enum("transport").
+			Values("UNSPECIFIED", "GRPC", "HTTP1").
+			Default("UNSPECIFIED").
+			Comment("The transport the beacon is using."),
+		}
 }
 
 // Edges of the Beacon.
