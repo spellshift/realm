@@ -43,34 +43,6 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(())
     }
 
-    fn fetch_asset(&self, _name: String) -> Result<Vec<u8>, String> {
-        Ok(Vec::new())
-    }
-
-    fn report_credential(&self, _credential: CredentialWrapper) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn report_file(&self, _file: FileWrapper) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn report_process_list(&self, _list: ProcessListWrapper) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn report_task_output(&self, _output: String, _error: Option<String>) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
-        Ok(Vec::new())
-    }
-
     fn get_transport(&self) -> Result<String, String> {
         Ok("http".into())
     }
@@ -104,6 +76,8 @@ impl AgentLibrary for AgentLibraryFake {
 use super::agent::Agent;
 #[cfg(feature = "stdlib")]
 use pb::c2;
+#[cfg(feature = "stdlib")]
+use transport::SyncTransport;
 
 #[cfg(feature = "stdlib")]
 #[derive(Debug, Default)]
@@ -113,42 +87,6 @@ use alloc::collections::BTreeSet;
 
 #[cfg(feature = "stdlib")]
 impl Agent for AgentFake {
-    fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
-        Ok(Vec::new())
-    }
-    fn report_credential(
-        &self,
-        _req: c2::ReportCredentialRequest,
-    ) -> Result<c2::ReportCredentialResponse, String> {
-        Ok(c2::ReportCredentialResponse::default())
-    }
-    fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
-        Ok(c2::ReportFileResponse::default())
-    }
-    fn report_process_list(
-        &self,
-        _req: c2::ReportProcessListRequest,
-    ) -> Result<c2::ReportProcessListResponse, String> {
-        Ok(c2::ReportProcessListResponse::default())
-    }
-    fn report_task_output(
-        &self,
-        _req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String> {
-        Ok(c2::ReportTaskOutputResponse::default())
-    }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
-    }
-    fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
-        Ok(())
-    }
-    fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
-        Ok(())
-    }
-    fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        Ok(c2::ClaimTasksResponse::default())
-    }
     fn get_transport(&self) -> Result<String, String> {
         Ok("http".into())
     }
@@ -202,5 +140,49 @@ impl Agent for AgentFake {
 
     fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
+    }
+}
+
+#[cfg(feature = "stdlib")]
+impl SyncTransport for AgentFake {
+    fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> anyhow::Result<Vec<u8>> {
+        Ok(Vec::new())
+    }
+    fn report_credential(
+        &self,
+        _req: c2::ReportCredentialRequest,
+    ) -> anyhow::Result<c2::ReportCredentialResponse> {
+        Ok(c2::ReportCredentialResponse::default())
+    }
+    fn report_file(
+        &self,
+        _req: c2::ReportFileRequest,
+    ) -> anyhow::Result<c2::ReportFileResponse> {
+        Ok(c2::ReportFileResponse::default())
+    }
+    fn report_process_list(
+        &self,
+        _req: c2::ReportProcessListRequest,
+    ) -> anyhow::Result<c2::ReportProcessListResponse> {
+        Ok(c2::ReportProcessListResponse::default())
+    }
+    fn report_task_output(
+        &self,
+        _req: c2::ReportTaskOutputRequest,
+    ) -> anyhow::Result<c2::ReportTaskOutputResponse> {
+        Ok(c2::ReportTaskOutputResponse::default())
+    }
+    fn reverse_shell(
+        &self,
+        _rx: std::sync::mpsc::Receiver<c2::ReverseShellRequest>,
+        _tx: std::sync::mpsc::Sender<c2::ReverseShellResponse>,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+    fn claim_tasks(
+        &self,
+        _req: c2::ClaimTasksRequest,
+    ) -> anyhow::Result<c2::ClaimTasksResponse> {
+        Ok(c2::ClaimTasksResponse::default())
     }
 }

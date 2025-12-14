@@ -157,54 +157,52 @@ mod tests {
     }
 
     impl SyncTransport for MockTransport {
-        fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
+        fn fetch_asset(&self, req: c2::FetchAssetRequest) -> anyhow::Result<Vec<u8>> {
             if self.should_fail_fetch {
-                return Err("Failed to fetch asset".to_string());
+                return Err(anyhow::anyhow!("Failed to fetch asset"));
             }
             if let Some(data) = self.assets.lock().unwrap().get(&req.name) {
                 Ok(data.clone())
             } else {
-                Err("Asset not found".to_string())
+                Err(anyhow::anyhow!("Asset not found"))
             }
         }
 
         fn report_credential(
             &self,
             _req: c2::ReportCredentialRequest,
-        ) -> Result<c2::ReportCredentialResponse, String> {
+        ) -> anyhow::Result<c2::ReportCredentialResponse> {
             Ok(c2::ReportCredentialResponse::default())
         }
         fn report_file(
             &self,
             _req: c2::ReportFileRequest,
-        ) -> Result<c2::ReportFileResponse, String> {
+        ) -> anyhow::Result<c2::ReportFileResponse> {
             Ok(c2::ReportFileResponse::default())
         }
         fn report_process_list(
             &self,
             _req: c2::ReportProcessListRequest,
-        ) -> Result<c2::ReportProcessListResponse, String> {
+        ) -> anyhow::Result<c2::ReportProcessListResponse> {
             Ok(c2::ReportProcessListResponse::default())
         }
         fn report_task_output(
             &self,
             _req: c2::ReportTaskOutputRequest,
-        ) -> Result<c2::ReportTaskOutputResponse, String> {
+        ) -> anyhow::Result<c2::ReportTaskOutputResponse> {
             Ok(c2::ReportTaskOutputResponse::default())
         }
-        fn reverse_shell(&self) -> Result<(), String> {
-            Ok(())
-        }
-        fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
-            Ok(())
-        }
-        fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
+        fn reverse_shell(
+            &self,
+            _rx: std::sync::mpsc::Receiver<c2::ReverseShellRequest>,
+            _tx: std::sync::mpsc::Sender<c2::ReverseShellResponse>,
+        ) -> anyhow::Result<()> {
             Ok(())
         }
         fn claim_tasks(
             &self,
             _req: c2::ClaimTasksRequest,
-        ) -> Result<c2::ClaimTasksResponse, String> {
+        ) -> anyhow::Result<c2::ClaimTasksResponse> {
             Ok(c2::ClaimTasksResponse::default())
         }
     }

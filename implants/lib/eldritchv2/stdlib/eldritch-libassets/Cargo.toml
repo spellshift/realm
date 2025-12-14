@@ -20,3 +20,4 @@ stdlib = ["eldritch-libagent/stdlib"]
 
 [dev-dependencies]
 tempfile = "3.3"
+eldritch-libagent = { workspace = true, features = ["fake_bindings"] }
