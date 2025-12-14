@@ -1,0 +1,16 @@
+[package]
+name = "eldritch-agent"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+pb = { workspace = true, optional = true }
+prost = { workspace = true, optional = true }
+prost-types = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["rwlock"] }
+anyhow = { workspace = true }
+transport = { workspace = true, optional = true }
+
+[features]
+default = []
+stdlib = ["dep:pb", "dep:prost", "dep:prost-types", "dep:transport"]

@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::sync::Arc;
+use eldritch_agent::Agent;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::{Read, Write};

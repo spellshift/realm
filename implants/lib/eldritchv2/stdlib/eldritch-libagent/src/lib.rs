@@ -12,8 +12,6 @@ use alloc::collections::BTreeMap;
 pub mod fake;
 
 #[cfg(feature = "stdlib")]
-pub mod agent;
-#[cfg(feature = "stdlib")]
 pub mod conversion;
 #[cfg(feature = "stdlib")]
 pub mod std;

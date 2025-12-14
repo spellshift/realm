@@ -58,7 +58,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
-        let sync_transport = agent.get_sync_transport();
+        let sync_transport = agent.get_sync_transport_internal();
         let repl_handler: Option<Arc<dyn eldritchv2::pivot::ReplHandler>> =
             Some(Arc::new(agent.clone()));
 
@@ -206,7 +206,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
         };
-        let _ = self.agent.get_sync_transport().report_task_output(req);
+        let _ = self.agent.get_sync_transport_internal().report_task_output(req);
     }
 
     fn print_err(&self, _span: &Span, s: &str) {
@@ -229,6 +229,6 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
         };
-        let _ = self.agent.get_sync_transport().report_task_output(req);
+        let _ = self.agent.get_sync_transport_internal().report_task_output(req);
     }
 }

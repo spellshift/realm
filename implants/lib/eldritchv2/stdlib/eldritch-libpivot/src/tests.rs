@@ -3,6 +3,55 @@ use pb::c2;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use transport::SyncTransport;
+use eldritch_agent::{Agent, SubtaskFuture};
+use alloc::collections::{BTreeMap, BTreeSet};
+
+struct MockAgent {
+    calls: Arc<Mutex<Vec<String>>>,
+    should_block: bool,
+    transport: Arc<MockTransport>,
+}
+
+impl MockAgent {
+    fn new(transport: Arc<MockTransport>) -> Self {
+        Self {
+            calls: Arc::new(Mutex::new(Vec::new())),
+            should_block: false,
+            transport,
+        }
+    }
+}
+
+impl Agent for MockAgent {
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String> { Err("Not impl".into()) }
+    fn get_transport(&self) -> Result<String, String> { Ok("mock".into()) }
+    fn set_transport(&self, _transport: String) -> Result<(), String> { Ok(()) }
+    fn list_transports(&self) -> Result<Vec<String>, String> { Ok(vec![]) }
+    fn get_callback_interval(&self) -> Result<u64, String> { Ok(0) }
+    fn set_callback_interval(&self, _interval: u64) -> Result<(), String> { Ok(()) }
+    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> { Ok(vec![]) }
+    fn stop_task(&self, _task_id: i64) -> Result<(), String> { Ok(()) }
+    fn set_callback_uri(&self, _uri: String) -> Result<(), String> { Ok(()) }
+    fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> { Ok(BTreeSet::new()) }
+    fn get_active_callback_uri(&self) -> Result<String, String> { Ok("".into()) }
+    fn get_next_callback_uri(&self) -> Result<String, String> { Ok("".into()) }
+    fn add_callback_uri(&self, _uri: String) -> Result<(), String> { Ok(()) }
+    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> { Ok(()) }
+    fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> { Ok(()) }
+    fn spawn_subtask(&self, _task_id: i64, _name: String, future: SubtaskFuture) -> Result<(), String> {
+        // Just execute the future immediately for testing
+        // Note: this assumes the future doesn't depend on runtime features not available here
+        // But reverse_shell_pty_impl spawns threads, which is fine in test
+        let waker = futures::task::noop_waker();
+        let mut cx = core::task::Context::from_waker(&waker);
+        let mut f = future;
+        let _ = f.as_mut().poll(&mut cx);
+        Ok(())
+    }
+    fn get_sync_transport(&self) -> Option<Arc<dyn SyncTransport>> {
+        Some(self.transport.clone())
+    }
+}
 
 struct MockTransport {
     calls: Arc<Mutex<Vec<String>>>,
@@ -78,8 +127,10 @@ fn test_reverse_shell_pty_delegation() {
     let mut transport_mock = MockTransport::new();
     transport_mock.should_block = true;
     let transport = Arc::new(transport_mock);
+    let agent = Arc::new(MockAgent::new(transport.clone()));
+
     let task_id = 999;
-    let lib = StdPivotLibrary::new(transport.clone(), None, task_id);
+    let lib = StdPivotLibrary::new(agent, None, task_id);
 
     // Use "sh" (or similar) which should exist. We don't need it to do anything specific,
     // just start and eventually be killed or exit when we close channels.
@@ -107,11 +158,12 @@ fn test_reverse_shell_pty_delegation() {
 #[test]
 fn test_reverse_shell_repl_delegation() {
     let transport = Arc::new(MockTransport::new());
+    let agent = Arc::new(MockAgent::new(transport));
     let repl_handler = Arc::new(MockReplHandler {
         calls: Arc::new(Mutex::new(Vec::new())),
     });
     let task_id = 123;
-    let lib = StdPivotLibrary::new(transport, Some(repl_handler.clone()), task_id);
+    let lib = StdPivotLibrary::new(agent, Some(repl_handler.clone()), task_id);
 
     lib.reverse_shell_repl().unwrap();
 

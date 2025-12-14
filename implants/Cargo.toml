@@ -11,6 +11,7 @@ members = [
     "lib/eldritchv2/eldritch-macros",
     "lib/eldritchv2/eldritch-repl",
     "lib/eldritchv2/eldritch-wasm",
+    "lib/eldritchv2/eldritch-agent",
     "lib/eldritchv2/stdlib/eldritch-libagent",
     "lib/eldritchv2/stdlib/eldritch-libassets",
     "lib/eldritchv2/stdlib/eldritch-libcrypto",
@@ -40,6 +41,7 @@ eldritch-core = {path = "lib/eldritchv2/eldritch-core", default-features = false
 eldritch-macros = {path = "lib/eldritchv2/eldritch-macros", default-features = false}
 eldritch-repl = {path = "lib/eldritchv2/eldritch-repl", default-features = false}
 eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
+eldritch-agent = {path = "lib/eldritchv2/eldritch-agent", default-features = false}
 eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
 eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
 eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
