@@ -1,0 +1,15 @@
+[package]
+name = "eldritch-agent"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+pb = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+spin = { workspace = true, features = ["rwlock"] }
+anyhow = { workspace = true }
+transport = { workspace = true }
+
+[features]
+default = []

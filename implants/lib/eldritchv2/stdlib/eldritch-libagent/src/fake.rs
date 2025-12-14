@@ -19,27 +19,14 @@ impl AgentLibrary for AgentLibraryFake {
         Ok(BTreeMap::new())
     }
 
-    fn get_id(&self) -> Result<String, String> {
-        Ok("fake-id".into())
-    }
-
-    fn get_platform(&self) -> Result<String, String> {
-        Ok("linux".into())
-    }
-
     fn _terminate_this_process_clowntown(&self) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn set_config(&self, _config: BTreeMap<String, Value>) -> Result<(), String> {
         Ok(())
     }
 
     fn set_callback_interval(&self, _interval: i64) -> Result<(), String> {
         Ok(())
     }
-
-    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
+    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
         Ok(())
     }
 
@@ -75,10 +62,6 @@ impl AgentLibrary for AgentLibraryFake {
         Ok("http".into())
     }
 
-    fn set_transport(&self, _transport: String) -> Result<(), String> {
-        Ok(())
-    }
-
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(alloc::vec!["http".into()])
     }
@@ -93,10 +76,6 @@ impl AgentLibrary for AgentLibraryFake {
 
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
-    }
-
-    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String> {
-        interp.interpret(&code)
     }
 }
 

@@ -17,7 +17,7 @@ It allows you to:
 - Modify agent configuration (callback intervals, transports).
 - Manage background tasks.
 - Report data back to the C2 server (though the `report` library is often preferred for high-level reporting).
-- Control agent execution (sleep, termination).
+- Control agent execution (termination).
 
 ### agent._terminate_this_process_clowntown
 `agent._terminate_this_process_clowntown() -> None`
@@ -41,21 +41,6 @@ Manually triggers a check-in to claim pending tasks from the C2 server.
 
 **Errors**
 - Returns an error string if the check-in fails.
-
-### agent.eval
-`agent.eval(interp: &mut Interpreter, code: str) -> Value`
-Evaluates the provided Eldritch code using the current interpreter instance.
-
-This method allows the agent to execute dynamic code within the current context.
-
-**Parameters**
-- `code` (`str`): The Eldritch code to evaluate.
-
-**Returns**
-- `Value`: The result of the evaluation.
-
-**Errors**
-- Returns an error string if the code execution fails.
 
 ### agent.fetch_asset
 `agent.fetch_asset(name: str) -> Bytes`
@@ -91,26 +76,6 @@ Returns the current configuration of the agent as a dictionary.
 
 **Errors**
 - Returns an error string if the configuration cannot be retrieved or is not implemented.
-
-### agent.get_id
-`agent.get_id() -> str`
-Returns the unique identifier (ID) of the agent.
-
-**Returns**
-- `str`: The agent's ID.
-
-**Errors**
-- Returns an error string if the ID cannot be retrieved or is not implemented.
-
-### agent.get_platform
-`agent.get_platform() -> str`
-Returns the platform identifier the agent is running on.
-
-**Returns**
-- `str`: The platform string (e.g., "linux", "windows").
-
-**Errors**
-- Returns an error string if the platform cannot be determined or is not implemented.
 
 ### agent.get_transport
 `agent.get_transport() -> str`
@@ -213,6 +178,19 @@ This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw)
 **Errors**
 - Returns an error string if the reverse shell cannot be started.
 
+### agent.set_active_callback_uri
+`agent.set_active_callback_uri(uri: str) -> None`
+Sets the active callback URI for the agent.
+
+**Parameters**
+- `uri` (`str`): The new URI to callback to
+
+**Returns**
+- `None`
+
+**Errors**
+- Returns an error string if the active callback uri cannot be set.
+
 ### agent.set_callback_interval
 `agent.set_callback_interval(interval: int) -> None`
 Sets the callback interval for the agent.
@@ -227,51 +205,6 @@ This configuration change is typically transient and may not persist across rebo
 
 **Errors**
 - Returns an error string if the interval cannot be set.
-
-### agent.set_callback_uri
-`agent.set_callback_uri(uri: str) -> None`
-
-### agent.set_config
-`agent.set_config(config: Dict) -> None`
-Updates the agent's configuration with the provided dictionary.
-
-**Parameters**
-- `config` (`Dict<String, Value>`): A dictionary of configuration keys and values to update.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the configuration cannot be updated or is not implemented.
-
-### agent.set_transport
-`agent.set_transport(transport: str) -> None`
-Switches the agent to use the specified transport.
-
-**Parameters**
-- `transport` (`str`): The name of the transport to switch to.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the transport is unknown or cannot be activated.
-
-### agent.sleep
-`agent.sleep(secs: int) -> None`
-Pauses execution of the current thread for the specified number of seconds.
-
-This is a blocking call and will prevent other operations in the same thread
-from executing for the duration.
-
-**Parameters**
-- `secs` (`int`): The number of seconds to sleep.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the sleep operation fails (unlikely).
 
 ### agent.stop_task
 `agent.stop_task(task_id: int) -> None`

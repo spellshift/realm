@@ -1,5 +1,5 @@
 use alloc::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::SystemTime;
 
@@ -32,8 +32,14 @@ impl Printer for StreamPrinter {
     }
 }
 
+struct SubtaskHandle {
+    name: String,
+    _handle: tokio::task::JoinHandle<()>,
+}
+
 struct TaskHandle {
     quest: String,
+    subtasks: Arc<RwLock<Vec<SubtaskHandle>>>,
 }
 
 #[derive(Clone)]
@@ -93,9 +99,31 @@ impl TaskRegistry {
             task.id,
             TaskHandle {
                 quest: task.quest_name.clone(),
+                subtasks: Arc::new(RwLock::new(Vec::new())),
             },
         );
         true
+    }
+
+    pub fn register_subtask(
+        &self,
+        task_id: i64,
+        name: String,
+        handle: tokio::task::JoinHandle<()>,
+    ) {
+        let tasks = self.tasks.lock().unwrap();
+        if let Some(task) = tasks.get(&task_id) {
+            let mut subtasks = task.subtasks.write().unwrap();
+            subtasks.push(SubtaskHandle {
+                name,
+                _handle: handle,
+            });
+        } else {
+            // Task might have finished already, or this is an orphan subtask.
+            // In the future we might want to track these anyway.
+            #[cfg(debug_assertions)]
+            log::warn!("Attempted to register subtask '{name}' for non-existent task {task_id}");
+        }
     }
 
     pub fn list(&self) -> Vec<Task> {
@@ -112,8 +140,12 @@ impl TaskRegistry {
 
     pub fn stop(&self, task_id: i64) {
         let mut tasks = self.tasks.lock().unwrap();
-        if tasks.remove(&task_id).is_some() {
+        if let Some(handle) = tasks.remove(&task_id) {
             log::info!("Task {task_id} stop requested (thread may persist)");
+            let subtasks = handle.subtasks.read().unwrap();
+            for subtask in subtasks.iter() {
+                subtask._handle.abort();
+            }
         }
     }
 }

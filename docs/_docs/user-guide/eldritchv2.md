@@ -775,33 +775,6 @@ It allows you to:
 - Control agent execution (termination).
 
 
-*   **`agent.get_config`**
-    Returns the current configuration of the agent as a dictionary.
-    
-    **Returns**
-    - `Dict<String, Value>`: A dictionary containing configuration keys and values.
-    
-    **Errors**
-    - Returns an error string if the configuration cannot be retrieved or is not implemented.
-
-*   **`agent.get_id`**
-    Returns the unique identifier (ID) of the agent.
-    
-    **Returns**
-    - `str`: The agent's ID.
-    
-    **Errors**
-    - Returns an error string if the ID cannot be retrieved or is not implemented.
-
-*   **`agent.get_platform`**
-    Returns the platform identifier the agent is running on.
-    
-    **Returns**
-    - `str`: The platform string (e.g., "linux", "windows").
-    
-    **Errors**
-    - Returns an error string if the platform cannot be determined or is not implemented.
-
 *   **`agent._terminate_this_process_clowntown`**
     **DANGER**: Terminates the agent process immediately.
     
@@ -814,19 +787,14 @@ It allows you to:
     **Errors**
     - This function is unlikely to return an error, as it terminates the process.
 
-*   **`agent.set_config`**
-    Updates the agent's configuration with the provided dictionary.
-    
-    **Parameters**
-    - `config` (`Dict<String, Value>`): A dictionary of configuration keys and values to update.
+*   **`agent.get_config`**
+    Returns the current configuration of the agent as a dictionary.
     
     **Returns**
-    - `None`
+    - `Dict<String, Value>`: A dictionary containing configuration keys and values.
     
     **Errors**
-    - Returns an error string if the configuration cannot be updated or is not implemented.
-
-*   **`agent.set_callback_uri`**
+    - Returns an error string if the configuration cannot be retrieved or is not implemented.
 
 *   **`agent.fetch_asset`**
     Fetches an asset (file) from the C2 server by name.
@@ -926,18 +894,6 @@ It allows you to:
     **Errors**
     - Returns an error string if the transport cannot be identified.
 
-*   **`agent.set_transport`**
-    Switches the agent to use the specified transport.
-    
-    **Parameters**
-    - `transport` (`str`): The name of the transport to switch to.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the transport is unknown or cannot be activated.
-
 *   **`agent.list_transports`**
     Returns a list of available transport names.
     
@@ -970,6 +926,18 @@ It allows you to:
     **Errors**
     - Returns an error string if the interval cannot be set.
 
+*   **`agent.set_active_callback_uri`**
+    Sets the active callback URI for the agent.
+    
+    **Parameters**
+    - `uri` (`str`): The new URI to callback to
+    
+    **Returns**
+    - `None`
+    
+    **Errors**
+    - Returns an error string if the active callback uri cannot be set.
+
 *   **`agent.list_tasks`**
     Lists the currently running or queued background tasks on the agent.
     
@@ -990,20 +958,6 @@ It allows you to:
     
     **Errors**
     - Returns an error string if the task cannot be stopped or does not exist.
-
-*   **`agent.eval`**
-    Evaluates the provided Eldritch code using the current interpreter instance.
-    
-    This method allows the agent to execute dynamic code within the current context.
-    
-    **Parameters**
-    - `code` (`str`): The Eldritch code to evaluate.
-    
-    **Returns**
-    - `Value`: The result of the evaluation.
-    
-    **Errors**
-    - Returns an error string if the code execution fails.
 
 ### Assets
 

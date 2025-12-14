@@ -51,28 +51,12 @@ impl AgentLibrary for StdAgentLibrary {
         Ok(result)
     }
 
-    fn get_id(&self) -> Result<String, String> {
-        Err("get_id not implemented".to_string())
-    }
-
-    fn get_platform(&self) -> Result<String, String> {
-        Err("get_platform not implemented".to_string())
-    }
-
     fn _terminate_this_process_clowntown(&self) -> Result<(), String> {
         ::std::process::exit(0);
     }
 
-    fn set_config(&self, _config: BTreeMap<String, Value>) -> Result<(), String> {
-        Err("set_config not implemented".to_string())
-    }
-
     fn set_callback_interval(&self, interval: i64) -> Result<(), String> {
         self.agent.set_callback_interval(interval as u64)
-    }
-
-    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.agent.set_callback_uri(uri)
     }
 
     // Interactivity
@@ -135,12 +119,11 @@ impl AgentLibrary for StdAgentLibrary {
         self.agent.get_transport()
     }
 
-    fn set_transport(&self, transport: String) -> Result<(), String> {
-        self.agent.set_transport(transport)
-    }
-
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.agent.list_transports()
+    }
+    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.agent.set_active_callback_uri(uri)
     }
 
     fn get_callback_interval(&self) -> Result<i64, String> {
@@ -155,9 +138,5 @@ impl AgentLibrary for StdAgentLibrary {
 
     fn stop_task(&self, task_id: i64) -> Result<(), String> {
         self.agent.stop_task(task_id)
-    }
-
-    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String> {
-        interp.interpret(&code)
     }
 }

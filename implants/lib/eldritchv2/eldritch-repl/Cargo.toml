@@ -3,15 +3,6 @@ name = "eldritch-repl"
 version = "0.3.0"
 edition = "2024"
 
-[features]
-stdlib = ["eldritchv2/stdlib", "eldritchv2/std"]
-fake_bindings = ["eldritchv2/fake_bindings"]
-
-[[bin]]
-name = "eldritch"
-path = "bin/repl.rs"
-required-features = ["stdlib"]
-
 [[bench]]
 name = "repl_bench"
 harness = false
@@ -19,28 +10,10 @@ harness = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = false
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-crossterm = "0.27"
-eldritchv2 = { workspace = true, default-features = false, features = [
-    "std",
-    "stdlib",
-] }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
-getrandom = { version = "0.2", features = ["js"] }
-uuid = { version = "1.18", features = ["js"] }
-eldritchv2 = { workspace = true, default-features = false, features = [
-    "fake_bindings",
-] }
-
 [dependencies]
 eldritch-core = { workspace = true }
-spin = { version = "0.10.0", features = ["rwlock"] }
-log = "0.4"
+spin = { workspace = true, features = ["rwlock"] }
+log = { workspace = true }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = { workspace = true }

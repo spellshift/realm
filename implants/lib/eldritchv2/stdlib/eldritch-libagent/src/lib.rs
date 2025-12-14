@@ -44,36 +44,6 @@ mod tests;
 /// - Control agent execution (termination).
 pub trait AgentLibrary {
     #[eldritch_method]
-    /// Returns the current configuration of the agent as a dictionary.
-    ///
-    /// **Returns**
-    /// - `Dict<String, Value>`: A dictionary containing configuration keys and values.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the configuration cannot be retrieved or is not implemented.
-    fn get_config(&self) -> Result<BTreeMap<String, Value>, String>;
-
-    #[eldritch_method]
-    /// Returns the unique identifier (ID) of the agent.
-    ///
-    /// **Returns**
-    /// - `str`: The agent's ID.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the ID cannot be retrieved or is not implemented.
-    fn get_id(&self) -> Result<String, String>;
-
-    #[eldritch_method]
-    /// Returns the platform identifier the agent is running on.
-    ///
-    /// **Returns**
-    /// - `str`: The platform string (e.g., "linux", "windows").
-    ///
-    /// **Errors**
-    /// - Returns an error string if the platform cannot be determined or is not implemented.
-    fn get_platform(&self) -> Result<String, String>;
-
-    #[eldritch_method]
     /// **DANGER**: Terminates the agent process immediately.
     ///
     /// This method calls `std::process::exit(0)`, effectively killing the agent.
@@ -87,20 +57,14 @@ pub trait AgentLibrary {
     fn _terminate_this_process_clowntown(&self) -> Result<(), String>;
 
     #[eldritch_method]
-    /// Updates the agent's configuration with the provided dictionary.
-    ///
-    /// **Parameters**
-    /// - `config` (`Dict<String, Value>`): A dictionary of configuration keys and values to update.
+    /// Returns the current configuration of the agent as a dictionary.
     ///
     /// **Returns**
-    /// - `None`
+    /// - `Dict<String, Value>`: A dictionary containing configuration keys and values.
     ///
     /// **Errors**
-    /// - Returns an error string if the configuration cannot be updated or is not implemented.
-    fn set_config(&self, config: BTreeMap<String, Value>) -> Result<(), String>;
-
-    #[eldritch_method]
-    fn set_callback_uri(&self, uri: String) -> Result<(), String>;
+    /// - Returns an error string if the configuration cannot be retrieved or is not implemented.
+    fn get_config(&self) -> Result<BTreeMap<String, Value>, String>;
 
     // Interactivity
     #[eldritch_method]
@@ -211,19 +175,6 @@ pub trait AgentLibrary {
     fn get_transport(&self) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Switches the agent to use the specified transport.
-    ///
-    /// **Parameters**
-    /// - `transport` (`str`): The name of the transport to switch to.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the transport is unknown or cannot be activated.
-    fn set_transport(&self, transport: String) -> Result<(), String>;
-
-    #[eldritch_method]
     /// Returns a list of available transport names.
     ///
     /// **Returns**
@@ -258,6 +209,19 @@ pub trait AgentLibrary {
     /// - Returns an error string if the interval cannot be set.
     fn set_callback_interval(&self, interval: i64) -> Result<(), String>;
 
+    #[eldritch_method]
+    /// Sets the active callback URI for the agent.
+    ///
+    /// **Parameters**
+    /// - `uri` (`str`): The new URI to callback to
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if the active callback uri cannot be set.
+    fn set_active_callback_uri(&self, uri: String) -> Result<(), String>;
+
     // Task Management
     #[eldritch_method]
     /// Lists the currently running or queued background tasks on the agent.
@@ -281,19 +245,4 @@ pub trait AgentLibrary {
     /// **Errors**
     /// - Returns an error string if the task cannot be stopped or does not exist.
     fn stop_task(&self, task_id: i64) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Evaluates the provided Eldritch code using the current interpreter instance.
-    ///
-    /// This method allows the agent to execute dynamic code within the current context.
-    ///
-    /// **Parameters**
-    /// - `code` (`str`): The Eldritch code to evaluate.
-    ///
-    /// **Returns**
-    /// - `Value`: The result of the evaluation.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the code execution fails.
-    fn eval(&self, interp: &mut Interpreter, code: String) -> Result<Value, String>;
 }

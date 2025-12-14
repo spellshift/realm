@@ -12,11 +12,11 @@ no_std = []
 std = []
 
 [dependencies]
-spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
-libm = "0.2.15"
+spin = { workspace = true, features = ["mutex", "spin_mutex", "rwlock"] }
+libm = { workspace = true }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = { workspace = true }
 
 [[bench]]
 name = "interpreter"
