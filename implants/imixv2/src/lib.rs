@@ -7,6 +7,9 @@ pub mod shell;
 pub mod task;
 pub mod version;
 
+#[cfg(test)]
+mod tests;
+
 #[unsafe(no_mangle)]
 pub extern "C" fn lib_entry() {
     #[cfg(debug_assertions)]

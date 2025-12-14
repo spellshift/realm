@@ -146,9 +146,15 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     }
 
     pub fn get_sync_transport(&self) -> Arc<dyn SyncTransport> {
-        Arc::new(SyncTransportAdapter::new(
+        let agent = self.clone();
+        let factory: transport::sync::TransportFactory<T> = Box::new(move || {
+            let agent = agent.clone();
+            Box::pin(async move { agent.get_usable_transport().await })
+        });
+        Arc::new(SyncTransportAdapter::new_with_factory(
             self.transport.clone(),
             self.runtime_handle.clone(),
+            Some(factory),
         ))
     }
 
