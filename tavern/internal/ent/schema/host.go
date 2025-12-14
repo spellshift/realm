@@ -122,3 +122,4 @@ func (Host) Mixin() []ent.Mixin {
 		MixinHistory{}, // created_at, last_modified_at
 	}
 }
+

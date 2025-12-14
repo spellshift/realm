@@ -48,7 +48,6 @@ type MetadataDefinition struct {
 	Tactic       string `yaml:"tactic"`
 	ParamDefs    []ParamDefinition
 }
-
 // Validate ensures the Tome metadata has been properly configured.
 func (meta MetadataDefinition) Validate() error {
 	if meta.Name == "" {
