@@ -1,10 +1,10 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
-use eldritch_libagent::agent::Agent;
+use eldritchv2::Agent;
 use pb::c2;
 use pb::config::Config;
 use std::sync::Arc;
-use transport::MockTransport;
+use transport::{MockTransport, SyncTransport};
 
 #[tokio::test]
 async fn test_imix_agent_buffer_and_flush() {
@@ -30,7 +30,7 @@ async fn test_imix_agent_buffer_and_flush() {
             ..Default::default()
         }),
     };
-    agent.report_task_output(req).unwrap();
+    agent.buffer_task_output(req).unwrap();
 
     // Verify buffer
     {
@@ -78,8 +78,10 @@ async fn test_imix_agent_fetch_asset() {
         name: "test_file".to_string(),
     };
 
-    let agent_clone = agent.clone();
-    let result = std::thread::spawn(move || agent_clone.fetch_asset(req))
+    let agent_clone = Arc::new(agent); // Wrap in Arc for get_sync_transport
+    let st = agent_clone.get_sync_transport();
+
+    let result = std::thread::spawn(move || st.fetch_asset(req))
         .join()
         .unwrap();
 
@@ -105,9 +107,11 @@ async fn test_imix_agent_report_credential() {
     let registry = Arc::new(TaskRegistry::new());
     let agent = ImixAgent::new(Config::default(), transport, handle, registry);
 
-    let agent_clone = agent.clone();
+    let agent_clone = Arc::new(agent);
+    let st = agent_clone.get_sync_transport();
+
     std::thread::spawn(move || {
-        let _ = agent_clone.report_credential(c2::ReportCredentialRequest {
+        let _ = st.report_credential(c2::ReportCredentialRequest {
             task_id: 1,
             credential: None,
         });
@@ -134,9 +138,10 @@ async fn test_imix_agent_report_process_list() {
     let registry = Arc::new(TaskRegistry::new());
     let agent = ImixAgent::new(Config::default(), transport, handle, registry);
 
-    let agent_clone = agent.clone();
+    let agent_clone = Arc::new(agent);
+    let st = agent_clone.get_sync_transport();
     std::thread::spawn(move || {
-        let _ = agent_clone.report_process_list(c2::ReportProcessListRequest {
+        let _ = st.report_process_list(c2::ReportProcessListRequest {
             task_id: 1,
             list: None,
         });
@@ -150,14 +155,11 @@ async fn test_imix_agent_claim_tasks() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
 
-    transport.expect_clone().returning(|| {
-        let mut t = MockTransport::default();
-        t.expect_is_active().returning(|| true);
-        t.expect_claim_tasks()
-            .times(1)
-            .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
-        t
-    });
+    // Expect on main transport because claim_tasks uses it directly
+    transport
+        .expect_claim_tasks()
+        .times(1)
+        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
@@ -188,9 +190,10 @@ async fn test_imix_agent_report_file() {
     let registry = Arc::new(TaskRegistry::new());
     let agent = ImixAgent::new(Config::default(), transport, handle, registry);
 
-    let agent_clone = agent.clone();
+    let agent_clone = Arc::new(agent);
+    let st = agent_clone.get_sync_transport();
     std::thread::spawn(move || {
-        let _ = agent_clone.report_file(c2::ReportFileRequest {
+        let _ = st.report_file(c2::ReportFileRequest {
             task_id: 1,
             chunk: None,
         });
@@ -217,7 +220,7 @@ async fn test_imix_agent_config_access() {
     let agent = ImixAgent::new(config, transport, handle, registry);
 
     // Run in thread for block_on
-    let agent_clone = agent.clone();
+    let agent_clone = Arc::new(agent);
     let result = std::thread::spawn(move || agent_clone.get_config())
         .join()
         .unwrap();
@@ -241,15 +244,17 @@ async fn test_imix_agent_transport_management() {
     let registry = Arc::new(TaskRegistry::new());
     let agent = ImixAgent::new(Config::default(), transport, handle, registry);
 
-    let agent_clone = agent.clone();
-    let name = std::thread::spawn(move || agent_clone.get_transport())
+    let agent_clone = Arc::new(agent);
+
+    let ac1 = agent_clone.clone();
+    let name = std::thread::spawn(move || ac1.get_transport())
         .join()
         .unwrap()
         .unwrap();
     assert_eq!(name, "mock_proto");
 
-    let agent_clone = agent.clone();
-    let list = std::thread::spawn(move || agent_clone.list_transports())
+    let ac2 = agent_clone.clone();
+    let list = std::thread::spawn(move || ac2.list_transports())
         .join()
         .unwrap()
         .unwrap();

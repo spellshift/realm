@@ -12,7 +12,7 @@ no_std = []
 std = []
 
 [dependencies]
-spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
+spin = { workspace = true }
 libm = "0.2.15"
 
 [dev-dependencies]

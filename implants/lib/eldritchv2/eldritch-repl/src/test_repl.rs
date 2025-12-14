@@ -2,9 +2,9 @@
 extern crate alloc;
 
 mod tests {
+    use crate::{Input, Repl, ReplAction};
     use alloc::string::ToString;
     use alloc::vec;
-    use eldritch_repl::{Input, Repl, ReplAction};
 
     #[test]
     fn test_clear_screen() {

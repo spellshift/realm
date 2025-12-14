@@ -4,13 +4,13 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::{c2, eldritch};
+use transport::SyncTransport;
 
 #[eldritch_library_impl(ReportLibrary)]
 pub struct StdReportLibrary {
-    pub agent: Arc<dyn Agent>,
+    pub transport: Arc<dyn SyncTransport>,
     pub task_id: i64,
 }
 
@@ -23,8 +23,8 @@ impl core::fmt::Debug for StdReportLibrary {
 }
 
 impl StdReportLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
-        Self { agent, task_id }
+    pub fn new(transport: Arc<dyn SyncTransport>, task_id: i64) -> Self {
+        Self { transport, task_id }
     }
 }
 
@@ -46,7 +46,10 @@ impl ReportLibrary for StdReportLibrary {
             chunk: Some(file_msg),
         };
 
-        self.agent.report_file(req).map(|_| ())
+        self.transport
+            .report_file(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {
@@ -103,7 +106,10 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             list: Some(eldritch::ProcessList { list: processes }),
         };
-        self.agent.report_process_list(req).map(|_| ())
+        self.transport
+            .report_process_list(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn ssh_key(&self, username: String, key: String) -> Result<(), String> {
@@ -116,7 +122,10 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             credential: Some(cred),
         };
-        self.agent.report_credential(req).map(|_| ())
+        self.transport
+            .report_credential(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn user_password(&self, username: String, password: String) -> Result<(), String> {
@@ -129,6 +138,9 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             credential: Some(cred),
         };
-        self.agent.report_credential(req).map(|_| ())
+        self.transport
+            .report_credential(req)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 }

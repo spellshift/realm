@@ -4,8 +4,9 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+transport = { workspace = true }
 eldritch-core = { workspace = true, default-features = false }
-spin = "0.10"
+spin = { workspace = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }

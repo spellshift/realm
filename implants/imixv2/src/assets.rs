@@ -5,7 +5,7 @@ use std::borrow::Cow;
 #[folder = "../imix/install_scripts"]
 pub struct Asset;
 
-impl eldritch_libassets::RustEmbed for Asset {
+impl eldritchv2::RustEmbed for Asset {
     fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile> {
         <Asset as rust_embed::RustEmbed>::get(file_path)
     }

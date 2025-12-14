@@ -6,6 +6,7 @@ use alloc::sync::Arc;
 use eldritch_core::Value;
 use std::sync::RwLock;
 use std::thread;
+use transport::SyncTransport;
 
 #[derive(Clone)]
 struct MockAgent {
@@ -34,49 +35,6 @@ impl Agent for MockAgent {
         Ok(())
     }
 
-    // Unused stubs
-    fn fetch_asset(&self, _: pb::c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
-        Err("".into())
-    }
-    fn report_credential(
-        &self,
-        _: pb::c2::ReportCredentialRequest,
-    ) -> Result<pb::c2::ReportCredentialResponse, String> {
-        Err("".into())
-    }
-    fn report_file(
-        &self,
-        _: pb::c2::ReportFileRequest,
-    ) -> Result<pb::c2::ReportFileResponse, String> {
-        Err("".into())
-    }
-    fn report_process_list(
-        &self,
-        _: pb::c2::ReportProcessListRequest,
-    ) -> Result<pb::c2::ReportProcessListResponse, String> {
-        Err("".into())
-    }
-    fn report_task_output(
-        &self,
-        _: pb::c2::ReportTaskOutputRequest,
-    ) -> Result<pb::c2::ReportTaskOutputResponse, String> {
-        Err("".into())
-    }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("".into())
-    }
-    fn start_reverse_shell(&self, _: i64, _: Option<String>) -> Result<(), String> {
-        Err("".into())
-    }
-    fn start_repl_reverse_shell(&self, _: i64) -> Result<(), String> {
-        Err("".into())
-    }
-    fn claim_tasks(
-        &self,
-        _: pb::c2::ClaimTasksRequest,
-    ) -> Result<pb::c2::ClaimTasksResponse, String> {
-        Err("".into())
-    }
     fn get_transport(&self) -> Result<String, String> {
         Err("".into())
     }
@@ -118,10 +76,54 @@ impl Agent for MockAgent {
     }
 }
 
+impl SyncTransport for MockAgent {
+    fn fetch_asset(&self, _: pb::c2::FetchAssetRequest) -> anyhow::Result<Vec<u8>> {
+        Err(anyhow::anyhow!(""))
+    }
+    fn report_credential(
+        &self,
+        _: pb::c2::ReportCredentialRequest,
+    ) -> anyhow::Result<pb::c2::ReportCredentialResponse> {
+        Err(anyhow::anyhow!(""))
+    }
+    fn report_file(
+        &self,
+        _: pb::c2::ReportFileRequest,
+    ) -> anyhow::Result<pb::c2::ReportFileResponse> {
+        Err(anyhow::anyhow!(""))
+    }
+    fn report_process_list(
+        &self,
+        _: pb::c2::ReportProcessListRequest,
+    ) -> anyhow::Result<pb::c2::ReportProcessListResponse> {
+        Err(anyhow::anyhow!(""))
+    }
+    fn report_task_output(
+        &self,
+        _: pb::c2::ReportTaskOutputRequest,
+    ) -> anyhow::Result<pb::c2::ReportTaskOutputResponse> {
+        Err(anyhow::anyhow!(""))
+    }
+    fn reverse_shell(
+        &self,
+        _: std::sync::mpsc::Receiver<pb::c2::ReverseShellRequest>,
+        _: std::sync::mpsc::Sender<pb::c2::ReverseShellResponse>,
+    ) -> anyhow::Result<()> {
+        Err(anyhow::anyhow!(""))
+    }
+    fn claim_tasks(
+        &self,
+        _: pb::c2::ClaimTasksRequest,
+    ) -> anyhow::Result<pb::c2::ClaimTasksResponse> {
+        Err(anyhow::anyhow!(""))
+    }
+}
+
 #[test]
 fn test_get_config() {
     let agent = Arc::new(MockAgent::new());
-    let lib = StdAgentLibrary::new(agent, 1);
+    let transport = agent.clone() as Arc<dyn SyncTransport>;
+    let lib = StdAgentLibrary::new(agent, transport, 1);
 
     let config = lib.get_config().unwrap();
     assert_eq!(config.get("key"), Some(&Value::String("value".to_string())));
@@ -131,7 +133,8 @@ fn test_get_config() {
 #[test]
 fn test_concurrent_access() {
     let agent = Arc::new(MockAgent::new());
-    let lib = StdAgentLibrary::new(agent.clone(), 1);
+    let transport = agent.clone() as Arc<dyn SyncTransport>;
+    let lib = StdAgentLibrary::new(agent.clone(), transport, 1);
     let lib = Arc::new(lib);
 
     let mut handles = vec![];
@@ -174,7 +177,8 @@ fn test_concurrent_access() {
 fn test_eval_context() {
     use eldritch_core::Interpreter;
     let agent = Arc::new(MockAgent::new());
-    let lib = StdAgentLibrary::new(agent, 1);
+    let transport = agent.clone() as Arc<dyn SyncTransport>;
+    let lib = StdAgentLibrary::new(agent, transport, 1);
     let mut interp = Interpreter::new();
     interp.register_lib(lib);
 

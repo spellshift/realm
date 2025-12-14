@@ -1,4 +1,5 @@
 use crate::PivotLibrary;
+use crate::ReplHandler;
 use crate::arp_scan_impl;
 use crate::ncat_impl;
 use crate::port_scan_impl;
@@ -19,14 +20,13 @@ use russh::{Disconnect, client};
 use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
 use std::sync::Arc;
-
-// Deps for Agent
-use eldritch_libagent::agent::Agent;
+use transport::SyncTransport;
 
 #[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
 pub struct StdPivotLibrary {
-    pub agent: Option<Arc<dyn Agent>>,
+    pub transport: Option<Arc<dyn SyncTransport>>,
+    pub repl_handler: Option<Arc<dyn ReplHandler>>,
     pub task_id: Option<i64>,
 }
 
@@ -39,9 +39,14 @@ impl core::fmt::Debug for StdPivotLibrary {
 }
 
 impl StdPivotLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
+    pub fn new(
+        transport: Arc<dyn SyncTransport>,
+        repl_handler: Option<Arc<dyn ReplHandler>>,
+        task_id: i64,
+    ) -> Self {
         Self {
-            agent: Some(agent),
+            transport: Some(transport),
+            repl_handler,
             task_id: Some(task_id),
         }
     }
@@ -49,26 +54,26 @@ impl StdPivotLibrary {
 
 impl PivotLibrary for StdPivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
-        let agent = self
-            .agent
+        let transport = self
+            .transport
             .as_ref()
-            .ok_or_else(|| "No agent available".to_string())?;
+            .ok_or_else(|| "No transport available".to_string())?;
         let task_id = self
             .task_id
             .ok_or_else(|| "No task_id available".to_string())?;
-        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, cmd)
+        reverse_shell_pty_impl::reverse_shell_pty(transport.clone(), task_id, cmd)
             .map_err(|e| e.to_string())
     }
 
     fn reverse_shell_repl(&self) -> Result<(), String> {
-        let agent = self
-            .agent
+        let handler = self
+            .repl_handler
             .as_ref()
-            .ok_or_else(|| "No agent available".to_string())?;
+            .ok_or_else(|| "No repl_handler available".to_string())?;
         let task_id = self
             .task_id
             .ok_or_else(|| "No task_id available".to_string())?;
-        agent
+        handler
             .start_repl_reverse_shell(task_id)
             .map_err(|e| e.to_string())
     }
@@ -151,13 +156,10 @@ impl PivotLibrary for StdPivotLibrary {
     }
 }
 
-// SSH Client utils
 struct Client {}
-
 #[async_trait]
 impl client::Handler for Client {
     type Error = russh::Error;
-
     async fn check_server_key(
         self,
         _server_public_key: &key::PublicKey,
@@ -165,11 +167,9 @@ impl client::Handler for Client {
         Ok((self, true))
     }
 }
-
 pub struct Session {
     session: client::Handle<Client>,
 }
-
 impl Session {
     pub async fn connect(
         user: String,
@@ -182,8 +182,6 @@ impl Session {
         let config = Arc::new(config);
         let sh = Client {};
         let mut session = client::connect(config, addrs.clone(), sh).await?;
-
-        // Try key auth first
         if let Some(local_key) = key {
             let key_pair = decode_secret_key(&local_key, key_password)?;
             let _auth_res: bool = session
@@ -191,33 +189,22 @@ impl Session {
                 .await?;
             return Ok(Self { session });
         }
-
-        // If key auth doesn't work try password auth
         if let Some(local_pass) = password {
             let _auth_res: bool = session.authenticate_password(user, local_pass).await?;
             return Ok(Self { session });
         }
-
-        Err(anyhow::anyhow!(
-            "Failed to authenticate to host {}@{}",
-            user,
-            addrs.clone()
-        ))
+        Err(anyhow::anyhow!("Failed to authenticate"))
     }
-
     pub async fn copy(&mut self, src: &str, dst: &str) -> anyhow::Result<()> {
         let mut channel = self.session.channel_open_session().await?;
         channel.request_subsystem(true, "sftp").await.unwrap();
         let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
-
         let _ = sftp.remove_file(dst).await;
         let mut dst_file = sftp.create(dst).await?;
         let mut src_file = tokio::io::BufReader::new(tokio::fs::File::open(src).await?);
         let _bytes_copied = tokio::io::copy_buf(&mut src_file, &mut dst_file).await?;
-
         Ok(())
     }
-
     pub async fn call(&mut self, command: &str) -> anyhow::Result<CommandResult> {
         let mut channel = self.session.channel_open_session().await?;
         channel.exec(true, command).await?;
@@ -244,7 +231,6 @@ impl Session {
             code,
         })
     }
-
     pub async fn close(&mut self) -> anyhow::Result<()> {
         self.session
             .disconnect(Disconnect::ByApplication, "", "English")
@@ -252,18 +238,15 @@ impl Session {
         Ok(())
     }
 }
-
 pub struct CommandResult {
     pub stdout: Vec<u8>,
     pub stderr: Vec<u8>,
     pub code: Option<u32>,
 }
-
 impl CommandResult {
     pub fn output(&self) -> Result<String> {
         Ok(String::from_utf8_lossy(&self.stdout).to_string())
     }
-
     pub fn error(&self) -> Result<String> {
         Ok(String::from_utf8_lossy(&self.stderr).to_string())
     }

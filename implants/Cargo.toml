@@ -10,6 +10,7 @@ members = [
     "lib/eldritchv2/eldritch-core",
     "lib/eldritchv2/eldritch-macros",
     "lib/eldritchv2/eldritch-repl",
+    "lib/eldritchv2/eldritch-wasm",
     "lib/eldritchv2/stdlib/eldritch-libagent",
     "lib/eldritchv2/stdlib/eldritch-libassets",
     "lib/eldritchv2/stdlib/eldritch-libcrypto",
@@ -104,6 +105,7 @@ serde_json = "1.0.87"
 sha1 = "0.10.5"
 sha2 = "0.10.7"
 sha256 = { version = "1.0.3", default-features = false }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
 starlark = "0.12.0"
 starlark_derive = "0.12.0"
 structopt = "0.3.23"
