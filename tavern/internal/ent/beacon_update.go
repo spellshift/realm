@@ -158,6 +158,20 @@ func (bu *BeaconUpdate) ClearInterval() *BeaconUpdate {
 	return bu
 }
 
+// SetTransport sets the "transport" field.
+func (bu *BeaconUpdate) SetTransport(b beacon.Transport) *BeaconUpdate {
+	bu.mutation.SetTransport(b)
+	return bu
+}
+
+// SetNillableTransport sets the "transport" field if the given value is not nil.
+func (bu *BeaconUpdate) SetNillableTransport(b *beacon.Transport) *BeaconUpdate {
+	if b != nil {
+		bu.SetTransport(*b)
+	}
+	return bu
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (bu *BeaconUpdate) SetHostID(id int) *BeaconUpdate {
 	bu.mutation.SetHostID(id)
@@ -305,6 +319,11 @@ func (bu *BeaconUpdate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
+	if v, ok := bu.mutation.Transport(); ok {
+		if err := beacon.TransportValidator(v); err != nil {
+			return &ValidationError{Name: "transport", err: fmt.Errorf(`ent: validator failed for field "Beacon.transport": %w`, err)}
+		}
+	}
 	if bu.mutation.HostCleared() && len(bu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
@@ -361,6 +380,9 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if bu.mutation.IntervalCleared() {
 		_spec.ClearField(beacon.FieldInterval, field.TypeUint64)
+	}
+	if value, ok := bu.mutation.Transport(); ok {
+		_spec.SetField(beacon.FieldTransport, field.TypeEnum, value)
 	}
 	if bu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -628,6 +650,20 @@ func (buo *BeaconUpdateOne) ClearInterval() *BeaconUpdateOne {
 	return buo
 }
 
+// SetTransport sets the "transport" field.
+func (buo *BeaconUpdateOne) SetTransport(b beacon.Transport) *BeaconUpdateOne {
+	buo.mutation.SetTransport(b)
+	return buo
+}
+
+// SetNillableTransport sets the "transport" field if the given value is not nil.
+func (buo *BeaconUpdateOne) SetNillableTransport(b *beacon.Transport) *BeaconUpdateOne {
+	if b != nil {
+		buo.SetTransport(*b)
+	}
+	return buo
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (buo *BeaconUpdateOne) SetHostID(id int) *BeaconUpdateOne {
 	buo.mutation.SetHostID(id)
@@ -788,6 +824,11 @@ func (buo *BeaconUpdateOne) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
+	if v, ok := buo.mutation.Transport(); ok {
+		if err := beacon.TransportValidator(v); err != nil {
+			return &ValidationError{Name: "transport", err: fmt.Errorf(`ent: validator failed for field "Beacon.transport": %w`, err)}
+		}
+	}
 	if buo.mutation.HostCleared() && len(buo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
@@ -861,6 +902,9 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	}
 	if buo.mutation.IntervalCleared() {
 		_spec.ClearField(beacon.FieldInterval, field.TypeUint64)
+	}
+	if value, ok := buo.mutation.Transport(); ok {
+		_spec.SetField(beacon.FieldTransport, field.TypeEnum, value)
 	}
 	if buo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{

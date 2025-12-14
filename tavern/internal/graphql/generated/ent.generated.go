@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -4708,6 +4709,50 @@ func (ec *executionContext) fieldContext_Beacon_interval(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Beacon_transport(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Beacon_transport(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Transport, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(beacon.Transport)
+	fc.Result = res
+	return ec.marshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Beacon_transport(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Beacon",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type BeaconTransport does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Beacon_host(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Beacon_host(ctx, field)
 	if err != nil {
@@ -5111,6 +5156,8 @@ func (ec *executionContext) fieldContext_BeaconEdge_node(_ context.Context, fiel
 				return ec.fieldContext_Beacon_nextSeenAt(ctx, field)
 			case "interval":
 				return ec.fieldContext_Beacon_interval(ctx, field)
+			case "transport":
+				return ec.fieldContext_Beacon_transport(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
@@ -12227,6 +12274,8 @@ func (ec *executionContext) fieldContext_Shell_beacon(_ context.Context, field g
 				return ec.fieldContext_Beacon_nextSeenAt(ctx, field)
 			case "interval":
 				return ec.fieldContext_Beacon_interval(ctx, field)
+			case "transport":
+				return ec.fieldContext_Beacon_transport(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
@@ -13554,6 +13603,8 @@ func (ec *executionContext) fieldContext_Task_beacon(_ context.Context, field gr
 				return ec.fieldContext_Beacon_nextSeenAt(ctx, field)
 			case "interval":
 				return ec.fieldContext_Beacon_interval(ctx, field)
+			case "transport":
+				return ec.fieldContext_Beacon_transport(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
 			case "tasks":
@@ -15596,7 +15647,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith", "hasShells", "hasShellsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "transport", "transportNEQ", "transportIn", "transportNotIn", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith", "hasShells", "hasShellsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16394,6 +16445,34 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.IntervalNotNil = data
+		case "transport":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transport"))
+			data, err := ec.unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Transport = data
+		case "transportNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportNEQ"))
+			data, err := ec.unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TransportNEQ = data
+		case "transportIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportIn"))
+			data, err := ec.unmarshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransportᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TransportIn = data
+		case "transportNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportNotIn"))
+			data, err := ec.unmarshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransportᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TransportNotIn = data
 		case "hasHost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasHost"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -23921,7 +24000,7 @@ func (ec *executionContext) unmarshalInputUpdateBeaconInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "hostID"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "transport", "hostID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23935,6 +24014,13 @@ func (ec *executionContext) unmarshalInputUpdateBeaconInput(ctx context.Context,
 				return it, err
 			}
 			it.LastModifiedAt = data
+		case "transport":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transport"))
+			data, err := ec.unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Transport = data
 		case "hostID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostID"))
 			data, err := ec.unmarshalOID2ᚖint(ctx, v)
@@ -24844,6 +24930,11 @@ func (ec *executionContext) _Beacon(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Beacon_nextSeenAt(ctx, field, obj)
 		case "interval":
 			out.Values[i] = ec._Beacon_interval(ctx, field, obj)
+		case "transport":
+			out.Values[i] = ec._Beacon_transport(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "host":
 			field := field
 
@@ -28517,6 +28608,16 @@ func (ec *executionContext) marshalNBeaconOrderField2ᚖrealmᚗpubᚋtavernᚋi
 	return v
 }
 
+func (ec *executionContext) unmarshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx context.Context, v any) (beacon.Transport, error) {
+	var res beacon.Transport
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx context.Context, sel ast.SelectionSet, v beacon.Transport) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNBeaconWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx context.Context, v any) (*ent.BeaconWhereInput, error) {
 	res, err := ec.unmarshalInputBeaconWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -29339,6 +29440,89 @@ func (ec *executionContext) unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋi
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransportᚄ(ctx context.Context, v any) ([]beacon.Transport, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]beacon.Transport, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransportᚄ(ctx context.Context, sel ast.SelectionSet, v []beacon.Transport) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx context.Context, v any) (*beacon.Transport, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(beacon.Transport)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbeaconᚐTransport(ctx context.Context, sel ast.SelectionSet, v *beacon.Transport) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx context.Context, v any) ([]*ent.BeaconWhereInput, error) {

@@ -36,6 +36,8 @@ type Beacon struct {
 	NextSeenAt time.Time `json:"next_seen_at,omitempty"`
 	// Duration until next callback, in seconds.
 	Interval uint64 `json:"interval,omitempty"`
+	// The transport the beacon is using.
+	Transport beacon.Transport `json:"transport,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BeaconQuery when eager-loading is set.
 	Edges        BeaconEdges `json:"edges"`
@@ -97,7 +99,7 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case beacon.FieldID, beacon.FieldInterval:
 			values[i] = new(sql.NullInt64)
-		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
+		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier, beacon.FieldTransport:
 			values[i] = new(sql.NullString)
 		case beacon.FieldCreatedAt, beacon.FieldLastModifiedAt, beacon.FieldLastSeenAt, beacon.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
@@ -177,6 +179,12 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field interval", values[i])
 			} else if value.Valid {
 				b.Interval = uint64(value.Int64)
+			}
+		case beacon.FieldTransport:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field transport", values[i])
+			} else if value.Valid {
+				b.Transport = beacon.Transport(value.String)
 			}
 		case beacon.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -262,6 +270,9 @@ func (b *Beacon) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("interval=")
 	builder.WriteString(fmt.Sprintf("%v", b.Interval))
+	builder.WriteString(", ")
+	builder.WriteString("transport=")
+	builder.WriteString(fmt.Sprintf("%v", b.Transport))
 	builder.WriteByte(')')
 	return builder.String()
 }

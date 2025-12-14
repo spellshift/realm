@@ -69,6 +69,7 @@ type BeaconMutation struct {
 	next_seen_at     *time.Time
 	interval         *uint64
 	addinterval      *int64
+	transport        *beacon.Transport
 	clearedFields    map[string]struct{}
 	host             *int
 	clearedhost      bool
@@ -591,6 +592,42 @@ func (m *BeaconMutation) ResetInterval() {
 	delete(m.clearedFields, beacon.FieldInterval)
 }
 
+// SetTransport sets the "transport" field.
+func (m *BeaconMutation) SetTransport(b beacon.Transport) {
+	m.transport = &b
+}
+
+// Transport returns the value of the "transport" field in the mutation.
+func (m *BeaconMutation) Transport() (r beacon.Transport, exists bool) {
+	v := m.transport
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransport returns the old "transport" field's value of the Beacon entity.
+// If the Beacon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BeaconMutation) OldTransport(ctx context.Context) (v beacon.Transport, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransport is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransport requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransport: %w", err)
+	}
+	return oldValue.Transport, nil
+}
+
+// ResetTransport resets all changes to the "transport" field.
+func (m *BeaconMutation) ResetTransport() {
+	m.transport = nil
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *BeaconMutation) SetHostID(id int) {
 	m.host = &id
@@ -772,7 +809,7 @@ func (m *BeaconMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BeaconMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, beacon.FieldCreatedAt)
 	}
@@ -800,6 +837,9 @@ func (m *BeaconMutation) Fields() []string {
 	if m.interval != nil {
 		fields = append(fields, beacon.FieldInterval)
 	}
+	if m.transport != nil {
+		fields = append(fields, beacon.FieldTransport)
+	}
 	return fields
 }
 
@@ -826,6 +866,8 @@ func (m *BeaconMutation) Field(name string) (ent.Value, bool) {
 		return m.NextSeenAt()
 	case beacon.FieldInterval:
 		return m.Interval()
+	case beacon.FieldTransport:
+		return m.Transport()
 	}
 	return nil, false
 }
@@ -853,6 +895,8 @@ func (m *BeaconMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldNextSeenAt(ctx)
 	case beacon.FieldInterval:
 		return m.OldInterval(ctx)
+	case beacon.FieldTransport:
+		return m.OldTransport(ctx)
 	}
 	return nil, fmt.Errorf("unknown Beacon field %s", name)
 }
@@ -924,6 +968,13 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetInterval(v)
+		return nil
+	case beacon.FieldTransport:
+		v, ok := value.(beacon.Transport)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransport(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon field %s", name)
@@ -1048,6 +1099,9 @@ func (m *BeaconMutation) ResetField(name string) error {
 		return nil
 	case beacon.FieldInterval:
 		m.ResetInterval()
+		return nil
+	case beacon.FieldTransport:
+		m.ResetTransport()
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon field %s", name)

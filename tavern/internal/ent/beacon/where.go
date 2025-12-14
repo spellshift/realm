@@ -610,6 +610,26 @@ func IntervalNotNil() predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotNull(FieldInterval))
 }
 
+// TransportEQ applies the EQ predicate on the "transport" field.
+func TransportEQ(v Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldTransport, v))
+}
+
+// TransportNEQ applies the NEQ predicate on the "transport" field.
+func TransportNEQ(v Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldTransport, v))
+}
+
+// TransportIn applies the In predicate on the "transport" field.
+func TransportIn(vs ...Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldTransport, vs...))
+}
+
+// TransportNotIn applies the NotIn predicate on the "transport" field.
+func TransportNotIn(vs ...Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldTransport, vs...))
+}
+
 // HasHost applies the HasEdge predicate on the "host" edge.
 func HasHost() predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {

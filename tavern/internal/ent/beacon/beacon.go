@@ -3,6 +3,9 @@
 package beacon
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -32,6 +35,8 @@ const (
 	FieldNextSeenAt = "next_seen_at"
 	// FieldInterval holds the string denoting the interval field in the database.
 	FieldInterval = "interval"
+	// FieldTransport holds the string denoting the transport field in the database.
+	FieldTransport = "transport"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
@@ -75,6 +80,7 @@ var Columns = []string{
 	FieldLastSeenAt,
 	FieldNextSeenAt,
 	FieldInterval,
+	FieldTransport,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "beacons"
@@ -118,6 +124,33 @@ var (
 	// AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	AgentIdentifierValidator func(string) error
 )
+
+// Transport defines the type for the "transport" enum field.
+type Transport string
+
+// TransportUNSPECIFIED is the default value of the Transport enum.
+const DefaultTransport = TransportUNSPECIFIED
+
+// Transport values.
+const (
+	TransportUNSPECIFIED Transport = "UNSPECIFIED"
+	TransportGRPC        Transport = "GRPC"
+	TransportHTTP1       Transport = "HTTP1"
+)
+
+func (t Transport) String() string {
+	return string(t)
+}
+
+// TransportValidator is a validator for the "transport" field enum values. It is called by the builders before save.
+func TransportValidator(t Transport) error {
+	switch t {
+	case TransportUNSPECIFIED, TransportGRPC, TransportHTTP1:
+		return nil
+	default:
+		return fmt.Errorf("beacon: invalid enum value for transport field: %q", t)
+	}
+}
 
 // OrderOption defines the ordering options for the Beacon queries.
 type OrderOption func(*sql.Selector)
@@ -170,6 +203,11 @@ func ByNextSeenAt(opts ...sql.OrderTermOption) OrderOption {
 // ByInterval orders the results by the interval field.
 func ByInterval(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInterval, opts...).ToFunc()
+}
+
+// ByTransport orders the results by the transport field.
+func ByTransport(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransport, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.
@@ -226,4 +264,22 @@ func newShellsStep() *sqlgraph.Step {
 		sqlgraph.To(ShellsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
 	)
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e Transport) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *Transport) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = Transport(str)
+	if err := TransportValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid Transport", str)
+	}
+	return nil
 }

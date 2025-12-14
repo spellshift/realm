@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -13,6 +14,7 @@ import (
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
 	LastModifiedAt *time.Time
+	Transport      *beacon.Transport
 	HostID         *int
 }
 
@@ -20,6 +22,9 @@ type UpdateBeaconInput struct {
 func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
 	if v := i.LastModifiedAt; v != nil {
 		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Transport; v != nil {
+		m.SetTransport(*v)
 	}
 	if v := i.HostID; v != nil {
 		m.SetHostID(*v)

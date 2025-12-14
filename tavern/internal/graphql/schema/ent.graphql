@@ -39,6 +39,10 @@ type Beacon implements Node {
   """
   interval: Uint64
   """
+  The transport the beacon is using.
+  """
+  transport: BeaconTransport!
+  """
   Host this beacon is running on.
   """
   host: Host!
@@ -157,6 +161,14 @@ enum BeaconOrderField {
   LAST_SEEN_AT
   NEXT_SEEN_AT
   INTERVAL
+}
+"""
+BeaconTransport is enum for the field transport
+"""
+enum BeaconTransport @goModel(model: "realm.pub/tavern/internal/ent/beacon.Transport") {
+  UNSPECIFIED
+  GRPC
+  HTTP1
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -306,6 +318,13 @@ input BeaconWhereInput {
   intervalLTE: Uint64
   intervalIsNil: Boolean
   intervalNotNil: Boolean
+  """
+  transport field predicates
+  """
+  transport: BeaconTransport
+  transportNEQ: BeaconTransport
+  transportIn: [BeaconTransport!]
+  transportNotIn: [BeaconTransport!]
   """
   host edge predicates
   """
@@ -3329,6 +3348,10 @@ input UpdateBeaconInput {
   Timestamp of when this ent was last updated
   """
   lastModifiedAt: Time
+  """
+  The transport the beacon is using.
+  """
+  transport: BeaconTransport
   hostID: ID
 }
 """
