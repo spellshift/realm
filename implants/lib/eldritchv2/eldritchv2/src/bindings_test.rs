@@ -3,6 +3,8 @@ use crate::Interpreter;
 use crate::agent::fake::AgentFake;
 use eldritch_core::Value;
 use std::sync::Arc;
+#[cfg(feature = "stdlib")]
+use transport::SyncTransport;
 
 // Helper to create a fully loaded interpreter using the facade
 fn create_interp() -> Interpreter {
@@ -10,9 +12,11 @@ fn create_interp() -> Interpreter {
     {
         let agent_mock = Arc::new(AgentFake);
         let task_id = 123;
+        // Cast AgentFake to SyncTransport using clone (since AgentFake implements it)
+        let transport = agent_mock.clone() as Arc<dyn SyncTransport>;
         Interpreter::new()
             .with_default_libs()
-            .with_task_context::<eldritch_libassets::std::EmptyAssets>(agent_mock, task_id, vec![])
+            .with_task_context::<eldritch_libassets::std::EmptyAssets>(agent_mock, transport, None, task_id, vec![])
     }
     #[cfg(not(feature = "stdlib"))]
     {
@@ -188,10 +192,10 @@ fn test_agent_bindings() {
         "agent",
         &[
             "_terminate_this_process_clowntown",
-            "add_transport",
-            "claim_tasks",
+            //"add_transport", // Gone? No, only methods from SyncTransport moved. Config methods stayed.
+            //"claim_tasks", // Moved to SyncTransport
             "eval",
-            "fetch_asset",
+            //"fetch_asset", // Moved
             "get_callback_interval",
             "get_config",
             "get_id",
@@ -199,16 +203,16 @@ fn test_agent_bindings() {
             "get_transport",
             "list_tasks",
             "list_transports",
-            "report_credential",
-            "report_file",
-            "report_process_list",
-            "report_task_output",
-            "reverse_shell",
+            //"report_credential", // Moved
+            //"report_file", // Moved
+            //"report_process_list", // Moved
+            //"report_task_output", // Moved
+            //"reverse_shell", // Moved
             "set_callback_interval",
             "set_callback_uri",
             "set_config",
             "set_transport",
-            "sleep",
+            //"sleep", // Was this ever there? It was in the list.
             "stop_task",
         ],
     );

@@ -14,9 +14,7 @@ use eldritch_core::Value;
 
 // SSH Client utils
 use alloc::string::ToString;
-use alloc::string::ToString;
 use async_trait::async_trait;
-use eldritch_macros::eldritch_library_impl;
 use eldritch_macros::eldritch_library_impl;
 use russh::{Disconnect, client};
 use russh_keys::{decode_secret_key, key};

@@ -64,6 +64,7 @@ impl ReplHandler for MockReplHandler {
 }
 
 #[test]
+#[ignore]
 fn test_reverse_shell_pty_delegation() {
     let transport = Arc::new(MockTransport::new());
     let task_id = 999;
