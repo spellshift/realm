@@ -9,6 +9,18 @@ use pb::c2::FetchAssetRequest;
 use transport::ActiveTransport;
 use transport::Transport;
 
+#[derive(Debug)]
+pub struct EmptyAssets;
+
+impl RustEmbed for EmptyAssets {
+    fn get(_file_path: &str) -> Option<rust_embed::EmbeddedFile> {
+        None
+    }
+    fn iter() -> impl Iterator<Item = Cow<'static, str>> {
+        alloc::vec![].into_iter()
+    }
+}
+
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync> {
     phantom: core::marker::PhantomData<A>,

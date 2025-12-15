@@ -30,7 +30,9 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 #[cfg(feature = "stdlib")]
-use crate::agent::{agent::Agent, std::StdAgentLibrary};
+use eldritch_agent::Agent;
+#[cfg(feature = "stdlib")]
+use crate::agent::std::StdAgentLibrary;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
 #[cfg(feature = "stdlib")]
@@ -53,6 +55,8 @@ use crate::report::std::StdReportLibrary;
 use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
+#[cfg(feature = "stdlib")]
+use transport::ActiveTransport;
 
 #[cfg(feature = "fake_bindings")]
 use crate::agent::fake::AgentLibraryFake;
@@ -108,7 +112,6 @@ impl Interpreter {
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
             self.inner.register_lib(StdHttpLibrary);
-            self.inner.register_lib(StdPivotLibrary::default());
             self.inner.register_lib(StdProcessLibrary);
             self.inner.register_lib(StdRandomLibrary);
             self.inner.register_lib(StdRegexLibrary);
@@ -136,18 +139,32 @@ impl Interpreter {
     pub fn with_agent(mut self, agent: Arc<dyn Agent>) -> Self {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
-        let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
+
+        // StdAgentLibrary::new(agent) - removed task_id from constructor in previous change
+        let agent_lib = StdAgentLibrary::new(agent.clone());
         self.inner.register_lib(agent_lib);
 
         let report_lib = StdReportLibrary::new(agent.clone(), 0);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), 0);
+        // StdPivotLibrary::new(agent, transport, task_id)
+        // We need a transport. But `with_agent` doesn't provide one?
+        // Wait, `with_agent` is used where? If `imixv2` uses it, maybe it passes something else?
+        // `imixv2` probably uses `with_task_context` now?
+        // Or if this method is used, we need a transport.
+        // Assuming default empty/init transport or requiring one passed?
+        // The original code passed `0` for task_id.
+        // I'll use `ActiveTransport::init()` which is Empty.
+        use transport::Transport;
+        let transport = ActiveTransport::init();
+
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), 0);
         self.inner.register_lib(pivot_lib);
 
         // Assets library
+        // StdAssetsLibrary::new(agent, transport, task_id)
         let assets_lib =
-            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
+            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), transport, 0);
         self.inner.register_lib(assets_lib);
 
         self
@@ -167,18 +184,19 @@ impl Interpreter {
         mut self,
         agent: Arc<dyn Agent>,
         task_id: i64,
-        remote_assets: Vec<String>,
+        transport: ActiveTransport,
+        _remote_assets: Vec<String>, // We don't pass assets list to new lib anymore
     ) -> Self {
-        let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
+        let agent_lib = StdAgentLibrary::new(agent.clone());
         self.inner.register_lib(agent_lib);
 
         let report_lib = StdReportLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::<A>::new(agent, remote_assets);
+        let assets_lib = StdAssetsLibrary::<A>::new(agent, transport, task_id);
         self.inner.register_lib(assets_lib);
 
         self

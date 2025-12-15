@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 eldritch-core = { workspace = true, default-features = false }
 spin = "0.10"
+eldritch-agent = { path = "../eldritch-agent" }
+transport = { workspace = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }

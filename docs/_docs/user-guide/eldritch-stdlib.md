@@ -16,7 +16,6 @@ The `agent` library provides capabilities for interacting with the agent's inter
 It allows you to:
 - Modify agent configuration (callback intervals, transports).
 - Manage background tasks.
-- Report data back to the C2 server (though the `report` library is often preferred for high-level reporting).
 - Control agent execution (termination).
 
 ### agent._terminate_this_process_clowntown
@@ -31,31 +30,6 @@ Use with extreme caution.
 
 **Errors**
 - This function is unlikely to return an error, as it terminates the process.
-
-### agent.claim_tasks
-`agent.claim_tasks() -> List<TaskWrapper>`
-Manually triggers a check-in to claim pending tasks from the C2 server.
-
-**Returns**
-- `List<Task>`: A list of tasks retrieved from the server.
-
-**Errors**
-- Returns an error string if the check-in fails.
-
-### agent.fetch_asset
-`agent.fetch_asset(name: str) -> Bytes`
-Fetches an asset (file) from the C2 server by name.
-
-This method requests the asset content from the server.
-
-**Parameters**
-- `name` (`str`): The name of the asset to fetch.
-
-**Returns**
-- `Bytes`: The content of the asset as a byte array.
-
-**Errors**
-- Returns an error string if the asset cannot be fetched or communication fails.
 
 ### agent.get_callback_interval
 `agent.get_callback_interval() -> int`
@@ -107,77 +81,6 @@ Returns a list of available transport names.
 **Errors**
 - Returns an error string if the list cannot be retrieved.
 
-### agent.report_credential
-`agent.report_credential(credential: CredentialWrapper) -> None`
-Reports a captured credential to the C2 server.
-
-**Parameters**
-- `credential` (`Credential`): The credential object to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_file
-`agent.report_file(file: FileWrapper) -> None`
-Reports a file (chunk) to the C2 server.
-
-This is typically used internally by `report.file`.
-
-**Parameters**
-- `file` (`File`): The file chunk wrapper to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_process_list
-`agent.report_process_list(list: ProcessListWrapper) -> None`
-Reports a list of processes to the C2 server.
-
-This is typically used internally by `report.process_list`.
-
-**Parameters**
-- `list` (`ProcessList`): The process list wrapper to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_task_output
-`agent.report_task_output(output: str, error: Option<str>) -> None`
-Reports the output of a task to the C2 server.
-
-This is used to send stdout/stderr or errors back to the controller.
-
-**Parameters**
-- `output` (`str`): The standard output content.
-- `error` (`Option<str>`): Optional error message.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.reverse_shell
-`agent.reverse_shell() -> None`
-Initiates a reverse shell session.
-
-This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reverse shell cannot be started.
-
 ### agent.set_active_callback_uri
 `agent.set_active_callback_uri(uri: str) -> None`
 Sets the active callback URI for the agent.
@@ -220,14 +123,7 @@ Stops a specific background task by its ID.
 - Returns an error string if the task cannot be stopped or does not exist.
 
 ## Assets Library
-The `assets` library provides access to files embedded directly within the agent binary.
-
-This allows you to:
-- Deploy tools or payloads without downloading them from the network.
-- Read embedded configuration or scripts.
-- List available embedded assets.
-
-**Note**: Asset paths are typically relative to the embedding root (e.g., `sliver/agent-x64`).
+The `assets` library provides access to files embedded directly within the agent binary or fetched remotely.
 
 ### assets.copy
 `assets.copy(src: str, dest: str) -> None`
@@ -242,6 +138,19 @@ Copies an embedded asset to a destination path on the disk.
 
 **Errors**
 - Returns an error string if the asset does not exist or the file cannot be written (e.g., permission denied).
+
+### assets.fetch
+`assets.fetch(name: str) -> Bytes`
+Fetches a remote asset from the C2 server.
+
+**Parameters**
+- `name` (`str`): The name of the asset to fetch.
+
+**Returns**
+- `List<int>`: The asset content as a list of bytes.
+
+**Errors**
+- Returns an error string if the fetch fails.
 
 ### assets.list
 `assets.list() -> List<str>`
@@ -859,121 +768,33 @@ Performs an HTTP POST request.
 ## Pivot Library
 The `pivot` library provides tools for lateral movement, scanning, and tunneling.
 
-It supports:
-- Reverse shells (PTY and REPL).
-- SSH execution and file copy.
-- Network scanning (ARP, Port).
-- Traffic tunneling (Port forwarding, Bind proxy).
-- Simple network interaction (Ncat).
-- SMB execution (Stubbed/Proposed).
-
 ### pivot.arp_scan
 `pivot.arp_scan(target_cidrs: List<str>) -> List<Dict>`
 Performs an ARP scan to discover live hosts on the local network.
-
-**Parameters**
-- `target_cidrs` (`List<str>`): List of CIDRs to scan.
-
-**Returns**
-- `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
 
 ### pivot.ncat
 `pivot.ncat(address: str, port: int, data: str, protocol: str) -> str`
 Sends arbitrary data to a host via TCP or UDP and waits for a response.
 
-**Parameters**
-- `address` (`str`): Target address.
-- `port` (`int`): Target port.
-- `data` (`str`): Data to send.
-- `protocol` (`str`): "tcp" or "udp".
-
-**Returns**
-- `str`: The response data.
-
 ### pivot.port_scan
 `pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<Dict>`
 Scans TCP/UDP ports on target hosts.
-
-**Parameters**
-- `target_cidrs` (`List<str>`): List of CIDRs to scan (e.g., `["192.168.1.0/24"]`).
-- `ports` (`List<int>`): List of ports to scan.
-- `protocol` (`str`): "tcp" or "udp".
-- `timeout` (`int`): Timeout per port in seconds.
-- `fd_limit` (`Option<int>`): Maximum concurrent file descriptors/sockets (defaults to 64).
-
-**Returns**
-- `List<Dict>`: List of open ports/results.
 
 ### pivot.reverse_shell_pty
 `pivot.reverse_shell_pty(cmd: Option<str>) -> None`
 Spawns a reverse shell with a PTY (Pseudo-Terminal) attached.
 
-This provides a full interactive shell experience over the agent's C2 channel.
-
-**Parameters**
-- `cmd` (`Option<str>`): The shell command to run (e.g., `/bin/bash`, `cmd.exe`). If `None`, defaults to system shell.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the shell cannot be spawned.
-
 ### pivot.reverse_shell_repl
-`pivot.reverse_shell_repl() -> None`
+`pivot.reverse_shell_repl(interp: &mut Interpreter) -> None`
 Spawns a basic REPL-style reverse shell.
-
-Useful if PTY is not available.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if failure occurs.
 
 ### pivot.ssh_copy
 `pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Option<str>, key: Option<str>, key_password: Option<str>, timeout: Option<int>) -> str`
 Copies a file to a remote host via SSH (SCP/SFTP).
 
-**Parameters**
-- `target` (`str`): The remote host IP or hostname.
-- `port` (`int`): The SSH port.
-- `src` (`str`): Local source file path.
-- `dst` (`str`): Remote destination file path.
-- `username` (`str`): SSH username.
-- `password` (`Option<str>`): SSH password.
-- `key` (`Option<str>`): SSH private key.
-- `key_password` (`Option<str>`): Key password.
-- `timeout` (`Option<int>`): Connection timeout.
-
-**Returns**
-- `str`: "Success" message or error detail.
-
-**Errors**
-- Returns an error string if copy fails.
-
 ### pivot.ssh_exec
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Option<str>, key: Option<str>, key_password: Option<str>, timeout: Option<int>) -> Dict`
 Executes a command on a remote host via SSH.
-
-**Parameters**
-- `target` (`str`): The remote host IP or hostname.
-- `port` (`int`): The SSH port (usually 22).
-- `command` (`str`): The command to execute.
-- `username` (`str`): SSH username.
-- `password` (`Option<str>`): SSH password (optional).
-- `key` (`Option<str>`): SSH private key (optional).
-- `key_password` (`Option<str>`): Password for the private key (optional).
-- `timeout` (`Option<int>`): Connection timeout in seconds (optional).
-
-**Returns**
-- `Dict`: A dictionary containing command output:
-- `stdout` (`str`)
-- `stderr` (`str`)
-- `status` (`int`): Exit code.
-
-**Errors**
-- Returns an error string if connection fails.
 
 ## Process Library
 The `process` library allows interaction with system processes.
