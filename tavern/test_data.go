@@ -85,72 +85,104 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
 
-			testBeacons = append(testBeacons,
-				client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
-					SetIdentifier(newRandomIdentifier()).
-					SetAgentIdentifier("test-data").
-					SetHost(testHost).
-					SetInterval(600000).
-					SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
-					SetPrincipal("root").
-					SaveX(ctx),
-			)
-			if i == 3 {
+			if i == 4 && groupNum == 5 {
+				// Host with dead beacons Group 5 - Service 5
 				testBeacons = append(testBeacons,
 					client.Beacon.Create().
 						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
 						SetIdentifier(newRandomIdentifier()).
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
-						SetInterval(600).
-						SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
-						SetPrincipal("janet").
+						SetInterval(60).
+						SetPrincipal("root").
 						SaveX(ctx),
 				)
-			}
-			if groupNum == 1 {
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-2*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-2*time.Minute).Add(60*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(60).
+						SetPrincipal("root").
+						SaveX(ctx),
+				)
 				testBeacons = append(testBeacons,
 					client.Beacon.Create().
 						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-						SetNextSeenAt(time.Now().Add(-30*time.Second).Add(600000*time.Second)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(60).
+						SetPrincipal("root").
+						SaveX(ctx),
+				)
+			} else {
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
 						SetIdentifier(newRandomIdentifier()).
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
 						SetInterval(600000).
-						SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
-						SetPrincipal("jane").
+						SetPrincipal("root").
+						SaveX(ctx),
+				)
+				if i == 3 {
+					testBeacons = append(testBeacons,
+						client.Beacon.Create().
+							SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+							SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+							SetIdentifier(newRandomIdentifier()).
+							SetAgentIdentifier("test-data").
+							SetHost(testHost).
+							SetInterval(600).
+							SetPrincipal("janet").
+							SaveX(ctx),
+					)
+				}
+				if groupNum == 1 {
+					testBeacons = append(testBeacons,
+						client.Beacon.Create().
+							SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+							SetNextSeenAt(time.Now().Add(-30*time.Second).Add(600000*time.Second)).
+							SetIdentifier(newRandomIdentifier()).
+							SetAgentIdentifier("test-data").
+							SetHost(testHost).
+							SetInterval(600000).
+							SetPrincipal("jane").
+							SaveX(ctx),
+					)
+				}
+
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-10*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-10*time.Second).Add(1000*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(1000).
+						SetPrincipal("admin").
+						SaveX(ctx),
+				)
+
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Hour)).
+						SetNextSeenAt(time.Now().Add(-1*time.Hour).Add(4*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(4).
+						SetPrincipal("Administrator").
 						SaveX(ctx),
 				)
 			}
-
-			testBeacons = append(testBeacons,
-				client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
-					SetNextSeenAt(time.Now().Add(-10*time.Second).Add(1000*time.Second)).
-					SetIdentifier(newRandomIdentifier()).
-					SetAgentIdentifier("test-data").
-					SetHost(testHost).
-					SetInterval(1000).
-					SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
-					SetPrincipal("admin").
-					SaveX(ctx),
-			)
-
-			testBeacons = append(testBeacons,
-				client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
-					SetNextSeenAt(time.Now().Add(-1*time.Hour).Add(4*time.Second)).
-					SetIdentifier(newRandomIdentifier()).
-					SetAgentIdentifier("test-data").
-					SetHost(testHost).
-					SetInterval(4).
-					SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
-					SetPrincipal("Administrator").
-					SaveX(ctx),
-			)
 		}
 	}
 
