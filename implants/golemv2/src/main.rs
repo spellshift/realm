@@ -1,4 +1,6 @@
 mod agent;
+mod assets;
+mod assetbackend;
 
 use clap::{Arg, Command, ArgAction};
 use anyhow::Result;
@@ -12,19 +14,11 @@ use std::sync::Arc;
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 
+// Get some embedded assets and implement them as AssetBackend
 #[derive(RustEmbed)]
 #[folder = "embedded"]
-struct GolemEmbeddedAssets; // This type now implements the `RustEmbed` trait
-
-impl eldritch_libassets::RustEmbed for GolemEmbeddedAssets {
-    fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile> {
-        <GolemEmbeddedAssets as rust_embed::RustEmbed>::get(file_path)
-    }
-
-    fn iter() -> impl Iterator<Item = Cow<'static, str>> {
-        <GolemEmbeddedAssets as rust_embed::RustEmbed>::iter()
-    }
-}
+struct GolemEmbeddedAssets;
+as_asset_backend!(GolemEmbeddedAssets);
 
 struct ParsedTome {
     pub name: String,
@@ -147,7 +141,6 @@ fn main() -> anyhow::Result<()>  {
         },
         Err(e) => {
             println!("{}", e)
-
         }
     }
     Ok(())
