@@ -26,7 +26,7 @@ pub use eldritch_core::{
 };
 
 // Re-export dependency traits
-pub use eldritch_libagent::agent::Agent;
+pub use eldritch_agent::Agent;
 pub use eldritch_libassets::RustEmbed;
 pub use eldritch_libpivot::ReplHandler;
 
@@ -148,7 +148,7 @@ impl Interpreter {
         let report_lib = StdReportLibrary::new(transport.clone(), 0);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(transport.clone(), None, 0);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), None, 0);
         self.inner.register_lib(pivot_lib);
 
         // Assets library
@@ -183,7 +183,7 @@ impl Interpreter {
         let report_lib = StdReportLibrary::new(transport.clone(), task_id);
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(transport.clone(), repl_handler, task_id);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), repl_handler, task_id);
         self.inner.register_lib(pivot_lib);
 
         let assets_lib = StdAssetsLibrary::<A>::new(transport, remote_assets);

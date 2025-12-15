@@ -88,7 +88,7 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegist
             for task in tasks {
                 #[cfg(debug_assertions)]
                 log::info!("Claimed task: {}", task.id);
-                let sync_transport = agent.get_sync_transport();
+                let sync_transport = agent.get_sync_transport_internal();
                 let repl_handler: Option<Arc<dyn ReplHandler>> = Some(Arc::new(agent.clone()));
                 registry.spawn(task, Arc::new(agent.clone()), sync_transport, repl_handler);
             }

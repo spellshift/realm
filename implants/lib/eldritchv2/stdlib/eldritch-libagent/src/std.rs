@@ -10,7 +10,7 @@ use transport::SyncTransport;
 use crate::TaskWrapper;
 
 #[cfg(feature = "stdlib")]
-use crate::agent::Agent;
+use eldritch_agent::Agent;
 
 #[eldritch_library_impl(AgentLibrary)]
 pub struct StdAgentLibrary {

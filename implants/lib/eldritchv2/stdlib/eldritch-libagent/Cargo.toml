@@ -7,6 +7,7 @@ edition = "2024"
 transport = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
+eldritch-agent = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
@@ -17,5 +18,5 @@ anyhow = "1.0"
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types"]
+stdlib = ["dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types", "eldritch-agent/stdlib"]
 fake_bindings = []

