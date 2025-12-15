@@ -3,11 +3,12 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::SystemTime;
 
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
+use transport::{ActiveTransport, Transport}; // Added Transport
 
 #[derive(Debug)]
 struct StreamPrinter {
@@ -199,7 +200,21 @@ fn setup_interpreter(
 
     // Register Task Context (Agent, Report, Assets)
     let remote_assets = tome.file_names.clone();
-    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, remote_assets);
+
+    let config = agent.get_config().unwrap_or_default();
+    let uri = config.get("callback_uri").cloned().unwrap_or_default();
+    let proxy = config.get("proxy_uri").cloned();
+
+    // Transport::new is a trait method, but ActiveTransport::new might be inherent?
+    // Wait, ActiveTransport enum implements Transport.
+    // If we import Transport trait, we can use ActiveTransport::new if it delegates or is the implementation.
+    // `transport/src/lib.rs` has `impl Transport for ActiveTransport`.
+    // It does NOT have inherent `new`.
+    // So `ActiveTransport::new` refers to `Transport::new` called on the type `ActiveTransport`.
+    // This requires `use transport::Transport`.
+    let transport = ActiveTransport::new(uri, proxy).unwrap_or_else(|_| ActiveTransport::init());
+
+    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, transport, remote_assets);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome

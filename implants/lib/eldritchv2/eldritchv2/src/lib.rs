@@ -112,6 +112,7 @@ impl Interpreter {
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
             self.inner.register_lib(StdHttpLibrary);
+            // StdPivotLibrary removed from defaults as it requires agent context
             self.inner.register_lib(StdProcessLibrary);
             self.inner.register_lib(StdRandomLibrary);
             self.inner.register_lib(StdRegexLibrary);
@@ -140,29 +141,19 @@ impl Interpreter {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
 
-        // StdAgentLibrary::new(agent) - removed task_id from constructor in previous change
         let agent_lib = StdAgentLibrary::new(agent.clone());
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), 0);
-        self.inner.register_lib(report_lib);
-
-        // StdPivotLibrary::new(agent, transport, task_id)
-        // We need a transport. But `with_agent` doesn't provide one?
-        // Wait, `with_agent` is used where? If `imixv2` uses it, maybe it passes something else?
-        // `imixv2` probably uses `with_task_context` now?
-        // Or if this method is used, we need a transport.
-        // Assuming default empty/init transport or requiring one passed?
-        // The original code passed `0` for task_id.
-        // I'll use `ActiveTransport::init()` which is Empty.
         use transport::Transport;
         let transport = ActiveTransport::init();
+
+        let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), 0);
+        self.inner.register_lib(report_lib);
 
         let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), 0);
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        // StdAssetsLibrary::new(agent, transport, task_id)
         let assets_lib =
             StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), transport, 0);
         self.inner.register_lib(assets_lib);
@@ -190,7 +181,7 @@ impl Interpreter {
         let agent_lib = StdAgentLibrary::new(agent.clone());
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), task_id);
+        let report_lib = StdReportLibrary::new(agent.clone(), transport.clone(), task_id);
         self.inner.register_lib(report_lib);
 
         let pivot_lib = StdPivotLibrary::new(agent.clone(), transport.clone(), task_id);

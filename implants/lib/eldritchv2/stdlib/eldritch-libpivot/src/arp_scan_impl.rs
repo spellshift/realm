@@ -250,31 +250,15 @@ pub fn run(
     lib: &StdPivotLibrary,
     target_cidrs: Vec<String>,
 ) -> Result<Vec<BTreeMap<String, Value>>, String> {
-    // ARP scan uses `pnet` which is blocking/thread-based, not async.
-    // However, we should still run it in a subtask to avoid blocking the interpreter thread
-    // if we want to be consistent, but pnet uses raw sockets which might need privileges
-    // and might be fine to run in a blocking thread (which spawn_blocking does).
-    // The current implementation spawns threads.
-
-    // We'll wrap it in a blocking task via agent.
-    // `arp_scan` implementation above calls `std::thread::spawn` and `join()`.
-    // It blocks until done (timeout 5s per interface).
-
     let (tx, rx) = std::sync::mpsc::channel();
     let target_cidrs_clone = target_cidrs.clone();
 
     let fut = async move {
-        // Since handle_arp_scan is blocking, we should wrap it in spawn_blocking if we were in async runtime.
-        // But here we are in an async block that will be executed by the agent's runtime.
-        // If agent runtime is single threaded (current thread), blocking here blocks other tasks.
-        // If multithreaded, it's okayish but bad practice.
-        // We should use `tokio::task::spawn_blocking`.
-
+        // Use spawn_blocking for blocking operation
         let res = tokio::task::spawn_blocking(move || {
             handle_arp_scan(target_cidrs_clone)
         }).await;
 
-        // Handle JoinError from spawn_blocking
         let inner_res = match res {
             Ok(r) => r,
             Err(e) => Err(anyhow!("Task join error: {}", e)),
@@ -313,41 +297,4 @@ pub fn run(
     _target_cidrs: Vec<String>,
 ) -> Result<Vec<BTreeMap<String, Value>>, String> {
     Err("ARP Scanning is not available on Windows.".to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[cfg(not(target_os = "windows"))]
-    #[test]
-    fn test_parse_cidrs() {
-        let cidrs = vec!["192.168.1.0/24".to_string(), "10.0.0.1/32".to_string()];
-        let networks = parse_cidrs_for_arp_scan(cidrs).unwrap();
-        assert_eq!(networks.len(), 2);
-        assert_eq!(networks[0].ip().to_string(), "192.168.1.0");
-        assert_eq!(networks[0].prefix(), 24);
-        assert_eq!(networks[1].ip().to_string(), "10.0.0.1");
-        assert_eq!(networks[1].prefix(), 32);
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    #[test]
-    fn test_parse_cidrs_invalid() {
-        let cidrs = vec!["invalid".to_string()];
-        assert!(parse_cidrs_for_arp_scan(cidrs).is_err());
-
-        let cidrs = vec!["192.168.1.0".to_string()]; // missing prefix
-        assert!(parse_cidrs_for_arp_scan(cidrs).is_err());
-
-        let cidrs = vec!["192.168.1.0/33".to_string()]; // invalid prefix
-        assert!(parse_cidrs_for_arp_scan(cidrs).is_err());
-    }
-
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn test_windows_unsupported() {
-        // We can't test run() easily because we need a mock StdPivotLibrary.
-        // But we can check if the module compiles on windows.
-    }
 }

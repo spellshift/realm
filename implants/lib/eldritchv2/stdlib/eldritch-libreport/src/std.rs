@@ -7,10 +7,13 @@ use eldritch_agent::Agent;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use pb::{c2, eldritch};
+use transport::ActiveTransport;
+use transport::Transport;
 
 #[eldritch_library_impl(ReportLibrary)]
 pub struct StdReportLibrary {
     pub agent: Arc<dyn Agent>,
+    pub transport: ActiveTransport,
     pub task_id: i64,
 }
 
@@ -23,8 +26,8 @@ impl core::fmt::Debug for StdReportLibrary {
 }
 
 impl StdReportLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
-        Self { agent, task_id }
+    pub fn new(agent: Arc<dyn Agent>, transport: ActiveTransport, task_id: i64) -> Self {
+        Self { agent, transport, task_id }
     }
 }
 
@@ -46,7 +49,23 @@ impl ReportLibrary for StdReportLibrary {
             chunk: Some(file_msg),
         };
 
-        self.agent.report_file(req).map(|_| ())
+        // Create a synchronous channel for the transport
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut t = self.transport.clone();
+
+        let task_future = async move {
+            // transport.report_file takes Receiver<ReportFileRequest>
+            let _ = t.report_file(rx).await;
+        };
+
+        self.agent.spawn_subtask(self.task_id, "report_file".to_string(), alloc::boxed::Box::pin(task_future))
+            .map_err(|e| e.to_string())?;
+
+        // Send the single request and close the channel (by dropping tx)
+        // Need to clone req? It's sent by value.
+        tx.send(req).map_err(|e| e.to_string())?;
+
+        Ok(())
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {
@@ -103,7 +122,13 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             list: Some(eldritch::ProcessList { list: processes }),
         };
-        self.agent.report_process_list(req).map(|_| ())
+
+        let mut t = self.transport.clone();
+        let task_future = async move {
+            let _ = t.report_process_list(req).await;
+        };
+        self.agent.spawn_subtask(self.task_id, "report_process_list".to_string(), alloc::boxed::Box::pin(task_future))
+            .map_err(|e| e.to_string())
     }
 
     fn ssh_key(&self, username: String, key: String) -> Result<(), String> {
@@ -116,7 +141,13 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             credential: Some(cred),
         };
-        self.agent.report_credential(req).map(|_| ())
+
+        let mut t = self.transport.clone();
+        let task_future = async move {
+            let _ = t.report_credential(req).await;
+        };
+        self.agent.spawn_subtask(self.task_id, "report_credential".to_string(), alloc::boxed::Box::pin(task_future))
+            .map_err(|e| e.to_string())
     }
 
     fn user_password(&self, username: String, password: String) -> Result<(), String> {
@@ -129,6 +160,12 @@ impl ReportLibrary for StdReportLibrary {
             task_id: self.task_id,
             credential: Some(cred),
         };
-        self.agent.report_credential(req).map(|_| ())
+
+        let mut t = self.transport.clone();
+        let task_future = async move {
+            let _ = t.report_credential(req).await;
+        };
+        self.agent.spawn_subtask(self.task_id, "report_credential".to_string(), alloc::boxed::Box::pin(task_future))
+            .map_err(|e| e.to_string())
     }
 }

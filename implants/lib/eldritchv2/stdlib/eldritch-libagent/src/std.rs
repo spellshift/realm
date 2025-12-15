@@ -24,6 +24,7 @@ impl core::fmt::Debug for StdAgentLibrary {
 }
 
 impl StdAgentLibrary {
+    // Removed task_id as it is unused in configuration-only agent lib
     pub fn new(agent: Arc<dyn Agent>) -> Self {
         Self { agent }
     }

@@ -75,10 +75,16 @@ impl Session {
         channel.request_subsystem(true, "sftp").await?;
         let sftp = russh_sftp::client::SftpSession::new(channel.into_stream()).await?;
 
+        // Use sftp.create which returns a file handle
+        // Wait, I should verify what create returns. In russh-sftp 2.0.8, it returns impl Future<Output = Result<File>>.
+        // File has write_all.
+        // It does not have close in some versions, but drop closes it.
+        // The error `no method named close` confirms it doesn't have explicit close.
         let mut remote_file = sftp.create(dst).await?;
         let local_data = std::fs::read(src)?;
         remote_file.write_all(&local_data).await?;
-        // sftp file closed on drop
+
+        // Dropping remote_file closes it.
         Ok(())
     }
 }

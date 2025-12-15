@@ -63,11 +63,10 @@ impl<A: RustEmbed + Send + Sync> AssetsLibrary for StdAssetsLibrary<A> {
         let task_future = async move {
             let req = FetchAssetRequest { name: name_clone };
             if let Err(_e) = t.fetch_asset(req, tx_std.clone()).await {
-                 // Ignore error sending on channel as it means receiver dropped or transport failed
+                 // Ignore error sending on channel
             }
         };
 
-        // We need to construct the future.
         let fut = alloc::boxed::Box::pin(task_future);
 
         if let Err(e) = self.agent.spawn_subtask(self.task_id, alloc::format!("fetch_{}", name), fut) {
@@ -75,8 +74,6 @@ impl<A: RustEmbed + Send + Sync> AssetsLibrary for StdAssetsLibrary<A> {
         }
 
         let mut data = Vec::new();
-        // The transport::fetch_asset uses the sender to send FetchAssetResponse which contains chunk.
-        // We collect them all.
         for resp in rx_std {
              data.extend_from_slice(&resp.chunk);
         }

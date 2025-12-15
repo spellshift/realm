@@ -8,6 +8,8 @@ eldritch-core = { workspace = true }
 eldritch-agent = { path = "../../eldritch-agent" }
 eldritch-macros = { workspace = true }
 eldritch-libagent = { workspace = true, optional = true }
+transport = { workspace = true }
+tokio = { workspace = true, features = ["sync", "rt"] }
 pb = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 

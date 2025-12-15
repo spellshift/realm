@@ -5,13 +5,13 @@ edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
-eldritch-agent = { path = "../../eldritch-agent" }
 eldritch-macros = { workspace = true }
+eldritch-agent = { path = "../../eldritch-agent" }
 transport = { workspace = true }
 pb = { workspace = true }
 anyhow = { version = "1.0" }
-tokio = { workspace = true, features = ["sync", "rt"] }
 rust-embed = { version = "8.0" }
+tokio = { workspace = true, features = ["sync", "rt"] }
 
 [features]
 default = ["std", "stdlib"]
