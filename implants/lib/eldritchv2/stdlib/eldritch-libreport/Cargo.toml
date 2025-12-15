@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
+eldritch-agent = { path = "../../eldritch-agent" }
 eldritch-macros = { workspace = true }
 eldritch-libagent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
