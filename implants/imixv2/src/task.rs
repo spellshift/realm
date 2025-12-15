@@ -8,7 +8,7 @@ use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
-use transport::{ActiveTransport, Transport}; // Added Transport
+use transport::{ActiveTransport, Transport};
 
 #[derive(Debug)]
 struct StreamPrinter {
@@ -160,7 +160,7 @@ fn execute_task(
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx));
-    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), printer.clone());
+    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), printer.clone(), runtime_handle.clone());
 
     // Report Start
     report_start(task_id, &agent);
@@ -195,6 +195,7 @@ fn setup_interpreter(
     tome: &pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     printer: Arc<StreamPrinter>,
+    runtime_handle: tokio::runtime::Handle,
 ) -> Interpreter {
     let mut interp = Interpreter::new_with_printer(printer).with_default_libs();
 
@@ -205,14 +206,10 @@ fn setup_interpreter(
     let uri = config.get("callback_uri").cloned().unwrap_or_default();
     let proxy = config.get("proxy_uri").cloned();
 
-    // Transport::new is a trait method, but ActiveTransport::new might be inherent?
-    // Wait, ActiveTransport enum implements Transport.
-    // If we import Transport trait, we can use ActiveTransport::new if it delegates or is the implementation.
-    // `transport/src/lib.rs` has `impl Transport for ActiveTransport`.
-    // It does NOT have inherent `new`.
-    // So `ActiveTransport::new` refers to `Transport::new` called on the type `ActiveTransport`.
-    // This requires `use transport::Transport`.
-    let transport = ActiveTransport::new(uri, proxy).unwrap_or_else(|_| ActiveTransport::init());
+    // Construct transport inside runtime context
+    let transport = runtime_handle.block_on(async {
+        ActiveTransport::new(uri, proxy)
+    }).unwrap_or_else(|_| ActiveTransport::init());
 
     interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, transport, remote_assets);
 

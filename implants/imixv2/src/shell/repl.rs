@@ -68,9 +68,10 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
-        // Use the pre-fetched transport config
-        let active_transport = transport::ActiveTransport::new(transport_uri, transport_proxy)
-            .unwrap_or_else(|_| transport::ActiveTransport::init());
+        // Construct transport inside runtime context
+        let active_transport = tokio::runtime::Handle::current().block_on(async {
+            transport::ActiveTransport::new(transport_uri, transport_proxy)
+        }).unwrap_or_else(|_| transport::ActiveTransport::init());
 
         let mut interpreter =
             Interpreter::new_with_printer(printer)
