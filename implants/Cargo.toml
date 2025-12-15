@@ -25,7 +25,7 @@ members = [
     "lib/eldritchv2/stdlib/eldritch-libtime",
     "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/stdlib/migration",
-    "lib/eldritchv2/eldritchv2",
+    "lib/eldritchv2/eldritchv2", "golemv2",
 ]
 resolver = "2"
 
