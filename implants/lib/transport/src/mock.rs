@@ -47,5 +47,9 @@ mock! {
             rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
             tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
         ) -> Result<()>;
+
+        fn get_type(&mut self) {
+            return Transport::Unspecified
+        }
     }
 }

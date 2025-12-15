@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -608,6 +609,26 @@ func IntervalIsNil() predicate.Beacon {
 // IntervalNotNil applies the NotNil predicate on the "interval" field.
 func IntervalNotNil() predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotNull(FieldInterval))
+}
+
+// TransportEQ applies the EQ predicate on the "transport" field.
+func TransportEQ(v c2pb.Beacon_Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldTransport, v))
+}
+
+// TransportNEQ applies the NEQ predicate on the "transport" field.
+func TransportNEQ(v c2pb.Beacon_Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldTransport, v))
+}
+
+// TransportIn applies the In predicate on the "transport" field.
+func TransportIn(vs ...c2pb.Beacon_Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldTransport, vs...))
+}
+
+// TransportNotIn applies the NotIn predicate on the "transport" field.
+func TransportNotIn(vs ...c2pb.Beacon_Transport) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldTransport, vs...))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.

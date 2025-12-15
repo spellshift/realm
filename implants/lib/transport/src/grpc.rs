@@ -192,6 +192,10 @@ impl Transport for GRPC {
 
         Ok(())
     }
+
+    fn get_type(&mut self) -> pb::c2::beacon::Transport {
+        return pb::c2::beacon::Transport::Grpc
+    }
 }
 
 impl GRPC {

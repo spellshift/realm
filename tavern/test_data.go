@@ -93,6 +93,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(600000).
+					SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
 					SetPrincipal("root").
 					SaveX(ctx),
 			)
@@ -105,6 +106,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
 						SetInterval(600).
+						SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
 						SetPrincipal("janet").
 						SaveX(ctx),
 				)
@@ -118,6 +120,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
 						SetInterval(600000).
+						SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
 						SetPrincipal("jane").
 						SaveX(ctx),
 				)
@@ -131,6 +134,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(1000).
+					SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
 					SetPrincipal("admin").
 					SaveX(ctx),
 			)
@@ -143,6 +147,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(4).
+					SetTransport(c2pb.Beacon_TRANSPORT_GRPC).
 					SetPrincipal("Administrator").
 					SaveX(ctx),
 			)

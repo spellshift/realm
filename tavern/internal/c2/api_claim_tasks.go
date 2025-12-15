@@ -195,6 +195,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetLastSeenAt(now).
 		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
 		SetInterval(req.Beacon.Interval).
+		SetTransport(req.Beacon.Transport).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
