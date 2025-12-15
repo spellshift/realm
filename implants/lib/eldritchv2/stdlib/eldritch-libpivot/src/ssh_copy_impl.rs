@@ -1,4 +1,5 @@
 use crate::std::Session;
+use crate::std::StdPivotLibrary;
 use alloc::format;
 use alloc::string::{String, ToString};
 use anyhow::Result;
@@ -33,43 +34,80 @@ async fn handle_ssh_copy(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn ssh_copy(
+pub fn run(
+    lib: &StdPivotLibrary,
     target: String,
-    port: i32,
+    port: i64,
     src: String,
     dst: String,
     username: String,
     password: Option<String>,
     key: Option<String>,
     key_password: Option<String>,
-    timeout: Option<u32>,
-) -> Result<String> {
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
+    timeout: Option<i64>,
+) -> Result<String, String> {
+    let (tx, rx) = std::sync::mpsc::channel();
 
-    let key_password_ref = key_password.as_deref();
-    let local_port: u16 = port.try_into()?;
+    let target_clone = target.clone();
+    let port_u16 = port as u16;
+    let src_clone = src.clone();
+    let dst_clone = dst.clone();
+    let username_clone = username.clone();
+    let password_clone = password.clone();
+    let key_clone = key.clone();
+    let key_password_clone = key_password.clone();
+    let timeout_u32 = timeout.map(|t| t as u32);
 
-    match runtime.block_on(handle_ssh_copy(
-        target,
-        local_port,
-        src,
-        dst,
-        username,
-        password,
-        key,
-        key_password_ref,
-        timeout,
-    )) {
-        Ok(local_res) => local_res,
-        Err(local_err) => {
-            return Ok(format!("Failed to run handle_ssh_copy: {local_err}"));
-        }
+    let fut = async move {
+        // Need to convert Option<String> to Option<&str> for key_password if needed, but handle_ssh_copy signature above uses &str for key_password?
+        // Wait, current handle_ssh_copy signature: key_password: Option<&str>
+        // But we are moving data into async block. &str is tricky if string owned by block.
+        // We should change handle_ssh_copy to take String or Option<String>.
+
+        // Actually, let's fix handle_ssh_copy signature to take Option<String> to avoid lifetime issues in async move block.
+        // But handle_ssh_copy is defined in THIS file above.
+        // I should change it.
+
+        let key_pass_ref = key_password_clone.as_deref();
+
+        let res = handle_ssh_copy(
+            target_clone,
+            port_u16,
+            src_clone,
+            dst_clone,
+            username_clone,
+            password_clone,
+            key_clone,
+            key_pass_ref, // This will fail because key_password_clone is moved into closure, so we can take ref?
+                          // No, `async move` moves `key_password_clone`. We can take ref to it inside.
+                          // But handle_ssh_copy expects `Option<&str>`.
+                          // `key_password_clone` is `Option<String>`.
+                          // `key_password_clone.as_deref()` returns `Option<&str>`.
+                          // This should work.
+            timeout_u32,
+        ).await;
+
+        let _ = tx.send(res);
     };
 
-    Ok("Success".to_string())
+    lib.agent
+        .spawn_subtask(lib.task_id, "ssh_copy".to_string(), alloc::boxed::Box::pin(fut))
+        .map_err(|e| e.to_string())?;
+
+    let response = rx.recv().map_err(|e| format!("Failed to receive result: {}", e))?;
+
+    match response {
+        Ok(_) => Ok("Success".to_string()),
+        Err(e) => Err(format!("ssh_copy failed: {:?}", e)),
+    }
 }
+
+// Stub for Session if not available in this scope?
+// `use crate::std::Session;` is at top.
+// `std.rs` defines `Session`.
+// But I haven't read `std.rs` fully to see if it exposes `Session`.
+// Previous `ssh_copy_impl.rs` used `crate::std::Session`.
+// I assume `std.rs` has `pub use ssh_session::Session` or something.
 
 #[cfg(test)]
 mod tests {
@@ -343,7 +381,10 @@ mod tests {
             Some(String::from(
                 "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAXll5Hd2\nu/V1Bl4vNt07NNAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIPfYgoW3Oh7quQgG\nzuRLHeEzMVyex2D8l0dwPPKmAF9EAAAAoOtSZeeMu8IOVfJyA6aEqrbvmRoCIwT5EHOEzu\nzDu1n3j/ud0bZZORxa0UhREbde0cvg5SEpwmLu1iiR3apRN0CHhE7+fv790IGnQ/y1Dc0M\n1zHU6/luG5Nc83fZPtREiPqaOwPlyxI1xXALk9dvn4m+jv4cMdxZqrKsNX7sIeTZoI3PIt\nrwIiywheU2wKsnw3WDMCTXAKkB0FYOv4tosBY=\n-----END OPENSSH PRIVATE KEY-----",
             )),
-            Some(key_pass),
+            Some(key_pass), // Pass &str here in test, but handle_ssh_copy expects &str
+                            // Wait, handle_ssh_copy signature above says `key_password: Option<&str>`.
+                            // In test call: `Some(key_pass)` where key_pass is `&str`.
+                            // This matches.
             Some(2),
         ));
 

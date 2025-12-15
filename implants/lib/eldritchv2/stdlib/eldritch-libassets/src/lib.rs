@@ -16,14 +16,7 @@ pub trait RustEmbed {
 }
 
 #[eldritch_library("assets")]
-/// The `assets` library provides access to files embedded directly within the agent binary.
-///
-/// This allows you to:
-/// - Deploy tools or payloads without downloading them from the network.
-/// - Read embedded configuration or scripts.
-/// - List available embedded assets.
-///
-/// **Note**: Asset paths are typically relative to the embedding root (e.g., `sliver/agent-x64`).
+/// The `assets` library provides access to files embedded directly within the agent binary or fetched remotely.
 pub trait AssetsLibrary {
     #[eldritch_method]
     /// Reads the content of an embedded asset as a list of bytes.
@@ -37,6 +30,19 @@ pub trait AssetsLibrary {
     /// **Errors**
     /// - Returns an error string if the asset does not exist.
     fn read_binary(&self, name: String) -> Result<Vec<u8>, String>;
+
+    #[eldritch_method]
+    /// Fetches a remote asset from the C2 server.
+    ///
+    /// **Parameters**
+    /// - `name` (`str`): The name of the asset to fetch.
+    ///
+    /// **Returns**
+    /// - `List<int>`: The asset content as a list of bytes.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the fetch fails.
+    fn fetch(&self, name: String) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
     /// Reads the content of an embedded asset as a UTF-8 string.

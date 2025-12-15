@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
+eldritch-agent = { path = "../../eldritch-agent" }
 eldritch-macros = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { workspace = true, optional = true }

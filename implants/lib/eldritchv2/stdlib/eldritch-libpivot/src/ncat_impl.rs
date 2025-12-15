@@ -1,5 +1,6 @@
 use std::net::Ipv4Addr;
 
+use crate::std::StdPivotLibrary;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -62,14 +63,32 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
     }
 }
 
-// We do not want to make this async since it would require we make all of the starlark bindings async.
-// Instead we have a handle_ncat function that we call with block_on
-pub fn ncat(address: String, port: i32, data: String, protocol: String) -> Result<String> {
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
+pub fn run(
+    lib: &StdPivotLibrary,
+    address: String,
+    port: i64,
+    data: String,
+    protocol: String,
+) -> Result<String, String> {
+    let (tx, rx) = std::sync::mpsc::channel();
 
-    runtime.block_on(handle_ncat(address, port, data, protocol))
+    let address_clone = address.clone();
+    let port_i32 = port as i32;
+    let data_clone = data.clone();
+    let protocol_clone = protocol.clone();
+
+    let fut = async move {
+        let res = handle_ncat(address_clone, port_i32, data_clone, protocol_clone).await;
+        let _ = tx.send(res);
+    };
+
+    lib.agent
+        .spawn_subtask(lib.task_id, "ncat".to_string(), alloc::boxed::Box::pin(fut))
+        .map_err(|e| e.to_string())?;
+
+    let response = rx.recv().map_err(|e| format!("Failed to receive result: {}", e))?;
+
+    response.map_err(|e| format!("ncat failed: {:?}", e))
 }
 
 #[cfg(test)]

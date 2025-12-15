@@ -40,4 +40,5 @@ pub trait Agent: Send + Sync {
         name: String,
         future: SubtaskFuture,
     ) -> Result<(), String>;
+    fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String>;
 }

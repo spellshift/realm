@@ -12,6 +12,8 @@ use tokio::sync::Semaphore;
 use tokio::task;
 use tokio::time::{Duration, sleep};
 
+use crate::std::StdPivotLibrary;
+
 macro_rules! scanf {
     ( $string:expr, $sep:expr, $( $x:ty ),+ ) => {{
         let mut iter = $string.split($sep);
@@ -421,29 +423,50 @@ async fn handle_port_scan(
 // ]
 
 // Non-async wrapper for our async scan.
-pub fn port_scan(
+pub fn run(
+    lib: &StdPivotLibrary,
     target_cidrs: Vec<String>,
-    ports: Vec<i32>,
+    ports: Vec<i64>,
     protocol: String,
-    timeout: i32,
+    timeout: i64,
     fd_limit: Option<i64>,
-) -> Result<Vec<BTreeMap<String, Value>>> {
+) -> Result<Vec<BTreeMap<String, Value>>, String> {
     if protocol != TCP && protocol != UDP {
-        return Err(anyhow::anyhow!("Unsupported protocol. Use 'tcp' or 'udp'."));
+        return Err("Unsupported protocol. Use 'tcp' or 'udp'.".to_string());
     }
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
+    // Bridge to async execution via agent subtask
+    let (tx, rx) = std::sync::mpsc::channel();
 
+    let target_cidrs_clone = target_cidrs.clone();
+    let ports_i32: Vec<i32> = ports.iter().map(|&p| p as i32).collect();
+    let protocol_clone = protocol.clone();
     let limit = fd_limit.unwrap_or(64) as usize;
-    let response = runtime.block_on(handle_port_scan(
-        target_cidrs,
-        ports,
-        protocol,
-        timeout,
-        limit,
-    ));
+    let timeout_i32 = timeout as i32;
+
+    let fut = async move {
+        // We run the port scan logic here.
+        // Note: handle_port_scan is defined above and uses tokio::task::spawn internally.
+        // It requires a multithreaded runtime context if it uses spawn.
+        // Agent subtasks run in a tokio runtime (imixv2 usually uses rt-multi-thread).
+
+        let res = handle_port_scan(
+            target_cidrs_clone,
+            ports_i32,
+            protocol_clone,
+            timeout_i32,
+            limit,
+        ).await;
+
+        let _ = tx.send(res);
+    };
+
+    lib.agent
+        .spawn_subtask(lib.task_id, "port_scan".to_string(), alloc::boxed::Box::pin(fut))
+        .map_err(|e| e.to_string())?;
+
+    // Wait for result
+    let response = rx.recv().map_err(|e| format!("Failed to receive result: {}", e))?;
 
     match response {
         Ok(results) => {
@@ -460,7 +483,7 @@ pub fn port_scan(
 
             Ok(final_res)
         }
-        Err(err) => Err(anyhow::anyhow!("The port_scan command failed: {err:?}")),
+        Err(err) => Err(format!("The port_scan command failed: {:?}", err)),
     }
 }
 

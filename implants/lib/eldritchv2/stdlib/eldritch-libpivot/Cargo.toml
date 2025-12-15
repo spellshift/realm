@@ -6,7 +6,8 @@ edition = "2024"
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
-eldritch-libagent = { workspace = true }
+eldritch-agent = { path = "../../eldritch-agent" }
+transport = { workspace = true }
 
 anyhow = { workspace = true, optional = true }
 async-recursion = { workspace = true, optional = true }
@@ -34,7 +35,6 @@ eldritch-libagent = { workspace = true, features = ["stdlib"] }
 [features]
 default = ["stdlib"]
 stdlib = [
-    "eldritch-libagent/stdlib",
     "anyhow",
     "async-recursion",
     "async-trait",
