@@ -81,5 +81,4 @@ pub trait UnsafeTransport: Clone + Send {
 
     #[allow(dead_code)]
     fn get_type(&mut self) -> beacon::Transport;
-
 }

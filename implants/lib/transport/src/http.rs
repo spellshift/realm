@@ -422,7 +422,7 @@ impl Transport for HTTP {
     }
 
     fn get_type(&mut self) -> pb::c2::beacon::Transport {
-        return pb::c2::beacon::Transport::Http1
+        return pb::c2::beacon::Transport::Http1;
     }
 }
 
