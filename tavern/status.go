@@ -8,7 +8,7 @@ import (
 
 type Status struct {
 	OKStatusText string
-	Pubkey string
+	Pubkey       string
 }
 
 // OKStatusText is the body returned by the status handler when everything is running as expected.
@@ -25,7 +25,7 @@ func newStatusHandler() http.HandlerFunc {
 
 		res, err := json.Marshal(Status{
 			OKStatusText: OKStatusText,
-			Pubkey: pubStr,
+			Pubkey:       pubStr,
 		})
 		if err != nil {
 			panic(err)

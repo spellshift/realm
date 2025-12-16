@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestLRUCache(t *testing.T) {
 	var session_pub_keys = NewSyncMap()
 	session_pub_keys.Store(1, []byte{0x01, 0x02, 0x03})
