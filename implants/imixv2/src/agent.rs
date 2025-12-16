@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};

@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
-eldritch-libagent = { workspace = true }
+eldritch-agent = { workspace = true }
 pb = { workspace = true }
 anyhow = { version = "1.0" }
 rust-embed = { version = "8.0" }
@@ -14,8 +14,8 @@ rust-embed = { version = "8.0" }
 [features]
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
-fake_bindings = ["eldritch-libagent/fake_bindings"]
-stdlib = ["eldritch-libagent/stdlib"]
+fake_bindings = []
+stdlib = []
 
 [dev-dependencies]
 tempfile = "3.3"

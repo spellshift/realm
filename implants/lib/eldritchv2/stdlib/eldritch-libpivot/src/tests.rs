@@ -1,6 +1,6 @@
 use crate::{PivotLibrary, std::StdPivotLibrary};
 use alloc::collections::{BTreeMap, BTreeSet};
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use pb::c2;
 use std::sync::{Arc, Mutex};
 
