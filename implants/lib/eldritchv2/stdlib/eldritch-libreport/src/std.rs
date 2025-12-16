@@ -4,7 +4,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::{c2, eldritch};
 

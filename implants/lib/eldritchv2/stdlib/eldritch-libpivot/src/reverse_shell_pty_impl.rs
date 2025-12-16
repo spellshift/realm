@@ -1,7 +1,7 @@
 use alloc::string::String;
 use alloc::sync::Arc;
 use anyhow::Result;
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 
 pub fn reverse_shell_pty(agent: Arc<dyn Agent>, task_id: i64, cmd: Option<String>) -> Result<()> {
     agent

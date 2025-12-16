@@ -5,7 +5,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
 use core::marker::PhantomData;
-use eldritch_libagent::agent::Agent;
+use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::io::Write;
@@ -102,7 +102,6 @@ mod tests {
     use super::*;
     use alloc::collections::BTreeMap;
     use alloc::string::ToString;
-    use eldritch_libagent::fake::AgentFake;
     use pb::c2;
     use std::borrow::Cow;
     use std::collections::BTreeSet;
@@ -254,7 +253,7 @@ mod tests {
 
     #[test]
     fn test_read_binary_embedded_success() {
-        let agent = Arc::new(AgentFake);
+        let agent = Arc::new(MockAgent::new());
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
@@ -268,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_read_binary_embedded_fail() {
-        let agent = Arc::new(AgentFake);
+        let agent = Arc::new(MockAgent::new());
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
     }
@@ -292,7 +291,7 @@ mod tests {
 
     #[test]
     fn test_read_embedded_success() {
-        let agent = Arc::new(AgentFake);
+        let agent = Arc::new(MockAgent::new());
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
@@ -301,7 +300,7 @@ mod tests {
 
     #[test]
     fn test_copy_success() {
-        let agent = Arc::new(AgentFake);
+        let agent = Arc::new(MockAgent::new());
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
@@ -314,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_copy_fail_read() {
-        let agent = Arc::new(AgentFake);
+        let agent = Arc::new(MockAgent::new());
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
@@ -327,7 +326,7 @@ mod tests {
 
     #[test]
     fn test_copy_fail_write() {
-        let agent = Arc::new(AgentFake);
+        let agent = Arc::new(MockAgent::new());
         let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
         let temp_dir = tempfile::tempdir().unwrap();
         let _dest_str = temp_dir.path().to_str().unwrap().to_string();
