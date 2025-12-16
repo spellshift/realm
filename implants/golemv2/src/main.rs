@@ -20,7 +20,7 @@ use crate::multiassets::{MultiAssetLibrary, ParsedTome};
 asset_backend_embedded!(GolemEmbeddedAssets, "embedded");
 
 #[cfg(debug_assertions)]
-asset_backend_embedded!(GolemEmbeddedAssets, "../../../bin/embedded_files_test");
+asset_backend_embedded!(GolemEmbeddedAssets, "../../bin/embedded_files_test");
 
 // Build a new runtime
 fn new_runtime(agent: Arc<GolemAgent>, assetlib: impl ForeignValue + 'static) -> Interpreter {
@@ -108,7 +108,7 @@ fn main() -> anyhow::Result<()>  {
                 .map_err(|_| ())
                 .or_else(|_| {
                     locker.read(tome_path.clone())
-                    .map_err(|e| anyhow::anyhow!("Error: No such file or directory"))
+                    .map_err(|_| anyhow::anyhow!("Error: No such file or directory"))
                 })?;
 
             parsed_tomes.push(ParsedTome {

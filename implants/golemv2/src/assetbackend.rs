@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use core::fmt::Debug;
 use std::fs;
 use std::path::PathBuf;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow};
 
 
 // This trait is object-safe (`dyn AssetBackend`) because it is Sized, Send, Sync,

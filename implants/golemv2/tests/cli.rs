@@ -95,6 +95,43 @@ fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Test running `./golem -a ../../bin/golem_cli_test/`
+#[test]
+fn test_golem_main_loaded_files() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golemv2"));
+    cmd.arg("-a");
+    cmd.arg("../../bin/golem_cli_test/");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(r#"["append", "compress""#));
+    Ok(())
+}
+
+// Test running `./golem -a ../../bin/golem_cli_test/ -e`
+#[test]
+fn test_golem_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golemv2"));
+    cmd.arg("-e");
+    cmd.arg("-a");
+    cmd.arg("../../bin/golem_cli_test/");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(r#"hello from an embedded shell script"#))
+        .stdout(predicate::str::contains(r#"hello from an asset directory"#));
+    Ok(())
+}
+
+// Test running `./golem -a ./../bin/golem_cli_test/ -a ./../bin/golem_cli_test_shadow/`. Should fail
+#[test]
+fn test_golem_main_loaded_files_shadow() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golemv2"));
+    cmd.arg("-a");
+    cmd.arg("../../bin/golem_cli_test/");
+    cmd.arg("../../bin/golem_cli_test_shadow/");
+    cmd.assert().failure().stderr(predicate::str::contains(r#"Error: Asset collision detected."#));
+    Ok(())
+}
+
 // Test running `./golem` to execute embedded scripts.
 #[test]
 fn test_golem_main_embedded_files() -> anyhow::Result<()> {

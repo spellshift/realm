@@ -1,0 +1,7 @@
+def test():
+    res = ""
+    for i in ["H", "E", "L", "L", "O"]:
+        res = res + i
+    return res
+
+print(test())
