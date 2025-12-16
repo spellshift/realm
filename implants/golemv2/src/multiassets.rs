@@ -5,8 +5,9 @@ use std::fs;
 use std::io::Write;
 use eldritch_libassets::AssetsLibrary;
 use eldritch_macros::eldritch_library_impl;
-
+use alloc::borrow::Cow;
 use crate::assetbackend::AssetBackend;
+use anyhow;
 
 pub struct ParsedTome {
     pub name: String,
@@ -18,13 +19,15 @@ pub struct ParsedTome {
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct MultiAssetLibrary {
     // Stores a vector of boxed trait objects for runtime polymorphism.
-    assets: Vec<Box<dyn AssetBackend>>,
+    backends: Vec<Box<dyn AssetBackend>>,
+    // Stores all asset names collected so far.
+    asset_names: HashSet<String>,
 }
 
 impl core::fmt::Debug for MultiAssetLibrary {
 fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // Collect the Debug-printable items into a standard Vec
-        let backends_formatted: Vec<_> = self.assets.iter().enumerate()
+        let backends_formatted: Vec<_> = self.backends.iter().enumerate()
             .map(|(i, backend)| (i, backend)) // Create the (index, &Box<dyn AssetBackend>) tuple
             .collect();
         
@@ -36,26 +39,48 @@ fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 
 impl MultiAssetLibrary {
     /// Initializes an empty library.
-    pub fn new() -> Self {
-        MultiAssetLibrary { assets: Vec::new() }
+    pub fn new() -> anyhow::Result<Self> {
+        Ok(MultiAssetLibrary {
+            backends: Vec::new(),
+            asset_names: HashSet::new(),
+        })
     }
 
     /// Adds an AssetBackend to the library.
     /// The order of addition determines the search precedence.
-    pub fn add<T>(&mut self, asset: T)
+    /// Asset name shadowing is forbidden
+    pub fn add<T>(&mut self, backend: T) -> anyhow::Result<()>
     where
-        T: AssetBackend + 'static, // Must implement the trait and have 'static lifetime
+        T: AssetBackend + 'static,
     {
+        // Make a hashset of the new asset names
+        let new_assets: HashSet<String> = backend.assets().into_iter()
+            .map(Cow::into_owned)
+            .collect();
+        // See if any name overlap with existin assets
+        let colliding_names: Vec<&str> = self.asset_names.intersection(&new_assets)
+            .map(String::as_str)
+            .collect();
+
+        if colliding_names.len() > 0 {
+            let error_message = format!(
+                "Asset collision detected. The following asset names already exist in the library: {}",
+                colliding_names.join(", ")
+            );
+            return Err(anyhow::Error::msg(error_message));
+        };
         // Box the concrete type and store it as a trait object.
-        self.assets.push(Box::new(asset));
+        self.asset_names.extend(new_assets);
+        self.backends.push(Box::new(backend));
+        Ok(())
     }
 
     // Get all the tomes from the asset locker
     pub fn tomes(&self) -> Vec<ParsedTome> {
         let mut tomes: Vec<ParsedTome> = Vec::new();
         let mut seen_files: HashSet<String> = HashSet::new(); // track names weve seen
-        for library in &self.assets {
-            for name_cow in library.iter_items() {
+        for library in &self.backends {
+            for name_cow in library.assets() {
                 let file_path = name_cow.as_ref();
                 // Only process files ending with the eldritch extensions
                 if !file_path.ends_with("main.eldritch") && !file_path.ends_with("main.eldr") {
@@ -89,7 +114,7 @@ impl MultiAssetLibrary {
 impl AssetsLibrary for MultiAssetLibrary {
     fn read_binary(&self, name: String) -> Result<Vec<u8>, String> {
         // Iterate through the boxed trait objects (maintaining precedence order)
-        for library in &self.assets {
+        for library in &self.backends {
             if let Some(file) = library.get(&name) {
                 // Return immediately upon the first match
                 return Ok(file.to_vec());
@@ -123,17 +148,15 @@ impl AssetsLibrary for MultiAssetLibrary {
         let mut all_assets = HashSet::new();
 
         // Iterate through all libraries and collect all asset names
-        for library in &self.assets {
-            for name in library.iter_items() {
-                if name.ends_with("main.eldritch") || name.ends_with("main.eldr") ||
-                   name.ends_with("metadata.yml") || name.ends_with("metadata.yaml") {
-                    continue; // Skip eldritch files
-                    }
-                all_assets.insert(name);
-            }
+        for name in &self.asset_names {
+            if name.ends_with("main.eldritch") || name.ends_with("main.eldr") ||
+                name.ends_with("metadata.yml") || name.ends_with("metadata.yaml") {
+                continue; // Skip eldritch files
+                }
+            all_assets.insert(name);
         }
 
         // Convert the set of unique Cow<'static, str> into a Vec<String>
-        Ok(all_assets.into_iter().map(|c| c.into_owned()).collect())
+        Ok(all_assets.into_iter().map(|c| c.to_owned()).collect())
     }
 }

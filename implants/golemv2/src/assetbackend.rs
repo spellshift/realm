@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use core::fmt::Debug;
 use std::fs;
 use std::path::PathBuf;
+use anyhow::{anyhow, Result};
 
 
 // This trait is object-safe (`dyn AssetBackend`) because it is Sized, Send, Sync,
@@ -12,7 +13,7 @@ use std::path::PathBuf;
 pub trait AssetBackend: Debug + Send + Sync + 'static {
     fn get(&self, file_path: &str) -> Option<Cow<'static, [u8]>>;
     // Returns a concrete Vec for dynamic dispatch
-    fn iter_items(&self) -> Vec<Cow<'static, str>>;
+    fn assets(&self) -> Vec<Cow<'static, str>>;
 }
 
 /// Automatically implements the object-safe AssetBackend trait
@@ -32,7 +33,7 @@ macro_rules! asset_backend_embedded {
                 Some(embedded_file.data)
             }
 
-            fn iter_items(&self) -> Vec<Cow<'static, str>> {
+            fn assets(&self) -> Vec<Cow<'static, str>> {
                 // Call the standard iter() and force collection into a concrete Vec
                 <Self as rust_embed::RustEmbed>::iter().collect()
             }
@@ -53,19 +54,19 @@ impl DirectoryAssetBackend {
     ///
     /// # Errors
     /// Returns a String error if the path does not exist or is not a directory.
-    pub fn new(directory_name: &str) -> Result<Self, String> {
+    pub fn new(directory_name: &str) -> anyhow::Result<Self> {
         let root = PathBuf::from(directory_name);
         if !root.exists() {
-            return Err(format!("Directory not found: {}", directory_name));
+            return Err(anyhow!("Directory not found: {}", directory_name));
         }
         if !root.is_dir() {
-            return Err(format!("Path is not a directory: {}", directory_name));
+            return Err(anyhow!("Path is not a directory: {}", directory_name));
         }
         
         // Canonicalize the path to resolve symlinks and '..' segments,
         // which helps in later path checks.
         let canonical_root = root.canonicalize()
-            .map_err(|e| format!("Failed to canonicalize path {}: {}", directory_name, e))?;
+            .map_err(|e| anyhow!("Failed to canonicalize path {}: {}", directory_name, e))?;
 
         Ok(DirectoryAssetBackend { root: canonical_root })
     }
@@ -103,7 +104,7 @@ impl AssetBackend for DirectoryAssetBackend {
         Some(Cow::Owned(data))
     }
 
-    fn iter_items(&self) -> Vec<Cow<'static, str>> {
+    fn assets(&self) -> Vec<Cow<'static, str>> {
         walkdir::WalkDir::new(&self.root)
         .max_depth(MAX_RECURSION_DEPTH) 
         .into_iter()

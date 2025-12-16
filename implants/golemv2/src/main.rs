@@ -5,29 +5,25 @@ use clap::{Arg, Command, ArgAction};
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
 use std::fs;
 use std::sync::Arc;
-use eldritch_libagent::agent::{self, Agent};
 use std::borrow::Cow;
-use tokio::sync::Semaphore;
-use tokio::task;
-use futures::stream::{self, StreamExt};
-use tokio;
+use eldritch_libassets::AssetsLibrary;
 mod assetbackend;
 mod multiassets;
 mod agent;
-
-
 
 use crate::agent::GolemAgent;
 use crate::assetbackend::DirectoryAssetBackend;
 use crate::multiassets::{MultiAssetLibrary, ParsedTome};
 
-const MAX_CONCURRENT_INTERPRETATIONS: usize = 16;
-
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
+#[cfg(not(debug_assertions))]
 asset_backend_embedded!(GolemEmbeddedAssets, "embedded");
 
+#[cfg(debug_assertions)]
+asset_backend_embedded!(GolemEmbeddedAssets, "../../../bin/embedded_files_test");
+
 // Build a new runtime
-fn new_runtime(agent: Arc<dyn Agent>, assetlib: impl ForeignValue + 'static) -> Interpreter {
+fn new_runtime(agent: Arc<GolemAgent>, assetlib: impl ForeignValue + 'static) -> Interpreter {
     // Maybe change the printer here?
     let mut interp = Interpreter::new_with_printer(Arc::new(StdoutPrinter)).with_default_libs();
     // Register the libraries that we need. Basically the same as interp.with_task_context but
@@ -42,82 +38,64 @@ fn new_runtime(agent: Arc<dyn Agent>, assetlib: impl ForeignValue + 'static) -> 
     interp
 }
 
-async fn execute_all_tomes<A, F, T: Agent>(
-    parsed_tomes: Vec<ParsedTome>, 
-    agent: dyn<impl Agent>,
-    assetlib: impl ForeignValue + 'static
-) -> Vec<Result<String, String>>
-where
-    A: Agent + Clone + 'static,
-    F: ForeignValue + Clone + 'static,
-{
-    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_INTERPRETATIONS));
-    
-    // 1. Map: Create a stream of futures (tasks)
-    let futures_stream = stream::iter(parsed_tomes).map(|tome| {
-        let semaphore_clone = Arc::clone(&semaphore);
-        // This is the future (an async block) that produces the final Result
-        async move { 
-            // ... (Acquire permit, spawn_blocking, handle results as before) ...
-            
-            let _permit = semaphore_clone.acquire_owned().await.expect("Semaphore failed");
-
-            let interpret_result = task::spawn_blocking(move || {
-                let interp = new_runtime(agent, locker); 
-                interp.interpret(&tome.eldritch)
-            }).await;
-
-            match interpret_result {
-                Ok(res) => res, 
-                Err(e) => {
-                    eprintln!("Error: Blocking task for tome '{}' failed to join: {:?}", tome.name, e);
-                    Err(format!("Task failed to join: {:?}", e))
-                }
-            }
-        }
-    });
-    return ;
-}
 fn main() -> anyhow::Result<()>  {
     let matches = Command::new("golem")
         .arg(
-            Arg::with_name("INPUT")
+            Arg::new("INPUT")
                 .help("Set the tomes to run")
-                .multiple_occurrences(true)
+                .action(ArgAction::Append)
                 .required(false),
         )
         .arg(
-            Arg::with_name("interactive")
+            Arg::new("interactive")
                 .help("Run the interactive REPL")
                 .short('i')
-                .multiple_occurrences(false)
                 .required(false),
         )
         .arg(
             Arg::new("assets")
                 .short('a')
                 .long("assets")
-                .action(ArgAction::Set)
-                .value_name("DIRECTORY")
-                .help("Local asset directory to expose to tomes"),
+                .value_name("SOURCE")
+                // Allow multiple values (e.g., -a dir1 dir2) and multiple occurrences (e.g., -a dir1 -a dir2)
+                .num_args(1..) 
+                .action(ArgAction::Append) 
+                .help("Asset source (directory, Tavern URL, or ZIP)"),
+        )
+        .arg(
+            Arg::new("embedded")
+                .short('e')
+                .long("embedded")
+                .action(ArgAction::SetTrue)
+                .help("Use embedded assets alongside asset sources"),
+        )
+        .arg(
+            Arg::new("dump")
+                .short('d')
+                .long("dump")
+                .action(ArgAction::SetTrue)
+                .help("Dump tomes to be run and assets"),
         )
         .get_matches();
 
     //let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
-    let mut locker = MultiAssetLibrary::new();
-    locker.add(GolemEmbeddedAssets);
+    let mut locker = MultiAssetLibrary::new()?;
 
-    // Get all the given asset dirs as a AssetBackend
-    if matches.contains_id("assets") {
-        let asset_directories = matches.try_get_many::<String>("assets").unwrap().unwrap();
-        for dir in asset_directories {
-            match DirectoryAssetBackend::new(dir) {
-                Ok(ab) => locker.add(ab),
-                Err(e) => eprintln!("failed to open assets: {}", e)
-            }
-        }
+    let asset_directories: Vec<String> = matches.get_many::<String>("assets")
+        .unwrap_or_default()
+        .cloned()
+        .collect();
+
+    // If we have specified asset sources, we need to manually include embedded
+    if asset_directories.len() == 0 || matches.get_flag("embedded") {
+        locker.add(GolemEmbeddedAssets)?;
     }
-    
+    // Load all the asset directories into the locker
+    for dir in asset_directories {
+        let backend = DirectoryAssetBackend::new(&dir)?;
+        locker.add(backend)?;
+    }
+
     let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
     // Input overrides the main.eldritch files in the assets
     if matches.contains_id("INPUT") {
@@ -125,43 +103,55 @@ fn main() -> anyhow::Result<()>  {
         let tome_files = matches.try_get_many::<String>("INPUT").unwrap().unwrap();
         for tome in tome_files {
             let tome_path = tome.to_string().clone();
-            let tome_contents = fs::read_to_string(&tome_path)?;
+            // Read the specified tome off of the disk first, if that fails. try to get it from the asset locker
+            let tome_contents = fs::read_to_string(&tome_path)
+                .map_err(|_| ())
+                .or_else(|_| {
+                    locker.read(tome_path.clone())
+                    .map_err(|e| anyhow::anyhow!("Error: No such file or directory"))
+                })?;
+
             parsed_tomes.push(ParsedTome {
                 name: tome_path.clone(),
                 eldritch: tome_contents,
             });
         }
-
-        /*
-
-        */
     } else if matches.contains_id("interactive") {
         eprint!("interactive is not implemented!\n");
         return Ok(());
     }
+    // If we havent specified tomes in INPUT, we need to look through the asset locker for tomes to run
+    if parsed_tomes.len() == 0 {
+        parsed_tomes = locker.tomes();
+    }
 
-
+    // Setup the interpreter. This will need refactored when we do multi-threaded
     let agent = Arc::new(GolemAgent::new());
-    let interp = new_runtime(agent, locker);
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap();
+    let mut interp = new_runtime(agent, locker);
 
-    let (error_code, _result) = match runtime.block_on(run_tomes(parsed_tomes)) {
-        Ok(response) => (0, response),
-        Err(error) => {
-            eprint!("failed to execute tome {:?}", error);
-            (-1, Vec::new())
-        }
-    };
-    match interp.interpret("print(assets.list())") {
-        Ok(val) => {
-            println!("{}", val)
-        },
-        Err(e) => {
-            println!("{}", e)
+    // Print a debug for the configured assets and tomes
+    if matches.get_flag("dump") {
+        let tome_names: Vec<&str> = parsed_tomes.iter()
+            .map(|tome| tome.name.as_str())
+            .collect();
+        println!("tomes = {:?}", tome_names);
+        match interp.interpret("print(\"assets =\", assets.list())") {
+            Ok(_) => {},
+            Err(e) => {
+                println!("{}", e)
+            }
         }
     }
+
+    // Time to run some commands
+    for tome in parsed_tomes {
+        match interp.interpret(&tome.eldritch) {
+            Ok(_) => {},
+            Err(e) => {
+                println!("[{}] {}", tome.name, e)
+            }
+        }
+    }
+
     Ok(())
 }
