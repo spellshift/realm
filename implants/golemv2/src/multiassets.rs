@@ -26,13 +26,7 @@ pub struct MultiAssetLibrary {
 
 impl core::fmt::Debug for MultiAssetLibrary {
 fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        // Collect the Debug-printable items into a standard Vec
-        let backends_formatted: Vec<_> = self.backends.iter().enumerate()
-            .map(|(i, backend)| (i, backend)) // Create the (index, &Box<dyn AssetBackend>) tuple
-            .collect();
-        
         f.debug_struct("MultiAssetLibrary")
-            .field("Backends", &backends_formatted)
             .finish()
     }
 }
@@ -96,7 +90,6 @@ impl MultiAssetLibrary {
                 let eldritch_content = match str::from_utf8(eldritch_data.as_ref()) {
                     Ok(s) => s.to_string(),
                     Err(_) => {
-                        eprintln!("Warning: Eldritch file '{}' has invalid UTF-8 and was skipped.", file_path);
                         continue;
                     }
                 };
@@ -120,43 +113,31 @@ impl AssetsLibrary for MultiAssetLibrary {
                 return Ok(file.to_vec());
             }
         }
-        Err(format!("Asset not found: {}", name))
+        Err(format!("asset not found: {}", name))
     }
 
     fn read(&self, name: String) -> Result<String, String> {
         let file = self.read_binary(name.clone())
-            .map_err(|_| format!("Asset not found: {}", name))?;
+            .map_err(|_| format!("asset not found: {}", name))?;
 
         String::from_utf8(file)
-            .map_err(|e| format!("Asset '{}' contains invalid UTF-8: {}", name, e))
+            .map_err(|e| format!("asset '{}' contains invalid UTF-8: {}", name, e))
     }
 
     fn copy(&self, src: String, dest: String) -> Result<(), String> {
         let embedded_data = self.read_binary(src.clone())
-            .map_err(|e| format!("Copy failed: {}", e))?;
+            .map_err(|e| format!("copy failed: {}", e))?;
 
         let mut file = fs::File::create(&dest)
-            .map_err(|e| format!("Failed to create destination file '{}': {}", dest, e))?;
+            .map_err(|e| format!("failed to create destination file '{}': {}", dest, e))?;
 
         file.write_all(&embedded_data)
-            .map_err(|e| format!("Failed to write data to destination file '{}': {}", dest, e))?;
+            .map_err(|e| format!("failed to write data to destination file '{}': {}", dest, e))?;
 
         Ok(())
     }
 
     fn list(&self) -> Result<Vec<String>, String> {
-        let mut all_assets = HashSet::new();
-
-        // Iterate through all libraries and collect all asset names
-        for name in &self.asset_names {
-            if name.ends_with("main.eldritch") || name.ends_with("main.eldr") ||
-                name.ends_with("metadata.yml") || name.ends_with("metadata.yaml") {
-                continue; // Skip eldritch files
-                }
-            all_assets.insert(name);
-        }
-
-        // Convert the set of unique Cow<'static, str> into a Vec<String>
-        Ok(all_assets.into_iter().map(|c| c.to_owned()).collect())
+        Ok(self.asset_names.iter().cloned().collect())
     }
 }

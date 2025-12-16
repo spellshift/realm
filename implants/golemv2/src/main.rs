@@ -57,8 +57,6 @@ fn main() -> anyhow::Result<()>  {
                 .short('a')
                 .long("assets")
                 .value_name("SOURCE")
-                // Allow multiple values (e.g., -a dir1 dir2) and multiple occurrences (e.g., -a dir1 -a dir2)
-                .num_args(1..) 
                 .action(ArgAction::Append) 
                 .help("Asset source (directory, Tavern URL, or ZIP)"),
         )

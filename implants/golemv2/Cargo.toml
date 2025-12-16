@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = "4.5.53"
+clap = { workspace = true }
 anyhow = { workspace = true }
 pb = { workspace = true }
 walkdir = "2.5.0"
