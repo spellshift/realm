@@ -17,3 +17,5 @@ eldritch-libagent = { workspace = true, features = ["stdlib"] }
 eldritch-libassets = { workspace = true, features = ["stdlib"] }
 eldritch-libpivot = { workspace = true, features = ["stdlib"] }
 eldritch-libreport = { workspace = true, features = ["stdlib"] }
+tokio.workspace = true
+futures.workspace = true

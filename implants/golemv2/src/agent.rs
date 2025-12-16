@@ -1,11 +1,9 @@
 extern crate alloc;
 
-use eldritchv2::{agent::AgentLibrary};
 use eldritch_libagent::agent::Agent;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::sync::Arc;
 use std::sync::RwLock;
-use std::thread;
 
 #[derive(Clone)]
 pub struct GolemAgent {

@@ -1,13 +1,17 @@
-extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use std::collections::HashSet;
 use std::fs;
-use std::io::{self, Write};
+use std::io::Write;
 use eldritch_libassets::AssetsLibrary;
 use eldritch_macros::eldritch_library_impl;
 
-use crate::assetbackend::AssetBackend; 
+use crate::assetbackend::AssetBackend;
+
+pub struct ParsedTome {
+    pub name: String,
+    pub eldritch: String,
+}
 
 /// A library that combines multiple AssetBackend implementations,
 /// searching them in the order they were added.
@@ -44,6 +48,41 @@ impl MultiAssetLibrary {
     {
         // Box the concrete type and store it as a trait object.
         self.assets.push(Box::new(asset));
+    }
+
+    // Get all the tomes from the asset locker
+    pub fn tomes(&self) -> Vec<ParsedTome> {
+        let mut tomes: Vec<ParsedTome> = Vec::new();
+        let mut seen_files: HashSet<String> = HashSet::new(); // track names weve seen
+        for library in &self.assets {
+            for name_cow in library.iter_items() {
+                let file_path = name_cow.as_ref();
+                // Only process files ending with the eldritch extensions
+                if !file_path.ends_with("main.eldritch") && !file_path.ends_with("main.eldr") {
+                    continue;
+                }
+                if !seen_files.insert(file_path.to_string()) {
+                    continue; 
+                }
+                let eldritch_data = match library.as_ref().get(file_path) {
+                    Some(data) => data,
+                    None => continue, // Should not happen for a file listed in iter_items
+                };
+                let eldritch_content = match str::from_utf8(eldritch_data.as_ref()) {
+                    Ok(s) => s.to_string(),
+                    Err(_) => {
+                        eprintln!("Warning: Eldritch file '{}' has invalid UTF-8 and was skipped.", file_path);
+                        continue;
+                    }
+                };
+
+                tomes.push(ParsedTome {
+                    name: file_path.to_string(), 
+                    eldritch: eldritch_content,
+                });
+            }
+        }
+        tomes
     }
 }
 
@@ -86,6 +125,10 @@ impl AssetsLibrary for MultiAssetLibrary {
         // Iterate through all libraries and collect all asset names
         for library in &self.assets {
             for name in library.iter_items() {
+                if name.ends_with("main.eldritch") || name.ends_with("main.eldr") ||
+                   name.ends_with("metadata.yml") || name.ends_with("metadata.yaml") {
+                    continue; // Skip eldritch files
+                    }
                 all_assets.insert(name);
             }
         }
