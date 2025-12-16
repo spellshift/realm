@@ -54,6 +54,13 @@ func (Host) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Timestamp of when a task was last claimed or updated for the host."),
+		field.Time("next_seen_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("NEXT_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Timestamp of when a task is next expected to be claimed or updated for the host."),
 	}
 }
 

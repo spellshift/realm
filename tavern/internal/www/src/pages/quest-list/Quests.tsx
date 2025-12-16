@@ -6,7 +6,8 @@ import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import QuestHeader from "./components/QuestHeader";
 import { QuestTable } from "./components/QuestTable";
 import { useQuests } from "./useQuests";
-import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
+import { SortingControls } from "../../context/SortContext/index";
 
 const Quests = () => {
     const {
@@ -24,11 +25,10 @@ const Quests = () => {
         <PageWrapper currNavItem={PageNavItem.quests}>
             <QuestHeader />
             <div className="bg-gray-50 rounded-md">
-                <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
+                <div className="flex flex-col md:flex-row justify-between px-4 py-2 border-b border-gray-200 pb-5">
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">Quests</h3>
                     <div className="flex flex-row justify-end">
-                        {/* Sorting not added yet */}
-                        {/* <Button leftIcon={<Bars3BottomLeftIcon className="w-4" />} buttonVariant="ghost" buttonStyle={{ color: 'gray', size: "md" }} onClick={() => console.log("hi")}>Sort</Button> */}
+                        <SortingControls type={PageNavItem.quests} />
                         <FilterControls type={FilterPageType.QUEST} />
                     </div>
                 </div>

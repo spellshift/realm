@@ -123,6 +123,20 @@ func (bc *BeaconCreate) SetNillableLastSeenAt(t *time.Time) *BeaconCreate {
 	return bc
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (bc *BeaconCreate) SetNextSeenAt(t time.Time) *BeaconCreate {
+	bc.mutation.SetNextSeenAt(t)
+	return bc
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (bc *BeaconCreate) SetNillableNextSeenAt(t *time.Time) *BeaconCreate {
+	if t != nil {
+		bc.SetNextSeenAt(*t)
+	}
+	return bc
+}
+
 // SetInterval sets the "interval" field.
 func (bc *BeaconCreate) SetInterval(u uint64) *BeaconCreate {
 	bc.mutation.SetInterval(u)
@@ -323,6 +337,10 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
 	}
+	if value, ok := bc.mutation.NextSeenAt(); ok {
+		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
+		_node.NextSeenAt = value
+	}
 	if value, ok := bc.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
 		_node.Interval = value
@@ -506,6 +524,24 @@ func (u *BeaconUpsert) ClearLastSeenAt() *BeaconUpsert {
 	return u
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *BeaconUpsert) SetNextSeenAt(v time.Time) *BeaconUpsert {
+	u.Set(beacon.FieldNextSeenAt, v)
+	return u
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateNextSeenAt() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldNextSeenAt)
+	return u
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *BeaconUpsert) ClearNextSeenAt() *BeaconUpsert {
+	u.SetNull(beacon.FieldNextSeenAt)
+	return u
+}
+
 // SetInterval sets the "interval" field.
 func (u *BeaconUpsert) SetInterval(v uint64) *BeaconUpsert {
 	u.Set(beacon.FieldInterval, v)
@@ -666,6 +702,27 @@ func (u *BeaconUpsertOne) UpdateLastSeenAt() *BeaconUpsertOne {
 func (u *BeaconUpsertOne) ClearLastSeenAt() *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *BeaconUpsertOne) SetNextSeenAt(v time.Time) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateNextSeenAt() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *BeaconUpsertOne) ClearNextSeenAt() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearNextSeenAt()
 	})
 }
 
@@ -999,6 +1056,27 @@ func (u *BeaconUpsertBulk) UpdateLastSeenAt() *BeaconUpsertBulk {
 func (u *BeaconUpsertBulk) ClearLastSeenAt() *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearLastSeenAt()
+	})
+}
+
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *BeaconUpsertBulk) SetNextSeenAt(v time.Time) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateNextSeenAt() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *BeaconUpsertBulk) ClearNextSeenAt() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearNextSeenAt()
 	})
 }
 

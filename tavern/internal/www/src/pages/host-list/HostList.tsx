@@ -4,9 +4,10 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useHosts } from "./useHosts";
-import FilterControls, { FilterPageType } from "../../components/filter-controls";
+import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
 import HostTable from "./HostTable";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
+import { SortingControls } from "../../context/SortContext/index";
 
 const HostList: React.FC = () => {
     const { loading, error, data, updateHosts, page, setPage } = useHosts(true);
@@ -45,7 +46,7 @@ const HostList: React.FC = () => {
                     link: "/hosts"
                 }]}
             />
-            <div className="flex flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
+            <div className="flex flex-col md:flex-row justify-between items-end px-4 py-2 border-b border-gray-200 pb-5">
                 <div className="flex-1 flex flex-col gap-2">
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">
                         Hosts
@@ -54,7 +55,8 @@ const HostList: React.FC = () => {
                         Hosts are in-scope systems for the current engagement. A host can have multiple beacons which can execute instructions provided by tomes.
                     </p>
                 </div>
-                <div className="flex flex-row justify-end">
+                <div className="flex flex-row justify-end m">
+                    <SortingControls type={PageNavItem.hosts} />
                     <FilterControls type={FilterPageType.HOST} />
                 </div>
             </div>

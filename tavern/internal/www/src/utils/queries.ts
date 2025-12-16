@@ -53,6 +53,7 @@ query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
                 node{
                     id
                     name
+                    primaryIP
                 }
             }
         }
@@ -211,6 +212,16 @@ export const GET_QUEST_QUERY = gql`
                         edges{
                             node{
                                 lastModifiedAt
+                            }
+                        }
+                    }
+                    tasks{
+                        edges{
+                            node{
+                                id
+                                beacon {
+                                    id
+                                }
                             }
                         }
                     }

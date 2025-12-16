@@ -1,50 +1,44 @@
 import { useQuery } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TableRowLimit } from "../../utils/enums";
+import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { GET_QUEST_QUERY } from "../../utils/queries";
 import { Filters, useFilters } from "../../context/FilterContext";
-import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
-import { Cursor, GetQuestQueryVariables, QuestQueryTopLevel } from "../../utils/interfacesQuery";
+import { constructQuestFilterQuery, constructTaskFilterQuery } from "../../utils/constructQueryUtils";
+import { Cursor, GetQuestQueryVariables, OrderByField, QuestQueryTopLevel } from "../../utils/interfacesQuery";
+import { useSorts } from "../../context/SortContext";
 
 export const useQuests = (pagination: boolean) => {
     const [page, setPage] = useState<number>(1);
     const { filters } = useFilters();
+    const { sorts } = useSorts();
 
-    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters): GetQuestQueryVariables => {
+    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters, sort?: OrderByField): GetQuestQueryVariables => {
         const defaultRowLimit = TableRowLimit.QuestRowLimit;
-        const filterQueryFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
+        const filterQueryTaskFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
+        const questFilterFields = (currentFilters?.filtersEnabled) ? constructQuestFilterQuery(currentFilters) : null;
 
         const query: GetQuestQueryVariables = {
           where: {
-            ...(currentFilters?.filtersEnabled && currentFilters.questName && {
-              nameContains: currentFilters.questName
-            }),
-            ...(filterQueryFields || {})
+            ...(questFilterFields || {}),
+            ...(filterQueryTaskFields || {})
           },
           whereTotalTask: {
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           whereFinishedTask: {
             execFinishedAtNotNil: true,
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           whereOutputTask: {
             outputSizeGT: 0,
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           whereErrorTask: {
             errorNotNil: true,
-            ...(filterQueryFields?.hasTasksWith || {})
+            ...(filterQueryTaskFields?.hasTasksWith || {})
           },
           firstTask: 1,
-          orderByTask: [{
-            direction: "DESC",
-            field: "LAST_MODIFIED_AT"
-          }],
-          orderBy: [{
-            direction: "DESC",
-            field: "CREATED_AT"
-          }]
+          ...(sort && {orderBy: [sort]})
         };
 
         if (pagination) {
@@ -57,7 +51,8 @@ export const useQuests = (pagination: boolean) => {
         return query;
     }, [pagination]);
 
-    const queryVariables = useMemo(() => constructDefaultQuery(undefined, undefined, filters), [constructDefaultQuery, filters]);
+    const questSort = sorts[PageNavItem.quests];
+    const queryVariables = useMemo(() => constructDefaultQuery(undefined, undefined, filters, questSort), [constructDefaultQuery, filters, questSort]);
 
     const { loading, data, error, refetch } = useQuery<QuestQueryTopLevel>(
       GET_QUEST_QUERY,
@@ -68,14 +63,22 @@ export const useQuests = (pagination: boolean) => {
     );
 
     const updateQuestList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-      const query = constructDefaultQuery(afterCursor, beforeCursor, filters);
-      refetch(query);
-    }, [filters, constructDefaultQuery, refetch]);
+      const query = constructDefaultQuery(afterCursor, beforeCursor, filters, questSort);
+      return refetch(query);
+    }, [filters, questSort, constructDefaultQuery, refetch]);
 
-    // Reset page when filters change
+    useEffect(() => {
+      const abortController = new AbortController();
+      updateQuestList();
+
+      return () => {
+        abortController.abort();
+      };
+    }, [updateQuestList]);
+
     useEffect(() => {
       setPage(1);
-    }, [filters]);
+    }, [filters, questSort]);
 
     return {
         data,

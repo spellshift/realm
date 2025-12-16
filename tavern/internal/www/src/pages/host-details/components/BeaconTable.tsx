@@ -20,14 +20,14 @@ const BeaconTable = ({ beacons }: { beacons: Array<BeaconEdge> }) => {
             header: 'Beacon',
             accessorFn: (row: BeaconEdge) => row?.node?.name,
             footer: props => props.column.id,
-            enableSorting: true,
+            enableSorting: false,
         },
         {
             id: "principal",
             header: "Principal",
             accessorFn: (row: BeaconEdge) => row?.node?.principal,
             footer: props => props.column.id,
-            enableSorting: true,
+            enableSorting: false,
             maxSize: 100,
             cell: (cellData: any) => {
                 const principal = cellData.getValue();

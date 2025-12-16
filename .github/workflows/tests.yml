@@ -32,6 +32,9 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.out
+        flags: tavern
+        name: tavern-coverage
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -52,7 +55,7 @@ jobs:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: '1.87.0'
+        toolchain: '1.91.1'
         default: true
         profile: minimal
         components: rustfmt, clippy
@@ -87,3 +90,35 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./implants/lcov.info
+        flags: implants
+        name: implants-coverage-${{ matrix.os }}
+  ui-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+    defaults:
+      run:
+        working-directory: tavern/internal/www
+    steps:
+    - uses: actions/checkout@v5
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: tavern/internal/www/package-lock.json
+    - name: 📦 Install dependencies
+      run: npm ci
+    - name: 🔎 Run vitest with coverage
+      run: npm test -- --run --coverage
+    - name: 📶 Upload Coverage Results
+      if: always()
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./tavern/internal/www/coverage/lcov.info
+        flags: ui-tests
+        name: ui-tests-coverage

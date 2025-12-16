@@ -2,6 +2,7 @@ codecov:
   notify:
     wait_for_ci: yes
     after_n_builds: 6
+
 ignore:
   - "**/*.pb.go" # Ignore Generated Protobufs
   - "**/*.generated.go" # Ignore Generated Code
@@ -9,3 +10,8 @@ ignore:
   - implants/lib/pb/src/generated/*.rs # Ignore Generated Protobufs
   - tavern/internal/ent/ # Ignore Ent Generated Code
   - tavern/internal/c2/c2test # Ignore test util package
+  - tavern/internal/www/node_modules/ # Ignore Node modules
+  - tavern/internal/www/build/ # Ignore build artifacts
+  - tavern/internal/www/src/components # Ignore components for now
+  - tavern/internal/www/src/pages
+  - tavern/internal/www/utils

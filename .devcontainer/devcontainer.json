@@ -65,5 +65,5 @@
 	// "mounts": [
 	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
 	// ],
-	"postAttachCommand": "cargo install cargo-zigbuild && cargo install xwin --target x86_64-unknown-linux-gnu"
+	"postAttachCommand": "cargo install cargo-zigbuild && cargo +1.89.0 install xwin --locked"
 }

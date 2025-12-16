@@ -1,4 +1,5 @@
-import { TomeNode, UserNode } from "./interfacesQuery";
+import { BeaconNode, HostNode, TagNode, TomeNode, UserNode } from "./interfacesQuery";
+import { TomeFilterFieldKind } from "./enums";
 
 export type KindOfTag = 'service' | 'group';
 
@@ -10,9 +11,29 @@ export interface FilterBarOption {
     name: string;
 }
 
+export interface FilterOptionGroup {
+    label: string;
+    options: FilterBarOption[];
+}
+
+export interface TagContextProps {
+    beacons: Array<FilterBarOption & BeaconNode>;
+    groupTags: Array<FilterBarOption & TagNode>;
+    serviceTags: Array<FilterBarOption & TagNode>;
+    hosts: Array<FilterBarOption & HostNode>;
+    principals: Array<FilterBarOption>;
+    primaryIPs: Array<FilterBarOption>;
+    platforms: Array<FilterBarOption>;
+}
+
 export interface OnlineOfflineStatus {
     online: number;
     offline: number;
+}
+
+export type TomeFiltersByType = {
+    [TomeFilterFieldKind.SupportModel]: Array<string>,
+    [TomeFilterFieldKind.Tactic]: Array<string>
 }
 
 export type FieldInputParams = {
