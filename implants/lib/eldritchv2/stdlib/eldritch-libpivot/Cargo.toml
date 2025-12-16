@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
+eldritch-repl = { workspace = true } # Added dependency
 eldritch-macros = { workspace = true }
 eldritch-agent = { path = "../../eldritch-agent" }
 transport = { workspace = true }
@@ -24,6 +25,7 @@ tokio = { workspace = true, features = [
 ], optional = true }
 pnet = { workspace = true, optional = true }
 pb = { workspace = true }
+crossterm = { workspace = true } # Added dependency
 
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
 listeners = { workspace = true, optional = true }
