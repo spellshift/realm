@@ -7,6 +7,7 @@ use alloc::sync::Arc;
 use std::sync::RwLock;
 use std::thread;
 
+#[derive(Clone)]
 pub struct GolemAgent {
     config: Arc<RwLock<BTreeMap<String, String>>>,
 }

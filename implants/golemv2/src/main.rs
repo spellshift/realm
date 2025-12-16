@@ -1,6 +1,3 @@
-mod agent;
-mod assets;
-mod assetbackend;
 
 use clap::{Arg, Command, ArgAction};
 use anyhow::Result;
@@ -14,11 +11,15 @@ use std::sync::Arc;
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 
-// Get some embedded assets and implement them as AssetBackend
-#[derive(RustEmbed)]
-#[folder = "embedded"]
-struct GolemEmbeddedAssets;
-as_asset_backend!(GolemEmbeddedAssets);
+mod assetbackend;
+mod multiassets;
+mod agent;
+
+use crate::assetbackend::DirectoryAssetBackend;
+use crate::multiassets::MultiAssetLibrary;
+
+// Get some embedded assets and implement them as AssetBackend and RustEmbed
+asset_backend_embedded!(GolemEmbeddedAssets, "embedded");
 
 struct ParsedTome {
     pub name: String,
@@ -50,42 +51,19 @@ fn main() -> anyhow::Result<()>  {
         )
         .get_matches();
 
-    let mut assets: Vec<String> = Vec::new();
-    let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
+    //let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
+    let mut locker = MultiAssetLibrary::new();
 
+    locker.add(GolemEmbeddedAssets);
+    // Get all the given asset dirs as a AssetBackend
     if matches.contains_id("assets") {
-        const MAX_RECURSION_DEPTH: usize = 10;
         let asset_directories = matches.try_get_many::<String>("assets").unwrap().unwrap();
         for dir in asset_directories {
-            for entry in WalkDir::new(dir)
-                .max_depth(MAX_RECURSION_DEPTH)
-                .into_iter()
-                .flatten()
-            {
-                if entry.file_type().is_file() {
-                    // Make the path relative
-                    if let Ok(rel_path) = entry.path().strip_prefix(dir) {
-                        if let Some(entry_str) = rel_path.to_str() {
-                            // If we have a tome, then add it
-                            if entry.file_name() == "main.eldritch" {
-                                let tome_contents = fs::read_to_string(entry.path())?;
-                                parsed_tomes.push(ParsedTome {
-                                    name: String::from(entry_str),
-                                    eldritch: tome_contents
-                                })
-                            } else if entry.file_name() != "metadata.yml" {
-                                assets.push(entry_str.to_owned());
-                            }
-                        }
-                    }
-                }
+            match DirectoryAssetBackend::new(dir) {
+                Ok(ab) => locker.add(ab),
+                Err(e) => eprintln!("failed to open assets: {}", e)
             }
         }
-        // Set the assets of each tome to the local file names
-        /*for tome in &mut parsed_tomes {
-            tome.file_names = assets.clone();
-        }
-        */
     }
 
     if matches.contains_id("INPUT") {
@@ -119,23 +97,21 @@ fn main() -> anyhow::Result<()>  {
     } else if matches.contains_id("interactive") {
         eprint!("interactive is not implemented!\n");
         return Ok(());
-    } else {
-        // If we dont have any tomes (e.g. the user did not supply a local assets dir), then read the embedded tomes
-        eprint!("we dont have any tomes specified\n");
     }
 
     let mut interp = Interpreter::new_with_printer(Arc::new(StdoutPrinter)).with_default_libs();
+    // Register the libraries that we need. Basically the same as interp.with_task_context but
+    // with our custom assets library
+    let agent = Arc::new(agent::GolemAgent::new());
+    let agent_lib = eldritch_libagent::std::StdAgentLibrary::new(agent.clone(), 0);
+    interp.register_lib(agent_lib);
+    let report_lib = eldritch_libreport::std::StdReportLibrary::new(agent.clone(), 0);
+    interp.register_lib(report_lib);
+    let pivot_lib = eldritch_libpivot::std::StdPivotLibrary::new(agent.clone(), 0);
+    interp.register_lib(pivot_lib);
+    interp.register_lib(locker);
 
-    // Register Task Context (Agent, Report, Assets)
-    let remote_assets = assets.clone();
-    let agent = agent::GolemAgent::new();
-    interp = interp.with_task_context::<GolemEmbeddedAssets>(Arc::new(agent), 0, remote_assets);
-    /*
-    for tome in &mut parsed_tomes {
-        println!("{}", tome.name);
-    }
-     */
-    match interp.interpret("print(assets.list())\nprint(assets.read(assets.list()[1]))") {
+    match interp.interpret("print(assets.list())") {
         Ok(val) => {
             println!("{}", val)
         },

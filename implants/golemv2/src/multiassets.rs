@@ -1,7 +1,3 @@
-use assetbackend;
-
-// multi_asset_library.rs
-
 extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -9,14 +5,29 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::{self, Write};
 use eldritch_libassets::AssetsLibrary;
+use eldritch_macros::eldritch_library_impl;
 
-use crate::AssetBackend; 
+use crate::assetbackend::AssetBackend; 
 
 /// A library that combines multiple AssetBackend implementations,
 /// searching them in the order they were added.
+#[eldritch_library_impl(AssetsLibrary)]
 pub struct MultiAssetLibrary {
     // Stores a vector of boxed trait objects for runtime polymorphism.
     assets: Vec<Box<dyn AssetBackend>>,
+}
+
+impl core::fmt::Debug for MultiAssetLibrary {
+fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        // Collect the Debug-printable items into a standard Vec
+        let backends_formatted: Vec<_> = self.assets.iter().enumerate()
+            .map(|(i, backend)| (i, backend)) // Create the (index, &Box<dyn AssetBackend>) tuple
+            .collect();
+        
+        f.debug_struct("MultiAssetLibrary")
+            .field("Backends", &backends_formatted)
+            .finish()
+    }
 }
 
 impl MultiAssetLibrary {
@@ -36,16 +47,13 @@ impl MultiAssetLibrary {
     }
 }
 
-// ----------------------------------------
-// AssetsLibrary Implementation
-// ----------------------------------------
 impl AssetsLibrary for MultiAssetLibrary {
     fn read_binary(&self, name: String) -> Result<Vec<u8>, String> {
         // Iterate through the boxed trait objects (maintaining precedence order)
         for library in &self.assets {
             if let Some(file) = library.get(&name) {
                 // Return immediately upon the first match
-                return Ok(file.data.to_vec());
+                return Ok(file.to_vec());
             }
         }
         Err(format!("Asset not found: {}", name))
