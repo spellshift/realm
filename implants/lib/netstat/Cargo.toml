@@ -1,0 +1,28 @@
+[package]
+name = "netstat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+log = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+]}
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+byteorder = "1.5"
+
+[target.'cfg(target_os = "freebsd")'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-test = { workspace = true }

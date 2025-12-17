@@ -11,6 +11,7 @@ print_stdout = []
 [dependencies]
 pb = { workspace = true }
 transport = { workspace = true }
+netstat = { workspace = true }
 
 generic-array = "=0.14.7"
 aes = { workspace = true }
@@ -84,9 +85,6 @@ windows-sys = { workspace = true, features = [
 [target.'cfg(not(windows))'.dependencies]
 pnet = { workspace = true }
 
-# NOT FREEBSD
-[target.'cfg(not(target_os = "freebsd"))'.dependencies]
-listeners = { workspace = true }
 
 # DEV
 [dev-dependencies]
