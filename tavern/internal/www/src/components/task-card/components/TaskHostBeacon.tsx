@@ -3,6 +3,7 @@ import Badge from "../../tavern-base-ui/badge/Badge";
 import { FC } from "react";
 import { checkIfBeaconOffline } from "../../../utils/utils";
 import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
+import { Globe, Network } from "lucide-react";
 
 interface TaskHostBeaconType {
     beacon: BeaconNode
@@ -27,9 +28,12 @@ const TaskHostBeacon: FC<TaskHostBeaconType> = ({ beacon }) => {
                     {(principal && principal !== "") &&
                         <Badge>{principal}</Badge>
                     }
-                    {(host?.primaryIP && host?.primaryIP !== "") &&
-                        <Badge>{host?.primaryIP}</Badge>
-                    }
+                    {host?.primaryIP && (
+                        <Badge leftIcon={<Network className="h-3 w-3" />}>{host?.primaryIP}</Badge>
+                    )}
+                    {host?.externalIP && (
+                        <Badge leftIcon={<Globe className="h-3 w-3" />}>{host?.externalIP}</Badge>
+                    )}
                     {host?.platform &&
                         <Badge>{host?.platform}</Badge>
                     }

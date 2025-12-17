@@ -33,6 +33,7 @@ query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
                   id
                   name
                   primaryIP
+                  externalIP
                   platform
                   tags {
                     edges{
@@ -88,6 +89,7 @@ export const GET_HOST_QUERY = gql`
                 id
                 name
                 primaryIP
+                externalIP
                 platform
                 lastSeenAt
                 tags {
@@ -341,6 +343,7 @@ export const GET_TASK_QUERY = gql`
                             id
                             name
                             primaryIP
+                            externalIP
                             platform
                             tags {
                                 edges{
