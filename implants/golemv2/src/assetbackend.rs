@@ -6,40 +6,8 @@ use core::fmt::Debug;
 use std::fs;
 use std::path::PathBuf;
 use anyhow::{anyhow};
+use eldritch_libassets::std::AssetBackend;
 
-
-// This trait is object-safe (`dyn AssetBackend`) because it is Sized, Send, Sync,
-// and all methods return known, concrete types (EmbeddedFile or Vec).
-pub trait AssetBackend: Debug + Send + Sync + 'static {
-    fn get(&self, file_path: &str) -> Option<Cow<'static, [u8]>>;
-    // Returns a concrete Vec for dynamic dispatch
-    fn assets(&self) -> Vec<Cow<'static, str>>;
-}
-
-/// Automatically implements the object-safe AssetBackend trait
-/// for a struct that uses the standard #[derive(rust_embed::RustEmbed)].
-#[macro_export]
-macro_rules! asset_backend_embedded {
-    // This macro takes the struct name ($name) and the folder path ($folder_path)
-    ($name:ident, $folder_path:literal) => {
-        // A. Define the struct with #[derive(RustEmbed)]
-        #[derive(Debug, rust_embed::RustEmbed)]
-        #[folder = $folder_path]
-        pub struct $name;
-
-        impl $crate::assetbackend::AssetBackend for $name {
-            fn get(&self, file_path: &str) -> Option<Cow<'static, [u8]>> {
-                let embedded_file: rust_embed::EmbeddedFile = <Self as rust_embed::RustEmbed>::get(file_path)?;
-                Some(embedded_file.data)
-            }
-
-            fn assets(&self) -> Vec<Cow<'static, str>> {
-                // Call the standard iter() and force collection into a concrete Vec
-                <Self as rust_embed::RustEmbed>::iter().collect()
-            }
-        }
-    };
-}
 
 const MAX_RECURSION_DEPTH: usize = 10;
 
@@ -97,7 +65,7 @@ impl DirectoryAssetBackend {
 
 // Implementing AssetBackend for DirectoryAssetBackend
 impl AssetBackend for DirectoryAssetBackend {
-    fn get(&self, file_path: &str) -> Option<Cow<'static, [u8]>> {
+    fn get(&self, file_path: &str) -> Result<Vec<u8>> {
         let safe_path = self.get_safe_path(file_path)?;
         // The path is safe and exists. Read the contents.
         let data = fs::read(&safe_path).ok()?;

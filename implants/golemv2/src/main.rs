@@ -2,25 +2,32 @@
 extern crate alloc;
 
 use clap::{Arg, Command, ArgAction};
+use eldritch_libassets::std::{StdAssetsLibrary, EmbeddedAssets};
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
 use std::fs;
 use std::sync::Arc;
 use std::borrow::Cow;
 use eldritch_libassets::AssetsLibrary;
-mod assetbackend;
-mod multiassets;
 mod agent;
+mod assetbackend;
 
 use crate::agent::GolemAgent;
-use crate::assetbackend::DirectoryAssetBackend;
-use crate::multiassets::{MultiAssetLibrary, ParsedTome};
 
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
 #[cfg(not(debug_assertions))]
-asset_backend_embedded!(GolemEmbeddedAssets, "embedded");
+#[derive(Debug, rust_embed::RustEmbed)]
+#[folder = "embedded"]
+pub struct GolemEmbeddedAssets;
 
 #[cfg(debug_assertions)]
-asset_backend_embedded!(GolemEmbeddedAssets, "../../bin/embedded_files_test");
+#[derive(Debug, rust_embed::RustEmbed)]
+#[folder = "../../bin/embedded_files_test"]
+pub struct GolemEmbeddedAssets;
+
+pub struct ParsedTome {
+    pub name: String,
+    pub eldritch: String,
+}
 
 // Build a new runtime
 fn new_runtime(agent: Arc<GolemAgent>, assetlib: impl ForeignValue + 'static) -> Interpreter {
@@ -77,7 +84,7 @@ fn main() -> anyhow::Result<()>  {
         .get_matches();
 
     //let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
-    let mut locker = MultiAssetLibrary::new()?;
+    let mut locker = StdAssetsLibrary::new();
 
     let asset_directories: Vec<String> = matches.get_many::<String>("assets")
         .unwrap_or_default()
@@ -86,7 +93,8 @@ fn main() -> anyhow::Result<()>  {
 
     // If we have specified asset sources, we need to manually include embedded
     if asset_directories.len() == 0 || matches.get_flag("embedded") {
-        locker.add(GolemEmbeddedAssets)?;
+        let backend = EmbeddedAssets::<GolemEmbeddedAssets>::new();
+        locker.add(Arc::new(backend))?;
     }
     // Load all the asset directories into the locker
     for dir in asset_directories {

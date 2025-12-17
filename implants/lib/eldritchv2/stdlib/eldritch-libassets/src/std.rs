@@ -1,11 +1,11 @@
 use super::AssetsLibrary;
-use crate::RustEmbed;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::borrow::Cow;
 use anyhow::Result;
 use eldritch_agent::Agent;
+use rust_embed;
 use core::marker::PhantomData;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
@@ -31,20 +31,20 @@ impl AssetBackend for EmptyAssets {
     }
 }
 
-// An AssetBackend that gets assets from a rustembed
-pub struct EmbeddedAssets<T: RustEmbed> {
+// An AssetBackend that gets assets from a rust_embed::Embed
+pub struct EmbeddedAssets<T: rust_embed::Embed> {
     _phantom: PhantomData<T>,
 }
 
-impl<T: RustEmbed> EmbeddedAssets<T> {
+impl<T: rust_embed::Embed> EmbeddedAssets<T> {
     pub fn new() -> Self { // No arguments needed
         Self { _phantom: PhantomData }
     }
 }
 
-impl<T: RustEmbed + Send + Sync + 'static> AssetBackend for EmbeddedAssets<T> {
+impl<T: rust_embed::Embed + Send + Sync + 'static> AssetBackend for EmbeddedAssets<T> {
     fn get(&self, name: &str) -> Result<Vec<u8>> {
-        // T::get is a static method from the RustEmbed trait
+        // T::get is a static method from the rust_embed::Embed trait
         T::get(name)
             .map(|file| file.data.to_vec())
             .ok_or_else(|| anyhow::anyhow!("asset not found: {}", name))
@@ -203,22 +203,12 @@ mod tests {
     use std::collections::BTreeSet;
     use std::sync::Mutex;
 
-    use crate::RustEmbed as LocalRustEmbed;
-    use rust_embed::RustEmbed as CrateRustEmbed;
+    use rust_embed::Embed as CrateEmbed;
 
     #[cfg(debug_assertions)]
-    #[derive(CrateRustEmbed)]
+    #[derive(rust_embed::Embed)]
     #[folder = "../../../../../bin/embedded_files_test"]
     pub struct TestAsset;
-
-    impl LocalRustEmbed for TestAsset {
-        fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile> {
-            <TestAsset as CrateRustEmbed>::get(file_path)
-        }
-        fn iter() -> impl Iterator<Item = Cow<'static, str>> {
-            <TestAsset as CrateRustEmbed>::iter()
-        }
-    }
 
     struct MockAgent {
         assets: Mutex<BTreeMap<String, Vec<u8>>>,

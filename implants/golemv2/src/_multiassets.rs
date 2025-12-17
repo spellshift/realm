@@ -9,10 +9,7 @@ use alloc::borrow::Cow;
 use crate::assetbackend::AssetBackend;
 use anyhow;
 
-pub struct ParsedTome {
-    pub name: String,
-    pub eldritch: String,
-}
+
 
 /// A library that combines multiple AssetBackend implementations,
 /// searching them in the order they were added.
