@@ -10,9 +10,10 @@ fn create_interp() -> Interpreter {
     {
         let agent_mock = Arc::new(AgentFake);
         let task_id = 123;
+        let backend = Arc::new(eldritch_libassets::std::EmptyAssets);
         Interpreter::new()
             .with_default_libs()
-            .with_task_context::<eldritch_libassets::std::EmptyAssets>(agent_mock, task_id, vec![])
+            .with_task_context(agent_mock, task_id, vec![], backend)
     }
     #[cfg(not(feature = "stdlib"))]
     {
