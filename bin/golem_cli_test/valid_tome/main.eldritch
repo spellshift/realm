@@ -4,4 +4,6 @@ def test():
         res = res + i
     return res
 
+print("hello from an asset directory")
 print(test())
+print(dir(file))

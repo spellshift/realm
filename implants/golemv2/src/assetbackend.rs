@@ -65,11 +65,11 @@ impl DirectoryAssetBackend {
 
 // Implementing AssetBackend for DirectoryAssetBackend
 impl AssetBackend for DirectoryAssetBackend {
-    fn get(&self, file_path: &str) -> Result<Vec<u8>> {
-        let safe_path = self.get_safe_path(file_path)?;
+    fn get(&self, file_path: &str) -> anyhow::Result<Vec<u8>> {
+        let safe_path = self.get_safe_path(file_path).ok_or(anyhow::anyhow!("invalid file path"))?;
         // The path is safe and exists. Read the contents.
-        let data = fs::read(&safe_path).ok()?;
-        Some(Cow::Owned(data))
+        let data = fs::read(&safe_path)?;
+        Ok(data)
     }
 
     fn assets(&self) -> Vec<Cow<'static, str>> {

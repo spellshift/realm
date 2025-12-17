@@ -5,12 +5,13 @@ use clap::{Arg, Command, ArgAction};
 use eldritch_libassets::std::{StdAssetsLibrary, EmbeddedAssets};
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
 use std::fs;
+use std::process::exit;
 use std::sync::Arc;
-use std::borrow::Cow;
 use eldritch_libassets::AssetsLibrary;
+
 mod agent;
 mod assetbackend;
-
+use crate::assetbackend::DirectoryAssetBackend;
 use crate::agent::GolemAgent;
 
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
@@ -99,7 +100,7 @@ fn main() -> anyhow::Result<()>  {
     // Load all the asset directories into the locker
     for dir in asset_directories {
         let backend = DirectoryAssetBackend::new(&dir)?;
-        locker.add(backend)?;
+        locker.add(Arc::new(backend))?;
     }
 
     let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
@@ -114,7 +115,7 @@ fn main() -> anyhow::Result<()>  {
                 .map_err(|_| ())
                 .or_else(|_| {
                     locker.read(tome_path.clone())
-                    .map_err(|_| anyhow::anyhow!("Error: No such file or directory"))
+                    .map_err(|_| anyhow::anyhow!("Error: No such file or asset"))
                 })?;
 
             parsed_tomes.push(ParsedTome {
@@ -128,7 +129,27 @@ fn main() -> anyhow::Result<()>  {
     }
     // If we havent specified tomes in INPUT, we need to look through the asset locker for tomes to run
     if parsed_tomes.len() == 0 {
-        parsed_tomes = locker.tomes();
+        match locker.list() {
+            Ok(assets) => {
+                for asset in assets {
+                    if asset.ends_with("main.eldritch") {
+                        let eldr_str = match locker.read(asset.clone()) {
+                            Ok(val) => val,
+                            Err(e) =>  return Err(anyhow::anyhow!(e))
+                        };
+                        parsed_tomes.push(ParsedTome {
+                            name: asset,
+                            eldritch: eldr_str,
+                        });
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(anyhow::anyhow!(e))
+            }
+        }
+
+
     }
 
     // Setup the interpreter. This will need refactored when we do multi-threaded
@@ -144,7 +165,8 @@ fn main() -> anyhow::Result<()>  {
         match interp.interpret("print(\"assets =\", assets.list())") {
             Ok(_) => {},
             Err(e) => {
-                println!("{}", e)
+                eprintln!("{}", e);
+                exit(127);
             }
         }
     }
@@ -154,7 +176,8 @@ fn main() -> anyhow::Result<()>  {
         match interp.interpret(&tome.eldritch) {
             Ok(_) => {},
             Err(e) => {
-                println!("[{}] {}", tome.name, e)
+                eprintln!("{}: {}", tome.name, e);
+                exit(127);
             }
         }
     }
