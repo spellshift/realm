@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
@@ -40,7 +40,7 @@ extern "C" {
 const PROC_ALL_PIDS: u32 = 1;
 const PROC_PIDLISTFDS: libc::c_int = 1;
 const PROC_PIDFDSOCKETINFO: libc::c_int = 3;
-const PROX_FDTYPE_SOCKET: u32 = 2;
+const PROC_FDTYPE_SOCKET: u32 = 2;
 
 // Data structures matching macOS kernel structures
 #[repr(C)]
@@ -95,7 +95,7 @@ struct SocketInfo {
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct VInfoStat {
-    vst_dev: u64,
+    vst_dev: u32,
     vst_mode: u16,
     vst_nlink: u16,
     vst_ino: u64,
@@ -220,37 +220,138 @@ struct TcpSockInfo {
     tcpsi_tp: u64,
 }
 
+const SOCK_MAXADDRLEN: usize = 255;
+const IF_NAMESIZE: usize = 16;
+const MAX_KCTL_NAME: usize = 96;
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+struct SockaddrUn {
+    sun_len: u8,
+    sun_family: u8,
+    sun_path: [u8; 104],
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+union UnsiAddr {
+    ua_sun: SockaddrUn,
+    ua_dummy: [u8; SOCK_MAXADDRLEN],
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct UnSockInfo {
-    _unused: [u8; 0],
+    unsi_conn_so: u64,
+    unsi_conn_pcb: u64,
+    unsi_addr: UnsiAddr,
+    unsi_caddr: UnsiAddr,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct NdrvInfo {
-    _unused: [u8; 0],
+    ndrvsi_if_family: u32,
+    ndrvsi_if_unit: u32,
+    ndrvsi_if_name: [u8; IF_NAMESIZE],
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct KernEventInfo {
-    _unused: [u8; 0],
+    kesi_vendor_code_filter: u32,
+    kesi_class_filter: u32,
+    kesi_subclass_filter: u32,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct KernCtlInfo {
-    _unused: [u8; 0],
+    kcsi_id: u32,
+    kcsi_reg_unit: u32,
+    kcsi_flags: u32,
+    kcsi_recvbufsize: u32,
+    kcsi_sendbufsize: u32,
+    kcsi_unit: u32,
+    kcsi_name: [u8; MAX_KCTL_NAME],
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct VsockSockInfo {
-    _unused: [u8; 0],
+    local_cid: u32,
+    local_port: u32,
+    remote_cid: u32,
+    remote_port: u32,
+}
+
+/// Checks if the current macOS version is 11.0 or greater.
+/// The proc_info.h structures used here, particularly vsock_sockinfo,
+/// were added in macOS 11.0 (Big Sur) with the Virtualization framework.
+fn check_macos_version() -> Result<()> {
+    use std::ffi::CStr;
+
+    unsafe {
+        // Use sysctl to get kern.osproductversion
+        let mut size: libc::size_t = 0;
+        let name = b"kern.osproductversion\0";
+
+        // First call to get size
+        let result = libc::sysctlbyname(
+            name.as_ptr() as *const libc::c_char,
+            std::ptr::null_mut(),
+            &mut size,
+            std::ptr::null_mut(),
+            0,
+        );
+
+        if result != 0 {
+            return Err(anyhow!("Failed to get macOS version via sysctl"));
+        }
+
+        // Allocate buffer and get actual value
+        let mut buffer = vec![0u8; size];
+        let result = libc::sysctlbyname(
+            name.as_ptr() as *const libc::c_char,
+            buffer.as_mut_ptr() as *mut libc::c_void,
+            &mut size,
+            std::ptr::null_mut(),
+            0,
+        );
+
+        if result != 0 {
+            return Err(anyhow!("Failed to read macOS version via sysctl"));
+        }
+
+        // Convert to string
+        let version_cstr = CStr::from_bytes_until_nul(&buffer)
+            .map_err(|_| anyhow!("Invalid version string from sysctl"))?;
+        let version_string = version_cstr
+            .to_str()
+            .map_err(|_| anyhow!("Invalid UTF-8 in version string"))?;
+
+        // Parse major version (e.g., "15.6.1" -> 15, "11.0" -> 11)
+        let major_version: u32 = version_string
+            .split('.')
+            .next()
+            .and_then(|s| s.parse().ok())
+            .ok_or_else(|| anyhow!("Failed to parse macOS version: {}", version_string))?;
+
+        if major_version < 11 {
+            return Err(anyhow!(
+                "macOS 11.0 (Big Sur) or greater is required for netstat functionality. Current version: {}",
+                version_string
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 pub fn netstat() -> Result<Vec<NetstatEntry>> {
+    // Check macOS version - requires macOS 11.0 or greater
+    check_macos_version()?;
+
     let mut entries = Vec::new();
 
     // Get all PIDs
@@ -303,7 +404,7 @@ fn get_pid_sockets(pid: i32) -> Result<Vec<NetstatEntry>> {
 
     // For each socket FD, get detailed socket info
     for fd_info in fds {
-        if fd_info.proc_fdtype == PROX_FDTYPE_SOCKET {
+        if fd_info.proc_fdtype == PROC_FDTYPE_SOCKET {
             if let Ok(Some(entry)) = get_socket_info(pid, fd_info.proc_fd) {
                 entries.push(entry);
             }
@@ -383,8 +484,8 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
                 // IPv4
                 let in_info = si.soi_proto.pri_in;
 
-                let local_addr = unsafe { in_info.insi_laddr.ina_46.i46a_addr4.s_addr };
-                let remote_addr = unsafe { in_info.insi_faddr.ina_46.i46a_addr4.s_addr };
+                let local_addr = in_info.insi_laddr.ina_46.i46a_addr4.s_addr;
+                let remote_addr = in_info.insi_faddr.ina_46.i46a_addr4.s_addr;
 
                 let local_port = u16::from_be((in_info.insi_lport & 0xFFFF) as u16);
                 let remote_port = u16::from_be((in_info.insi_fport & 0xFFFF) as u16);
@@ -396,7 +497,7 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
                 };
 
                 let connection_state = if socket_type == SocketType::TCP {
-                    parse_tcp_state(unsafe { si.soi_proto.pri_tcp.tcpsi_state })
+                    parse_tcp_state(si.soi_proto.pri_tcp.tcpsi_state)
                 } else {
                     ConnectionState::Unknown
                 };
@@ -416,8 +517,8 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
                 // IPv6
                 let in_info = si.soi_proto.pri_in;
 
-                let local_addr = unsafe { in_info.insi_laddr.ina_6.__u6_addr.__u6_addr8 };
-                let remote_addr = unsafe { in_info.insi_faddr.ina_6.__u6_addr.__u6_addr8 };
+                let local_addr = in_info.insi_laddr.ina_6.__u6_addr.__u6_addr8;
+                let remote_addr = in_info.insi_faddr.ina_6.__u6_addr.__u6_addr8;
 
                 let local_port = u16::from_be((in_info.insi_lport & 0xFFFF) as u16);
                 let remote_port = u16::from_be((in_info.insi_fport & 0xFFFF) as u16);
@@ -430,7 +531,7 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
                 };
 
                 let connection_state = if socket_type == SocketType::TCP {
-                    parse_tcp_state(unsafe { si.soi_proto.pri_tcp.tcpsi_state })
+                    parse_tcp_state(si.soi_proto.pri_tcp.tcpsi_state)
                 } else {
                     ConnectionState::Unknown
                 };
@@ -489,6 +590,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_macos_version_check() {
+        // This test should pass on macOS 11.0 or greater
+        let result = check_macos_version();
+        assert!(
+            result.is_ok(),
+            "Version check failed: {:?}. This test requires macOS 11.0+",
+            result
+        );
+    }
+
+    #[test]
     fn test_parse_tcp_state() {
         assert_eq!(parse_tcp_state(0), ConnectionState::Close);
         assert_eq!(parse_tcp_state(1), ConnectionState::Listen);
@@ -497,7 +609,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Requires macOS system
     fn test_netstat_integration() {
         let result = netstat();
         assert!(result.is_ok());
@@ -516,7 +627,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore] // Requires macOS system
     async fn test_netstat_with_test_socket() -> Result<()> {
         use std::process;
         use tokio::net::TcpListener;
