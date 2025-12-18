@@ -38,14 +38,14 @@ const Badge: FC<BadgeProps> = (
             >
                 {/** render icon before */}
                 {icon && iconPlacement === "left" ? (
-                    <span className={`inline-flex shrink-0 self-center ${children}`}>{icon}</span>
+                    <span className="inline-flex shrink-0 self-center mr-1">{icon}</span>
                 ) : null}
 
                 {children}
 
                 {/** render icon after */}
                 {icon && iconPlacement === "right" ? (
-                    <span className={`inline-flex shrink-0 self-center  ${children}`}>{icon}</span>
+                    <span className="inline-flex shrink-0 self-center ml-1">{icon}</span>
                 ) : null}
             </div>
         </div>
