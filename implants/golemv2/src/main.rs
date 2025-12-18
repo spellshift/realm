@@ -11,6 +11,7 @@ use eldritch_libassets::AssetsLibrary;
 
 mod agent;
 mod assetbackend;
+mod repl;
 use crate::assetbackend::DirectoryAssetBackend;
 use crate::agent::GolemAgent;
 
@@ -123,16 +124,13 @@ fn main() -> anyhow::Result<()>  {
                 eldritch: tome_contents,
             });
         }
-    } else if matches.contains_id("interactive") {
-        eprint!("interactive is not implemented!\n");
-        return Ok(());
     }
     // If we havent specified tomes in INPUT, we need to look through the asset locker for tomes to run
     if parsed_tomes.len() == 0 {
         match locker.list() {
             Ok(assets) => {
                 for asset in assets {
-                    if asset.ends_with("main.eldritch") {
+                    if asset.ends_with("main.eldritch") || asset.ends_with("main.eldr") {
                         let eldr_str = match locker.read(asset.clone()) {
                             Ok(val) => val,
                             Err(e) =>  return Err(anyhow::anyhow!(e))
@@ -155,6 +153,11 @@ fn main() -> anyhow::Result<()>  {
     // Setup the interpreter. This will need refactored when we do multi-threaded
     let agent = Arc::new(GolemAgent::new());
     let mut interp = new_runtime(agent, locker);
+
+    if matches.contains_id("interactive") {
+        repl::repl(interp)?;
+        return Ok(());
+    }
 
     // Print a debug for the configured assets and tomes
     if matches.get_flag("dump") {

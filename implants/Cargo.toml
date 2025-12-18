@@ -3,6 +3,7 @@ members = [
     "imix",
     "imixv2",
     "golem",
+    "golemv2",
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
@@ -25,7 +26,7 @@ members = [
     "lib/eldritchv2/stdlib/eldritch-libtime",
     "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/stdlib/migration",
-    "lib/eldritchv2/eldritchv2", "golemv2",
+    "lib/eldritchv2/eldritchv2",
 ]
 resolver = "2"
 
