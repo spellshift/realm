@@ -88,7 +88,7 @@ static_vcruntime = "2.0"
 which = "4.4.2"
 whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"
-windows-sys = "0.45.0"
+windows-sys = "0.61.2"
 winreg = "0.51.0"
 chacha20poly1305 = "0.10.1"
 bytes = "1.6.0"
