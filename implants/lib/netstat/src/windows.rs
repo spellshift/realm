@@ -1,11 +1,12 @@
 use anyhow::Result;
+use std::collections::HashMap;
 use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ptr;
 
 use super::{ConnectionState, NetstatEntry, SocketType};
 
-use windows_sys::Win32::Foundation::{CloseHandle, ERROR_INSUFFICIENT_BUFFER, NO_ERROR};
+use windows_sys::Win32::Foundation::{CloseHandle, ERROR_INSUFFICIENT_BUFFER, INVALID_HANDLE_VALUE, NO_ERROR};
 use windows_sys::Win32::NetworkManagement::IpHelper::{
     GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCP6ROW_OWNER_PID, MIB_TCP6TABLE_OWNER_PID,
     MIB_TCPROW_OWNER_PID, MIB_TCPTABLE_OWNER_PID, MIB_UDP6ROW_OWNER_PID,
@@ -13,28 +14,32 @@ use windows_sys::Win32::NetworkManagement::IpHelper::{
     TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
 };
 use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6};
-use windows_sys::Win32::System::ProcessStatus::K32GetModuleBaseNameW;
-use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+    CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+};
 
 pub fn netstat() -> Result<Vec<NetstatEntry>> {
     let mut entries = Vec::new();
 
+    // Create process snapshot once for all lookups
+    let process_map = create_process_snapshot()?;
+
     // Get TCP IPv4 connections
-    entries.extend(get_tcp_table()?);
+    entries.extend(get_tcp_table(&process_map)?);
 
     // Get TCP IPv6 connections
-    entries.extend(get_tcp6_table()?);
+    entries.extend(get_tcp6_table(&process_map)?);
 
     // Get UDP IPv4 sockets
-    entries.extend(get_udp_table()?);
+    entries.extend(get_udp_table(&process_map)?);
 
     // Get UDP IPv6 sockets
-    entries.extend(get_udp6_table()?);
+    entries.extend(get_udp6_table(&process_map)?);
 
     Ok(entries)
 }
 
-fn get_tcp_table() -> Result<Vec<NetstatEntry>> {
+fn get_tcp_table(process_map: &HashMap<u32, String>) -> Result<Vec<NetstatEntry>> {
     unsafe {
         let mut size: u32 = 0;
 
@@ -91,7 +96,7 @@ fn get_tcp_table() -> Result<Vec<NetstatEntry>> {
                 Some(IpAddr::V4(Ipv4Addr::from(local_addr.to_be_bytes())))
             };
 
-            let process_name = get_process_name(row.dwOwningPid).ok();
+            let process_name = get_process_name(row.dwOwningPid, process_map);
 
             entries.push(NetstatEntry {
                 socket_type: SocketType::TCP,
@@ -109,7 +114,7 @@ fn get_tcp_table() -> Result<Vec<NetstatEntry>> {
     }
 }
 
-fn get_tcp6_table() -> Result<Vec<NetstatEntry>> {
+fn get_tcp6_table(process_map: &HashMap<u32, String>) -> Result<Vec<NetstatEntry>> {
     unsafe {
         let mut size: u32 = 0;
 
@@ -166,7 +171,7 @@ fn get_tcp6_table() -> Result<Vec<NetstatEntry>> {
                 Some(IpAddr::V6(remote_addr))
             };
 
-            let process_name = get_process_name(row.dwOwningPid).ok();
+            let process_name = get_process_name(row.dwOwningPid, process_map);
 
             entries.push(NetstatEntry {
                 socket_type: SocketType::TCP,
@@ -184,7 +189,7 @@ fn get_tcp6_table() -> Result<Vec<NetstatEntry>> {
     }
 }
 
-fn get_udp_table() -> Result<Vec<NetstatEntry>> {
+fn get_udp_table(process_map: &HashMap<u32, String>) -> Result<Vec<NetstatEntry>> {
     unsafe {
         let mut size: u32 = 0;
 
@@ -233,7 +238,7 @@ fn get_udp_table() -> Result<Vec<NetstatEntry>> {
             let local_addr = u32::from_be(row.dwLocalAddr);
             let local_port = u16::from_be((row.dwLocalPort & 0xFFFF) as u16);
 
-            let process_name = get_process_name(row.dwOwningPid).ok();
+            let process_name = get_process_name(row.dwOwningPid, process_map);
 
             entries.push(NetstatEntry {
                 socket_type: SocketType::UDP,
@@ -251,7 +256,7 @@ fn get_udp_table() -> Result<Vec<NetstatEntry>> {
     }
 }
 
-fn get_udp6_table() -> Result<Vec<NetstatEntry>> {
+fn get_udp6_table(process_map: &HashMap<u32, String>) -> Result<Vec<NetstatEntry>> {
     unsafe {
         let mut size: u32 = 0;
 
@@ -300,7 +305,7 @@ fn get_udp6_table() -> Result<Vec<NetstatEntry>> {
             let local_addr = Ipv6Addr::from(row.ucLocalAddr);
             let local_port = u16::from_be((row.dwLocalPort & 0xFFFF) as u16);
 
-            let process_name = get_process_name(row.dwOwningPid).ok();
+            let process_name = get_process_name(row.dwOwningPid, process_map);
 
             entries.push(NetstatEntry {
                 socket_type: SocketType::UDP,
@@ -318,24 +323,45 @@ fn get_udp6_table() -> Result<Vec<NetstatEntry>> {
     }
 }
 
-fn get_process_name(pid: u32) -> Result<String> {
+fn create_process_snapshot() -> Result<HashMap<u32, String>> {
     unsafe {
-        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
-        if handle == std::ptr::null_mut() {
-            return Err(anyhow::anyhow!("Cannot open process {}", pid));
+        let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if snapshot == INVALID_HANDLE_VALUE {
+            return Err(anyhow::anyhow!("Failed to create process snapshot"));
         }
 
-        let mut name_buffer = [0u16; 260]; // MAX_PATH
-        let len = K32GetModuleBaseNameW(handle, std::ptr::null_mut(), name_buffer.as_mut_ptr(), 260);
+        let mut process_map = HashMap::new();
+        let mut entry: PROCESSENTRY32W = mem::zeroed();
+        entry.dwSize = mem::size_of::<PROCESSENTRY32W>() as u32;
 
-        CloseHandle(handle);
-
-        if len == 0 {
-            return Err(anyhow::anyhow!("Cannot get module name for PID {}", pid));
+        if Process32FirstW(snapshot, &mut entry) == 0 {
+            CloseHandle(snapshot);
+            return Err(anyhow::anyhow!("Failed to get first process"));
         }
 
-        Ok(String::from_utf16_lossy(&name_buffer[0..len as usize]))
+        loop {
+            // Find the null terminator in szExeFile
+            let name_len = entry
+                .szExeFile
+                .iter()
+                .position(|&c| c == 0)
+                .unwrap_or(entry.szExeFile.len());
+
+            let process_name = String::from_utf16_lossy(&entry.szExeFile[0..name_len]);
+            process_map.insert(entry.th32ProcessID, process_name);
+
+            if Process32NextW(snapshot, &mut entry) == 0 {
+                break;
+            }
+        }
+
+        CloseHandle(snapshot);
+        Ok(process_map)
     }
+}
+
+fn get_process_name(pid: u32, process_map: &HashMap<u32, String>) -> Option<String> {
+    process_map.get(&pid).cloned()
 }
 
 fn parse_tcp_state(state: u32) -> ConnectionState {
