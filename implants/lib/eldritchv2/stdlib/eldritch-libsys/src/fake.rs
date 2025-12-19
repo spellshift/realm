@@ -29,6 +29,7 @@ impl SysLibrary for SysLibraryFake {
         _args: Vec<String>,
         _disown: Option<bool>,
         _env_vars: Option<BTreeMap<String, String>>,
+        _input: Option<String>
     ) -> Result<BTreeMap<String, Value>, String> {
         Ok(BTreeMap::new())
     }

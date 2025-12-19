@@ -1254,7 +1254,7 @@ Reflectively injects a DLL from memory into a remote process.
 - Returns an error string if injection fails.
 
 ### sys.exec
-`sys.exec(path: str, args: List<str>, disown: Option<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Option<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 Executes a program directly (without a shell).
 
 **Parameters**
