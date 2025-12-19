@@ -6,15 +6,20 @@ package graphql
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
+	tavernTomes "realm.pub/tavern/tomes"
 )
 
 // DropAllData is the resolver for the dropAllData field.
@@ -177,10 +182,72 @@ func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeI
 		uploaderID = &uploader.ID
 	}
 
-	return r.client.Tome.Create().
+	t, err := r.client.Tome.Create().
 		SetNillableUploaderID(uploaderID).
 		SetInput(input).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Write files to "AI Generated Tomes" directory
+	go func() {
+		// Sanitize name to prevent path traversal
+		safeName := filepath.Base(input.Name)
+		if safeName == "." || safeName == "/" || strings.Contains(safeName, "..") {
+			fmt.Printf("invalid tome name %q\n", input.Name)
+			return
+		}
+
+		dirPath := filepath.Join("AI Generated Tomes", safeName)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			fmt.Printf("failed to create directory for tome %q: %v\n", input.Name, err)
+			return
+		}
+
+		// Construct Metadata
+		var paramDefs []tavernTomes.ParamDefinition
+		if input.ParamDefs != nil && *input.ParamDefs != "" {
+			if err := json.Unmarshal([]byte(*input.ParamDefs), &paramDefs); err != nil {
+				fmt.Printf("failed to unmarshal param defs for tome %q: %v\n", input.Name, err)
+			}
+		}
+
+		metadata := tavernTomes.MetadataDefinition{
+			Name:        input.Name,
+			Description: input.Description,
+			Author:      input.Author,
+			ParamDefs:   paramDefs,
+		}
+
+		if input.SupportModel == nil {
+			metadata.SupportModel = "UNSPECIFIED"
+		} else {
+			metadata.SupportModel = string(*input.SupportModel)
+		}
+
+		if input.Tactic == nil {
+			metadata.Tactic = "UNSPECIFIED"
+		} else {
+			metadata.Tactic = string(*input.Tactic)
+		}
+
+		metaBytes, err := yaml.Marshal(metadata)
+		if err != nil {
+			fmt.Printf("failed to marshal metadata for tome %q: %v\n", input.Name, err)
+		} else {
+			if err := os.WriteFile(filepath.Join(dirPath, "metadata.yml"), metaBytes, 0644); err != nil {
+				fmt.Printf("failed to write metadata.yml for tome %q: %v\n", input.Name, err)
+			}
+		}
+
+		// Write eldritch
+		if err := os.WriteFile(filepath.Join(dirPath, "main.eldritch"), []byte(input.Eldritch), 0644); err != nil {
+			fmt.Printf("failed to write main.eldritch for tome %q: %v\n", input.Name, err)
+		}
+	}()
+
+	return t, nil
 }
 
 // UpdateTome is the resolver for the updateTome field.

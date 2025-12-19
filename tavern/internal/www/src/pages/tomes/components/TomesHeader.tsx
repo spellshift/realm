@@ -1,12 +1,21 @@
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
+import { useEffect, useState } from "react";
+import { checkAI } from "../../../services/aiService";
+import CreateAITomeModal from "./CreateAITomeModal";
 
 type TomesHeaderType = {
     setOpen: (arg: boolean) => void
 }
 const TomesHeader = ({ setOpen }: TomesHeaderType) => {
+    const [isAIModalOpen, setAIModalOpen] = useState(false);
+    const [isAIAvailable, setIsAIAvailable] = useState(false);
+
+    useEffect(() => {
+        checkAI().then(setIsAIAvailable);
+    }, []);
 
     return (
         <div className="flex flex-col gap-4">
@@ -15,7 +24,16 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
                     label: "Tomes",
                     link: "/tomes"
                 }]} />
-                <div>
+                <div className="flex gap-2">
+                    {isAIAvailable && (
+                        <Button
+                            buttonStyle={{ color: "purple", "size": "md" }}
+                            leftIcon={<SparklesIcon className="h-4 w-4" />}
+                            onClick={() => setAIModalOpen(true)}
+                        >
+                            Create with AI
+                        </Button>
+                    )}
                     <Button
                         buttonStyle={{ color: "purple", "size": "md" }}
                         leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />}
@@ -25,6 +43,7 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
                     </Button>
                 </div>
             </div>
+            {isAIModalOpen && <CreateAITomeModal isOpen={isAIModalOpen} setOpen={setAIModalOpen} />}
             <PageHeader title="Tomes">
                 <>
                     <span>A tome is a prebuilt bundle, which includes execution instructions and files. Tomes are how beacon actions are defined. </span>
