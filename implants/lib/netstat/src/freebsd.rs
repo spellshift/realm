@@ -1,5 +1,5 @@
+use super::{ConnectionState, NetstatEntry, SocketType};
 use anyhow::Result;
-use super::{NetstatEntry, SocketType, ConnectionState};
 
 pub fn netstat() -> Result<Vec<NetstatEntry>> {
     // TODO: Implement FreeBSD sysctl using net.inet.tcp.pcblist

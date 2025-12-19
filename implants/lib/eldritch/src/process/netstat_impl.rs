@@ -31,7 +31,13 @@ pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
         );
 
         // local_port
-        insert_dict_kv!(dict, starlark_heap, "local_port", entry.local_port as u32, u32);
+        insert_dict_kv!(
+            dict,
+            starlark_heap,
+            "local_port",
+            entry.local_port as u32,
+            u32
+        );
 
         // remote_address: IP or "UNKNOWN"
         let remote_addr = entry
@@ -62,9 +68,7 @@ pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
         insert_dict_kv!(dict, starlark_heap, "pid", entry.pid, u32);
 
         // process_name: "node" | "UNKNOWN"
-        let proc_name = entry
-            .process_name
-            .unwrap_or_else(|| "UNKNOWN".to_string());
+        let proc_name = entry.process_name.unwrap_or_else(|| "UNKNOWN".to_string());
         insert_dict_kv!(dict, starlark_heap, "process_name", proc_name, String);
 
         out.push(dict);
@@ -172,7 +176,9 @@ mod tests {
             }
         }
 
-        Err(anyhow::anyhow!("Failed to find our test socket in netstat results"))
+        Err(anyhow::anyhow!(
+            "Failed to find our test socket in netstat results"
+        ))
     }
 
     #[tokio::test]

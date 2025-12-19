@@ -29,11 +29,7 @@ extern "C" {
         buffersize: libc::c_int,
     ) -> libc::c_int;
 
-    fn proc_name(
-        pid: libc::c_int,
-        buffer: *mut libc::c_void,
-        buffersize: u32,
-    ) -> libc::c_int;
+    fn proc_name(pid: libc::c_int, buffer: *mut libc::c_void, buffersize: u32) -> libc::c_int;
 }
 
 // Constants from libproc.h
@@ -417,13 +413,7 @@ fn get_pid_sockets(pid: i32) -> Result<Vec<NetstatEntry>> {
 fn get_pid_fds(pid: i32) -> Result<Vec<ProcFdInfo>> {
     unsafe {
         // First call to get buffer size
-        let size = proc_pidinfo(
-            pid,
-            PROC_PIDLISTFDS,
-            0,
-            std::ptr::null_mut(),
-            0,
-        );
+        let size = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, std::ptr::null_mut(), 0);
 
         if size <= 0 {
             return Ok(Vec::new());
@@ -431,7 +421,13 @@ fn get_pid_fds(pid: i32) -> Result<Vec<ProcFdInfo>> {
 
         // Allocate buffer
         let count = size as usize / mem::size_of::<ProcFdInfo>();
-        let mut fds = vec![ProcFdInfo { proc_fd: 0, proc_fdtype: 0 }; count];
+        let mut fds = vec![
+            ProcFdInfo {
+                proc_fd: 0,
+                proc_fdtype: 0
+            };
+            count
+        ];
 
         // Second call to get actual data
         let result = proc_pidinfo(
@@ -558,7 +554,10 @@ fn get_process_name(pid: i32) -> Result<String> {
         let result = proc_name(pid, buffer.as_mut_ptr() as *mut libc::c_void, 256);
 
         if result <= 0 {
-            return Err(anyhow::anyhow!("Failed to get process name for PID {}", pid));
+            return Err(anyhow::anyhow!(
+                "Failed to get process name for PID {}",
+                pid
+            ));
         }
 
         // Find null terminator
@@ -620,9 +619,7 @@ mod tests {
         // Verify all entries have valid data
         for entry in entries {
             assert!(entry.local_port > 0 || entry.local_port == 0);
-            assert!(
-                entry.socket_type == SocketType::TCP || entry.socket_type == SocketType::UDP
-            );
+            assert!(entry.socket_type == SocketType::TCP || entry.socket_type == SocketType::UDP);
         }
     }
 
