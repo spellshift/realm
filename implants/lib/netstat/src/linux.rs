@@ -358,7 +358,6 @@ mod tests {
 
         // Verify all entries have valid data
         for entry in entries {
-            assert!(entry.local_port > 0 || entry.local_port == 0);
             // Verify socket type is set
             assert!(entry.socket_type == SocketType::TCP || entry.socket_type == SocketType::UDP);
         }
