@@ -1,3 +1,4 @@
+import { Tooltip } from "@chakra-ui/react";
 import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -25,15 +26,18 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
                     link: "/tomes"
                 }]} />
                 <div className="flex gap-2">
-                    {isAIAvailable && (
-                        <Button
-                            buttonStyle={{ color: "purple", "size": "md" }}
-                            leftIcon={<SparklesIcon className="h-4 w-4" />}
-                            onClick={() => setAIModalOpen(true)}
-                        >
-                            Create with AI
-                        </Button>
-                    )}
+                    <Tooltip label={!isAIAvailable ? "Chrome built-in AI is not available" : "Generate a new Tome using AI"}>
+                        <span>
+                            <Button
+                                buttonStyle={{ color: "purple", "size": "md" }}
+                                leftIcon={<SparklesIcon className="h-4 w-4" />}
+                                onClick={() => setAIModalOpen(true)}
+                                disabled={!isAIAvailable}
+                            >
+                                Create with AI
+                            </Button>
+                        </span>
+                    </Tooltip>
                     <Button
                         buttonStyle={{ color: "purple", "size": "md" }}
                         leftIcon={<ArrowUpTrayIcon className="h-4 w-4" />}
