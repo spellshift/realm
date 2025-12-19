@@ -90,7 +90,7 @@ fn parse_proc_net_line(
 ) -> Result<Option<NetstatEntry>> {
     let fields: Vec<&str> = line.split_whitespace().collect();
 
-    if fields.len() < 10 {
+    if fields.len() < 12 {
         return Ok(None);
     }
 

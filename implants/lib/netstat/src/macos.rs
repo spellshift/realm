@@ -305,6 +305,10 @@ fn check_macos_version() -> Result<()> {
             return Err(anyhow!("Failed to get macOS version via sysctl"));
         }
 
+        if size == 0 {
+            return Err(anyhow!("sysctl returned size 0 for version string"));
+        }
+
         // Allocate buffer and get actual value
         let mut buffer = vec![0u8; size];
         let result = libc::sysctlbyname(
@@ -474,17 +478,23 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
         // Get process name
         let process_name = get_process_name(pid).ok();
 
-        // Parse socket info based on family
-        match si.soi_family {
+        // Extract common info
+        let in_info = si.soi_proto.pri_in;
+        let local_port = u16::from_be((in_info.insi_lport & 0xFFFF) as u16);
+        let remote_port = u16::from_be((in_info.insi_fport & 0xFFFF) as u16);
+
+        let connection_state = if socket_type == SocketType::TCP {
+            parse_tcp_state(si.soi_proto.pri_tcp.tcpsi_state)
+        } else {
+            ConnectionState::Unknown
+        };
+
+        // Parse family-specific addresses
+        let (local_address, remote_address) = match si.soi_family {
             libc::AF_INET => {
                 // IPv4
-                let in_info = si.soi_proto.pri_in;
-
                 let local_addr = in_info.insi_laddr.ina_46.i46a_addr4.s_addr;
                 let remote_addr = in_info.insi_faddr.ina_46.i46a_addr4.s_addr;
-
-                let local_port = u16::from_be((in_info.insi_lport & 0xFFFF) as u16);
-                let remote_port = u16::from_be((in_info.insi_fport & 0xFFFF) as u16);
 
                 let remote_address = if remote_addr == 0 {
                     None
@@ -492,32 +502,15 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
                     Some(IpAddr::V4(Ipv4Addr::from(u32::from_be(remote_addr))))
                 };
 
-                let connection_state = if socket_type == SocketType::TCP {
-                    parse_tcp_state(si.soi_proto.pri_tcp.tcpsi_state)
-                } else {
-                    ConnectionState::Unknown
-                };
-
-                Ok(Some(NetstatEntry {
-                    socket_type,
-                    local_address: IpAddr::V4(Ipv4Addr::from(u32::from_be(local_addr))),
-                    local_port,
+                (
+                    IpAddr::V4(Ipv4Addr::from(u32::from_be(local_addr))),
                     remote_address,
-                    remote_port,
-                    connection_state,
-                    pid: pid as u32,
-                    process_name,
-                }))
+                )
             }
             libc::AF_INET6 => {
                 // IPv6
-                let in_info = si.soi_proto.pri_in;
-
                 let local_addr = in_info.insi_laddr.ina_6.__u6_addr.__u6_addr8;
                 let remote_addr = in_info.insi_faddr.ina_6.__u6_addr.__u6_addr8;
-
-                let local_port = u16::from_be((in_info.insi_lport & 0xFFFF) as u16);
-                let remote_port = u16::from_be((in_info.insi_fport & 0xFFFF) as u16);
 
                 let remote_ipv6 = Ipv6Addr::from(remote_addr);
                 let remote_address = if remote_ipv6.is_unspecified() {
@@ -526,25 +519,21 @@ fn get_socket_info(pid: i32, fd: i32) -> Result<Option<NetstatEntry>> {
                     Some(IpAddr::V6(remote_ipv6))
                 };
 
-                let connection_state = if socket_type == SocketType::TCP {
-                    parse_tcp_state(si.soi_proto.pri_tcp.tcpsi_state)
-                } else {
-                    ConnectionState::Unknown
-                };
-
-                Ok(Some(NetstatEntry {
-                    socket_type,
-                    local_address: IpAddr::V6(Ipv6Addr::from(local_addr)),
-                    local_port,
-                    remote_address,
-                    remote_port,
-                    connection_state,
-                    pid: pid as u32,
-                    process_name,
-                }))
+                (IpAddr::V6(Ipv6Addr::from(local_addr)), remote_address)
             }
-            _ => Ok(None), // Skip other address families
-        }
+            _ => return Ok(None), // Skip other address families
+        };
+
+        Ok(Some(NetstatEntry {
+            socket_type,
+            local_address,
+            local_port,
+            remote_address,
+            remote_port,
+            connection_state,
+            pid: pid as u32,
+            process_name,
+        }))
     }
 }
 

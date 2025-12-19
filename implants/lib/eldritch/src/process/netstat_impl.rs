@@ -1,5 +1,9 @@
+#![cfg(not(target_os = "freebsd"))]
+
 use anyhow::Result;
 use starlark::values::{dict::Dict, Heap};
+
+const UNKNOWN: &str = "UNKNOWN";
 
 pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
     use super::super::insert_dict_kv;
@@ -43,7 +47,7 @@ pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
         let remote_addr = entry
             .remote_address
             .map(|ip| ip.to_string())
-            .unwrap_or_else(|| "UNKNOWN".to_string());
+            .unwrap_or_else(|| UNKNOWN.to_string());
         insert_dict_kv!(dict, starlark_heap, "remote_address", remote_addr, String);
 
         // remote_port: u16
@@ -68,7 +72,7 @@ pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
         insert_dict_kv!(dict, starlark_heap, "pid", entry.pid, u32);
 
         // process_name: "node" | "UNKNOWN"
-        let proc_name = entry.process_name.unwrap_or_else(|| "UNKNOWN".to_string());
+        let proc_name = entry.process_name.unwrap_or_else(|| UNKNOWN.to_string());
         insert_dict_kv!(dict, starlark_heap, "process_name", proc_name, String);
 
         out.push(dict);

@@ -1,5 +1,17 @@
-[target.release]
+[target.'cfg(target_os = "windows")']
 rustflags = [
-    "-Clink-arg=/DEBUG:NONE",
-    "-C", "target-feature=+crt-static",
+    "--cfg",
+    "windows",
+]
+
+[target.'cfg(target_os = "macos")']
+rustflags = [
+    "--cfg",
+    "macos",
+]
+
+[target.'cfg(target_os = "freebsd")']
+rustflags = [
+    "--cfg",
+    "freebsd",
 ]
