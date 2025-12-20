@@ -54,6 +54,9 @@ func getRemoteIP(ctx context.Context) string {
 func getClientIP(ctx context.Context) string {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
+		if redirectedFor, exists := md["x-redirected-for"]; exists && len(redirectedFor) > 0 {
+			return strings.TrimSpace(redirectedFor[0])
+		}
 		if forwardedFor, exists := md["x-forwarded-for"]; exists && len(forwardedFor) > 0 {
 			// X-Forwarded-For is a comma-separated list, the first IP is the original client
 			clientIP := strings.Split(forwardedFor[0], ",")[0]
