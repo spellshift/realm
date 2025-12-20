@@ -477,14 +477,10 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     );
 
     // Times
-    if let Ok(d) = metadata.modified().and_then(|m| {
-        m.duration_since(::std::time::UNIX_EPOCH)
-            .map_err(std::io::Error::other)
-    }) {
-        dict.insert(
-            "modified".to_string(),
-            Value::String(d.as_secs().to_string()),
-        );
+    if let Ok(modified) = metadata.modified() {
+        let dt: chrono::DateTime<chrono::Utc> = modified.into();
+        let formatted = dt.format("%Y-%m-%d %H:%M:%S UTC").to_string();
+        dict.insert("modified".to_string(), Value::String(formatted));
     }
 
     Ok(dict)
@@ -994,6 +990,7 @@ mod tests {
         assert!(f.contains_key("owner"));
         assert!(f.contains_key("group"));
         assert!(f.contains_key("absolute_path"));
+        assert!(f.contains_key("modified"));
 
         // On unix, owner/group should not be empty (usually)
         // But in some containers or weird envs, it might be stringified ID.
@@ -1005,6 +1002,15 @@ mod tests {
             assert!(std::path::Path::new(abs).is_absolute());
         } else {
             panic!("absolute_path is not a string");
+        }
+
+        // Check modified time format
+        if let Value::String(mod_time) = &f["modified"] {
+            // Check format YYYY-MM-DD HH:MM:SS UTC
+            let re = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$").unwrap();
+            assert!(re.is_match(mod_time.as_bytes()), "Timestamp format mismatch: {}", mod_time);
+        } else {
+            panic!("modified is not a string");
         }
 
         Ok(())
