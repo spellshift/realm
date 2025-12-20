@@ -350,7 +350,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 }
 
 func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, EnvGeminiAPIKey.String()))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// Configure Raw Query Logging

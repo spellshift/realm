@@ -1,9 +1,18 @@
 
 export const checkAI = async (): Promise<boolean> => {
-    if (!window.ai) return false;
+    if (!window.ai || !window.ai.languageModel) {
+        console.log("AI Service: window.ai or languageModel is not defined. Ensure you are on Chrome 128+ and have 'Prompt API for Gemini Nano' enabled in chrome://flags.");
+        return false;
+    }
     try {
-        const capabilities = await window.ai.languageModel.capabilities();
-        return capabilities.available !== "no";
+        // Check availability with the specific language requirements
+        const availability = await window.ai.languageModel.availability({
+            expectedOutputs: [{ type: "text", languages: ["en"] }]
+        });
+        console.log("AI Service: Availability state:", availability);
+        // "readily": Model is available and loaded.
+        // "after-download": Model is available but needs to be downloaded.
+        return availability === "readily" || availability === "after-download";
     } catch (e) {
         console.error("Error checking AI capabilities:", e);
         return false;
@@ -51,11 +60,15 @@ list_files(input_params['path'])
 
 Generate only the JSON object. Do not include markdown formatting.`;
 
+    let session;
     try {
-        const session = await window.ai.languageModel.create({ systemPrompt });
+        session = await window.ai.languageModel.create({
+            initialPrompts: [
+                { role: "system", content: systemPrompt }
+            ],
+            expectedOutputs: [{ type: "text", languages: ["en"] }]
+        });
         const result = await session.prompt(prompt);
-        session.destroy();
-
         // Attempt to parse JSON. If it fails, try to strip markdown blocks.
         let cleaned = result.trim();
         if (cleaned.startsWith("```json")) {
@@ -68,5 +81,9 @@ Generate only the JSON object. Do not include markdown formatting.`;
     } catch (e) {
         console.error("AI generation failed:", e);
         throw e;
+    } finally {
+        if (session) {
+            session.destroy();
+        }
     }
 };

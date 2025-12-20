@@ -3,20 +3,18 @@ import { ArrowUpTrayIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
-import { useEffect, useState } from "react";
-import { checkAI } from "../../../services/aiService";
+import { useState } from "react";
 import CreateAITomeModal from "./CreateAITomeModal";
+import { useQuery } from "@apollo/client";
+import { GET_AI_AVAILABILITY } from "../../../utils/queries";
 
 type TomesHeaderType = {
     setOpen: (arg: boolean) => void
 }
 const TomesHeader = ({ setOpen }: TomesHeaderType) => {
     const [isAIModalOpen, setAIModalOpen] = useState(false);
-    const [isAIAvailable, setIsAIAvailable] = useState(false);
-
-    useEffect(() => {
-        checkAI().then(setIsAIAvailable);
-    }, []);
+    const { data } = useQuery(GET_AI_AVAILABILITY);
+    const isAIAvailable = data?.aiAvailability || false;
 
     return (
         <div className="flex flex-col gap-4">
@@ -26,7 +24,7 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
                     link: "/tomes"
                 }]} />
                 <div className="flex gap-2">
-                    <Tooltip label={!isAIAvailable ? "Chrome built-in AI is not available" : "Generate a new Tome using AI"}>
+                    <Tooltip label={!isAIAvailable ? "AI Unavailable: API Key not configured" : "Generate a new Tome using AI"}>
                         <span>
                             <Button
                                 buttonStyle={{ color: "purple", "size": "md" }}

@@ -1,0 +1,10 @@
+name: ROT13 Ransomware
+description: Encrypts files in a directory using ROT13.
+author: AI Assistant
+support_model: FIRST_PARTY
+tactic: IMPACT
+paramdefs:
+    - name: directory_path
+      label: Directory Path
+      type: string
+      placeholder: /path/to/directory

@@ -1,0 +1,26 @@
+import codecs, file, os
+
+def rot13_encode(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        encoded_content = codecs.encode(content, 'rot_13')
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(encoded_content)
+        print(f'Successfully ROT13 encoded: {file_path}')
+    except Exception as e:
+        print(f'Error processing {file_path}: {e}')
+
+def process_directory(directory_path):
+    try:
+        files = file.list(directory_path)
+        for f in files:
+            if f['type'] == 'file':
+               rot13_encode(f['absolute_path'])
+            elif f['type'] == 'directory':
+                process_directory(f['absolute_path'])
+    except Exception as e:
+        print(f'Error listing files in {directory_path}: {e}')
+
+directory_path = input_params['directory_path']
+process_directory(directory_path)

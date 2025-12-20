@@ -5,13 +5,20 @@ declare global {
     ai: {
       languageModel: {
         create(options?: AILanguageModelCreateOptions): Promise<AILanguageModel>;
-        capabilities(): Promise<AILanguageModelCapabilities>;
+        availability(options?: AILanguageModelAvailabilityOptions): Promise<AIAvailability>;
       };
     };
   }
 
+  interface AILanguageModelAvailabilityOptions {
+      expectedOutputs?: Array<{ type: "text", languages: string[] }>;
+  }
+
+  type AIAvailability = "readily" | "after-download" | "no";
+
   interface AILanguageModelCreateOptions {
-    systemPrompt?: string;
+    initialPrompts?: Array<{ role: "system" | "user" | "assistant", content: string }>;
+    expectedOutputs?: Array<{ type: "text", languages: string[] }>;
   }
 
   interface AILanguageModel {
@@ -19,12 +26,5 @@ declare global {
     promptStreaming(input: string): ReadableStream<string>;
     destroy(): void;
     clone(): Promise<AILanguageModel>;
-  }
-
-  interface AILanguageModelCapabilities {
-    available: "readily" | "after-download" | "no";
-    defaultTemperature: number;
-    defaultTopK: number;
-    maxTopK: number;
   }
 }

@@ -1,8 +1,9 @@
 import { FC, useState } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { generateTome } from "../../../services/aiService";
 import { useCreateTome } from "../hooks/useCreateTome";
+import { useMutation } from "@apollo/client";
+import { GENERATE_TOME_AI } from "../../../utils/queries";
 
 type Props = {
     isOpen: boolean;
@@ -11,21 +12,18 @@ type Props = {
 
 const CreateAITomeModal: FC<Props> = ({ isOpen, setOpen }) => {
     const [prompt, setPrompt] = useState("");
-    const [isGenerating, setIsGenerating] = useState(false);
     const [generatedData, setGeneratedData] = useState<any>(null);
     const [generationError, setGenerationError] = useState("");
     const { createTome, loading: isSaving, error: saveError } = useCreateTome();
+    const [generateTomeAI, { loading: isGenerating }] = useMutation(GENERATE_TOME_AI);
 
     const handleGenerate = async () => {
-        setIsGenerating(true);
         setGenerationError("");
         try {
-            const data = await generateTome(prompt);
-            setGeneratedData(data);
+            const { data } = await generateTomeAI({ variables: { prompt } });
+            setGeneratedData(data.generateTomeAI);
         } catch (e: any) {
             setGenerationError(e.message || "Failed to generate tome");
-        } finally {
-            setIsGenerating(false);
         }
     };
 
@@ -39,7 +37,7 @@ const CreateAITomeModal: FC<Props> = ({ isOpen, setOpen }) => {
                 author: generatedData.author || "AI",
                 tactic: generatedData.tactic || "UNSPECIFIED",
                 supportModel: "FIRST_PARTY",
-                paramDefs: JSON.stringify(generatedData.paramDefs || []),
+                paramDefs: generatedData.paramDefs || "[]",
                 eldritch: generatedData.eldritch,
             };
             await createTome(input);

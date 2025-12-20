@@ -13,7 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/option"
+	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/file"
@@ -318,6 +320,102 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error) {
 	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
+}
+
+// GenerateTomeAi is the resolver for the generateTomeAI field.
+func (r *mutationResolver) GenerateTomeAi(ctx context.Context, prompt string) (*models.GeneratedTomeData, error) {
+	if r.geminiAPIKey == "" {
+		return nil, fmt.Errorf("Gemini API key not configured")
+	}
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(r.geminiAPIKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
+	}
+	defer client.Close()
+
+	model := client.GenerativeModel("gemini-2.0-flash")
+	model.ResponseMIMEType = "application/json"
+
+	systemPrompt := `You are an expert in creating "Realm Tomes" for the Tavern security platform.
+A Tome consists of metadata and an execution script in the "Eldritch" language (a Starlark/Python dialect).
+
+You must generate a valid JSON object with the following structure:
+{
+  "name": "Tome Name",
+  "description": "Description of what the tome does",
+  "author": "AI Assistant",
+  "tactic": "RECON",
+  "paramDefs": [
+    { "name": "param_name", "label": "Parameter Label", "type": "string", "placeholder": "example value" }
+  ],
+  "eldritch": "print('hello world')"
+}
+
+Valid tactics are: RECON, RESOURCE_DEVELOPMENT, INITIAL_ACCESS, EXECUTION, PERSISTENCE, PRIVILEGE_ESCALATION, DEFENSE_EVASION, CREDENTIAL_ACCESS, DISCOVERY, LATERAL_MOVEMENT, COLLECTION, COMMAND_AND_CONTROL, EXFILTRATION, IMPACT.
+
+The "eldritch" script supports Python-like syntax. Use 'print()' for output. Input parameters are available in the 'input_params' dictionary, e.g., input_params['param_name'].
+
+Example script that lists files:
+usernfo = sys.get_user()
+def list_files(path):
+    res = file.list(path)
+    for f in res:
+        print(f['absolute_path'])
+list_files(input_params['path'])
+
+Generate only the JSON object. Do not include markdown formatting.`
+
+	model.SystemInstruction = genai.NewUserContent(genai.Text(systemPrompt))
+
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate content: %w", err)
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("no content generated")
+	}
+
+	part := resp.Candidates[0].Content.Parts[0]
+	txt, ok := part.(genai.Text)
+	if !ok {
+		return nil, fmt.Errorf("unexpected response type")
+	}
+
+	cleaned := string(txt)
+	cleaned = strings.TrimSpace(cleaned)
+	if strings.HasPrefix(cleaned, "```json") {
+		cleaned = strings.TrimPrefix(cleaned, "```json")
+		cleaned = strings.TrimSuffix(cleaned, "```")
+	} else if strings.HasPrefix(cleaned, "```") {
+		cleaned = strings.TrimPrefix(cleaned, "```")
+		cleaned = strings.TrimSuffix(cleaned, "```")
+	}
+	cleaned = strings.TrimSpace(cleaned)
+
+	var respData struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Author      string `json:"author"`
+		Tactic      string `json:"tactic"`
+		ParamDefs   any    `json:"paramDefs"`
+		Eldritch    string `json:"eldritch"`
+	}
+	if err := json.Unmarshal([]byte(cleaned), &respData); err != nil {
+		return nil, fmt.Errorf("failed to parse generated JSON: %w", err)
+	}
+
+	paramDefsBytes, _ := json.Marshal(respData.ParamDefs)
+
+	return &models.GeneratedTomeData{
+		Name:        respData.Name,
+		Description: respData.Description,
+		Author:      respData.Author,
+		Tactic:      respData.Tactic,
+		ParamDefs:   string(paramDefsBytes),
+		Eldritch:    respData.Eldritch,
+	}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

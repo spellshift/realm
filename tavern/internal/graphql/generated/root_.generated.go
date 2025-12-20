@@ -92,6 +92,15 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	GeneratedTomeData struct {
+		Author      func(childComplexity int) int
+		Description func(childComplexity int) int
+		Eldritch    func(childComplexity int) int
+		Name        func(childComplexity int) int
+		ParamDefs   func(childComplexity int) int
+		Tactic      func(childComplexity int) int
+	}
+
 	Host struct {
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
@@ -204,6 +213,7 @@ type ComplexityRoot struct {
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteTome       func(childComplexity int, tomeID int) int
 		DropAllData      func(childComplexity int) int
+		GenerateTomeAi   func(childComplexity int, prompt string) int
 		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
@@ -220,19 +230,20 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
-		Files        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
-		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		Me           func(childComplexity int) int
-		Node         func(childComplexity int, id int) int
-		Nodes        func(childComplexity int, ids []int) int
-		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
-		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
-		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
-		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		AiAvailability func(childComplexity int) int
+		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
+		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Me             func(childComplexity int) int
+		Node           func(childComplexity int, id int) int
+		Nodes          func(childComplexity int, ids []int) int
+		Quests         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		Repositories   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		Shells         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
+		Tasks          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -643,6 +654,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FileEdge.Node(childComplexity), true
+
+	case "GeneratedTomeData.author":
+		if e.complexity.GeneratedTomeData.Author == nil {
+			break
+		}
+
+		return e.complexity.GeneratedTomeData.Author(childComplexity), true
+
+	case "GeneratedTomeData.description":
+		if e.complexity.GeneratedTomeData.Description == nil {
+			break
+		}
+
+		return e.complexity.GeneratedTomeData.Description(childComplexity), true
+
+	case "GeneratedTomeData.eldritch":
+		if e.complexity.GeneratedTomeData.Eldritch == nil {
+			break
+		}
+
+		return e.complexity.GeneratedTomeData.Eldritch(childComplexity), true
+
+	case "GeneratedTomeData.name":
+		if e.complexity.GeneratedTomeData.Name == nil {
+			break
+		}
+
+		return e.complexity.GeneratedTomeData.Name(childComplexity), true
+
+	case "GeneratedTomeData.paramDefs":
+		if e.complexity.GeneratedTomeData.ParamDefs == nil {
+			break
+		}
+
+		return e.complexity.GeneratedTomeData.ParamDefs(childComplexity), true
+
+	case "GeneratedTomeData.tactic":
+		if e.complexity.GeneratedTomeData.Tactic == nil {
+			break
+		}
+
+		return e.complexity.GeneratedTomeData.Tactic(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
@@ -1224,6 +1277,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DropAllData(childComplexity), true
 
+	case "Mutation.generateTomeAI":
+		if e.complexity.Mutation.GenerateTomeAi == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_generateTomeAI_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.GenerateTomeAi(childComplexity, args["prompt"].(string)), true
+
 	case "Mutation.importRepository":
 		if e.complexity.Mutation.ImportRepository == nil {
 			break
@@ -1323,6 +1388,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
+
+	case "Query.aiAvailability":
+		if e.complexity.Query.AiAvailability == nil {
+			break
+		}
+
+		return e.complexity.Query.AiAvailability(childComplexity), true
 
 	case "Query.beacons":
 		if e.complexity.Query.Beacons == nil {
@@ -6044,6 +6116,7 @@ input UserWhereInput {
 scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
+  aiAvailability: Boolean! @requireRole(role: USER)
   files(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -6285,6 +6358,20 @@ scalar Uint64
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # AI
+    ###
+    generateTomeAI(prompt: String!): GeneratedTomeData! @requireRole(role: USER)
+}
+
+type GeneratedTomeData {
+    name: String!
+    description: String!
+    author: String!
+    tactic: String!
+    paramDefs: String!
+    eldritch: String!
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

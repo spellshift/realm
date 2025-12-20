@@ -3753,8 +3753,23 @@ type Mutation {
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # AI
+    ###
+    generateTomeAI(prompt: String!): GeneratedTomeData! @requireRole(role: USER)
+}
+
+type GeneratedTomeData {
+    name: String!
+    description: String!
+    author: String!
+    tactic: String!
+    paramDefs: String!
+    eldritch: String!
 }
 extend type Query {
+  aiAvailability: Boolean! @requireRole(role: USER)
   files(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

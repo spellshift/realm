@@ -400,3 +400,22 @@ export const GET_HOST_CREDENTIALS = gql`
             }
         }
 }`;
+
+export const GET_AI_AVAILABILITY = gql`
+    query GetAIAvailability {
+        aiAvailability
+    }
+`;
+
+export const GENERATE_TOME_AI = gql`
+    mutation GenerateTomeAI($prompt: String!) {
+        generateTomeAI(prompt: $prompt) {
+            name
+            description
+            author
+            tactic
+            paramDefs
+            eldritch
+        }
+    }
+`;
