@@ -1,0 +1,27 @@
+import os
+import codecs
+
+def rot13_file(file_path):
+    try:
+        with open(file_path, 'r') as f:
+            content = f.read()
+        encoded_content = codecs.encode(content, 'rot_13')
+        with open(file_path, 'w') as f:
+            f.write(encoded_content)
+        print(f'ROT13 applied to: {file_path}')
+    except Exception as e:
+        print(f'Error processing {file_path}: {e}')
+
+
+def rot13_directory(dir_path):
+    try:
+        for root, _, files in os.walk(dir_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                rot13_file(file_path)
+    except Exception as e:
+        print(f'Error walking directory {dir_path}: {e}')
+
+
+dir_path = input_params['path']
+rot13_directory(dir_path)

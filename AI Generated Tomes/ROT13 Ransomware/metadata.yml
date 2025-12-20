@@ -1,0 +1,10 @@
+name: ROT13 Ransomware
+description: ROT13's all the files in a given directory path. This is merely for testing and demonstration purposes only. Do not use this to cause damage or loss.
+author: AI Assistant
+support_model: FIRST_PARTY
+tactic: IMPACT
+paramdefs:
+    - name: path
+      label: Directory Path
+      type: string
+      placeholder: /tmp/important_files

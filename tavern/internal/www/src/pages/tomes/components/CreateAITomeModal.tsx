@@ -61,8 +61,8 @@ const CreateAITomeModal: FC<Props> = ({ isOpen, setOpen }) => {
                             onChange={(e) => setPrompt(e.target.value)}
                         />
                         <div className="flex justify-end gap-2">
-                             <Button onClick={() => setOpen(false)} buttonStyle={{ color: "gray" }} buttonVariant="outline">Cancel</Button>
-                             <Button onClick={handleGenerate} disabled={!prompt || isGenerating} buttonStyle={{ color: "purple" }}>
+                             <Button onClick={() => setOpen(false)} buttonStyle={{ color: "red", size: "md" }} buttonVariant="outline">Cancel</Button>
+                             <Button onClick={handleGenerate} disabled={!prompt || isGenerating} buttonStyle={{ color: "purple", size: "md" }}>
                                 {isGenerating ? "Generating..." : "Generate"}
                              </Button>
                         </div>
@@ -90,8 +90,8 @@ const CreateAITomeModal: FC<Props> = ({ isOpen, setOpen }) => {
                         </div>
 
                         <div className="flex justify-end gap-2">
-                            <Button onClick={() => setGeneratedData(null)} buttonStyle={{ color: "gray" }} buttonVariant="outline">Back</Button>
-                            <Button onClick={handleSave} disabled={isSaving} buttonStyle={{ color: "purple" }}>
+                            <Button onClick={() => setGeneratedData(null)} buttonStyle={{ color: "gray", size: "md" }} buttonVariant="outline">Back</Button>
+                            <Button onClick={handleSave} disabled={isSaving} buttonStyle={{ color: "purple", size: "md" }}>
                                 {isSaving ? "Saving..." : "Save Tome"}
                             </Button>
                         </div>
