@@ -187,6 +187,7 @@ fn is_interpreter_type(ty: &Type) -> bool {
 fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), syn::Error> {
     let mut parsing = Vec::new();
     let mut call_args = Vec::new();
+    let mut param_names_str = Vec::new();
     let mut arg_idx = 0usize;
 
     for input in &sig.inputs {
@@ -204,6 +205,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
                 }
 
                 let arg_name_str = quote!(#pat).to_string();
+                param_names_str.push(arg_name_str.clone());
 
                 // Detect &str
                 let is_str_ref = if let Type::Reference(TypeReference { elem, .. }) = &**ty {
@@ -215,6 +217,13 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
                 } else {
                     false
                 };
+
+                // Add validation for multiple values (positional AND keyword)
+                parsing.push(quote! {
+                    if #arg_idx < _eldritch_args.len() && _eldritch_kwargs.contains_key(#arg_name_str) {
+                         return Err(alloc::format!("TypeError: Function got multiple values for argument '{}'", #arg_name_str));
+                    }
+                });
 
                 if is_str_ref {
                     parsing.push(quote! {
@@ -250,5 +259,43 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
         }
     }
 
-    Ok((quote! { #(#parsing)* }, quote! { #(#call_args),* }))
+    // Validate argument counts and unexpected keywords
+    let max_pos = arg_idx;
+    let mut validation = Vec::new();
+
+    validation.push(quote! {
+        if _eldritch_args.len() > #max_pos {
+             return Err(alloc::format!("TypeError: Function got too many arguments. Expected {}, got {}", #max_pos, _eldritch_args.len()));
+        }
+    });
+
+    // Validate keywords - handle empty case
+    if param_names_str.is_empty() {
+        validation.push(quote! {
+             if !_eldritch_kwargs.is_empty() {
+                 // Get first key to report
+                 let key = _eldritch_kwargs.keys().next().unwrap();
+                 return Err(alloc::format!("TypeError: Function got an unexpected keyword argument '{}'", key));
+             }
+        });
+    } else {
+        validation.push(quote! {
+             for key in _eldritch_kwargs.keys() {
+                 let is_valid = match key.as_str() {
+                     #(#param_names_str)|* => true,
+                     _ => false
+                 };
+                 if !is_valid {
+                      return Err(alloc::format!("TypeError: Function got an unexpected keyword argument '{}'", key));
+                 }
+             }
+        });
+    }
+
+    // Prepend validation to parsing logic
+    let mut final_parsing = Vec::new();
+    final_parsing.extend(validation);
+    final_parsing.push(quote! { #(#parsing)* });
+
+    Ok((quote! { #(#final_parsing)* }, quote! { #(#call_args),* }))
 }
