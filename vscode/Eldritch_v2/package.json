@@ -1,0 +1,60 @@
+{
+  "name": "eldritch-ai",
+  "displayName": "Eldritch AI",
+  "description": "AI-powered Tome creation for Realm",
+  "version": "0.0.1",
+  "publisher": "realm",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "eldritch-ai-sidebar",
+          "title": "Eldritch AI",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "eldritch-ai-sidebar": [
+        {
+          "type": "webview",
+          "id": "eldritch.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Eldritch AI",
+      "properties": {
+        "eldritch.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Google Gemini"
+        },
+        "eldritch.modelName": {
+          "type": "string",
+          "default": "gemini-2.0-flash-exp",
+          "description": "Gemini Model Name"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.130",
+    "@types/vscode": "^1.107.0",
+    "typescript": "^5.9.3"
+  }
+}
