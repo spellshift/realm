@@ -54,7 +54,11 @@ fn handle_exec(
     input: Option<String>, // Added input option
 ) -> Result<CommandOutput> {
     // Setup stdin configuration, null if no input is given
-    let stdinpipe = if input.is_some() { Stdio::piped() } else { Stdio::null() };
+    let stdinpipe = if input.is_some() {
+        Stdio::piped()
+    } else {
+        Stdio::null()
+    };
     if !disown {
         let mut child = Command::new(path)
             .args(args)
@@ -204,7 +208,7 @@ mod tests {
         Ok(())
     }
 
-        #[test]
+    #[test]
     fn test_exec_input() -> Result<()> {
         #[cfg(target_os = "windows")]
         let (cmd, args) = (
