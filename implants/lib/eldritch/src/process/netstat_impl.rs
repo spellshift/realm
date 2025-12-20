@@ -1,5 +1,3 @@
-#![cfg(not(target_os = "freebsd"))]
-
 use anyhow::Result;
 use starlark::values::{dict::Dict, Heap};
 
