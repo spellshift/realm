@@ -1,12 +1,12 @@
+use super::ArgCheck;
 use crate::ast::Value;
 use crate::interpreter::introspection::get_type_name;
 use crate::interpreter::operations::{compare_values, values_equal};
-use super::ArgCheck;
+use alloc::format;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use spin::RwLock;
-use alloc::format;
 
 pub fn handle_list_methods(
     l: &Arc<RwLock<Vec<Value>>>,

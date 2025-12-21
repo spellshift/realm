@@ -1,9 +1,9 @@
-use crate::ast::Value;
 use super::ArgCheck;
+use crate::ast::Value;
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 use spin::RwLock;
 
 pub fn handle_dict_methods(

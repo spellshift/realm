@@ -5,15 +5,15 @@ use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
 
-mod str;
 mod dict;
 mod list;
 mod set;
+mod str;
 
-use str::handle_string_methods;
 use dict::handle_dict_methods;
 use list::handle_list_methods;
 use set::handle_set_methods;
+use str::handle_string_methods;
 
 // --- Argument Validation Helper ---
 

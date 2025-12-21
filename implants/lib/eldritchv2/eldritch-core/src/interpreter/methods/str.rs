@@ -1,13 +1,17 @@
+use super::ArgCheck;
 use crate::ast::Value;
 use crate::interpreter::introspection::is_truthy;
-use super::ArgCheck;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 use spin::RwLock;
 
-pub fn handle_string_methods(s: &str, method: &str, args: &[Value]) -> Option<Result<Value, String>> {
+pub fn handle_string_methods(
+    s: &str,
+    method: &str,
+    args: &[Value],
+) -> Option<Result<Value, String>> {
     match method {
         "split" => Some((|| {
             let parts: Vec<Value> = if args.is_empty() {
