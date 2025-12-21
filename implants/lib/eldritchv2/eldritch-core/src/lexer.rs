@@ -125,8 +125,9 @@ impl Lexer {
         quote_char: char,
         is_fstring: bool,
         is_bytes: bool,
+        is_raw: bool,
     ) -> Result<Token, EldritchError> {
-        if is_fstring || is_bytes {
+        if is_fstring || is_bytes || is_raw {
             self.start = self.current;
         } else {
             self.start += 1;
@@ -180,7 +181,7 @@ impl Lexer {
                 self.line += 1;
             }
 
-            if c == '{' && is_fstring && !is_bytes {
+            if c == '{' && is_fstring && !is_bytes && !is_raw {
                 if !current_literal.is_empty() {
                     fstring_tokens.push(self.create_string_token(current_literal.clone()));
                     current_literal.clear();
@@ -196,18 +197,35 @@ impl Lexer {
                 if self.is_at_end() {
                     return self.error("Unterminated string literal");
                 }
-                let escaped = self.advance();
-                match escaped {
-                    'n' => current_literal.push('\n'),
-                    't' => current_literal.push('\t'),
-                    'r' => current_literal.push('\r'),
-                    '\\' => current_literal.push('\\'),
-                    '"' => current_literal.push('"'),
-                    '\'' => current_literal.push('\''),
-                    '\n' => {
-                        self.line += 1;
+
+                if is_raw {
+                    let next_char = self.peek();
+                    if next_char == quote_char {
+                        // Escape the quote, but keep the backslash in the string
+                        current_literal.push('\\');
+                        current_literal.push(self.advance());
+                    } else {
+                        // Keep the backslash, don't consume next char yet
+                        current_literal.push('\\');
+                        if next_char == '\\' {
+                            // Consume the second backslash so it doesn't escape anything else
+                            current_literal.push(self.advance());
+                        }
                     }
-                    c => current_literal.push(c),
+                } else {
+                    let escaped = self.advance();
+                    match escaped {
+                        'n' => current_literal.push('\n'),
+                        't' => current_literal.push('\t'),
+                        'r' => current_literal.push('\r'),
+                        '\\' => current_literal.push('\\'),
+                        '"' => current_literal.push('"'),
+                        '\'' => current_literal.push('\''),
+                        '\n' => {
+                            self.line += 1;
+                        }
+                        c => current_literal.push(c),
+                    }
                 }
             } else {
                 current_literal.push(self.advance());
@@ -500,12 +518,12 @@ impl Lexer {
                 self.line += 1;
                 Ok(self.add_token(TokenKind::Newline))
             }
-            '"' | '\'' => self.string(c, false, false),
+            '"' | '\'' => self.string(c, false, false, false),
             'b' => {
                 if self.peek() == '"' || self.peek() == '\'' {
                     let quote_char = self.peek();
                     self.advance(); // consume the quote
-                    self.string(quote_char, false, true) // is_fstring=false, is_bytes=true
+                    self.string(quote_char, false, true, false) // is_fstring=false, is_bytes=true
                 } else {
                     self.current = self.start;
                     Ok(self.identifier())
@@ -515,7 +533,17 @@ impl Lexer {
                 if self.peek() == '"' || self.peek() == '\'' {
                     let quote_char = self.peek();
                     self.advance();
-                    self.string(quote_char, true, false)
+                    self.string(quote_char, true, false, false)
+                } else {
+                    self.current = self.start;
+                    Ok(self.identifier())
+                }
+            }
+            'r' | 'R' => {
+                if self.peek() == '"' || self.peek() == '\'' {
+                    let quote_char = self.peek();
+                    self.advance(); // consume the quote
+                    self.string(quote_char, false, false, true) // is_fstring=false, is_bytes=false, is_raw=true
                 } else {
                     self.current = self.start;
                     Ok(self.identifier())

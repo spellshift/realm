@@ -21,12 +21,30 @@ fn test_list_edge_cases() {
         "l=[1]; l.insert('a', 1)",
         "insert() index must be an integer",
     );
-    assert::fail("l=[1]; l.insert()", "insert() takes exactly two arguments");
-    assert::fail("l=[1]; l.append()", "append() takes exactly one argument");
-    assert::fail("l=[1]; l.extend()", "extend() takes exactly one argument");
-    assert::fail("l=[1]; l.extend(1)", "extend() expects an iterable");
-    assert::fail("l=[1]; l.remove()", "remove() takes exactly one argument");
-    assert::fail("l=[1]; l.index()", "index() takes exactly one argument");
+    assert::fail(
+        "l=[1]; l.insert()",
+        "TypeError: insert() takes exactly 2 arguments",
+    );
+    assert::fail(
+        "l=[1]; l.append()",
+        "TypeError: append() takes exactly 1 argument",
+    );
+    assert::fail(
+        "l=[1]; l.extend()",
+        "TypeError: extend() takes exactly 1 argument",
+    );
+    assert::fail(
+        "l=[1]; l.extend(1)",
+        "TypeError: extend() expects an iterable",
+    );
+    assert::fail(
+        "l=[1]; l.remove()",
+        "TypeError: remove() takes exactly 1 argument",
+    );
+    assert::fail(
+        "l=[1]; l.index()",
+        "TypeError: index() takes exactly 1 argument",
+    );
 }
 
 #[test]
@@ -42,50 +60,80 @@ fn test_dict_edge_cases() {
     );
 
     // Errors
-    assert::fail("d={}; d.get()", "get() takes 1 or 2 arguments");
-    assert::fail("d={}; d.get('a', 'b', 'c')", "get() takes 1 or 2 arguments");
-    assert::fail("d={}; d.update()", "update() takes exactly one argument");
-    assert::fail("d={}; d.update(1)", "update() requires a dictionary");
+    assert::fail(
+        "d={}; d.get()",
+        "TypeError: get() takes between 1 and 2 arguments",
+    );
+    assert::fail(
+        "d={}; d.get('a', 'b', 'c')",
+        "TypeError: get() takes between 1 and 2 arguments",
+    );
+    assert::fail(
+        "d={}; d.update()",
+        "TypeError: update() takes exactly 1 argument",
+    );
+    assert::fail(
+        "d={}; d.update(1)",
+        "TypeError: update() requires a dictionary",
+    );
 }
 
 #[test]
 fn test_set_edge_cases() {
     // Errors
-    assert::fail("s={1}; s.add()", "add() takes exactly one argument");
+    assert::fail(
+        "s={1}; s.add()",
+        "TypeError: add() takes exactly 1 argument",
+    );
     assert::fail(
         "s={1}; s.contains()",
-        "contains() takes exactly one argument",
+        "TypeError: contains() takes exactly 1 argument",
     );
     assert::fail(
         "s={1}; s.difference()",
-        "difference() takes exactly one argument",
+        "TypeError: difference() takes exactly 1 argument",
     );
-    assert::fail("s={1}; s.difference(1)", "is not iterable");
-    assert::fail("s={1}; s.discard()", "discard() takes exactly one argument");
+    assert::fail(
+        "s={1}; s.difference(1)",
+        "TypeError: 'int' object is not iterable",
+    );
+    assert::fail(
+        "s={1}; s.discard()",
+        "TypeError: discard() takes exactly 1 argument",
+    );
     assert::fail(
         "s={1}; s.intersection()",
-        "intersection() takes exactly one argument",
+        "TypeError: intersection() takes exactly 1 argument",
     );
     assert::fail(
         "s={1}; s.isdisjoint()",
-        "isdisjoint() takes exactly one argument",
+        "TypeError: isdisjoint() takes exactly 1 argument",
     );
     assert::fail(
         "s={1}; s.issubset()",
-        "issubset() takes exactly one argument",
+        "TypeError: issubset() takes exactly 1 argument",
     );
     assert::fail(
         "s={1}; s.issuperset()",
-        "issuperset() takes exactly one argument",
+        "TypeError: issuperset() takes exactly 1 argument",
     );
-    assert::fail("s={1}; s.remove()", "remove() takes exactly one argument");
+    assert::fail(
+        "s={1}; s.remove()",
+        "TypeError: remove() takes exactly 1 argument",
+    );
     assert::fail("s={1}; s.remove(99)", "KeyError");
     assert::fail(
         "s={1}; s.symmetric_difference()",
-        "symmetric_difference() takes exactly one argument",
+        "TypeError: symmetric_difference() takes exactly 1 argument",
     );
-    assert::fail("s={1}; s.union()", "union() takes exactly one argument");
-    assert::fail("s={1}; s.update()", "update() takes exactly one argument");
+    assert::fail(
+        "s={1}; s.union()",
+        "TypeError: union() takes exactly 1 argument",
+    );
+    assert::fail(
+        "s={1}; s.update()",
+        "TypeError: update() takes exactly 1 argument",
+    );
 }
 
 #[test]
@@ -102,24 +150,48 @@ fn test_string_edge_cases() {
     );
 
     // Errors
-    assert::fail("''.startswith()", "startswith() takes 1 argument");
-    assert::fail("''.endswith()", "endswith() takes 1 argument");
-    assert::fail("''.removeprefix()", "removeprefix() takes 1 argument");
-    assert::fail("''.removesuffix()", "removesuffix() takes 1 argument");
-    assert::fail("''.find()", "find() takes 1 argument");
-    assert::fail("''.index()", "index() takes 1 argument");
+    assert::fail(
+        "''.startswith()",
+        "TypeError: startswith() takes exactly 1 argument",
+    );
+    assert::fail(
+        "''.endswith()",
+        "TypeError: endswith() takes exactly 1 argument",
+    );
+    assert::fail(
+        "''.removeprefix()",
+        "TypeError: removeprefix() takes exactly 1 argument",
+    );
+    assert::fail(
+        "''.removesuffix()",
+        "TypeError: removesuffix() takes exactly 1 argument",
+    );
+    assert::fail("''.find()", "TypeError: find() takes exactly 1 argument");
+    assert::fail("''.index()", "TypeError: index() takes exactly 1 argument");
     assert::fail("''.index('z')", "ValueError: substring not found");
-    assert::fail("''.rfind()", "rfind() takes 1 argument");
-    assert::fail("''.rindex()", "rindex() takes 1 argument");
+    assert::fail("''.rfind()", "TypeError: rfind() takes exactly 1 argument");
+    assert::fail(
+        "''.rindex()",
+        "TypeError: rindex() takes exactly 1 argument",
+    );
     assert::fail("''.rindex('z')", "ValueError: substring not found");
-    assert::fail("''.count()", "count() takes 1 argument");
-    assert::fail("''.replace('a')", "replace() takes 2 arguments");
-    assert::fail("''.join()", "join() takes 1 argument");
-    assert::fail("''.join(1)", "join() expects a list");
-    assert::fail("''.join([1])", "join() expects list of strings");
-    assert::fail("''.partition()", "partition() takes 1 argument");
-    assert::fail("''.rpartition()", "rpartition() takes 1 argument");
-    assert::fail("'{}'.format()", "tuple index out of range");
+    assert::fail("''.count()", "TypeError: count() takes exactly 1 argument");
+    assert::fail(
+        "''.replace('a')",
+        "TypeError: replace() takes exactly 2 arguments",
+    );
+    assert::fail("''.join()", "TypeError: join() takes exactly 1 argument");
+    assert::fail("''.join(1)", "TypeError: join() expects a list");
+    assert::fail("''.join([1])", "TypeError: join() expects list of strings");
+    assert::fail(
+        "''.partition()",
+        "TypeError: partition() takes exactly 1 argument",
+    );
+    assert::fail(
+        "''.rpartition()",
+        "TypeError: rpartition() takes exactly 1 argument",
+    );
+    assert::fail("'{}'.format()", "IndexError: tuple index out of range");
 
     // Coverage for format logic
     assert::pass(
