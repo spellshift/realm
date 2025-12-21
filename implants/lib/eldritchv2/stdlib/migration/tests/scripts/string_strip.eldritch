@@ -8,6 +8,7 @@ assert_eq("xxabcxx".lstrip("x"), "abcxx")
 
 assert_eq("  abc  ".rstrip(), "  abc")
 assert_eq("xxabcxx".rstrip("x"), "xxabc")
+assert_eq("test><><".rstrip("<>"), "test")
 
 # Mixed characters
 assert_eq("123abc123".strip("123"), "abc")

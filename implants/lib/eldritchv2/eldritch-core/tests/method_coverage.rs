@@ -253,6 +253,7 @@ fn test_string_edge_cases() {
 
         assert_eq("  abc  ".rstrip(), "  abc")
         assert_eq("xxabcxx".rstrip("x"), "xxabc")
+        assert_eq("test><><".rstrip("<>"), "test")
     "#,
     );
 
