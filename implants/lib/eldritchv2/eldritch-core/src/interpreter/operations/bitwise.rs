@@ -1,8 +1,8 @@
 use crate::ast::Value;
-use crate::token::{Span, TokenKind};
 use crate::interpreter::core::Interpreter;
 use crate::interpreter::error::{EldritchError, EldritchErrorKind};
 use crate::interpreter::introspection::get_type_name;
+use crate::token::{Span, TokenKind};
 use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::sync::Arc;
