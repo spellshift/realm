@@ -42,16 +42,34 @@ pub fn handle_string_methods(
             Ok(Value::List(Arc::new(RwLock::new(lines))))
         })()),
         "strip" => Some((|| {
-            args.require(0, "strip")?;
-            Ok(Value::String(s.trim().to_string()))
+            args.require_range(0, 1, "strip")?;
+            if args.is_empty() {
+                Ok(Value::String(s.trim().to_string()))
+            } else {
+                let chars_val = args[0].to_string();
+                let chars: Vec<char> = chars_val.chars().collect();
+                Ok(Value::String(s.trim_matches(&chars[..]).to_string()))
+            }
         })()),
         "lstrip" => Some((|| {
-            args.require(0, "lstrip")?;
-            Ok(Value::String(s.trim_start().to_string()))
+            args.require_range(0, 1, "lstrip")?;
+            if args.is_empty() {
+                Ok(Value::String(s.trim_start().to_string()))
+            } else {
+                let chars_val = args[0].to_string();
+                let chars: Vec<char> = chars_val.chars().collect();
+                Ok(Value::String(s.trim_start_matches(&chars[..]).to_string()))
+            }
         })()),
         "rstrip" => Some((|| {
-            args.require(0, "rstrip")?;
-            Ok(Value::String(s.trim_end().to_string()))
+            args.require_range(0, 1, "rstrip")?;
+            if args.is_empty() {
+                Ok(Value::String(s.trim_end().to_string()))
+            } else {
+                let chars_val = args[0].to_string();
+                let chars: Vec<char> = chars_val.chars().collect();
+                Ok(Value::String(s.trim_end_matches(&chars[..]).to_string()))
+            }
         })()),
         "lower" => Some((|| {
             args.require(0, "lower")?;

@@ -343,8 +343,8 @@ mod tests {
         let content = content.unwrap();
         assert!(!content.is_empty());
         assert_eq!(
-            std::str::from_utf8(&content).unwrap(),
-            "print(\"This script just prints\")\n"
+            std::str::from_utf8(&content).unwrap().trim(),
+            "print(\"This script just prints\")"
         );
         Ok(())
     }
@@ -402,8 +402,7 @@ mod tests {
         let result = lib.copy("print/main.eldritch".to_string(), dest_str.clone());
         assert!(result.is_ok());
         let content = std::fs::read_to_string(dest_path).unwrap();
-        assert_eq!(content, "print(\"This script just prints\")\n");
-        Ok(())
+        assert_eq!(content.trim(), "print(\"This script just prints\")");
     }
 
     #[test]
