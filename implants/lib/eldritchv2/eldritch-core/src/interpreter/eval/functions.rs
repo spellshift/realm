@@ -2,12 +2,15 @@ use super::super::super::ast::{
     Argument, Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
 use super::super::super::token::Span;
+use super::super::builtins::{
+    eval_builtin::builtin_eval_func, filter::builtin_filter, map::builtin_map,
+    reduce::builtin_reduce, sorted::builtin_sorted,
+};
 use super::super::core::{Flow, Interpreter};
 use super::super::error::{EldritchError, EldritchErrorKind};
 use super::super::exec::execute_stmts;
 use super::super::introspection::get_type_name;
 use super::super::methods::call_bound_method;
-use super::super::builtins::{eval_builtin::builtin_eval_func, filter::builtin_filter, map::builtin_map, reduce::builtin_reduce, sorted::builtin_sorted};
 use super::utils::parse_error_kind;
 use super::{MAX_RECURSION_DEPTH, evaluate};
 use alloc::collections::{BTreeMap, BTreeSet};

@@ -1,8 +1,8 @@
 use crate::ast::{Argument, Value};
 use crate::interpreter::core::{Flow, Interpreter};
 use crate::interpreter::error::{EldritchError, EldritchErrorKind};
-use crate::interpreter::eval::functions::evaluate_arg;
 use crate::interpreter::eval::MAX_RECURSION_DEPTH;
+use crate::interpreter::eval::functions::evaluate_arg;
 use crate::token::Span;
 use alloc::string::ToString;
 

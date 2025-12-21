@@ -1,4 +1,4 @@
-use crate::ast::{Argument};
+use crate::ast::Argument;
 use crate::interpreter::core::Interpreter;
 use crate::interpreter::error::{EldritchError, EldritchErrorKind};
 use crate::interpreter::eval::functions::{call_value, evaluate_arg};
