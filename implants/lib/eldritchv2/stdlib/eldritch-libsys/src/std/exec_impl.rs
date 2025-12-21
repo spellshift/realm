@@ -211,14 +211,15 @@ mod tests {
     #[test]
     fn test_exec_input() -> Result<()> {
         #[cfg(target_os = "windows")]
-        let (cmd, args) = (
+        let (cmd, args, input) = (
             "cmd.exe".to_string(),
-            vec!["/C".to_string(), "echo".to_string(), "hello".to_string()],
+            vec!["/C".to_string(), "findstr".to_string(), "^".to_string()],
+            "hello".to_string(),
         );
         #[cfg(not(target_os = "windows"))]
-        let (cmd, input) = ("cat".to_string(), "hello".to_string());
+        let (cmd, args, input) = ("cat".to_string(), Vec::new(), "hello".to_string());
 
-        let res = exec(cmd, Vec::new(), Some(false), None, Some(input))?;
+        let res = exec(cmd, args, Some(false), None, Some(input))?;
         assert_eq!(res.get("status").unwrap(), &Value::Int(0));
 
         let stdout = res.get("stdout").unwrap();
