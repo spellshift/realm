@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use std::process::{Command, Stdio}; // Run programs
 use std::str;
 
-const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test/";
+const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test";
 // Test running `./golem ./nonexistentdir/run.tome`
 #[test]
 fn test_golem_main_file_not_found() -> anyhow::Result<()> {
@@ -27,43 +27,35 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
 fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}syntax_fail.eldritch"));
-    cmd.assert().failure().stderr(predicate::str::contains(
-        r#"Parse error: unexpected string literal"#.to_string(),
+    cmd.arg(format!(
+        "{GOLEM_CLI_TEST_DIR}_shadow/syntax_fail/main.eldritch"
     ));
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains(r#"Parse error: unexpected string literal"#.to_string()));
 
     Ok(())
 }
-// Test running `./golem ../../bin/golem_cli_test/hello_world.tome`
+// Test running `./golem ../../bin/golem_cli_test/valid_tome/main.eldritch`
 #[test]
 fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}hello_world.eldritch"));
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}/valid_tome/main.eldritch"));
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"HELLO"#));
+        .stdout(predicate::str::contains(r#"HELLO"#))
+        .stdout(predicate::str::contains(r#""append", "compress""#));
 
     Ok(())
 }
-// Test running `./golem ../../bin/golem_cli_test/eldritch_test.tome`
-#[test]
-fn test_golem_main_basic_eldritch_non_interactive() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}eldritch_test.eldritch"));
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains(r#"["append", "compress""#));
-
-    Ok(())
-}
 // Test running `./golem ../../bin/golem_cli_test/eldritch_test.tome`
 #[test]
 fn test_golem_main_basic_async() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golem"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}download_test.eldritch"));
+    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}/download_test/main.eldritch"));
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"OKAY!"#));
