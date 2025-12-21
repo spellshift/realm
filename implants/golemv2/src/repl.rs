@@ -27,6 +27,16 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
             res
         }),
     );
+
+    // Add a way out
+    inter.register_module(
+        "exit",
+        Value::NativeFunction("exit".to_string(), |_env, _| {
+            println!("");
+            std::process::exit(0)
+        }),
+    );
+
     println!("Type 'exit()' to quit. End blocks with an empty line.");
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
@@ -49,10 +59,6 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
                             stdout.execute(cursor::MoveToNextLine(1))?;
 
                             terminal::disable_raw_mode()?;
-                            if code == "exit()" || code == "quit()" {
-                                render(&mut stdout, &repl)?;
-                                break;
-                            }
                             match inter.interpret(&code) {
                                 Ok(v) => {
                                     if !matches!(v, Value::None) {
