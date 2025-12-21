@@ -1965,7 +1965,6 @@ It supports:
     - `args` (`List<str>`): List of arguments.
     - `disown` (`Option<bool>`): If `True`, runs in background/detached.
     - `env_vars` (`Option<Dict<str, str>>`): Environment variables to set.
-    - `input` (`Option<String>`): String to pass to process stdin
 
     **Returns**
     - `Dict`: Output containing `stdout`, `stderr`, and `status` (exit code).
