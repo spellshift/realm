@@ -1,19 +1,19 @@
 #![allow(clippy::mutable_key_type)]
 extern crate alloc;
 
-use clap::{Arg, Command, ArgAction};
-use eldritch_libassets::std::{StdAssetsLibrary, EmbeddedAssets};
+use clap::{Arg, ArgAction, Command};
+use eldritch_libassets::AssetsLibrary;
+use eldritch_libassets::std::{EmbeddedAssets, StdAssetsLibrary};
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
 use std::fs;
 use std::process::exit;
 use std::sync::Arc;
-use eldritch_libassets::AssetsLibrary;
 
 mod agent;
 mod assetbackend;
 mod repl;
-use crate::assetbackend::DirectoryAssetBackend;
 use crate::agent::GolemAgent;
+use crate::assetbackend::DirectoryAssetBackend;
 
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
 #[cfg(not(debug_assertions))]
@@ -47,7 +47,7 @@ fn new_runtime(agent: Arc<GolemAgent>, assetlib: impl ForeignValue + 'static) ->
     interp
 }
 
-fn main() -> anyhow::Result<()>  {
+fn main() -> anyhow::Result<()> {
     let matches = Command::new("golem")
         .arg(
             Arg::new("INPUT")
@@ -66,7 +66,7 @@ fn main() -> anyhow::Result<()>  {
                 .short('a')
                 .long("assets")
                 .value_name("SOURCE")
-                .action(ArgAction::Append) 
+                .action(ArgAction::Append)
                 .help("Asset source (directory, Tavern URL, or ZIP)"),
         )
         .arg(
@@ -88,7 +88,8 @@ fn main() -> anyhow::Result<()>  {
     //let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
     let mut locker = StdAssetsLibrary::new();
 
-    let asset_directories: Vec<String> = matches.get_many::<String>("assets")
+    let asset_directories: Vec<String> = matches
+        .get_many::<String>("assets")
         .unwrap_or_default()
         .cloned()
         .collect();
@@ -115,8 +116,9 @@ fn main() -> anyhow::Result<()>  {
             let tome_contents = fs::read_to_string(&tome_path)
                 .map_err(|_| ())
                 .or_else(|_| {
-                    locker.read(tome_path.clone())
-                    .map_err(|_| anyhow::anyhow!("Error: No such file or asset"))
+                    locker
+                        .read(tome_path.clone())
+                        .map_err(|_| anyhow::anyhow!("Error: No such file or asset"))
                 })?;
 
             parsed_tomes.push(ParsedTome {
@@ -133,7 +135,7 @@ fn main() -> anyhow::Result<()>  {
                     if asset.ends_with("main.eldritch") || asset.ends_with("main.eldr") {
                         let eldr_str = match locker.read(asset.clone()) {
                             Ok(val) => val,
-                            Err(e) =>  return Err(anyhow::anyhow!(e))
+                            Err(e) => return Err(anyhow::anyhow!(e)),
                         };
                         parsed_tomes.push(ParsedTome {
                             name: asset,
@@ -142,12 +144,8 @@ fn main() -> anyhow::Result<()>  {
                     }
                 }
             }
-            Err(e) => {
-                return Err(anyhow::anyhow!(e))
-            }
+            Err(e) => return Err(anyhow::anyhow!(e)),
         }
-
-
     }
 
     // Setup the interpreter. This will need refactored when we do multi-threaded
@@ -161,12 +159,10 @@ fn main() -> anyhow::Result<()>  {
 
     // Print a debug for the configured assets and tomes
     if matches.get_flag("dump") {
-        let tome_names: Vec<&str> = parsed_tomes.iter()
-            .map(|tome| tome.name.as_str())
-            .collect();
+        let tome_names: Vec<&str> = parsed_tomes.iter().map(|tome| tome.name.as_str()).collect();
         println!("tomes = {:?}", tome_names);
         match interp.interpret("print(\"assets =\", assets.list())") {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => {
                 eprintln!("{}", e);
                 exit(127);
@@ -177,7 +173,7 @@ fn main() -> anyhow::Result<()>  {
     // Time to run some commands
     for tome in parsed_tomes {
         match interp.interpret(&tome.eldritch) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => {
                 eprintln!("{}: {}", tome.name, e);
                 exit(127);

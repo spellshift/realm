@@ -27,10 +27,12 @@ fn test_golem_main_file_not_found() -> anyhow::Result<()> {
 fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golemv2"));
 
-    cmd.arg(format!("{GOLEM_CLI_TEST_DIR}_shadow/syntax_fail/main.eldritch"));
-    cmd.assert().failure().stderr(predicate::str::contains(
-        r#"Parser Error"#.to_string(),
+    cmd.arg(format!(
+        "{GOLEM_CLI_TEST_DIR}_shadow/syntax_fail/main.eldritch"
     ));
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains(r#"Parser Error"#.to_string()));
 
     Ok(())
 }
@@ -106,7 +108,9 @@ fn test_golem_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
     cmd.arg(GOLEM_CLI_TEST_DIR);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"hello from an embedded shell script"#))
+        .stdout(predicate::str::contains(
+            r#"hello from an embedded shell script"#,
+        ))
         .stdout(predicate::str::contains(r#"hello from an asset directory"#));
     Ok(())
 }
@@ -119,7 +123,9 @@ fn test_golem_main_loaded_files_shadow() -> anyhow::Result<()> {
     cmd.arg(GOLEM_CLI_TEST_DIR);
     cmd.arg("-a");
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}_shadow"));
-    cmd.assert().failure().stderr(predicate::str::contains(r#"Error: asset collision detected."#));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        r#"Error: asset collision detected."#,
+    ));
     Ok(())
 }
 

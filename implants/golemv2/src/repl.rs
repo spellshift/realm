@@ -79,8 +79,7 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
                         }
                         ReplAction::Complete => {
                             let state = repl.get_render_state();
-                            let (start, completions) =
-                                inter.complete(&state.buffer, state.cursor);
+                            let (start, completions) = inter.complete(&state.buffer, state.cursor);
                             repl.set_suggestions(completions, start);
                             render(&mut stdout, &repl)?;
                         }
@@ -117,7 +116,7 @@ fn map_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char(' ') if key.modifiers.contains(KeyModifiers::CONTROL) => {
             Some(Input::ForceComplete)
         }
-        KeyCode::Enter if key.modifiers.contains(KeyModifiers::SHIFT)=> Some(Input::ForceEnter),
+        KeyCode::Enter if key.modifiers.contains(KeyModifiers::SHIFT) => Some(Input::ForceEnter),
         KeyCode::Char(c) => Some(Input::Char(c)),
         KeyCode::Enter => Some(Input::Enter),
         KeyCode::Backspace => Some(Input::Backspace),

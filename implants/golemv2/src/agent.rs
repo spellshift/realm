@@ -1,8 +1,8 @@
 extern crate alloc;
 
-use eldritch_libagent::agent::Agent;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::sync::Arc;
+use eldritch_libagent::agent::Agent;
 use std::sync::RwLock;
 
 #[derive(Clone)]
@@ -39,9 +39,6 @@ impl Agent for GolemAgent {
         Err("".into())
     }
 
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("".into())
-    }
     fn start_reverse_shell(&self, _: i64, _: Option<String>) -> Result<(), String> {
         Err("".into())
     }
@@ -122,5 +119,4 @@ impl Agent for GolemAgent {
     fn stop_task(&self, _: i64) -> Result<(), String> {
         Err("".into())
     }
-
 }
