@@ -8,6 +8,7 @@ mod assert_eq;
 mod bool;
 mod builtins_fn;
 mod bytes;
+mod chr;
 mod dir;
 mod enumerate;
 mod eprint;
@@ -15,6 +16,7 @@ mod fail;
 mod int;
 mod len;
 mod libs;
+mod ord;
 mod pprint;
 mod print;
 mod range;
@@ -58,6 +60,8 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("libs", libs::builtin_libs as BuiltinFn),
         ("builtins", builtins_fn::builtin_builtins as BuiltinFn),
         ("bytes", bytes::builtin_bytes as BuiltinFn),
+        ("chr", chr::builtin_chr as BuiltinFn),
+        ("ord", ord::builtin_ord as BuiltinFn),
         // New
         ("abs", abs::builtin_abs as BuiltinFn),
         ("any", any::builtin_any as BuiltinFn),
