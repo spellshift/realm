@@ -62,9 +62,6 @@ impl Agent for MockAgent {
     ) -> Result<pb::c2::ReportTaskOutputResponse, String> {
         Err("".into())
     }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Err("".into())
-    }
     fn start_reverse_shell(&self, _: i64, _: Option<String>) -> Result<(), String> {
         Err("".into())
     }

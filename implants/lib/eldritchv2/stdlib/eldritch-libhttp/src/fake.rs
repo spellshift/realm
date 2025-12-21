@@ -12,7 +12,7 @@ use spin::RwLock;
 pub struct HttpLibraryFake;
 
 impl HttpLibrary for HttpLibraryFake {
-    fn download(&self, _url: String, _path: String) -> Result<(), String> {
+    fn download(&self, _url: String, _path: String, _insecure: Option<bool>) -> Result<(), String> {
         Ok(())
     }
 

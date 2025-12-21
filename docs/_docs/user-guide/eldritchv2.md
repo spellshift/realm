@@ -82,8 +82,6 @@ print(greet("World"))
 Eldritch V2 supports loading modules. Standard library modules (like `file`, `sys`) are available globally or can be imported if configured. In the standard environment, they are pre-loaded global objects.
 
 ```python
-import file
-# or just use the global object directly if available
 file.list(".")
 ```
 
@@ -796,95 +794,6 @@ It allows you to:
     **Errors**
     - Returns an error string if the configuration cannot be retrieved or is not implemented.
 
-*   **`agent.fetch_asset`**
-    Fetches an asset (file) from the C2 server by name.
-    
-    This method requests the asset content from the server.
-    
-    **Parameters**
-    - `name` (`str`): The name of the asset to fetch.
-    
-    **Returns**
-    - `Bytes`: The content of the asset as a byte array.
-    
-    **Errors**
-    - Returns an error string if the asset cannot be fetched or communication fails.
-
-*   **`agent.report_credential`**
-    Reports a captured credential to the C2 server.
-    
-    **Parameters**
-    - `credential` (`Credential`): The credential object to report.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the reporting fails.
-
-*   **`agent.report_file`**
-    Reports a file (chunk) to the C2 server.
-    
-    This is typically used internally by `report.file`.
-    
-    **Parameters**
-    - `file` (`File`): The file chunk wrapper to report.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the reporting fails.
-
-*   **`agent.report_process_list`**
-    Reports a list of processes to the C2 server.
-    
-    This is typically used internally by `report.process_list`.
-    
-    **Parameters**
-    - `list` (`ProcessList`): The process list wrapper to report.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the reporting fails.
-
-*   **`agent.report_task_output`**
-    Reports the output of a task to the C2 server.
-    
-    This is used to send stdout/stderr or errors back to the controller.
-    
-    **Parameters**
-    - `output` (`str`): The standard output content.
-    - `error` (`Option<str>`): Optional error message.
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the reporting fails.
-
-*   **`agent.reverse_shell`**
-    Initiates a reverse shell session.
-    
-    This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-    
-    **Returns**
-    - `None`
-    
-    **Errors**
-    - Returns an error string if the reverse shell cannot be started.
-
-*   **`agent.claim_tasks`**
-    Manually triggers a check-in to claim pending tasks from the C2 server.
-    
-    **Returns**
-    - `List<Task>`: A list of tasks retrieved from the server.
-    
-    **Errors**
-    - Returns an error string if the check-in fails.
-
 *   **`agent.get_transport`**
     Returns the name of the currently active transport.
     
@@ -1535,7 +1444,7 @@ It supports:
     **Parameters**
     - `url` (`str`): The URL to download from.
     - `path` (`str`): The local destination path.
-    
+    - `insecure` (`Option<bool>`): If true, ignore SSL certificate verification (insecure).
     **Returns**
     - `None`
     
@@ -1603,7 +1512,7 @@ It supports:
     - Returns an error string if the shell cannot be spawned.
 
 *   **`pivot.reverse_shell_repl`**
-    Spawns a basic REPL-style reverse shell.
+    Spawns a basic REPL-style reverse shell with an Eldritch interpreter.
     
     Useful if PTY is not available.
     

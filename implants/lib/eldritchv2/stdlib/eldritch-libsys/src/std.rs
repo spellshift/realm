@@ -49,8 +49,9 @@ impl SysLibrary for StdSysLibrary {
         args: Vec<String>,
         disown: Option<bool>,
         env_vars: Option<BTreeMap<String, String>>,
+        input: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        exec_impl::exec(path, args, disown, env_vars).map_err(|e| e.to_string())
+        exec_impl::exec(path, args, disown, env_vars, input).map_err(|e| e.to_string())
     }
 
     fn get_env(&self) -> Result<BTreeMap<String, String>, String> {

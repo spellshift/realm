@@ -3,7 +3,7 @@ extern crate alloc;
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::{Interpreter, Value};
+use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 use alloc::collections::BTreeMap;
@@ -67,100 +67,11 @@ pub trait AgentLibrary {
     fn get_config(&self) -> Result<BTreeMap<String, Value>, String>;
 
     // Interactivity
-    #[eldritch_method]
-    /// Fetches an asset (file) from the C2 server by name.
-    ///
-    /// This method requests the asset content from the server.
-    ///
-    /// **Parameters**
-    /// - `name` (`str`): The name of the asset to fetch.
-    ///
-    /// **Returns**
-    /// - `Bytes`: The content of the asset as a byte array.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the asset cannot be fetched or communication fails.
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String>;
-
-    #[eldritch_method]
-    /// Reports a captured credential to the C2 server.
-    ///
-    /// **Parameters**
-    /// - `credential` (`Credential`): The credential object to report.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the reporting fails.
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Reports a file (chunk) to the C2 server.
-    ///
-    /// This is typically used internally by `report.file`.
-    ///
-    /// **Parameters**
-    /// - `file` (`File`): The file chunk wrapper to report.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the reporting fails.
     fn report_file(&self, file: FileWrapper) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Reports a list of processes to the C2 server.
-    ///
-    /// This is typically used internally by `report.process_list`.
-    ///
-    /// **Parameters**
-    /// - `list` (`ProcessList`): The process list wrapper to report.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the reporting fails.
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Reports the output of a task to the C2 server.
-    ///
-    /// This is used to send stdout/stderr or errors back to the controller.
-    ///
-    /// **Parameters**
-    /// - `output` (`str`): The standard output content.
-    /// - `error` (`Option<str>`): Optional error message.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the reporting fails.
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Initiates a reverse shell session.
-    ///
-    /// This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the reverse shell cannot be started.
-    fn reverse_shell(&self) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Manually triggers a check-in to claim pending tasks from the C2 server.
-    ///
-    /// **Returns**
-    /// - `List<Task>`: A list of tasks retrieved from the server.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the check-in fails.
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String>;
 
     // Agent Configuration

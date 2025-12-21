@@ -22,7 +22,6 @@ pub trait Agent: Send + Sync {
         &self,
         req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String>;
-    fn reverse_shell(&self) -> Result<(), String>;
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String>;
     fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String>;
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String>;

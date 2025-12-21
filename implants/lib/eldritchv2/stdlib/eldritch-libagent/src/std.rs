@@ -1,9 +1,9 @@
 use super::AgentLibrary;
 use alloc::collections::BTreeMap;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use eldritch_core::{Interpreter, Value};
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
 use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
@@ -102,10 +102,6 @@ impl AgentLibrary for StdAgentLibrary {
             output: Some(output_msg),
         };
         self.agent.report_task_output(req).map(|_| ())
-    }
-
-    fn reverse_shell(&self) -> Result<(), String> {
-        self.agent.reverse_shell()
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {

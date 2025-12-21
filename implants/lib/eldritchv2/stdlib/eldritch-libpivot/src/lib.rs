@@ -54,7 +54,7 @@ pub trait PivotLibrary {
     fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String>;
 
     #[eldritch_method]
-    /// Spawns a basic REPL-style reverse shell.
+    /// Spawns a basic REPL-style reverse shell with an Eldritch interpreter.
     ///
     /// Useful if PTY is not available.
     ///

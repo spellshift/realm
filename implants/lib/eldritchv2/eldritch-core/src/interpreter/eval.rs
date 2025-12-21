@@ -279,6 +279,29 @@ fn evaluate_index(
                 ),
             }
         }
+        Value::String(s) => {
+            let idx_int = match idx_val {
+                Value::Int(i) => i,
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "string indices must be integers",
+                        index.span,
+                    );
+                }
+            };
+            let chars: Vec<char> = s.chars().collect();
+            let len = chars.len() as i64;
+            let true_idx = if idx_int < 0 { len + idx_int } else { idx_int };
+            if true_idx < 0 || true_idx as usize >= chars.len() {
+                return interp.error(
+                    EldritchErrorKind::IndexError,
+                    "String index out of range",
+                    span,
+                );
+            }
+            Ok(Value::String(chars[true_idx as usize].to_string()))
+        }
         _ => interp.error(
             EldritchErrorKind::TypeError,
             &format!("'{}' object is not subscriptable", get_type_name(&obj_val)),

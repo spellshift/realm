@@ -1,10 +1,10 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
-use eldritch_libagent::agent::Agent;
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
 
+#[allow(clippy::field_reassign_with_default)]
 #[tokio::test]
 async fn test_imix_agent_get_callback_interval_error() {
     let mut config = Config::default();
@@ -20,6 +20,7 @@ async fn test_imix_agent_get_callback_interval_error() {
     assert!(result.unwrap_err().to_string().contains("No beacon info"));
 }
 
+#[allow(clippy::field_reassign_with_default)]
 #[tokio::test]
 async fn test_imix_agent_get_callback_interval_success() {
     let mut config = Config::default();

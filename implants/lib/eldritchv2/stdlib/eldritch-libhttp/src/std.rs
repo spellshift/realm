@@ -19,7 +19,7 @@ use std::path::PathBuf;
 pub struct StdHttpLibrary;
 
 impl HttpLibrary for StdHttpLibrary {
-    fn download(&self, url: String, path: String) -> Result<(), String> {
+    fn download(&self, url: String, path: String, insecure: Option<bool>) -> Result<(), String> {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -30,6 +30,7 @@ impl HttpLibrary for StdHttpLibrary {
             // v2: download(url, path) -> assumes insecure is false or handled by env?
             // The trait signature doesn't have allow_insecure. We'll default to false.
             let client = reqwest::Client::builder()
+                .danger_accept_invalid_certs(insecure.unwrap_or(false))
                 .build()
                 .map_err(|e| format!("Failed to build client: {e}"))?;
 
@@ -197,7 +198,7 @@ mod tests {
         let url = server.url("/foo").to_string();
         let lib = StdHttpLibrary;
 
-        lib.download(url, path.clone()).unwrap();
+        lib.download(url, path.clone(), None).unwrap();
 
         let content = read_to_string(&path).unwrap();
         assert_eq!(content, "test body");
@@ -217,7 +218,7 @@ mod tests {
         let url = server.url("/foo").to_string();
         let lib = StdHttpLibrary;
 
-        let res = lib.download(url, path);
+        let res = lib.download(url, path, None);
         assert!(res.is_err());
         assert!(
             res.unwrap_err()
@@ -240,7 +241,7 @@ mod tests {
         let tmp_dir = tempfile::tempdir().unwrap();
         let path = tmp_dir.path().to_str().unwrap().to_string();
 
-        let res = lib.download(url, path);
+        let res = lib.download(url, path, None);
         assert!(res.is_err());
         // Exact error message depends on OS, but should be a file creation error
         let err = res.unwrap_err();
