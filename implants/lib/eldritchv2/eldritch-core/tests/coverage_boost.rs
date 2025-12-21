@@ -58,8 +58,6 @@ fn test_coverage_utils() {
 fn test_coverage_builtins() {
     assert::fail("int([])", "argument must be a string, bytes or number");
     assert::fail("range()", "range expects 1-3 integer arguments");
-    // This now works because range supports 1, 2, or 3 args
-    // assert::fail("range(1, 2, 3)", "Range expects one or two integer arguments");
     assert::pass("range(1, 2, 3)");
 
     assert::pass(
