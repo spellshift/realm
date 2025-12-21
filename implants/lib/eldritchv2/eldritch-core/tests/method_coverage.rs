@@ -240,4 +240,33 @@ fn test_string_edge_cases() {
         assert_eq("abc".count(""), 4) # 3 chars + 1
     "#,
     );
+
+    // Strip/Lstrip/Rstrip with arguments
+    assert::pass(
+        r#"
+        assert_eq("  abc  ".strip(), "abc")
+        assert_eq("xxabcxx".strip("x"), "abc")
+        assert_eq("xyabcxy".strip("xy"), "abc")
+
+        assert_eq("  abc  ".lstrip(), "abc  ")
+        assert_eq("xxabcxx".lstrip("x"), "abcxx")
+
+        assert_eq("  abc  ".rstrip(), "  abc")
+        assert_eq("xxabcxx".rstrip("x"), "xxabc")
+    "#,
+    );
+
+    // Errors for strip/lstrip/rstrip
+    assert::fail(
+        "''.strip('a', 'b')",
+        "TypeError: strip() takes between 0 and 1 arguments",
+    );
+    assert::fail(
+        "''.lstrip('a', 'b')",
+        "TypeError: lstrip() takes between 0 and 1 arguments",
+    );
+    assert::fail(
+        "''.rstrip('a', 'b')",
+        "TypeError: rstrip() takes between 0 and 1 arguments",
+    );
 }
