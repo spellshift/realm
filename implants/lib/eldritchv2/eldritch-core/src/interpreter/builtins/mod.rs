@@ -39,6 +39,13 @@ mod tprint;
 mod tuple;
 mod zip;
 
+// Moved from eval/
+pub mod eval_builtin;
+pub mod filter;
+pub mod map;
+pub mod reduce;
+pub mod sorted;
+
 pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
     vec![
         // Existing

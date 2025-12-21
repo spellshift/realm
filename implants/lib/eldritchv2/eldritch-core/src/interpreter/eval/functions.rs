@@ -7,7 +7,7 @@ use super::super::error::{EldritchError, EldritchErrorKind};
 use super::super::exec::execute_stmts;
 use super::super::introspection::get_type_name;
 use super::super::methods::call_bound_method;
-use super::builtins::{builtin_eval, builtin_filter, builtin_map, builtin_reduce, builtin_sorted};
+use super::super::builtins::{eval_builtin::builtin_eval_func, filter::builtin_filter, map::builtin_map, reduce::builtin_reduce, sorted::builtin_sorted};
 use super::utils::parse_error_kind;
 use super::{MAX_RECURSION_DEPTH, evaluate};
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -67,7 +67,7 @@ pub(crate) fn call_function(
         } else if name == "sorted" {
             return builtin_sorted(interp, args, span);
         } else if name == "eval" {
-            return builtin_eval(interp, args, span);
+            return builtin_eval_func(interp, args, span);
         }
     }
 
