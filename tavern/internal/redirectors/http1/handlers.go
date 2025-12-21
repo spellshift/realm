@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -161,12 +163,34 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 }
 
 func getClientIP(r *http.Request) string {
-	if clientIp := r.Header.Get("x-forwarded-for"); len(clientIp) > 0 {
-		return clientIp
+	if forwardedFor := r.Header.Get("x-forwarded-for"); len(forwardedFor) > 0 {
+		// X-Forwarded-For is a comma-separated list, the first IP is the original client
+		clientIp := strings.TrimSpace(strings.Split(forwardedFor, ",")[0])
+		if validateIP(clientIp) {
+			return clientIp
+		} else {
+			slog.Error("bad forwarded for ip", "ip", clientIp)
+		}
 	}
-	return r.RemoteAddr
+
+	// Fallback to RemoteAddr
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		slog.Error("failed to parse remote addr", "ip", r.RemoteAddr)
+	}
+
+	host = strings.TrimSpace(host)
+	if validateIP(host) {
+		return host
+	} else {
+		slog.Error("bad remote ip", "ip", host)
+	}
+	return "unknown"
 }
 
+func validateIP(ipaddr string) bool {
+	return net.ParseIP(ipaddr) != nil || ipaddr == "unknown"
+}
 func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
 	if !requirePOST(w, r) {
 		return

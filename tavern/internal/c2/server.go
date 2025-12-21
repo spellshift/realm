@@ -2,6 +2,7 @@ package c2
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"strings"
 
@@ -27,6 +28,10 @@ func New(graph *ent.Client, mux *stream.Mux) *Server {
 	}
 }
 
+func validateIP(ipaddr string) bool {
+	return net.ParseIP(ipaddr) != nil || ipaddr == "unknown"
+}
+
 func getRemoteIP(ctx context.Context) string {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
@@ -45,15 +50,30 @@ func GetClientIP(ctx context.Context) string {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		if redirectedFor, exists := md["x-redirected-for"]; exists && len(redirectedFor) > 0 {
-			return strings.TrimSpace(redirectedFor[0])
+			clientIP := strings.TrimSpace(redirectedFor[0])
+			if validateIP(clientIP) {
+				return clientIP
+			} else {
+				slog.Error("bad redirect for ip", "ip", clientIP)
+			}
 		}
 		if forwardedFor, exists := md["x-forwarded-for"]; exists && len(forwardedFor) > 0 {
 			// X-Forwarded-For is a comma-separated list, the first IP is the original client
-			clientIP := strings.Split(forwardedFor[0], ",")[0]
-			return strings.TrimSpace(clientIP)
+			clientIP := strings.TrimSpace(strings.Split(forwardedFor[0], ",")[0])
+			if validateIP(clientIP) {
+				return clientIP
+			} else {
+				slog.Error("bad forwarded for ip", "ip", clientIP)
+			}
 		}
 	}
 
 	// Fallback to peer address
-	return getRemoteIP(ctx)
+	remoteIp := getRemoteIP(ctx)
+	if validateIP(remoteIp) {
+		return remoteIp
+	} else {
+		slog.Error("Bad remote IP", "ip", remoteIp)
+	}
+	return "unknown"
 }

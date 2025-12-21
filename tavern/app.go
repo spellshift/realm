@@ -511,6 +511,8 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
 			return
 		}
 
+		slog.Info("headers: ", r.Header)
+
 		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
 			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
 			return
