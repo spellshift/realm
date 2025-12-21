@@ -157,7 +157,7 @@ fn handle_list_methods(
                     return Err(format!(
                         "TypeError: extend() expects an iterable, got {}",
                         get_type_name(iterable)
-                    ))
+                    ));
                 }
             }
             Ok(Value::None)
@@ -358,8 +358,7 @@ fn handle_set_methods(
         "symmetric_difference" => Some((|| {
             args.require(1, "symmetric_difference")?;
             let other_set = get_set_elements(&args[0])?;
-            let sym: BTreeSet<Value> =
-                s.read().symmetric_difference(&other_set).cloned().collect();
+            let sym: BTreeSet<Value> = s.read().symmetric_difference(&other_set).cloned().collect();
             Ok(Value::Set(Arc::new(RwLock::new(sym))))
         })()),
         "union" => Some((|| {
@@ -378,11 +377,7 @@ fn handle_set_methods(
     }
 }
 
-fn handle_string_methods(
-    s: &str,
-    method: &str,
-    args: &[Value],
-) -> Option<Result<Value, String>> {
+fn handle_string_methods(s: &str, method: &str, args: &[Value]) -> Option<Result<Value, String>> {
     match method {
         "split" => Some((|| {
             let parts: Vec<Value> = if args.is_empty() {
@@ -698,11 +693,7 @@ fn handle_string_methods(
     }
 }
 
-pub fn call_bound_method(
-    receiver: &Value,
-    method: &str,
-    args: &[Value],
-) -> Result<Value, String> {
+pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Result<Value, String> {
     let result = match receiver {
         Value::List(l) => handle_list_methods(l, method, args),
         Value::Dictionary(d) => handle_dict_methods(d, method, args),

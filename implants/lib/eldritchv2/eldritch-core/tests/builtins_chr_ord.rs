@@ -3,9 +3,9 @@ extern crate eldritch_core;
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
     use eldritch_core::Interpreter;
     use eldritch_core::Value;
-    use alloc::string::String;
 
     #[test]
     fn test_chr() {
@@ -34,11 +34,17 @@ mod tests {
         // Invalid integer (out of range)
         let res = interp.interpret("chr(1114112)");
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("chr() arg not in range(0x110000)"));
+        assert!(
+            res.unwrap_err()
+                .contains("chr() arg not in range(0x110000)")
+        );
 
         let res = interp.interpret("chr(-1)");
         assert!(res.is_err());
-        assert!(res.unwrap_err().contains("chr() arg not in range(0x110000)"));
+        assert!(
+            res.unwrap_err()
+                .contains("chr() arg not in range(0x110000)")
+        );
 
         // Type error
         let res = interp.interpret("chr('A')");

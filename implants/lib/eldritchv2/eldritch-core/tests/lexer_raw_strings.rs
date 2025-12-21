@@ -12,7 +12,7 @@ s3 = r"hello\\world"
 s4 = r"path\to\file"
 "#;
         if let Err(e) = interp.interpret(code) {
-             panic!("Failed to interpret: {:?}", e);
+            panic!("Failed to interpret: {:?}", e);
         }
 
         // Helper to check value

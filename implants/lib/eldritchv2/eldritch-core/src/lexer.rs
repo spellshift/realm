@@ -200,18 +200,18 @@ impl Lexer {
 
                 if is_raw {
                     let next_char = self.peek();
-                     if next_char == quote_char {
-                         // Escape the quote, but keep the backslash in the string
-                         current_literal.push('\\');
-                         current_literal.push(self.advance());
-                     } else {
-                         // Keep the backslash, don't consume next char yet
-                         current_literal.push('\\');
-                         if next_char == '\\' {
-                             // Consume the second backslash so it doesn't escape anything else
-                             current_literal.push(self.advance());
-                         }
-                     }
+                    if next_char == quote_char {
+                        // Escape the quote, but keep the backslash in the string
+                        current_literal.push('\\');
+                        current_literal.push(self.advance());
+                    } else {
+                        // Keep the backslash, don't consume next char yet
+                        current_literal.push('\\');
+                        if next_char == '\\' {
+                            // Consume the second backslash so it doesn't escape anything else
+                            current_literal.push(self.advance());
+                        }
+                    }
                 } else {
                     let escaped = self.advance();
                     match escaped {
