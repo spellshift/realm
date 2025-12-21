@@ -2,8 +2,6 @@ package stream
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -31,11 +29,6 @@ const (
 	// Maximum message size allowed from peer.
 	maxMessageSize = 256 * 1024 // 256KB
 )
-
-type websocketMessage struct {
-	Type string `json:"type"`
-	Data string `json:"data"`
-}
 
 type connector struct {
 	*Stream
@@ -90,27 +83,39 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				continue
 			}
 
-			encodedData := base64.StdEncoding.EncodeToString(message.Body)
-			wsMsg := websocketMessage{
-				Type: kind,
-				Data: encodedData,
-			}
-			jsonBytes, err := json.Marshal(wsMsg)
-			if err != nil {
-				slog.ErrorContext(ctx, "failed to marshal websocket message", "error", err)
-				continue
-			}
-
-			w, err := c.ws.NextWriter(websocket.TextMessage)
+			w, err := c.ws.NextWriter(websocket.BinaryMessage)
 			if err != nil {
 				return
 			}
-			if _, err := w.Write(jsonBytes); err != nil {
+			if _, err := w.Write(message.Body); err != nil {
 				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
 					"stream_id", c.Stream.id,
 					"stream_order_key", c.Stream.orderKey,
 					"error", err,
 				)
+			}
+
+			// Flush queued messages to the current websocket message.
+			n := len(c.Messages())
+			for i := 0; i < n; i++ {
+				additionalMsg := <-c.Messages()
+
+				// Filter additional messages too
+				kind := additionalMsg.Metadata[MetadataMsgKind]
+				if kind == "" {
+					kind = "data"
+				}
+				if kind != c.kind {
+					continue
+				}
+
+				if _, err := w.Write(additionalMsg.Body); err != nil {
+					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
+						"stream_id", c.Stream.id,
+						"stream_order_key", c.Stream.orderKey,
+						"error", err,
+					)
+				}
 			}
 
 			if err := w.Close(); err != nil {
@@ -154,24 +159,12 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 				return
 			}
 
-			var wsMsg websocketMessage
-			if err := json.Unmarshal(message, &wsMsg); err != nil {
-				slog.ErrorContext(ctx, "websocket received invalid json", "error", err)
-				continue
-			}
-
-			decodedData, err := base64.StdEncoding.DecodeString(wsMsg.Data)
-			if err != nil {
-				slog.ErrorContext(ctx, "websocket received invalid base64 data", "error", err)
-				continue
-			}
-
-			msgLen := len(decodedData)
+			msgLen := len(message)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
-				Body: decodedData,
+				Body: message,
 				Metadata: map[string]string{
 					metadataID:      c.id,
-					MetadataMsgKind: wsMsg.Type,
+					MetadataMsgKind: c.kind,
 				},
 			}, c.mux); err != nil {
 				slog.ErrorContext(ctx, "websocket failed to publish message",
