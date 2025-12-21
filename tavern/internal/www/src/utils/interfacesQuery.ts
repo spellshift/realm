@@ -49,6 +49,7 @@ export interface HostNode {
     id: string;
     name: string;
     primaryIP?: string;
+    externalIP?: string;
     platform?: string;
     lastSeenAt?: string;
     tags?: {
