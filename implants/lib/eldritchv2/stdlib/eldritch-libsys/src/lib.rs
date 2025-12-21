@@ -75,6 +75,7 @@ pub trait SysLibrary {
         args: Vec<String>,
         disown: Option<bool>,
         env_vars: Option<BTreeMap<String, String>>,
+        input: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
