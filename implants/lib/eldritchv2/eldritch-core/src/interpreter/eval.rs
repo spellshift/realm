@@ -292,11 +292,7 @@ fn evaluate_index(
             };
             let chars: Vec<char> = s.chars().collect();
             let len = chars.len() as i64;
-            let true_idx = if idx_int < 0 {
-                len + idx_int
-            } else {
-                idx_int
-            };
+            let true_idx = if idx_int < 0 { len + idx_int } else { idx_int };
             if true_idx < 0 || true_idx as usize >= chars.len() {
                 return interp.error(
                     EldritchErrorKind::IndexError,

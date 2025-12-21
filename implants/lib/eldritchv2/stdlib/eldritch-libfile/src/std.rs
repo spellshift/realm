@@ -1008,7 +1008,11 @@ mod tests {
         if let Value::String(mod_time) = &f["modified"] {
             // Check format YYYY-MM-DD HH:MM:SS UTC
             let re = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$").unwrap();
-            assert!(re.is_match(mod_time.as_bytes()), "Timestamp format mismatch: {}", mod_time);
+            assert!(
+                re.is_match(mod_time.as_bytes()),
+                "Timestamp format mismatch: {}",
+                mod_time
+            );
         } else {
             panic!("modified is not a string");
         }
