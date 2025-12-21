@@ -5,13 +5,13 @@ use anyhow::{Context, Result};
 use eldritch_core::Value;
 use std::collections::HashMap;
 use std::io::Write; // Required for writing to stdin
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
     nix::sys::wait::wait,
     nix::unistd::{ForkResult, fork, setsid},
-    std::process::{Stdio, exit},
+    std::process::exit,
 };
 
 struct CommandOutput {
