@@ -787,7 +787,10 @@ fn apply_timestamps(
         let d = t
             .duration_since(::std::time::UNIX_EPOCH)
             .unwrap_or(::std::time::Duration::ZERO);
-        TimeVal::new(d.as_secs() as i64, d.subsec_micros() as i64)
+        TimeVal::new(
+            d.as_secs() as i64,
+            d.subsec_micros() as nix::libc::suseconds_t,
+        )
     }
 
     let a_tv = if let Some(a) = atime {
