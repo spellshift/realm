@@ -353,15 +353,18 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
         }
 
         (Value::String(s), "split") => {
-            let delim = if !args.is_empty() {
-                args[0].to_string()
+            let parts: Vec<Value> = if args.is_empty() {
+                // Default split: split by whitespace (runs of whitespace are one separator)
+                s.split_whitespace()
+                    .map(|p| Value::String(p.to_string()))
+                    .collect()
             } else {
-                " ".to_string()
+                // Split by specific delimiter
+                let delim = args[0].to_string();
+                s.split(&delim)
+                    .map(|p| Value::String(p.to_string()))
+                    .collect()
             };
-            let parts: Vec<Value> = s
-                .split(&delim)
-                .map(|p| Value::String(p.to_string()))
-                .collect();
             Ok(Value::List(Arc::new(RwLock::new(parts))))
         }
         (Value::String(s), "splitlines") => {
