@@ -92,7 +92,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "RemoteAddr_Multiple_Colons_IPv6_With_Port",
 			setupRequest: func() *http.Request {
 				req := httptest.NewRequest(http.MethodPost, "/test", nil)
-				req.RemoteAddr = "2001:db8::1:5000"
+				req.RemoteAddr = "[2001:db8::1]:5000"
 				return req
 			},
 			expectedIP: "2001:db8::1",
