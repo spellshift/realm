@@ -56,7 +56,7 @@ fn test_list_extended_methods() {
     assert::fail("l=[1]; l.index(2)", "ValueError");
     assert::fail("l=[]; l.pop()", "pop from empty list");
     // Missing arguments
-    assert::fail("l=[1]; l.append()", "append() takes exactly one argument");
+    assert::fail("l=[1]; l.append()", "append() takes exactly 1 argument");
 }
 
 #[test]

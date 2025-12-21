@@ -95,7 +95,7 @@ fn test_coverage_methods() {
         assert(l == [1, 2])
     "#,
     );
-    assert::fail("l = []; l.append()", "takes exactly one argument");
+    assert::fail("l = []; l.append()", "takes exactly 1 argument");
 
     assert::pass(
         r#"
@@ -104,7 +104,7 @@ fn test_coverage_methods() {
         assert(l == [1, 2])
     "#,
     );
-    assert::fail("l = []; l.extend()", "takes exactly one argument");
+    assert::fail("l = []; l.extend()", "takes exactly 1 argument");
     assert::fail("l = []; l.extend(1)", "expects an iterable");
 
     assert::pass(
@@ -120,31 +120,31 @@ fn test_coverage_methods() {
         assert(l == [-1, 0, 1, 2, 3, 4])
     "#,
     );
-    assert::fail("l = []; l.insert(1)", "takes exactly two arguments");
+    assert::fail("l = []; l.insert(1)", "takes exactly 2 arguments");
     assert::fail("l = []; l.insert('a', 1)", "index must be an integer");
 
     assert::fail("l = []; l.remove(1)", "x not in list");
-    assert::fail("l = []; l.remove()", "takes exactly one argument");
+    assert::fail("l = []; l.remove()", "takes exactly 1 argument");
 
     assert::fail("l = []; l.index(1)", "x not in list");
-    assert::fail("l = []; l.index()", "takes exactly one argument");
+    assert::fail("l = []; l.index()", "takes exactly 1 argument");
 
     assert::fail("l = []; l.pop()", "pop from empty list");
 
     // Dict errors
-    assert::fail("d = {}; d.get()", "takes 1 or 2 arguments");
+    assert::fail("d = {}; d.get()", "takes between 1 and 2 arguments");
 
-    assert::fail("d = {}; d.update()", "takes exactly one argument");
+    assert::fail("d = {}; d.update()", "takes exactly 1 argument");
     assert::fail("d = {}; d.update(1)", "requires a dictionary");
 
     assert::fail("d = {}; d.popitem()", "dictionary is empty");
 
     // String errors
-    assert::fail("''.startswith()", "takes 1 argument");
-    assert::fail("''.endswith()", "takes 1 argument");
-    assert::fail("''.find()", "takes 1 argument");
-    assert::fail("''.replace('a')", "takes 2 arguments");
-    assert::fail("''.join()", "takes 1 argument");
+    assert::fail("''.startswith()", "takes exactly 1 argument");
+    assert::fail("''.endswith()", "takes exactly 1 argument");
+    assert::fail("''.find()", "takes exactly 1 argument");
+    assert::fail("''.replace('a')", "takes exactly 2 arguments");
+    assert::fail("''.join()", "takes exactly 1 argument");
     assert::fail("''.join(1)", "expects a list");
     assert::fail("''.join([1])", "expects list of strings");
 
