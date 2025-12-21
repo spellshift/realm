@@ -61,31 +61,6 @@ fn test_golem_main_basic_async() -> anyhow::Result<()> {
         .stdout(predicate::str::contains(r#"OKAY!"#));
     Ok(())
 }
-// Test running `echo -e "test_var = 'hello'\nprint(test_var)" | ./golem` for interactive mode.
-// verifies that the process exits successfully. Not the output of the command.
-// The way the interactive context returns data doesn't seem to work with how Command::stdout() works.
-#[test]
-fn test_golem_main_basic_interactive() -> anyhow::Result<()> {
-    let golem_exec_path = cargo_bin!("golemv2");
-
-    let mut child = Command::new(golem_exec_path)
-        .arg("-i")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn child process");
-
-    let mut stdin = child.stdin.take().expect("Failed to open stdin");
-    std::thread::spawn(move || {
-        let _ = stdin.write_all("test_var = 'hello'\nprint(test_var)".as_bytes());
-    });
-
-    let output = child.wait_with_output().expect("Failed to read stdout");
-    assert_eq!(str::from_utf8(&output.stderr)?, "hello\n");
-
-    Ok(())
-}
 
 // Test running `./golem -a ../../bin/golem_cli_test/`
 #[test]

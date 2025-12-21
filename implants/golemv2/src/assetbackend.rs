@@ -1,5 +1,4 @@
-// This file defines the necessary trait and macro to make standard
-// RustEmbed structs compatible with the dynamic MultiAssetLibrary.
+// This file defines DirectoryAssetBackend which is compatible with StdAssetLibrary
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use anyhow::anyhow;
