@@ -324,6 +324,12 @@ fn get_udp6_table(process_map: &HashMap<u32, String>) -> Result<Vec<NetstatEntry
     }
 }
 
+// The `CreateToolhelp32Snapshot` function provides a complete list of running processes
+// without requiring `SeDebugPrivilege`. While `SeDebugPrivilege` would allow us to
+// open and inspect protected processes, it's not necessary for the current task of
+// mapping PIDs to process names. `GetExtendedTcpTable` and `GetExtendedUdpTable`
+// already provide the PIDs for all connections, and this function is sufficient to
+// resolve their names.
 fn create_process_snapshot() -> Result<HashMap<u32, String>> {
     unsafe {
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
