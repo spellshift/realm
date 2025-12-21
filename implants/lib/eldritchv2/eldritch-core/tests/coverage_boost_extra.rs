@@ -25,10 +25,7 @@ fn test_eval_index_out_of_bounds() {
     assert::fail("(1,)[-2]", "Tuple index out of range");
 
     // String
-    // Eldritch doesn't seem to support string indexing in eval.rs yet?
-    // Wait, evaluate_index only handles List, Tuple, Dictionary.
-    // Let's verify this failure.
-    assert::fail("'abc'[0]", "'string' object is not subscriptable");
+    assert::fail("'abc'[10]", "String index out of range");
 }
 
 #[test]
