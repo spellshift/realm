@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
@@ -159,10 +160,19 @@ func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 	}
 }
 
+func getClientIP(r *http.Request) string {
+	if clientIp := r.Header.Get("x-forwarded-for"); len(clientIp) > 0 {
+		return clientIp
+	}
+	return r.RemoteAddr
+}
+
 func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
 	if !requirePOST(w, r) {
 		return
 	}
+
+	clientIp := getClientIP(r)
 
 	methodName := r.URL.Path
 	if methodName == "" {
@@ -179,6 +189,14 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 
 	ctx, cancel := createRequestContext(unaryTimeout)
 	defer cancel()
+
+	// Set x-redirected-for header with the client IP
+	if clientIp != "" {
+		md := metadata.New(map[string]string{
+			"x-redirected-for": clientIp,
+		})
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
 
 	var responseBody []byte
 	err := conn.Invoke(
