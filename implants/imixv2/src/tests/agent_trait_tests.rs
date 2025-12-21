@@ -149,15 +149,11 @@ async fn test_imix_agent_report_process_list() {
 async fn test_imix_agent_claim_tasks() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
-
-    transport.expect_clone().returning(|| {
-        let mut t = MockTransport::default();
-        t.expect_is_active().returning(|| true);
-        t.expect_claim_tasks()
-            .times(1)
-            .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
-        t
-    });
+    transport.expect_is_active().returning(|| true);
+    transport
+        .expect_claim_tasks()
+        .times(1)
+        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
@@ -166,8 +162,8 @@ async fn test_imix_agent_claim_tasks() {
     let config = Config::default();
     let agent = ImixAgent::new(config, transport, handle, registry);
 
-    let agent_clone = agent.clone();
-    let _ = agent_clone.claim_tasks().await.unwrap();
+    // let agent_clone = agent.clone();
+    let _ = agent.claim_tasks().await.unwrap();
 }
 
 #[tokio::test]

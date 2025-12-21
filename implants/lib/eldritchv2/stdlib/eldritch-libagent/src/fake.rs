@@ -2,7 +2,7 @@ use super::AgentLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::{Interpreter, Value};
+use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
 #[cfg(feature = "stdlib")]
@@ -26,7 +26,7 @@ impl AgentLibrary for AgentLibraryFake {
     fn set_callback_interval(&self, _interval: i64) -> Result<(), String> {
         Ok(())
     }
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
+    fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
 
@@ -47,10 +47,6 @@ impl AgentLibrary for AgentLibraryFake {
     }
 
     fn report_task_output(&self, _output: String, _error: Option<String>) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn reverse_shell(&self) -> Result<(), String> {
         Ok(())
     }
 
@@ -115,9 +111,6 @@ impl Agent for AgentFake {
         _req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse::default())
-    }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
     }
     fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
         Ok(())

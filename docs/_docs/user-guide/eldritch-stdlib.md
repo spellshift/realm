@@ -32,31 +32,6 @@ Use with extreme caution.
 **Errors**
 - This function is unlikely to return an error, as it terminates the process.
 
-### agent.claim_tasks
-`agent.claim_tasks() -> List<TaskWrapper>`
-Manually triggers a check-in to claim pending tasks from the C2 server.
-
-**Returns**
-- `List<Task>`: A list of tasks retrieved from the server.
-
-**Errors**
-- Returns an error string if the check-in fails.
-
-### agent.fetch_asset
-`agent.fetch_asset(name: str) -> Bytes`
-Fetches an asset (file) from the C2 server by name.
-
-This method requests the asset content from the server.
-
-**Parameters**
-- `name` (`str`): The name of the asset to fetch.
-
-**Returns**
-- `Bytes`: The content of the asset as a byte array.
-
-**Errors**
-- Returns an error string if the asset cannot be fetched or communication fails.
-
 ### agent.get_callback_interval
 `agent.get_callback_interval() -> int`
 Returns the current callback interval in seconds.
@@ -106,77 +81,6 @@ Returns a list of available transport names.
 
 **Errors**
 - Returns an error string if the list cannot be retrieved.
-
-### agent.report_credential
-`agent.report_credential(credential: CredentialWrapper) -> None`
-Reports a captured credential to the C2 server.
-
-**Parameters**
-- `credential` (`Credential`): The credential object to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_file
-`agent.report_file(file: FileWrapper) -> None`
-Reports a file (chunk) to the C2 server.
-
-This is typically used internally by `report.file`.
-
-**Parameters**
-- `file` (`File`): The file chunk wrapper to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_process_list
-`agent.report_process_list(list: ProcessListWrapper) -> None`
-Reports a list of processes to the C2 server.
-
-This is typically used internally by `report.process_list`.
-
-**Parameters**
-- `list` (`ProcessList`): The process list wrapper to report.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.report_task_output
-`agent.report_task_output(output: str, error: Option<str>) -> None`
-Reports the output of a task to the C2 server.
-
-This is used to send stdout/stderr or errors back to the controller.
-
-**Parameters**
-- `output` (`str`): The standard output content.
-- `error` (`Option<str>`): Optional error message.
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reporting fails.
-
-### agent.reverse_shell
-`agent.reverse_shell() -> None`
-Initiates a reverse shell session.
-
-This starts a reverse shell based on the agent's capabilities (e.g., PTY or raw).
-
-**Returns**
-- `None`
-
-**Errors**
-- Returns an error string if the reverse shell cannot be started.
 
 ### agent.set_active_callback_uri
 `agent.set_active_callback_uri(uri: str) -> None`
@@ -808,13 +712,13 @@ It supports:
 **Note**: TLS validation behavior depends on the underlying agent configuration and may not be exposed per-request in this version of the library (unlike v1 which had `allow_insecure` arg).
 
 ### http.download
-`http.download(url: str, path: str) -> None`
+`http.download(url: str, path: str, insecure: Option<bool>) -> None`
 Downloads a file from a URL to a local path.
 
 **Parameters**
 - `url` (`str`): The URL to download from.
 - `path` (`str`): The local destination path.
-
+- `insecure` (`Option<bool>`): If true, ignore SSL certificate verification (insecure).
 **Returns**
 - `None`
 
@@ -921,7 +825,7 @@ This provides a full interactive shell experience over the agent's C2 channel.
 
 ### pivot.reverse_shell_repl
 `pivot.reverse_shell_repl() -> None`
-Spawns a basic REPL-style reverse shell.
+Spawns a basic REPL-style reverse shell with an Eldritch interpreter.
 
 Useful if PTY is not available.
 

@@ -69,11 +69,11 @@ fn handle_exec(
             .spawn()?;
 
         // If we have input, write it to the pipe
-        if let Some(text) = input {
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin.write_all(text.as_bytes())?;
-                // Stdin is closed here when 'stdin' is dropped, sending EOF to the child
-            }
+        if let Some(text) = input
+            && let Some(mut stdin) = child.stdin.take()
+        {
+            stdin.write_all(text.as_bytes())?;
+            // Stdin is closed here when 'stdin' is dropped, sending EOF to the child
         }
 
         let res = child.wait_with_output()?;
@@ -142,11 +142,11 @@ fn handle_exec(
                             .stderr(Stdio::null())
                             .spawn()?;
 
-                        if let Some(text) = input {
-                            if let Some(mut stdin) = res.stdin.take() {
-                                let _ = stdin.write_all(text.as_bytes());
-                                let _ = stdin.flush();
-                            }
+                        if let Some(text) = input
+                            && let Some(mut stdin) = res.stdin.take()
+                        {
+                            let _ = stdin.write_all(text.as_bytes());
+                            let _ = stdin.flush();
                         }
                         exit(0);
                     }

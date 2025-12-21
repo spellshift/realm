@@ -29,6 +29,9 @@ pub async fn run_agent() -> Result<()> {
         task_registry.clone(),
     ));
 
+    // Track the last interval we slept for, as a fallback in case we fail to read the config
+    let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
+
     #[cfg(debug_assertions)]
     log::info!("Agent initialized");
 
@@ -43,11 +46,18 @@ pub async fn run_agent() -> Result<()> {
             break;
         }
 
+        if let Ok(new_interval) = agent.get_callback_interval_u64() {
+            last_interval = new_interval;
+        }
+
         if let Err(e) = sleep_until_next_cycle(&agent, start).await {
             #[cfg(debug_assertions)]
-            log::error!("Failed to sleep: {e:#}");
+            log::error!(
+                "Failed to sleep, falling back to last interval {last_interval} sec: {e:#}"
+            );
+
             // Prevent tight loop on config read failure
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(last_interval)).await;
         }
     }
 

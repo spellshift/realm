@@ -46,9 +46,6 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse {})
     }
-    fn reverse_shell(&self) -> Result<(), String> {
-        Ok(())
-    }
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         self.start_calls.lock().unwrap().push((task_id, cmd));
         Ok(())

@@ -29,13 +29,13 @@ pub trait HttpLibrary {
     /// **Parameters**
     /// - `url` (`str`): The URL to download from.
     /// - `path` (`str`): The local destination path.
-    ///
+    /// - `insecure` (`Option<bool>`): If true, ignore SSL certificate verification (insecure).
     /// **Returns**
     /// - `None`
     ///
     /// **Errors**
     /// - Returns an error string if the download fails.
-    fn download(&self, url: String, path: String) -> Result<(), String>;
+    fn download(&self, url: String, path: String, insecure: Option<bool>) -> Result<(), String>;
 
     #[eldritch_method]
     /// Performs an HTTP GET request.
