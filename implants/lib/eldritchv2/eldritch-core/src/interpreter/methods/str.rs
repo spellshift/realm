@@ -13,7 +13,7 @@ pub fn handle_string_methods(
     args: &[Value],
 ) -> Option<Result<Value, String>> {
     match method {
-        "split" => Some((|| {
+        "split" => Some({
             let parts: Vec<Value> = if args.is_empty() {
                 s.split_whitespace()
                     .map(|p| Value::String(p.to_string()))
@@ -25,8 +25,8 @@ pub fn handle_string_methods(
                     .collect()
             };
             Ok(Value::List(Arc::new(RwLock::new(parts))))
-        })()),
-        "splitlines" => Some((|| {
+        }),
+        "splitlines" => Some({
             let keepends = if !args.is_empty() {
                 is_truthy(&args[0])
             } else {
@@ -40,7 +40,7 @@ pub fn handle_string_methods(
                 s.lines().map(|p| Value::String(p.to_string())).collect()
             };
             Ok(Value::List(Arc::new(RwLock::new(lines))))
-        })()),
+        }),
         "strip" => Some((|| {
             args.require_range(0, 1, "strip")?;
             if args.is_empty() {
@@ -257,7 +257,7 @@ pub fn handle_string_methods(
                 ]))
             }
         })()),
-        "rsplit" => Some((|| {
+        "rsplit" => Some({
             let delim = if !args.is_empty() {
                 args[0].to_string()
             } else {
@@ -269,7 +269,7 @@ pub fn handle_string_methods(
                 .collect();
             parts.reverse();
             Ok(Value::List(Arc::new(RwLock::new(parts))))
-        })()),
+        }),
         "codepoints" => Some((|| {
             args.require(0, "codepoints")?;
             let points: Vec<Value> = s.chars().map(|c| Value::Int(c as i64)).collect();
@@ -301,13 +301,13 @@ pub fn handle_string_methods(
         "islower" => Some((|| {
             args.require(0, "islower")?;
             Ok(Value::Bool(
-                !s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == &s.to_lowercase(),
+                !s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == s.to_lowercase(),
             ))
         })()),
         "isupper" => Some((|| {
             args.require(0, "isupper")?;
             Ok(Value::Bool(
-                !s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == &s.to_uppercase(),
+                !s.is_empty() && s.chars().any(|c| c.is_alphabetic()) && s == s.to_uppercase(),
             ))
         })()),
         "isspace" => Some((|| {

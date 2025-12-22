@@ -22,11 +22,11 @@ pub fn builtin_chr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             // Valid range for char is roughly 0 to 0x10FFFF
             // Rust char::from_u32 checks this.
             if *i < 0 || *i > 0x10FFFF {
-                return Err(format!("chr() arg not in range(0x110000)"));
+                return Err("chr() arg not in range(0x110000)".to_string());
             }
             match char::from_u32(*i as u32) {
                 Some(c) => Ok(Value::String(String::from(c))),
-                None => Err(format!("chr() arg not in range(0x110000)")),
+                None => Err("chr() arg not in range(0x110000)".to_string()),
             }
         }
         _ => Err(format!(

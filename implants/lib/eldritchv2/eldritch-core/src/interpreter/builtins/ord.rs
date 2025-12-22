@@ -19,10 +19,10 @@ pub fn builtin_ord(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
     match &args[0] {
         Value::String(s) => {
             let mut chars = s.chars();
-            if let Some(c) = chars.next() {
-                if chars.next().is_none() {
-                    return Ok(Value::Int(c as i64));
-                }
+            if let Some(c) = chars.next()
+                && chars.next().is_none()
+            {
+                return Ok(Value::Int(c as i64));
             }
             Err(format!(
                 "ord() expected string of length 1, but string '{}' found",

@@ -363,7 +363,18 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.set_active_callback_uri(uri)
+        self.block_on(async {
+            let mut uris = self.callback_uris.write().await;
+            let mut idx = self.active_uri_idx.write().await;
+
+            if let Some(pos) = uris.iter().position(|x| *x == uri) {
+                *idx = pos;
+            } else {
+                uris.push(uri);
+                *idx = uris.len() - 1;
+            }
+            Ok(())
+        })
     }
 
     fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
@@ -419,21 +430,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 if *idx >= uris.len() && !uris.is_empty() {
                     *idx = 0;
                 }
-            }
-            Ok(())
-        })
-    }
-
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            let mut idx = self.active_uri_idx.write().await;
-
-            if let Some(pos) = uris.iter().position(|x| *x == uri) {
-                *idx = pos;
-            } else {
-                uris.push(uri);
-                *idx = uris.len() - 1;
             }
             Ok(())
         })

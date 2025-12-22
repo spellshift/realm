@@ -131,7 +131,7 @@ pub trait AgentLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the active callback uri cannot be set.
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String>;
+    fn set_callback_uri(&self, uri: String) -> Result<(), String>;
 
     // Task Management
     #[eldritch_method]

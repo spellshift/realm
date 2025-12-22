@@ -843,7 +843,7 @@ It allows you to:
     **Errors**
     - Returns an error string if the interval cannot be set.
 
-*   **`agent.set_active_callback_uri`**
+*   **`agent.set_callback_uri`**
     Sets the active callback URI for the agent.
     
     **Parameters**

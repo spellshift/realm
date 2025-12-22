@@ -141,7 +141,9 @@ impl TaskRegistry {
     pub fn stop(&self, task_id: i64) {
         let mut tasks = self.tasks.lock().unwrap();
         if let Some(handle) = tasks.remove(&task_id) {
+            #[cfg(debug_assertions)]
             log::info!("Task {task_id} stop requested (thread may persist)");
+
             let subtasks = handle.subtasks.read().unwrap();
             for subtask in subtasks.iter() {
                 subtask._handle.abort();
@@ -178,13 +180,19 @@ fn execute_task(
     drop(interp);
 
     // Wait for consumer to finish processing all messages
-    let _ = runtime_handle.block_on(consumer_join_handle);
+    match runtime_handle.block_on(consumer_join_handle) {
+        Ok(_) => {}
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("task={task_id} failed to wait for output consumer to join: {_e}");
+        }
+    }
 
     // Handle result
     match result {
         Ok(exec_result) => report_result(task_id, exec_result, &agent),
-        Err(_) => {
-            report_panic(task_id, &agent);
+        Err(e) => {
+            report_panic(task_id, &agent, format!("panic: {e:?}"));
         }
     }
 }
@@ -217,7 +225,7 @@ fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
     #[cfg(debug_assertions)]
     log::info!("task={task_id} Started execution");
 
-    let _ = agent.report_task_output(ReportTaskOutputRequest {
+    match agent.report_task_output(ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
             output: String::new(),
@@ -225,7 +233,13 @@ fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
             exec_started_at: Some(Timestamp::from(SystemTime::now())),
             exec_finished_at: None,
         }),
-    });
+    }) {
+        Ok(_) => {}
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("task={task_id} failed to report task start: {_e}");
+        }
+    }
 }
 
 fn spawn_output_consumer(
@@ -239,7 +253,7 @@ fn spawn_output_consumer(
         log::info!("task={task_id} Started output stream");
 
         while let Some(msg) = rx.recv().await {
-            let _ = agent.report_task_output(ReportTaskOutputRequest {
+            match agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
                     output: msg,
@@ -247,23 +261,33 @@ fn spawn_output_consumer(
                     exec_started_at: None,
                     exec_finished_at: None,
                 }),
-            });
+            }) {
+                Ok(_) => {}
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("task={task_id} failed to report output: {_e}");
+                }
+            }
         }
     })
 }
 
-fn report_panic(task_id: i64, agent: &Arc<dyn Agent>) {
-    let _ = agent.report_task_output(ReportTaskOutputRequest {
+fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, err: String) {
+    match agent.report_task_output(ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
             output: String::new(),
-            error: Some(TaskError {
-                msg: "Task execution panicked".to_string(),
-            }),
+            error: Some(TaskError { msg: err }),
             exec_started_at: None,
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
-    });
+    }) {
+        Ok(_) => {}
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("task={task_id} failed to report error: {_e}");
+        }
+    }
 }
 
 fn report_result(
@@ -290,7 +314,7 @@ fn report_result(
             #[cfg(debug_assertions)]
             log::info!("task={task_id} Error: {e}");
 
-            let _ = agent.report_task_output(ReportTaskOutputRequest {
+            match agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
                     output: String::new(),
@@ -298,7 +322,13 @@ fn report_result(
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
-            });
+            }) {
+                Ok(_) => {}
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("task={task_id} failed to report task error: {_e}");
+                }
+            }
         }
     }
 }
