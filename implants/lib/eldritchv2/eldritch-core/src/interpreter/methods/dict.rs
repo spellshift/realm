@@ -66,6 +66,40 @@ pub fn handle_dict_methods(
                 Err("KeyError: popitem(): dictionary is empty".into())
             }
         })()),
+        "clear" => Some((|| {
+            args.require(0, "clear")?;
+            d.write().clear();
+            Ok(Value::None)
+        })()),
+        "pop" => Some((|| {
+            args.require_range(1, 2, "pop")?;
+            let key = &args[0];
+            let mut map = d.write();
+            if let Some(val) = map.remove(key) {
+                return Ok(val);
+            }
+            if args.len() == 2 {
+                Ok(args[1].clone())
+            } else {
+                Err(format!("KeyError: {}", key))
+            }
+        })()),
+        "setdefault" => Some((|| {
+            args.require_range(1, 2, "setdefault")?;
+            let key = args[0].clone();
+            let default = if args.len() == 2 {
+                args[1].clone()
+            } else {
+                Value::None
+            };
+            let mut map = d.write();
+            if let Some(val) = map.get(&key) {
+                Ok(val.clone())
+            } else {
+                map.insert(key, default.clone());
+                Ok(default)
+            }
+        })()),
         _ => None,
     }
 }
