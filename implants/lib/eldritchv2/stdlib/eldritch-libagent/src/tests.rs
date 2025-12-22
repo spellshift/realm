@@ -104,9 +104,6 @@ impl Agent for MockAgent {
     fn remove_callback_uri(&self, _: String) -> Result<(), String> {
         Err("".into())
     }
-    fn set_active_callback_uri(&self, _: String) -> Result<(), String> {
-        Err("".into())
-    }
     fn list_tasks(&self) -> Result<Vec<pb::c2::Task>, String> {
         Err("".into())
     }

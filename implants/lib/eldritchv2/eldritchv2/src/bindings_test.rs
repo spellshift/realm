@@ -193,8 +193,8 @@ fn test_agent_bindings() {
             "get_transport",
             "list_tasks",
             "list_transports",
-            "set_active_callback_uri",
             "set_callback_interval",
+            "set_callback_uri",
             "stop_task",
         ],
     );
