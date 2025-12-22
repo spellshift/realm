@@ -27,7 +27,7 @@ mod tests {
 
         let res = interp.interpret("chr(1114111)"); // 0x10FFFF
         match res {
-            Ok(_) => assert!(true),
+            Ok(_) => {}
             Err(e) => panic!("Should accept 0x10FFFF: {}", e),
         }
 
