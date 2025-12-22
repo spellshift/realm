@@ -7,7 +7,9 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install"]
+default = ["install", "grpc"]
+grpc = ["transport/grpc"]
+http1 = ["transport/http1"]
 win_service = []
 install = []
 
@@ -30,7 +32,7 @@ eldritch-repl = { workspace = true }
 eldritch-agent = { workspace = true }
 eldritch-libagent = { workspace = true, features = ["stdlib"] }
 eldritch-libassets = { workspace = true, features = ["stdlib"] }
-transport = { workspace = true, features = ["grpc", "http1"] }
+transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }

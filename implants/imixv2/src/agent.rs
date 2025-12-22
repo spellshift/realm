@@ -310,7 +310,13 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn get_transport(&self) -> Result<String, String> {
         // Blocks on read, but it's fast
-        self.block_on(async { Ok(self.transport.read().await.name().to_string()) })
+        self.block_on(async {
+            let t = self
+                .get_usable_transport()
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(t.name().to_string())
+        })
     }
 
     fn set_transport(&self, transport: String) -> Result<(), String> {
