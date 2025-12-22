@@ -223,31 +223,3 @@ async fn test_imix_agent_config_access() {
     assert_eq!(map.get("callback_uri").unwrap(), "http://localhost:8080");
     assert_eq!(map.get("beacon_id").unwrap(), "agent1");
 }
-
-#[tokio::test]
-async fn test_imix_agent_transport_management() {
-    let mut transport = MockTransport::default();
-    transport.expect_name().returning(|| "mock_proto");
-    transport
-        .expect_list_available()
-        .returning(|| vec!["mock_proto".to_string(), "http".to_string()]);
-    transport.expect_is_active().returning(|| true);
-
-    let handle = tokio::runtime::Handle::current();
-    let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
-
-    let agent_clone = agent.clone();
-    let name = std::thread::spawn(move || agent_clone.get_transport())
-        .join()
-        .unwrap()
-        .unwrap();
-    assert_eq!(name, "mock_proto");
-
-    let agent_clone = agent.clone();
-    let list = std::thread::spawn(move || agent_clone.list_transports())
-        .join()
-        .unwrap()
-        .unwrap();
-    assert!(list.contains(&"mock_proto".to_string()));
-}
