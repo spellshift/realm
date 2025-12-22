@@ -95,90 +95,97 @@ impl fmt::Debug for Value {
     }
 }
 
-#[cfg(feature = "std")]
-thread_local! {
-    static EQ_VISITED: core::cell::RefCell<BTreeSet<(usize, usize)>> = core::cell::RefCell::new(BTreeSet::new());
-}
-
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
-        #[cfg(feature = "std")]
-        {
-            // Use thread_local visited set to prevent infinite recursion
-            let p1 = match self {
-                Value::List(l) => Arc::as_ptr(l) as usize,
-                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
-                Value::Set(s) => Arc::as_ptr(s) as usize,
-                _ => 0,
-            };
-            let p2 = match other {
-                Value::List(l) => Arc::as_ptr(l) as usize,
-                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
-                Value::Set(s) => Arc::as_ptr(s) as usize,
-                _ => 0,
-            };
-
-            // If we have trackable pointers
-            if p1 != 0 && p2 != 0 {
-                // Canonical ordering for the pair to handle commutative check (a==b same as b==a)
-                let pair = if p1 < p2 { (p1, p2) } else { (p2, p1) };
-
-                // Check visited
-                let in_visited = EQ_VISITED.with(|v| v.borrow().contains(&pair));
-                if in_visited {
-                    // Assume equal if we are already checking this pair
-                    return true;
-                }
-
-                struct VisitedGuard {
-                    pair: (usize, usize),
-                }
-                impl Drop for VisitedGuard {
-                    fn drop(&mut self) {
-                        EQ_VISITED.with(|v| v.borrow_mut().remove(&self.pair));
-                    }
-                }
-
-                // Insert
-                EQ_VISITED.with(|v| v.borrow_mut().insert(pair));
-                let _guard = VisitedGuard { pair };
-
-                return self.eq_inner(other);
-            }
-        }
-
-        self.eq_inner(other)
+        let mut visited = BTreeSet::new();
+        self.eq_helper(other, &mut visited)
     }
 }
 
 impl Value {
-    fn eq_inner(&self, other: &Self) -> bool {
-        match (self, other) {
+    fn eq_helper(&self, other: &Self, visited: &mut BTreeSet<(usize, usize)>) -> bool {
+        let p1 = match self {
+            Value::List(l) => Arc::as_ptr(l) as usize,
+            Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+            Value::Set(s) => Arc::as_ptr(s) as usize,
+            _ => 0,
+        };
+        let p2 = match other {
+            Value::List(l) => Arc::as_ptr(l) as usize,
+            Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+            Value::Set(s) => Arc::as_ptr(s) as usize,
+            _ => 0,
+        };
+
+        if p1 != 0 && p2 != 0 {
+            let pair = if p1 < p2 { (p1, p2) } else { (p2, p1) };
+            if visited.contains(&pair) {
+                return true;
+            }
+            visited.insert(pair);
+        }
+
+        let result = match (self, other) {
             (Value::None, Value::None) => true,
             (Value::Bool(a), Value::Bool(b)) => a == b,
             (Value::Int(a), Value::Int(b)) => a == b,
-            (Value::Float(a), Value::Float(b)) => a == b, // Note: NaN != NaN usually, but handled by PartialOrd? No, PartialEq
+            (Value::Float(a), Value::Float(b)) => a == b,
             (Value::String(a), Value::String(b)) => a == b,
             (Value::Bytes(a), Value::Bytes(b)) => a == b,
             (Value::List(a), Value::List(b)) => {
                 if Arc::ptr_eq(a, b) {
-                    return true;
+                    true
+                } else {
+                    let la = a.read();
+                    let lb = b.read();
+                    if la.len() != lb.len() {
+                        false
+                    } else {
+                        la.iter()
+                            .zip(lb.iter())
+                            .all(|(va, vb)| va.eq_helper(vb, visited))
+                    }
                 }
-                a.read().eq(&*b.read())
             }
             (Value::Dictionary(a), Value::Dictionary(b)) => {
                 if Arc::ptr_eq(a, b) {
-                    return true;
+                    true
+                } else {
+                    let da = a.read();
+                    let db = b.read();
+                    if da.len() != db.len() {
+                        false
+                    } else {
+                        da.iter().zip(db.iter()).all(|((ka, va), (kb, vb))| {
+                            ka.eq_helper(kb, visited) && va.eq_helper(vb, visited)
+                        })
+                    }
                 }
-                a.read().eq(&*b.read())
             }
             (Value::Set(a), Value::Set(b)) => {
                 if Arc::ptr_eq(a, b) {
-                    return true;
+                    true
+                } else {
+                    let sa = a.read();
+                    let sb = b.read();
+                    if sa.len() != sb.len() {
+                        false
+                    } else {
+                        sa.iter()
+                            .zip(sb.iter())
+                            .all(|(va, vb)| va.eq_helper(vb, visited))
+                    }
                 }
-                a.read().eq(&*b.read())
             }
-            (Value::Tuple(a), Value::Tuple(b)) => a == b,
+            (Value::Tuple(a), Value::Tuple(b)) => {
+                if a.len() != b.len() {
+                    false
+                } else {
+                    a.iter()
+                        .zip(b.iter())
+                        .all(|(va, vb)| va.eq_helper(vb, visited))
+                }
+            }
             (Value::Function(a), Value::Function(b)) => a.name == b.name,
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a == b,
             (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => {
@@ -187,7 +194,14 @@ impl Value {
             (Value::BoundMethod(r1, n1), Value::BoundMethod(r2, n2)) => r1 == r2 && n1 == n2,
             (Value::Foreign(a), Value::Foreign(b)) => Arc::ptr_eq(a, b),
             _ => false,
+        };
+
+        if p1 != 0 && p2 != 0 {
+            let pair = if p1 < p2 { (p1, p2) } else { (p2, p1) };
+            visited.remove(&pair);
         }
+
+        result
     }
 }
 
@@ -199,76 +213,50 @@ impl PartialOrd for Value {
     }
 }
 
-#[cfg(feature = "std")]
-thread_local! {
-    static CMP_VISITED: core::cell::RefCell<BTreeSet<(usize, usize)>> = core::cell::RefCell::new(BTreeSet::new());
-}
-
 impl Ord for Value {
     fn cmp(&self, other: &Self) -> Ordering {
-        #[cfg(feature = "std")]
-        {
-            // Use thread_local visited set to prevent infinite recursion
-            let p1 = match self {
-                Value::List(l) => Arc::as_ptr(l) as usize,
-                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
-                Value::Set(s) => Arc::as_ptr(s) as usize,
-                _ => 0,
-            };
-            let p2 = match other {
-                Value::List(l) => Arc::as_ptr(l) as usize,
-                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
-                Value::Set(s) => Arc::as_ptr(s) as usize,
-                _ => 0,
-            };
-
-            // If we have trackable pointers
-            if p1 != 0 && p2 != 0 {
-                // Not commutative for ordering, but we just need to track the pair being compared
-                // to detect cycle. Since cmp(a, b) calls cmp(b, a) potentially via symmetry?
-                // No, Ord is antisymmetric.
-                // But if we are comparing (a, b), and we recurse to (a, b) again, it's a cycle.
-                // If we recurse to (b, a)?
-                // Let's just track (p1, p2) directed edge.
-                let pair = (p1, p2);
-
-                let in_visited = CMP_VISITED.with(|v| v.borrow().contains(&pair));
-                if in_visited {
-                    // Assume equal if we are already checking this pair to break cycle
-                    return Ordering::Equal;
-                }
-
-                struct VisitedCmpGuard {
-                    pair: (usize, usize),
-                }
-                impl Drop for VisitedCmpGuard {
-                    fn drop(&mut self) {
-                        CMP_VISITED.with(|v| v.borrow_mut().remove(&self.pair));
-                    }
-                }
-
-                CMP_VISITED.with(|v| v.borrow_mut().insert(pair));
-                let _guard = VisitedCmpGuard { pair };
-
-                return self.cmp_inner(other);
-            }
-        }
-        self.cmp_inner(other)
+        let mut visited = BTreeSet::new();
+        self.cmp_helper(other, &mut visited)
     }
 }
 
 impl Value {
-    fn cmp_inner(&self, other: &Self) -> Ordering {
+    fn cmp_helper(&self, other: &Self, visited: &mut BTreeSet<(usize, usize)>) -> Ordering {
+        let p1 = match self {
+            Value::List(l) => Arc::as_ptr(l) as usize,
+            Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+            Value::Set(s) => Arc::as_ptr(s) as usize,
+            _ => 0,
+        };
+        let p2 = match other {
+            Value::List(l) => Arc::as_ptr(l) as usize,
+            Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+            Value::Set(s) => Arc::as_ptr(s) as usize,
+            _ => 0,
+        };
+
+        if p1 != 0 && p2 != 0 {
+            let pair = (p1, p2);
+            if visited.contains(&pair) {
+                return Ordering::Equal;
+            }
+            visited.insert(pair);
+        }
+
         // Define an ordering between types:
         // None < Bool < Int < Float < String < Bytes < List < Tuple < Dict < Set < Function < Native < Bound < Foreign
         let self_discriminant = self.discriminant_value();
         let other_discriminant = other.discriminant_value();
 
         if self_discriminant != other_discriminant {
+            if p1 != 0 && p2 != 0 {
+                let pair = (p1, p2);
+                visited.remove(&pair);
+            }
             return self_discriminant.cmp(&other_discriminant);
         }
 
-        match (self, other) {
+        let result = match (self, other) {
             (Value::None, Value::None) => Ordering::Equal,
             (Value::Bool(a), Value::Bool(b)) => a.cmp(b),
             (Value::Int(a), Value::Int(b)) => a.cmp(b),
@@ -277,27 +265,103 @@ impl Value {
             (Value::Bytes(a), Value::Bytes(b)) => a.cmp(b),
             (Value::List(a), Value::List(b)) => {
                 if Arc::ptr_eq(a, b) {
-                    return Ordering::Equal;
+                    Ordering::Equal
+                } else {
+                    let la = a.read();
+                    let lb = b.read();
+                    // Lexicographical comparison with recursion
+                    let len = la.len().min(lb.len());
+                    let mut ord = Ordering::Equal;
+                    for i in 0..len {
+                        ord = la[i].cmp_helper(&lb[i], visited);
+                        if ord != Ordering::Equal {
+                            break;
+                        }
+                    }
+                    if ord == Ordering::Equal {
+                        la.len().cmp(&lb.len())
+                    } else {
+                        ord
+                    }
                 }
-                a.read().cmp(&*b.read())
             }
-            (Value::Tuple(a), Value::Tuple(b)) => a.cmp(b),
+            (Value::Tuple(a), Value::Tuple(b)) => {
+                let len = a.len().min(b.len());
+                let mut ord = Ordering::Equal;
+                for i in 0..len {
+                    ord = a[i].cmp_helper(&b[i], visited);
+                    if ord != Ordering::Equal {
+                        break;
+                    }
+                }
+                if ord == Ordering::Equal {
+                    a.len().cmp(&b.len())
+                } else {
+                    ord
+                }
+            }
             (Value::Dictionary(a), Value::Dictionary(b)) => {
                 if Arc::ptr_eq(a, b) {
-                    return Ordering::Equal;
+                    Ordering::Equal
+                } else {
+                    let da = a.read();
+                    let db = b.read();
+                    // Iterate and compare (key, value) pairs
+                    let mut it1 = da.iter();
+                    let mut it2 = db.iter();
+                    loop {
+                        match (it1.next(), it2.next()) {
+                            (Some((k1, v1)), Some((k2, v2))) => {
+                                let mut ord = k1.cmp_helper(k2, visited);
+                                if ord == Ordering::Equal {
+                                    ord = v1.cmp_helper(v2, visited);
+                                }
+                                if ord != Ordering::Equal {
+                                    break ord;
+                                }
+                            }
+                            (Some(_), None) => {
+                                break Ordering::Greater;
+                            }
+                            (None, Some(_)) => {
+                                break Ordering::Less;
+                            }
+                            (None, None) => {
+                                break Ordering::Equal;
+                            }
+                        }
+                    }
                 }
-                // BTreeMap implements Ord
-                a.read().cmp(&*b.read())
             }
             (Value::Set(a), Value::Set(b)) => {
                 if Arc::ptr_eq(a, b) {
-                    return Ordering::Equal;
+                    Ordering::Equal
+                } else {
+                    let sa = a.read();
+                    let sb = b.read();
+                    let mut it1 = sa.iter();
+                    let mut it2 = sb.iter();
+                    loop {
+                        match (it1.next(), it2.next()) {
+                            (Some(v1), Some(v2)) => {
+                                let ord = v1.cmp_helper(v2, visited);
+                                if ord != Ordering::Equal {
+                                    break ord;
+                                }
+                            }
+                            (Some(_), None) => {
+                                break Ordering::Greater;
+                            }
+                            (None, Some(_)) => {
+                                break Ordering::Less;
+                            }
+                            (None, None) => {
+                                break Ordering::Equal;
+                            }
+                        }
+                    }
                 }
-                // BTreeSet implements Ord
-                a.read().cmp(&*b.read())
             }
-            // For functions and others, we just compare pointers or names as best effort
-            // This is primarily to satisfy BTreeSet requirement, not for user-facing logical ordering necessarily.
             (Value::Function(a), Value::Function(b)) => a.name.cmp(&b.name),
             (Value::NativeFunction(a, _), Value::NativeFunction(b, _)) => a.cmp(b),
             (Value::NativeFunctionWithKwargs(a, _), Value::NativeFunctionWithKwargs(b, _)) => {
@@ -313,7 +377,14 @@ impl Value {
                 p1.cmp(&p2)
             }
             _ => Ordering::Equal, // Should be covered by discriminant check
+        };
+
+        if p1 != 0 && p2 != 0 {
+            let pair = (p1, p2);
+            visited.remove(&pair);
         }
+
+        result
     }
 }
 
