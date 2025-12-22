@@ -39,7 +39,6 @@ pub trait Agent: Send + Sync {
     fn get_next_callback_uri(&self) -> Result<String, String>;
     fn add_callback_uri(&self, uri: String) -> Result<(), String>;
     fn remove_callback_uri(&self, uri: String) -> Result<(), String>;
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String>;
 
     // Task Management
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String>;

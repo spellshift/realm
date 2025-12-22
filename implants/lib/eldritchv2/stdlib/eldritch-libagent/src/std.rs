@@ -118,8 +118,8 @@ impl AgentLibrary for StdAgentLibrary {
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.agent.list_transports()
     }
-    fn set_active_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.agent.set_active_callback_uri(uri)
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.agent.set_callback_uri(uri)
     }
 
     fn get_callback_interval(&self) -> Result<i64, String> {
