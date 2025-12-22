@@ -137,11 +137,7 @@ pub trait CryptoLibrary {
     ///
     /// **Parameters**
     /// - `content` (`str`): The string content to encode.
-    /// - `encode_type` (`Option<str>`): The encoding variant. Valid options:
-    ///   - "STANDARD" (default)
-    ///   - "STANDARD_NO_PAD"
-    ///   - "URL_SAFE"
-    ///   - "URL_SAFE_NO_PAD"
+    /// - `encode_type` (`Option<str>`): The encoding variant. Valid options: `STANDARD` (default), `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`
     ///
     /// **Returns**
     /// - `str`: The Base64 encoded string.
@@ -155,11 +151,7 @@ pub trait CryptoLibrary {
     ///
     /// **Parameters**
     /// - `content` (`str`): The Base64 string to decode.
-    /// - `encode_type` (`Option<str>`): The decoding variant (matches encoding options).
-    ///   - "STANDARD" (default)
-    ///   - "STANDARD_NO_PAD"
-    ///   - "URL_SAFE"
-    ///   - "URL_SAFE_NO_PAD"
+    /// - `encode_type` (`Option<str>`): The decoding variant (matches encoding options). Valid options: `STANDARD` (default), `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`
     ///
     /// **Returns**
     /// - `str`: The decoded string.

@@ -26,7 +26,7 @@ fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let stdlib_path = Path::new(&manifest_dir).join("../stdlib");
     let docs_path =
-        Path::new(&manifest_dir).join("../../../../docs/_docs/user-guide/eldritch-stdlib.md");
+        Path::new(&manifest_dir).join("../../../../docs/_docs/user-guide/eldritchv2.md");
 
     let libraries = parse_libraries(&stdlib_path);
     generate_markdown(&libraries, &docs_path);
@@ -227,16 +227,23 @@ fn map_type(t: &str) -> String {
 }
 
 fn generate_markdown(libs: &[LibraryDoc], out_path: &Path) {
-    let mut content = String::new();
-    content.push_str("---\n");
-    content.push_str("title: Eldritch Standard Library\n");
-    content.push_str("tags:\n - User Guide\n");
-    content.push_str("description: Eldritch Standard Library Documentation\n");
-    content.push_str("permalink: user-guide/eldritch-stdlib\n");
-    content.push_str("---\n\n");
+    let mut content = r#"---
+title: Eldritch V2
+tags:
+ - User Guide
+description: Eldritch V2 Standard Library Documentation
+permalink: user-guide/eldritchv2
+---
+{% comment %} Generated from implants/lib/eldritchv2/eldritchv2/build.rs {% endcomment %}
 
-    content.push_str("# Standard Library\n\n");
-    content.push_str("The following libraries are available in Eldritch.\n\n");
+# Standard Library
+
+
+The following libraries are available in Eldritch.
+
+
+"#
+    .to_string();
 
     for lib in libs {
         let title_name = if let Some(c) = lib.name.chars().next() {
