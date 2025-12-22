@@ -142,13 +142,10 @@ fn test_dict_clear_pop_setdefault() {
     );
 
     // Test pop() errors
-    assert::fail(
-        "d = {}; d.pop('a')",
-        "KeyError: a"
-    );
+    assert::fail("d = {}; d.pop('a')", "KeyError: a");
     assert::fail(
         "d = {'a': 1}; d.pop()",
-        "TypeError: pop() takes between 1 and 2 arguments"
+        "TypeError: pop() takes between 1 and 2 arguments",
     );
 
     // Test setdefault()

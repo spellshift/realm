@@ -32,8 +32,12 @@ pub trait HttpLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the download fails.
-    fn download(&self, uri: String, dst: String, allow_insecure: Option<bool>)
-        -> Result<(), String>;
+    fn download(
+        &self,
+        uri: String,
+        dst: String,
+        allow_insecure: Option<bool>,
+    ) -> Result<(), String>;
 
     #[eldritch_method]
     /// Performs an HTTP GET request.

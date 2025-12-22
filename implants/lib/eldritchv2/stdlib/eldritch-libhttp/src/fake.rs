@@ -92,7 +92,9 @@ mod tests {
     #[test]
     fn test_http_fake_get() {
         let http = HttpLibraryFake;
-        let resp = http.get("http://example.com".into(), None, None, None).unwrap();
+        let resp = http
+            .get("http://example.com".into(), None, None, None)
+            .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(200));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
             assert_eq!(

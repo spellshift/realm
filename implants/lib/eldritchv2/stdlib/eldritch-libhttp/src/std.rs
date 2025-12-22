@@ -189,9 +189,9 @@ impl HttpLibrary for StdHttpLibrary {
 mod tests {
     use super::*;
     use httptest::{
+        Expectation, Server,
         matchers::{all_of, contains, request, url_decoded},
         responders::status_code,
-        Expectation, Server,
     };
     use std::fs::read_to_string;
     use tempfile::NamedTempFile;
