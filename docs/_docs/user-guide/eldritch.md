@@ -161,6 +161,11 @@ The **agent.get_callback_interval** method returns the current callback interval
 
 The **agent.list_tasks** method returns a list of dictionaries representing the currently running or queued background tasks on the agent. Each dictionary contains task metadata and status.
 
+```python
+>>> agent.list_tasks()
+[{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
+```
+
 ### agent.stop_task (V2-Only)
 
 `agent.stop_task(task_id: int) -> None`
