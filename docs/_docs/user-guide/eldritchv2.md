@@ -85,8 +85,8 @@ Returns a list of available transport names.
 **Errors**
 - Returns an error string if the list cannot be retrieved.
 
-### agent.set_active_callback_uri
-`agent.set_active_callback_uri(uri: str) -> None`
+### agent.set_callback_uri
+`agent.set_callback_uri(uri: str) -> None`
 Sets the active callback URI for the agent.
 
 **Parameters**
