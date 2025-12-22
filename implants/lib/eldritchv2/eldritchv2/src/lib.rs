@@ -147,7 +147,10 @@ impl Interpreter {
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        let backend = Arc::new(crate::assets::std::AgentAssets::new(agent.clone(),  Vec::new()));
+        let backend = Arc::new(crate::assets::std::AgentAssets::new(
+            agent.clone(),
+            Vec::new(),
+        ));
         let mut assets_lib = StdAssetsLibrary::new();
         assets_lib.add_shadow(backend);
         self.inner.register_lib(assets_lib);
@@ -170,7 +173,7 @@ impl Interpreter {
         agent: Arc<dyn Agent>,
         task_id: i64,
         remote_assets: Vec<String>,
-        backend: Arc<dyn assets::std::AssetBackend>
+        backend: Arc<dyn assets::std::AssetBackend>,
     ) -> Self {
         let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(agent_lib);
@@ -183,7 +186,10 @@ impl Interpreter {
 
         let mut assets_lib = StdAssetsLibrary::new();
         // As with previously, remote assets can shadow the Embedded Assets
-        let agent_backend = Arc::new(crate::assets::std::AgentAssets::new(agent.clone(),  remote_assets.clone()));
+        let agent_backend = Arc::new(crate::assets::std::AgentAssets::new(
+            agent.clone(),
+            remote_assets.clone(),
+        ));
         assets_lib.add_shadow(agent_backend.clone());
         assets_lib.add_shadow(backend.clone());
         self.inner.register_lib(assets_lib);

@@ -1,17 +1,16 @@
 use super::AssetsLibrary;
+use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use alloc::borrow::Cow;
 use anyhow::Result;
-use eldritch_agent::Agent;
-use rust_embed;
 use core::marker::PhantomData;
+use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
-use std::io::Write;
+use rust_embed;
 use std::collections::HashSet;
-
+use std::io::Write;
 
 // Trait for arbitrary backends to get and list assets.
 pub trait AssetBackend: Send + Sync + 'static {
@@ -37,8 +36,11 @@ pub struct EmbeddedAssets<T: rust_embed::Embed> {
 }
 
 impl<T: rust_embed::Embed> EmbeddedAssets<T> {
-    pub fn new() -> Self { // No arguments needed
-        Self { _phantom: PhantomData }
+    pub fn new() -> Self {
+        // No arguments needed
+        Self {
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -99,12 +101,10 @@ pub struct StdAssetsLibrary {
 }
 
 impl core::fmt::Debug for StdAssetsLibrary {
-fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("StdAssetsLibrary")
-            .finish()
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("StdAssetsLibrary").finish()
     }
 }
-
 
 impl StdAssetsLibrary {
     /// Initializes an empty library.
@@ -120,11 +120,12 @@ impl StdAssetsLibrary {
     /// Asset name shadowing is forbidden
     pub fn add(&mut self, backend: Arc<dyn AssetBackend>) -> anyhow::Result<()> {
         // Make a hashset of the new asset names
-        let new_assets: HashSet<String> = backend.assets().into_iter()
-            .map(Cow::into_owned)
-            .collect();
+        let new_assets: HashSet<String> =
+            backend.assets().into_iter().map(Cow::into_owned).collect();
         // See if any name overlap with existin assets
-        let colliding_names: Vec<&str> = self.asset_names.intersection(&new_assets)
+        let colliding_names: Vec<&str> = self
+            .asset_names
+            .intersection(&new_assets)
             .map(String::as_str)
             .collect();
 
@@ -147,9 +148,8 @@ impl StdAssetsLibrary {
     pub fn add_shadow(&mut self, backend: Arc<dyn AssetBackend>) {
         let assets = backend.assets();
         // This converts the Cow to an owned String only if it isn't already owned.
-        self.asset_names.extend(
-            assets.iter().map(|c| c.to_string())
-        );
+        self.asset_names
+            .extend(assets.iter().map(|c| c.to_string()));
         self.backends.push(backend);
     }
 
@@ -160,7 +160,6 @@ impl StdAssetsLibrary {
         };
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
-            
             if let Ok(file) = backend.get(&name) {
                 // Return immediately upon the first match
                 return Ok(file);
@@ -197,7 +196,7 @@ mod tests {
     use super::*;
     use alloc::collections::BTreeMap;
     use alloc::string::ToString;
-    use eldritch_agent::{Agent};
+    use eldritch_agent::Agent;
     use pb::c2;
     use std::borrow::Cow;
     use std::collections::BTreeSet;
@@ -336,7 +335,7 @@ mod tests {
 
     #[test]
     fn test_read_binary_embedded_success() -> anyhow::Result<()> {
-        let mut lib = StdAssetsLibrary::new(); 
+        let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
@@ -351,7 +350,7 @@ mod tests {
 
     #[test]
     fn test_read_binary_embedded_fail() -> anyhow::Result<()> {
-        let mut lib = StdAssetsLibrary::new(); 
+        let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
         Ok(())
@@ -361,7 +360,10 @@ mod tests {
     fn test_read_binary_remote_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, vec!["remote_file.txt".to_string()])))?;
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), b"remote content");
@@ -369,20 +371,26 @@ mod tests {
     }
 
     #[test]
-    fn test_read_binary_remote_fail()-> anyhow::Result<()> {
+    fn test_read_binary_remote_fail() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new().should_fail());
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, vec!["remote_file.txt".to_string()])))?;
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
         let result = lib.read_binary("remote_file.txt".to_string());
         assert!(result.is_err());
         Ok(())
     }
 
     #[test]
-    fn test_read_embedded_success()-> anyhow::Result<()> {
+    fn test_read_embedded_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, vec!["remote_file.txt".to_string()])))?;
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
@@ -403,6 +411,7 @@ mod tests {
         assert!(result.is_ok());
         let content = std::fs::read_to_string(dest_path).unwrap();
         assert_eq!(content.trim(), "print(\"This script just prints\")");
+        Ok(())
     }
 
     #[test]

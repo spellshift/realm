@@ -201,7 +201,7 @@ fn setup_interpreter(
     // Register Task Context (Agent, Report, Assets)
     let remote_assets = tome.file_names.clone();
     let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
-    interp = interp.with_task_context::<>(agent, task_id, remote_assets, backend);
+    interp = interp.with_task_context(agent, task_id, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
