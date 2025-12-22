@@ -113,7 +113,7 @@ fn test_dict_methods() {
 }
 
 #[test]
-fn test_dict_missing_methods() {
+fn test_dict_clear_pop_setdefault() {
     // Test clear()
     assert::pass(
         r#"

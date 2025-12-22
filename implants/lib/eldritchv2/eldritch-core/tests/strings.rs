@@ -12,7 +12,7 @@ fn test_string_literals() {
 }
 
 #[test]
-fn test_string_missing_methods() {
+fn test_string_rsplit_codepoints_elems() {
     // Test rsplit()
     assert::pass(
         r#"
@@ -62,7 +62,7 @@ fn test_string_missing_methods() {
 }
 
 #[test]
-fn test_string_boolean_checks() {
+fn test_string_boolean_predicates() {
     // isalnum
     assert::pass(
         r#"
