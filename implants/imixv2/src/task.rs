@@ -183,8 +183,8 @@ fn execute_task(
     // Handle result
     match result {
         Ok(exec_result) => report_result(task_id, exec_result, &agent),
-        Err(_) => {
-            report_panic(task_id, &agent);
+        Err(payload) => {
+            report_panic(task_id, &agent, payload);
         }
     }
 }
@@ -252,13 +252,21 @@ fn spawn_output_consumer(
     })
 }
 
-fn report_panic(task_id: i64, agent: &Arc<dyn Agent>) {
+fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, payload: Box<dyn std::any::Any + Send>) {
+    let msg = if let Some(s) = payload.downcast_ref::<&str>() {
+        format!("Task execution panicked: {}", s)
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        format!("Task execution panicked: {}", s)
+    } else {
+        "Task execution panicked".to_string()
+    };
+
     let _ = agent.report_task_output(ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
             output: String::new(),
             error: Some(TaskError {
-                msg: "Task execution panicked".to_string(),
+                msg,
             }),
             exec_started_at: None,
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),

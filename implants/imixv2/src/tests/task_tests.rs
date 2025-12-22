@@ -150,9 +150,7 @@ async fn test_task_registry_spawn() {
 async fn test_task_streaming_output() {
     let agent = Arc::new(MockAgent::new());
     let task_id = 456;
-    // Removed indentation and loops to avoid parser errors in string literal
     let code = "print(\"Chunk 1\")\nprint(\"Chunk 2\")";
-    println!("Code: {:?}", code);
 
     let task = c2::Task {
         id: task_id,
@@ -169,12 +167,6 @@ async fn test_task_streaming_output() {
     tokio::time::sleep(Duration::from_secs(3)).await;
 
     let reports = agent.output_reports.lock().unwrap();
-
-    // Debug output
-    println!("Reports count: {}", reports.len());
-    for r in reports.iter() {
-        println!("Report: {:?}", r);
-    }
 
     let outputs: Vec<String> = reports
         .iter()
@@ -194,7 +186,6 @@ async fn test_task_streaming_error() {
     let agent = Arc::new(MockAgent::new());
     let task_id = 789;
     let code = "print(\"Before Error\")\nx = 1 / 0";
-    println!("Code: {:?}", code);
 
     let task = c2::Task {
         id: task_id,
@@ -211,12 +202,6 @@ async fn test_task_streaming_error() {
     tokio::time::sleep(Duration::from_secs(3)).await;
 
     let reports = agent.output_reports.lock().unwrap();
-
-    // Debug
-    println!("Reports count: {}", reports.len());
-    for r in reports.iter() {
-        println!("Report: {:?}", r);
-    }
 
     let outputs: Vec<String> = reports
         .iter()
@@ -237,6 +222,10 @@ async fn test_task_streaming_error() {
             .unwrap_or(false)
     });
     assert!(error_report.is_some(), "Should report error");
+
+    let err_msg = error_report.unwrap().output.as_ref().unwrap().error.as_ref().unwrap().msg.clone();
+    // 1/0 is usually "Division by zero"
+    assert!(err_msg.to_lowercase().contains("zero"), "Error message should mention zero, got: {}", err_msg);
 }
 
 #[tokio::test]
@@ -272,7 +261,6 @@ async fn test_task_invalid_method() {
     let task_id = 1010;
     // This calls a method that doesn't exist on the agent object
     let code = "agent.this_method_does_not_exist()";
-    println!("Code: {:?}", code);
 
     let task = c2::Task {
         id: task_id,
@@ -290,12 +278,6 @@ async fn test_task_invalid_method() {
 
     let reports = agent.output_reports.lock().unwrap();
 
-    // Debug
-    println!("Reports count: {}", reports.len());
-    for r in reports.iter() {
-        println!("Report: {:?}", r);
-    }
-
     // Check for error report
     let error_report = reports.iter().find(|r| {
         r.output
@@ -304,12 +286,11 @@ async fn test_task_invalid_method() {
             .unwrap_or(false)
     });
 
-    if let Some(r) = error_report {
-        let err = r.output.as_ref().unwrap().error.as_ref().unwrap();
-        println!("Error reported: {:?}", err.msg);
-    }
-
     assert!(error_report.is_some(), "Should report error for invalid method call");
+
+    let err_msg = error_report.unwrap().output.as_ref().unwrap().error.as_ref().unwrap().msg.clone();
+    println!("Error reported: {:?}", err_msg);
+    assert!(err_msg.contains("Method 'this_method_does_not_exist' not found"), "Error message should mention method not found, got: {}", err_msg);
 }
 
 #[tokio::test]
@@ -318,7 +299,6 @@ async fn test_task_syntax_error() {
     let task_id = 2020;
     // Syntax error
     let code = "1 +";
-    println!("Code: {:?}", code);
 
     let task = c2::Task {
         id: task_id,
@@ -336,12 +316,6 @@ async fn test_task_syntax_error() {
 
     let reports = agent.output_reports.lock().unwrap();
 
-    // Debug
-    println!("Reports count: {}", reports.len());
-    for r in reports.iter() {
-        println!("Report: {:?}", r);
-    }
-
     // Check for error report
     let error_report = reports.iter().find(|r| {
         r.output
@@ -350,10 +324,10 @@ async fn test_task_syntax_error() {
             .unwrap_or(false)
     });
 
-    if let Some(r) = error_report {
-        let err = r.output.as_ref().unwrap().error.as_ref().unwrap();
-        println!("Error reported: {:?}", err.msg);
-    }
-
     assert!(error_report.is_some(), "Should report error for syntax error");
+
+    let err_msg = error_report.unwrap().output.as_ref().unwrap().error.as_ref().unwrap().msg.clone();
+    println!("Error reported: {:?}", err_msg);
+    // Syntax errors usually contain "SyntaxError"
+    assert!(err_msg.contains("SyntaxError"), "Error message should look like syntax error, got: {}", err_msg);
 }
