@@ -154,12 +154,12 @@ assumptions on `Transport` requirements no gut checks are applied to the passed 
 
 ### assets.copy
 
-`assets.copy(src: str, dst: str) -> None`
+`assets.copy(src: str, dest: str) -> None`
 
 The <b>assets.copy</b> method copies an embedded file from the agent to disk.
 The `src` variable will be the path from the `embed_files_golem_prod` as the root dir.
 For example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.
-If `dst` exists it will be overwritten. If it doesn't exist the function will fail.
+If `dest` exists it will be overwritten. If it doesn't exist the function will fail.
 
 ```python
 def deploy_agent():
@@ -220,7 +220,7 @@ The <b>crypto.encode_b64</b> method encodes the given text using the given base6
 
 ### crypto.decode_b64
 
-`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
+`crypto.decode_b64(content: str, encode_type: Optional<str>) -> str`
 
 The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
 
@@ -402,9 +402,9 @@ The <b>file.mkdir</b> method will make a new directory at `path`. If the parent 
 
 ### file.moveto
 
-`file.moveto(src: str, dst: str) -> None`
+`file.moveto(old: str, new: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.moveto</b> method moves a file or directory from `old` to `new`. If the `new` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
@@ -464,7 +464,7 @@ The <b> file.temp</b> method returns the path of a new temporary file with a ran
 
 ### file.template
 
-`file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
+`file.template(template_path: str, dst_path: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The <b>file.template</b> method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
@@ -636,7 +636,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_exec
 
-`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
+`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> Dict`
 
 The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
 Stdout returns the string result from the command output.
@@ -798,15 +798,15 @@ haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.
 
 ### regex.replace_all
 
-`regex.replace_all(haystack: str, pattern: str, value: string) -> str`
+`regex.replace_all(haystack: str, pattern: str, text: string) -> str`
 
-The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given text. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace
 
-`regex.replace(haystack: str, pattern: str, value: string) -> str`
+`regex.replace(haystack: str, pattern: str, text: string) -> str`
 
-The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given text. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ---
 
@@ -952,7 +952,7 @@ $> sys.get_pid()
 
 ### sys.get_reg
 
-`sys.get_reg(reghive: str, regpath: str) -> Dict`
+`sys.get_reg(reghiv: str, regpth: str) -> Dict`
 
 The <b>sys.get_reg</b> method returns the registry values at the requested registry path.
 An example is below:
@@ -1054,7 +1054,7 @@ sys.shell("ls /nofile")
 
 ### sys.write_reg_hex
 
-`sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
+`sys.write_reg_hex(reghiv: str, regpth: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
 The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.
 An example is below:
@@ -1088,7 +1088,7 @@ True
 
 ### sys.write_reg_int
 
-`sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> Bool`
+`sys.write_reg_int(reghiv: str, regpth: str, regname: str, regtype: str, regvalue: int) -> Bool`
 
 The <b>sys.write_reg_int</b> method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.
 An example is below:
@@ -1122,7 +1122,7 @@ True
 
 ### sys.write_reg_str
 
-`sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
+`sys.write_reg_str(reghiv: str, regpth: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
 The <b>sys.write_reg_str</b> method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.
 An example is below:

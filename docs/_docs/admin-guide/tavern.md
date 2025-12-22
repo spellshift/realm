@@ -143,9 +143,9 @@ The following environment variables are currently supported for additional MySQL
 | MYSQL_USER| User to authenticate with | root | No |
 | MYSQL_PASSWD| Password to authenticate with | no password | No |
 | MYSQL_DB| Name of the database to use | tavern | No |
-| MYSQL_MAX_IDLE_CONNS | Integer value of max idle mysql connections to keep open | 10 | No |
-| MYSQL_MAX_OPEN_CONNS | Integer value of max mysql connections to open | 100 | No |
-| MYSQL_MAX_CONN_LIFETIME | Integer value of max mysql connection lifetime (in seconds) | 3600 | No |
+| DB_MAX_IDLE_CONNS | Integer value of max idle mysql connections to keep open | 10 | No |
+| DB_MAX_OPEN_CONNS | Integer value of max mysql connections to open | 100 | No |
+| DB_MAX_CONN_LIFETIME | Integer value of max mysql connection lifetime (in seconds) | 3600 | No |
 
 Here is an example of running Tavern locally with a MySQL backend:
 
