@@ -53,7 +53,10 @@ fn build_bin_create_file_dll() {
     );
     let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll_file);
     assert!(test_dll_path.is_file());
-    println!("cargo:rustc-env=TEST_DLL_PATH={}", relative_path_to_test_dll_file);
+    println!(
+        "cargo:rustc-env=TEST_DLL_PATH={}",
+        relative_path_to_test_dll_file
+    );
 }
 
 fn build_bin_reflective_loader() {
