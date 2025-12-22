@@ -98,7 +98,7 @@ mod tests {
     #[cfg(target_os = "windows")]
     use tempfile::NamedTempFile;
 
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", debug_assertions))]
     #[test]
     fn test_dll_inject_simple() -> anyhow::Result<()> {
         const DLL_EXEC_WAIT_TIME: u64 = 5;
@@ -109,8 +109,7 @@ mod tests {
 
         // Get the path to our test dll file.
         let cargo_root = env!("CARGO_MANIFEST_DIR");
-        let relative_path_to_test_dll =
-            "..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll";
+        let relative_path_to_test_dll = env!("TEST_DLL_PATH");
         let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
         assert!(test_dll_path.is_file());
 
