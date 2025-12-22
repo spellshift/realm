@@ -286,9 +286,9 @@ mod tests {
 
         // Handle windows
         #[cfg(windows)]
-        let mut cmd = Command::new("timeout");
+        let mut cmd = Command::new("ping");
         #[cfg(windows)]
-        cmd.arg("10");
+        cmd.args(["-n", "10", "127.0.0.1"]);
 
         if let Ok(mut child) = cmd.spawn() {
             let pid = child.id() as i64;
