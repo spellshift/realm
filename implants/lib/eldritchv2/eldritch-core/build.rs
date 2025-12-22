@@ -23,42 +23,117 @@ fn main() {
         .and_then(|p| p.parent()) // lib
         .and_then(|p| p.parent()) // implants
         .and_then(|p| p.parent()) // root
-        .map(|p| p.join("docs/_docs/user-guide/eldritchv2.md"));
+        .map(|p| p.join("docs/_docs/user-guide/eldritchv2-core.md"));
 
     if let Some(path) = user_guide_path {
-        if path.exists() {
-            match generate_docs(&path, &manifest_dir) {
-                Ok(_) => println!("cargo:warning=Documentation updated successfully."),
-                Err(e) => println!("cargo:warning=Failed to update documentation: {}", e),
-            }
-        } else {
-            println!(
-                "cargo:warning=User guide not found at expected path: {:?}",
-                path
-            );
+        match generate_docs(&path, &manifest_dir) {
+            Ok(_) => println!("cargo:warning=Documentation updated successfully."),
+            Err(e) => println!("cargo:warning=Failed to update documentation: {}", e),
         }
     }
 }
 
 fn generate_docs(user_guide_path: &std::path::Path, core_path: &str) -> std::io::Result<()> {
-    let mut doc_content = String::new();
+    let mut doc_content = r#"---
+title: Eldritch V2 core
+tags:
+ - User Guide
+description: EldritchV2 Core User Guide
+permalink: user-guide/eldritchv2-core
+---
+{% comment %} Generated from implants/lib/eldritchv2/eldritch-core/build.rs {% endcomment %}
 
-    // 1. Read existing user guide header (up to Built-in Functions)
-    let current_content = std::fs::read_to_string(user_guide_path)?;
-    let split_token = "## Built-in Functions";
-    let parts: Vec<&str> = current_content.split(split_token).collect();
+# Overview
 
-    if parts.len() < 2 {
-        return Err(std::io::Error::other(
-            "Could not find '## Built-in Functions' section in user guide",
-        ));
-    }
+Eldritch V2 is a Starlark-like domain specific language used for scripting implant behaviors. It is designed to be familiar to Python users while remaining simple, safe, and easily embeddable.
 
-    doc_content.push_str(parts[0]);
-    doc_content.push_str("## Built-in Functions\n\n");
-    doc_content.push_str(
-        "Eldritch V2 provides a rich set of built-in functions available in the global scope.\n\n",
-    );
+## Quick Start
+
+You can try the language in the [interactive REPL demo](/assets/eldritch-repl/index.html).
+
+### Hello World
+
+```python
+print("Hello, World!")
+```
+
+### Variables and Types
+
+Eldritch V2 is dynamically typed.
+
+```python
+x = 10              # int
+y = 3.14            # float
+name = "Eldritch"   # string
+is_active = True    # bool
+data = b"\x00\x01"  # bytes
+items = [1, 2, 3]   # list
+config = {"a": 1}   # dict
+point = (10, 20)    # tuple
+unique = {1, 2, 3}  # set
+```
+
+## Language Reference
+
+### Control Flow
+
+**If Statements**
+
+```python
+if x > 10:
+    print("Big")
+elif x == 10:
+    print("Ten")
+else:
+    print("Small")
+```
+
+**Loops**
+
+```python
+# For loop
+for i in range(5):
+    print(i)
+
+# While loop
+while x > 0:
+    x -= 1
+    if x == 5:
+        break
+```
+
+**Ternary Operator**
+
+```python
+status = "Active" if is_running else "Inactive"
+```
+
+### Functions
+
+Functions are defined using `def`. They support positional arguments, keyword arguments, default values, `*args`, and `**kwargs`.
+
+```python
+def greet(name, greeting="Hello"):
+    return "%s, %s!" % (greeting, name)
+
+print(greet("World"))
+```
+
+### Modules
+
+Eldritch V2 supports loading modules. Standard library modules (like `file`, `sys`) are available globally or can be imported if configured. In the standard environment, they are pre-loaded global objects.
+
+```python
+file.list(".")
+```
+
+
+## Built-in Functions
+
+Eldritch V2 provides a rich set of built-in functions available in the global scope.
+
+
+"#.to_string();
 
     // 2. Generate Builtins Docs
     let builtins_dir = std::path::Path::new(core_path).join("src/interpreter/builtins");
