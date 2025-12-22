@@ -265,3 +265,95 @@ async fn test_task_registry_list_and_stop() {
         "Task should be removed from list"
     );
 }
+
+#[tokio::test]
+async fn test_task_invalid_method() {
+    let agent = Arc::new(MockAgent::new());
+    let task_id = 1010;
+    // This calls a method that doesn't exist on the agent object
+    let code = "agent.this_method_does_not_exist()";
+    println!("Code: {:?}", code);
+
+    let task = c2::Task {
+        id: task_id,
+        tome: Some(Tome {
+            eldritch: code.to_string(),
+            ..Default::default()
+        }),
+        quest_name: "invalid_method_test".to_string(),
+    };
+
+    let registry = TaskRegistry::new();
+    registry.spawn(task, agent.clone());
+
+    tokio::time::sleep(Duration::from_secs(3)).await;
+
+    let reports = agent.output_reports.lock().unwrap();
+
+    // Debug
+    println!("Reports count: {}", reports.len());
+    for r in reports.iter() {
+        println!("Report: {:?}", r);
+    }
+
+    // Check for error report
+    let error_report = reports.iter().find(|r| {
+        r.output
+            .as_ref()
+            .map(|o| o.error.is_some())
+            .unwrap_or(false)
+    });
+
+    if let Some(r) = error_report {
+        let err = r.output.as_ref().unwrap().error.as_ref().unwrap();
+        println!("Error reported: {:?}", err.msg);
+    }
+
+    assert!(error_report.is_some(), "Should report error for invalid method call");
+}
+
+#[tokio::test]
+async fn test_task_syntax_error() {
+    let agent = Arc::new(MockAgent::new());
+    let task_id = 2020;
+    // Syntax error
+    let code = "1 +";
+    println!("Code: {:?}", code);
+
+    let task = c2::Task {
+        id: task_id,
+        tome: Some(Tome {
+            eldritch: code.to_string(),
+            ..Default::default()
+        }),
+        quest_name: "syntax_error_test".to_string(),
+    };
+
+    let registry = TaskRegistry::new();
+    registry.spawn(task, agent.clone());
+
+    tokio::time::sleep(Duration::from_secs(3)).await;
+
+    let reports = agent.output_reports.lock().unwrap();
+
+    // Debug
+    println!("Reports count: {}", reports.len());
+    for r in reports.iter() {
+        println!("Report: {:?}", r);
+    }
+
+    // Check for error report
+    let error_report = reports.iter().find(|r| {
+        r.output
+            .as_ref()
+            .map(|o| o.error.is_some())
+            .unwrap_or(false)
+    });
+
+    if let Some(r) = error_report {
+        let err = r.output.as_ref().unwrap().error.as_ref().unwrap();
+        println!("Error reported: {:?}", err.msg);
+    }
+
+    assert!(error_report.is_some(), "Should report error for syntax error");
+}
