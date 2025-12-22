@@ -11,19 +11,6 @@ pub mod fake;
 #[cfg(feature = "stdlib")]
 pub mod std;
 
-#[cfg(feature = "stdlib")]
-pub mod arp_scan_impl;
-#[cfg(feature = "stdlib")]
-pub mod ncat_impl;
-#[cfg(feature = "stdlib")]
-pub mod port_scan_impl;
-#[cfg(feature = "stdlib")]
-pub mod reverse_shell_pty_impl;
-#[cfg(feature = "stdlib")]
-pub mod ssh_copy_impl;
-#[cfg(feature = "stdlib")]
-pub mod ssh_exec_impl;
-
 #[cfg(test)]
 mod tests;
 
