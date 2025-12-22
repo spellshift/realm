@@ -213,7 +213,7 @@ mod tests {
         #[cfg(target_os = "windows")]
         let (cmd, args, input) = (
             "cmd.exe".to_string(),
-            vec!["/C".to_string(), "findstr".to_string(), "^".to_string()],
+            vec!["/C".to_string(), "sort".to_string()],
             "hello".to_string(),
         );
         #[cfg(not(target_os = "windows"))]
