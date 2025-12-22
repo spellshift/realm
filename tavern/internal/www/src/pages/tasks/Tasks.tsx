@@ -2,18 +2,17 @@ import { Link, useParams } from "react-router-dom";
 import { PageWrapper } from "../../components/page-wrapper";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
-import { DEFAULT_QUERY_TYPE, PageNavItem, TableRowLimit } from "../../utils/enums";
-import { useTasks } from "../../hooks/useTasks";
+import { PageNavItem, TableRowLimit } from "../../utils/enums";
+import { useTasks } from "./useTasks";
 import Button from "../../components/tavern-base-ui/button/Button";
 import TaskCard from "../../components/task-card/TaskCard";
-import FilterControls, { FilterPageType } from "../../components/FilterControls";
+import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
 import { TaskEdge } from "../../utils/interfacesQuery";
 import { EditablePageHeader } from "./EditablePageHeader";
-import SortingControls from "../../components/SortingControls";
+import { SortingControls } from "../../context/SortContext/index";
 
 const Tasks = () => {
     const { questId } = useParams();
-    const pageType = questId ? DEFAULT_QUERY_TYPE.questIdQuery : DEFAULT_QUERY_TYPE.questDetailsQuery;
     const {
         data,
         loading,
@@ -21,7 +20,7 @@ const Tasks = () => {
         updateTaskList,
         page,
         setPage
-    } = useTasks(pageType, questId);
+    } = useTasks(questId);
 
     return (
         <PageWrapper currNavItem={PageNavItem.quests}>

@@ -4,10 +4,10 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useHosts } from "./useHosts";
-import FilterControls, { FilterPageType } from "../../components/FilterControls";
+import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
 import HostTable from "./HostTable";
 import TablePagination from "../../components/tavern-base-ui/TablePagination";
-import SortingControls from "../../components/SortingControls";
+import { SortingControls } from "../../context/SortContext/index";
 
 const HostList: React.FC = () => {
     const { loading, error, data, updateHosts, page, setPage } = useHosts(true);
