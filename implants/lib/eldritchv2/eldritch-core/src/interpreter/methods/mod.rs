@@ -58,12 +58,15 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
             "sort".to_string(),
         ],
         Value::Dictionary(_) => vec![
+            "clear".to_string(),
             "keys".to_string(),
             "values".to_string(),
             "items".to_string(),
             "get".to_string(),
             "update".to_string(),
+            "pop".to_string(),
             "popitem".to_string(),
+            "setdefault".to_string(),
         ],
         Value::Set(_) => vec![
             "add".to_string(),
