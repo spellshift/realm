@@ -1,5 +1,5 @@
 def set_callback_uri(uri):
-    agent.set_active_callback_uri(uri)
+    agent.set_callback_uri(uri)
     print(f"Set agent callback uri to {uri}")
 
 

@@ -328,9 +328,6 @@ mod tests {
         fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
             Ok(())
         }
-        fn set_active_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
     }
 
     #[test]

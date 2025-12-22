@@ -1,10 +1,11 @@
 use crate::PivotLibrary;
-use crate::arp_scan_impl;
-use crate::ncat_impl;
-use crate::port_scan_impl;
-use crate::reverse_shell_pty_impl;
-use crate::ssh_copy_impl;
-use crate::ssh_exec_impl;
+pub mod arp_scan_impl;
+pub mod ncat_impl;
+pub mod port_scan_impl;
+pub mod reverse_shell_pty_impl;
+pub mod ssh_copy_impl;
+pub mod ssh_exec_impl;
+
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;

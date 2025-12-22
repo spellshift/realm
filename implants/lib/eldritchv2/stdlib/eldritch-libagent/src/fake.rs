@@ -26,7 +26,7 @@ impl AgentLibrary for AgentLibraryFake {
     fn set_callback_interval(&self, _interval: i64) -> Result<(), String> {
         Ok(())
     }
-    fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> {
+    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
 
@@ -169,10 +169,6 @@ impl Agent for AgentFake {
     }
 
     fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn set_active_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
 }
