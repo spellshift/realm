@@ -95,8 +95,64 @@ impl fmt::Debug for Value {
     }
 }
 
+#[cfg(feature = "std")]
+thread_local! {
+    static EQ_VISITED: core::cell::RefCell<BTreeSet<(usize, usize)>> = core::cell::RefCell::new(BTreeSet::new());
+}
+
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
+        #[cfg(feature = "std")]
+        {
+            // Use thread_local visited set to prevent infinite recursion
+            let p1 = match self {
+                Value::List(l) => Arc::as_ptr(l) as usize,
+                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+                Value::Set(s) => Arc::as_ptr(s) as usize,
+                _ => 0,
+            };
+            let p2 = match other {
+                Value::List(l) => Arc::as_ptr(l) as usize,
+                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+                Value::Set(s) => Arc::as_ptr(s) as usize,
+                _ => 0,
+            };
+
+            // If we have trackable pointers
+            if p1 != 0 && p2 != 0 {
+                // Canonical ordering for the pair to handle commutative check (a==b same as b==a)
+                let pair = if p1 < p2 { (p1, p2) } else { (p2, p1) };
+
+                // Check visited
+                let in_visited = EQ_VISITED.with(|v| v.borrow().contains(&pair));
+                if in_visited {
+                    // Assume equal if we are already checking this pair
+                    return true;
+                }
+
+                struct VisitedGuard {
+                    pair: (usize, usize),
+                }
+                impl Drop for VisitedGuard {
+                    fn drop(&mut self) {
+                        EQ_VISITED.with(|v| v.borrow_mut().remove(&self.pair));
+                    }
+                }
+
+                // Insert
+                EQ_VISITED.with(|v| v.borrow_mut().insert(pair));
+                let _guard = VisitedGuard { pair };
+
+                return self.eq_inner(other);
+            }
+        }
+
+        self.eq_inner(other)
+    }
+}
+
+impl Value {
+    fn eq_inner(&self, other: &Self) -> bool {
         match (self, other) {
             (Value::None, Value::None) => true,
             (Value::Bool(a), Value::Bool(b)) => a == b,
@@ -143,8 +199,66 @@ impl PartialOrd for Value {
     }
 }
 
+#[cfg(feature = "std")]
+thread_local! {
+    static CMP_VISITED: core::cell::RefCell<BTreeSet<(usize, usize)>> = core::cell::RefCell::new(BTreeSet::new());
+}
+
 impl Ord for Value {
     fn cmp(&self, other: &Self) -> Ordering {
+        #[cfg(feature = "std")]
+        {
+            // Use thread_local visited set to prevent infinite recursion
+            let p1 = match self {
+                Value::List(l) => Arc::as_ptr(l) as usize,
+                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+                Value::Set(s) => Arc::as_ptr(s) as usize,
+                _ => 0,
+            };
+            let p2 = match other {
+                Value::List(l) => Arc::as_ptr(l) as usize,
+                Value::Dictionary(d) => Arc::as_ptr(d) as usize,
+                Value::Set(s) => Arc::as_ptr(s) as usize,
+                _ => 0,
+            };
+
+            // If we have trackable pointers
+            if p1 != 0 && p2 != 0 {
+                // Not commutative for ordering, but we just need to track the pair being compared
+                // to detect cycle. Since cmp(a, b) calls cmp(b, a) potentially via symmetry?
+                // No, Ord is antisymmetric.
+                // But if we are comparing (a, b), and we recurse to (a, b) again, it's a cycle.
+                // If we recurse to (b, a)?
+                // Let's just track (p1, p2) directed edge.
+                let pair = (p1, p2);
+
+                let in_visited = CMP_VISITED.with(|v| v.borrow().contains(&pair));
+                if in_visited {
+                    // Assume equal if we are already checking this pair to break cycle
+                    return Ordering::Equal;
+                }
+
+                struct VisitedCmpGuard {
+                    pair: (usize, usize),
+                }
+                impl Drop for VisitedCmpGuard {
+                    fn drop(&mut self) {
+                        CMP_VISITED.with(|v| v.borrow_mut().remove(&self.pair));
+                    }
+                }
+
+                CMP_VISITED.with(|v| v.borrow_mut().insert(pair));
+                let _guard = VisitedCmpGuard { pair };
+
+                return self.cmp_inner(other);
+            }
+        }
+        self.cmp_inner(other)
+    }
+}
+
+impl Value {
+    fn cmp_inner(&self, other: &Self) -> Ordering {
         // Define an ordering between types:
         // None < Bool < Int < Float < String < Bytes < List < Tuple < Dict < Set < Function < Native < Bound < Foreign
         let self_discriminant = self.discriminant_value();
