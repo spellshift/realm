@@ -188,19 +188,38 @@ impl ProcessLibrary for StdProcessLibrary {
 
     #[cfg(not(target_os = "freebsd"))]
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        const UNKNOWN: &str = "UNKNOWN";
+        let entries = netstat::netstat().map_err(|e| e.to_string())?;
         let mut out = Vec::new();
-        if let Ok(listeners) = listeners::get_all() {
-            for l in listeners {
-                let mut map = BTreeMap::new();
-                map.insert("socket_type".to_string(), Value::String("TCP".to_string()));
-                map.insert(
-                    "local_address".to_string(),
-                    Value::String(l.socket.ip().to_string()),
-                );
-                map.insert("local_port".to_string(), Value::Int(l.socket.port() as i64));
-                map.insert("pid".to_string(), Value::Int(l.process.pid as i64));
-                out.push(map);
-            }
+        for entry in entries {
+            let mut map = BTreeMap::new();
+            map.insert(
+                "socket_type".to_string(),
+                Value::String(entry.socket_type.to_string()),
+            );
+            map.insert(
+                "local_address".to_string(),
+                Value::String(entry.local_address.to_string()),
+            );
+            map.insert(
+                "local_port".to_string(),
+                Value::Int(entry.local_port as i64),
+            );
+            let remote_addr = entry
+                .remote_address
+                .map(|ip| ip.to_string())
+                .unwrap_or_else(|| UNKNOWN.to_string());
+            map.insert("remote_address".to_string(), Value::String(remote_addr));
+            map.insert(
+                "remote_port".to_string(),
+                Value::Int(entry.remote_port as i64),
+            );
+            map.insert(
+                "connection_state".to_string(),
+                Value::String(entry.connection_state.to_string()),
+            );
+            map.insert("pid".to_string(), Value::Int(entry.pid as i64));
+            out.push(map);
         }
         Ok(out)
     }
