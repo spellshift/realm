@@ -18,16 +18,20 @@ jobs:
         os:
           - ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
     - name: ⚡ Setup Golang
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
         cache: true
+    - name: 🔨 Install gotestsum
+      run: go install gotest.tools/gotestsum@latest
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
-      run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
+      run: |
+        gotestsum --junitfile junit-tavern-${{ matrix.os }}.xml -- \
+          -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
@@ -35,6 +39,13 @@ jobs:
         files: ./coverage.out
         flags: tavern
         name: tavern-coverage
+    - name: 📤 Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-tavern-${{ matrix.os }}
+        path: junit-tavern-${{ matrix.os }}.xml
+
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -47,7 +58,7 @@ jobs:
           - macOS-latest
           - windows-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
     - if: matrix.os == 'windows-latest'
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
@@ -82,10 +93,13 @@ jobs:
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
+      # Note: --junit-path must be before -- if passed to nextest, but usually nextest args are consumed by nextest directly.
+      # However, cargo-llvm-cov passes extra args to nextest.
+      # We put it directly after 'nextest' subcommand.
       run: |
         cd ./implants/ &&
         cargo fmt --check &&
-        cargo llvm-cov nextest --lcov --output-path lcov.info
+        cargo llvm-cov nextest --lcov --output-path lcov.info --junit-path junit-implants-${{ matrix.os }}.xml
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
@@ -93,6 +107,13 @@ jobs:
         files: ./implants/lcov.info
         flags: implants
         name: implants-coverage-${{ matrix.os }}
+    - name: 📤 Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-implants-${{ matrix.os }}
+        path: implants/junit-implants-${{ matrix.os }}.xml
+
   ui-tests:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -103,7 +124,7 @@ jobs:
       run:
         working-directory: tavern/internal/www
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
     - name: ⚡ Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -113,7 +134,7 @@ jobs:
     - name: 📦 Install dependencies
       run: npm ci
     - name: 🔎 Run vitest with coverage
-      run: npm test -- --run --coverage
+      run: npm test -- --run --coverage --reporter=junit --output-file=junit-ui-${{ matrix.os }}.xml
     - name: 📶 Upload Coverage Results
       if: always()
       uses: codecov/codecov-action@v5
@@ -122,3 +143,87 @@ jobs:
         files: ./tavern/internal/www/coverage/lcov.info
         flags: ui-tests
         name: ui-tests-coverage
+    - name: 📤 Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-ui-${{ matrix.os }}
+        path: tavern/internal/www/junit-ui-${{ matrix.os }}.xml
+
+  flaky-monitor:
+    needs: [tavern, implants, ui-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to push to test-results branch
+      pull-requests: write # Needed to comment on PRs
+    if: always() # Run even if tests fail
+    steps:
+    - uses: actions/checkout@v4
+
+    # 1. Download current run artifacts
+    - name: 📥 Download Current Test Results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: test-results-*
+        path: current_results
+        merge-multiple: true
+
+    # 2. Checkout or create the test-results branch to access history
+    - name: 📚 Checkout History
+      run: |
+        git fetch origin test-results:test-results || true
+        if git show-ref --verify --quiet refs/heads/test-results; then
+          git clone --branch test-results --single-branch https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git test-history
+        else
+          echo "Branch test-results does not exist. Creating empty directory."
+          mkdir test-history
+          cd test-history
+          git init
+          git checkout -b test-results
+          # Need to setup remote if we want to push later, but clone handles it better.
+          # For init, we need to add remote.
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        fi
+      # Using manual git commands instead of actions/checkout to handle "branch doesn't exist" gracefully without failing the job
+
+    # 3. Organize data
+    - name: 🗃️ Organize Data
+      run: |
+        mkdir -p test-history/history/${{ github.run_id }}
+        cp current_results/*.xml test-history/history/${{ github.run_id }}/
+
+        # Ensure we have the script available (it was checked out in step 1 from main)
+        cp scripts/analyze_flaky_tests.py .
+
+    # 4. Analyze
+    - name: 📊 Analyze Test Results
+      run: |
+        # Analyze the entire history folder
+        python3 analyze_flaky_tests.py test-history/history --output flaky-report.md
+        cat flaky-report.md >> $GITHUB_STEP_SUMMARY
+
+    # 5. Comment PR using github-script
+    - name: 💬 Comment PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('flaky-report.md', 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: report
+          })
+
+    # 6. Push updated history back to test-results branch
+    - name: 💾 Save History
+      if: github.ref == 'refs/heads/main' # Only push history on main branch builds
+      working-directory: test-history
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add .
+        git commit -m "Add test results for run ${{ github.run_id }}"
+        git push origin test-results
