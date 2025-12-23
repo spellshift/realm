@@ -11,7 +11,7 @@ use std::process::Command;
 
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
-    nix::sys::wait::wait,
+    nix::sys::wait::waitpid,
     nix::unistd::{fork, setsid, ForkResult},
     std::process::{exit, Stdio},
 };
@@ -84,7 +84,7 @@ fn handle_exec(
                     return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
                 }
 
-                let _ = wait();
+                let _ = waitpid(child, None);
 
                 Ok(CommandOutput {
                     stdout: "".to_string(),
