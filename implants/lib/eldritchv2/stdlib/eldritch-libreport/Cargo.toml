@@ -1,0 +1,16 @@
+[package]
+name = "eldritch-libreport"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch-agent = { workspace = true, optional = true }
+pb = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["rwlock"] }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:pb", "dep:eldritch-agent"]
+fake_bindings = []

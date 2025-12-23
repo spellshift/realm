@@ -1,0 +1,27 @@
+[package]
+name = "eldritch-core"
+version = "0.3.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+no_std = []
+std = []
+
+[dependencies]
+spin = { workspace = true, features = ["mutex", "spin_mutex", "rwlock"] }
+libm = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "interpreter"
+harness = false
+
+[[bench]]
+name = "builtins"
+harness = false
