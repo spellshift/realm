@@ -7,15 +7,10 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
-🚨 **DEPRECATION WARNING:** Eldritch v1 will soon be deprecated and replaced with v2 🚨
-
-
 Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
 By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
-
-Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
 **Trying to create a tome? Check out the guide in [Golem](/user-guide/golem).**
 
@@ -124,38 +119,38 @@ for user_home_dir in file.list("/home/"):
 
 ## Agent
 
-### agent._terminate_this_process_clowntown (V2-Only)
+### agent._terminate_this_process_clowntown
 
 `agent._terminate_this_process_clowntown() -> None`
 
 > [!CAUTION]
 > **DANGER**: The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
-### agent.get_config (V2-Only)
+### agent.get_config
 
 `agent.get_config() -> Dict<str, Value>`
 
 The **agent.get_config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
 
-### agent.get_transport (V2-Only)
+### agent.get_transport
 
 `agent.get_transport() -> str`
 
 The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc").
 
-### agent.list_transports (V2-Only)
+### agent.list_transports
 
 `agent.list_transports() -> List<str>`
 
 The **agent.list_transports** method returns a list of available transport names supported by the agent.
 
-### agent.get_callback_interval (V2-Only)
+### agent.get_callback_interval
 
 `agent.get_callback_interval() -> int`
 
 The **agent.get_callback_interval** method returns the current callback interval in seconds.
 
-### agent.list_tasks (V2-Only)
+### agent.list_tasks
 
 `agent.list_tasks() -> List<Dict>`
 
@@ -166,7 +161,7 @@ The **agent.list_tasks** method returns a list of dictionaries representing the 
 [{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
 ```
 
-### agent.stop_task (V2-Only)
+### agent.stop_task
 
 `agent.stop_task(task_id: int) -> None`
 
@@ -233,6 +228,18 @@ The <b>assets.read</b> method returns a UTF-8 string representation of the asset
 ---
 
 ## Crypto
+
+### crypto.aes_decrypt
+
+`crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
+
+The <b>crypto.aes_decrypt</b> method decrypts the given data using AES (CBC mode). The key must be 16, 24, or 32 bytes, and the IV must be 16 bytes.
+
+### crypto.aes_encrypt
+
+`crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
+
+The <b>crypto.aes_encrypt</b> method encrypts the given data using AES (CBC mode). The key must be 16, 24, or 32 bytes, and the IV must be 16 bytes.
 
 ### crypto.aes_decrypt_file
 
@@ -311,6 +318,24 @@ The <b>crypto.to_json</b> method converts given type to JSON text.
 crypto.to_json({"foo": "bar"})
 "{\"foo\":\"bar\"}"
 ```
+
+### crypto.md5
+
+`crypto.md5(data: Bytes) -> str`
+
+The <b>crypto.md5</b> method calculates the MD5 hash of the provided data and returns it as a hexadecimal string.
+
+### crypto.sha1
+
+`crypto.sha1(data: Bytes) -> str`
+
+The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided data and returns it as a hexadecimal string.
+
+### crypto.sha256
+
+`crypto.sha256(data: Bytes) -> str`
+
+The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data and returns it as a hexadecimal string.
 
 ### crypto.hash_file
 
@@ -443,11 +468,11 @@ Here is an example of the Dict layout:
 
 The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
-### file.moveto
+### file.move
 
-`file.moveto(src: str, dst: str) -> None`
+`file.move(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.move</b> method moves or renames a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
@@ -516,9 +541,9 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 ### file.timestomp
 
-`file.timestomp(src: str, dst: str) -> None`
+`file.timestomp(path: str, mtime: Option<Value>, atime: Option<Value>, ctime: Option<Value>, ref_file: Option<str>) -> None`
 
-Unimplemented.
+The <b>file.timestomp</b> method modifies the timestamps of a file. It can update the modification time (`mtime`), access time (`atime`), and creation time (`ctime`) to specific values (epoch integer or string). Alternatively, if `ref_file` is provided, the timestamps from that file will be copied to `path`.
 
 ### file.write
 
@@ -554,15 +579,15 @@ The <b>http.download</b> method downloads a file at the URI specified in `uri` t
 
 ### http.get
 
-`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> Dict`
 
-The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`. It returns a dictionary containing the `status_code` (int), `body` (Bytes), and `headers` (Dict). Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
-`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> Dict`
 
-The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`. It returns a dictionary containing the `status_code` (int), `body` (Bytes), and `headers` (Dict). Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
 ---
 
@@ -598,12 +623,6 @@ $> pivot.arp_scan(["192.168.1.1/32"])
 []
 ```
 
-### pivot.bind_proxy
-
-`pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
-
-The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
-
 ### pivot.ncat
 
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
@@ -612,15 +631,9 @@ The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP t
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
-### pivot.port_forward
-
-`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
-
-The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
-
 ### pivot.port_scan
 
-`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int) -> List<str>`
+`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<str>`
 
 The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.
 Inputs:
@@ -629,6 +642,7 @@ Inputs:
 - `ports` can be a list of any number of integers between 1 and 65535.
 - `protocol` must be: `tcp` or `udp`. These are the only supported options.
 - `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
+- `fd_limit` is the optional limit on concurrent file descriptors (defaults to 64).
 
 Results will be in the format:
 
@@ -661,11 +675,11 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
-### pivot.smb_exec
+### pivot.reverse_shell_repl
 
-`pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
+`pivot.reverse_shell_repl() -> None`
 
-The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
+The **pivot.reverse_shell_repl** method spawns a generic Eldritch REPL reverse shell over the agent's current transport. This is useful when a PTY cannot be spawned.
 
 ### pivot.ssh_copy
 
@@ -808,6 +822,12 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.bytes
+
+`random.bytes(len: int) -> List<int>`
+
+The <b>random.bytes</b> method returns a list of random bytes of the specified length.
+
 ### random.int
 
 `random.int(min: i32, max: i32) -> i32`
@@ -818,6 +838,12 @@ The <b>random.int</b> method returns randomly generated integer value between a 
 
 `random.string(length: uint, charset: Optional<str>) -> str`
 The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
+### random.uuid
+
+`random.uuid() -> str`
+
+The <b>random.uuid</b> method returns a randomly generated UUID (v4).
 
 ---
 
@@ -902,12 +928,13 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
+The `input` parameter allows you to pass a string to the process's stdin.
 
 ```python
 sys.exec("/bin/bash",["-c", "whoami"])
@@ -1233,6 +1260,6 @@ The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This
 
 ### time.sleep
 
-`time.sleep(secs: float)`
+`time.sleep(secs: int)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.
