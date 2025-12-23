@@ -1,79 +1,41 @@
 use anyhow::Result;
 use starlark::values::{dict::Dict, Heap};
 
-const UNKNOWN: &str = "UNKNOWN";
+#[cfg(target_os = "freebsd")]
+pub fn netstat(_: &Heap) -> Result<Vec<Dict>> {
+    Err(anyhow::anyhow!("Not implemented for FreeBSD"))
+}
 
+#[cfg(not(target_os = "freebsd"))]
 pub fn netstat(starlark_heap: &'_ Heap) -> Result<Vec<Dict<'_>>> {
     use super::super::insert_dict_kv;
     use starlark::{collections::SmallMap, const_frozen_string, values::Value};
 
-    let entries = netstat::netstat()?;
     let mut out: Vec<Dict> = Vec::new();
 
-    for entry in entries {
-        let map: SmallMap<Value, Value> = SmallMap::new();
-        let mut dict = Dict::new(map);
-
-        // socket_type: "TCP" | "UDP"
-        insert_dict_kv!(
-            dict,
-            starlark_heap,
-            "socket_type",
-            entry.socket_type.to_string(),
-            String
-        );
-
-        // local_address
-        insert_dict_kv!(
-            dict,
-            starlark_heap,
-            "local_address",
-            entry.local_address.to_string(),
-            String
-        );
-
-        // local_port
-        insert_dict_kv!(
-            dict,
-            starlark_heap,
-            "local_port",
-            entry.local_port as u32,
-            u32
-        );
-
-        // remote_address: IP or "UNKNOWN"
-        let remote_addr = entry
-            .remote_address
-            .map(|ip| ip.to_string())
-            .unwrap_or_else(|| UNKNOWN.to_string());
-        insert_dict_kv!(dict, starlark_heap, "remote_address", remote_addr, String);
-
-        // remote_port: u16
-        insert_dict_kv!(
-            dict,
-            starlark_heap,
-            "remote_port",
-            entry.remote_port as u32,
-            u32
-        );
-
-        // connection_state: "ESTABLISHED" | "LISTEN" | ... | "UNKNOWN"
-        insert_dict_kv!(
-            dict,
-            starlark_heap,
-            "connection_state",
-            entry.connection_state.to_string(),
-            String
-        );
-
-        // pid: u32
-        insert_dict_kv!(dict, starlark_heap, "pid", entry.pid, u32);
-
-        // process_name: "node" | "UNKNOWN"
-        let proc_name = entry.process_name.unwrap_or_else(|| UNKNOWN.to_string());
-        insert_dict_kv!(dict, starlark_heap, "process_name", proc_name, String);
-
-        out.push(dict);
+    if let Ok(listeners) = listeners::get_all() {
+        for l in listeners {
+            let map: SmallMap<Value, Value> = SmallMap::new();
+            // Create Dict type.
+            let mut dict = Dict::new(map);
+            insert_dict_kv!(dict, starlark_heap, "socket_type", "TCP", String);
+            insert_dict_kv!(
+                dict,
+                starlark_heap,
+                "local_address",
+                l.socket.ip().to_string(),
+                String
+            );
+            insert_dict_kv!(
+                dict,
+                starlark_heap,
+                "local_port",
+                l.socket.port() as u32,
+                u32
+            );
+            insert_dict_kv!(dict, starlark_heap, "pid", l.process.pid, u32);
+            out.push(dict);
+        }
     }
 
     Ok(out)
@@ -91,7 +53,7 @@ mod tests {
     use tokio::task;
 
     async fn local_bind_tcp() -> TcpListener {
-        // Try to bind to a random port
+        // Try three times to bind to a port
         TcpListener::bind("127.0.0.1:0").await.unwrap()
     }
 
@@ -114,116 +76,45 @@ mod tests {
     async fn test_netstat() -> Result<()> {
         let heap = Heap::new();
         let listener = local_bind_tcp().await;
-        let test_port: u32 = listener.local_addr()?.port().into();
+        let test_port: i32 = listener.local_addr()?.port().into();
         let _listen_task = task::spawn(local_accept_tcp(listener));
         let res = netstat(&heap)?;
-        let real_pid = id();
-
+        let real_pid = id() as i32;
         for socket in res {
-            let socket_type = socket
-                .get(const_frozen_string!("socket_type").to_value())
-                .unwrap()
-                .and_then(|val| val.unpack_str());
-
-            if socket_type != Some("TCP") {
+            if Some(Some("TCP"))
+                != socket
+                    .get(const_frozen_string!("socket_type").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_str())
+            {
                 continue;
             }
-
-            let local_addr = socket
-                .get(const_frozen_string!("local_address").to_value())
-                .unwrap()
-                .and_then(|val| val.unpack_str());
-
-            if local_addr != Some("127.0.0.1") {
+            if Some(Some("127.0.0.1"))
+                != socket
+                    .get(const_frozen_string!("local_address").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_str())
+            {
                 continue;
             }
-
-            let local_port = socket
-                .get(const_frozen_string!("local_port").to_value())
-                .unwrap()
-                .and_then(|val| val.unpack_i32());
-
-            if local_port != Some(test_port as i32) {
+            if Some(Some(test_port))
+                != socket
+                    .get(const_frozen_string!("local_port").to_value())
+                    .unwrap()
+                    .map(|val| val.unpack_i32())
+            {
                 continue;
             }
-
-            let pid = socket
+            if let Some(Some(pid)) = socket
                 .get(const_frozen_string!("pid").to_value())
                 .unwrap()
-                .and_then(|val| val.unpack_i32());
-
-            // Verify all required fields are present
-            assert!(socket
-                .get(const_frozen_string!("remote_address").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("remote_port").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("connection_state").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("process_name").to_value())
-                .unwrap()
-                .is_some());
-
-            // If we can get the PID, it should match ours
-            if let Some(socket_pid) = pid {
-                if socket_pid == real_pid as i32 {
+                .map(|val| val.unpack_i32())
+            {
+                if pid == real_pid {
                     return Ok(());
                 }
             }
         }
-
-        Err(anyhow::anyhow!(
-            "Failed to find our test socket in netstat results"
-        ))
-    }
-
-    #[tokio::test]
-    async fn test_netstat_all_fields_present() -> Result<()> {
-        let heap = Heap::new();
-        let res = netstat(&heap)?;
-
-        // Verify every entry has all required fields
-        for socket in res {
-            assert!(socket
-                .get(const_frozen_string!("socket_type").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("local_address").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("local_port").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("remote_address").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("remote_port").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("connection_state").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("pid").to_value())
-                .unwrap()
-                .is_some());
-            assert!(socket
-                .get(const_frozen_string!("process_name").to_value())
-                .unwrap()
-                .is_some());
-        }
-
-        Ok(())
+        Err(anyhow::anyhow!("Failed to find socket"))
     }
 }

@@ -12,6 +12,7 @@ use {
     std::os::windows::ffi::{OsStrExt, OsStringExt},
     std::path::Path,
     std::{slice, str},
+    windows_sys::Win32::System::Memory::LocalFree,
     windows_sys::Win32::UI::Shell::CommandLineToArgvW,
 };
 
@@ -59,7 +60,8 @@ pub fn to_argv(command_line: &str) -> Vec<OsString> {
         for i in 0..argc {
             argv.push(os_string_from_wide_ptr(*args.offset(i as isize)));
         }
-        // Does args need to be free'd manually here?p
+
+        LocalFree(args as isize);
     }
     argv
 }
