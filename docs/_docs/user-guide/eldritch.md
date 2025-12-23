@@ -7,10 +7,14 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
+🚨 **DEPRECATION WARNING:** Eldritch v1 will soon be deprecated and replaced with v2 🚨
+
 Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
 By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
+
+Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
 **Trying to create a tome? Check out the guide in [Golem](/user-guide/golem).**
 
@@ -908,7 +912,7 @@ The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
 
-### sys.exec (V2-Only)
+### sys.exec
 
 `sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
@@ -916,7 +920,7 @@ The <b>sys.exec</b> method executes a program specified with `path` and passes t
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
-The `input` parameter allows you to pass a string to the process's stdin.
+The `input` parameter (V2-Only) allows you to pass a string to the process's stdin.
 
 ```python
 sys.exec("/bin/bash",["-c", "whoami"])
