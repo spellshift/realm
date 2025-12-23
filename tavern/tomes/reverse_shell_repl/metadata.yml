@@ -1,0 +1,5 @@
+name: Reverse Shell REPL
+description: Spawn a reverse shell using the configured Agent transport (e.g. gRPC) that will provide an interactive Eldritch REPL shell.
+author: kcarretto
+support_model: FIRST_PARTY
+tactic: EXECUTION

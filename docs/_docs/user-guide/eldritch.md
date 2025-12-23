@@ -7,6 +7,9 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
+🚨 **DEPRECATION WARNING:** Eldritch v1 will soon be deprecated and replaced with v2 🚨
+
+
 Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
@@ -121,14 +124,54 @@ for user_home_dir in file.list("/home/"):
 
 ## Agent
 
-### agent.eval
+### agent._terminate_this_process_clowntown (V2-Only)
 
-`agent.eval(script: str) -> None`
+`agent._terminate_this_process_clowntown() -> None`
 
-The <b>agent.eval</b> method takes an arbitrary eldritch payload string and
-executes it in the runtime environment of the executing tome. This means that
-any `print`s or `eprint`s or output from the script will be merged with that
-of the broader tome.
+> [!CAUTION]
+> **DANGER**: The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
+
+### agent.get_config (V2-Only)
+
+`agent.get_config() -> Dict<str, Value>`
+
+The **agent.get_config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
+
+### agent.get_transport (V2-Only)
+
+`agent.get_transport() -> str`
+
+The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc").
+
+### agent.list_transports (V2-Only)
+
+`agent.list_transports() -> List<str>`
+
+The **agent.list_transports** method returns a list of available transport names supported by the agent.
+
+### agent.get_callback_interval (V2-Only)
+
+`agent.get_callback_interval() -> int`
+
+The **agent.get_callback_interval** method returns the current callback interval in seconds.
+
+### agent.list_tasks (V2-Only)
+
+`agent.list_tasks() -> List<Dict>`
+
+The **agent.list_tasks** method returns a list of dictionaries representing the currently running or queued background tasks on the agent. Each dictionary contains task metadata and status.
+
+```python
+>>> agent.list_tasks()
+[{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
+```
+
+### agent.stop_task (V2-Only)
+
+`agent.stop_task(task_id: int) -> None`
+
+The **agent.stop_task** method stops a specific background task by its ID. If the task cannot be stopped or does not exist, the method will error.
+
 
 ### agent.set_callback_interval
 

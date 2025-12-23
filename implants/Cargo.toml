@@ -1,11 +1,31 @@
 [workspace]
 members = [
     "imix",
+    "imixv2",
     "golem",
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
     "lib/host_unique",
+    "lib/eldritchv2/eldritch-core",
+    "lib/eldritchv2/eldritch-macros",
+    "lib/eldritchv2/eldritch-repl",
+    "lib/eldritchv2/eldritch-agent",
+    "lib/eldritchv2/stdlib/eldritch-libagent",
+    "lib/eldritchv2/stdlib/eldritch-libassets",
+    "lib/eldritchv2/stdlib/eldritch-libcrypto",
+    "lib/eldritchv2/stdlib/eldritch-libfile",
+    "lib/eldritchv2/stdlib/eldritch-libhttp",
+    "lib/eldritchv2/stdlib/eldritch-libpivot",
+    "lib/eldritchv2/stdlib/eldritch-libprocess",
+    "lib/eldritchv2/stdlib/eldritch-librandom",
+    "lib/eldritchv2/stdlib/eldritch-libregex",
+    "lib/eldritchv2/stdlib/eldritch-libreport",
+    "lib/eldritchv2/stdlib/eldritch-libsys",
+    "lib/eldritchv2/stdlib/eldritch-libtime",
+    "lib/eldritchv2/stdlib/tests",
+    "lib/eldritchv2/stdlib/migration",
+    "lib/eldritchv2/eldritchv2",
 ]
 resolver = "2"
 
@@ -14,6 +34,25 @@ transport = { path = "./lib/transport" }
 eldritch = { path = "./lib/eldritch" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
+
+# Eldritch V2
+eldritch-core = {path = "lib/eldritchv2/eldritch-core", default-features = false }
+eldritch-macros = {path = "lib/eldritchv2/eldritch-macros", default-features = false}
+eldritch-repl = {path = "lib/eldritchv2/eldritch-repl", default-features = false}
+eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
+eldritch-agent = {path = "lib/eldritchv2/eldritch-agent"}
+eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
+eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
+eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
+eldritch-libfile = {path = "lib/eldritchv2/stdlib/eldritch-libfile",default-features = false }
+eldritch-libhttp = {path = "lib/eldritchv2/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libpivot = {path = "lib/eldritchv2/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libprocess = {path = "lib/eldritchv2/stdlib/eldritch-libprocess",default-features = false }
+eldritch-librandom = {path = "lib/eldritchv2/stdlib/eldritch-librandom", default-features = false }
+eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-features = false }
+eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
+eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
 
 aes = "0.8.3"
 allocative = "0.3.2"
@@ -26,6 +65,7 @@ base64 = "0.21.4"
 chrono = "0.4.34"
 const-decoder = "0.3.0"
 clap = "3.2.23"
+criterion = "0.5"
 netdev = "0.33.0"
 derive_more = "=0.99.17"
 eval = "0.4.3"
@@ -39,6 +79,7 @@ httptest = "0.15.4"
 hyper = { version = "1", features = ["full"] }
 ipnetwork = "0.20.0"
 itertools = "0.10"
+libm = "0.2.15"
 listeners = "0.2"
 lsp-types = "0.93.0"
 log = "0.4.20"
@@ -67,6 +108,7 @@ serde_json = "1.0.87"
 sha1 = "0.10.5"
 sha2 = "0.10.7"
 sha256 = { version = "1.0.3", default-features = false }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
 starlark = "0.12.0"
 starlark_derive = "0.12.0"
 structopt = "0.3.23"
@@ -93,7 +135,8 @@ chacha20poly1305 = "0.10.1"
 bytes = "1.6.0"
 x25519-dalek = "2.0.1"
 lru = "0.16.0"
-
+crossterm = "0.27"
+futures = "0.3"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
