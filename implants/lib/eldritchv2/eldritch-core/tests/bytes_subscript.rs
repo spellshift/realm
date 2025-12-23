@@ -1,4 +1,3 @@
-
 use eldritch_core::{Interpreter, Value};
 
 #[test]
