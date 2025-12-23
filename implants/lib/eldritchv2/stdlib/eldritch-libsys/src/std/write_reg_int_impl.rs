@@ -152,7 +152,7 @@ mod tests {
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
-            assert_eq!(val2.bytes, 12345678u64.to_le_bytes().to_vec());
+            assert_eq!(val2.bytes, 12345678u32.to_le_bytes().to_vec());
 
             //delete temp regkey
             hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
@@ -312,7 +312,7 @@ mod tests {
             hkcu = RegKey::predef(HKEY_CURRENT_USER);
             subky = hkcu.open_subkey(format!("SOFTWARE\\{}", id))?;
             val2 = subky.get_raw_value("FOO2")?;
-            assert_eq!(val2.bytes, 12345678u32.to_le_bytes().to_vec());
+            assert_eq!(val2.bytes, 12345678u64.to_le_bytes().to_vec());
 
             //delete temp regkey
             hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
