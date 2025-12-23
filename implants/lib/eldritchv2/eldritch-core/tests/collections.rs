@@ -113,6 +113,64 @@ fn test_dict_methods() {
 }
 
 #[test]
+fn test_dict_clear_pop_setdefault() {
+    // Test clear()
+    assert::pass(
+        r#"
+        d = {"a": 1, "b": 2}
+        d.clear()
+        assert_eq(len(d), 0)
+        assert_eq(d, {})
+        d.clear() # Should be fine on empty dict
+        assert_eq(len(d), 0)
+    "#,
+    );
+
+    // Test pop()
+    assert::pass(
+        r#"
+        d = {"a": 1, "b": 2}
+        val = d.pop("a")
+        assert_eq(val, 1)
+        assert_eq(d, {"b": 2})
+
+        # Pop with default
+        val = d.pop("z", 999)
+        assert_eq(val, 999)
+        assert_eq(d, {"b": 2}) # Should not modify
+    "#,
+    );
+
+    // Test pop() errors
+    assert::fail("d = {}; d.pop('a')", "KeyError: a");
+    assert::fail(
+        "d = {'a': 1}; d.pop()",
+        "TypeError: pop() takes between 1 and 2 arguments",
+    );
+
+    // Test setdefault()
+    assert::pass(
+        r#"
+        d = {"a": 1}
+        # Existing key
+        val = d.setdefault("a", 2)
+        assert_eq(val, 1)
+        assert_eq(d["a"], 1)
+
+        # New key with default
+        val = d.setdefault("b", 2)
+        assert_eq(val, 2)
+        assert_eq(d["b"], 2)
+
+        # New key without default (should be None)
+        val = d.setdefault("c")
+        assert_eq(val, None)
+        assert_eq(d["c"], None)
+    "#,
+    );
+}
+
+#[test]
 fn test_sets() {
     assert::pass(
         r#"

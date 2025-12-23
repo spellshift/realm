@@ -3,7 +3,6 @@ extern crate alloc;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
@@ -19,30 +18,35 @@ pub mod std;
 /// It supports:
 /// - GET and POST requests.
 /// - File downloading.
-/// - Custom headers.
-///
-/// **Note**: TLS validation behavior depends on the underlying agent configuration and may not be exposed per-request in this version of the library (unlike v1 which had `allow_insecure` arg).
+/// - Custom headers and query parameters.
 pub trait HttpLibrary {
     #[eldritch_method]
     /// Downloads a file from a URL to a local path.
     ///
     /// **Parameters**
-    /// - `url` (`str`): The URL to download from.
-    /// - `path` (`str`): The local destination path.
-    /// - `insecure` (`Option<bool>`): If true, ignore SSL certificate verification (insecure).
+    /// - `uri` (`str`): The URL to download from.
+    /// - `dst` (`str`): The local destination path.
+    /// - `allow_insecure` (`Option<bool>`): If true, ignore SSL certificate verification.
     /// **Returns**
     /// - `None`
     ///
     /// **Errors**
     /// - Returns an error string if the download fails.
-    fn download(&self, url: String, path: String, insecure: Option<bool>) -> Result<(), String>;
+    fn download(
+        &self,
+        uri: String,
+        dst: String,
+        allow_insecure: Option<bool>,
+    ) -> Result<(), String>;
 
     #[eldritch_method]
     /// Performs an HTTP GET request.
     ///
     /// **Parameters**
-    /// - `url` (`str`): The target URL.
+    /// - `uri` (`str`): The target URL.
+    /// - `query_params` (`Option<Dict<str, str>>`): Optional query parameters.
     /// - `headers` (`Option<Dict<str, str>>`): Optional custom HTTP headers.
+    /// - `allow_insecure` (`Option<bool>`): If true, ignore SSL certificate verification.
     ///
     /// **Returns**
     /// - `Dict`: A dictionary containing the response:
@@ -54,17 +58,21 @@ pub trait HttpLibrary {
     /// - Returns an error string if the request fails.
     fn get(
         &self,
-        url: String,
+        uri: String,
+        query_params: Option<BTreeMap<String, String>>,
         headers: Option<BTreeMap<String, String>>,
+        allow_insecure: Option<bool>,
     ) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
     /// Performs an HTTP POST request.
     ///
     /// **Parameters**
-    /// - `url` (`str`): The target URL.
-    /// - `body` (`Option<Bytes>`): The request body.
+    /// - `uri` (`str`): The target URL.
+    /// - `body` (`Option<str>`): The request body.
+    /// - `form` (`Option<Dict<str, str>>`): Form data (application/x-www-form-urlencoded).
     /// - `headers` (`Option<Dict<str, str>>`): Optional custom HTTP headers.
+    /// - `allow_insecure` (`Option<bool>`): If true, ignore SSL certificate verification.
     ///
     /// **Returns**
     /// - `Dict`: A dictionary containing the response:
@@ -76,8 +84,10 @@ pub trait HttpLibrary {
     /// - Returns an error string if the request fails.
     fn post(
         &self,
-        url: String,
-        body: Option<Vec<u8>>,
+        uri: String,
+        body: Option<String>,
+        form: Option<BTreeMap<String, String>>,
         headers: Option<BTreeMap<String, String>>,
+        allow_insecure: Option<bool>,
     ) -> Result<BTreeMap<String, Value>, String>;
 }

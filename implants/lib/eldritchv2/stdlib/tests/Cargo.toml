@@ -4,7 +4,7 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-eldritchv2 = { workspace = true, features = ["fake_bindings"] }
+eldritchv2 = { workspace = true, features = ["fake_bindings", "stdlib"] }
 eldritch-core = { workspace = true, default-features = false }
 anyhow = { workspace = true }
 glob = { workspace = true }

@@ -7,7 +7,6 @@ extern crate std;
 
 // Re-exports from eldritch-stdlib
 pub use eldritch_libagent as agent;
-#[cfg(feature = "stdlib")]
 pub use eldritch_libassets as assets;
 pub use eldritch_libcrypto as crypto;
 pub use eldritch_libfile as file;

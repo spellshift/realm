@@ -2,7 +2,6 @@ use super::HttpLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use spin::RwLock;
@@ -12,20 +11,27 @@ use spin::RwLock;
 pub struct HttpLibraryFake;
 
 impl HttpLibrary for HttpLibraryFake {
-    fn download(&self, _url: String, _path: String, _insecure: Option<bool>) -> Result<(), String> {
+    fn download(
+        &self,
+        _uri: String,
+        _dst: String,
+        _allow_insecure: Option<bool>,
+    ) -> Result<(), String> {
         Ok(())
     }
 
     fn get(
         &self,
-        url: String,
+        uri: String,
+        _query_params: Option<BTreeMap<String, String>>,
         _headers: Option<BTreeMap<String, String>>,
+        _allow_insecure: Option<bool>,
     ) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("status_code".into(), Value::Int(200));
         map.insert(
             "body".into(),
-            Value::Bytes(format!("Mock GET response from {}", url).into_bytes()),
+            Value::Bytes(format!("Mock GET response from {}", uri).into_bytes()),
         );
 
         // Mock headers
@@ -44,9 +50,11 @@ impl HttpLibrary for HttpLibraryFake {
 
     fn post(
         &self,
-        url: String,
-        body: Option<Vec<u8>>,
+        uri: String,
+        body: Option<String>,
+        _form: Option<BTreeMap<String, String>>,
         _headers: Option<BTreeMap<String, String>>,
+        _allow_insecure: Option<bool>,
     ) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("status_code".into(), Value::Int(201));
@@ -56,7 +64,7 @@ impl HttpLibrary for HttpLibraryFake {
             Value::Bytes(
                 format!(
                     "Mock POST response from {}, received {} bytes",
-                    url, body_len
+                    uri, body_len
                 )
                 .into_bytes(),
             ),
@@ -84,7 +92,9 @@ mod tests {
     #[test]
     fn test_http_fake_get() {
         let http = HttpLibraryFake;
-        let resp = http.get("http://example.com".into(), None).unwrap();
+        let resp = http
+            .get("http://example.com".into(), None, None, None)
+            .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(200));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
             assert_eq!(
@@ -100,7 +110,13 @@ mod tests {
     fn test_http_fake_post() {
         let http = HttpLibraryFake;
         let resp = http
-            .post("http://example.com".into(), Some(vec![1, 2, 3]), None)
+            .post(
+                "http://example.com".into(),
+                Some("abc".into()),
+                None,
+                None,
+                None,
+            )
             .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(201));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
