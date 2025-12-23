@@ -99,16 +99,17 @@ jobs:
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
-      # nextest outputting JUnit, then we convert to CTRF.
-      # Note: We use -- before --junit-path to ensure it is passed to nextest, not consumed by llvm-cov.
+      # nextest configured via nextest.toml to output junit.xml
       run: |
         cd ./implants/ &&
         cargo fmt --check &&
-        cargo llvm-cov nextest --lcov --output-path lcov.info -- --junit-path junit-implants-${{ matrix.os }}.xml
+        cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF
       if: always()
       run: |
         cd ./implants/
+        # Move junit report if it exists
+        mv junit.xml junit-implants-${{ matrix.os }}.xml || echo "No JUnit report generated"
         npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
