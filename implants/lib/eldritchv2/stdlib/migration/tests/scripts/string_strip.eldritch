@@ -1,0 +1,21 @@
+# Test strip, lstrip, and rstrip with optional arguments
+assert_eq("  abc  ".strip(), "abc")
+assert_eq("xxabcxx".strip("x"), "abc")
+assert_eq("xyabcxy".strip("xy"), "abc")
+
+assert_eq("  abc  ".lstrip(), "abc  ")
+assert_eq("xxabcxx".lstrip("x"), "abcxx")
+
+assert_eq("  abc  ".rstrip(), "  abc")
+assert_eq("xxabcxx".rstrip("x"), "xxabc")
+assert_eq("test><><".rstrip("<>"), "test")
+
+# Mixed characters
+assert_eq("123abc123".strip("123"), "abc")
+assert_eq("123abc123".lstrip("123"), "abc123")
+assert_eq("123abc123".rstrip("123"), "123abc")
+
+# Empty args
+assert_eq("".strip(), "")
+assert_eq("".strip("a"), "")
+assert_eq("a".strip("a"), "")

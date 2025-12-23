@@ -1,0 +1,44 @@
+[package]
+name = "eldritch-libsys"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+anyhow = { workspace = true }
+sysinfo = { workspace = true, optional = true }
+whoami = { workspace = true, optional = true }
+local-ip-address = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+
+[target.'cfg(unix)'.dependencies]
+nix = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+winreg = { workspace = true }
+object = { workspace = true }
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_Security",
+    "Win32_System_SystemInformation",
+    "Win32_System_SystemServices",
+    "Win32_UI_Shell",
+] }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:sysinfo", "dep:whoami", "dep:local-ip-address", "dep:hex"]
+fake_bindings = []
+
+[dev-dependencies]
+uuid = { version = "1.0", features = ["v4"] }
+tempfile = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }
