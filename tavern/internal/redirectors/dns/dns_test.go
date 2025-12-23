@@ -1,7 +1,6 @@
 package dns_test
 
 import (
-	"context"
 	"net"
 	"testing"
 	"time"
@@ -200,8 +199,6 @@ func TestCleanupConversations(t *testing.T) {
 	_, ok = r.GetConversation(freshConvID)
 	assert.True(t, ok, "fresh conversation should remain")
 }
-
-
 
 // stubUpstream provides a minimal gRPC server for testing
 type stubUpstream struct {

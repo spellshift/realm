@@ -217,7 +217,13 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 
 	domain = strings.ToLower(domain)
-	slog.Debug("received DNS query", "domain", domain, "query_type", queryType, "from", addr.String())
+
+	// Log ALL queries to track Cloudflare filtering patterns
+	if queryType == txtRecordType {
+		slog.Info("TXT query received", "domain", domain, "from", addr.String())
+	} else {
+		slog.Debug("received DNS query", "domain", domain, "query_type", queryType, "from", addr.String())
+	}
 
 	// Extract subdomain
 	subdomain, err := r.extractSubdomain(domain)
@@ -230,7 +236,35 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	// Decode packet
 	packet, err := r.decodePacket(subdomain)
 	if err != nil {
-		slog.Debug("failed to decode packet", "error", err)
+		// Silently drop queries that fail to decode - likely legitimate DNS queries or probes
+		// Cloudflare forwards all queries under our zone, not just C2 traffic
+		slog.Debug("ignoring non-C2 query", "domain", domain, "error", err)
+
+		// For A record queries, return benign IP (127.0.0.1) instead of NXDOMAIN
+		// Cloudflare does recursive lookups on subdomain components - if we return NXDOMAIN
+		// for the parent subdomain, it won't forward the full TXT query for INIT packets
+		if queryType == aRecordType {
+			slog.Debug("returning benign A record for non-C2 subdomain", "domain", domain)
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, []byte{127, 0, 0, 1})
+			return
+		}
+
+		// For other types, return NXDOMAIN
+		r.sendErrorResponse(conn, addr, transactionID)
+		return
+	}
+
+	// Validate packet type before processing
+	if packet.Type == dnspb.PacketType_PACKET_TYPE_UNSPECIFIED {
+		// Invalid/empty packet - likely parsing artifact from random domain
+		slog.Debug("ignoring packet with unspecified type", "domain", domain)
+
+		// Return benign A record for A queries to satisfy Cloudflare recursive lookups
+		if queryType == aRecordType {
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, []byte{127, 0, 0, 1})
+			return
+		}
+
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
 	}
@@ -251,7 +285,8 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 
 	if err != nil {
-		slog.Error("failed to handle packet", "type", packet.Type, "error", err)
+		// Log as WARN since conversation-not-found is expected with UDP packet loss
+		slog.Warn("packet handling failed", "type", packet.Type, "conv_id", packet.ConversationId, "error", err)
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
 	}
@@ -371,15 +406,33 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 
 	r.conversations.Store(packet.ConversationId, conv)
 
-	slog.Debug("created conversation", "conv_id", conv.ID, "method", conv.MethodPath, "total_chunks", conv.TotalChunks)
+	slog.Info("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
+		"total_chunks", conv.TotalChunks, "data_size", initPayload.FileSize)
 
-	return []byte("ok"), nil
+	// Return empty STATUS packet (no ACKs/NACKs yet) to look like legitimate DNS data
+	// Don't return plain text "ok" which could trigger Cloudflare filters
+	statusPacket := &dnspb.DNSPacket{
+		Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
+		ConversationId: packet.ConversationId,
+		Acks:           []*dnspb.AckRange{},
+		Nacks:          []uint32{},
+	}
+	statusData, err := proto.Marshal(statusPacket)
+	if err != nil {
+		atomic.AddInt32(&r.conversationCount, -1)
+		r.conversations.Delete(packet.ConversationId)
+		return nil, fmt.Errorf("failed to marshal init status: %w", err)
+	}
+	return statusData, nil
 }
 
 // handleDataPacket processes DATA packet
 func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.ClientConn, packet *dnspb.DNSPacket, queryType uint16) ([]byte, error) {
 	val, ok := r.conversations.Load(packet.ConversationId)
 	if !ok {
+		// Log at debug - this is normal with UDP packet loss/reordering (INIT may arrive later)
+		slog.Debug("DATA packet for unknown conversation (INIT may be lost/delayed)",
+			"conv_id", packet.ConversationId, "seq", packet.Sequence)
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
 	}
 
@@ -401,7 +454,8 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 	// Check if conversation is complete and auto-process
 	if uint32(len(conv.Chunks)) == conv.TotalChunks && !conv.Completed {
 		conv.Completed = true
-		slog.Debug("conversation complete, processing request", "conv_id", conv.ID, "total_chunks", conv.TotalChunks)
+		slog.Info("C2 request complete, forwarding to upstream", "conv_id", conv.ID,
+			"method", conv.MethodPath, "total_chunks", conv.TotalChunks, "data_size", conv.ExpectedDataSize)
 
 		// Unlock before calling processCompletedConversation (it will re-lock)
 		conv.mu.Unlock()
@@ -575,8 +629,6 @@ func (r *Redirector) computeAcksNacks(conv *Conversation) ([]*dnspb.AckRange, []
 
 	return acks, nacks
 }
-
-
 
 // handleFetchPacket processes FETCH packet
 func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) {
