@@ -26,7 +26,8 @@ jobs:
         cache: true
     - name: 🔨 Install Tools
       run: |
-        go install gotest.tools/gotestsum@latest
+        # Pin gotestsum to v1.12.0 to support Go 1.23.4 (v1.13.0 requires Go 1.24)
+        go install gotest.tools/gotestsum@v1.12.0
         go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
