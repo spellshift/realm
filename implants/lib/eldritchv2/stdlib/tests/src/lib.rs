@@ -92,7 +92,7 @@ mod tests {
         let metadata_content = fs::read_to_string(metadata_path)?;
         let metadata: Metadata = serde_yaml::from_str(&metadata_content)?;
 
-        let code = fs::read_to_string(&eldritch_path)?;
+        let code = fs::read_to_string(&eldritch_path)?.replace("\r\n", "\n");
 
         let mut interp = Interpreter::new();
         register_fake_libs(&mut interp);
