@@ -28,18 +28,21 @@ jobs:
       run: |
         go install gotest.tools/gotestsum@latest
         go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
-        # Ensure GOPATH/bin is in PATH for subsequent steps
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
       # Use gotestsum for human-readable output to stdout, and capture JSON to file for reporting
       run: |
-        gotestsum --jsonfile test-output.json -- \
+        $(go env GOPATH)/bin/gotestsum --jsonfile test-output.json -- \
           -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 🔄 Convert to CTRF
       if: always() # Run even if tests fail so we report the failures
-      run: cat test-output.json | go-ctrf-json-reporter -o ctrf-tavern-${{ matrix.os }}.json
+      run: |
+        if [ -f test-output.json ]; then
+          cat test-output.json | $(go env GOPATH)/bin/go-ctrf-json-reporter -o ctrf-tavern-${{ matrix.os }}.json
+        else
+          echo "test-output.json not found, skipping CTRF conversion"
+        fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
@@ -116,7 +119,9 @@ jobs:
         cd ./implants/
         # Move junit report if it exists
         mv junit.xml junit-implants-${{ matrix.os }}.xml || echo "No JUnit report generated"
-        npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
+        if [ -f junit-implants-${{ matrix.os }}.xml ]; then
+          npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
+        fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
