@@ -28,6 +28,8 @@ jobs:
       run: |
         go install gotest.tools/gotestsum@latest
         go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
+        # Ensure GOPATH/bin is in PATH for subsequent steps
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
@@ -98,6 +100,10 @@ jobs:
       uses: taiki-e/install-action@v2
       with:
         tool: nextest,cargo-llvm-cov
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
     - name: 🔎 Run tests
       # nextest configured via nextest.toml to output junit.xml
       run: |
