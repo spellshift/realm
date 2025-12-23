@@ -119,38 +119,38 @@ for user_home_dir in file.list("/home/"):
 
 ## Agent
 
-### agent._terminate_this_process_clowntown
+### agent._terminate_this_process_clowntown (V2-Only)
 
 `agent._terminate_this_process_clowntown() -> None`
 
 > [!CAUTION]
 > **DANGER**: The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
-### agent.get_config
+### agent.get_config (V2-Only)
 
 `agent.get_config() -> Dict<str, Value>`
 
 The **agent.get_config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
 
-### agent.get_transport
+### agent.get_transport (V2-Only)
 
 `agent.get_transport() -> str`
 
 The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc").
 
-### agent.list_transports
+### agent.list_transports (V2-Only)
 
 `agent.list_transports() -> List<str>`
 
 The **agent.list_transports** method returns a list of available transport names supported by the agent.
 
-### agent.get_callback_interval
+### agent.get_callback_interval (V2-Only)
 
 `agent.get_callback_interval() -> int`
 
 The **agent.get_callback_interval** method returns the current callback interval in seconds.
 
-### agent.list_tasks
+### agent.list_tasks (V2-Only)
 
 `agent.list_tasks() -> List<Dict>`
 
@@ -161,7 +161,7 @@ The **agent.list_tasks** method returns a list of dictionaries representing the 
 [{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
 ```
 
-### agent.stop_task
+### agent.stop_task (V2-Only)
 
 `agent.stop_task(task_id: int) -> None`
 
@@ -229,13 +229,13 @@ The <b>assets.read</b> method returns a UTF-8 string representation of the asset
 
 ## Crypto
 
-### crypto.aes_decrypt
+### crypto.aes_decrypt (V2-Only)
 
 `crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 
 The <b>crypto.aes_decrypt</b> method decrypts the given data using AES (CBC mode). The key must be 16, 24, or 32 bytes, and the IV must be 16 bytes.
 
-### crypto.aes_encrypt
+### crypto.aes_encrypt (V2-Only)
 
 `crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 
@@ -318,24 +318,6 @@ The <b>crypto.to_json</b> method converts given type to JSON text.
 crypto.to_json({"foo": "bar"})
 "{\"foo\":\"bar\"}"
 ```
-
-### crypto.md5
-
-`crypto.md5(data: Bytes) -> str`
-
-The <b>crypto.md5</b> method calculates the MD5 hash of the provided data and returns it as a hexadecimal string.
-
-### crypto.sha1
-
-`crypto.sha1(data: Bytes) -> str`
-
-The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided data and returns it as a hexadecimal string.
-
-### crypto.sha256
-
-`crypto.sha256(data: Bytes) -> str`
-
-The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data and returns it as a hexadecimal string.
 
 ### crypto.hash_file
 
@@ -539,7 +521,7 @@ If the destination file doesn't exist it will be created (if the parent director
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
 
-### file.timestomp
+### file.timestomp (V2-Only)
 
 `file.timestomp(path: str, mtime: Option<Value>, atime: Option<Value>, ctime: Option<Value>, ref_file: Option<str>) -> None`
 
@@ -675,7 +657,7 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
-### pivot.reverse_shell_repl
+### pivot.reverse_shell_repl (V2-Only)
 
 `pivot.reverse_shell_repl() -> None`
 
@@ -822,7 +804,7 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
-### random.bytes
+### random.bytes (V2-Only)
 
 `random.bytes(len: int) -> List<int>`
 
@@ -839,7 +821,7 @@ The <b>random.int</b> method returns randomly generated integer value between a 
 `random.string(length: uint, charset: Optional<str>) -> str`
 The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
 
-### random.uuid
+### random.uuid (V2-Only)
 
 `random.uuid() -> str`
 
@@ -926,7 +908,7 @@ The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
 
-### sys.exec
+### sys.exec (V2-Only)
 
 `sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
