@@ -14,6 +14,11 @@ const MAX_LABEL_LENGTH: usize = 63;
 const MAX_DNS_NAME_LENGTH: usize = 253;
 const CONV_ID_LENGTH: usize = 8;
 
+// Async protocol configuration
+const SEND_WINDOW_SIZE: usize = 10;  // Packets in flight
+const MAX_RETRIES_PER_CHUNK: u32 = 3; // Max retries for a chunk
+const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB max data size
+
 // DNS resolver fallbacks
 const FALLBACK_DNS_SERVERS: &[&str] = &["1.1.1.1:53", "8.8.8.8:53"];
 
@@ -83,38 +88,40 @@ impl DNS {
     }
 
     /// Calculate maximum data size that will fit in DNS query
-    fn calculate_max_chunk_size(&self) -> usize {
+    fn calculate_max_chunk_size(&self, total_chunks: u32) -> usize {
         // DNS limit: total_length <= 253
-        // Format: <base32_labels>.<base_domain>
-        // total_length = encoded_length + num_dots + base_domain_length
-        // num_dots = ceil(encoded_length / 63) - 1 + 1 = ceil(encoded_length / 63)
+        // Format: <label1>.<label2>....<labelN>.<base_domain>
+        // total_length = encoded_length + ceil(encoded_length / 63) + base_domain_length
 
         let base_domain_len = self.base_domain.len();
+        let available = MAX_DNS_NAME_LENGTH.saturating_sub(base_domain_len);
 
-        // Available for encoded data and its dots
-        let available = MAX_DNS_NAME_LENGTH.saturating_sub(base_domain_len + 1); // +1 for dot before base_domain
+        // Calculate max encoded length where: encoded + ceil(encoded/63) <= available
+        // For n complete labels (63 chars each): n*63 + n = n*64
+        // So: floor(available / 64) * 63 gives us the safe amount
+        let complete_labels = available / 64;
+        let max_encoded_length = complete_labels * 63;
 
-        // For every 63 chars of encoded data, we need 1 dot
-        // So: encoded_length + ceil(encoded_length / 63) <= available
-        // Rearranging: encoded_length <= available * 63 / 64
-        let max_encoded_length = (available * 63) / 64;
-
-        // Base32 encoding: 5 bytes -> 8 chars
-        // So: encoded_length = ceil(protobuf_length * 8 / 5)
-        // Rearranging: protobuf_length = floor(encoded_length * 5 / 8)
+        // Base32: 5 bytes protobuf -> 8 chars encoded
+        // protobuf_length = encoded_length * 5 / 8
         let max_protobuf_length = (max_encoded_length * 5) / 8;
 
-        // Protobuf overhead:
-        // - type: 1 byte tag + 1 byte value = 2 bytes
-        // - sequence: 1 byte tag + varint (1-5 bytes, assume 3 for safety) = 4 bytes
-        // - conversation_id: 1 byte tag + 1 byte length + 8 bytes string = 10 bytes
-        // - data: 1 byte tag + varint length (1-2 bytes for our sizes) = 3 bytes
-        // - crc32: 1 byte tag + varint (1-5 bytes, assume 3 for safety) = 4 bytes
-        // Total: 2 + 4 + 10 + 3 + 4 = 23 bytes
-        const PROTOBUF_FIXED_OVERHEAD: usize = 23;
+        // Calculate protobuf overhead with worst-case varint sizes
+        let sample_packet = DnsPacket {
+            r#type: PacketType::Data.into(),
+            sequence: total_chunks,
+            conversation_id: "a".repeat(CONV_ID_LENGTH),
+            data: vec![],
+            crc32: 0xFFFFFFFF,
+            window_size: SEND_WINDOW_SIZE as u32,
+            acks: vec![],
+            nacks: vec![],
+        };
 
-        // Max data size is exactly what fits
-        max_protobuf_length.saturating_sub(PROTOBUF_FIXED_OVERHEAD)
+        let overhead = sample_packet.encoded_len();
+
+        // Max data size is what fits after overhead
+        max_protobuf_length.saturating_sub(overhead)
     }
 
     /// Encode data using Base32 (DNS-safe, case-insensitive)
@@ -172,7 +179,7 @@ impl DNS {
     /// Send packet and get response with resolver fallback
     async fn send_packet(&mut self, packet: DnsPacket) -> Result<Vec<u8>> {
         let subdomain = self.build_subdomain(&packet)?;
-        let query = self.build_dns_query(&subdomain)?;
+        let (query, txid) = self.build_dns_query(&subdomain)?;
 
         // Try each DNS server in order
         let mut last_error = None;
@@ -180,7 +187,7 @@ impl DNS {
             let server_idx = (self.current_server_index + attempt) % self.dns_servers.len();
             let server = &self.dns_servers[server_idx];
 
-            match self.try_dns_query(server, &query).await {
+            match self.try_dns_query(server, &query, txid).await {
                 Ok(response) => {
                     // Update current server on success
                     self.current_server_index = server_idx;
@@ -197,7 +204,7 @@ impl DNS {
     }
 
     /// Try a single DNS query against a specific server
-    async fn try_dns_query(&self, server: &str, query: &[u8]) -> Result<Vec<u8>> {
+    async fn try_dns_query(&self, server: &str, query: &[u8], expected_txid: u16) -> Result<Vec<u8>> {
         // Create UDP socket with timeout
         let socket = UdpSocket::bind("0.0.0.0:0").await?;
         socket.connect(server).await?;
@@ -213,16 +220,17 @@ impl DNS {
             .map_err(|_| anyhow::anyhow!("DNS query timeout"))??;
         buf.truncate(len);
 
-        // Parse TXT record from response
-        self.parse_dns_response(&buf)
+        // Parse and validate response
+        self.parse_dns_response(&buf, expected_txid)
     }
 
-    /// Build DNS query packet
-    fn build_dns_query(&self, domain: &str) -> Result<Vec<u8>> {
+    /// Build DNS query packet with random transaction ID
+    fn build_dns_query(&self, domain: &str) -> Result<(Vec<u8>, u16)> {
         let mut query = Vec::new();
 
-        // Transaction ID
-        query.extend_from_slice(&[0x12, 0x34]);
+        // Transaction ID (random for security)
+        let txid = rand::random::<u16>();
+        query.extend_from_slice(&txid.to_be_bytes());
         // Flags: standard query
         query.extend_from_slice(&[0x01, 0x00]);
         // Questions: 1
@@ -262,13 +270,19 @@ impl DNS {
         // Class: IN (1)
         query.extend_from_slice(&[0x00, 0x01]);
 
-        Ok(query)
+        Ok((query, txid))
     }
 
-    /// Parse DNS response based on record type
-    fn parse_dns_response(&self, response: &[u8]) -> Result<Vec<u8>> {
+    /// Parse DNS response based on record type, validating transaction ID
+    fn parse_dns_response(&self, response: &[u8], expected_txid: u16) -> Result<Vec<u8>> {
         if response.len() < 12 {
             return Err(anyhow::anyhow!("DNS response too short"));
+        }
+
+        // Validate transaction ID
+        let response_txid = u16::from_be_bytes([response[0], response[1]]);
+        if response_txid != expected_txid {
+            return Err(anyhow::anyhow!("DNS transaction ID mismatch: expected {}, got {}", expected_txid, response_txid));
         }
 
         // Read answer count from header
@@ -357,26 +371,74 @@ impl DNS {
         Self::unmarshal_with_codec::<Req, Resp>(&response_data)
     }
 
-    /// Send raw request bytes and receive raw response bytes using DNS protocol
-    /// Used for streaming requests like report_file where data is pre-marshaled
+    /// Send raw request bytes and receive raw response bytes using DNS protocol with async transmission
+    /// Uses windowed transmission with ACK/NACK-based retransmission
     async fn dns_exchange_raw(&mut self, request_data: Vec<u8>, method_code: &str) -> Result<Vec<u8>> {
+        use std::collections::{HashSet, HashMap};
 
-        // Calculate chunk size based on DNS limits and base domain
-        let chunk_size = self.calculate_max_chunk_size();
+        // Validate data size
+        if request_data.len() > MAX_DATA_SIZE {
+            return Err(anyhow::anyhow!(
+                "Request data exceeds maximum size: {} bytes > {} bytes",
+                request_data.len(),
+                MAX_DATA_SIZE
+            ));
+        }
+
+        // Calculate exact chunk_size and total_chunks using varint boundary solving
+        // Protobuf varints encode differently based on value:
+        // [1, 127] → 1 byte, [128, 16383] → 2 bytes, [16384, 2097151] → 3 bytes
+        let (chunk_size, total_chunks) = if request_data.is_empty() {
+            (self.calculate_max_chunk_size(1), 1)
+        } else {
+            let varint_ranges = [
+                (1u32, 127u32),
+                (128u32, 16383u32),
+                (16384u32, 2097151u32),
+            ];
+
+            let mut result = None;
+            for (min_chunks, max_chunks) in varint_ranges.iter() {
+                // Calculate overhead assuming worst case (max sequence in this range)
+                let chunk_size = self.calculate_max_chunk_size(*max_chunks);
+                let total_chunks = ((request_data.len() + chunk_size - 1) / chunk_size).max(1);
+
+                // Check if the calculated total_chunks falls within this range
+                if total_chunks >= *min_chunks as usize && total_chunks <= *max_chunks as usize {
+                    // Found the correct range - this is exact
+                    result = Some((chunk_size, total_chunks));
+                    break;
+                }
+            }
+
+            // Fallback for very large data (shouldn't happen with 50MB limit)
+            result.unwrap_or_else(|| {
+                let chunk_size = self.calculate_max_chunk_size(2097151);
+                let total_chunks = ((request_data.len() + chunk_size - 1) / chunk_size).max(1);
+                (chunk_size, total_chunks)
+            })
+        };
+
+        let data_crc = Self::calculate_crc32(&request_data);
+
+        log::debug!("DNS: Request size={} bytes, chunks={}, chunk_size={} bytes, crc32={:#x}",
+            request_data.len(), total_chunks, chunk_size, data_crc);
 
         // Generate conversation ID
         let conv_id = Self::generate_conv_id();
-        let total_chunks = (request_data.len() + chunk_size - 1) / chunk_size;
-        let data_crc = Self::calculate_crc32(&request_data);
 
         // Send INIT packet
         let init_payload = InitPayload {
             method_code: method_code.to_string(),
             total_chunks: total_chunks as u32,
             data_crc32: data_crc,
+            file_size: request_data.len() as u32,
         };
         let mut init_payload_bytes = Vec::new();
         init_payload.encode(&mut init_payload_bytes)?;
+
+        log::debug!("DNS: INIT packet - conv_id={}, method={}, total_chunks={}, file_size={}, data_crc32={:#x}",
+            conv_id, method_code, total_chunks, request_data.len(), data_crc);
 
         let init_packet = DnsPacket {
             r#type: PacketType::Init.into(),
@@ -384,37 +446,224 @@ impl DNS {
             conversation_id: conv_id.clone(),
             data: init_payload_bytes,
             crc32: 0,
+            window_size: SEND_WINDOW_SIZE as u32,
+            acks: vec![],
+            nacks: vec![],
         };
 
-        self.send_packet(init_packet).await?;
-
-        // Send DATA packets
-        for (seq, chunk) in request_data.chunks(chunk_size).enumerate() {
-            let data_packet = DnsPacket {
-                r#type: PacketType::Data.into(),
-                sequence: (seq + 1) as u32,
-                conversation_id: conv_id.clone(),
-                data: chunk.to_vec(),
-                crc32: Self::calculate_crc32(chunk),
-            };
-            self.send_packet(data_packet).await?;
+        match self.send_packet(init_packet).await {
+            Ok(_) => {
+                log::debug!("DNS: INIT sent for conv_id={}", conv_id);
+            }
+            Err(e) => {
+                return Err(anyhow::anyhow!("Failed to send INIT packet to DNS server: {}.", e));
+            }
         }
 
-        // Send END packet
-        let end_packet = DnsPacket {
-            r#type: PacketType::End.into(),
+        // Async windowed transmission
+        let mut acknowledged = HashSet::new(); // Fully acknowledged chunks
+        let mut nack_set = HashSet::new();
+        let mut retry_counts: HashMap<u32, u32> = HashMap::new();
+
+        // Prepare chunks
+        let chunks: Vec<Vec<u8>> = request_data
+            .chunks(chunk_size)
+            .map(|chunk| chunk.to_vec())
+            .collect();
+
+        // Send all chunks and collect ACKs/NACKs
+        // In async mode, each DATA packet gets immediate STATUS response via DNS request-response
+        for seq in 1..=total_chunks {
+            let seq_u32 = seq as u32;
+
+            // Skip if already acknowledged
+            if acknowledged.contains(&seq_u32) {
+                continue;
+            }
+
+            let chunk = &chunks[seq - 1];
+
+            let data_packet = DnsPacket {
+                r#type: PacketType::Data.into(),
+                sequence: seq_u32,
+                conversation_id: conv_id.clone(),
+                data: chunk.clone(),
+                crc32: Self::calculate_crc32(chunk),
+                window_size: SEND_WINDOW_SIZE as u32,
+                acks: vec![],
+                nacks: vec![],
+            };
+
+            // Send DATA packet and get STATUS response
+            match self.send_packet(data_packet).await {
+                Ok(response_data) => {
+                    // The response could be:
+                    // 1. A marshaled STATUS packet (protobuf)
+                    // 2. Plain "ok" string (backward compat)
+                    // 3. Error response
+
+                    // Try to parse as STATUS packet (protobuf)
+                    if let Ok(status_packet) = DnsPacket::decode(&response_data[..]) {
+                        if status_packet.r#type == PacketType::Status.into() {
+                            // Process ACKs - mark as acknowledged
+                            for ack_range in &status_packet.acks {
+                                for ack_seq in ack_range.start_seq..=ack_range.end_seq {
+                                    acknowledged.insert(ack_seq);
+                                    retry_counts.remove(&ack_seq);
+                                }
+                            }
+
+                            // Process NACKs - queue for retransmission
+                            for &nack_seq in &status_packet.nacks {
+                                if nack_seq >= 1 && nack_seq <= total_chunks as u32 {
+                                    nack_set.insert(nack_seq);
+                                }
+                            }
+                        }
+                    } else if response_data == b"ok" {
+                        // Legacy "ok" response - assume this chunk was accepted
+                        acknowledged.insert(seq_u32);
+                    } else {
+                        // Unknown response format - assume need to retry this chunk
+                        log::debug!("DNS: Unknown response format ({} bytes), retrying chunk", response_data.len());
+                        nack_set.insert(seq_u32);
+                    }
+                }
+                Err(e) => {
+                    // DNS query failed - check if it's a size issue or transient error
+                    let err_msg = e.to_string();
+                    eprintln!("DNS ERROR: Failed to send chunk {}: {}", seq_u32, err_msg);
+
+                    // If packet is too long, this is a fatal error (can't fix with retries)
+                    if err_msg.contains("DNS query too long") {
+                        return Err(anyhow::anyhow!(
+                            "Chunk {} is too large to fit in DNS query: {}",
+                            seq_u32,
+                            err_msg
+                        ));
+                    }
+
+                    // Check for connection/network errors
+                    if err_msg.contains("timeout") || err_msg.contains("refused") || err_msg.contains("unreachable") {
+                        eprintln!("DNS ERROR: Connection to DNS server failed.");
+                    }
+
+                    // Otherwise, mark for retry (transient network error)
+                    nack_set.insert(seq_u32);
+                }
+            }
+        }
+
+        // Retry NACKed chunks
+        while !nack_set.is_empty() {
+            let nacks_to_retry: Vec<u32> = nack_set.drain().collect();
+
+            for nack_seq in nacks_to_retry {
+                // Check retry limit
+                let retries = retry_counts.entry(nack_seq).or_insert(0);
+                if *retries >= MAX_RETRIES_PER_CHUNK {
+                    return Err(anyhow::anyhow!(
+                        "Max retries exceeded for chunk {}",
+                        nack_seq
+                    ));
+                }
+                *retries += 1;
+
+                // Skip if already acknowledged (may have been ACKed in another response)
+                if acknowledged.contains(&nack_seq) {
+                    continue;
+                }
+
+                if let Some(chunk) = chunks.get((nack_seq - 1) as usize) {
+                    let retransmit_packet = DnsPacket {
+                        r#type: PacketType::Data.into(),
+                        sequence: nack_seq,
+                        conversation_id: conv_id.clone(),
+                        data: chunk.clone(),
+                        crc32: Self::calculate_crc32(chunk),
+                        window_size: SEND_WINDOW_SIZE as u32,
+                        acks: vec![],
+                        nacks: vec![],
+                    };
+
+                    match self.send_packet(retransmit_packet).await {
+                        Ok(response_data) => {
+                            // Parse STATUS response
+                            if let Ok(status_packet) = DnsPacket::decode(&response_data[..]) {
+                                if status_packet.r#type == PacketType::Status.into() {
+                                    // Process ACKs
+                                    for ack_range in &status_packet.acks {
+                                        for ack_seq in ack_range.start_seq..=ack_range.end_seq {
+                                            acknowledged.insert(ack_seq);
+                                            retry_counts.remove(&ack_seq);
+                                        }
+                                    }
+
+                                    // Process NACKs
+                                    for &new_nack in &status_packet.nacks {
+                                        if new_nack >= 1 && new_nack <= total_chunks as u32 && !acknowledged.contains(&new_nack) {
+                                            nack_set.insert(new_nack);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            // Retry failed - add back to NACK set
+                            nack_set.insert(nack_seq);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Verify all chunks acknowledged
+        if acknowledged.len() != total_chunks {
+            return Err(anyhow::anyhow!(
+                "Not all chunks acknowledged after max retries: {}/{} chunks. Missing: {:?}",
+                acknowledged.len(),
+                total_chunks,
+                (1..=total_chunks as u32).filter(|seq| !acknowledged.contains(seq)).collect::<Vec<_>>()
+            ));
+        }
+
+        log::debug!("DNS: All {} chunks acknowledged, sending FETCH", total_chunks);
+
+        // All data sent and acknowledged
+        // Now request the response via FETCH (or END for backward compatibility)
+        // Send FETCH packet to get response
+        let fetch_packet = DnsPacket {
+            r#type: PacketType::Fetch.into(),
             sequence: (total_chunks + 1) as u32,
             conversation_id: conv_id.clone(),
             data: vec![],
             crc32: 0,
+            window_size: 0,
+            acks: vec![],
+            nacks: vec![],
         };
 
-        let end_response = self.send_packet(end_packet).await?;
+        let end_response = match self.send_packet(fetch_packet).await {
+            Ok(resp) => {
+                log::debug!("DNS: FETCH response received ({} bytes)", resp.len());
+                resp
+            }
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "Failed to fetch response from server: {}.",
+                    e
+                ));
+            }
+        };
 
-        // Check if END response contains ResponseMetadata (chunked response indicator)
-        // ResponseMetadata is NOT encrypted - it's plain protobuf
-        // If response is just "ok", it's a small response and will be in first FETCH
-        // If response is protobuf metadata, we need multiple FETCHes
+        // Validate response is not empty
+        if end_response.is_empty() {
+            return Err(anyhow::anyhow!(
+                "Server returned empty response."
+            ));
+        }
+
+        // Check if response contains ResponseMetadata (chunked response indicator)
         if end_response.len() > 2 && end_response != b"ok" {
             // Try to parse as ResponseMetadata (plain protobuf, not encrypted)
             if let Ok(metadata) = ResponseMetadata::decode(&end_response[..]) {
@@ -424,8 +673,8 @@ impl DNS {
 
                 // Fetch all encrypted response chunks and concatenate
                 let mut full_response = Vec::new();
-                for chunk_idx in 0..total_chunks {
-                    // Create FetchPayload with chunk index
+                for chunk_idx in 1..=total_chunks {
+                    // Create FetchPayload with 1-based chunk index
                     let fetch_payload = FetchPayload {
                         chunk_index: chunk_idx as u32,
                     };
@@ -438,6 +687,9 @@ impl DNS {
                         conversation_id: conv_id.clone(),
                         data: fetch_payload_bytes,
                         crc32: 0,
+                        window_size: 0,
+                        acks: vec![],
+                        nacks: vec![],
                     };
 
                     // Each chunk is encrypted - get raw chunk data
@@ -461,19 +713,7 @@ impl DNS {
         }
 
         // Single response (small enough to fit in one packet)
-        // Send FETCH packet to get response
-        let fetch_packet = DnsPacket {
-            r#type: PacketType::Fetch.into(),
-            sequence: (total_chunks + 2) as u32,
-            conversation_id: conv_id.clone(),
-            data: vec![],
-            crc32: 0,
-        };
-
-        let final_response = self.send_packet(fetch_packet).await?;
-
-        // Return raw response data
-        Ok(final_response)
+        Ok(end_response)
     }
 }
 

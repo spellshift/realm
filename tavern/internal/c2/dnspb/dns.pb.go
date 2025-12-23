@@ -28,8 +28,8 @@ const (
 	PacketType_PACKET_TYPE_UNSPECIFIED PacketType = 0
 	PacketType_PACKET_TYPE_INIT        PacketType = 1 // Establish conversation
 	PacketType_PACKET_TYPE_DATA        PacketType = 2 // Send data chunk
-	PacketType_PACKET_TYPE_END         PacketType = 3 // Finalize request
-	PacketType_PACKET_TYPE_FETCH       PacketType = 4 // Retrieve response chunk
+	PacketType_PACKET_TYPE_FETCH       PacketType = 3 // Retrieve response chunk
+	PacketType_PACKET_TYPE_STATUS      PacketType = 4 // Server status response with ACKs/NACKs
 )
 
 // Enum value maps for PacketType.
@@ -38,15 +38,15 @@ var (
 		0: "PACKET_TYPE_UNSPECIFIED",
 		1: "PACKET_TYPE_INIT",
 		2: "PACKET_TYPE_DATA",
-		3: "PACKET_TYPE_END",
-		4: "PACKET_TYPE_FETCH",
+		3: "PACKET_TYPE_FETCH",
+		4: "PACKET_TYPE_STATUS",
 	}
 	PacketType_value = map[string]int32{
 		"PACKET_TYPE_UNSPECIFIED": 0,
 		"PACKET_TYPE_INIT":        1,
 		"PACKET_TYPE_DATA":        2,
-		"PACKET_TYPE_END":         3,
-		"PACKET_TYPE_FETCH":       4,
+		"PACKET_TYPE_FETCH":       3,
+		"PACKET_TYPE_STATUS":      4,
 	}
 )
 
@@ -86,8 +86,12 @@ type DNSPacket struct {
 	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 12-character random conversation ID
 	Data           []byte                 `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`                                           // Chunk payload (or InitPayload for INIT packets)
 	Crc32          uint32                 `protobuf:"varint,5,opt,name=crc32,proto3" json:"crc32,omitempty"`                                        // Optional CRC32 for validation
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Async protocol fields for windowed transmission
+	WindowSize    uint32      `protobuf:"varint,6,opt,name=window_size,json=windowSize,proto3" json:"window_size,omitempty"` // Number of packets client has in-flight
+	Acks          []*AckRange `protobuf:"bytes,7,rep,name=acks,proto3" json:"acks,omitempty"`                                // Ranges of successfully received chunks (SACK)
+	Nacks         []uint32    `protobuf:"varint,8,rep,packed,name=nacks,proto3" json:"nacks,omitempty"`                      // Specific sequence numbers to retransmit
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DNSPacket) Reset() {
@@ -155,6 +159,80 @@ func (x *DNSPacket) GetCrc32() uint32 {
 	return 0
 }
 
+func (x *DNSPacket) GetWindowSize() uint32 {
+	if x != nil {
+		return x.WindowSize
+	}
+	return 0
+}
+
+func (x *DNSPacket) GetAcks() []*AckRange {
+	if x != nil {
+		return x.Acks
+	}
+	return nil
+}
+
+func (x *DNSPacket) GetNacks() []uint32 {
+	if x != nil {
+		return x.Nacks
+	}
+	return nil
+}
+
+// AckRange represents a contiguous range of acknowledged sequence numbers
+type AckRange struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StartSeq      uint32                 `protobuf:"varint,1,opt,name=start_seq,json=startSeq,proto3" json:"start_seq,omitempty"` // Inclusive start of range
+	EndSeq        uint32                 `protobuf:"varint,2,opt,name=end_seq,json=endSeq,proto3" json:"end_seq,omitempty"`       // Inclusive end of range
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AckRange) Reset() {
+	*x = AckRange{}
+	mi := &file_dns_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AckRange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AckRange) ProtoMessage() {}
+
+func (x *AckRange) ProtoReflect() protoreflect.Message {
+	mi := &file_dns_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AckRange.ProtoReflect.Descriptor instead.
+func (*AckRange) Descriptor() ([]byte, []int) {
+	return file_dns_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AckRange) GetStartSeq() uint32 {
+	if x != nil {
+		return x.StartSeq
+	}
+	return 0
+}
+
+func (x *AckRange) GetEndSeq() uint32 {
+	if x != nil {
+		return x.EndSeq
+	}
+	return 0
+}
+
 // InitPayload is the payload for INIT packets
 // It contains metadata about the upcoming data transmission
 type InitPayload struct {
@@ -162,13 +240,14 @@ type InitPayload struct {
 	MethodCode    string                 `protobuf:"bytes,1,opt,name=method_code,json=methodCode,proto3" json:"method_code,omitempty"`     // 2-character gRPC method code (e.g., "ct", "fa")
 	TotalChunks   uint32                 `protobuf:"varint,2,opt,name=total_chunks,json=totalChunks,proto3" json:"total_chunks,omitempty"` // Total number of data chunks to expect
 	DataCrc32     uint32                 `protobuf:"varint,3,opt,name=data_crc32,json=dataCrc32,proto3" json:"data_crc32,omitempty"`       // CRC32 checksum of complete request data
+	FileSize      uint32                 `protobuf:"varint,4,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`          // Total size of the file/data in bytes
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InitPayload) Reset() {
 	*x = InitPayload{}
-	mi := &file_dns_proto_msgTypes[1]
+	mi := &file_dns_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -180,7 +259,7 @@ func (x *InitPayload) String() string {
 func (*InitPayload) ProtoMessage() {}
 
 func (x *InitPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_dns_proto_msgTypes[1]
+	mi := &file_dns_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -193,7 +272,7 @@ func (x *InitPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitPayload.ProtoReflect.Descriptor instead.
 func (*InitPayload) Descriptor() ([]byte, []int) {
-	return file_dns_proto_rawDescGZIP(), []int{1}
+	return file_dns_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *InitPayload) GetMethodCode() string {
@@ -217,6 +296,13 @@ func (x *InitPayload) GetDataCrc32() uint32 {
 	return 0
 }
 
+func (x *InitPayload) GetFileSize() uint32 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
 // FetchPayload is the payload for FETCH packets
 // It specifies which response chunk to retrieve
 type FetchPayload struct {
@@ -228,7 +314,7 @@ type FetchPayload struct {
 
 func (x *FetchPayload) Reset() {
 	*x = FetchPayload{}
-	mi := &file_dns_proto_msgTypes[2]
+	mi := &file_dns_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +326,7 @@ func (x *FetchPayload) String() string {
 func (*FetchPayload) ProtoMessage() {}
 
 func (x *FetchPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_dns_proto_msgTypes[2]
+	mi := &file_dns_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +339,7 @@ func (x *FetchPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FetchPayload.ProtoReflect.Descriptor instead.
 func (*FetchPayload) Descriptor() ([]byte, []int) {
-	return file_dns_proto_rawDescGZIP(), []int{2}
+	return file_dns_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *FetchPayload) GetChunkIndex() uint32 {
@@ -275,7 +361,7 @@ type ResponseMetadata struct {
 
 func (x *ResponseMetadata) Reset() {
 	*x = ResponseMetadata{}
-	mi := &file_dns_proto_msgTypes[3]
+	mi := &file_dns_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -287,7 +373,7 @@ func (x *ResponseMetadata) String() string {
 func (*ResponseMetadata) ProtoMessage() {}
 
 func (x *ResponseMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_dns_proto_msgTypes[3]
+	mi := &file_dns_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -300,7 +386,7 @@ func (x *ResponseMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResponseMetadata.ProtoReflect.Descriptor instead.
 func (*ResponseMetadata) Descriptor() ([]byte, []int) {
-	return file_dns_proto_rawDescGZIP(), []int{3}
+	return file_dns_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ResponseMetadata) GetTotalChunks() uint32 {
@@ -328,19 +414,27 @@ var File_dns_proto protoreflect.FileDescriptor
 
 const file_dns_proto_rawDesc = "" +
 	"\n" +
-	"\tdns.proto\x12\x03dns\"\x9f\x01\n" +
+	"\tdns.proto\x12\x03dns\"\xf9\x01\n" +
 	"\tDNSPacket\x12#\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x0f.dns.PacketTypeR\x04type\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\rR\bsequence\x12'\n" +
 	"\x0fconversation_id\x18\x03 \x01(\tR\x0econversationId\x12\x12\n" +
 	"\x04data\x18\x04 \x01(\fR\x04data\x12\x14\n" +
-	"\x05crc32\x18\x05 \x01(\rR\x05crc32\"p\n" +
+	"\x05crc32\x18\x05 \x01(\rR\x05crc32\x12\x1f\n" +
+	"\vwindow_size\x18\x06 \x01(\rR\n" +
+	"windowSize\x12!\n" +
+	"\x04acks\x18\a \x03(\v2\r.dns.AckRangeR\x04acks\x12\x14\n" +
+	"\x05nacks\x18\b \x03(\rR\x05nacks\"@\n" +
+	"\bAckRange\x12\x1b\n" +
+	"\tstart_seq\x18\x01 \x01(\rR\bstartSeq\x12\x17\n" +
+	"\aend_seq\x18\x02 \x01(\rR\x06endSeq\"\x8d\x01\n" +
 	"\vInitPayload\x12\x1f\n" +
 	"\vmethod_code\x18\x01 \x01(\tR\n" +
 	"methodCode\x12!\n" +
 	"\ftotal_chunks\x18\x02 \x01(\rR\vtotalChunks\x12\x1d\n" +
 	"\n" +
-	"data_crc32\x18\x03 \x01(\rR\tdataCrc32\"/\n" +
+	"data_crc32\x18\x03 \x01(\rR\tdataCrc32\x12\x1b\n" +
+	"\tfile_size\x18\x04 \x01(\rR\bfileSize\"/\n" +
 	"\fFetchPayload\x12\x1f\n" +
 	"\vchunk_index\x18\x01 \x01(\rR\n" +
 	"chunkIndex\"s\n" +
@@ -349,14 +443,14 @@ const file_dns_proto_rawDesc = "" +
 	"\n" +
 	"data_crc32\x18\x02 \x01(\rR\tdataCrc32\x12\x1d\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\rR\tchunkSize*\x81\x01\n" +
+	"chunk_size\x18\x03 \x01(\rR\tchunkSize*\x84\x01\n" +
 	"\n" +
 	"PacketType\x12\x1b\n" +
 	"\x17PACKET_TYPE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PACKET_TYPE_INIT\x10\x01\x12\x14\n" +
-	"\x10PACKET_TYPE_DATA\x10\x02\x12\x13\n" +
-	"\x0fPACKET_TYPE_END\x10\x03\x12\x15\n" +
-	"\x11PACKET_TYPE_FETCH\x10\x04B$Z\"realm.pub/tavern/internal/c2/dnspbb\x06proto3"
+	"\x10PACKET_TYPE_DATA\x10\x02\x12\x15\n" +
+	"\x11PACKET_TYPE_FETCH\x10\x03\x12\x16\n" +
+	"\x12PACKET_TYPE_STATUS\x10\x04B$Z\"realm.pub/tavern/internal/c2/dnspbb\x06proto3"
 
 var (
 	file_dns_proto_rawDescOnce sync.Once
@@ -371,21 +465,23 @@ func file_dns_proto_rawDescGZIP() []byte {
 }
 
 var file_dns_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dns_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_dns_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_dns_proto_goTypes = []any{
 	(PacketType)(0),          // 0: dns.PacketType
 	(*DNSPacket)(nil),        // 1: dns.DNSPacket
-	(*InitPayload)(nil),      // 2: dns.InitPayload
-	(*FetchPayload)(nil),     // 3: dns.FetchPayload
-	(*ResponseMetadata)(nil), // 4: dns.ResponseMetadata
+	(*AckRange)(nil),         // 2: dns.AckRange
+	(*InitPayload)(nil),      // 3: dns.InitPayload
+	(*FetchPayload)(nil),     // 4: dns.FetchPayload
+	(*ResponseMetadata)(nil), // 5: dns.ResponseMetadata
 }
 var file_dns_proto_depIdxs = []int32{
 	0, // 0: dns.DNSPacket.type:type_name -> dns.PacketType
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 1: dns.DNSPacket.acks:type_name -> dns.AckRange
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_dns_proto_init() }
@@ -399,7 +495,7 @@ func file_dns_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dns_proto_rawDesc), len(file_dns_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

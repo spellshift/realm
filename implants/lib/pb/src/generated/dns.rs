@@ -19,6 +19,28 @@ pub struct DnsPacket {
     /// Optional CRC32 for validation
     #[prost(uint32, tag = "5")]
     pub crc32: u32,
+    /// Async protocol fields for windowed transmission
+    ///
+    /// Number of packets client has in-flight
+    #[prost(uint32, tag = "6")]
+    pub window_size: u32,
+    /// Ranges of successfully received chunks (SACK)
+    #[prost(message, repeated, tag = "7")]
+    pub acks: ::prost::alloc::vec::Vec<AckRange>,
+    /// Specific sequence numbers to retransmit
+    #[prost(uint32, repeated, tag = "8")]
+    pub nacks: ::prost::alloc::vec::Vec<u32>,
+}
+/// AckRange represents a contiguous range of acknowledged sequence numbers
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AckRange {
+    /// Inclusive start of range
+    #[prost(uint32, tag = "1")]
+    pub start_seq: u32,
+    /// Inclusive end of range
+    #[prost(uint32, tag = "2")]
+    pub end_seq: u32,
 }
 /// InitPayload is the payload for INIT packets
 /// It contains metadata about the upcoming data transmission
@@ -34,6 +56,9 @@ pub struct InitPayload {
     /// CRC32 checksum of complete request data
     #[prost(uint32, tag = "3")]
     pub data_crc32: u32,
+    /// Total size of the file/data in bytes
+    #[prost(uint32, tag = "4")]
+    pub file_size: u32,
 }
 /// FetchPayload is the payload for FETCH packets
 /// It specifies which response chunk to retrieve
@@ -67,10 +92,10 @@ pub enum PacketType {
     Init = 1,
     /// Send data chunk
     Data = 2,
-    /// Finalize request
-    End = 3,
     /// Retrieve response chunk
-    Fetch = 4,
+    Fetch = 3,
+    /// Server status response with ACKs/NACKs
+    Status = 4,
 }
 impl PacketType {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -82,8 +107,8 @@ impl PacketType {
             PacketType::Unspecified => "PACKET_TYPE_UNSPECIFIED",
             PacketType::Init => "PACKET_TYPE_INIT",
             PacketType::Data => "PACKET_TYPE_DATA",
-            PacketType::End => "PACKET_TYPE_END",
             PacketType::Fetch => "PACKET_TYPE_FETCH",
+            PacketType::Status => "PACKET_TYPE_STATUS",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -92,8 +117,8 @@ impl PacketType {
             "PACKET_TYPE_UNSPECIFIED" => Some(Self::Unspecified),
             "PACKET_TYPE_INIT" => Some(Self::Init),
             "PACKET_TYPE_DATA" => Some(Self::Data),
-            "PACKET_TYPE_END" => Some(Self::End),
             "PACKET_TYPE_FETCH" => Some(Self::Fetch),
+            "PACKET_TYPE_STATUS" => Some(Self::Status),
             _ => None,
         }
     }

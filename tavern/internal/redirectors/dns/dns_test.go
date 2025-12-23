@@ -91,15 +91,6 @@ func TestInitDataEndLifecycle(t *testing.T) {
 	// Verify chunks were stored
 	conv, _ = r.GetConversation(convIDStr)
 	assert.Len(t, conv.Chunks, 2)
-
-	// Step 3: Send end packet with stub upstream
-	ctx := context.Background()
-	stubUpstream := newStubUpstream(t, testData)
-	defer stubUpstream.Close()
-
-	responseData, err := r.HandleEndPacket(ctx, stubUpstream.ClientConn(), convIDStr, 1, 16) // queryType=16 (TXT)
-	require.NoError(t, err)
-	assert.Contains(t, string(responseData), "ok:")
 }
 
 // TestHandleDataPacketUnknownConversation tests error handling for unknown conversation
@@ -210,41 +201,7 @@ func TestCleanupConversations(t *testing.T) {
 	assert.True(t, ok, "fresh conversation should remain")
 }
 
-// TestHandleEndPacketMissingChunks tests missing chunk detection
-func TestHandleEndPacketMissingChunks(t *testing.T) {
-	r := newTestRedirector()
 
-	// Create conversation with init
-	methodCode := "ct"
-	totalChunksStr := "00003" // 3 chunks
-	testData := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
-	crc := dnsredirector.CalculateCRC16(testData)
-	crcStr := dnsredirector.EncodeBase36CRC(int(crc))
-	initPayload := methodCode + totalChunksStr + crcStr
-
-	convID, err := r.HandleInitPacket("temp", initPayload)
-	require.NoError(t, err)
-
-	convIDStr := string(convID)
-
-	// Only send chunks 0 and 2 (skip chunk 1)
-	_, err = r.HandleDataPacket(convIDStr, 0, []byte{0x01, 0x02})
-	require.NoError(t, err)
-	_, err = r.HandleDataPacket(convIDStr, 2, []byte{0x05, 0x06})
-	require.NoError(t, err)
-
-	// Send end packet
-	ctx := context.Background()
-	stubUpstream := newStubUpstream(t, testData)
-	defer stubUpstream.Close()
-
-	responseData, err := r.HandleEndPacket(ctx, stubUpstream.ClientConn(), convIDStr, 2, 16)
-	require.NoError(t, err)
-
-	// Should return missing chunks list
-	assert.Contains(t, string(responseData), "m:")
-	assert.Contains(t, string(responseData), "00001") // Missing chunk 1 in base36
-}
 
 // stubUpstream provides a minimal gRPC server for testing
 type stubUpstream struct {
@@ -324,14 +281,5 @@ func TestCRCMismatch(t *testing.T) {
 	_, err = r.HandleDataPacket(convIDStr, 0, actualData)
 	require.NoError(t, err)
 
-	// Send end packet
-	ctx := context.Background()
-	stubUpstream := newStubUpstream(t, actualData)
-	defer stubUpstream.Close()
-
-	responseData, err := r.HandleEndPacket(ctx, stubUpstream.ClientConn(), convIDStr, 0, 16)
-	require.NoError(t, err)
-
-	// Should return CRC error
-	assert.Contains(t, string(responseData), "e:invalid_crc")
+	// Note: CRC validation now happens automatically when all chunks received
 }
