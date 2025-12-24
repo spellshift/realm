@@ -1,0 +1,89 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch: ~
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: ⚡ Setup Golang
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: '1.83.0'
+        default: true
+        profile: minimal
+        components: rustfmt, clippy
+
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: tavern/internal/www/package-lock.json
+
+    - name: 📦 Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler libssl-dev
+
+    - name: 📦 Build Frontend
+      working-directory: tavern/internal/www
+      run: |
+        npm ci
+        npm run build
+
+    - name: 🔨 Build Tavern
+      run: |
+        go mod download
+        go build -v -o tavern_bin ./tavern
+
+    - name: 🚀 Run Tavern
+      env:
+        HTTP_LISTEN_ADDR: "127.0.0.1:8000"
+        ENABLE_TEST_DATA: "true"
+      run: |
+        ./tavern_bin &
+        echo "Waiting for Tavern to start..."
+        # Wait for port 8000
+        timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 8000
+
+    - name: 🔑 Get Server Pubkey and Build Agent
+      working-directory: implants/imixv2
+      run: |
+        echo "Fetching Tavern public key..."
+        export IMIX_SERVER_PUBKEY=$(curl -s http://127.0.0.1:8000/status | jq -r .Pubkey)
+        echo "Got pubkey: $IMIX_SERVER_PUBKEY"
+
+        echo "Building imixv2..."
+        cargo build --release
+
+    - name: 🤖 Run Agent
+      working-directory: implants/imixv2
+      env:
+        IMIX_CALLBACK_URI: "http://127.0.0.1:8000"
+      run: |
+        ./target/release/imixv2 &
+
+    - name: 🎭 Install Playwright
+      working-directory: tests/e2e
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+
+    - name: 🧪 Run E2E Tests
+      working-directory: tests/e2e
+      run: npx playwright test
