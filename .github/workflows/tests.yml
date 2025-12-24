@@ -43,6 +43,8 @@ jobs:
       run: |
         if [ -f test-output.json ]; then
           cat test-output.json | $(go env GOPATH)/bin/go-ctrf-json-reporter -o ctrf-tavern-${{ matrix.os }}.json
+          # Normalize timestamps to avoid 50+ year durations when merging with reports lacking timestamps
+          jq '.results.summary.stop = (.results.summary.stop - .results.summary.start) | .results.summary.start = 0' ctrf-tavern-${{ matrix.os }}.json > ctrf-tavern-${{ matrix.os }}.json.tmp && mv ctrf-tavern-${{ matrix.os }}.json.tmp ctrf-tavern-${{ matrix.os }}.json
         else
           echo "test-output.json not found, skipping CTRF conversion"
         fi
