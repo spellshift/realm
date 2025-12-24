@@ -64,7 +64,7 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
-        "build-lsp": "node install.js",
+        "build-lsp": "cd ../implants && cargo build --release -p eldritch-lsp && mkdir -p ../vscode/bin && cp target/release/eldritch-lsp ../vscode/bin/ && cd ../vscode",
         "postinstall": "cd client && npm install && cd .. && node install.js"
     },
     "devDependencies": {

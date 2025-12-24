@@ -4,7 +4,6 @@ def cat(path):
         print(res)
     else:
         eprint(f"Error: Invalid Path '{path}'")
-
     return
 
 time.sleep(5)
