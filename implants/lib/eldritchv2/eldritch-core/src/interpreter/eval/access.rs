@@ -107,6 +107,28 @@ pub(crate) fn evaluate_index(
             }
             Ok(Value::String(chars[true_idx as usize].to_string()))
         }
+        Value::Bytes(b) => {
+            let idx_int = match idx_val {
+                Value::Int(i) => i,
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "bytes indices must be integers",
+                        index.span,
+                    );
+                }
+            };
+            let len = b.len() as i64;
+            let true_idx = if idx_int < 0 { len + idx_int } else { idx_int };
+            if true_idx < 0 || true_idx as usize >= b.len() {
+                return interp.error(
+                    EldritchErrorKind::IndexError,
+                    "Bytes index out of range",
+                    span,
+                );
+            }
+            Ok(Value::Int(b[true_idx as usize] as i64))
+        }
         _ => interp.error(
             EldritchErrorKind::TypeError,
             &format!("'{}' object is not subscriptable", get_type_name(&obj_val)),
@@ -248,6 +270,28 @@ pub(crate) fn evaluate_slice(
                 }
             }
             Ok(Value::String(result_chars.into_iter().collect()))
+        }
+        Value::Bytes(b) => {
+            let len = b.len() as i64;
+            let (i, j) = adjust_slice_indices(len, &start_val_opt, &stop_val_opt, step_val);
+            let mut result_bytes = Vec::new();
+            let mut curr = i;
+            if step_val > 0 {
+                while curr < j {
+                    if curr >= 0 && curr < len {
+                        result_bytes.push(b[curr as usize]);
+                    }
+                    curr += step_val;
+                }
+            } else {
+                while curr > j {
+                    if curr >= 0 && curr < len {
+                        result_bytes.push(b[curr as usize]);
+                    }
+                    curr += step_val;
+                }
+            }
+            Ok(Value::Bytes(result_bytes))
         }
         _ => interp.error(
             EldritchErrorKind::TypeError,
