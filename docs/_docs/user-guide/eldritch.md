@@ -166,12 +166,47 @@ The **agent.list_tasks** method returns a list of dictionaries representing the 
 [{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
 ```
 
+### agent.claim_tasks (V2-Only)
+
+`agent.claim_tasks() -> List<Dict>`
+
+The **agent.claim_tasks** method reaches out to the C2 server to claim any pending tasks. It returns a list of task objects that were claimed. **This is a low-level method usually handled automatically by the agent loop.**
+
 ### agent.stop_task (V2-Only)
 
 `agent.stop_task(task_id: int) -> None`
 
 The **agent.stop_task** method stops a specific background task by its ID. If the task cannot be stopped or does not exist, the method will error.
 
+### agent.fetch_asset (V2-Only)
+
+`agent.fetch_asset(name: str) -> List<int>`
+
+The **agent.fetch_asset** method fetches an asset by name from the C2 server. This returns the raw bytes of the asset.
+
+### agent.report_credential (V2-Only)
+
+`agent.report_credential(credential: CredentialWrapper) -> None`
+
+The **agent.report_credential** method reports a captured credential to the C2 server. **This is a low-level method; prefer using `report.user_password` or `report.ssh_key`.**
+
+### agent.report_file (V2-Only)
+
+`agent.report_file(file: FileWrapper) -> None`
+
+The **agent.report_file** method reports a file to the C2 server. **This is a low-level method; prefer using `report.file`.**
+
+### agent.report_process_list (V2-Only)
+
+`agent.report_process_list(list: ProcessListWrapper) -> None`
+
+The **agent.report_process_list** method reports a process list snapshot to the C2 server. **This is a low-level method; prefer using `report.process_list`.**
+
+### agent.report_task_output (V2-Only)
+
+`agent.report_task_output(output: str, error: Option<str>) -> None`
+
+The **agent.report_task_output** method reports output for the current task to the C2 server.
 
 ### agent.set_callback_interval
 
@@ -598,12 +633,6 @@ $> pivot.arp_scan(["192.168.1.1/32"])
 []
 ```
 
-### pivot.bind_proxy
-
-`pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
-
-The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
-
 ### pivot.ncat
 
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
@@ -611,12 +640,6 @@ The <b>pivot.bind_proxy</b> method is being proposed to provide users another op
 The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
-
-### pivot.port_forward
-
-`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
-
-The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.port_scan
 
@@ -661,11 +684,11 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
-### pivot.smb_exec
+### pivot.reverse_shell_repl
 
-`pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
+`pivot.reverse_shell_repl() -> None`
 
-The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
+The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter. This is useful if PTY is not available.
 
 ### pivot.ssh_copy
 
@@ -902,12 +925,13 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
+The `input` string, if provided, will be written to the process's standard input.
 
 ```python
 sys.exec("/bin/bash",["-c", "whoami"])

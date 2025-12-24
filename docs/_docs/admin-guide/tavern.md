@@ -112,6 +112,31 @@ By default Tavern only supports GRPC connections directly to the server. To Enab
 
 By default, Tavern will listen on `0.0.0.0:8000`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
 
+### Logging Configuration
+
+Tavern provides several environment variables to control logging verbosity and format, which can be critical for debugging or integrating with log aggregation systems.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| `ENABLE_DEBUG_LOGGING` | Set to any value to enable verbose debug logging. | Disabled | No |
+| `ENABLE_JSON_LOGGING` | Set to any value to output logs in JSON format instead of text. | Disabled | No |
+| `ENABLE_INSTANCE_ID_LOGGING` | Set to any value to include the Tavern instance ID in every log message. | Disabled | No |
+| `ENABLE_GRAPHQL_RAW_QUERY_LOGGING` | Set to any value to log the full raw GraphQL query for every request (verbose). | Disabled | No |
+
+### Advanced Configuration
+
+For specialized deployments or testing scenarios, the following variables are available:
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| `ENABLE_TEST_RUN_AND_EXIT` | Starts the application, runs a self-test cycle, and exits immediately. Useful for CI/CD checks. | Disabled | No |
+| `GCP_PROJECT_ID` | The Google Cloud Project ID. Required if using GCP-specific features like PubSub. | N/A | Only for GCP PubSub |
+| `GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS` | Interval (in ms) to send keep-alive messages to GCP PubSub to reduce cold-start latency. | `1000` | No |
+| `PUBSUB_TOPIC_SHELL_INPUT` | The PubSub topic for shell input commands. | `mem://shell_input` | No |
+| `PUBSUB_SUBSCRIPTION_SHELL_INPUT` | The PubSub subscription for shell input. | `mem://shell_input` | No |
+| `PUBSUB_TOPIC_SHELL_OUTPUT` | The PubSub topic for shell output data. | `mem://shell_output` | No |
+| `PUBSUB_SUBSCRIPTION_SHELL_OUTPUT` | The PubSub subscription for shell output. | `mem://shell_output` | No |
+
 ### Metrics
 
 By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
