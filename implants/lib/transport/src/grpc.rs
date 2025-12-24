@@ -196,6 +196,7 @@ impl Transport for GRPC {
 
     fn get_type(&mut self) -> pb::c2::beacon::Transport {
         return pb::c2::beacon::Transport::Grpc;
+    }
     fn is_active(&self) -> bool {
         self.grpc.is_some()
     }
