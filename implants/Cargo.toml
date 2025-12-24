@@ -3,6 +3,7 @@ members = [
     "imix",
     "imixv2",
     "golem",
+    "golemv2",
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
