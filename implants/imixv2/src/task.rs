@@ -1,4 +1,5 @@
 use alloc::collections::BTreeMap;
+use eldritch_libassets::std::EmbeddedAssets;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::SystemTime;
@@ -205,9 +206,12 @@ fn setup_interpreter(
 ) -> Interpreter {
     let mut interp = Interpreter::new_with_printer(printer).with_default_libs();
 
-    // Register Task Context (Agent, Report, Assets)
+    // Remote asset filenames
     let remote_assets = tome.file_names.clone();
-    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, remote_assets);
+    // Support embedded assets behind remote asset filenames 
+    let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
+    // Register Task Context (Agent, Report, Assets)
+    interp = interp.with_task_context(agent, task_id, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
