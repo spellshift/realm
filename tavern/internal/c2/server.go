@@ -28,10 +28,6 @@ func New(graph *ent.Client, mux *stream.Mux) *Server {
 	}
 }
 
-func validateIP(ipaddr string) bool {
-	return net.ParseIP(ipaddr) != nil || ipaddr == "unknown"
-}
-
 func getRemoteIP(ctx context.Context) string {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
@@ -54,7 +50,7 @@ func GetClientIP(ctx context.Context) string {
 			if validateIP(clientIP) {
 				return clientIP
 			} else {
-				slog.Error("bad redirect for ip", "ip", clientIP)
+				slog.Error("bad x-redirected-for ip", "ip", clientIP)
 			}
 		}
 		if forwardedFor, exists := md["x-forwarded-for"]; exists && len(forwardedFor) > 0 {
@@ -63,7 +59,7 @@ func GetClientIP(ctx context.Context) string {
 			if validateIP(clientIP) {
 				return clientIP
 			} else {
-				slog.Error("bad forwarded for ip", "ip", clientIP)
+				slog.Error("bad x-forwarded-for ip", "ip", clientIP)
 			}
 		}
 	}
