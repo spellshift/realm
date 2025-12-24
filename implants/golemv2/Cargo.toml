@@ -1,0 +1,30 @@
+[package]
+name = "golemv2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { workspace = true }
+anyhow = { workspace = true }
+pb = { workspace = true }
+crossterm = { workspace = true }
+walkdir = "2.5.0"
+rust-embed = { workspace = true }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritchv2 = { workspace = true, features = ["std", "stdlib"] }
+eldritch-repl = { workspace = true }
+eldritch-libagent = { workspace = true, features = ["stdlib"] }
+eldritch-libassets = { workspace = true, features = ["stdlib"] }
+eldritch-libpivot = { workspace = true, features = ["stdlib"] }
+eldritch-libreport = { workspace = true, features = ["stdlib"] }
+tokio.workspace = true
+futures.workspace = true
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
+tempfile = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+static_vcruntime = { workspace = true }
