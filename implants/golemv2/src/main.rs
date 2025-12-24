@@ -2,6 +2,7 @@
 extern crate alloc;
 
 use clap::{Arg, ArgAction, Command};
+use eldritch_libagent::fake::{AgentFake};
 use eldritch_libassets::AssetsLibrary;
 use eldritch_libassets::std::{EmbeddedAssets, StdAssetsLibrary};
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
@@ -9,10 +10,8 @@ use std::fs;
 use std::process::exit;
 use std::sync::Arc;
 
-mod agent;
 mod directorybackend;
 mod repl;
-use crate::agent::GolemAgent;
 use crate::directorybackend::DirectoryAssetBackend;
 
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
@@ -32,11 +31,12 @@ pub struct ParsedTome {
 }
 
 // Build a new runtime
-fn new_runtime(agent: Arc<GolemAgent>, assetlib: impl ForeignValue + 'static) -> Interpreter {
+fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     // Maybe change the printer here?
     let mut interp = Interpreter::new_with_printer(Arc::new(StdoutPrinter)).with_default_libs();
     // Register the libraries that we need. Basically the same as interp.with_task_context but
     // with our custom assets library
+    let agent = Arc::new(AgentFake {});
     let agent_lib = eldritch_libagent::std::StdAgentLibrary::new(agent.clone(), 0);
     interp.register_lib(agent_lib);
     let report_lib = eldritch_libreport::std::StdReportLibrary::new(agent.clone(), 0);
@@ -132,7 +132,7 @@ fn main() -> anyhow::Result<()> {
         match locker.list() {
             Ok(assets) => {
                 for asset in assets {
-                    if asset.ends_with("main.eldritch") || asset.ends_with("main.eldr") {
+                    if asset.ends_with("main.eldritch") {
                         let eldr_str = match locker.read(asset.clone()) {
                             Ok(val) => val,
                             Err(e) => return Err(anyhow::anyhow!(e)),
@@ -149,8 +149,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Setup the interpreter. This will need refactored when we do multi-threaded
-    let agent = Arc::new(GolemAgent::new());
-    let mut interp = new_runtime(agent, locker);
+    let mut interp = new_runtime(locker);
 
     if matches.contains_id("interactive") {
         repl::repl(interp)?;
