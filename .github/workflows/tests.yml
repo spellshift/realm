@@ -24,10 +24,30 @@ jobs:
       with:
         go-version-file: go.mod
         cache: true
+    - name: 🔨 Install Tools
+      run: |
+        # Pin gotestsum to v1.12.0 to support Go 1.23.4 (v1.13.0 requires Go 1.24)
+        go install gotest.tools/gotestsum@v1.12.0
+        go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
-      run: go test -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
+      # Use gotestsum for human-readable output to stdout, and capture JSON to file for reporting
+      shell: bash
+      run: |
+        $(go env GOPATH)/bin/gotestsum --jsonfile test-output.json -- \
+          -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
+    - name: 🔄 Convert to CTRF
+      if: always() # Run even if tests fail so we report the failures
+      shell: bash
+      run: |
+        if [ -f test-output.json ]; then
+          cat test-output.json | $(go env GOPATH)/bin/go-ctrf-json-reporter -o ctrf-tavern-${{ matrix.os }}.json
+          # Normalize timestamps to avoid 50+ year durations when merging with reports lacking timestamps
+          jq '.results.summary.stop = (.results.summary.stop - .results.summary.start) | .results.summary.start = 0' ctrf-tavern-${{ matrix.os }}.json > ctrf-tavern-${{ matrix.os }}.json.tmp && mv ctrf-tavern-${{ matrix.os }}.json.tmp ctrf-tavern-${{ matrix.os }}.json
+        else
+          echo "test-output.json not found, skipping CTRF conversion"
+        fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
@@ -35,12 +55,20 @@ jobs:
         files: ./coverage.out
         flags: tavern
         name: tavern-coverage
+    - name: 📤 Upload CTRF Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ctrf-tavern-${{ matrix.os }}
+        path: ctrf-tavern-${{ matrix.os }}.json
+
   implants:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
       IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -81,11 +109,32 @@ jobs:
       uses: taiki-e/install-action@v2
       with:
         tool: nextest,cargo-llvm-cov
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
     - name: 🔎 Run tests
+      # nextest configured via nextest.toml to output junit.xml
       run: |
         cd ./implants/ &&
         cargo fmt --check &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
+    - name: 🔄 Convert to CTRF
+      if: always()
+      shell: bash # Explicitly use bash to support standard shell syntax on Windows
+      run: |
+        cd ./implants/
+        # Move junit report if it exists
+        JUNIT_PATH=$(find . -name junit.xml | head -n 1)
+        if [ -n "$JUNIT_PATH" ]; then
+          mv "$JUNIT_PATH" junit-implants-${{ matrix.os }}.xml
+        else
+          echo "No JUnit report generated"
+        fi
+
+        if [ -f junit-implants-${{ matrix.os }}.xml ]; then
+          npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
+        fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
@@ -93,6 +142,13 @@ jobs:
         files: ./implants/lcov.info
         flags: implants
         name: implants-coverage-${{ matrix.os }}
+    - name: 📤 Upload CTRF Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ctrf-implants-${{ matrix.os }}
+        path: implants/ctrf-implants-${{ matrix.os }}.json
+
   ui-tests:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -113,7 +169,11 @@ jobs:
     - name: 📦 Install dependencies
       run: npm ci
     - name: 🔎 Run vitest with coverage
-      run: npm test -- --run --coverage
+      # Generate JUnit XML
+      run: npm test -- --run --coverage --reporter=junit --output-file=junit-ui-${{ matrix.os }}.xml
+    - name: 🔄 Convert to CTRF
+      if: always()
+      run: npx junit-to-ctrf junit-ui-${{ matrix.os }}.xml -o ctrf-ui-${{ matrix.os }}.json
     - name: 📶 Upload Coverage Results
       if: always()
       uses: codecov/codecov-action@v5
@@ -122,3 +182,45 @@ jobs:
         files: ./tavern/internal/www/coverage/lcov.info
         flags: ui-tests
         name: ui-tests-coverage
+    - name: 📤 Upload CTRF Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ctrf-ui-${{ matrix.os }}
+        path: tavern/internal/www/ctrf-ui-${{ matrix.os }}.json
+
+  flaky-monitor:
+    needs: [tavern, implants, ui-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📥 Download CTRF Results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ctrf-*
+          path: ctrf-reports
+          merge-multiple: true
+
+      - name: 📊 Publish Test Report
+        uses: ctrf-io/github-test-reporter@v1
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          report-path: 'ctrf-reports/*.json'
+          upload-artifact: true
+          fetch-previous-results: true
+          pull-request: true
+          overwrite-comment: true
+
+          # Report Config
+          # https://github.com/ctrf-io/github-test-reporter/blob/main/docs/report-showcase.md
+          summary-delta-report: true
+          tests-changed-report: true
+          insights-report: true
+          slowest-report: true
+          failed-folded-report: true
+          flaky-rate-report: true
+          fail-rate-report: true
+          previous-results-report: true
+          previous-results-max: 100
