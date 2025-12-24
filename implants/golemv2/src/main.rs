@@ -10,10 +10,10 @@ use std::process::exit;
 use std::sync::Arc;
 
 mod agent;
-mod assetbackend;
+mod directorybackend;
 mod repl;
 use crate::agent::GolemAgent;
-use crate::assetbackend::DirectoryAssetBackend;
+use crate::directorybackend::DirectoryAssetBackend;
 
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
 #[cfg(not(debug_assertions))]
