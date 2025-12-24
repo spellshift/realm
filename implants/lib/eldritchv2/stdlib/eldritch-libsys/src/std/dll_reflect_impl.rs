@@ -8,7 +8,6 @@ use {
     std::{os::raw::c_void, ptr::null_mut},
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
-    windows_sys::core::BOOL,
     windows_sys::Win32::{
         Foundation::{FALSE, GetLastError, HANDLE},
         System::{
@@ -20,6 +19,7 @@ use {
             Threading::{OpenProcess, PROCESS_ACCESS_RIGHTS, PROCESS_ALL_ACCESS},
         },
     },
+    windows_sys::core::BOOL,
 };
 
 #[cfg(all(host_family = "windows", target_os = "windows"))]
