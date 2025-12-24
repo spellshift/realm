@@ -406,6 +406,20 @@ impl Interpreter {
                             TokenKind::String(s) => {
                                 target_val = Some(Value::String(s.clone()));
                             }
+                            TokenKind::RBracket => {
+                                // Assume List
+                                target_val = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                            }
+                            TokenKind::RBrace => {
+                                // Assume Dictionary (could be Set, but Dict is safer default)
+                                target_val = Some(Value::Dictionary(Arc::new(RwLock::new(
+                                    BTreeMap::new(),
+                                ))));
+                            }
+                            TokenKind::RParen => {
+                                // Assume Tuple
+                                target_val = Some(Value::Tuple(Vec::new()));
+                            }
                             _ => {}
                         }
                     }
