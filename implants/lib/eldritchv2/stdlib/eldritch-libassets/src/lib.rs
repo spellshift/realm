@@ -8,7 +8,6 @@ pub mod fake;
 #[cfg(feature = "stdlib")]
 pub mod std;
 
-
 #[eldritch_library("assets")]
 /// The `assets` library provides access to files embedded directly within the agent binary.
 ///
