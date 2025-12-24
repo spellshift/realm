@@ -194,10 +194,13 @@ jobs:
 
       - name: 📊 Publish Test Report
         uses: ctrf-io/github-test-reporter@v1
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           report-path: 'ctrf-reports/*.json'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           upload-artifact: true
+          pull-request: true
           fetch-previous-results: true
           summary-report: true
           summary-delta-report: true
@@ -213,6 +216,4 @@ jobs:
           previous-results-report: true
           insights-report: true
           slowest-report: true
-          ai-report: true
-          ai-summary-report: true
           pull-request-report: true
