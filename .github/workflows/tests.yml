@@ -68,6 +68,7 @@ jobs:
     env:
       IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
