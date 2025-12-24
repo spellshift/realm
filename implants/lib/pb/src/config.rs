@@ -1,4 +1,7 @@
+use tonic::transport;
 use uuid::Uuid;
+
+use crate::c2::beacon::Transport;
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -102,6 +105,13 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
+        #[cfg(feature = "http1")]
+        let transport = crate::c2::beacon::Transport::Http1;
+        #[cfg(feature = "grpc")]
+        let transport = crate::c2::beacon::Transport::Grpc;
+        #[cfg(not(any(feature = "http1", feature = "grpc")))]
+        let transport = crate::c2::beacon::Transport::Unspecified;
+
         let info = crate::c2::Beacon {
             identifier: beacon_id,
             principal: whoami::username(),
@@ -114,6 +124,7 @@ impl Config {
                     5_u64
                 }
             },
+            transport: transport as i32,
             host: Some(host),
             agent: Some(agent),
         };

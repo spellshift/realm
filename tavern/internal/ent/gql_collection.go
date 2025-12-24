@@ -280,6 +280,11 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 				selectedFields = append(selectedFields, beacon.FieldInterval)
 				fieldSeen[beacon.FieldInterval] = struct{}{}
 			}
+		case "transport":
+			if _, ok := fieldSeen[beacon.FieldTransport]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldTransport)
+				fieldSeen[beacon.FieldTransport] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:
