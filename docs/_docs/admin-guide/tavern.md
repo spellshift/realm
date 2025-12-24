@@ -119,7 +119,7 @@ By default, Tavern does not export metrics. You may use the below environment co
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
 | ENABLE_METRICS | Set to any value to enable the "/metrics" endpoint. | Disabled | No |
-| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8080` | No |
+| HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8000` | No |
 
 ### Secrets
 
@@ -292,38 +292,6 @@ DISABLE_DEFAULT_TOMES=1 go run ./tavern
 ### PPROF
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
-
-### Logging
-
-The following environment variables configure Tavern's logging behavior.
-
-| Env Var | Description | Default | Required |
-| ------- | ----------- | ------- | -------- |
-| ENABLE_DEBUG_LOGGING | Emit verbose debug logs to help troubleshoot issues. | Disabled | No |
-| ENABLE_JSON_LOGGING | Emit logs in JSON format for easier parsing by log aggregators. | Disabled | No |
-| ENABLE_INSTANCE_ID_LOGGING | Include the tavern instance id in log messages. | Disabled | No |
-| ENABLE_GRAPHQL_RAW_QUERY_LOGGING | Include the raw GraphQL query in graphql log messages. | Disabled | No |
-
-### Google Cloud & PubSub
-
-The following environment variables are available for configuring Google Cloud Platform integration and PubSub messaging for shell I/O.
-
-| Env Var | Description | Default | Required |
-| ------- | ----------- | ------- | -------- |
-| GCP_PROJECT_ID | The project id tavern is deployed in for Google Cloud Platform deployments. | N/A | No |
-| GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS | Interval to publish no-op pubsub messages to help avoid gcppubsub coldstart latency. | 1000 | No |
-| PUBSUB_TOPIC_SHELL_INPUT | The topic to publish shell input to. | `mem://shell_input` | No |
-| PUBSUB_SUBSCRIPTION_SHELL_INPUT | The subscription to receive shell input from. | `mem://shell_input` | No |
-| PUBSUB_TOPIC_SHELL_OUTPUT | The topic to publish shell output to. | `mem://shell_output` | No |
-| PUBSUB_SUBSCRIPTION_SHELL_OUTPUT | The subscription to receive shell output from. | `mem://shell_output` | No |
-
-### Testing
-
-The following environment variables are used for testing purposes.
-
-| Env Var | Description | Default | Required |
-| ------- | ----------- | ------- | -------- |
-| ENABLE_TEST_RUN_AND_EXIT | Start the application, but exit immediately after. Useful for testing startup. | Disabled | No |
 
 ## Build and publish tavern container
 
