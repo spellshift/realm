@@ -58,6 +58,7 @@ type ComplexityRoot struct {
 		Principal       func(childComplexity int) int
 		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Transport       func(childComplexity int) int
 	}
 
 	BeaconConnection struct {
@@ -519,6 +520,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Beacon.Tasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TaskOrder), args["where"].(*ent.TaskWhereInput)), true
+
+	case "Beacon.transport":
+		if e.complexity.Beacon.Transport == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Transport(childComplexity), true
 
 	case "BeaconConnection.edges":
 		if e.complexity.BeaconConnection.Edges == nil {
@@ -2428,6 +2436,10 @@ type Beacon implements Node {
   """
   interval: Uint64
   """
+  Beacons current transport.
+  """
+  transport: BeaconTransport!
+  """
   Host this beacon is running on.
   """
   host: Host!
@@ -2546,6 +2558,14 @@ enum BeaconOrderField {
   LAST_SEEN_AT
   NEXT_SEEN_AT
   INTERVAL
+}
+"""
+BeaconTransport is enum for the field transport
+"""
+enum BeaconTransport @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Beacon_Transport") {
+  TRANSPORT_GRPC
+  TRANSPORT_HTTP1
+  TRANSPORT_UNSPECIFIED
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -2695,6 +2715,13 @@ input BeaconWhereInput {
   intervalLTE: Uint64
   intervalIsNil: Boolean
   intervalNotNil: Boolean
+  """
+  transport field predicates
+  """
+  transport: BeaconTransport
+  transportNEQ: BeaconTransport
+  transportIn: [BeaconTransport!]
+  transportNotIn: [BeaconTransport!]
   """
   host edge predicates
   """

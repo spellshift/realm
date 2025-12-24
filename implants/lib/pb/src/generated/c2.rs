@@ -21,6 +21,50 @@ pub struct Beacon {
     /// Duration until next callback, in seconds.
     #[prost(uint64, tag = "5")]
     pub interval: u64,
+    #[prost(enumeration = "beacon::Transport", tag = "6")]
+    pub transport: i32,
+}
+/// Nested message and enum types in `Beacon`.
+pub mod beacon {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum Transport {
+        Unspecified = 0,
+        Grpc = 1,
+        Http1 = 2,
+    }
+    impl Transport {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Transport::Unspecified => "TRANSPORT_UNSPECIFIED",
+                Transport::Grpc => "TRANSPORT_GRPC",
+                Transport::Http1 => "TRANSPORT_HTTP1",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "TRANSPORT_UNSPECIFIED" => Some(Self::Unspecified),
+                "TRANSPORT_GRPC" => Some(Self::Grpc),
+                "TRANSPORT_HTTP1" => Some(Self::Http1),
+                _ => None,
+            }
+        }
+    }
 }
 /// Host information for the system a beacon is running on.
 #[allow(clippy::derive_partial_eq_without_eq)]

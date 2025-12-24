@@ -162,6 +162,12 @@ type BeaconWhereInput struct {
 	IntervalIsNil  bool     `json:"intervalIsNil,omitempty"`
 	IntervalNotNil bool     `json:"intervalNotNil,omitempty"`
 
+	// "transport" field predicates.
+	Transport      *c2pb.Beacon_Transport  `json:"transport,omitempty"`
+	TransportNEQ   *c2pb.Beacon_Transport  `json:"transportNEQ,omitempty"`
+	TransportIn    []c2pb.Beacon_Transport `json:"transportIn,omitempty"`
+	TransportNotIn []c2pb.Beacon_Transport `json:"transportNotIn,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -575,6 +581,18 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	}
 	if i.IntervalNotNil {
 		predicates = append(predicates, beacon.IntervalNotNil())
+	}
+	if i.Transport != nil {
+		predicates = append(predicates, beacon.TransportEQ(*i.Transport))
+	}
+	if i.TransportNEQ != nil {
+		predicates = append(predicates, beacon.TransportNEQ(*i.TransportNEQ))
+	}
+	if len(i.TransportIn) > 0 {
+		predicates = append(predicates, beacon.TransportIn(i.TransportIn...))
+	}
+	if len(i.TransportNotIn) > 0 {
+		predicates = append(predicates, beacon.TransportNotIn(i.TransportNotIn...))
 	}
 
 	if i.HasHost != nil {

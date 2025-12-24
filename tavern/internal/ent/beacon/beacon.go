@@ -3,10 +3,13 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 const (
@@ -32,6 +35,8 @@ const (
 	FieldNextSeenAt = "next_seen_at"
 	// FieldInterval holds the string denoting the interval field in the database.
 	FieldInterval = "interval"
+	// FieldTransport holds the string denoting the transport field in the database.
+	FieldTransport = "transport"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
@@ -75,6 +80,7 @@ var Columns = []string{
 	FieldLastSeenAt,
 	FieldNextSeenAt,
 	FieldInterval,
+	FieldTransport,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "beacons"
@@ -118,6 +124,16 @@ var (
 	// AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	AgentIdentifierValidator func(string) error
 )
+
+// TransportValidator is a validator for the "transport" field enum values. It is called by the builders before save.
+func TransportValidator(t c2pb.Beacon_Transport) error {
+	switch t.String() {
+	case "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED":
+		return nil
+	default:
+		return fmt.Errorf("beacon: invalid enum value for transport field: %q", t)
+	}
+}
 
 // OrderOption defines the ordering options for the Beacon queries.
 type OrderOption func(*sql.Selector)
@@ -170,6 +186,11 @@ func ByNextSeenAt(opts ...sql.OrderTermOption) OrderOption {
 // ByInterval orders the results by the interval field.
 func ByInterval(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInterval, opts...).ToFunc()
+}
+
+// ByTransport orders the results by the transport field.
+func ByTransport(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransport, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.
@@ -227,3 +248,10 @@ func newShellsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
 	)
 }
+
+var (
+	// c2pb.Beacon_Transport must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*c2pb.Beacon_Transport)(nil)
+	// c2pb.Beacon_Transport must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*c2pb.Beacon_Transport)(nil)
+)
