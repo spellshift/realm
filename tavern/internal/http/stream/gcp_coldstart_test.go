@@ -2,7 +2,6 @@ package stream_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -17,19 +16,18 @@ func TestPreventPubSubColdStarts_ValidInterval(t *testing.T) {
 	defer cancel()
 
 	// Create a mock topic and subscription.
-	topicName := fmt.Sprintf("mem://valid-%d", time.Now().UnixNano())
-	topic, err := pubsub.OpenTopic(ctx, topicName)
+	topic, err := pubsub.OpenTopic(ctx, "mem://valid")
 	if err != nil {
 		t.Fatalf("Failed to open topic: %v", err)
 	}
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	sub, err := pubsub.OpenSubscription(ctx, "mem://valid")
 	if err != nil {
 		t.Fatalf("Failed to open subscription: %v", err)
 	}
 	defer sub.Shutdown(ctx)
 
-	go stream.PreventPubSubColdStarts(ctx, 50*time.Millisecond, topicName, topicName)
+	go stream.PreventPubSubColdStarts(ctx, 50*time.Millisecond, "mem://valid", "mem://valid")
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)
@@ -45,19 +43,18 @@ func TestPreventPubSubColdStarts_ZeroInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	topicName := fmt.Sprintf("mem://zero-%d", time.Now().UnixNano())
-	topic, err := pubsub.OpenTopic(ctx, topicName)
+	topic, err := pubsub.OpenTopic(ctx, "mem://zero")
 	if err != nil {
 		t.Fatalf("Failed to open topic: %v", err)
 	}
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	sub, err := pubsub.OpenSubscription(ctx, "mem://zero")
 	if err != nil {
 		t.Fatalf("Failed to open subscription: %v", err)
 	}
 	defer sub.Shutdown(ctx)
 
-	go stream.PreventPubSubColdStarts(ctx, 0, topicName, topicName)
+	go stream.PreventPubSubColdStarts(ctx, 0, "mem://zero", "mem://zero")
 
 	// Expect to not receive a message and for the context to timeout
 	_, err = sub.Receive(ctx)
@@ -69,19 +66,18 @@ func TestPreventPubSubColdStarts_SubMillisecondInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	topicName := fmt.Sprintf("mem://sub-%d", time.Now().UnixNano())
-	topic, err := pubsub.OpenTopic(ctx, topicName)
+	topic, err := pubsub.OpenTopic(ctx, "mem://sub")
 	if err != nil {
 		t.Fatalf("Failed to open topic: %v", err)
 	}
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	sub, err := pubsub.OpenSubscription(ctx, "mem://sub")
 	if err != nil {
 		t.Fatalf("Failed to open subscription: %v", err)
 	}
 	defer sub.Shutdown(ctx)
 
-	go stream.PreventPubSubColdStarts(ctx, 1*time.Microsecond, topicName, topicName)
+	go stream.PreventPubSubColdStarts(ctx, 1*time.Microsecond, "mem://sub", "mem://sub")
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)
