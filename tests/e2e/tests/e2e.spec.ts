@@ -11,7 +11,8 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
 
   // Select the checkbox. Using force: true because Chakra UI hides the actual input.
   console.log('Selecting beacon');
-  await page.locator('input[type="checkbox"]').first().check({ force: true });
+  // Avoid selecting the filter switches by targeting the option container
+  await page.locator('.option-container input[type="checkbox"]').first().check({ force: true });
 
   // Click Continue
   console.log('Clicking Continue (Beacon)');
