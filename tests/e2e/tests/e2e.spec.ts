@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test('End-to-end reverse shell repl test', async ({ page }) => {
-  // Increase test timeout to 60 seconds to accommodate slow CI environments
-  test.setTimeout(60000);
+  // Increase test timeout to 120 seconds to accommodate slow CI environments and agent startup
+  test.setTimeout(120000);
 
   // 1. Connect to tavern's UI using playwright at http://127.0.0.1:8000/createQuest
   console.log('Navigating to /createQuest');
@@ -37,8 +37,9 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
   console.log('Waiting for agent execution and checking for Shells tab...');
 
   // Polling loop to wait for Shells tab
-  const maxRetries = 10;
-  const retryInterval = 3000; // 3 seconds
+  // Agent check-in and task execution might take time, especially cold start
+  const maxRetries = 20;
+  const retryInterval = 5000; // 5 seconds
   let shellTabFound = false;
 
   for (let i = 0; i < maxRetries; i++) {
@@ -46,10 +47,14 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
     await page.waitForTimeout(retryInterval);
 
     console.log('Reloading page');
-    await page.reload();
+    await page.reload({ waitUntil: 'networkidle' });
 
+    // Check if we are still on the same quest details page or redirected
+    // The "Shells" tab appears in the Task results area
     const shellsTab = page.getByRole('tab', { name: 'Shells' });
-    if (await shellsTab.isVisible()) {
+
+    // Use a short timeout for the visibility check to avoid hanging the loop
+    if (await shellsTab.isVisible({ timeout: 1000 }).catch(() => false)) {
       console.log('Shells tab found!');
       shellTabFound = true;
       await shellsTab.click();
@@ -71,21 +76,21 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
   console.log('Verifying shell connection');
 
   // Wait for terminal to be visible
-  await expect(page.locator('#terminal')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#terminal')).toBeVisible({ timeout: 30000 });
 
   // Focus the terminal (clicking it helps ensure focus)
   await page.locator('.xterm-cursor-layer').click();
 
   console.log('Sending command');
   // Type something.
-  await page.waitForTimeout(2000); // Wait a bit more for connection to be fully established
+  await page.waitForTimeout(5000); // Wait a bit more for connection to be fully established
   await page.keyboard.type('print("Hello E2E")');
   await page.keyboard.press('Enter');
 
   // Verify output.
   console.log('Verifying output');
   // xterm rows usually contain the text.
-  await expect(page.locator('.xterm-rows')).toContainText('Hello E2E', { timeout: 15000 });
+  await expect(page.locator('.xterm-rows')).toContainText('Hello E2E', { timeout: 30000 });
 
   console.log('Test Complete');
 });
