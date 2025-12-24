@@ -179,6 +179,18 @@ impl Transport for ActiveTransport {
         }
     }
 
+    fn get_type(&mut self) -> beacon::Transport {
+        match self {
+            #[cfg(feature = "grpc")]
+            Self::Grpc(t) => t.get_type(),
+            #[cfg(feature = "http1")]
+            Self::Http(t) => t.get_type(),
+            #[cfg(feature = "mock")]
+            Self::Mock(t) => t.get_type(),
+            Self::Empty => beacon::Transport::Unspecified,
+        }
+    }
+
     fn is_active(&self) -> bool {
         match self {
             #[cfg(feature = "grpc")]
