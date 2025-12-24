@@ -202,6 +202,7 @@ jobs:
           upload-artifact: true
           fetch-previous-results: true
           pull-request: true
+          overwrite-comment: true
 
           # Report Config
           # https://github.com/ctrf-io/github-test-reporter/blob/main/docs/report-showcase.md
