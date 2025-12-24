@@ -2,7 +2,6 @@ package stream_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -18,11 +17,10 @@ func TestMux(t *testing.T) {
 	defer cancel()
 
 	// Setup Topic and Subscription
-	topicName := fmt.Sprintf("mem://mux-test-%d", time.Now().UnixNano())
-	topic, err := pubsub.OpenTopic(ctx, topicName)
+	topic, err := pubsub.OpenTopic(ctx, "mem://mux-test")
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	sub, err := pubsub.OpenSubscription(ctx, "mem://mux-test")
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -38,6 +36,9 @@ func TestMux(t *testing.T) {
 	defer mux.Unregister(stream1)
 	mux.Register(stream2)
 	defer mux.Unregister(stream2)
+
+	// Give the mux a moment to register the streams
+	time.Sleep(50 * time.Millisecond)
 
 	// Send a message for stream1
 	err = topic.Send(ctx, &pubsub.Message{

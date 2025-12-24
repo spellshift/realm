@@ -2,7 +2,6 @@ package stream_test
 
 import (
 	"context"
-	"fmt"
 	"net/http/httptest"
 	"strconv"
 	"strings"
@@ -30,20 +29,18 @@ func TestNewShellHandler(t *testing.T) {
 	defer cancel()
 
 	// Topic for messages going TO the websocket (server -> shell)
-	outputTopicName := fmt.Sprintf("mem://websocket-output-%d", time.Now().UnixNano())
-	outputTopic, err := pubsub.OpenTopic(ctx, outputTopicName)
+	outputTopic, err := pubsub.OpenTopic(ctx, "mem://websocket-output")
 	require.NoError(t, err)
 	defer outputTopic.Shutdown(ctx)
-	outputSub, err := pubsub.OpenSubscription(ctx, outputTopicName)
+	outputSub, err := pubsub.OpenSubscription(ctx, "mem://websocket-output")
 	require.NoError(t, err)
 	defer outputSub.Shutdown(ctx)
 
 	// Topic for messages coming FROM the websocket (shell -> server)
-	inputTopicName := fmt.Sprintf("mem://websocket-input-%d", time.Now().UnixNano())
-	inputTopic, err := pubsub.OpenTopic(ctx, inputTopicName)
+	inputTopic, err := pubsub.OpenTopic(ctx, "mem://websocket-input")
 	require.NoError(t, err)
 	defer inputTopic.Shutdown(ctx)
-	inputSub, err := pubsub.OpenSubscription(ctx, inputTopicName)
+	inputSub, err := pubsub.OpenSubscription(ctx, "mem://websocket-input")
 	require.NoError(t, err)
 	defer inputSub.Shutdown(ctx)
 

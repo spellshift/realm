@@ -155,8 +155,8 @@ func TestRedirector_ContextCancellation(t *testing.T) {
 		serverErr <- redirector.Redirect(ctx, addr, upstreamConn)
 	}()
 
-	// Wait for the server to start listening.
-	waitForServer(t, addr)
+	// Wait a moment for the server to start listening.
+	time.Sleep(100 * time.Millisecond)
 
 	// Cancel the context, which should trigger GracefulStop.
 	cancel()
@@ -214,18 +214,4 @@ func TestRedirector_UpstreamFailure(t *testing.T) {
 	s, ok := status.FromError(err)
 	require.True(t, ok, "error should be a gRPC status error")
 	require.Equal(t, codes.Unavailable, s.Code(), "error code should be Unavailable")
-}
-
-func waitForServer(t *testing.T, addr string) {
-	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for time.Now().Before(deadline) {
-		conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
-		if err == nil {
-			conn.Close()
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	t.Fatalf("server did not start listening on %s", addr)
 }
