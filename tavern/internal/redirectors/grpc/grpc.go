@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/redirectors"
 )
 
@@ -49,10 +50,17 @@ func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
 		}
 
 		ctx := ss.Context()
+		// Get the client's remote IP address
+		clientIP := c2.GetClientIP(ctx)
+
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
-			ctx = metadata.NewOutgoingContext(ctx, md)
+			ctx = metadata.NewOutgoingContext(ctx, md.Copy())
 		}
+
+		// Set x-redirected-for header with the client IP
+		ctx = redirectors.SetRedirectedForHeader(ctx, clientIP)
+
 		cs, err := upstream.NewStream(ctx, &grpc.StreamDesc{
 			StreamName:    fullMethodName,
 			ServerStreams: true,

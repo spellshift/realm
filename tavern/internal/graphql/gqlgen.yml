@@ -51,6 +51,9 @@ models:
   Platform:
     model:
       - realm.pub/tavern/internal/c2/c2pb.Host_Platform
+  Transport:
+    model:
+      - realm.pub/tavern/internal/c2/c2pb.Beacon_Transport
   SupportModel:
     model:
       - realm.pub/tavern/internal/ent/tome.SupportModel

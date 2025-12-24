@@ -3,8 +3,8 @@ state: |
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
   INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
     VALUES (1010,"db1","EXISTING-HOST", "PLATFORM_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
-  INSERT INTO `beacons` (id, name, identifier, beacon_host, created_at, last_modified_at)
-    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `beacons` (id, name, identifier, beacon_host, transport, created_at, last_modified_at)
+    VALUES (1337,"delightful-lich","ABCDEFG-123456",1010, "TRANSPORT_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
 requestor:
   session_token: secretToken
 query: |
