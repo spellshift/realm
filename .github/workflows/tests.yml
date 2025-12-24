@@ -199,3 +199,20 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           upload-artifact: true
           fetch-previous-results: true
+          summary-report: true
+          summary-delta-report: true
+          tests-changed-report: true
+          github-report: true
+          test-report: true
+          test-list-report: true
+          failed-report: true
+          fail-rate-report: true
+          flaky-report: true
+          flaky-rate-report: true
+          failed-folded-report: true
+          previous-results-report: true
+          insights-report: true
+          slowest-report: true
+          ai-report: true
+          ai-summary-report: true
+          pull-request-report: true
