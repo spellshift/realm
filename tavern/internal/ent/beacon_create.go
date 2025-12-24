@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/shell"
@@ -151,6 +152,12 @@ func (bc *BeaconCreate) SetNillableInterval(u *uint64) *BeaconCreate {
 	return bc
 }
 
+// SetTransport sets the "transport" field.
+func (bc *BeaconCreate) SetTransport(ct c2pb.Beacon_Transport) *BeaconCreate {
+	bc.mutation.SetTransport(ct)
+	return bc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (bc *BeaconCreate) SetHostID(id int) *BeaconCreate {
 	bc.mutation.SetHostID(id)
@@ -279,6 +286,14 @@ func (bc *BeaconCreate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
+	if _, ok := bc.mutation.Transport(); !ok {
+		return &ValidationError{Name: "transport", err: errors.New(`ent: missing required field "Beacon.transport"`)}
+	}
+	if v, ok := bc.mutation.Transport(); ok {
+		if err := beacon.TransportValidator(v); err != nil {
+			return &ValidationError{Name: "transport", err: fmt.Errorf(`ent: validator failed for field "Beacon.transport": %w`, err)}
+		}
+	}
 	if len(bc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Beacon.host"`)}
 	}
@@ -344,6 +359,10 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
 		_node.Interval = value
+	}
+	if value, ok := bc.mutation.Transport(); ok {
+		_spec.SetField(beacon.FieldTransport, field.TypeEnum, value)
+		_node.Transport = value
 	}
 	if nodes := bc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -566,6 +585,18 @@ func (u *BeaconUpsert) ClearInterval() *BeaconUpsert {
 	return u
 }
 
+// SetTransport sets the "transport" field.
+func (u *BeaconUpsert) SetTransport(v c2pb.Beacon_Transport) *BeaconUpsert {
+	u.Set(beacon.FieldTransport, v)
+	return u
+}
+
+// UpdateTransport sets the "transport" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateTransport() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldTransport)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -751,6 +782,20 @@ func (u *BeaconUpsertOne) UpdateInterval() *BeaconUpsertOne {
 func (u *BeaconUpsertOne) ClearInterval() *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearInterval()
+	})
+}
+
+// SetTransport sets the "transport" field.
+func (u *BeaconUpsertOne) SetTransport(v c2pb.Beacon_Transport) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetTransport(v)
+	})
+}
+
+// UpdateTransport sets the "transport" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateTransport() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateTransport()
 	})
 }
 
@@ -1105,6 +1150,20 @@ func (u *BeaconUpsertBulk) UpdateInterval() *BeaconUpsertBulk {
 func (u *BeaconUpsertBulk) ClearInterval() *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearInterval()
+	})
+}
+
+// SetTransport sets the "transport" field.
+func (u *BeaconUpsertBulk) SetTransport(v c2pb.Beacon_Transport) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetTransport(v)
+	})
+}
+
+// UpdateTransport sets the "transport" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateTransport() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateTransport()
 	})
 }
 
