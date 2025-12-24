@@ -23,7 +23,8 @@
     "activationEvents": [
         "workspaceContains:*.tome",
         "workspaceContains:*/*.tome",
-        "workspaceContains:*/*/*.tome"
+        "workspaceContains:*/*/*.tome",
+        "onLanguage:eldritch"
     ],
     "main": "./client/out/extension",
     "contributes": {
@@ -39,7 +40,8 @@
                     "eldritch"
                 ],
                 "extensions": [
-                    ".tome"
+                    ".tome",
+                    ".eldritch"
                 ],
                 "filenames": [],
                 "configuration": "./syntaxes/eldritch.configuration.json"

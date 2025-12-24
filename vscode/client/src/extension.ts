@@ -9,11 +9,12 @@ let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
     // Otherwise to spawn the server
-    let serverOptions: ServerOptions = { command: "eldritch-lang", args: ["--lsp"] };
+    // We assume eldritch-lsp is in the PATH.
+    let serverOptions: ServerOptions = { command: "eldritch-lsp", args: [] };
 
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
-        // Register the server for Starlark documents
+        // Register the server for Eldritch documents
         documentSelector: [{ scheme: 'file', language: 'eldritch' }],
     };
 
