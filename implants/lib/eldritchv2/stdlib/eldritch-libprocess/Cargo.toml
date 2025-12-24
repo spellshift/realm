@@ -12,7 +12,7 @@ netstat = { workspace = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:sysinfo", "dep:listeners"]
+stdlib = ["dep:sysinfo"]
 fake_bindings = []
 
 [dev-dependencies]
