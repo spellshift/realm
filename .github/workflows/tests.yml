@@ -122,7 +122,13 @@ jobs:
       run: |
         cd ./implants/
         # Move junit report if it exists
-        mv junit.xml junit-implants-${{ matrix.os }}.xml || echo "No JUnit report generated"
+        JUNIT_PATH=$(find . -name junit.xml | head -n 1)
+        if [ -n "$JUNIT_PATH" ]; then
+          mv "$JUNIT_PATH" junit-implants-${{ matrix.os }}.xml
+        else
+          echo "No JUnit report generated"
+        fi
+
         if [ -f junit-implants-${{ matrix.os }}.xml ]; then
           npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
         fi
