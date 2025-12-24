@@ -51,5 +51,10 @@ mock! {
         fn get_type(&mut self) -> pb::c2::beacon::Transport {
             return Transport::Unspecified
         }
+        fn is_active(&self) -> bool;
+
+        fn name(&self) -> &'static str;
+
+        fn list_available(&self) -> Vec<String>;
     }
 }

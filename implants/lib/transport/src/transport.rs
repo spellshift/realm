@@ -81,4 +81,15 @@ pub trait UnsafeTransport: Clone + Send {
 
     #[allow(dead_code)]
     fn get_type(&mut self) -> beacon::Transport;
+    /// Returns true if the transport is fully initialized and active
+    #[allow(dead_code)]
+    fn is_active(&self) -> bool;
+
+    /// Returns the name of the transport protocol (e.g., "grpc", "http")
+    #[allow(dead_code)]
+    fn name(&self) -> &'static str;
+
+    /// Returns a list of available transports that this instance can switch to or supports.
+    #[allow(dead_code)]
+    fn list_available(&self) -> Vec<String>;
 }

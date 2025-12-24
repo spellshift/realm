@@ -1,0 +1,48 @@
+[package]
+name = "eldritch-libpivot"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch-agent = { workspace = true }
+
+anyhow = { workspace = true, optional = true }
+async-recursion = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+ipnetwork = { workspace = true, optional = true }
+log = { workspace = true, optional = true }
+russh = { workspace = true, optional = true }
+russh-sftp = { workspace = true, optional = true }
+russh-keys = { workspace = true, optional = true }
+tokio = { workspace = true, features = [
+    "macros",
+    "rt-multi-thread",
+    "fs",
+], optional = true }
+pnet = { workspace = true, optional = true }
+pb = { workspace = true }
+
+[target.'cfg(not(target_os = "freebsd"))'.dependencies]
+listeners = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+eldritch-agent = { workspace = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "anyhow",
+    "async-recursion",
+    "async-trait",
+    "ipnetwork",
+    "log",
+    "russh",
+    "russh-sftp",
+    "russh-keys",
+    "tokio",
+    "pnet",
+]
+fake_bindings = []

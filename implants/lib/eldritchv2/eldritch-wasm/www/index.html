@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eldritch REPL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+            overflow-y: scroll;
+        }
+
+        #terminal {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            outline: none;
+        }
+
+        #current-line {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .prompt {
+            color: #569cd6;
+            margin-right: 0px;
+            /* Spacing handled by content */
+        }
+
+        .continuation {
+            color: #569cd6;
+        }
+
+        .cursor {
+            background-color: #d4d4d4;
+            color: #1e1e1e;
+        }
+
+        /* Visual indicator when not focused */
+        body.not-focused .cursor {
+            background-color: transparent;
+            border: 1px solid #d4d4d4;
+            color: #d4d4d4;
+        }
+
+        body.not-focused {
+            opacity: 0.8;
+        }
+
+        /* Hide the actual input but keep it functional */
+        #hidden-input {
+            position: fixed;
+            opacity: 0;
+            top: 0;
+            left: -9999px;
+        }
+
+        #realm-logo {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            /* Adjust size as needed, 150px seems reasonable for a 250px source */
+            opacity: 0.8;
+            pointer-events: none;
+            /* Let clicks pass through if it overlaps something */
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px),
+        (max-height: 600px) {
+            #realm-logo {
+                display: none;
+            }
+        }
+
+        #suggestions {
+            display: none;
+            background-color: #252526;
+            border: 1px solid #454545;
+            position: absolute;
+            z-index: 2000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 4px 8px;
+            cursor: pointer;
+            color: #d4d4d4;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.selected {
+            background-color: #04395e;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZZ8G47GCT4"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-ZZ8G47GCT4');
+</script>
+
+<body>
+    <h1>Eldritch v0.3 REPL (WASM)</h1>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1000">
+        <a href="https://github.com/spellshift/realm/issues/new?template=feedback.md&title=%5Bfeedback%5D%5Beldritchv0.3%5D%20Feedback%20Title"
+            target="_blank" class="btn btn-dark btn-lg shadow">
+            <i class="fab fa-github me-2"></i>Leave Feedback
+        </a>
+    </div>
+    <h2><a Leave Feedback</a>
+    </h2>
+    <div id="terminal"></div>
+    <div id="current-line"></div>
+    <div id="suggestions"></div>
+    <textarea id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+
+    <img id="realm-logo" src="https://raw.githubusercontent.com/spellshift/realm/main/docs/assets/img/realm_250px.png"
+        alt="Realm Logo">
+
+    <script type="module">
+        import init, { WasmRepl } from './pkg/eldritch_repl.js';
+
+        let repl;
+        const termEl = document.getElementById('terminal');
+        const currentLineEl = document.getElementById('current-line');
+        const inputEl = document.getElementById('hidden-input');
+        const suggestionsEl = document.getElementById('suggestions');
+
+        // Persistence
+        const HISTORY_KEY = 'eldritch_history';
+
+        // Output handling
+        window.repl_print = (s) => {
+            // This is kept for backward compatibility if any direct calls remain,
+            // but the primary output path should now be through handle_key/execute returns.
+            printLine(s);
+        };
+
+        function printLine(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            termEl.appendChild(div);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        async function main() {
+            await init();
+            repl = new WasmRepl();
+
+            // Load history
+            try {
+                const saved = localStorage.getItem(HISTORY_KEY);
+                if (saved) {
+                    repl.load_history(JSON.parse(saved));
+                }
+            } catch (e) { console.error(e); }
+
+            printLine("stdlib fakes registered, enjoy our demo environment!");
+            render();
+
+            // Focus handling
+            inputEl.addEventListener('focus', () => {
+                document.body.classList.remove('not-focused');
+                render(); // Re-render to update cursor style if needed
+            });
+
+            inputEl.addEventListener('blur', () => {
+                document.body.classList.add('not-focused');
+                render();
+            });
+
+            // Focus hidden input on click anywhere
+            document.body.addEventListener('click', () => {
+                // If the user has selected text, do not steal focus,
+                // otherwise they cannot copy the text.
+                const sel = window.getSelection();
+                if (sel && sel.toString().length > 0) {
+                    return;
+                }
+                inputEl.focus();
+            });
+
+            // Initial focus
+            inputEl.focus();
+        }
+
+        function render() {
+            const state = repl.get_state();
+
+            // Render prompt and buffer with cursor
+            const promptSpan = `<span class="prompt">${escape(state.prompt)}</span>`;
+
+            const buf = state.buffer;
+            const cur = state.cursor;
+
+            let inputHtml = '';
+
+            // Ensure cursor is within bounds
+            const safeCur = Math.min(Math.max(0, cur), buf.length);
+
+            const before = buf.substring(0, safeCur);
+            const charAtCursor = buf.substring(safeCur, safeCur + 1) || ' ';
+            const after = buf.substring(safeCur + 1);
+
+            inputHtml = escape(before) + `<span class="cursor">${escape(charAtCursor)}</span>` + escape(after);
+
+            // Handle multi-line indentation alignment
+            if (state.prompt.length > 0) {
+                const padding = ' '.repeat(state.prompt.length);
+                inputHtml = inputHtml.replace(/\n/g, '\n' + padding);
+            }
+
+            currentLineEl.innerHTML = promptSpan + inputHtml;
+
+            // Handle suggestions
+            if (state.suggestions && state.suggestions.length > 0) {
+                suggestionsEl.innerHTML = '';
+                state.suggestions.forEach((s, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    if (state.suggestion_idx !== undefined && state.suggestion_idx === idx) {
+                        div.classList.add('selected');
+                    }
+                    div.innerText = s;
+                    div.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent hidden input focus steal causing blur?
+                        insertSuggestion(s);
+                        inputEl.focus();
+                    });
+                    suggestionsEl.appendChild(div);
+                });
+
+                suggestionsEl.style.display = 'block';
+
+                // Position logic: simple append below current line for now
+                // Calculating pixel position of the cursor is hard.
+                // We'll offset it by the height of the current line + some buffer.
+                // Ideally, we'd use getBoundingClientRect() of the cursor span, but we just re-rendered.
+
+                // Let's try to find the cursor span we just injected
+                const cursorSpan = currentLineEl.querySelector('.cursor');
+                if (cursorSpan) {
+                    const rect = cursorSpan.getBoundingClientRect();
+                    suggestionsEl.style.top = (window.scrollY + rect.bottom) + 'px';
+                    suggestionsEl.style.left = rect.left + 'px';
+                } else {
+                    // Fallback
+                    const rect = currentLineEl.getBoundingClientRect();
+                    suggestionsEl.style.top = (window.scrollY + rect.bottom) + 'px';
+                    suggestionsEl.style.left = (rect.left + 40) + 'px'; // approximate prompt width
+                }
+
+            } else {
+                suggestionsEl.style.display = 'none';
+            }
+
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function insertSuggestion(s) {
+            // Best effort insertion: append to cursor? or replace word?
+            // Since we don't have start/end info from backend easily, we can try to guess or just append.
+            // A common strategy if we just have the full completion string (which we seem to have from backend?):
+            // The backend returns a list of valid completions. Usually these are full words or suffixes?
+            // "Interpreter::complete" usually returns the full candidates relative to the token being completed?
+            // Or just the suffix?
+            // If it returns full token candidates, we need to find the token boundary.
+            // If it returns suffixes, we just append.
+            // Let's assume for now we append the clicked text, but we might be duplicating.
+            // Actually, usually completion in shells returns the *whole* word that replaces the current partial word.
+            // If I type `proc` and get `process`, and I click `process`, I want `process` in buffer, not `procprocess`.
+            // So I need to backspace until a separator, then insert.
+            // But this logic should ideally be in Rust.
+            // Since I am in JS, let's just use handle_paste which handles chars.
+            // But first let's try to be smart about backspacing.
+            // Simple heuristic: backspace until dot or space.
+
+            // NOTE: This is a frontend-side heuristic because the WASM interface doesn't expose `replace_current_word`.
+            // It assumes standard variable naming (no spaces).
+
+            // Get current buffer before cursor
+            const state = repl.get_state();
+            const before = state.buffer.substring(0, state.cursor);
+
+            // Find last separator
+            const match = before.match(/[^a-zA-Z0-9_]([a-zA-Z0-9_]+)$/);
+            let charsBack = 0;
+            if (match) {
+                charsBack = match[1].length;
+            } else if (before.match(/^[a-zA-Z0-9_]+$/)) {
+                // Whole line is one word
+                charsBack = before.length;
+            }
+
+            // Send backspaces
+            for (let i = 0; i < charsBack; i++) {
+                repl.handle_key('Backspace', false, false, false, false);
+            }
+
+            // Paste the suggestion
+            const res = repl.handle_paste(s);
+            if (res.echo) printLine(res.echo);
+            if (res.output) printLine(res.output);
+
+            // Force re-render which will also clear suggestions (handle_paste -> process_input which might clear them or they clear on input)
+            render();
+        }
+
+        function escape(s) {
+            return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function saveHistory() {
+            // Get history from Repl
+            const hist = repl.get_history();
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
+        }
+
+        inputEl.addEventListener('keydown', (e) => {
+            // Prevent default browser actions for handled keys
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'Backspace', 'Enter'].includes(e.key)) {
+                e.preventDefault();
+            }
+            if (e.key === 'c' && e.ctrlKey) e.preventDefault();
+            if (e.key === 'l' && e.ctrlKey) e.preventDefault();
+            if (e.key === 'a' && e.ctrlKey) e.preventDefault();
+            if (e.key === 'e' && e.ctrlKey) e.preventDefault();
+
+            // Handle Key via Rust
+            let key = e.key;
+
+            // Pass shiftKey to handle_key
+            const result = repl.handle_key(key, e.ctrlKey, e.altKey, e.metaKey, e.shiftKey);
+
+            // Handle clear screen
+            if (result.clear) {
+                termEl.innerHTML = '';
+            }
+
+            // Handle echo (the command or line accepted) FIRST
+            if (result.echo) {
+                printLine(result.echo);
+            }
+
+            // Then output
+            if (result.output) {
+                printLine(result.output);
+            }
+
+            // Re-render
+            render();
+
+            if (result.output || result.echo) {
+                saveHistory();
+            }
+        });
+
+        inputEl.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            if (text) {
+                const res = repl.handle_paste(text);
+                if (res.echo) printLine(res.echo);
+                if (res.output) printLine(res.output);
+                render();
+            }
+        });
+
+        main();
+    </script>
+</body>
+
+</html>

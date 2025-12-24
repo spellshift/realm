@@ -152,7 +152,7 @@ Modify .devcontainer/devcontainer.json by uncommenting the MacOSX.sdk mount. Thi
 ```bash
 cd realm/implants/imix/
 # Tell the linker to use the MacOSX.sdk
-export RUSTFLAGS="-Clink-arg=-isysroot -Clink-arg=/MacOSX.sdk -Clink-arg=-F/MacOSX.sdk/System/Library/Frameworks -Clink-arg=-L/MacOSX.sdk/usr/lib -Clink-arg=-lresolv"
+export SDKROOT="/MacOSX.sdk/"; export RUSTFLAGS="-Clink-arg=-isysroot -Clink-arg=/MacOSX.sdk -Clink-arg=-F/MacOSX.sdk/System/Library/Frameworks -Clink-arg=-L/MacOSX.sdk/usr/lib -Clink-arg=-lresolv"
 
 export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 

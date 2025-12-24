@@ -72,8 +72,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
-				SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-				SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)

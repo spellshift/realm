@@ -103,16 +103,21 @@ func TestNewShellHandler(t *testing.T) {
 
 	_, p, err := ws.ReadMessage()
 	assert.NoError(t, err)
+
 	assert.Equal(t, testMessage, p)
 
 	// Test reading from the websocket (shell -> server)
+	// Client sends raw bytes
 	readMessage := []byte("hello from shell")
-	err = ws.WriteMessage(websocket.BinaryMessage, readMessage)
+	err = ws.WriteMessage(websocket.TextMessage, readMessage)
 	require.NoError(t, err)
 
 	// Now, we expect the message on the input subscription
 	msg, err := inputSub.Receive(ctx)
 	require.NoError(t, err, "timed out waiting for message from websocket")
+
+	// The body sent to pubsub should be the raw bytes
 	assert.Equal(t, readMessage, msg.Body)
+	assert.Equal(t, "data", msg.Metadata[stream.MetadataMsgKind])
 	msg.Ack()
 }
