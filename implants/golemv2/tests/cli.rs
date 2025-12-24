@@ -1,7 +1,7 @@
 use assert_cmd::cargo_bin; // Find our binary
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
-use std::process::{Command}; // Run programs
+use std::process::Command; // Run programs
 use std::str;
 
 const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test";
