@@ -26,115 +26,115 @@ type HostCredentialUpdate struct {
 }
 
 // Where appends a list predicates to the HostCredentialUpdate builder.
-func (hcu *HostCredentialUpdate) Where(ps ...predicate.HostCredential) *HostCredentialUpdate {
-	hcu.mutation.Where(ps...)
-	return hcu
+func (_u *HostCredentialUpdate) Where(ps ...predicate.HostCredential) *HostCredentialUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hcu *HostCredentialUpdate) SetLastModifiedAt(t time.Time) *HostCredentialUpdate {
-	hcu.mutation.SetLastModifiedAt(t)
-	return hcu
+func (_u *HostCredentialUpdate) SetLastModifiedAt(v time.Time) *HostCredentialUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetPrincipal sets the "principal" field.
-func (hcu *HostCredentialUpdate) SetPrincipal(s string) *HostCredentialUpdate {
-	hcu.mutation.SetPrincipal(s)
-	return hcu
+func (_u *HostCredentialUpdate) SetPrincipal(v string) *HostCredentialUpdate {
+	_u.mutation.SetPrincipal(v)
+	return _u
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (hcu *HostCredentialUpdate) SetNillablePrincipal(s *string) *HostCredentialUpdate {
-	if s != nil {
-		hcu.SetPrincipal(*s)
+func (_u *HostCredentialUpdate) SetNillablePrincipal(v *string) *HostCredentialUpdate {
+	if v != nil {
+		_u.SetPrincipal(*v)
 	}
-	return hcu
+	return _u
 }
 
 // SetSecret sets the "secret" field.
-func (hcu *HostCredentialUpdate) SetSecret(s string) *HostCredentialUpdate {
-	hcu.mutation.SetSecret(s)
-	return hcu
+func (_u *HostCredentialUpdate) SetSecret(v string) *HostCredentialUpdate {
+	_u.mutation.SetSecret(v)
+	return _u
 }
 
 // SetNillableSecret sets the "secret" field if the given value is not nil.
-func (hcu *HostCredentialUpdate) SetNillableSecret(s *string) *HostCredentialUpdate {
-	if s != nil {
-		hcu.SetSecret(*s)
+func (_u *HostCredentialUpdate) SetNillableSecret(v *string) *HostCredentialUpdate {
+	if v != nil {
+		_u.SetSecret(*v)
 	}
-	return hcu
+	return _u
 }
 
 // SetKind sets the "kind" field.
-func (hcu *HostCredentialUpdate) SetKind(ek epb.Credential_Kind) *HostCredentialUpdate {
-	hcu.mutation.SetKind(ek)
-	return hcu
+func (_u *HostCredentialUpdate) SetKind(v epb.Credential_Kind) *HostCredentialUpdate {
+	_u.mutation.SetKind(v)
+	return _u
 }
 
 // SetNillableKind sets the "kind" field if the given value is not nil.
-func (hcu *HostCredentialUpdate) SetNillableKind(ek *epb.Credential_Kind) *HostCredentialUpdate {
-	if ek != nil {
-		hcu.SetKind(*ek)
+func (_u *HostCredentialUpdate) SetNillableKind(v *epb.Credential_Kind) *HostCredentialUpdate {
+	if v != nil {
+		_u.SetKind(*v)
 	}
-	return hcu
+	return _u
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hcu *HostCredentialUpdate) SetHostID(id int) *HostCredentialUpdate {
-	hcu.mutation.SetHostID(id)
-	return hcu
+func (_u *HostCredentialUpdate) SetHostID(id int) *HostCredentialUpdate {
+	_u.mutation.SetHostID(id)
+	return _u
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hcu *HostCredentialUpdate) SetHost(h *Host) *HostCredentialUpdate {
-	return hcu.SetHostID(h.ID)
+func (_u *HostCredentialUpdate) SetHost(v *Host) *HostCredentialUpdate {
+	return _u.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hcu *HostCredentialUpdate) SetTaskID(id int) *HostCredentialUpdate {
-	hcu.mutation.SetTaskID(id)
-	return hcu
+func (_u *HostCredentialUpdate) SetTaskID(id int) *HostCredentialUpdate {
+	_u.mutation.SetTaskID(id)
+	return _u
 }
 
 // SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
-func (hcu *HostCredentialUpdate) SetNillableTaskID(id *int) *HostCredentialUpdate {
+func (_u *HostCredentialUpdate) SetNillableTaskID(id *int) *HostCredentialUpdate {
 	if id != nil {
-		hcu = hcu.SetTaskID(*id)
+		_u = _u.SetTaskID(*id)
 	}
-	return hcu
+	return _u
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hcu *HostCredentialUpdate) SetTask(t *Task) *HostCredentialUpdate {
-	return hcu.SetTaskID(t.ID)
+func (_u *HostCredentialUpdate) SetTask(v *Task) *HostCredentialUpdate {
+	return _u.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostCredentialMutation object of the builder.
-func (hcu *HostCredentialUpdate) Mutation() *HostCredentialMutation {
-	return hcu.mutation
+func (_u *HostCredentialUpdate) Mutation() *HostCredentialMutation {
+	return _u.mutation
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (hcu *HostCredentialUpdate) ClearHost() *HostCredentialUpdate {
-	hcu.mutation.ClearHost()
-	return hcu
+func (_u *HostCredentialUpdate) ClearHost() *HostCredentialUpdate {
+	_u.mutation.ClearHost()
+	return _u
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (hcu *HostCredentialUpdate) ClearTask() *HostCredentialUpdate {
-	hcu.mutation.ClearTask()
-	return hcu
+func (_u *HostCredentialUpdate) ClearTask() *HostCredentialUpdate {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (hcu *HostCredentialUpdate) Save(ctx context.Context) (int, error) {
-	hcu.defaults()
-	return withHooks(ctx, hcu.sqlSave, hcu.mutation, hcu.hooks)
+func (_u *HostCredentialUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hcu *HostCredentialUpdate) SaveX(ctx context.Context) int {
-	affected, err := hcu.Save(ctx)
+func (_u *HostCredentialUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -142,74 +142,74 @@ func (hcu *HostCredentialUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (hcu *HostCredentialUpdate) Exec(ctx context.Context) error {
-	_, err := hcu.Save(ctx)
+func (_u *HostCredentialUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hcu *HostCredentialUpdate) ExecX(ctx context.Context) {
-	if err := hcu.Exec(ctx); err != nil {
+func (_u *HostCredentialUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hcu *HostCredentialUpdate) defaults() {
-	if _, ok := hcu.mutation.LastModifiedAt(); !ok {
+func (_u *HostCredentialUpdate) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := hostcredential.UpdateDefaultLastModifiedAt()
-		hcu.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hcu *HostCredentialUpdate) check() error {
-	if v, ok := hcu.mutation.Principal(); ok {
+func (_u *HostCredentialUpdate) check() error {
+	if v, ok := _u.mutation.Principal(); ok {
 		if err := hostcredential.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostCredential.principal": %w`, err)}
 		}
 	}
-	if v, ok := hcu.mutation.Secret(); ok {
+	if v, ok := _u.mutation.Secret(); ok {
 		if err := hostcredential.SecretValidator(v); err != nil {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "HostCredential.secret": %w`, err)}
 		}
 	}
-	if v, ok := hcu.mutation.Kind(); ok {
+	if v, ok := _u.mutation.Kind(); ok {
 		if err := hostcredential.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if hcu.mutation.HostCleared() && len(hcu.mutation.HostIDs()) > 0 {
+	if _u.mutation.HostCleared() && len(_u.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
 	return nil
 }
 
-func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := hcu.check(); err != nil {
-		return n, err
+func (_u *HostCredentialUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(hostcredential.Table, hostcredential.Columns, sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt))
-	if ps := hcu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := hcu.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostcredential.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := hcu.mutation.Principal(); ok {
+	if value, ok := _u.mutation.Principal(); ok {
 		_spec.SetField(hostcredential.FieldPrincipal, field.TypeString, value)
 	}
-	if value, ok := hcu.mutation.Secret(); ok {
+	if value, ok := _u.mutation.Secret(); ok {
 		_spec.SetField(hostcredential.FieldSecret, field.TypeString, value)
 	}
-	if value, ok := hcu.mutation.Kind(); ok {
+	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(hostcredential.FieldKind, field.TypeEnum, value)
 	}
-	if hcu.mutation.HostCleared() {
+	if _u.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -222,7 +222,7 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hcu.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -238,7 +238,7 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if hcu.mutation.TaskCleared() {
+	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -251,7 +251,7 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hcu.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -267,7 +267,7 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, hcu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{hostcredential.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -275,8 +275,8 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		return 0, err
 	}
-	hcu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // HostCredentialUpdateOne is the builder for updating a single HostCredential entity.
@@ -288,122 +288,122 @@ type HostCredentialUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hcuo *HostCredentialUpdateOne) SetLastModifiedAt(t time.Time) *HostCredentialUpdateOne {
-	hcuo.mutation.SetLastModifiedAt(t)
-	return hcuo
+func (_u *HostCredentialUpdateOne) SetLastModifiedAt(v time.Time) *HostCredentialUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetPrincipal sets the "principal" field.
-func (hcuo *HostCredentialUpdateOne) SetPrincipal(s string) *HostCredentialUpdateOne {
-	hcuo.mutation.SetPrincipal(s)
-	return hcuo
+func (_u *HostCredentialUpdateOne) SetPrincipal(v string) *HostCredentialUpdateOne {
+	_u.mutation.SetPrincipal(v)
+	return _u
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (hcuo *HostCredentialUpdateOne) SetNillablePrincipal(s *string) *HostCredentialUpdateOne {
-	if s != nil {
-		hcuo.SetPrincipal(*s)
+func (_u *HostCredentialUpdateOne) SetNillablePrincipal(v *string) *HostCredentialUpdateOne {
+	if v != nil {
+		_u.SetPrincipal(*v)
 	}
-	return hcuo
+	return _u
 }
 
 // SetSecret sets the "secret" field.
-func (hcuo *HostCredentialUpdateOne) SetSecret(s string) *HostCredentialUpdateOne {
-	hcuo.mutation.SetSecret(s)
-	return hcuo
+func (_u *HostCredentialUpdateOne) SetSecret(v string) *HostCredentialUpdateOne {
+	_u.mutation.SetSecret(v)
+	return _u
 }
 
 // SetNillableSecret sets the "secret" field if the given value is not nil.
-func (hcuo *HostCredentialUpdateOne) SetNillableSecret(s *string) *HostCredentialUpdateOne {
-	if s != nil {
-		hcuo.SetSecret(*s)
+func (_u *HostCredentialUpdateOne) SetNillableSecret(v *string) *HostCredentialUpdateOne {
+	if v != nil {
+		_u.SetSecret(*v)
 	}
-	return hcuo
+	return _u
 }
 
 // SetKind sets the "kind" field.
-func (hcuo *HostCredentialUpdateOne) SetKind(ek epb.Credential_Kind) *HostCredentialUpdateOne {
-	hcuo.mutation.SetKind(ek)
-	return hcuo
+func (_u *HostCredentialUpdateOne) SetKind(v epb.Credential_Kind) *HostCredentialUpdateOne {
+	_u.mutation.SetKind(v)
+	return _u
 }
 
 // SetNillableKind sets the "kind" field if the given value is not nil.
-func (hcuo *HostCredentialUpdateOne) SetNillableKind(ek *epb.Credential_Kind) *HostCredentialUpdateOne {
-	if ek != nil {
-		hcuo.SetKind(*ek)
+func (_u *HostCredentialUpdateOne) SetNillableKind(v *epb.Credential_Kind) *HostCredentialUpdateOne {
+	if v != nil {
+		_u.SetKind(*v)
 	}
-	return hcuo
+	return _u
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hcuo *HostCredentialUpdateOne) SetHostID(id int) *HostCredentialUpdateOne {
-	hcuo.mutation.SetHostID(id)
-	return hcuo
+func (_u *HostCredentialUpdateOne) SetHostID(id int) *HostCredentialUpdateOne {
+	_u.mutation.SetHostID(id)
+	return _u
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hcuo *HostCredentialUpdateOne) SetHost(h *Host) *HostCredentialUpdateOne {
-	return hcuo.SetHostID(h.ID)
+func (_u *HostCredentialUpdateOne) SetHost(v *Host) *HostCredentialUpdateOne {
+	return _u.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hcuo *HostCredentialUpdateOne) SetTaskID(id int) *HostCredentialUpdateOne {
-	hcuo.mutation.SetTaskID(id)
-	return hcuo
+func (_u *HostCredentialUpdateOne) SetTaskID(id int) *HostCredentialUpdateOne {
+	_u.mutation.SetTaskID(id)
+	return _u
 }
 
 // SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
-func (hcuo *HostCredentialUpdateOne) SetNillableTaskID(id *int) *HostCredentialUpdateOne {
+func (_u *HostCredentialUpdateOne) SetNillableTaskID(id *int) *HostCredentialUpdateOne {
 	if id != nil {
-		hcuo = hcuo.SetTaskID(*id)
+		_u = _u.SetTaskID(*id)
 	}
-	return hcuo
+	return _u
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hcuo *HostCredentialUpdateOne) SetTask(t *Task) *HostCredentialUpdateOne {
-	return hcuo.SetTaskID(t.ID)
+func (_u *HostCredentialUpdateOne) SetTask(v *Task) *HostCredentialUpdateOne {
+	return _u.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostCredentialMutation object of the builder.
-func (hcuo *HostCredentialUpdateOne) Mutation() *HostCredentialMutation {
-	return hcuo.mutation
+func (_u *HostCredentialUpdateOne) Mutation() *HostCredentialMutation {
+	return _u.mutation
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (hcuo *HostCredentialUpdateOne) ClearHost() *HostCredentialUpdateOne {
-	hcuo.mutation.ClearHost()
-	return hcuo
+func (_u *HostCredentialUpdateOne) ClearHost() *HostCredentialUpdateOne {
+	_u.mutation.ClearHost()
+	return _u
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (hcuo *HostCredentialUpdateOne) ClearTask() *HostCredentialUpdateOne {
-	hcuo.mutation.ClearTask()
-	return hcuo
+func (_u *HostCredentialUpdateOne) ClearTask() *HostCredentialUpdateOne {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // Where appends a list predicates to the HostCredentialUpdate builder.
-func (hcuo *HostCredentialUpdateOne) Where(ps ...predicate.HostCredential) *HostCredentialUpdateOne {
-	hcuo.mutation.Where(ps...)
-	return hcuo
+func (_u *HostCredentialUpdateOne) Where(ps ...predicate.HostCredential) *HostCredentialUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (hcuo *HostCredentialUpdateOne) Select(field string, fields ...string) *HostCredentialUpdateOne {
-	hcuo.fields = append([]string{field}, fields...)
-	return hcuo
+func (_u *HostCredentialUpdateOne) Select(field string, fields ...string) *HostCredentialUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated HostCredential entity.
-func (hcuo *HostCredentialUpdateOne) Save(ctx context.Context) (*HostCredential, error) {
-	hcuo.defaults()
-	return withHooks(ctx, hcuo.sqlSave, hcuo.mutation, hcuo.hooks)
+func (_u *HostCredentialUpdateOne) Save(ctx context.Context) (*HostCredential, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hcuo *HostCredentialUpdateOne) SaveX(ctx context.Context) *HostCredential {
-	node, err := hcuo.Save(ctx)
+func (_u *HostCredentialUpdateOne) SaveX(ctx context.Context) *HostCredential {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -411,60 +411,60 @@ func (hcuo *HostCredentialUpdateOne) SaveX(ctx context.Context) *HostCredential 
 }
 
 // Exec executes the query on the entity.
-func (hcuo *HostCredentialUpdateOne) Exec(ctx context.Context) error {
-	_, err := hcuo.Save(ctx)
+func (_u *HostCredentialUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hcuo *HostCredentialUpdateOne) ExecX(ctx context.Context) {
-	if err := hcuo.Exec(ctx); err != nil {
+func (_u *HostCredentialUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hcuo *HostCredentialUpdateOne) defaults() {
-	if _, ok := hcuo.mutation.LastModifiedAt(); !ok {
+func (_u *HostCredentialUpdateOne) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := hostcredential.UpdateDefaultLastModifiedAt()
-		hcuo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hcuo *HostCredentialUpdateOne) check() error {
-	if v, ok := hcuo.mutation.Principal(); ok {
+func (_u *HostCredentialUpdateOne) check() error {
+	if v, ok := _u.mutation.Principal(); ok {
 		if err := hostcredential.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostCredential.principal": %w`, err)}
 		}
 	}
-	if v, ok := hcuo.mutation.Secret(); ok {
+	if v, ok := _u.mutation.Secret(); ok {
 		if err := hostcredential.SecretValidator(v); err != nil {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "HostCredential.secret": %w`, err)}
 		}
 	}
-	if v, ok := hcuo.mutation.Kind(); ok {
+	if v, ok := _u.mutation.Kind(); ok {
 		if err := hostcredential.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if hcuo.mutation.HostCleared() && len(hcuo.mutation.HostIDs()) > 0 {
+	if _u.mutation.HostCleared() && len(_u.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
 	return nil
 }
 
-func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCredential, err error) {
-	if err := hcuo.check(); err != nil {
+func (_u *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCredential, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(hostcredential.Table, hostcredential.Columns, sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt))
-	id, ok := hcuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "HostCredential.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := hcuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, hostcredential.FieldID)
 		for _, f := range fields {
@@ -476,26 +476,26 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 			}
 		}
 	}
-	if ps := hcuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := hcuo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostcredential.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := hcuo.mutation.Principal(); ok {
+	if value, ok := _u.mutation.Principal(); ok {
 		_spec.SetField(hostcredential.FieldPrincipal, field.TypeString, value)
 	}
-	if value, ok := hcuo.mutation.Secret(); ok {
+	if value, ok := _u.mutation.Secret(); ok {
 		_spec.SetField(hostcredential.FieldSecret, field.TypeString, value)
 	}
-	if value, ok := hcuo.mutation.Kind(); ok {
+	if value, ok := _u.mutation.Kind(); ok {
 		_spec.SetField(hostcredential.FieldKind, field.TypeEnum, value)
 	}
-	if hcuo.mutation.HostCleared() {
+	if _u.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -508,7 +508,7 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hcuo.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -524,7 +524,7 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if hcuo.mutation.TaskCleared() {
+	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -537,7 +537,7 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hcuo.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -553,10 +553,10 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &HostCredential{config: hcuo.config}
+	_node = &HostCredential{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, hcuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{hostcredential.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -564,6 +564,6 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 		}
 		return nil, err
 	}
-	hcuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

@@ -151,7 +151,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Task fields.
-func (t *Task) assignValues(columns []string, values []any) error {
+func (_m *Task) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -162,71 +162,71 @@ func (t *Task) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			t.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case task.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				t.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case task.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				t.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case task.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field claimed_at", values[i])
 			} else if value.Valid {
-				t.ClaimedAt = value.Time
+				_m.ClaimedAt = value.Time
 			}
 		case task.FieldExecStartedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field exec_started_at", values[i])
 			} else if value.Valid {
-				t.ExecStartedAt = value.Time
+				_m.ExecStartedAt = value.Time
 			}
 		case task.FieldExecFinishedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field exec_finished_at", values[i])
 			} else if value.Valid {
-				t.ExecFinishedAt = value.Time
+				_m.ExecFinishedAt = value.Time
 			}
 		case task.FieldOutput:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field output", values[i])
 			} else if value.Valid {
-				t.Output = value.String
+				_m.Output = value.String
 			}
 		case task.FieldOutputSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field output_size", values[i])
 			} else if value.Valid {
-				t.OutputSize = int(value.Int64)
+				_m.OutputSize = int(value.Int64)
 			}
 		case task.FieldError:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field error", values[i])
 			} else if value.Valid {
-				t.Error = value.String
+				_m.Error = value.String
 			}
 		case task.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_tasks", value)
 			} else if value.Valid {
-				t.quest_tasks = new(int)
-				*t.quest_tasks = int(value.Int64)
+				_m.quest_tasks = new(int)
+				*_m.quest_tasks = int(value.Int64)
 			}
 		case task.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_beacon", value)
 			} else if value.Valid {
-				t.task_beacon = new(int)
-				*t.task_beacon = int(value.Int64)
+				_m.task_beacon = new(int)
+				*_m.task_beacon = int(value.Int64)
 			}
 		default:
-			t.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -234,183 +234,183 @@ func (t *Task) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Task.
 // This includes values selected through modifiers, order, etc.
-func (t *Task) Value(name string) (ent.Value, error) {
-	return t.selectValues.Get(name)
+func (_m *Task) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryQuest queries the "quest" edge of the Task entity.
-func (t *Task) QueryQuest() *QuestQuery {
-	return NewTaskClient(t.config).QueryQuest(t)
+func (_m *Task) QueryQuest() *QuestQuery {
+	return NewTaskClient(_m.config).QueryQuest(_m)
 }
 
 // QueryBeacon queries the "beacon" edge of the Task entity.
-func (t *Task) QueryBeacon() *BeaconQuery {
-	return NewTaskClient(t.config).QueryBeacon(t)
+func (_m *Task) QueryBeacon() *BeaconQuery {
+	return NewTaskClient(_m.config).QueryBeacon(_m)
 }
 
 // QueryReportedFiles queries the "reported_files" edge of the Task entity.
-func (t *Task) QueryReportedFiles() *HostFileQuery {
-	return NewTaskClient(t.config).QueryReportedFiles(t)
+func (_m *Task) QueryReportedFiles() *HostFileQuery {
+	return NewTaskClient(_m.config).QueryReportedFiles(_m)
 }
 
 // QueryReportedProcesses queries the "reported_processes" edge of the Task entity.
-func (t *Task) QueryReportedProcesses() *HostProcessQuery {
-	return NewTaskClient(t.config).QueryReportedProcesses(t)
+func (_m *Task) QueryReportedProcesses() *HostProcessQuery {
+	return NewTaskClient(_m.config).QueryReportedProcesses(_m)
 }
 
 // QueryReportedCredentials queries the "reported_credentials" edge of the Task entity.
-func (t *Task) QueryReportedCredentials() *HostCredentialQuery {
-	return NewTaskClient(t.config).QueryReportedCredentials(t)
+func (_m *Task) QueryReportedCredentials() *HostCredentialQuery {
+	return NewTaskClient(_m.config).QueryReportedCredentials(_m)
 }
 
 // QueryShells queries the "shells" edge of the Task entity.
-func (t *Task) QueryShells() *ShellQuery {
-	return NewTaskClient(t.config).QueryShells(t)
+func (_m *Task) QueryShells() *ShellQuery {
+	return NewTaskClient(_m.config).QueryShells(_m)
 }
 
 // Update returns a builder for updating this Task.
 // Note that you need to call Task.Unwrap() before calling this method if this Task
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (t *Task) Update() *TaskUpdateOne {
-	return NewTaskClient(t.config).UpdateOne(t)
+func (_m *Task) Update() *TaskUpdateOne {
+	return NewTaskClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Task entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (t *Task) Unwrap() *Task {
-	_tx, ok := t.config.driver.(*txDriver)
+func (_m *Task) Unwrap() *Task {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Task is not a transactional entity")
 	}
-	t.config.driver = _tx.drv
-	return t
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (t *Task) String() string {
+func (_m *Task) String() string {
 	var builder strings.Builder
 	builder.WriteString("Task(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
-	builder.WriteString(t.ClaimedAt.Format(time.ANSIC))
+	builder.WriteString(_m.ClaimedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("exec_started_at=")
-	builder.WriteString(t.ExecStartedAt.Format(time.ANSIC))
+	builder.WriteString(_m.ExecStartedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("exec_finished_at=")
-	builder.WriteString(t.ExecFinishedAt.Format(time.ANSIC))
+	builder.WriteString(_m.ExecFinishedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("output=")
-	builder.WriteString(t.Output)
+	builder.WriteString(_m.Output)
 	builder.WriteString(", ")
 	builder.WriteString("output_size=")
-	builder.WriteString(fmt.Sprintf("%v", t.OutputSize))
+	builder.WriteString(fmt.Sprintf("%v", _m.OutputSize))
 	builder.WriteString(", ")
 	builder.WriteString("error=")
-	builder.WriteString(t.Error)
+	builder.WriteString(_m.Error)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedReportedFiles returns the ReportedFiles named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Task) NamedReportedFiles(name string) ([]*HostFile, error) {
-	if t.Edges.namedReportedFiles == nil {
+func (_m *Task) NamedReportedFiles(name string) ([]*HostFile, error) {
+	if _m.Edges.namedReportedFiles == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedReportedFiles[name]
+	nodes, ok := _m.Edges.namedReportedFiles[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Task) appendNamedReportedFiles(name string, edges ...*HostFile) {
-	if t.Edges.namedReportedFiles == nil {
-		t.Edges.namedReportedFiles = make(map[string][]*HostFile)
+func (_m *Task) appendNamedReportedFiles(name string, edges ...*HostFile) {
+	if _m.Edges.namedReportedFiles == nil {
+		_m.Edges.namedReportedFiles = make(map[string][]*HostFile)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedReportedFiles[name] = []*HostFile{}
+		_m.Edges.namedReportedFiles[name] = []*HostFile{}
 	} else {
-		t.Edges.namedReportedFiles[name] = append(t.Edges.namedReportedFiles[name], edges...)
+		_m.Edges.namedReportedFiles[name] = append(_m.Edges.namedReportedFiles[name], edges...)
 	}
 }
 
 // NamedReportedProcesses returns the ReportedProcesses named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Task) NamedReportedProcesses(name string) ([]*HostProcess, error) {
-	if t.Edges.namedReportedProcesses == nil {
+func (_m *Task) NamedReportedProcesses(name string) ([]*HostProcess, error) {
+	if _m.Edges.namedReportedProcesses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedReportedProcesses[name]
+	nodes, ok := _m.Edges.namedReportedProcesses[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Task) appendNamedReportedProcesses(name string, edges ...*HostProcess) {
-	if t.Edges.namedReportedProcesses == nil {
-		t.Edges.namedReportedProcesses = make(map[string][]*HostProcess)
+func (_m *Task) appendNamedReportedProcesses(name string, edges ...*HostProcess) {
+	if _m.Edges.namedReportedProcesses == nil {
+		_m.Edges.namedReportedProcesses = make(map[string][]*HostProcess)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedReportedProcesses[name] = []*HostProcess{}
+		_m.Edges.namedReportedProcesses[name] = []*HostProcess{}
 	} else {
-		t.Edges.namedReportedProcesses[name] = append(t.Edges.namedReportedProcesses[name], edges...)
+		_m.Edges.namedReportedProcesses[name] = append(_m.Edges.namedReportedProcesses[name], edges...)
 	}
 }
 
 // NamedReportedCredentials returns the ReportedCredentials named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Task) NamedReportedCredentials(name string) ([]*HostCredential, error) {
-	if t.Edges.namedReportedCredentials == nil {
+func (_m *Task) NamedReportedCredentials(name string) ([]*HostCredential, error) {
+	if _m.Edges.namedReportedCredentials == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedReportedCredentials[name]
+	nodes, ok := _m.Edges.namedReportedCredentials[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Task) appendNamedReportedCredentials(name string, edges ...*HostCredential) {
-	if t.Edges.namedReportedCredentials == nil {
-		t.Edges.namedReportedCredentials = make(map[string][]*HostCredential)
+func (_m *Task) appendNamedReportedCredentials(name string, edges ...*HostCredential) {
+	if _m.Edges.namedReportedCredentials == nil {
+		_m.Edges.namedReportedCredentials = make(map[string][]*HostCredential)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedReportedCredentials[name] = []*HostCredential{}
+		_m.Edges.namedReportedCredentials[name] = []*HostCredential{}
 	} else {
-		t.Edges.namedReportedCredentials[name] = append(t.Edges.namedReportedCredentials[name], edges...)
+		_m.Edges.namedReportedCredentials[name] = append(_m.Edges.namedReportedCredentials[name], edges...)
 	}
 }
 
 // NamedShells returns the Shells named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Task) NamedShells(name string) ([]*Shell, error) {
-	if t.Edges.namedShells == nil {
+func (_m *Task) NamedShells(name string) ([]*Shell, error) {
+	if _m.Edges.namedShells == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedShells[name]
+	nodes, ok := _m.Edges.namedShells[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Task) appendNamedShells(name string, edges ...*Shell) {
-	if t.Edges.namedShells == nil {
-		t.Edges.namedShells = make(map[string][]*Shell)
+func (_m *Task) appendNamedShells(name string, edges ...*Shell) {
+	if _m.Edges.namedShells == nil {
+		_m.Edges.namedShells = make(map[string][]*Shell)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedShells[name] = []*Shell{}
+		_m.Edges.namedShells[name] = []*Shell{}
 	} else {
-		t.Edges.namedShells[name] = append(t.Edges.namedShells[name], edges...)
+		_m.Edges.namedShells[name] = append(_m.Edges.namedShells[name], edges...)
 	}
 }
 

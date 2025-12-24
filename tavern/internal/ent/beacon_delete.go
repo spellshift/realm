@@ -20,56 +20,56 @@ type BeaconDelete struct {
 }
 
 // Where appends a list predicates to the BeaconDelete builder.
-func (bd *BeaconDelete) Where(ps ...predicate.Beacon) *BeaconDelete {
-	bd.mutation.Where(ps...)
-	return bd
+func (_d *BeaconDelete) Where(ps ...predicate.Beacon) *BeaconDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (bd *BeaconDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, bd.sqlExec, bd.mutation, bd.hooks)
+func (_d *BeaconDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bd *BeaconDelete) ExecX(ctx context.Context) int {
-	n, err := bd.Exec(ctx)
+func (_d *BeaconDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (bd *BeaconDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *BeaconDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(beacon.Table, sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt))
-	if ps := bd.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, bd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	bd.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // BeaconDeleteOne is the builder for deleting a single Beacon entity.
 type BeaconDeleteOne struct {
-	bd *BeaconDelete
+	_d *BeaconDelete
 }
 
 // Where appends a list predicates to the BeaconDelete builder.
-func (bdo *BeaconDeleteOne) Where(ps ...predicate.Beacon) *BeaconDeleteOne {
-	bdo.bd.mutation.Where(ps...)
-	return bdo
+func (_d *BeaconDeleteOne) Where(ps ...predicate.Beacon) *BeaconDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (bdo *BeaconDeleteOne) Exec(ctx context.Context) error {
-	n, err := bdo.bd.Exec(ctx)
+func (_d *BeaconDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (bdo *BeaconDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bdo *BeaconDeleteOne) ExecX(ctx context.Context) {
-	if err := bdo.Exec(ctx); err != nil {
+func (_d *BeaconDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

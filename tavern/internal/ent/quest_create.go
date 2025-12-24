@@ -27,159 +27,159 @@ type QuestCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (qc *QuestCreate) SetCreatedAt(t time.Time) *QuestCreate {
-	qc.mutation.SetCreatedAt(t)
-	return qc
+func (_c *QuestCreate) SetCreatedAt(v time.Time) *QuestCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (qc *QuestCreate) SetNillableCreatedAt(t *time.Time) *QuestCreate {
-	if t != nil {
-		qc.SetCreatedAt(*t)
+func (_c *QuestCreate) SetNillableCreatedAt(v *time.Time) *QuestCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return qc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (qc *QuestCreate) SetLastModifiedAt(t time.Time) *QuestCreate {
-	qc.mutation.SetLastModifiedAt(t)
-	return qc
+func (_c *QuestCreate) SetLastModifiedAt(v time.Time) *QuestCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (qc *QuestCreate) SetNillableLastModifiedAt(t *time.Time) *QuestCreate {
-	if t != nil {
-		qc.SetLastModifiedAt(*t)
+func (_c *QuestCreate) SetNillableLastModifiedAt(v *time.Time) *QuestCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return qc
+	return _c
 }
 
 // SetName sets the "name" field.
-func (qc *QuestCreate) SetName(s string) *QuestCreate {
-	qc.mutation.SetName(s)
-	return qc
+func (_c *QuestCreate) SetName(v string) *QuestCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetParameters sets the "parameters" field.
-func (qc *QuestCreate) SetParameters(s string) *QuestCreate {
-	qc.mutation.SetParameters(s)
-	return qc
+func (_c *QuestCreate) SetParameters(v string) *QuestCreate {
+	_c.mutation.SetParameters(v)
+	return _c
 }
 
 // SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (qc *QuestCreate) SetNillableParameters(s *string) *QuestCreate {
-	if s != nil {
-		qc.SetParameters(*s)
+func (_c *QuestCreate) SetNillableParameters(v *string) *QuestCreate {
+	if v != nil {
+		_c.SetParameters(*v)
 	}
-	return qc
+	return _c
 }
 
 // SetParamDefsAtCreation sets the "param_defs_at_creation" field.
-func (qc *QuestCreate) SetParamDefsAtCreation(s string) *QuestCreate {
-	qc.mutation.SetParamDefsAtCreation(s)
-	return qc
+func (_c *QuestCreate) SetParamDefsAtCreation(v string) *QuestCreate {
+	_c.mutation.SetParamDefsAtCreation(v)
+	return _c
 }
 
 // SetNillableParamDefsAtCreation sets the "param_defs_at_creation" field if the given value is not nil.
-func (qc *QuestCreate) SetNillableParamDefsAtCreation(s *string) *QuestCreate {
-	if s != nil {
-		qc.SetParamDefsAtCreation(*s)
+func (_c *QuestCreate) SetNillableParamDefsAtCreation(v *string) *QuestCreate {
+	if v != nil {
+		_c.SetParamDefsAtCreation(*v)
 	}
-	return qc
+	return _c
 }
 
 // SetEldritchAtCreation sets the "eldritch_at_creation" field.
-func (qc *QuestCreate) SetEldritchAtCreation(s string) *QuestCreate {
-	qc.mutation.SetEldritchAtCreation(s)
-	return qc
+func (_c *QuestCreate) SetEldritchAtCreation(v string) *QuestCreate {
+	_c.mutation.SetEldritchAtCreation(v)
+	return _c
 }
 
 // SetNillableEldritchAtCreation sets the "eldritch_at_creation" field if the given value is not nil.
-func (qc *QuestCreate) SetNillableEldritchAtCreation(s *string) *QuestCreate {
-	if s != nil {
-		qc.SetEldritchAtCreation(*s)
+func (_c *QuestCreate) SetNillableEldritchAtCreation(v *string) *QuestCreate {
+	if v != nil {
+		_c.SetEldritchAtCreation(*v)
 	}
-	return qc
+	return _c
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
-func (qc *QuestCreate) SetTomeID(id int) *QuestCreate {
-	qc.mutation.SetTomeID(id)
-	return qc
+func (_c *QuestCreate) SetTomeID(id int) *QuestCreate {
+	_c.mutation.SetTomeID(id)
+	return _c
 }
 
 // SetTome sets the "tome" edge to the Tome entity.
-func (qc *QuestCreate) SetTome(t *Tome) *QuestCreate {
-	return qc.SetTomeID(t.ID)
+func (_c *QuestCreate) SetTome(v *Tome) *QuestCreate {
+	return _c.SetTomeID(v.ID)
 }
 
 // SetBundleID sets the "bundle" edge to the File entity by ID.
-func (qc *QuestCreate) SetBundleID(id int) *QuestCreate {
-	qc.mutation.SetBundleID(id)
-	return qc
+func (_c *QuestCreate) SetBundleID(id int) *QuestCreate {
+	_c.mutation.SetBundleID(id)
+	return _c
 }
 
 // SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
-func (qc *QuestCreate) SetNillableBundleID(id *int) *QuestCreate {
+func (_c *QuestCreate) SetNillableBundleID(id *int) *QuestCreate {
 	if id != nil {
-		qc = qc.SetBundleID(*id)
+		_c = _c.SetBundleID(*id)
 	}
-	return qc
+	return _c
 }
 
 // SetBundle sets the "bundle" edge to the File entity.
-func (qc *QuestCreate) SetBundle(f *File) *QuestCreate {
-	return qc.SetBundleID(f.ID)
+func (_c *QuestCreate) SetBundle(v *File) *QuestCreate {
+	return _c.SetBundleID(v.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
-func (qc *QuestCreate) AddTaskIDs(ids ...int) *QuestCreate {
-	qc.mutation.AddTaskIDs(ids...)
-	return qc
+func (_c *QuestCreate) AddTaskIDs(ids ...int) *QuestCreate {
+	_c.mutation.AddTaskIDs(ids...)
+	return _c
 }
 
 // AddTasks adds the "tasks" edges to the Task entity.
-func (qc *QuestCreate) AddTasks(t ...*Task) *QuestCreate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_c *QuestCreate) AddTasks(v ...*Task) *QuestCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return qc.AddTaskIDs(ids...)
+	return _c.AddTaskIDs(ids...)
 }
 
 // SetCreatorID sets the "creator" edge to the User entity by ID.
-func (qc *QuestCreate) SetCreatorID(id int) *QuestCreate {
-	qc.mutation.SetCreatorID(id)
-	return qc
+func (_c *QuestCreate) SetCreatorID(id int) *QuestCreate {
+	_c.mutation.SetCreatorID(id)
+	return _c
 }
 
 // SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
-func (qc *QuestCreate) SetNillableCreatorID(id *int) *QuestCreate {
+func (_c *QuestCreate) SetNillableCreatorID(id *int) *QuestCreate {
 	if id != nil {
-		qc = qc.SetCreatorID(*id)
+		_c = _c.SetCreatorID(*id)
 	}
-	return qc
+	return _c
 }
 
 // SetCreator sets the "creator" edge to the User entity.
-func (qc *QuestCreate) SetCreator(u *User) *QuestCreate {
-	return qc.SetCreatorID(u.ID)
+func (_c *QuestCreate) SetCreator(v *User) *QuestCreate {
+	return _c.SetCreatorID(v.ID)
 }
 
 // Mutation returns the QuestMutation object of the builder.
-func (qc *QuestCreate) Mutation() *QuestMutation {
-	return qc.mutation
+func (_c *QuestCreate) Mutation() *QuestMutation {
+	return _c.mutation
 }
 
 // Save creates the Quest in the database.
-func (qc *QuestCreate) Save(ctx context.Context) (*Quest, error) {
-	qc.defaults()
-	return withHooks(ctx, qc.sqlSave, qc.mutation, qc.hooks)
+func (_c *QuestCreate) Save(ctx context.Context) (*Quest, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (qc *QuestCreate) SaveX(ctx context.Context) *Quest {
-	v, err := qc.Save(ctx)
+func (_c *QuestCreate) SaveX(ctx context.Context) *Quest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -187,68 +187,68 @@ func (qc *QuestCreate) SaveX(ctx context.Context) *Quest {
 }
 
 // Exec executes the query.
-func (qc *QuestCreate) Exec(ctx context.Context) error {
-	_, err := qc.Save(ctx)
+func (_c *QuestCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (qc *QuestCreate) ExecX(ctx context.Context) {
-	if err := qc.Exec(ctx); err != nil {
+func (_c *QuestCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (qc *QuestCreate) defaults() {
-	if _, ok := qc.mutation.CreatedAt(); !ok {
+func (_c *QuestCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := quest.DefaultCreatedAt()
-		qc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := qc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		v := quest.DefaultLastModifiedAt()
-		qc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (qc *QuestCreate) check() error {
-	if _, ok := qc.mutation.CreatedAt(); !ok {
+func (_c *QuestCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Quest.created_at"`)}
 	}
-	if _, ok := qc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Quest.last_modified_at"`)}
 	}
-	if _, ok := qc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Quest.name"`)}
 	}
-	if v, ok := qc.mutation.Name(); ok {
+	if v, ok := _c.mutation.Name(); ok {
 		if err := quest.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Quest.name": %w`, err)}
 		}
 	}
-	if v, ok := qc.mutation.Parameters(); ok {
+	if v, ok := _c.mutation.Parameters(); ok {
 		if err := quest.ParametersValidator(v); err != nil {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if v, ok := qc.mutation.ParamDefsAtCreation(); ok {
+	if v, ok := _c.mutation.ParamDefsAtCreation(); ok {
 		if err := quest.ParamDefsAtCreationValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs_at_creation", err: fmt.Errorf(`ent: validator failed for field "Quest.param_defs_at_creation": %w`, err)}
 		}
 	}
-	if len(qc.mutation.TomeIDs()) == 0 {
+	if len(_c.mutation.TomeIDs()) == 0 {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Quest.tome"`)}
 	}
 	return nil
 }
 
-func (qc *QuestCreate) sqlSave(ctx context.Context) (*Quest, error) {
-	if err := qc.check(); err != nil {
+func (_c *QuestCreate) sqlSave(ctx context.Context) (*Quest, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := qc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, qc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -256,42 +256,42 @@ func (qc *QuestCreate) sqlSave(ctx context.Context) (*Quest, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	qc.mutation.id = &_node.ID
-	qc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
+func (_c *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Quest{config: qc.config}
+		_node = &Quest{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(quest.Table, sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = qc.conflict
-	if value, ok := qc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(quest.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := qc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(quest.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := qc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(quest.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := qc.mutation.Parameters(); ok {
+	if value, ok := _c.mutation.Parameters(); ok {
 		_spec.SetField(quest.FieldParameters, field.TypeString, value)
 		_node.Parameters = value
 	}
-	if value, ok := qc.mutation.ParamDefsAtCreation(); ok {
+	if value, ok := _c.mutation.ParamDefsAtCreation(); ok {
 		_spec.SetField(quest.FieldParamDefsAtCreation, field.TypeString, value)
 		_node.ParamDefsAtCreation = value
 	}
-	if value, ok := qc.mutation.EldritchAtCreation(); ok {
+	if value, ok := _c.mutation.EldritchAtCreation(); ok {
 		_spec.SetField(quest.FieldEldritchAtCreation, field.TypeString, value)
 		_node.EldritchAtCreation = value
 	}
-	if nodes := qc.mutation.TomeIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -308,7 +308,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		_node.quest_tome = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := qc.mutation.BundleIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.BundleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -325,7 +325,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		_node.quest_bundle = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := qc.mutation.TasksIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -341,7 +341,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := qc.mutation.CreatorIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -377,10 +377,10 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (qc *QuestCreate) OnConflict(opts ...sql.ConflictOption) *QuestUpsertOne {
-	qc.conflict = opts
+func (_c *QuestCreate) OnConflict(opts ...sql.ConflictOption) *QuestUpsertOne {
+	_c.conflict = opts
 	return &QuestUpsertOne{
-		create: qc,
+		create: _c,
 	}
 }
 
@@ -390,10 +390,10 @@ func (qc *QuestCreate) OnConflict(opts ...sql.ConflictOption) *QuestUpsertOne {
 //	client.Quest.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (qc *QuestCreate) OnConflictColumns(columns ...string) *QuestUpsertOne {
-	qc.conflict = append(qc.conflict, sql.ConflictColumns(columns...))
+func (_c *QuestCreate) OnConflictColumns(columns ...string) *QuestUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &QuestUpsertOne{
-		create: qc,
+		create: _c,
 	}
 }
 
@@ -594,16 +594,16 @@ type QuestCreateBulk struct {
 }
 
 // Save creates the Quest entities in the database.
-func (qcb *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
-	if qcb.err != nil {
-		return nil, qcb.err
+func (_c *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(qcb.builders))
-	nodes := make([]*Quest, len(qcb.builders))
-	mutators := make([]Mutator, len(qcb.builders))
-	for i := range qcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Quest, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := qcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*QuestMutation)
@@ -617,12 +617,12 @@ func (qcb *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, qcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = qcb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, qcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -646,7 +646,7 @@ func (qcb *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, qcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -654,8 +654,8 @@ func (qcb *QuestCreateBulk) Save(ctx context.Context) ([]*Quest, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (qcb *QuestCreateBulk) SaveX(ctx context.Context) []*Quest {
-	v, err := qcb.Save(ctx)
+func (_c *QuestCreateBulk) SaveX(ctx context.Context) []*Quest {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -663,14 +663,14 @@ func (qcb *QuestCreateBulk) SaveX(ctx context.Context) []*Quest {
 }
 
 // Exec executes the query.
-func (qcb *QuestCreateBulk) Exec(ctx context.Context) error {
-	_, err := qcb.Save(ctx)
+func (_c *QuestCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (qcb *QuestCreateBulk) ExecX(ctx context.Context) {
-	if err := qcb.Exec(ctx); err != nil {
+func (_c *QuestCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -690,10 +690,10 @@ func (qcb *QuestCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (qcb *QuestCreateBulk) OnConflict(opts ...sql.ConflictOption) *QuestUpsertBulk {
-	qcb.conflict = opts
+func (_c *QuestCreateBulk) OnConflict(opts ...sql.ConflictOption) *QuestUpsertBulk {
+	_c.conflict = opts
 	return &QuestUpsertBulk{
-		create: qcb,
+		create: _c,
 	}
 }
 
@@ -703,10 +703,10 @@ func (qcb *QuestCreateBulk) OnConflict(opts ...sql.ConflictOption) *QuestUpsertB
 //	client.Quest.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (qcb *QuestCreateBulk) OnConflictColumns(columns ...string) *QuestUpsertBulk {
-	qcb.conflict = append(qcb.conflict, sql.ConflictColumns(columns...))
+func (_c *QuestCreateBulk) OnConflictColumns(columns ...string) *QuestUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &QuestUpsertBulk{
-		create: qcb,
+		create: _c,
 	}
 }
 

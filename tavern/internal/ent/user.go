@@ -90,7 +90,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the User fields.
-func (u *User) assignValues(columns []string, values []any) error {
+func (_m *User) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -101,51 +101,51 @@ func (u *User) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			u.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case user.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				u.Name = value.String
+				_m.Name = value.String
 			}
 		case user.FieldOauthID:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field oauth_id", values[i])
 			} else if value.Valid {
-				u.OauthID = value.String
+				_m.OauthID = value.String
 			}
 		case user.FieldPhotoURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field photo_url", values[i])
 			} else if value.Valid {
-				u.PhotoURL = value.String
+				_m.PhotoURL = value.String
 			}
 		case user.FieldSessionToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field session_token", values[i])
 			} else if value.Valid {
-				u.SessionToken = value.String
+				_m.SessionToken = value.String
 			}
 		case user.FieldAccessToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field access_token", values[i])
 			} else if value.Valid {
-				u.AccessToken = value.String
+				_m.AccessToken = value.String
 			}
 		case user.FieldIsActivated:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_activated", values[i])
 			} else if value.Valid {
-				u.IsActivated = value.Bool
+				_m.IsActivated = value.Bool
 			}
 		case user.FieldIsAdmin:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_admin", values[i])
 			} else if value.Valid {
-				u.IsAdmin = value.Bool
+				_m.IsAdmin = value.Bool
 			}
 		default:
-			u.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -153,109 +153,109 @@ func (u *User) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the User.
 // This includes values selected through modifiers, order, etc.
-func (u *User) Value(name string) (ent.Value, error) {
-	return u.selectValues.Get(name)
+func (_m *User) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryTomes queries the "tomes" edge of the User entity.
-func (u *User) QueryTomes() *TomeQuery {
-	return NewUserClient(u.config).QueryTomes(u)
+func (_m *User) QueryTomes() *TomeQuery {
+	return NewUserClient(_m.config).QueryTomes(_m)
 }
 
 // QueryActiveShells queries the "active_shells" edge of the User entity.
-func (u *User) QueryActiveShells() *ShellQuery {
-	return NewUserClient(u.config).QueryActiveShells(u)
+func (_m *User) QueryActiveShells() *ShellQuery {
+	return NewUserClient(_m.config).QueryActiveShells(_m)
 }
 
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (u *User) Update() *UserUpdateOne {
-	return NewUserClient(u.config).UpdateOne(u)
+func (_m *User) Update() *UserUpdateOne {
+	return NewUserClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the User entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (u *User) Unwrap() *User {
-	_tx, ok := u.config.driver.(*txDriver)
+func (_m *User) Unwrap() *User {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: User is not a transactional entity")
 	}
-	u.config.driver = _tx.drv
-	return u
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (u *User) String() string {
+func (_m *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("name=")
-	builder.WriteString(u.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("oauth_id=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("photo_url=")
-	builder.WriteString(u.PhotoURL)
+	builder.WriteString(_m.PhotoURL)
 	builder.WriteString(", ")
 	builder.WriteString("session_token=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("access_token=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("is_activated=")
-	builder.WriteString(fmt.Sprintf("%v", u.IsActivated))
+	builder.WriteString(fmt.Sprintf("%v", _m.IsActivated))
 	builder.WriteString(", ")
 	builder.WriteString("is_admin=")
-	builder.WriteString(fmt.Sprintf("%v", u.IsAdmin))
+	builder.WriteString(fmt.Sprintf("%v", _m.IsAdmin))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTomes returns the Tomes named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (u *User) NamedTomes(name string) ([]*Tome, error) {
-	if u.Edges.namedTomes == nil {
+func (_m *User) NamedTomes(name string) ([]*Tome, error) {
+	if _m.Edges.namedTomes == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := u.Edges.namedTomes[name]
+	nodes, ok := _m.Edges.namedTomes[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (u *User) appendNamedTomes(name string, edges ...*Tome) {
-	if u.Edges.namedTomes == nil {
-		u.Edges.namedTomes = make(map[string][]*Tome)
+func (_m *User) appendNamedTomes(name string, edges ...*Tome) {
+	if _m.Edges.namedTomes == nil {
+		_m.Edges.namedTomes = make(map[string][]*Tome)
 	}
 	if len(edges) == 0 {
-		u.Edges.namedTomes[name] = []*Tome{}
+		_m.Edges.namedTomes[name] = []*Tome{}
 	} else {
-		u.Edges.namedTomes[name] = append(u.Edges.namedTomes[name], edges...)
+		_m.Edges.namedTomes[name] = append(_m.Edges.namedTomes[name], edges...)
 	}
 }
 
 // NamedActiveShells returns the ActiveShells named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (u *User) NamedActiveShells(name string) ([]*Shell, error) {
-	if u.Edges.namedActiveShells == nil {
+func (_m *User) NamedActiveShells(name string) ([]*Shell, error) {
+	if _m.Edges.namedActiveShells == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := u.Edges.namedActiveShells[name]
+	nodes, ok := _m.Edges.namedActiveShells[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (u *User) appendNamedActiveShells(name string, edges ...*Shell) {
-	if u.Edges.namedActiveShells == nil {
-		u.Edges.namedActiveShells = make(map[string][]*Shell)
+func (_m *User) appendNamedActiveShells(name string, edges ...*Shell) {
+	if _m.Edges.namedActiveShells == nil {
+		_m.Edges.namedActiveShells = make(map[string][]*Shell)
 	}
 	if len(edges) == 0 {
-		u.Edges.namedActiveShells[name] = []*Shell{}
+		_m.Edges.namedActiveShells[name] = []*Shell{}
 	} else {
-		u.Edges.namedActiveShells[name] = append(u.Edges.namedActiveShells[name], edges...)
+		_m.Edges.namedActiveShells[name] = append(_m.Edges.namedActiveShells[name], edges...)
 	}
 }
 

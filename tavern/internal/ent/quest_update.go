@@ -27,168 +27,168 @@ type QuestUpdate struct {
 }
 
 // Where appends a list predicates to the QuestUpdate builder.
-func (qu *QuestUpdate) Where(ps ...predicate.Quest) *QuestUpdate {
-	qu.mutation.Where(ps...)
-	return qu
+func (_u *QuestUpdate) Where(ps ...predicate.Quest) *QuestUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (qu *QuestUpdate) SetLastModifiedAt(t time.Time) *QuestUpdate {
-	qu.mutation.SetLastModifiedAt(t)
-	return qu
+func (_u *QuestUpdate) SetLastModifiedAt(v time.Time) *QuestUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (qu *QuestUpdate) SetName(s string) *QuestUpdate {
-	qu.mutation.SetName(s)
-	return qu
+func (_u *QuestUpdate) SetName(v string) *QuestUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (qu *QuestUpdate) SetNillableName(s *string) *QuestUpdate {
-	if s != nil {
-		qu.SetName(*s)
+func (_u *QuestUpdate) SetNillableName(v *string) *QuestUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return qu
+	return _u
 }
 
 // SetParameters sets the "parameters" field.
-func (qu *QuestUpdate) SetParameters(s string) *QuestUpdate {
-	qu.mutation.SetParameters(s)
-	return qu
+func (_u *QuestUpdate) SetParameters(v string) *QuestUpdate {
+	_u.mutation.SetParameters(v)
+	return _u
 }
 
 // SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (qu *QuestUpdate) SetNillableParameters(s *string) *QuestUpdate {
-	if s != nil {
-		qu.SetParameters(*s)
+func (_u *QuestUpdate) SetNillableParameters(v *string) *QuestUpdate {
+	if v != nil {
+		_u.SetParameters(*v)
 	}
-	return qu
+	return _u
 }
 
 // ClearParameters clears the value of the "parameters" field.
-func (qu *QuestUpdate) ClearParameters() *QuestUpdate {
-	qu.mutation.ClearParameters()
-	return qu
+func (_u *QuestUpdate) ClearParameters() *QuestUpdate {
+	_u.mutation.ClearParameters()
+	return _u
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
-func (qu *QuestUpdate) SetTomeID(id int) *QuestUpdate {
-	qu.mutation.SetTomeID(id)
-	return qu
+func (_u *QuestUpdate) SetTomeID(id int) *QuestUpdate {
+	_u.mutation.SetTomeID(id)
+	return _u
 }
 
 // SetTome sets the "tome" edge to the Tome entity.
-func (qu *QuestUpdate) SetTome(t *Tome) *QuestUpdate {
-	return qu.SetTomeID(t.ID)
+func (_u *QuestUpdate) SetTome(v *Tome) *QuestUpdate {
+	return _u.SetTomeID(v.ID)
 }
 
 // SetBundleID sets the "bundle" edge to the File entity by ID.
-func (qu *QuestUpdate) SetBundleID(id int) *QuestUpdate {
-	qu.mutation.SetBundleID(id)
-	return qu
+func (_u *QuestUpdate) SetBundleID(id int) *QuestUpdate {
+	_u.mutation.SetBundleID(id)
+	return _u
 }
 
 // SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
-func (qu *QuestUpdate) SetNillableBundleID(id *int) *QuestUpdate {
+func (_u *QuestUpdate) SetNillableBundleID(id *int) *QuestUpdate {
 	if id != nil {
-		qu = qu.SetBundleID(*id)
+		_u = _u.SetBundleID(*id)
 	}
-	return qu
+	return _u
 }
 
 // SetBundle sets the "bundle" edge to the File entity.
-func (qu *QuestUpdate) SetBundle(f *File) *QuestUpdate {
-	return qu.SetBundleID(f.ID)
+func (_u *QuestUpdate) SetBundle(v *File) *QuestUpdate {
+	return _u.SetBundleID(v.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
-func (qu *QuestUpdate) AddTaskIDs(ids ...int) *QuestUpdate {
-	qu.mutation.AddTaskIDs(ids...)
-	return qu
+func (_u *QuestUpdate) AddTaskIDs(ids ...int) *QuestUpdate {
+	_u.mutation.AddTaskIDs(ids...)
+	return _u
 }
 
 // AddTasks adds the "tasks" edges to the Task entity.
-func (qu *QuestUpdate) AddTasks(t ...*Task) *QuestUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *QuestUpdate) AddTasks(v ...*Task) *QuestUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return qu.AddTaskIDs(ids...)
+	return _u.AddTaskIDs(ids...)
 }
 
 // SetCreatorID sets the "creator" edge to the User entity by ID.
-func (qu *QuestUpdate) SetCreatorID(id int) *QuestUpdate {
-	qu.mutation.SetCreatorID(id)
-	return qu
+func (_u *QuestUpdate) SetCreatorID(id int) *QuestUpdate {
+	_u.mutation.SetCreatorID(id)
+	return _u
 }
 
 // SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
-func (qu *QuestUpdate) SetNillableCreatorID(id *int) *QuestUpdate {
+func (_u *QuestUpdate) SetNillableCreatorID(id *int) *QuestUpdate {
 	if id != nil {
-		qu = qu.SetCreatorID(*id)
+		_u = _u.SetCreatorID(*id)
 	}
-	return qu
+	return _u
 }
 
 // SetCreator sets the "creator" edge to the User entity.
-func (qu *QuestUpdate) SetCreator(u *User) *QuestUpdate {
-	return qu.SetCreatorID(u.ID)
+func (_u *QuestUpdate) SetCreator(v *User) *QuestUpdate {
+	return _u.SetCreatorID(v.ID)
 }
 
 // Mutation returns the QuestMutation object of the builder.
-func (qu *QuestUpdate) Mutation() *QuestMutation {
-	return qu.mutation
+func (_u *QuestUpdate) Mutation() *QuestMutation {
+	return _u.mutation
 }
 
 // ClearTome clears the "tome" edge to the Tome entity.
-func (qu *QuestUpdate) ClearTome() *QuestUpdate {
-	qu.mutation.ClearTome()
-	return qu
+func (_u *QuestUpdate) ClearTome() *QuestUpdate {
+	_u.mutation.ClearTome()
+	return _u
 }
 
 // ClearBundle clears the "bundle" edge to the File entity.
-func (qu *QuestUpdate) ClearBundle() *QuestUpdate {
-	qu.mutation.ClearBundle()
-	return qu
+func (_u *QuestUpdate) ClearBundle() *QuestUpdate {
+	_u.mutation.ClearBundle()
+	return _u
 }
 
 // ClearTasks clears all "tasks" edges to the Task entity.
-func (qu *QuestUpdate) ClearTasks() *QuestUpdate {
-	qu.mutation.ClearTasks()
-	return qu
+func (_u *QuestUpdate) ClearTasks() *QuestUpdate {
+	_u.mutation.ClearTasks()
+	return _u
 }
 
 // RemoveTaskIDs removes the "tasks" edge to Task entities by IDs.
-func (qu *QuestUpdate) RemoveTaskIDs(ids ...int) *QuestUpdate {
-	qu.mutation.RemoveTaskIDs(ids...)
-	return qu
+func (_u *QuestUpdate) RemoveTaskIDs(ids ...int) *QuestUpdate {
+	_u.mutation.RemoveTaskIDs(ids...)
+	return _u
 }
 
 // RemoveTasks removes "tasks" edges to Task entities.
-func (qu *QuestUpdate) RemoveTasks(t ...*Task) *QuestUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *QuestUpdate) RemoveTasks(v ...*Task) *QuestUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return qu.RemoveTaskIDs(ids...)
+	return _u.RemoveTaskIDs(ids...)
 }
 
 // ClearCreator clears the "creator" edge to the User entity.
-func (qu *QuestUpdate) ClearCreator() *QuestUpdate {
-	qu.mutation.ClearCreator()
-	return qu
+func (_u *QuestUpdate) ClearCreator() *QuestUpdate {
+	_u.mutation.ClearCreator()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (qu *QuestUpdate) Save(ctx context.Context) (int, error) {
-	qu.defaults()
-	return withHooks(ctx, qu.sqlSave, qu.mutation, qu.hooks)
+func (_u *QuestUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (qu *QuestUpdate) SaveX(ctx context.Context) int {
-	affected, err := qu.Save(ctx)
+func (_u *QuestUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -196,75 +196,75 @@ func (qu *QuestUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (qu *QuestUpdate) Exec(ctx context.Context) error {
-	_, err := qu.Save(ctx)
+func (_u *QuestUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (qu *QuestUpdate) ExecX(ctx context.Context) {
-	if err := qu.Exec(ctx); err != nil {
+func (_u *QuestUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (qu *QuestUpdate) defaults() {
-	if _, ok := qu.mutation.LastModifiedAt(); !ok {
+func (_u *QuestUpdate) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := quest.UpdateDefaultLastModifiedAt()
-		qu.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (qu *QuestUpdate) check() error {
-	if v, ok := qu.mutation.Name(); ok {
+func (_u *QuestUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := quest.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Quest.name": %w`, err)}
 		}
 	}
-	if v, ok := qu.mutation.Parameters(); ok {
+	if v, ok := _u.mutation.Parameters(); ok {
 		if err := quest.ParametersValidator(v); err != nil {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if qu.mutation.TomeCleared() && len(qu.mutation.TomeIDs()) > 0 {
+	if _u.mutation.TomeCleared() && len(_u.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
 	return nil
 }
 
-func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := qu.check(); err != nil {
-		return n, err
+func (_u *QuestUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(quest.Table, quest.Columns, sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt))
-	if ps := qu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := qu.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(quest.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := qu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(quest.FieldName, field.TypeString, value)
 	}
-	if value, ok := qu.mutation.Parameters(); ok {
+	if value, ok := _u.mutation.Parameters(); ok {
 		_spec.SetField(quest.FieldParameters, field.TypeString, value)
 	}
-	if qu.mutation.ParametersCleared() {
+	if _u.mutation.ParametersCleared() {
 		_spec.ClearField(quest.FieldParameters, field.TypeString)
 	}
-	if qu.mutation.ParamDefsAtCreationCleared() {
+	if _u.mutation.ParamDefsAtCreationCleared() {
 		_spec.ClearField(quest.FieldParamDefsAtCreation, field.TypeString)
 	}
-	if qu.mutation.EldritchAtCreationCleared() {
+	if _u.mutation.EldritchAtCreationCleared() {
 		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
 	}
-	if qu.mutation.TomeCleared() {
+	if _u.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -277,7 +277,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := qu.mutation.TomeIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -293,7 +293,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if qu.mutation.BundleCleared() {
+	if _u.mutation.BundleCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -306,7 +306,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := qu.mutation.BundleIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.BundleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -322,7 +322,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if qu.mutation.TasksCleared() {
+	if _u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -335,7 +335,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := qu.mutation.RemovedTasksIDs(); len(nodes) > 0 && !qu.mutation.TasksCleared() {
+	if nodes := _u.mutation.RemovedTasksIDs(); len(nodes) > 0 && !_u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -351,7 +351,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := qu.mutation.TasksIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -367,7 +367,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if qu.mutation.CreatorCleared() {
+	if _u.mutation.CreatorCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -380,7 +380,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := qu.mutation.CreatorIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -396,7 +396,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, qu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{quest.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -404,8 +404,8 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	qu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // QuestUpdateOne is the builder for updating a single Quest entity.
@@ -417,175 +417,175 @@ type QuestUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (quo *QuestUpdateOne) SetLastModifiedAt(t time.Time) *QuestUpdateOne {
-	quo.mutation.SetLastModifiedAt(t)
-	return quo
+func (_u *QuestUpdateOne) SetLastModifiedAt(v time.Time) *QuestUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (quo *QuestUpdateOne) SetName(s string) *QuestUpdateOne {
-	quo.mutation.SetName(s)
-	return quo
+func (_u *QuestUpdateOne) SetName(v string) *QuestUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (quo *QuestUpdateOne) SetNillableName(s *string) *QuestUpdateOne {
-	if s != nil {
-		quo.SetName(*s)
+func (_u *QuestUpdateOne) SetNillableName(v *string) *QuestUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return quo
+	return _u
 }
 
 // SetParameters sets the "parameters" field.
-func (quo *QuestUpdateOne) SetParameters(s string) *QuestUpdateOne {
-	quo.mutation.SetParameters(s)
-	return quo
+func (_u *QuestUpdateOne) SetParameters(v string) *QuestUpdateOne {
+	_u.mutation.SetParameters(v)
+	return _u
 }
 
 // SetNillableParameters sets the "parameters" field if the given value is not nil.
-func (quo *QuestUpdateOne) SetNillableParameters(s *string) *QuestUpdateOne {
-	if s != nil {
-		quo.SetParameters(*s)
+func (_u *QuestUpdateOne) SetNillableParameters(v *string) *QuestUpdateOne {
+	if v != nil {
+		_u.SetParameters(*v)
 	}
-	return quo
+	return _u
 }
 
 // ClearParameters clears the value of the "parameters" field.
-func (quo *QuestUpdateOne) ClearParameters() *QuestUpdateOne {
-	quo.mutation.ClearParameters()
-	return quo
+func (_u *QuestUpdateOne) ClearParameters() *QuestUpdateOne {
+	_u.mutation.ClearParameters()
+	return _u
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
-func (quo *QuestUpdateOne) SetTomeID(id int) *QuestUpdateOne {
-	quo.mutation.SetTomeID(id)
-	return quo
+func (_u *QuestUpdateOne) SetTomeID(id int) *QuestUpdateOne {
+	_u.mutation.SetTomeID(id)
+	return _u
 }
 
 // SetTome sets the "tome" edge to the Tome entity.
-func (quo *QuestUpdateOne) SetTome(t *Tome) *QuestUpdateOne {
-	return quo.SetTomeID(t.ID)
+func (_u *QuestUpdateOne) SetTome(v *Tome) *QuestUpdateOne {
+	return _u.SetTomeID(v.ID)
 }
 
 // SetBundleID sets the "bundle" edge to the File entity by ID.
-func (quo *QuestUpdateOne) SetBundleID(id int) *QuestUpdateOne {
-	quo.mutation.SetBundleID(id)
-	return quo
+func (_u *QuestUpdateOne) SetBundleID(id int) *QuestUpdateOne {
+	_u.mutation.SetBundleID(id)
+	return _u
 }
 
 // SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
-func (quo *QuestUpdateOne) SetNillableBundleID(id *int) *QuestUpdateOne {
+func (_u *QuestUpdateOne) SetNillableBundleID(id *int) *QuestUpdateOne {
 	if id != nil {
-		quo = quo.SetBundleID(*id)
+		_u = _u.SetBundleID(*id)
 	}
-	return quo
+	return _u
 }
 
 // SetBundle sets the "bundle" edge to the File entity.
-func (quo *QuestUpdateOne) SetBundle(f *File) *QuestUpdateOne {
-	return quo.SetBundleID(f.ID)
+func (_u *QuestUpdateOne) SetBundle(v *File) *QuestUpdateOne {
+	return _u.SetBundleID(v.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
-func (quo *QuestUpdateOne) AddTaskIDs(ids ...int) *QuestUpdateOne {
-	quo.mutation.AddTaskIDs(ids...)
-	return quo
+func (_u *QuestUpdateOne) AddTaskIDs(ids ...int) *QuestUpdateOne {
+	_u.mutation.AddTaskIDs(ids...)
+	return _u
 }
 
 // AddTasks adds the "tasks" edges to the Task entity.
-func (quo *QuestUpdateOne) AddTasks(t ...*Task) *QuestUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *QuestUpdateOne) AddTasks(v ...*Task) *QuestUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return quo.AddTaskIDs(ids...)
+	return _u.AddTaskIDs(ids...)
 }
 
 // SetCreatorID sets the "creator" edge to the User entity by ID.
-func (quo *QuestUpdateOne) SetCreatorID(id int) *QuestUpdateOne {
-	quo.mutation.SetCreatorID(id)
-	return quo
+func (_u *QuestUpdateOne) SetCreatorID(id int) *QuestUpdateOne {
+	_u.mutation.SetCreatorID(id)
+	return _u
 }
 
 // SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
-func (quo *QuestUpdateOne) SetNillableCreatorID(id *int) *QuestUpdateOne {
+func (_u *QuestUpdateOne) SetNillableCreatorID(id *int) *QuestUpdateOne {
 	if id != nil {
-		quo = quo.SetCreatorID(*id)
+		_u = _u.SetCreatorID(*id)
 	}
-	return quo
+	return _u
 }
 
 // SetCreator sets the "creator" edge to the User entity.
-func (quo *QuestUpdateOne) SetCreator(u *User) *QuestUpdateOne {
-	return quo.SetCreatorID(u.ID)
+func (_u *QuestUpdateOne) SetCreator(v *User) *QuestUpdateOne {
+	return _u.SetCreatorID(v.ID)
 }
 
 // Mutation returns the QuestMutation object of the builder.
-func (quo *QuestUpdateOne) Mutation() *QuestMutation {
-	return quo.mutation
+func (_u *QuestUpdateOne) Mutation() *QuestMutation {
+	return _u.mutation
 }
 
 // ClearTome clears the "tome" edge to the Tome entity.
-func (quo *QuestUpdateOne) ClearTome() *QuestUpdateOne {
-	quo.mutation.ClearTome()
-	return quo
+func (_u *QuestUpdateOne) ClearTome() *QuestUpdateOne {
+	_u.mutation.ClearTome()
+	return _u
 }
 
 // ClearBundle clears the "bundle" edge to the File entity.
-func (quo *QuestUpdateOne) ClearBundle() *QuestUpdateOne {
-	quo.mutation.ClearBundle()
-	return quo
+func (_u *QuestUpdateOne) ClearBundle() *QuestUpdateOne {
+	_u.mutation.ClearBundle()
+	return _u
 }
 
 // ClearTasks clears all "tasks" edges to the Task entity.
-func (quo *QuestUpdateOne) ClearTasks() *QuestUpdateOne {
-	quo.mutation.ClearTasks()
-	return quo
+func (_u *QuestUpdateOne) ClearTasks() *QuestUpdateOne {
+	_u.mutation.ClearTasks()
+	return _u
 }
 
 // RemoveTaskIDs removes the "tasks" edge to Task entities by IDs.
-func (quo *QuestUpdateOne) RemoveTaskIDs(ids ...int) *QuestUpdateOne {
-	quo.mutation.RemoveTaskIDs(ids...)
-	return quo
+func (_u *QuestUpdateOne) RemoveTaskIDs(ids ...int) *QuestUpdateOne {
+	_u.mutation.RemoveTaskIDs(ids...)
+	return _u
 }
 
 // RemoveTasks removes "tasks" edges to Task entities.
-func (quo *QuestUpdateOne) RemoveTasks(t ...*Task) *QuestUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *QuestUpdateOne) RemoveTasks(v ...*Task) *QuestUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return quo.RemoveTaskIDs(ids...)
+	return _u.RemoveTaskIDs(ids...)
 }
 
 // ClearCreator clears the "creator" edge to the User entity.
-func (quo *QuestUpdateOne) ClearCreator() *QuestUpdateOne {
-	quo.mutation.ClearCreator()
-	return quo
+func (_u *QuestUpdateOne) ClearCreator() *QuestUpdateOne {
+	_u.mutation.ClearCreator()
+	return _u
 }
 
 // Where appends a list predicates to the QuestUpdate builder.
-func (quo *QuestUpdateOne) Where(ps ...predicate.Quest) *QuestUpdateOne {
-	quo.mutation.Where(ps...)
-	return quo
+func (_u *QuestUpdateOne) Where(ps ...predicate.Quest) *QuestUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (quo *QuestUpdateOne) Select(field string, fields ...string) *QuestUpdateOne {
-	quo.fields = append([]string{field}, fields...)
-	return quo
+func (_u *QuestUpdateOne) Select(field string, fields ...string) *QuestUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Quest entity.
-func (quo *QuestUpdateOne) Save(ctx context.Context) (*Quest, error) {
-	quo.defaults()
-	return withHooks(ctx, quo.sqlSave, quo.mutation, quo.hooks)
+func (_u *QuestUpdateOne) Save(ctx context.Context) (*Quest, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (quo *QuestUpdateOne) SaveX(ctx context.Context) *Quest {
-	node, err := quo.Save(ctx)
+func (_u *QuestUpdateOne) SaveX(ctx context.Context) *Quest {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -593,55 +593,55 @@ func (quo *QuestUpdateOne) SaveX(ctx context.Context) *Quest {
 }
 
 // Exec executes the query on the entity.
-func (quo *QuestUpdateOne) Exec(ctx context.Context) error {
-	_, err := quo.Save(ctx)
+func (_u *QuestUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (quo *QuestUpdateOne) ExecX(ctx context.Context) {
-	if err := quo.Exec(ctx); err != nil {
+func (_u *QuestUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (quo *QuestUpdateOne) defaults() {
-	if _, ok := quo.mutation.LastModifiedAt(); !ok {
+func (_u *QuestUpdateOne) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := quest.UpdateDefaultLastModifiedAt()
-		quo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (quo *QuestUpdateOne) check() error {
-	if v, ok := quo.mutation.Name(); ok {
+func (_u *QuestUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := quest.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Quest.name": %w`, err)}
 		}
 	}
-	if v, ok := quo.mutation.Parameters(); ok {
+	if v, ok := _u.mutation.Parameters(); ok {
 		if err := quest.ParametersValidator(v); err != nil {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "Quest.parameters": %w`, err)}
 		}
 	}
-	if quo.mutation.TomeCleared() && len(quo.mutation.TomeIDs()) > 0 {
+	if _u.mutation.TomeCleared() && len(_u.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Quest.tome"`)
 	}
 	return nil
 }
 
-func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error) {
-	if err := quo.check(); err != nil {
+func (_u *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(quest.Table, quest.Columns, sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt))
-	id, ok := quo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Quest.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := quo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, quest.FieldID)
 		for _, f := range fields {
@@ -653,32 +653,32 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			}
 		}
 	}
-	if ps := quo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := quo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(quest.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := quo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(quest.FieldName, field.TypeString, value)
 	}
-	if value, ok := quo.mutation.Parameters(); ok {
+	if value, ok := _u.mutation.Parameters(); ok {
 		_spec.SetField(quest.FieldParameters, field.TypeString, value)
 	}
-	if quo.mutation.ParametersCleared() {
+	if _u.mutation.ParametersCleared() {
 		_spec.ClearField(quest.FieldParameters, field.TypeString)
 	}
-	if quo.mutation.ParamDefsAtCreationCleared() {
+	if _u.mutation.ParamDefsAtCreationCleared() {
 		_spec.ClearField(quest.FieldParamDefsAtCreation, field.TypeString)
 	}
-	if quo.mutation.EldritchAtCreationCleared() {
+	if _u.mutation.EldritchAtCreationCleared() {
 		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
 	}
-	if quo.mutation.TomeCleared() {
+	if _u.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -691,7 +691,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := quo.mutation.TomeIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -707,7 +707,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if quo.mutation.BundleCleared() {
+	if _u.mutation.BundleCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -720,7 +720,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := quo.mutation.BundleIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.BundleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -736,7 +736,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if quo.mutation.TasksCleared() {
+	if _u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -749,7 +749,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := quo.mutation.RemovedTasksIDs(); len(nodes) > 0 && !quo.mutation.TasksCleared() {
+	if nodes := _u.mutation.RemovedTasksIDs(); len(nodes) > 0 && !_u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -765,7 +765,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := quo.mutation.TasksIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -781,7 +781,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if quo.mutation.CreatorCleared() {
+	if _u.mutation.CreatorCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -794,7 +794,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := quo.mutation.CreatorIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -810,10 +810,10 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Quest{config: quo.config}
+	_node = &Quest{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, quo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{quest.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -821,6 +821,6 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 		}
 		return nil, err
 	}
-	quo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

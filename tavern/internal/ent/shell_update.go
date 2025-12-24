@@ -26,144 +26,144 @@ type ShellUpdate struct {
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
-func (su *ShellUpdate) Where(ps ...predicate.Shell) *ShellUpdate {
-	su.mutation.Where(ps...)
-	return su
+func (_u *ShellUpdate) Where(ps ...predicate.Shell) *ShellUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (su *ShellUpdate) SetLastModifiedAt(t time.Time) *ShellUpdate {
-	su.mutation.SetLastModifiedAt(t)
-	return su
+func (_u *ShellUpdate) SetLastModifiedAt(v time.Time) *ShellUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetClosedAt sets the "closed_at" field.
-func (su *ShellUpdate) SetClosedAt(t time.Time) *ShellUpdate {
-	su.mutation.SetClosedAt(t)
-	return su
+func (_u *ShellUpdate) SetClosedAt(v time.Time) *ShellUpdate {
+	_u.mutation.SetClosedAt(v)
+	return _u
 }
 
 // SetNillableClosedAt sets the "closed_at" field if the given value is not nil.
-func (su *ShellUpdate) SetNillableClosedAt(t *time.Time) *ShellUpdate {
-	if t != nil {
-		su.SetClosedAt(*t)
+func (_u *ShellUpdate) SetNillableClosedAt(v *time.Time) *ShellUpdate {
+	if v != nil {
+		_u.SetClosedAt(*v)
 	}
-	return su
+	return _u
 }
 
 // ClearClosedAt clears the value of the "closed_at" field.
-func (su *ShellUpdate) ClearClosedAt() *ShellUpdate {
-	su.mutation.ClearClosedAt()
-	return su
+func (_u *ShellUpdate) ClearClosedAt() *ShellUpdate {
+	_u.mutation.ClearClosedAt()
+	return _u
 }
 
 // SetData sets the "data" field.
-func (su *ShellUpdate) SetData(b []byte) *ShellUpdate {
-	su.mutation.SetData(b)
-	return su
+func (_u *ShellUpdate) SetData(v []byte) *ShellUpdate {
+	_u.mutation.SetData(v)
+	return _u
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (su *ShellUpdate) SetTaskID(id int) *ShellUpdate {
-	su.mutation.SetTaskID(id)
-	return su
+func (_u *ShellUpdate) SetTaskID(id int) *ShellUpdate {
+	_u.mutation.SetTaskID(id)
+	return _u
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (su *ShellUpdate) SetTask(t *Task) *ShellUpdate {
-	return su.SetTaskID(t.ID)
+func (_u *ShellUpdate) SetTask(v *Task) *ShellUpdate {
+	return _u.SetTaskID(v.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
-func (su *ShellUpdate) SetBeaconID(id int) *ShellUpdate {
-	su.mutation.SetBeaconID(id)
-	return su
+func (_u *ShellUpdate) SetBeaconID(id int) *ShellUpdate {
+	_u.mutation.SetBeaconID(id)
+	return _u
 }
 
 // SetBeacon sets the "beacon" edge to the Beacon entity.
-func (su *ShellUpdate) SetBeacon(b *Beacon) *ShellUpdate {
-	return su.SetBeaconID(b.ID)
+func (_u *ShellUpdate) SetBeacon(v *Beacon) *ShellUpdate {
+	return _u.SetBeaconID(v.ID)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
-func (su *ShellUpdate) SetOwnerID(id int) *ShellUpdate {
-	su.mutation.SetOwnerID(id)
-	return su
+func (_u *ShellUpdate) SetOwnerID(id int) *ShellUpdate {
+	_u.mutation.SetOwnerID(id)
+	return _u
 }
 
 // SetOwner sets the "owner" edge to the User entity.
-func (su *ShellUpdate) SetOwner(u *User) *ShellUpdate {
-	return su.SetOwnerID(u.ID)
+func (_u *ShellUpdate) SetOwner(v *User) *ShellUpdate {
+	return _u.SetOwnerID(v.ID)
 }
 
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
-func (su *ShellUpdate) AddActiveUserIDs(ids ...int) *ShellUpdate {
-	su.mutation.AddActiveUserIDs(ids...)
-	return su
+func (_u *ShellUpdate) AddActiveUserIDs(ids ...int) *ShellUpdate {
+	_u.mutation.AddActiveUserIDs(ids...)
+	return _u
 }
 
 // AddActiveUsers adds the "active_users" edges to the User entity.
-func (su *ShellUpdate) AddActiveUsers(u ...*User) *ShellUpdate {
-	ids := make([]int, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
+func (_u *ShellUpdate) AddActiveUsers(v ...*User) *ShellUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return su.AddActiveUserIDs(ids...)
+	return _u.AddActiveUserIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
-func (su *ShellUpdate) Mutation() *ShellMutation {
-	return su.mutation
+func (_u *ShellUpdate) Mutation() *ShellMutation {
+	return _u.mutation
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (su *ShellUpdate) ClearTask() *ShellUpdate {
-	su.mutation.ClearTask()
-	return su
+func (_u *ShellUpdate) ClearTask() *ShellUpdate {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // ClearBeacon clears the "beacon" edge to the Beacon entity.
-func (su *ShellUpdate) ClearBeacon() *ShellUpdate {
-	su.mutation.ClearBeacon()
-	return su
+func (_u *ShellUpdate) ClearBeacon() *ShellUpdate {
+	_u.mutation.ClearBeacon()
+	return _u
 }
 
 // ClearOwner clears the "owner" edge to the User entity.
-func (su *ShellUpdate) ClearOwner() *ShellUpdate {
-	su.mutation.ClearOwner()
-	return su
+func (_u *ShellUpdate) ClearOwner() *ShellUpdate {
+	_u.mutation.ClearOwner()
+	return _u
 }
 
 // ClearActiveUsers clears all "active_users" edges to the User entity.
-func (su *ShellUpdate) ClearActiveUsers() *ShellUpdate {
-	su.mutation.ClearActiveUsers()
-	return su
+func (_u *ShellUpdate) ClearActiveUsers() *ShellUpdate {
+	_u.mutation.ClearActiveUsers()
+	return _u
 }
 
 // RemoveActiveUserIDs removes the "active_users" edge to User entities by IDs.
-func (su *ShellUpdate) RemoveActiveUserIDs(ids ...int) *ShellUpdate {
-	su.mutation.RemoveActiveUserIDs(ids...)
-	return su
+func (_u *ShellUpdate) RemoveActiveUserIDs(ids ...int) *ShellUpdate {
+	_u.mutation.RemoveActiveUserIDs(ids...)
+	return _u
 }
 
 // RemoveActiveUsers removes "active_users" edges to User entities.
-func (su *ShellUpdate) RemoveActiveUsers(u ...*User) *ShellUpdate {
-	ids := make([]int, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
+func (_u *ShellUpdate) RemoveActiveUsers(v ...*User) *ShellUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return su.RemoveActiveUserIDs(ids...)
+	return _u.RemoveActiveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (su *ShellUpdate) Save(ctx context.Context) (int, error) {
-	su.defaults()
-	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
+func (_u *ShellUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (su *ShellUpdate) SaveX(ctx context.Context) int {
-	affected, err := su.Save(ctx)
+func (_u *ShellUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -171,65 +171,65 @@ func (su *ShellUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (su *ShellUpdate) Exec(ctx context.Context) error {
-	_, err := su.Save(ctx)
+func (_u *ShellUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (su *ShellUpdate) ExecX(ctx context.Context) {
-	if err := su.Exec(ctx); err != nil {
+func (_u *ShellUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (su *ShellUpdate) defaults() {
-	if _, ok := su.mutation.LastModifiedAt(); !ok {
+func (_u *ShellUpdate) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := shell.UpdateDefaultLastModifiedAt()
-		su.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (su *ShellUpdate) check() error {
-	if su.mutation.TaskCleared() && len(su.mutation.TaskIDs()) > 0 {
+func (_u *ShellUpdate) check() error {
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
 	}
-	if su.mutation.BeaconCleared() && len(su.mutation.BeaconIDs()) > 0 {
+	if _u.mutation.BeaconCleared() && len(_u.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
 	}
-	if su.mutation.OwnerCleared() && len(su.mutation.OwnerIDs()) > 0 {
+	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.owner"`)
 	}
 	return nil
 }
 
-func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := su.check(); err != nil {
-		return n, err
+func (_u *ShellUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(shell.Table, shell.Columns, sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt))
-	if ps := su.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := su.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(shell.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := su.mutation.ClosedAt(); ok {
+	if value, ok := _u.mutation.ClosedAt(); ok {
 		_spec.SetField(shell.FieldClosedAt, field.TypeTime, value)
 	}
-	if su.mutation.ClosedAtCleared() {
+	if _u.mutation.ClosedAtCleared() {
 		_spec.ClearField(shell.FieldClosedAt, field.TypeTime)
 	}
-	if value, ok := su.mutation.Data(); ok {
+	if value, ok := _u.mutation.Data(); ok {
 		_spec.SetField(shell.FieldData, field.TypeBytes, value)
 	}
-	if su.mutation.TaskCleared() {
+	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -242,7 +242,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -258,7 +258,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if su.mutation.BeaconCleared() {
+	if _u.mutation.BeaconCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -271,7 +271,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.BeaconIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.BeaconIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -287,7 +287,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if su.mutation.OwnerCleared() {
+	if _u.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -300,7 +300,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -316,7 +316,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if su.mutation.ActiveUsersCleared() {
+	if _u.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -329,7 +329,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !su.mutation.ActiveUsersCleared() {
+	if nodes := _u.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !_u.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -345,7 +345,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.ActiveUsersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -361,7 +361,7 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{shell.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -369,8 +369,8 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	su.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // ShellUpdateOne is the builder for updating a single Shell entity.
@@ -382,151 +382,151 @@ type ShellUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (suo *ShellUpdateOne) SetLastModifiedAt(t time.Time) *ShellUpdateOne {
-	suo.mutation.SetLastModifiedAt(t)
-	return suo
+func (_u *ShellUpdateOne) SetLastModifiedAt(v time.Time) *ShellUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetClosedAt sets the "closed_at" field.
-func (suo *ShellUpdateOne) SetClosedAt(t time.Time) *ShellUpdateOne {
-	suo.mutation.SetClosedAt(t)
-	return suo
+func (_u *ShellUpdateOne) SetClosedAt(v time.Time) *ShellUpdateOne {
+	_u.mutation.SetClosedAt(v)
+	return _u
 }
 
 // SetNillableClosedAt sets the "closed_at" field if the given value is not nil.
-func (suo *ShellUpdateOne) SetNillableClosedAt(t *time.Time) *ShellUpdateOne {
-	if t != nil {
-		suo.SetClosedAt(*t)
+func (_u *ShellUpdateOne) SetNillableClosedAt(v *time.Time) *ShellUpdateOne {
+	if v != nil {
+		_u.SetClosedAt(*v)
 	}
-	return suo
+	return _u
 }
 
 // ClearClosedAt clears the value of the "closed_at" field.
-func (suo *ShellUpdateOne) ClearClosedAt() *ShellUpdateOne {
-	suo.mutation.ClearClosedAt()
-	return suo
+func (_u *ShellUpdateOne) ClearClosedAt() *ShellUpdateOne {
+	_u.mutation.ClearClosedAt()
+	return _u
 }
 
 // SetData sets the "data" field.
-func (suo *ShellUpdateOne) SetData(b []byte) *ShellUpdateOne {
-	suo.mutation.SetData(b)
-	return suo
+func (_u *ShellUpdateOne) SetData(v []byte) *ShellUpdateOne {
+	_u.mutation.SetData(v)
+	return _u
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (suo *ShellUpdateOne) SetTaskID(id int) *ShellUpdateOne {
-	suo.mutation.SetTaskID(id)
-	return suo
+func (_u *ShellUpdateOne) SetTaskID(id int) *ShellUpdateOne {
+	_u.mutation.SetTaskID(id)
+	return _u
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (suo *ShellUpdateOne) SetTask(t *Task) *ShellUpdateOne {
-	return suo.SetTaskID(t.ID)
+func (_u *ShellUpdateOne) SetTask(v *Task) *ShellUpdateOne {
+	return _u.SetTaskID(v.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
-func (suo *ShellUpdateOne) SetBeaconID(id int) *ShellUpdateOne {
-	suo.mutation.SetBeaconID(id)
-	return suo
+func (_u *ShellUpdateOne) SetBeaconID(id int) *ShellUpdateOne {
+	_u.mutation.SetBeaconID(id)
+	return _u
 }
 
 // SetBeacon sets the "beacon" edge to the Beacon entity.
-func (suo *ShellUpdateOne) SetBeacon(b *Beacon) *ShellUpdateOne {
-	return suo.SetBeaconID(b.ID)
+func (_u *ShellUpdateOne) SetBeacon(v *Beacon) *ShellUpdateOne {
+	return _u.SetBeaconID(v.ID)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
-func (suo *ShellUpdateOne) SetOwnerID(id int) *ShellUpdateOne {
-	suo.mutation.SetOwnerID(id)
-	return suo
+func (_u *ShellUpdateOne) SetOwnerID(id int) *ShellUpdateOne {
+	_u.mutation.SetOwnerID(id)
+	return _u
 }
 
 // SetOwner sets the "owner" edge to the User entity.
-func (suo *ShellUpdateOne) SetOwner(u *User) *ShellUpdateOne {
-	return suo.SetOwnerID(u.ID)
+func (_u *ShellUpdateOne) SetOwner(v *User) *ShellUpdateOne {
+	return _u.SetOwnerID(v.ID)
 }
 
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
-func (suo *ShellUpdateOne) AddActiveUserIDs(ids ...int) *ShellUpdateOne {
-	suo.mutation.AddActiveUserIDs(ids...)
-	return suo
+func (_u *ShellUpdateOne) AddActiveUserIDs(ids ...int) *ShellUpdateOne {
+	_u.mutation.AddActiveUserIDs(ids...)
+	return _u
 }
 
 // AddActiveUsers adds the "active_users" edges to the User entity.
-func (suo *ShellUpdateOne) AddActiveUsers(u ...*User) *ShellUpdateOne {
-	ids := make([]int, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
+func (_u *ShellUpdateOne) AddActiveUsers(v ...*User) *ShellUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return suo.AddActiveUserIDs(ids...)
+	return _u.AddActiveUserIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
-func (suo *ShellUpdateOne) Mutation() *ShellMutation {
-	return suo.mutation
+func (_u *ShellUpdateOne) Mutation() *ShellMutation {
+	return _u.mutation
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (suo *ShellUpdateOne) ClearTask() *ShellUpdateOne {
-	suo.mutation.ClearTask()
-	return suo
+func (_u *ShellUpdateOne) ClearTask() *ShellUpdateOne {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // ClearBeacon clears the "beacon" edge to the Beacon entity.
-func (suo *ShellUpdateOne) ClearBeacon() *ShellUpdateOne {
-	suo.mutation.ClearBeacon()
-	return suo
+func (_u *ShellUpdateOne) ClearBeacon() *ShellUpdateOne {
+	_u.mutation.ClearBeacon()
+	return _u
 }
 
 // ClearOwner clears the "owner" edge to the User entity.
-func (suo *ShellUpdateOne) ClearOwner() *ShellUpdateOne {
-	suo.mutation.ClearOwner()
-	return suo
+func (_u *ShellUpdateOne) ClearOwner() *ShellUpdateOne {
+	_u.mutation.ClearOwner()
+	return _u
 }
 
 // ClearActiveUsers clears all "active_users" edges to the User entity.
-func (suo *ShellUpdateOne) ClearActiveUsers() *ShellUpdateOne {
-	suo.mutation.ClearActiveUsers()
-	return suo
+func (_u *ShellUpdateOne) ClearActiveUsers() *ShellUpdateOne {
+	_u.mutation.ClearActiveUsers()
+	return _u
 }
 
 // RemoveActiveUserIDs removes the "active_users" edge to User entities by IDs.
-func (suo *ShellUpdateOne) RemoveActiveUserIDs(ids ...int) *ShellUpdateOne {
-	suo.mutation.RemoveActiveUserIDs(ids...)
-	return suo
+func (_u *ShellUpdateOne) RemoveActiveUserIDs(ids ...int) *ShellUpdateOne {
+	_u.mutation.RemoveActiveUserIDs(ids...)
+	return _u
 }
 
 // RemoveActiveUsers removes "active_users" edges to User entities.
-func (suo *ShellUpdateOne) RemoveActiveUsers(u ...*User) *ShellUpdateOne {
-	ids := make([]int, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
+func (_u *ShellUpdateOne) RemoveActiveUsers(v ...*User) *ShellUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return suo.RemoveActiveUserIDs(ids...)
+	return _u.RemoveActiveUserIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
-func (suo *ShellUpdateOne) Where(ps ...predicate.Shell) *ShellUpdateOne {
-	suo.mutation.Where(ps...)
-	return suo
+func (_u *ShellUpdateOne) Where(ps ...predicate.Shell) *ShellUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (suo *ShellUpdateOne) Select(field string, fields ...string) *ShellUpdateOne {
-	suo.fields = append([]string{field}, fields...)
-	return suo
+func (_u *ShellUpdateOne) Select(field string, fields ...string) *ShellUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Shell entity.
-func (suo *ShellUpdateOne) Save(ctx context.Context) (*Shell, error) {
-	suo.defaults()
-	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
+func (_u *ShellUpdateOne) Save(ctx context.Context) (*Shell, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (suo *ShellUpdateOne) SaveX(ctx context.Context) *Shell {
-	node, err := suo.Save(ctx)
+func (_u *ShellUpdateOne) SaveX(ctx context.Context) *Shell {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -534,51 +534,51 @@ func (suo *ShellUpdateOne) SaveX(ctx context.Context) *Shell {
 }
 
 // Exec executes the query on the entity.
-func (suo *ShellUpdateOne) Exec(ctx context.Context) error {
-	_, err := suo.Save(ctx)
+func (_u *ShellUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (suo *ShellUpdateOne) ExecX(ctx context.Context) {
-	if err := suo.Exec(ctx); err != nil {
+func (_u *ShellUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (suo *ShellUpdateOne) defaults() {
-	if _, ok := suo.mutation.LastModifiedAt(); !ok {
+func (_u *ShellUpdateOne) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := shell.UpdateDefaultLastModifiedAt()
-		suo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (suo *ShellUpdateOne) check() error {
-	if suo.mutation.TaskCleared() && len(suo.mutation.TaskIDs()) > 0 {
+func (_u *ShellUpdateOne) check() error {
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
 	}
-	if suo.mutation.BeaconCleared() && len(suo.mutation.BeaconIDs()) > 0 {
+	if _u.mutation.BeaconCleared() && len(_u.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
 	}
-	if suo.mutation.OwnerCleared() && len(suo.mutation.OwnerIDs()) > 0 {
+	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.owner"`)
 	}
 	return nil
 }
 
-func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error) {
-	if err := suo.check(); err != nil {
+func (_u *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(shell.Table, shell.Columns, sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt))
-	id, ok := suo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Shell.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := suo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, shell.FieldID)
 		for _, f := range fields {
@@ -590,26 +590,26 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 			}
 		}
 	}
-	if ps := suo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := suo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(shell.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := suo.mutation.ClosedAt(); ok {
+	if value, ok := _u.mutation.ClosedAt(); ok {
 		_spec.SetField(shell.FieldClosedAt, field.TypeTime, value)
 	}
-	if suo.mutation.ClosedAtCleared() {
+	if _u.mutation.ClosedAtCleared() {
 		_spec.ClearField(shell.FieldClosedAt, field.TypeTime)
 	}
-	if value, ok := suo.mutation.Data(); ok {
+	if value, ok := _u.mutation.Data(); ok {
 		_spec.SetField(shell.FieldData, field.TypeBytes, value)
 	}
-	if suo.mutation.TaskCleared() {
+	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -622,7 +622,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -638,7 +638,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if suo.mutation.BeaconCleared() {
+	if _u.mutation.BeaconCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -651,7 +651,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.BeaconIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.BeaconIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -667,7 +667,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if suo.mutation.OwnerCleared() {
+	if _u.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -680,7 +680,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -696,7 +696,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if suo.mutation.ActiveUsersCleared() {
+	if _u.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -709,7 +709,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !suo.mutation.ActiveUsersCleared() {
+	if nodes := _u.mutation.RemovedActiveUsersIDs(); len(nodes) > 0 && !_u.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -725,7 +725,7 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.ActiveUsersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -741,10 +741,10 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Shell{config: suo.config}
+	_node = &Shell{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, suo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{shell.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -752,6 +752,6 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		return nil, err
 	}
-	suo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

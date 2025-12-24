@@ -26,237 +26,237 @@ type TomeUpdate struct {
 }
 
 // Where appends a list predicates to the TomeUpdate builder.
-func (tu *TomeUpdate) Where(ps ...predicate.Tome) *TomeUpdate {
-	tu.mutation.Where(ps...)
-	return tu
+func (_u *TomeUpdate) Where(ps ...predicate.Tome) *TomeUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (tu *TomeUpdate) SetLastModifiedAt(t time.Time) *TomeUpdate {
-	tu.mutation.SetLastModifiedAt(t)
-	return tu
+func (_u *TomeUpdate) SetLastModifiedAt(v time.Time) *TomeUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (tu *TomeUpdate) SetName(s string) *TomeUpdate {
-	tu.mutation.SetName(s)
-	return tu
+func (_u *TomeUpdate) SetName(v string) *TomeUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableName(s *string) *TomeUpdate {
-	if s != nil {
-		tu.SetName(*s)
+func (_u *TomeUpdate) SetNillableName(v *string) *TomeUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetDescription sets the "description" field.
-func (tu *TomeUpdate) SetDescription(s string) *TomeUpdate {
-	tu.mutation.SetDescription(s)
-	return tu
+func (_u *TomeUpdate) SetDescription(v string) *TomeUpdate {
+	_u.mutation.SetDescription(v)
+	return _u
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableDescription(s *string) *TomeUpdate {
-	if s != nil {
-		tu.SetDescription(*s)
+func (_u *TomeUpdate) SetNillableDescription(v *string) *TomeUpdate {
+	if v != nil {
+		_u.SetDescription(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetAuthor sets the "author" field.
-func (tu *TomeUpdate) SetAuthor(s string) *TomeUpdate {
-	tu.mutation.SetAuthor(s)
-	return tu
+func (_u *TomeUpdate) SetAuthor(v string) *TomeUpdate {
+	_u.mutation.SetAuthor(v)
+	return _u
 }
 
 // SetNillableAuthor sets the "author" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableAuthor(s *string) *TomeUpdate {
-	if s != nil {
-		tu.SetAuthor(*s)
+func (_u *TomeUpdate) SetNillableAuthor(v *string) *TomeUpdate {
+	if v != nil {
+		_u.SetAuthor(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetSupportModel sets the "support_model" field.
-func (tu *TomeUpdate) SetSupportModel(tm tome.SupportModel) *TomeUpdate {
-	tu.mutation.SetSupportModel(tm)
-	return tu
+func (_u *TomeUpdate) SetSupportModel(v tome.SupportModel) *TomeUpdate {
+	_u.mutation.SetSupportModel(v)
+	return _u
 }
 
 // SetNillableSupportModel sets the "support_model" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableSupportModel(tm *tome.SupportModel) *TomeUpdate {
-	if tm != nil {
-		tu.SetSupportModel(*tm)
+func (_u *TomeUpdate) SetNillableSupportModel(v *tome.SupportModel) *TomeUpdate {
+	if v != nil {
+		_u.SetSupportModel(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetTactic sets the "tactic" field.
-func (tu *TomeUpdate) SetTactic(t tome.Tactic) *TomeUpdate {
-	tu.mutation.SetTactic(t)
-	return tu
+func (_u *TomeUpdate) SetTactic(v tome.Tactic) *TomeUpdate {
+	_u.mutation.SetTactic(v)
+	return _u
 }
 
 // SetNillableTactic sets the "tactic" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableTactic(t *tome.Tactic) *TomeUpdate {
-	if t != nil {
-		tu.SetTactic(*t)
+func (_u *TomeUpdate) SetNillableTactic(v *tome.Tactic) *TomeUpdate {
+	if v != nil {
+		_u.SetTactic(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetParamDefs sets the "param_defs" field.
-func (tu *TomeUpdate) SetParamDefs(s string) *TomeUpdate {
-	tu.mutation.SetParamDefs(s)
-	return tu
+func (_u *TomeUpdate) SetParamDefs(v string) *TomeUpdate {
+	_u.mutation.SetParamDefs(v)
+	return _u
 }
 
 // SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableParamDefs(s *string) *TomeUpdate {
-	if s != nil {
-		tu.SetParamDefs(*s)
+func (_u *TomeUpdate) SetNillableParamDefs(v *string) *TomeUpdate {
+	if v != nil {
+		_u.SetParamDefs(*v)
 	}
-	return tu
+	return _u
 }
 
 // ClearParamDefs clears the value of the "param_defs" field.
-func (tu *TomeUpdate) ClearParamDefs() *TomeUpdate {
-	tu.mutation.ClearParamDefs()
-	return tu
+func (_u *TomeUpdate) ClearParamDefs() *TomeUpdate {
+	_u.mutation.ClearParamDefs()
+	return _u
 }
 
 // SetHash sets the "hash" field.
-func (tu *TomeUpdate) SetHash(s string) *TomeUpdate {
-	tu.mutation.SetHash(s)
-	return tu
+func (_u *TomeUpdate) SetHash(v string) *TomeUpdate {
+	_u.mutation.SetHash(v)
+	return _u
 }
 
 // SetNillableHash sets the "hash" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableHash(s *string) *TomeUpdate {
-	if s != nil {
-		tu.SetHash(*s)
+func (_u *TomeUpdate) SetNillableHash(v *string) *TomeUpdate {
+	if v != nil {
+		_u.SetHash(*v)
 	}
-	return tu
+	return _u
 }
 
 // SetEldritch sets the "eldritch" field.
-func (tu *TomeUpdate) SetEldritch(s string) *TomeUpdate {
-	tu.mutation.SetEldritch(s)
-	return tu
+func (_u *TomeUpdate) SetEldritch(v string) *TomeUpdate {
+	_u.mutation.SetEldritch(v)
+	return _u
 }
 
 // SetNillableEldritch sets the "eldritch" field if the given value is not nil.
-func (tu *TomeUpdate) SetNillableEldritch(s *string) *TomeUpdate {
-	if s != nil {
-		tu.SetEldritch(*s)
+func (_u *TomeUpdate) SetNillableEldritch(v *string) *TomeUpdate {
+	if v != nil {
+		_u.SetEldritch(*v)
 	}
-	return tu
+	return _u
 }
 
 // AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tu *TomeUpdate) AddFileIDs(ids ...int) *TomeUpdate {
-	tu.mutation.AddFileIDs(ids...)
-	return tu
+func (_u *TomeUpdate) AddFileIDs(ids ...int) *TomeUpdate {
+	_u.mutation.AddFileIDs(ids...)
+	return _u
 }
 
 // AddFiles adds the "files" edges to the File entity.
-func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+func (_u *TomeUpdate) AddFiles(v ...*File) *TomeUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return tu.AddFileIDs(ids...)
+	return _u.AddFileIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
-func (tu *TomeUpdate) SetUploaderID(id int) *TomeUpdate {
-	tu.mutation.SetUploaderID(id)
-	return tu
+func (_u *TomeUpdate) SetUploaderID(id int) *TomeUpdate {
+	_u.mutation.SetUploaderID(id)
+	return _u
 }
 
 // SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
-func (tu *TomeUpdate) SetNillableUploaderID(id *int) *TomeUpdate {
+func (_u *TomeUpdate) SetNillableUploaderID(id *int) *TomeUpdate {
 	if id != nil {
-		tu = tu.SetUploaderID(*id)
+		_u = _u.SetUploaderID(*id)
 	}
-	return tu
+	return _u
 }
 
 // SetUploader sets the "uploader" edge to the User entity.
-func (tu *TomeUpdate) SetUploader(u *User) *TomeUpdate {
-	return tu.SetUploaderID(u.ID)
+func (_u *TomeUpdate) SetUploader(v *User) *TomeUpdate {
+	return _u.SetUploaderID(v.ID)
 }
 
 // SetRepositoryID sets the "repository" edge to the Repository entity by ID.
-func (tu *TomeUpdate) SetRepositoryID(id int) *TomeUpdate {
-	tu.mutation.SetRepositoryID(id)
-	return tu
+func (_u *TomeUpdate) SetRepositoryID(id int) *TomeUpdate {
+	_u.mutation.SetRepositoryID(id)
+	return _u
 }
 
 // SetNillableRepositoryID sets the "repository" edge to the Repository entity by ID if the given value is not nil.
-func (tu *TomeUpdate) SetNillableRepositoryID(id *int) *TomeUpdate {
+func (_u *TomeUpdate) SetNillableRepositoryID(id *int) *TomeUpdate {
 	if id != nil {
-		tu = tu.SetRepositoryID(*id)
+		_u = _u.SetRepositoryID(*id)
 	}
-	return tu
+	return _u
 }
 
 // SetRepository sets the "repository" edge to the Repository entity.
-func (tu *TomeUpdate) SetRepository(r *Repository) *TomeUpdate {
-	return tu.SetRepositoryID(r.ID)
+func (_u *TomeUpdate) SetRepository(v *Repository) *TomeUpdate {
+	return _u.SetRepositoryID(v.ID)
 }
 
 // Mutation returns the TomeMutation object of the builder.
-func (tu *TomeUpdate) Mutation() *TomeMutation {
-	return tu.mutation
+func (_u *TomeUpdate) Mutation() *TomeMutation {
+	return _u.mutation
 }
 
 // ClearFiles clears all "files" edges to the File entity.
-func (tu *TomeUpdate) ClearFiles() *TomeUpdate {
-	tu.mutation.ClearFiles()
-	return tu
+func (_u *TomeUpdate) ClearFiles() *TomeUpdate {
+	_u.mutation.ClearFiles()
+	return _u
 }
 
 // RemoveFileIDs removes the "files" edge to File entities by IDs.
-func (tu *TomeUpdate) RemoveFileIDs(ids ...int) *TomeUpdate {
-	tu.mutation.RemoveFileIDs(ids...)
-	return tu
+func (_u *TomeUpdate) RemoveFileIDs(ids ...int) *TomeUpdate {
+	_u.mutation.RemoveFileIDs(ids...)
+	return _u
 }
 
 // RemoveFiles removes "files" edges to File entities.
-func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+func (_u *TomeUpdate) RemoveFiles(v ...*File) *TomeUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return tu.RemoveFileIDs(ids...)
+	return _u.RemoveFileIDs(ids...)
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
-func (tu *TomeUpdate) ClearUploader() *TomeUpdate {
-	tu.mutation.ClearUploader()
-	return tu
+func (_u *TomeUpdate) ClearUploader() *TomeUpdate {
+	_u.mutation.ClearUploader()
+	return _u
 }
 
 // ClearRepository clears the "repository" edge to the Repository entity.
-func (tu *TomeUpdate) ClearRepository() *TomeUpdate {
-	tu.mutation.ClearRepository()
-	return tu
+func (_u *TomeUpdate) ClearRepository() *TomeUpdate {
+	_u.mutation.ClearRepository()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (tu *TomeUpdate) Save(ctx context.Context) (int, error) {
-	if err := tu.defaults(); err != nil {
+func (_u *TomeUpdate) Save(ctx context.Context) (int, error) {
+	if err := _u.defaults(); err != nil {
 		return 0, err
 	}
-	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (tu *TomeUpdate) SaveX(ctx context.Context) int {
-	affected, err := tu.Save(ctx)
+func (_u *TomeUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -264,53 +264,53 @@ func (tu *TomeUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (tu *TomeUpdate) Exec(ctx context.Context) error {
-	_, err := tu.Save(ctx)
+func (_u *TomeUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tu *TomeUpdate) ExecX(ctx context.Context) {
-	if err := tu.Exec(ctx); err != nil {
+func (_u *TomeUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (tu *TomeUpdate) defaults() error {
-	if _, ok := tu.mutation.LastModifiedAt(); !ok {
+func (_u *TomeUpdate) defaults() error {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		if tome.UpdateDefaultLastModifiedAt == nil {
 			return fmt.Errorf("ent: uninitialized tome.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
 		}
 		v := tome.UpdateDefaultLastModifiedAt()
-		tu.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (tu *TomeUpdate) check() error {
-	if v, ok := tu.mutation.Name(); ok {
+func (_u *TomeUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
-	if v, ok := tu.mutation.SupportModel(); ok {
+	if v, ok := _u.mutation.SupportModel(); ok {
 		if err := tome.SupportModelValidator(v); err != nil {
 			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
 		}
 	}
-	if v, ok := tu.mutation.Tactic(); ok {
+	if v, ok := _u.mutation.Tactic(); ok {
 		if err := tome.TacticValidator(v); err != nil {
 			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
 		}
 	}
-	if v, ok := tu.mutation.ParamDefs(); ok {
+	if v, ok := _u.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
 		}
 	}
-	if v, ok := tu.mutation.Hash(); ok {
+	if v, ok := _u.mutation.Hash(); ok {
 		if err := tome.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "Tome.hash": %w`, err)}
 		}
@@ -318,49 +318,49 @@ func (tu *TomeUpdate) check() error {
 	return nil
 }
 
-func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := tu.check(); err != nil {
-		return n, err
+func (_u *TomeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(tome.Table, tome.Columns, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
-	if ps := tu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := tu.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := tu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Description(); ok {
+	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Author(); ok {
+	if value, ok := _u.mutation.Author(); ok {
 		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.SupportModel(); ok {
+	if value, ok := _u.mutation.SupportModel(); ok {
 		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
 	}
-	if value, ok := tu.mutation.Tactic(); ok {
+	if value, ok := _u.mutation.Tactic(); ok {
 		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
-	if value, ok := tu.mutation.ParamDefs(); ok {
+	if value, ok := _u.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
-	if tu.mutation.ParamDefsCleared() {
+	if _u.mutation.ParamDefsCleared() {
 		_spec.ClearField(tome.FieldParamDefs, field.TypeString)
 	}
-	if value, ok := tu.mutation.Hash(); ok {
+	if value, ok := _u.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
 	}
-	if value, ok := tu.mutation.Eldritch(); ok {
+	if value, ok := _u.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if tu.mutation.FilesCleared() {
+	if _u.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -373,7 +373,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tu.mutation.FilesCleared() {
+	if nodes := _u.mutation.RemovedFilesIDs(); len(nodes) > 0 && !_u.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -389,7 +389,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.FilesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -405,7 +405,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.UploaderCleared() {
+	if _u.mutation.UploaderCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -418,7 +418,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.UploaderIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UploaderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -434,7 +434,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tu.mutation.RepositoryCleared() {
+	if _u.mutation.RepositoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -447,7 +447,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RepositoryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RepositoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -463,7 +463,7 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tome.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -471,8 +471,8 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	tu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // TomeUpdateOne is the builder for updating a single Tome entity.
@@ -484,244 +484,244 @@ type TomeUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (tuo *TomeUpdateOne) SetLastModifiedAt(t time.Time) *TomeUpdateOne {
-	tuo.mutation.SetLastModifiedAt(t)
-	return tuo
+func (_u *TomeUpdateOne) SetLastModifiedAt(v time.Time) *TomeUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (tuo *TomeUpdateOne) SetName(s string) *TomeUpdateOne {
-	tuo.mutation.SetName(s)
-	return tuo
+func (_u *TomeUpdateOne) SetName(v string) *TomeUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableName(s *string) *TomeUpdateOne {
-	if s != nil {
-		tuo.SetName(*s)
+func (_u *TomeUpdateOne) SetNillableName(v *string) *TomeUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetDescription sets the "description" field.
-func (tuo *TomeUpdateOne) SetDescription(s string) *TomeUpdateOne {
-	tuo.mutation.SetDescription(s)
-	return tuo
+func (_u *TomeUpdateOne) SetDescription(v string) *TomeUpdateOne {
+	_u.mutation.SetDescription(v)
+	return _u
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableDescription(s *string) *TomeUpdateOne {
-	if s != nil {
-		tuo.SetDescription(*s)
+func (_u *TomeUpdateOne) SetNillableDescription(v *string) *TomeUpdateOne {
+	if v != nil {
+		_u.SetDescription(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetAuthor sets the "author" field.
-func (tuo *TomeUpdateOne) SetAuthor(s string) *TomeUpdateOne {
-	tuo.mutation.SetAuthor(s)
-	return tuo
+func (_u *TomeUpdateOne) SetAuthor(v string) *TomeUpdateOne {
+	_u.mutation.SetAuthor(v)
+	return _u
 }
 
 // SetNillableAuthor sets the "author" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableAuthor(s *string) *TomeUpdateOne {
-	if s != nil {
-		tuo.SetAuthor(*s)
+func (_u *TomeUpdateOne) SetNillableAuthor(v *string) *TomeUpdateOne {
+	if v != nil {
+		_u.SetAuthor(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetSupportModel sets the "support_model" field.
-func (tuo *TomeUpdateOne) SetSupportModel(tm tome.SupportModel) *TomeUpdateOne {
-	tuo.mutation.SetSupportModel(tm)
-	return tuo
+func (_u *TomeUpdateOne) SetSupportModel(v tome.SupportModel) *TomeUpdateOne {
+	_u.mutation.SetSupportModel(v)
+	return _u
 }
 
 // SetNillableSupportModel sets the "support_model" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableSupportModel(tm *tome.SupportModel) *TomeUpdateOne {
-	if tm != nil {
-		tuo.SetSupportModel(*tm)
+func (_u *TomeUpdateOne) SetNillableSupportModel(v *tome.SupportModel) *TomeUpdateOne {
+	if v != nil {
+		_u.SetSupportModel(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetTactic sets the "tactic" field.
-func (tuo *TomeUpdateOne) SetTactic(t tome.Tactic) *TomeUpdateOne {
-	tuo.mutation.SetTactic(t)
-	return tuo
+func (_u *TomeUpdateOne) SetTactic(v tome.Tactic) *TomeUpdateOne {
+	_u.mutation.SetTactic(v)
+	return _u
 }
 
 // SetNillableTactic sets the "tactic" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableTactic(t *tome.Tactic) *TomeUpdateOne {
-	if t != nil {
-		tuo.SetTactic(*t)
+func (_u *TomeUpdateOne) SetNillableTactic(v *tome.Tactic) *TomeUpdateOne {
+	if v != nil {
+		_u.SetTactic(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetParamDefs sets the "param_defs" field.
-func (tuo *TomeUpdateOne) SetParamDefs(s string) *TomeUpdateOne {
-	tuo.mutation.SetParamDefs(s)
-	return tuo
+func (_u *TomeUpdateOne) SetParamDefs(v string) *TomeUpdateOne {
+	_u.mutation.SetParamDefs(v)
+	return _u
 }
 
 // SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableParamDefs(s *string) *TomeUpdateOne {
-	if s != nil {
-		tuo.SetParamDefs(*s)
+func (_u *TomeUpdateOne) SetNillableParamDefs(v *string) *TomeUpdateOne {
+	if v != nil {
+		_u.SetParamDefs(*v)
 	}
-	return tuo
+	return _u
 }
 
 // ClearParamDefs clears the value of the "param_defs" field.
-func (tuo *TomeUpdateOne) ClearParamDefs() *TomeUpdateOne {
-	tuo.mutation.ClearParamDefs()
-	return tuo
+func (_u *TomeUpdateOne) ClearParamDefs() *TomeUpdateOne {
+	_u.mutation.ClearParamDefs()
+	return _u
 }
 
 // SetHash sets the "hash" field.
-func (tuo *TomeUpdateOne) SetHash(s string) *TomeUpdateOne {
-	tuo.mutation.SetHash(s)
-	return tuo
+func (_u *TomeUpdateOne) SetHash(v string) *TomeUpdateOne {
+	_u.mutation.SetHash(v)
+	return _u
 }
 
 // SetNillableHash sets the "hash" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableHash(s *string) *TomeUpdateOne {
-	if s != nil {
-		tuo.SetHash(*s)
+func (_u *TomeUpdateOne) SetNillableHash(v *string) *TomeUpdateOne {
+	if v != nil {
+		_u.SetHash(*v)
 	}
-	return tuo
+	return _u
 }
 
 // SetEldritch sets the "eldritch" field.
-func (tuo *TomeUpdateOne) SetEldritch(s string) *TomeUpdateOne {
-	tuo.mutation.SetEldritch(s)
-	return tuo
+func (_u *TomeUpdateOne) SetEldritch(v string) *TomeUpdateOne {
+	_u.mutation.SetEldritch(v)
+	return _u
 }
 
 // SetNillableEldritch sets the "eldritch" field if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableEldritch(s *string) *TomeUpdateOne {
-	if s != nil {
-		tuo.SetEldritch(*s)
+func (_u *TomeUpdateOne) SetNillableEldritch(v *string) *TomeUpdateOne {
+	if v != nil {
+		_u.SetEldritch(*v)
 	}
-	return tuo
+	return _u
 }
 
 // AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tuo *TomeUpdateOne) AddFileIDs(ids ...int) *TomeUpdateOne {
-	tuo.mutation.AddFileIDs(ids...)
-	return tuo
+func (_u *TomeUpdateOne) AddFileIDs(ids ...int) *TomeUpdateOne {
+	_u.mutation.AddFileIDs(ids...)
+	return _u
 }
 
 // AddFiles adds the "files" edges to the File entity.
-func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+func (_u *TomeUpdateOne) AddFiles(v ...*File) *TomeUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return tuo.AddFileIDs(ids...)
+	return _u.AddFileIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
-func (tuo *TomeUpdateOne) SetUploaderID(id int) *TomeUpdateOne {
-	tuo.mutation.SetUploaderID(id)
-	return tuo
+func (_u *TomeUpdateOne) SetUploaderID(id int) *TomeUpdateOne {
+	_u.mutation.SetUploaderID(id)
+	return _u
 }
 
 // SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableUploaderID(id *int) *TomeUpdateOne {
+func (_u *TomeUpdateOne) SetNillableUploaderID(id *int) *TomeUpdateOne {
 	if id != nil {
-		tuo = tuo.SetUploaderID(*id)
+		_u = _u.SetUploaderID(*id)
 	}
-	return tuo
+	return _u
 }
 
 // SetUploader sets the "uploader" edge to the User entity.
-func (tuo *TomeUpdateOne) SetUploader(u *User) *TomeUpdateOne {
-	return tuo.SetUploaderID(u.ID)
+func (_u *TomeUpdateOne) SetUploader(v *User) *TomeUpdateOne {
+	return _u.SetUploaderID(v.ID)
 }
 
 // SetRepositoryID sets the "repository" edge to the Repository entity by ID.
-func (tuo *TomeUpdateOne) SetRepositoryID(id int) *TomeUpdateOne {
-	tuo.mutation.SetRepositoryID(id)
-	return tuo
+func (_u *TomeUpdateOne) SetRepositoryID(id int) *TomeUpdateOne {
+	_u.mutation.SetRepositoryID(id)
+	return _u
 }
 
 // SetNillableRepositoryID sets the "repository" edge to the Repository entity by ID if the given value is not nil.
-func (tuo *TomeUpdateOne) SetNillableRepositoryID(id *int) *TomeUpdateOne {
+func (_u *TomeUpdateOne) SetNillableRepositoryID(id *int) *TomeUpdateOne {
 	if id != nil {
-		tuo = tuo.SetRepositoryID(*id)
+		_u = _u.SetRepositoryID(*id)
 	}
-	return tuo
+	return _u
 }
 
 // SetRepository sets the "repository" edge to the Repository entity.
-func (tuo *TomeUpdateOne) SetRepository(r *Repository) *TomeUpdateOne {
-	return tuo.SetRepositoryID(r.ID)
+func (_u *TomeUpdateOne) SetRepository(v *Repository) *TomeUpdateOne {
+	return _u.SetRepositoryID(v.ID)
 }
 
 // Mutation returns the TomeMutation object of the builder.
-func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
-	return tuo.mutation
+func (_u *TomeUpdateOne) Mutation() *TomeMutation {
+	return _u.mutation
 }
 
 // ClearFiles clears all "files" edges to the File entity.
-func (tuo *TomeUpdateOne) ClearFiles() *TomeUpdateOne {
-	tuo.mutation.ClearFiles()
-	return tuo
+func (_u *TomeUpdateOne) ClearFiles() *TomeUpdateOne {
+	_u.mutation.ClearFiles()
+	return _u
 }
 
 // RemoveFileIDs removes the "files" edge to File entities by IDs.
-func (tuo *TomeUpdateOne) RemoveFileIDs(ids ...int) *TomeUpdateOne {
-	tuo.mutation.RemoveFileIDs(ids...)
-	return tuo
+func (_u *TomeUpdateOne) RemoveFileIDs(ids ...int) *TomeUpdateOne {
+	_u.mutation.RemoveFileIDs(ids...)
+	return _u
 }
 
 // RemoveFiles removes "files" edges to File entities.
-func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+func (_u *TomeUpdateOne) RemoveFiles(v ...*File) *TomeUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return tuo.RemoveFileIDs(ids...)
+	return _u.RemoveFileIDs(ids...)
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
-func (tuo *TomeUpdateOne) ClearUploader() *TomeUpdateOne {
-	tuo.mutation.ClearUploader()
-	return tuo
+func (_u *TomeUpdateOne) ClearUploader() *TomeUpdateOne {
+	_u.mutation.ClearUploader()
+	return _u
 }
 
 // ClearRepository clears the "repository" edge to the Repository entity.
-func (tuo *TomeUpdateOne) ClearRepository() *TomeUpdateOne {
-	tuo.mutation.ClearRepository()
-	return tuo
+func (_u *TomeUpdateOne) ClearRepository() *TomeUpdateOne {
+	_u.mutation.ClearRepository()
+	return _u
 }
 
 // Where appends a list predicates to the TomeUpdate builder.
-func (tuo *TomeUpdateOne) Where(ps ...predicate.Tome) *TomeUpdateOne {
-	tuo.mutation.Where(ps...)
-	return tuo
+func (_u *TomeUpdateOne) Where(ps ...predicate.Tome) *TomeUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (tuo *TomeUpdateOne) Select(field string, fields ...string) *TomeUpdateOne {
-	tuo.fields = append([]string{field}, fields...)
-	return tuo
+func (_u *TomeUpdateOne) Select(field string, fields ...string) *TomeUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Tome entity.
-func (tuo *TomeUpdateOne) Save(ctx context.Context) (*Tome, error) {
-	if err := tuo.defaults(); err != nil {
+func (_u *TomeUpdateOne) Save(ctx context.Context) (*Tome, error) {
+	if err := _u.defaults(); err != nil {
 		return nil, err
 	}
-	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (tuo *TomeUpdateOne) SaveX(ctx context.Context) *Tome {
-	node, err := tuo.Save(ctx)
+func (_u *TomeUpdateOne) SaveX(ctx context.Context) *Tome {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -729,53 +729,53 @@ func (tuo *TomeUpdateOne) SaveX(ctx context.Context) *Tome {
 }
 
 // Exec executes the query on the entity.
-func (tuo *TomeUpdateOne) Exec(ctx context.Context) error {
-	_, err := tuo.Save(ctx)
+func (_u *TomeUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tuo *TomeUpdateOne) ExecX(ctx context.Context) {
-	if err := tuo.Exec(ctx); err != nil {
+func (_u *TomeUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (tuo *TomeUpdateOne) defaults() error {
-	if _, ok := tuo.mutation.LastModifiedAt(); !ok {
+func (_u *TomeUpdateOne) defaults() error {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		if tome.UpdateDefaultLastModifiedAt == nil {
 			return fmt.Errorf("ent: uninitialized tome.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
 		}
 		v := tome.UpdateDefaultLastModifiedAt()
-		tuo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (tuo *TomeUpdateOne) check() error {
-	if v, ok := tuo.mutation.Name(); ok {
+func (_u *TomeUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
-	if v, ok := tuo.mutation.SupportModel(); ok {
+	if v, ok := _u.mutation.SupportModel(); ok {
 		if err := tome.SupportModelValidator(v); err != nil {
 			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
 		}
 	}
-	if v, ok := tuo.mutation.Tactic(); ok {
+	if v, ok := _u.mutation.Tactic(); ok {
 		if err := tome.TacticValidator(v); err != nil {
 			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
 		}
 	}
-	if v, ok := tuo.mutation.ParamDefs(); ok {
+	if v, ok := _u.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
 		}
 	}
-	if v, ok := tuo.mutation.Hash(); ok {
+	if v, ok := _u.mutation.Hash(); ok {
 		if err := tome.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "Tome.hash": %w`, err)}
 		}
@@ -783,17 +783,17 @@ func (tuo *TomeUpdateOne) check() error {
 	return nil
 }
 
-func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) {
-	if err := tuo.check(); err != nil {
+func (_u *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(tome.Table, tome.Columns, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
-	id, ok := tuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Tome.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := tuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, tome.FieldID)
 		for _, f := range fields {
@@ -805,44 +805,44 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			}
 		}
 	}
-	if ps := tuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := tuo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := tuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Description(); ok {
+	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Author(); ok {
+	if value, ok := _u.mutation.Author(); ok {
 		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.SupportModel(); ok {
+	if value, ok := _u.mutation.SupportModel(); ok {
 		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
 	}
-	if value, ok := tuo.mutation.Tactic(); ok {
+	if value, ok := _u.mutation.Tactic(); ok {
 		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
-	if value, ok := tuo.mutation.ParamDefs(); ok {
+	if value, ok := _u.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
-	if tuo.mutation.ParamDefsCleared() {
+	if _u.mutation.ParamDefsCleared() {
 		_spec.ClearField(tome.FieldParamDefs, field.TypeString)
 	}
-	if value, ok := tuo.mutation.Hash(); ok {
+	if value, ok := _u.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
 	}
-	if value, ok := tuo.mutation.Eldritch(); ok {
+	if value, ok := _u.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if tuo.mutation.FilesCleared() {
+	if _u.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -855,7 +855,7 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tuo.mutation.FilesCleared() {
+	if nodes := _u.mutation.RemovedFilesIDs(); len(nodes) > 0 && !_u.mutation.FilesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -871,7 +871,7 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.FilesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -887,7 +887,7 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.UploaderCleared() {
+	if _u.mutation.UploaderCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -900,7 +900,7 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.UploaderIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UploaderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -916,7 +916,7 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tuo.mutation.RepositoryCleared() {
+	if _u.mutation.RepositoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -929,7 +929,7 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RepositoryIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RepositoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -945,10 +945,10 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Tome{config: tuo.config}
+	_node = &Tome{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, tuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tome.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -956,6 +956,6 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		return nil, err
 	}
-	tuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

@@ -26,18 +26,18 @@ import (
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (b *BeaconQuery) CollectFields(ctx context.Context, satisfies ...string) (*BeaconQuery, error) {
+func (_q *BeaconQuery) CollectFields(ctx context.Context, satisfies ...string) (*BeaconQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return b, nil
+		return _q, nil
 	}
-	if err := b.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return b, nil
+	return _q, nil
 }
 
-func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -51,18 +51,18 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostClient{config: b.config}).Query()
+				query = (&HostClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
 				return err
 			}
-			b.withHost = query
+			_q.withHost = query
 
 		case "tasks":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: b.config}).Query()
+				query = (&TaskClient{config: _q.config}).Query()
 			)
 			args := newTaskPaginateArgs(fieldArgs(ctx, new(TaskWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -80,7 +80,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					b.loadTotal = append(b.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -109,7 +109,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						return nil
 					})
 				} else {
-					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Beacon) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tasks)
 							if nodes[i].Edges.totalCount[1] == nil {
@@ -143,7 +143,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			} else {
 				query = pager.applyOrder(query)
 			}
-			b.WithNamedTasks(alias, func(wq *TaskQuery) {
+			_q.WithNamedTasks(alias, func(wq *TaskQuery) {
 				*wq = *query
 			})
 
@@ -151,7 +151,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&ShellClient{config: b.config}).Query()
+				query = (&ShellClient{config: _q.config}).Query()
 			)
 			args := newShellPaginateArgs(fieldArgs(ctx, new(ShellWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -169,7 +169,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					b.loadTotal = append(b.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -198,7 +198,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						return nil
 					})
 				} else {
-					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Beacon) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Shells)
 							if nodes[i].Edges.totalCount[2] == nil {
@@ -232,7 +232,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			} else {
 				query = pager.applyOrder(query)
 			}
-			b.WithNamedShells(alias, func(wq *ShellQuery) {
+			_q.WithNamedShells(alias, func(wq *ShellQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -287,7 +287,7 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 		}
 	}
 	if !unknownSeen {
-		b.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -350,18 +350,18 @@ func newBeaconPaginateArgs(rv map[string]any) *beaconPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (f *FileQuery) CollectFields(ctx context.Context, satisfies ...string) (*FileQuery, error) {
+func (_q *FileQuery) CollectFields(ctx context.Context, satisfies ...string) (*FileQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return f, nil
+		return _q, nil
 	}
-	if err := f.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return f, nil
+	return _q, nil
 }
 
-func (f *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -375,7 +375,7 @@ func (f *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TomeClient{config: f.config}).Query()
+				query = (&TomeClient{config: _q.config}).Query()
 			)
 			args := newTomePaginateArgs(fieldArgs(ctx, new(TomeWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -393,7 +393,7 @@ func (f *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					f.loadTotal = append(f.loadTotal, func(ctx context.Context, nodes []*File) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*File) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -426,7 +426,7 @@ func (f *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					f.loadTotal = append(f.loadTotal, func(_ context.Context, nodes []*File) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*File) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tomes)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -460,7 +460,7 @@ func (f *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			f.WithNamedTomes(alias, func(wq *TomeQuery) {
+			_q.WithNamedTomes(alias, func(wq *TomeQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -495,7 +495,7 @@ func (f *FileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 		}
 	}
 	if !unknownSeen {
-		f.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -558,18 +558,18 @@ func newFilePaginateArgs(rv map[string]any) *filePaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (h *HostQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostQuery, error) {
+func (_q *HostQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return h, nil
+		return _q, nil
 	}
-	if err := h.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return h, nil
+	return _q, nil
 }
 
-func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -583,7 +583,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TagClient{config: h.config}).Query()
+				query = (&TagClient{config: _q.config}).Query()
 			)
 			args := newTagPaginateArgs(fieldArgs(ctx, new(TagWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -601,7 +601,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Host) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -634,7 +634,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Host) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tags)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -668,7 +668,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			h.WithNamedTags(alias, func(wq *TagQuery) {
+			_q.WithNamedTags(alias, func(wq *TagQuery) {
 				*wq = *query
 			})
 
@@ -676,7 +676,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&BeaconClient{config: h.config}).Query()
+				query = (&BeaconClient{config: _q.config}).Query()
 			)
 			args := newBeaconPaginateArgs(fieldArgs(ctx, new(BeaconWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -694,7 +694,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Host) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -723,7 +723,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Host) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Beacons)
 							if nodes[i].Edges.totalCount[1] == nil {
@@ -757,7 +757,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			h.WithNamedBeacons(alias, func(wq *BeaconQuery) {
+			_q.WithNamedBeacons(alias, func(wq *BeaconQuery) {
 				*wq = *query
 			})
 
@@ -765,7 +765,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostFileClient{config: h.config}).Query()
+				query = (&HostFileClient{config: _q.config}).Query()
 			)
 			args := newHostFilePaginateArgs(fieldArgs(ctx, new(HostFileWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -783,7 +783,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Host) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -812,7 +812,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Host) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Files)
 							if nodes[i].Edges.totalCount[2] == nil {
@@ -846,7 +846,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			h.WithNamedFiles(alias, func(wq *HostFileQuery) {
+			_q.WithNamedFiles(alias, func(wq *HostFileQuery) {
 				*wq = *query
 			})
 
@@ -854,7 +854,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostProcessClient{config: h.config}).Query()
+				query = (&HostProcessClient{config: _q.config}).Query()
 			)
 			args := newHostProcessPaginateArgs(fieldArgs(ctx, new(HostProcessWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -872,7 +872,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Host) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -901,7 +901,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Host) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Processes)
 							if nodes[i].Edges.totalCount[3] == nil {
@@ -935,7 +935,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			h.WithNamedProcesses(alias, func(wq *HostProcessQuery) {
+			_q.WithNamedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
 
@@ -943,7 +943,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostCredentialClient{config: h.config}).Query()
+				query = (&HostCredentialClient{config: _q.config}).Query()
 			)
 			args := newHostCredentialPaginateArgs(fieldArgs(ctx, new(HostCredentialWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -961,7 +961,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Host) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -990,7 +990,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Host) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Credentials)
 							if nodes[i].Edges.totalCount[4] == nil {
@@ -1024,7 +1024,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			h.WithNamedCredentials(alias, func(wq *HostCredentialQuery) {
+			_q.WithNamedCredentials(alias, func(wq *HostCredentialQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -1079,7 +1079,7 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 		}
 	}
 	if !unknownSeen {
-		h.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -1142,18 +1142,18 @@ func newHostPaginateArgs(rv map[string]any) *hostPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (hc *HostCredentialQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostCredentialQuery, error) {
+func (_q *HostCredentialQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostCredentialQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return hc, nil
+		return _q, nil
 	}
-	if err := hc.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return hc, nil
+	return _q, nil
 }
 
-func (hc *HostCredentialQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *HostCredentialQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -1167,23 +1167,23 @@ func (hc *HostCredentialQuery) collectField(ctx context.Context, oneNode bool, o
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostClient{config: hc.config}).Query()
+				query = (&HostClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
 				return err
 			}
-			hc.withHost = query
+			_q.withHost = query
 
 		case "task":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: hc.config}).Query()
+				query = (&TaskClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, taskImplementors)...); err != nil {
 				return err
 			}
-			hc.withTask = query
+			_q.withTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostcredential.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostcredential.FieldCreatedAt)
@@ -1216,7 +1216,7 @@ func (hc *HostCredentialQuery) collectField(ctx context.Context, oneNode bool, o
 		}
 	}
 	if !unknownSeen {
-		hc.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -1279,18 +1279,18 @@ func newHostCredentialPaginateArgs(rv map[string]any) *hostcredentialPaginateArg
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (hf *HostFileQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostFileQuery, error) {
+func (_q *HostFileQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostFileQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return hf, nil
+		return _q, nil
 	}
-	if err := hf.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return hf, nil
+	return _q, nil
 }
 
-func (hf *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -1304,23 +1304,23 @@ func (hf *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostClient{config: hf.config}).Query()
+				query = (&HostClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
 				return err
 			}
-			hf.withHost = query
+			_q.withHost = query
 
 		case "task":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: hf.config}).Query()
+				query = (&TaskClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, taskImplementors)...); err != nil {
 				return err
 			}
-			hf.withTask = query
+			_q.withTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostfile.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostfile.FieldCreatedAt)
@@ -1368,7 +1368,7 @@ func (hf *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *
 		}
 	}
 	if !unknownSeen {
-		hf.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -1431,18 +1431,18 @@ func newHostFilePaginateArgs(rv map[string]any) *hostfilePaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (hp *HostProcessQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostProcessQuery, error) {
+func (_q *HostProcessQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostProcessQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return hp, nil
+		return _q, nil
 	}
-	if err := hp.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return hp, nil
+	return _q, nil
 }
 
-func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -1456,23 +1456,23 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostClient{config: hp.config}).Query()
+				query = (&HostClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
 				return err
 			}
-			hp.withHost = query
+			_q.withHost = query
 
 		case "task":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: hp.config}).Query()
+				query = (&TaskClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, taskImplementors)...); err != nil {
 				return err
 			}
-			hp.withTask = query
+			_q.withTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostprocess.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostprocess.FieldCreatedAt)
@@ -1535,7 +1535,7 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 		}
 	}
 	if !unknownSeen {
-		hp.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -1598,18 +1598,18 @@ func newHostProcessPaginateArgs(rv map[string]any) *hostprocessPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (q *QuestQuery) CollectFields(ctx context.Context, satisfies ...string) (*QuestQuery, error) {
+func (_q *QuestQuery) CollectFields(ctx context.Context, satisfies ...string) (*QuestQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return q, nil
+		return _q, nil
 	}
-	if err := q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return q, nil
+	return _q, nil
 }
 
-func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -1623,29 +1623,29 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TomeClient{config: q.config}).Query()
+				query = (&TomeClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, tomeImplementors)...); err != nil {
 				return err
 			}
-			q.withTome = query
+			_q.withTome = query
 
 		case "bundle":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&FileClient{config: q.config}).Query()
+				query = (&FileClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, fileImplementors)...); err != nil {
 				return err
 			}
-			q.withBundle = query
+			_q.withBundle = query
 
 		case "tasks":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: q.config}).Query()
+				query = (&TaskClient{config: _q.config}).Query()
 			)
 			args := newTaskPaginateArgs(fieldArgs(ctx, new(TaskWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -1663,7 +1663,7 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					q.loadTotal = append(q.loadTotal, func(ctx context.Context, nodes []*Quest) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Quest) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -1692,7 +1692,7 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 						return nil
 					})
 				} else {
-					q.loadTotal = append(q.loadTotal, func(_ context.Context, nodes []*Quest) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Quest) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tasks)
 							if nodes[i].Edges.totalCount[2] == nil {
@@ -1726,7 +1726,7 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			} else {
 				query = pager.applyOrder(query)
 			}
-			q.WithNamedTasks(alias, func(wq *TaskQuery) {
+			_q.WithNamedTasks(alias, func(wq *TaskQuery) {
 				*wq = *query
 			})
 
@@ -1734,12 +1734,12 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: q.config}).Query()
+				query = (&UserClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
 				return err
 			}
-			q.withCreator = query
+			_q.withCreator = query
 		case "createdAt":
 			if _, ok := fieldSeen[quest.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, quest.FieldCreatedAt)
@@ -1777,7 +1777,7 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 		}
 	}
 	if !unknownSeen {
-		q.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -1840,18 +1840,18 @@ func newQuestPaginateArgs(rv map[string]any) *questPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (r *RepositoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*RepositoryQuery, error) {
+func (_q *RepositoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*RepositoryQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return r, nil
+		return _q, nil
 	}
-	if err := r.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return r, nil
+	return _q, nil
 }
 
-func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -1865,7 +1865,7 @@ func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TomeClient{config: r.config}).Query()
+				query = (&TomeClient{config: _q.config}).Query()
 			)
 			args := newTomePaginateArgs(fieldArgs(ctx, new(TomeWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -1883,7 +1883,7 @@ func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					r.loadTotal = append(r.loadTotal, func(ctx context.Context, nodes []*Repository) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Repository) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -1912,7 +1912,7 @@ func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 						return nil
 					})
 				} else {
-					r.loadTotal = append(r.loadTotal, func(_ context.Context, nodes []*Repository) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Repository) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tomes)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -1946,7 +1946,7 @@ func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			} else {
 				query = pager.applyOrder(query)
 			}
-			r.WithNamedTomes(alias, func(wq *TomeQuery) {
+			_q.WithNamedTomes(alias, func(wq *TomeQuery) {
 				*wq = *query
 			})
 
@@ -1954,12 +1954,12 @@ func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: r.config}).Query()
+				query = (&UserClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
 				return err
 			}
-			r.withOwner = query
+			_q.withOwner = query
 		case "createdAt":
 			if _, ok := fieldSeen[repository.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, repository.FieldCreatedAt)
@@ -1992,7 +1992,7 @@ func (r *RepositoryQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 		}
 	}
 	if !unknownSeen {
-		r.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -2055,18 +2055,18 @@ func newRepositoryPaginateArgs(rv map[string]any) *repositoryPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (s *ShellQuery) CollectFields(ctx context.Context, satisfies ...string) (*ShellQuery, error) {
+func (_q *ShellQuery) CollectFields(ctx context.Context, satisfies ...string) (*ShellQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return s, nil
+		return _q, nil
 	}
-	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return s, nil
+	return _q, nil
 }
 
-func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -2080,40 +2080,40 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TaskClient{config: s.config}).Query()
+				query = (&TaskClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, taskImplementors)...); err != nil {
 				return err
 			}
-			s.withTask = query
+			_q.withTask = query
 
 		case "beacon":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&BeaconClient{config: s.config}).Query()
+				query = (&BeaconClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
 				return err
 			}
-			s.withBeacon = query
+			_q.withBeacon = query
 
 		case "owner":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: s.config}).Query()
+				query = (&UserClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
 				return err
 			}
-			s.withOwner = query
+			_q.withOwner = query
 
 		case "activeUsers":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: s.config}).Query()
+				query = (&UserClient{config: _q.config}).Query()
 			)
 			args := newUserPaginateArgs(fieldArgs(ctx, new(UserWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -2131,7 +2131,7 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Shell) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Shell) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -2164,7 +2164,7 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 						return nil
 					})
 				} else {
-					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Shell) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ActiveUsers)
 							if nodes[i].Edges.totalCount[3] == nil {
@@ -2198,7 +2198,7 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			} else {
 				query = pager.applyOrder(query)
 			}
-			s.WithNamedActiveUsers(alias, func(wq *UserQuery) {
+			_q.WithNamedActiveUsers(alias, func(wq *UserQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -2223,7 +2223,7 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 		}
 	}
 	if !unknownSeen {
-		s.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -2286,18 +2286,18 @@ func newShellPaginateArgs(rv map[string]any) *shellPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (t *TagQuery) CollectFields(ctx context.Context, satisfies ...string) (*TagQuery, error) {
+func (_q *TagQuery) CollectFields(ctx context.Context, satisfies ...string) (*TagQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return t, nil
+		return _q, nil
 	}
-	if err := t.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return _q, nil
 }
 
-func (t *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -2311,7 +2311,7 @@ func (t *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphq
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostClient{config: t.config}).Query()
+				query = (&HostClient{config: _q.config}).Query()
 			)
 			args := newHostPaginateArgs(fieldArgs(ctx, new(HostWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -2329,7 +2329,7 @@ func (t *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphq
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Tag) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Tag) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -2362,7 +2362,7 @@ func (t *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphq
 						return nil
 					})
 				} else {
-					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Tag) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Tag) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Hosts)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -2396,7 +2396,7 @@ func (t *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphq
 			} else {
 				query = pager.applyOrder(query)
 			}
-			t.WithNamedHosts(alias, func(wq *HostQuery) {
+			_q.WithNamedHosts(alias, func(wq *HostQuery) {
 				*wq = *query
 			})
 		case "name":
@@ -2416,7 +2416,7 @@ func (t *TagQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphq
 		}
 	}
 	if !unknownSeen {
-		t.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -2479,18 +2479,18 @@ func newTagPaginateArgs(rv map[string]any) *tagPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (t *TaskQuery) CollectFields(ctx context.Context, satisfies ...string) (*TaskQuery, error) {
+func (_q *TaskQuery) CollectFields(ctx context.Context, satisfies ...string) (*TaskQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return t, nil
+		return _q, nil
 	}
-	if err := t.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return _q, nil
 }
 
-func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -2504,29 +2504,29 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&QuestClient{config: t.config}).Query()
+				query = (&QuestClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, questImplementors)...); err != nil {
 				return err
 			}
-			t.withQuest = query
+			_q.withQuest = query
 
 		case "beacon":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&BeaconClient{config: t.config}).Query()
+				query = (&BeaconClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
 				return err
 			}
-			t.withBeacon = query
+			_q.withBeacon = query
 
 		case "reportedFiles":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostFileClient{config: t.config}).Query()
+				query = (&HostFileClient{config: _q.config}).Query()
 			)
 			args := newHostFilePaginateArgs(fieldArgs(ctx, new(HostFileWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -2544,7 +2544,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Task) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -2573,7 +2573,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Task) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ReportedFiles)
 							if nodes[i].Edges.totalCount[2] == nil {
@@ -2607,7 +2607,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			t.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
+			_q.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
 				*wq = *query
 			})
 
@@ -2615,7 +2615,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostProcessClient{config: t.config}).Query()
+				query = (&HostProcessClient{config: _q.config}).Query()
 			)
 			args := newHostProcessPaginateArgs(fieldArgs(ctx, new(HostProcessWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -2633,7 +2633,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Task) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -2662,7 +2662,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Task) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ReportedProcesses)
 							if nodes[i].Edges.totalCount[3] == nil {
@@ -2696,7 +2696,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			t.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
+			_q.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
 				*wq = *query
 			})
 
@@ -2704,7 +2704,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&HostCredentialClient{config: t.config}).Query()
+				query = (&HostCredentialClient{config: _q.config}).Query()
 			)
 			args := newHostCredentialPaginateArgs(fieldArgs(ctx, new(HostCredentialWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -2722,7 +2722,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Task) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -2751,7 +2751,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Task) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ReportedCredentials)
 							if nodes[i].Edges.totalCount[4] == nil {
@@ -2785,7 +2785,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			t.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
+			_q.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
 				*wq = *query
 			})
 
@@ -2793,7 +2793,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&ShellClient{config: t.config}).Query()
+				query = (&ShellClient{config: _q.config}).Query()
 			)
 			args := newShellPaginateArgs(fieldArgs(ctx, new(ShellWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -2811,7 +2811,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Task) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -2840,7 +2840,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Task) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Task) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Shells)
 							if nodes[i].Edges.totalCount[5] == nil {
@@ -2874,7 +2874,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			t.WithNamedShells(alias, func(wq *ShellQuery) {
+			_q.WithNamedShells(alias, func(wq *ShellQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -2924,7 +2924,7 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 		}
 	}
 	if !unknownSeen {
-		t.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -2987,18 +2987,18 @@ func newTaskPaginateArgs(rv map[string]any) *taskPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (t *TomeQuery) CollectFields(ctx context.Context, satisfies ...string) (*TomeQuery, error) {
+func (_q *TomeQuery) CollectFields(ctx context.Context, satisfies ...string) (*TomeQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return t, nil
+		return _q, nil
 	}
-	if err := t.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return _q, nil
 }
 
-func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -3012,7 +3012,7 @@ func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&FileClient{config: t.config}).Query()
+				query = (&FileClient{config: _q.config}).Query()
 			)
 			args := newFilePaginateArgs(fieldArgs(ctx, new(FileWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -3030,7 +3030,7 @@ func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Tome) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*Tome) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -3063,7 +3063,7 @@ func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Tome) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*Tome) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Files)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -3097,7 +3097,7 @@ func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			t.WithNamedFiles(alias, func(wq *FileQuery) {
+			_q.WithNamedFiles(alias, func(wq *FileQuery) {
 				*wq = *query
 			})
 
@@ -3105,23 +3105,23 @@ func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&UserClient{config: t.config}).Query()
+				query = (&UserClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
 				return err
 			}
-			t.withUploader = query
+			_q.withUploader = query
 
 		case "repository":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&RepositoryClient{config: t.config}).Query()
+				query = (&RepositoryClient{config: _q.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, repositoryImplementors)...); err != nil {
 				return err
 			}
-			t.withRepository = query
+			_q.withRepository = query
 		case "createdAt":
 			if _, ok := fieldSeen[tome.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, tome.FieldCreatedAt)
@@ -3174,7 +3174,7 @@ func (t *TomeQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 		}
 	}
 	if !unknownSeen {
-		t.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -3237,18 +3237,18 @@ func newTomePaginateArgs(rv map[string]any) *tomePaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (u *UserQuery) CollectFields(ctx context.Context, satisfies ...string) (*UserQuery, error) {
+func (_q *UserQuery) CollectFields(ctx context.Context, satisfies ...string) (*UserQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return u, nil
+		return _q, nil
 	}
-	if err := u.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := _q.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return u, nil
+	return _q, nil
 }
 
-func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (_q *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -3262,7 +3262,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&TomeClient{config: u.config}).Query()
+				query = (&TomeClient{config: _q.config}).Query()
 			)
 			args := newTomePaginateArgs(fieldArgs(ctx, new(TomeWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -3280,7 +3280,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					u.loadTotal = append(u.loadTotal, func(ctx context.Context, nodes []*User) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*User) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -3309,7 +3309,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					u.loadTotal = append(u.loadTotal, func(_ context.Context, nodes []*User) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*User) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tomes)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -3343,7 +3343,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			u.WithNamedTomes(alias, func(wq *TomeQuery) {
+			_q.WithNamedTomes(alias, func(wq *TomeQuery) {
 				*wq = *query
 			})
 
@@ -3351,7 +3351,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&ShellClient{config: u.config}).Query()
+				query = (&ShellClient{config: _q.config}).Query()
 			)
 			args := newShellPaginateArgs(fieldArgs(ctx, new(ShellWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -3369,7 +3369,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					u.loadTotal = append(u.loadTotal, func(ctx context.Context, nodes []*User) error {
+					_q.loadTotal = append(_q.loadTotal, func(ctx context.Context, nodes []*User) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -3402,7 +3402,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						return nil
 					})
 				} else {
-					u.loadTotal = append(u.loadTotal, func(_ context.Context, nodes []*User) error {
+					_q.loadTotal = append(_q.loadTotal, func(_ context.Context, nodes []*User) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ActiveShells)
 							if nodes[i].Edges.totalCount[1] == nil {
@@ -3436,7 +3436,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			} else {
 				query = pager.applyOrder(query)
 			}
-			u.WithNamedActiveShells(alias, func(wq *ShellQuery) {
+			_q.WithNamedActiveShells(alias, func(wq *ShellQuery) {
 				*wq = *query
 			})
 		case "name":
@@ -3466,7 +3466,7 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 		}
 	}
 	if !unknownSeen {
-		u.Select(selectedFields...)
+		_q.Select(selectedFields...)
 	}
 	return nil
 }
@@ -3553,7 +3553,7 @@ func fieldArgs(ctx context.Context, whereInput any, path ...string) map[string]a
 func unmarshalArgs(ctx context.Context, whereInput any, args map[string]any) map[string]any {
 	for _, k := range []string{firstField, lastField} {
 		v, ok := args[k]
-		if !ok {
+		if !ok || v == nil {
 			continue
 		}
 		i, err := graphql.UnmarshalInt(v)

@@ -24,180 +24,180 @@ type UserUpdate struct {
 }
 
 // Where appends a list predicates to the UserUpdate builder.
-func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
-	uu.mutation.Where(ps...)
-	return uu
+func (_u *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (uu *UserUpdate) SetName(s string) *UserUpdate {
-	uu.mutation.SetName(s)
-	return uu
+func (_u *UserUpdate) SetName(v string) *UserUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableName(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetName(*s)
+func (_u *UserUpdate) SetNillableName(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return uu
+	return _u
 }
 
 // SetPhotoURL sets the "photo_url" field.
-func (uu *UserUpdate) SetPhotoURL(s string) *UserUpdate {
-	uu.mutation.SetPhotoURL(s)
-	return uu
+func (_u *UserUpdate) SetPhotoURL(v string) *UserUpdate {
+	_u.mutation.SetPhotoURL(v)
+	return _u
 }
 
 // SetNillablePhotoURL sets the "photo_url" field if the given value is not nil.
-func (uu *UserUpdate) SetNillablePhotoURL(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetPhotoURL(*s)
+func (_u *UserUpdate) SetNillablePhotoURL(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetPhotoURL(*v)
 	}
-	return uu
+	return _u
 }
 
 // SetSessionToken sets the "session_token" field.
-func (uu *UserUpdate) SetSessionToken(s string) *UserUpdate {
-	uu.mutation.SetSessionToken(s)
-	return uu
+func (_u *UserUpdate) SetSessionToken(v string) *UserUpdate {
+	_u.mutation.SetSessionToken(v)
+	return _u
 }
 
 // SetNillableSessionToken sets the "session_token" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableSessionToken(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetSessionToken(*s)
+func (_u *UserUpdate) SetNillableSessionToken(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetSessionToken(*v)
 	}
-	return uu
+	return _u
 }
 
 // SetAccessToken sets the "access_token" field.
-func (uu *UserUpdate) SetAccessToken(s string) *UserUpdate {
-	uu.mutation.SetAccessToken(s)
-	return uu
+func (_u *UserUpdate) SetAccessToken(v string) *UserUpdate {
+	_u.mutation.SetAccessToken(v)
+	return _u
 }
 
 // SetNillableAccessToken sets the "access_token" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableAccessToken(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetAccessToken(*s)
+func (_u *UserUpdate) SetNillableAccessToken(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetAccessToken(*v)
 	}
-	return uu
+	return _u
 }
 
 // SetIsActivated sets the "is_activated" field.
-func (uu *UserUpdate) SetIsActivated(b bool) *UserUpdate {
-	uu.mutation.SetIsActivated(b)
-	return uu
+func (_u *UserUpdate) SetIsActivated(v bool) *UserUpdate {
+	_u.mutation.SetIsActivated(v)
+	return _u
 }
 
 // SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableIsActivated(b *bool) *UserUpdate {
-	if b != nil {
-		uu.SetIsActivated(*b)
+func (_u *UserUpdate) SetNillableIsActivated(v *bool) *UserUpdate {
+	if v != nil {
+		_u.SetIsActivated(*v)
 	}
-	return uu
+	return _u
 }
 
 // SetIsAdmin sets the "is_admin" field.
-func (uu *UserUpdate) SetIsAdmin(b bool) *UserUpdate {
-	uu.mutation.SetIsAdmin(b)
-	return uu
+func (_u *UserUpdate) SetIsAdmin(v bool) *UserUpdate {
+	_u.mutation.SetIsAdmin(v)
+	return _u
 }
 
 // SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableIsAdmin(b *bool) *UserUpdate {
-	if b != nil {
-		uu.SetIsAdmin(*b)
+func (_u *UserUpdate) SetNillableIsAdmin(v *bool) *UserUpdate {
+	if v != nil {
+		_u.SetIsAdmin(*v)
 	}
-	return uu
+	return _u
 }
 
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
-func (uu *UserUpdate) AddTomeIDs(ids ...int) *UserUpdate {
-	uu.mutation.AddTomeIDs(ids...)
-	return uu
+func (_u *UserUpdate) AddTomeIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddTomeIDs(ids...)
+	return _u
 }
 
 // AddTomes adds the "tomes" edges to the Tome entity.
-func (uu *UserUpdate) AddTomes(t ...*Tome) *UserUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *UserUpdate) AddTomes(v ...*Tome) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.AddTomeIDs(ids...)
+	return _u.AddTomeIDs(ids...)
 }
 
 // AddActiveShellIDs adds the "active_shells" edge to the Shell entity by IDs.
-func (uu *UserUpdate) AddActiveShellIDs(ids ...int) *UserUpdate {
-	uu.mutation.AddActiveShellIDs(ids...)
-	return uu
+func (_u *UserUpdate) AddActiveShellIDs(ids ...int) *UserUpdate {
+	_u.mutation.AddActiveShellIDs(ids...)
+	return _u
 }
 
 // AddActiveShells adds the "active_shells" edges to the Shell entity.
-func (uu *UserUpdate) AddActiveShells(s ...*Shell) *UserUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *UserUpdate) AddActiveShells(v ...*Shell) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.AddActiveShellIDs(ids...)
+	return _u.AddActiveShellIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
-func (uu *UserUpdate) Mutation() *UserMutation {
-	return uu.mutation
+func (_u *UserUpdate) Mutation() *UserMutation {
+	return _u.mutation
 }
 
 // ClearTomes clears all "tomes" edges to the Tome entity.
-func (uu *UserUpdate) ClearTomes() *UserUpdate {
-	uu.mutation.ClearTomes()
-	return uu
+func (_u *UserUpdate) ClearTomes() *UserUpdate {
+	_u.mutation.ClearTomes()
+	return _u
 }
 
 // RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
-func (uu *UserUpdate) RemoveTomeIDs(ids ...int) *UserUpdate {
-	uu.mutation.RemoveTomeIDs(ids...)
-	return uu
+func (_u *UserUpdate) RemoveTomeIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveTomeIDs(ids...)
+	return _u
 }
 
 // RemoveTomes removes "tomes" edges to Tome entities.
-func (uu *UserUpdate) RemoveTomes(t ...*Tome) *UserUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *UserUpdate) RemoveTomes(v ...*Tome) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.RemoveTomeIDs(ids...)
+	return _u.RemoveTomeIDs(ids...)
 }
 
 // ClearActiveShells clears all "active_shells" edges to the Shell entity.
-func (uu *UserUpdate) ClearActiveShells() *UserUpdate {
-	uu.mutation.ClearActiveShells()
-	return uu
+func (_u *UserUpdate) ClearActiveShells() *UserUpdate {
+	_u.mutation.ClearActiveShells()
+	return _u
 }
 
 // RemoveActiveShellIDs removes the "active_shells" edge to Shell entities by IDs.
-func (uu *UserUpdate) RemoveActiveShellIDs(ids ...int) *UserUpdate {
-	uu.mutation.RemoveActiveShellIDs(ids...)
-	return uu
+func (_u *UserUpdate) RemoveActiveShellIDs(ids ...int) *UserUpdate {
+	_u.mutation.RemoveActiveShellIDs(ids...)
+	return _u
 }
 
 // RemoveActiveShells removes "active_shells" edges to Shell entities.
-func (uu *UserUpdate) RemoveActiveShells(s ...*Shell) *UserUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *UserUpdate) RemoveActiveShells(v ...*Shell) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.RemoveActiveShellIDs(ids...)
+	return _u.RemoveActiveShellIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, uu.sqlSave, uu.mutation, uu.hooks)
+func (_u *UserUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (uu *UserUpdate) SaveX(ctx context.Context) int {
-	affected, err := uu.Save(ctx)
+func (_u *UserUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -205,31 +205,31 @@ func (uu *UserUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (uu *UserUpdate) Exec(ctx context.Context) error {
-	_, err := uu.Save(ctx)
+func (_u *UserUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (uu *UserUpdate) ExecX(ctx context.Context) {
-	if err := uu.Exec(ctx); err != nil {
+func (_u *UserUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (uu *UserUpdate) check() error {
-	if v, ok := uu.mutation.Name(); ok {
+func (_u *UserUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.SessionToken(); ok {
+	if v, ok := _u.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.AccessToken(); ok {
+	if v, ok := _u.mutation.AccessToken(); ok {
 		if err := user.AccessTokenValidator(v); err != nil {
 			return &ValidationError{Name: "access_token", err: fmt.Errorf(`ent: validator failed for field "User.access_token": %w`, err)}
 		}
@@ -237,37 +237,37 @@ func (uu *UserUpdate) check() error {
 	return nil
 }
 
-func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := uu.check(); err != nil {
-		return n, err
+func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
-	if ps := uu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := uu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(user.FieldName, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.PhotoURL(); ok {
+	if value, ok := _u.mutation.PhotoURL(); ok {
 		_spec.SetField(user.FieldPhotoURL, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.SessionToken(); ok {
+	if value, ok := _u.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.AccessToken(); ok {
+	if value, ok := _u.mutation.AccessToken(); ok {
 		_spec.SetField(user.FieldAccessToken, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.IsActivated(); ok {
+	if value, ok := _u.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)
 	}
-	if value, ok := uu.mutation.IsAdmin(); ok {
+	if value, ok := _u.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
 	}
-	if uu.mutation.TomesCleared() {
+	if _u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -280,7 +280,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedTomesIDs(); len(nodes) > 0 && !uu.mutation.TomesCleared() {
+	if nodes := _u.mutation.RemovedTomesIDs(); len(nodes) > 0 && !_u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -296,7 +296,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.TomesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TomesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -312,7 +312,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uu.mutation.ActiveShellsCleared() {
+	if _u.mutation.ActiveShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -325,7 +325,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedActiveShellsIDs(); len(nodes) > 0 && !uu.mutation.ActiveShellsCleared() {
+	if nodes := _u.mutation.RemovedActiveShellsIDs(); len(nodes) > 0 && !_u.mutation.ActiveShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -341,7 +341,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.ActiveShellsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ActiveShellsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -357,7 +357,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -365,8 +365,8 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	uu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // UserUpdateOne is the builder for updating a single User entity.
@@ -378,187 +378,187 @@ type UserUpdateOne struct {
 }
 
 // SetName sets the "name" field.
-func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
-	uuo.mutation.SetName(s)
-	return uuo
+func (_u *UserUpdateOne) SetName(v string) *UserUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableName(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetName(*s)
+func (_u *UserUpdateOne) SetNillableName(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return uuo
+	return _u
 }
 
 // SetPhotoURL sets the "photo_url" field.
-func (uuo *UserUpdateOne) SetPhotoURL(s string) *UserUpdateOne {
-	uuo.mutation.SetPhotoURL(s)
-	return uuo
+func (_u *UserUpdateOne) SetPhotoURL(v string) *UserUpdateOne {
+	_u.mutation.SetPhotoURL(v)
+	return _u
 }
 
 // SetNillablePhotoURL sets the "photo_url" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillablePhotoURL(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetPhotoURL(*s)
+func (_u *UserUpdateOne) SetNillablePhotoURL(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetPhotoURL(*v)
 	}
-	return uuo
+	return _u
 }
 
 // SetSessionToken sets the "session_token" field.
-func (uuo *UserUpdateOne) SetSessionToken(s string) *UserUpdateOne {
-	uuo.mutation.SetSessionToken(s)
-	return uuo
+func (_u *UserUpdateOne) SetSessionToken(v string) *UserUpdateOne {
+	_u.mutation.SetSessionToken(v)
+	return _u
 }
 
 // SetNillableSessionToken sets the "session_token" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableSessionToken(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetSessionToken(*s)
+func (_u *UserUpdateOne) SetNillableSessionToken(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetSessionToken(*v)
 	}
-	return uuo
+	return _u
 }
 
 // SetAccessToken sets the "access_token" field.
-func (uuo *UserUpdateOne) SetAccessToken(s string) *UserUpdateOne {
-	uuo.mutation.SetAccessToken(s)
-	return uuo
+func (_u *UserUpdateOne) SetAccessToken(v string) *UserUpdateOne {
+	_u.mutation.SetAccessToken(v)
+	return _u
 }
 
 // SetNillableAccessToken sets the "access_token" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableAccessToken(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetAccessToken(*s)
+func (_u *UserUpdateOne) SetNillableAccessToken(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetAccessToken(*v)
 	}
-	return uuo
+	return _u
 }
 
 // SetIsActivated sets the "is_activated" field.
-func (uuo *UserUpdateOne) SetIsActivated(b bool) *UserUpdateOne {
-	uuo.mutation.SetIsActivated(b)
-	return uuo
+func (_u *UserUpdateOne) SetIsActivated(v bool) *UserUpdateOne {
+	_u.mutation.SetIsActivated(v)
+	return _u
 }
 
 // SetNillableIsActivated sets the "is_activated" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableIsActivated(b *bool) *UserUpdateOne {
-	if b != nil {
-		uuo.SetIsActivated(*b)
+func (_u *UserUpdateOne) SetNillableIsActivated(v *bool) *UserUpdateOne {
+	if v != nil {
+		_u.SetIsActivated(*v)
 	}
-	return uuo
+	return _u
 }
 
 // SetIsAdmin sets the "is_admin" field.
-func (uuo *UserUpdateOne) SetIsAdmin(b bool) *UserUpdateOne {
-	uuo.mutation.SetIsAdmin(b)
-	return uuo
+func (_u *UserUpdateOne) SetIsAdmin(v bool) *UserUpdateOne {
+	_u.mutation.SetIsAdmin(v)
+	return _u
 }
 
 // SetNillableIsAdmin sets the "is_admin" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableIsAdmin(b *bool) *UserUpdateOne {
-	if b != nil {
-		uuo.SetIsAdmin(*b)
+func (_u *UserUpdateOne) SetNillableIsAdmin(v *bool) *UserUpdateOne {
+	if v != nil {
+		_u.SetIsAdmin(*v)
 	}
-	return uuo
+	return _u
 }
 
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
-func (uuo *UserUpdateOne) AddTomeIDs(ids ...int) *UserUpdateOne {
-	uuo.mutation.AddTomeIDs(ids...)
-	return uuo
+func (_u *UserUpdateOne) AddTomeIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddTomeIDs(ids...)
+	return _u
 }
 
 // AddTomes adds the "tomes" edges to the Tome entity.
-func (uuo *UserUpdateOne) AddTomes(t ...*Tome) *UserUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *UserUpdateOne) AddTomes(v ...*Tome) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.AddTomeIDs(ids...)
+	return _u.AddTomeIDs(ids...)
 }
 
 // AddActiveShellIDs adds the "active_shells" edge to the Shell entity by IDs.
-func (uuo *UserUpdateOne) AddActiveShellIDs(ids ...int) *UserUpdateOne {
-	uuo.mutation.AddActiveShellIDs(ids...)
-	return uuo
+func (_u *UserUpdateOne) AddActiveShellIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.AddActiveShellIDs(ids...)
+	return _u
 }
 
 // AddActiveShells adds the "active_shells" edges to the Shell entity.
-func (uuo *UserUpdateOne) AddActiveShells(s ...*Shell) *UserUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *UserUpdateOne) AddActiveShells(v ...*Shell) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.AddActiveShellIDs(ids...)
+	return _u.AddActiveShellIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
-func (uuo *UserUpdateOne) Mutation() *UserMutation {
-	return uuo.mutation
+func (_u *UserUpdateOne) Mutation() *UserMutation {
+	return _u.mutation
 }
 
 // ClearTomes clears all "tomes" edges to the Tome entity.
-func (uuo *UserUpdateOne) ClearTomes() *UserUpdateOne {
-	uuo.mutation.ClearTomes()
-	return uuo
+func (_u *UserUpdateOne) ClearTomes() *UserUpdateOne {
+	_u.mutation.ClearTomes()
+	return _u
 }
 
 // RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
-func (uuo *UserUpdateOne) RemoveTomeIDs(ids ...int) *UserUpdateOne {
-	uuo.mutation.RemoveTomeIDs(ids...)
-	return uuo
+func (_u *UserUpdateOne) RemoveTomeIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveTomeIDs(ids...)
+	return _u
 }
 
 // RemoveTomes removes "tomes" edges to Tome entities.
-func (uuo *UserUpdateOne) RemoveTomes(t ...*Tome) *UserUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *UserUpdateOne) RemoveTomes(v ...*Tome) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.RemoveTomeIDs(ids...)
+	return _u.RemoveTomeIDs(ids...)
 }
 
 // ClearActiveShells clears all "active_shells" edges to the Shell entity.
-func (uuo *UserUpdateOne) ClearActiveShells() *UserUpdateOne {
-	uuo.mutation.ClearActiveShells()
-	return uuo
+func (_u *UserUpdateOne) ClearActiveShells() *UserUpdateOne {
+	_u.mutation.ClearActiveShells()
+	return _u
 }
 
 // RemoveActiveShellIDs removes the "active_shells" edge to Shell entities by IDs.
-func (uuo *UserUpdateOne) RemoveActiveShellIDs(ids ...int) *UserUpdateOne {
-	uuo.mutation.RemoveActiveShellIDs(ids...)
-	return uuo
+func (_u *UserUpdateOne) RemoveActiveShellIDs(ids ...int) *UserUpdateOne {
+	_u.mutation.RemoveActiveShellIDs(ids...)
+	return _u
 }
 
 // RemoveActiveShells removes "active_shells" edges to Shell entities.
-func (uuo *UserUpdateOne) RemoveActiveShells(s ...*Shell) *UserUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *UserUpdateOne) RemoveActiveShells(v ...*Shell) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.RemoveActiveShellIDs(ids...)
+	return _u.RemoveActiveShellIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
-func (uuo *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
-	uuo.mutation.Where(ps...)
-	return uuo
+func (_u *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne {
-	uuo.fields = append([]string{field}, fields...)
-	return uuo
+func (_u *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated User entity.
-func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
-	return withHooks(ctx, uuo.sqlSave, uuo.mutation, uuo.hooks)
+func (_u *UserUpdateOne) Save(ctx context.Context) (*User, error) {
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (uuo *UserUpdateOne) SaveX(ctx context.Context) *User {
-	node, err := uuo.Save(ctx)
+func (_u *UserUpdateOne) SaveX(ctx context.Context) *User {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -566,31 +566,31 @@ func (uuo *UserUpdateOne) SaveX(ctx context.Context) *User {
 }
 
 // Exec executes the query on the entity.
-func (uuo *UserUpdateOne) Exec(ctx context.Context) error {
-	_, err := uuo.Save(ctx)
+func (_u *UserUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
-	if err := uuo.Exec(ctx); err != nil {
+func (_u *UserUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (uuo *UserUpdateOne) check() error {
-	if v, ok := uuo.mutation.Name(); ok {
+func (_u *UserUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := user.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.SessionToken(); ok {
+	if v, ok := _u.mutation.SessionToken(); ok {
 		if err := user.SessionTokenValidator(v); err != nil {
 			return &ValidationError{Name: "session_token", err: fmt.Errorf(`ent: validator failed for field "User.session_token": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.AccessToken(); ok {
+	if v, ok := _u.mutation.AccessToken(); ok {
 		if err := user.AccessTokenValidator(v); err != nil {
 			return &ValidationError{Name: "access_token", err: fmt.Errorf(`ent: validator failed for field "User.access_token": %w`, err)}
 		}
@@ -598,17 +598,17 @@ func (uuo *UserUpdateOne) check() error {
 	return nil
 }
 
-func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
-	if err := uuo.check(); err != nil {
+func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
-	id, ok := uuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := uuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, user.FieldID)
 		for _, f := range fields {
@@ -620,32 +620,32 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			}
 		}
 	}
-	if ps := uuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := uuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(user.FieldName, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.PhotoURL(); ok {
+	if value, ok := _u.mutation.PhotoURL(); ok {
 		_spec.SetField(user.FieldPhotoURL, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.SessionToken(); ok {
+	if value, ok := _u.mutation.SessionToken(); ok {
 		_spec.SetField(user.FieldSessionToken, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.AccessToken(); ok {
+	if value, ok := _u.mutation.AccessToken(); ok {
 		_spec.SetField(user.FieldAccessToken, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.IsActivated(); ok {
+	if value, ok := _u.mutation.IsActivated(); ok {
 		_spec.SetField(user.FieldIsActivated, field.TypeBool, value)
 	}
-	if value, ok := uuo.mutation.IsAdmin(); ok {
+	if value, ok := _u.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
 	}
-	if uuo.mutation.TomesCleared() {
+	if _u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -658,7 +658,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedTomesIDs(); len(nodes) > 0 && !uuo.mutation.TomesCleared() {
+	if nodes := _u.mutation.RemovedTomesIDs(); len(nodes) > 0 && !_u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -674,7 +674,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.TomesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TomesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -690,7 +690,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uuo.mutation.ActiveShellsCleared() {
+	if _u.mutation.ActiveShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -703,7 +703,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedActiveShellsIDs(); len(nodes) > 0 && !uuo.mutation.ActiveShellsCleared() {
+	if nodes := _u.mutation.RemovedActiveShellsIDs(); len(nodes) > 0 && !_u.mutation.ActiveShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -719,7 +719,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.ActiveShellsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ActiveShellsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -735,10 +735,10 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &User{config: uuo.config}
+	_node = &User{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, uuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -746,6 +746,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		return nil, err
 	}
-	uuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

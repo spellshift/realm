@@ -94,7 +94,7 @@ func (*Repository) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Repository fields.
-func (r *Repository) assignValues(columns []string, values []any) error {
+func (_m *Repository) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -105,52 +105,52 @@ func (r *Repository) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			r.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case repository.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				r.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case repository.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				r.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case repository.FieldURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field url", values[i])
 			} else if value.Valid {
-				r.URL = value.String
+				_m.URL = value.String
 			}
 		case repository.FieldPublicKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field public_key", values[i])
 			} else if value.Valid {
-				r.PublicKey = value.String
+				_m.PublicKey = value.String
 			}
 		case repository.FieldPrivateKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field private_key", values[i])
 			} else if value.Valid {
-				r.PrivateKey = value.String
+				_m.PrivateKey = value.String
 			}
 		case repository.FieldLastImportedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_imported_at", values[i])
 			} else if value.Valid {
-				r.LastImportedAt = value.Time
+				_m.LastImportedAt = value.Time
 			}
 		case repository.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field repository_owner", value)
 			} else if value.Valid {
-				r.repository_owner = new(int)
-				*r.repository_owner = int(value.Int64)
+				_m.repository_owner = new(int)
+				*_m.repository_owner = int(value.Int64)
 			}
 		default:
-			r.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -158,84 +158,84 @@ func (r *Repository) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Repository.
 // This includes values selected through modifiers, order, etc.
-func (r *Repository) Value(name string) (ent.Value, error) {
-	return r.selectValues.Get(name)
+func (_m *Repository) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryTomes queries the "tomes" edge of the Repository entity.
-func (r *Repository) QueryTomes() *TomeQuery {
-	return NewRepositoryClient(r.config).QueryTomes(r)
+func (_m *Repository) QueryTomes() *TomeQuery {
+	return NewRepositoryClient(_m.config).QueryTomes(_m)
 }
 
 // QueryOwner queries the "owner" edge of the Repository entity.
-func (r *Repository) QueryOwner() *UserQuery {
-	return NewRepositoryClient(r.config).QueryOwner(r)
+func (_m *Repository) QueryOwner() *UserQuery {
+	return NewRepositoryClient(_m.config).QueryOwner(_m)
 }
 
 // Update returns a builder for updating this Repository.
 // Note that you need to call Repository.Unwrap() before calling this method if this Repository
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (r *Repository) Update() *RepositoryUpdateOne {
-	return NewRepositoryClient(r.config).UpdateOne(r)
+func (_m *Repository) Update() *RepositoryUpdateOne {
+	return NewRepositoryClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Repository entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (r *Repository) Unwrap() *Repository {
-	_tx, ok := r.config.driver.(*txDriver)
+func (_m *Repository) Unwrap() *Repository {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Repository is not a transactional entity")
 	}
-	r.config.driver = _tx.drv
-	return r
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (r *Repository) String() string {
+func (_m *Repository) String() string {
 	var builder strings.Builder
 	builder.WriteString("Repository(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(r.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(r.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("url=")
-	builder.WriteString(r.URL)
+	builder.WriteString(_m.URL)
 	builder.WriteString(", ")
 	builder.WriteString("public_key=")
-	builder.WriteString(r.PublicKey)
+	builder.WriteString(_m.PublicKey)
 	builder.WriteString(", ")
 	builder.WriteString("private_key=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("last_imported_at=")
-	builder.WriteString(r.LastImportedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastImportedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTomes returns the Tomes named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (r *Repository) NamedTomes(name string) ([]*Tome, error) {
-	if r.Edges.namedTomes == nil {
+func (_m *Repository) NamedTomes(name string) ([]*Tome, error) {
+	if _m.Edges.namedTomes == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := r.Edges.namedTomes[name]
+	nodes, ok := _m.Edges.namedTomes[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (r *Repository) appendNamedTomes(name string, edges ...*Tome) {
-	if r.Edges.namedTomes == nil {
-		r.Edges.namedTomes = make(map[string][]*Tome)
+func (_m *Repository) appendNamedTomes(name string, edges ...*Tome) {
+	if _m.Edges.namedTomes == nil {
+		_m.Edges.namedTomes = make(map[string][]*Tome)
 	}
 	if len(edges) == 0 {
-		r.Edges.namedTomes[name] = []*Tome{}
+		_m.Edges.namedTomes[name] = []*Tome{}
 	} else {
-		r.Edges.namedTomes[name] = append(r.Edges.namedTomes[name], edges...)
+		_m.Edges.namedTomes[name] = append(_m.Edges.namedTomes[name], edges...)
 	}
 }
 

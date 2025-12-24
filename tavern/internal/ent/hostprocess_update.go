@@ -26,229 +26,229 @@ type HostProcessUpdate struct {
 }
 
 // Where appends a list predicates to the HostProcessUpdate builder.
-func (hpu *HostProcessUpdate) Where(ps ...predicate.HostProcess) *HostProcessUpdate {
-	hpu.mutation.Where(ps...)
-	return hpu
+func (_u *HostProcessUpdate) Where(ps ...predicate.HostProcess) *HostProcessUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hpu *HostProcessUpdate) SetLastModifiedAt(t time.Time) *HostProcessUpdate {
-	hpu.mutation.SetLastModifiedAt(t)
-	return hpu
+func (_u *HostProcessUpdate) SetLastModifiedAt(v time.Time) *HostProcessUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetPid sets the "pid" field.
-func (hpu *HostProcessUpdate) SetPid(u uint64) *HostProcessUpdate {
-	hpu.mutation.ResetPid()
-	hpu.mutation.SetPid(u)
-	return hpu
+func (_u *HostProcessUpdate) SetPid(v uint64) *HostProcessUpdate {
+	_u.mutation.ResetPid()
+	_u.mutation.SetPid(v)
+	return _u
 }
 
 // SetNillablePid sets the "pid" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillablePid(u *uint64) *HostProcessUpdate {
-	if u != nil {
-		hpu.SetPid(*u)
+func (_u *HostProcessUpdate) SetNillablePid(v *uint64) *HostProcessUpdate {
+	if v != nil {
+		_u.SetPid(*v)
 	}
-	return hpu
+	return _u
 }
 
-// AddPid adds u to the "pid" field.
-func (hpu *HostProcessUpdate) AddPid(u int64) *HostProcessUpdate {
-	hpu.mutation.AddPid(u)
-	return hpu
+// AddPid adds value to the "pid" field.
+func (_u *HostProcessUpdate) AddPid(v int64) *HostProcessUpdate {
+	_u.mutation.AddPid(v)
+	return _u
 }
 
 // SetPpid sets the "ppid" field.
-func (hpu *HostProcessUpdate) SetPpid(u uint64) *HostProcessUpdate {
-	hpu.mutation.ResetPpid()
-	hpu.mutation.SetPpid(u)
-	return hpu
+func (_u *HostProcessUpdate) SetPpid(v uint64) *HostProcessUpdate {
+	_u.mutation.ResetPpid()
+	_u.mutation.SetPpid(v)
+	return _u
 }
 
 // SetNillablePpid sets the "ppid" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillablePpid(u *uint64) *HostProcessUpdate {
-	if u != nil {
-		hpu.SetPpid(*u)
+func (_u *HostProcessUpdate) SetNillablePpid(v *uint64) *HostProcessUpdate {
+	if v != nil {
+		_u.SetPpid(*v)
 	}
-	return hpu
+	return _u
 }
 
-// AddPpid adds u to the "ppid" field.
-func (hpu *HostProcessUpdate) AddPpid(u int64) *HostProcessUpdate {
-	hpu.mutation.AddPpid(u)
-	return hpu
+// AddPpid adds value to the "ppid" field.
+func (_u *HostProcessUpdate) AddPpid(v int64) *HostProcessUpdate {
+	_u.mutation.AddPpid(v)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (hpu *HostProcessUpdate) SetName(s string) *HostProcessUpdate {
-	hpu.mutation.SetName(s)
-	return hpu
+func (_u *HostProcessUpdate) SetName(v string) *HostProcessUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableName(s *string) *HostProcessUpdate {
-	if s != nil {
-		hpu.SetName(*s)
+func (_u *HostProcessUpdate) SetNillableName(v *string) *HostProcessUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return hpu
+	return _u
 }
 
 // SetPrincipal sets the "principal" field.
-func (hpu *HostProcessUpdate) SetPrincipal(s string) *HostProcessUpdate {
-	hpu.mutation.SetPrincipal(s)
-	return hpu
+func (_u *HostProcessUpdate) SetPrincipal(v string) *HostProcessUpdate {
+	_u.mutation.SetPrincipal(v)
+	return _u
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillablePrincipal(s *string) *HostProcessUpdate {
-	if s != nil {
-		hpu.SetPrincipal(*s)
+func (_u *HostProcessUpdate) SetNillablePrincipal(v *string) *HostProcessUpdate {
+	if v != nil {
+		_u.SetPrincipal(*v)
 	}
-	return hpu
+	return _u
 }
 
 // SetPath sets the "path" field.
-func (hpu *HostProcessUpdate) SetPath(s string) *HostProcessUpdate {
-	hpu.mutation.SetPath(s)
-	return hpu
+func (_u *HostProcessUpdate) SetPath(v string) *HostProcessUpdate {
+	_u.mutation.SetPath(v)
+	return _u
 }
 
 // SetNillablePath sets the "path" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillablePath(s *string) *HostProcessUpdate {
-	if s != nil {
-		hpu.SetPath(*s)
+func (_u *HostProcessUpdate) SetNillablePath(v *string) *HostProcessUpdate {
+	if v != nil {
+		_u.SetPath(*v)
 	}
-	return hpu
+	return _u
 }
 
 // ClearPath clears the value of the "path" field.
-func (hpu *HostProcessUpdate) ClearPath() *HostProcessUpdate {
-	hpu.mutation.ClearPath()
-	return hpu
+func (_u *HostProcessUpdate) ClearPath() *HostProcessUpdate {
+	_u.mutation.ClearPath()
+	return _u
 }
 
 // SetCmd sets the "cmd" field.
-func (hpu *HostProcessUpdate) SetCmd(s string) *HostProcessUpdate {
-	hpu.mutation.SetCmd(s)
-	return hpu
+func (_u *HostProcessUpdate) SetCmd(v string) *HostProcessUpdate {
+	_u.mutation.SetCmd(v)
+	return _u
 }
 
 // SetNillableCmd sets the "cmd" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableCmd(s *string) *HostProcessUpdate {
-	if s != nil {
-		hpu.SetCmd(*s)
+func (_u *HostProcessUpdate) SetNillableCmd(v *string) *HostProcessUpdate {
+	if v != nil {
+		_u.SetCmd(*v)
 	}
-	return hpu
+	return _u
 }
 
 // ClearCmd clears the value of the "cmd" field.
-func (hpu *HostProcessUpdate) ClearCmd() *HostProcessUpdate {
-	hpu.mutation.ClearCmd()
-	return hpu
+func (_u *HostProcessUpdate) ClearCmd() *HostProcessUpdate {
+	_u.mutation.ClearCmd()
+	return _u
 }
 
 // SetEnv sets the "env" field.
-func (hpu *HostProcessUpdate) SetEnv(s string) *HostProcessUpdate {
-	hpu.mutation.SetEnv(s)
-	return hpu
+func (_u *HostProcessUpdate) SetEnv(v string) *HostProcessUpdate {
+	_u.mutation.SetEnv(v)
+	return _u
 }
 
 // SetNillableEnv sets the "env" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableEnv(s *string) *HostProcessUpdate {
-	if s != nil {
-		hpu.SetEnv(*s)
+func (_u *HostProcessUpdate) SetNillableEnv(v *string) *HostProcessUpdate {
+	if v != nil {
+		_u.SetEnv(*v)
 	}
-	return hpu
+	return _u
 }
 
 // ClearEnv clears the value of the "env" field.
-func (hpu *HostProcessUpdate) ClearEnv() *HostProcessUpdate {
-	hpu.mutation.ClearEnv()
-	return hpu
+func (_u *HostProcessUpdate) ClearEnv() *HostProcessUpdate {
+	_u.mutation.ClearEnv()
+	return _u
 }
 
 // SetCwd sets the "cwd" field.
-func (hpu *HostProcessUpdate) SetCwd(s string) *HostProcessUpdate {
-	hpu.mutation.SetCwd(s)
-	return hpu
+func (_u *HostProcessUpdate) SetCwd(v string) *HostProcessUpdate {
+	_u.mutation.SetCwd(v)
+	return _u
 }
 
 // SetNillableCwd sets the "cwd" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableCwd(s *string) *HostProcessUpdate {
-	if s != nil {
-		hpu.SetCwd(*s)
+func (_u *HostProcessUpdate) SetNillableCwd(v *string) *HostProcessUpdate {
+	if v != nil {
+		_u.SetCwd(*v)
 	}
-	return hpu
+	return _u
 }
 
 // ClearCwd clears the value of the "cwd" field.
-func (hpu *HostProcessUpdate) ClearCwd() *HostProcessUpdate {
-	hpu.mutation.ClearCwd()
-	return hpu
+func (_u *HostProcessUpdate) ClearCwd() *HostProcessUpdate {
+	_u.mutation.ClearCwd()
+	return _u
 }
 
 // SetStatus sets the "status" field.
-func (hpu *HostProcessUpdate) SetStatus(es epb.Process_Status) *HostProcessUpdate {
-	hpu.mutation.SetStatus(es)
-	return hpu
+func (_u *HostProcessUpdate) SetStatus(v epb.Process_Status) *HostProcessUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableStatus(es *epb.Process_Status) *HostProcessUpdate {
-	if es != nil {
-		hpu.SetStatus(*es)
+func (_u *HostProcessUpdate) SetNillableStatus(v *epb.Process_Status) *HostProcessUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
 	}
-	return hpu
+	return _u
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hpu *HostProcessUpdate) SetHostID(id int) *HostProcessUpdate {
-	hpu.mutation.SetHostID(id)
-	return hpu
+func (_u *HostProcessUpdate) SetHostID(id int) *HostProcessUpdate {
+	_u.mutation.SetHostID(id)
+	return _u
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hpu *HostProcessUpdate) SetHost(h *Host) *HostProcessUpdate {
-	return hpu.SetHostID(h.ID)
+func (_u *HostProcessUpdate) SetHost(v *Host) *HostProcessUpdate {
+	return _u.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hpu *HostProcessUpdate) SetTaskID(id int) *HostProcessUpdate {
-	hpu.mutation.SetTaskID(id)
-	return hpu
+func (_u *HostProcessUpdate) SetTaskID(id int) *HostProcessUpdate {
+	_u.mutation.SetTaskID(id)
+	return _u
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hpu *HostProcessUpdate) SetTask(t *Task) *HostProcessUpdate {
-	return hpu.SetTaskID(t.ID)
+func (_u *HostProcessUpdate) SetTask(v *Task) *HostProcessUpdate {
+	return _u.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
-func (hpu *HostProcessUpdate) Mutation() *HostProcessMutation {
-	return hpu.mutation
+func (_u *HostProcessUpdate) Mutation() *HostProcessMutation {
+	return _u.mutation
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (hpu *HostProcessUpdate) ClearHost() *HostProcessUpdate {
-	hpu.mutation.ClearHost()
-	return hpu
+func (_u *HostProcessUpdate) ClearHost() *HostProcessUpdate {
+	_u.mutation.ClearHost()
+	return _u
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (hpu *HostProcessUpdate) ClearTask() *HostProcessUpdate {
-	hpu.mutation.ClearTask()
-	return hpu
+func (_u *HostProcessUpdate) ClearTask() *HostProcessUpdate {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (hpu *HostProcessUpdate) Save(ctx context.Context) (int, error) {
-	hpu.defaults()
-	return withHooks(ctx, hpu.sqlSave, hpu.mutation, hpu.hooks)
+func (_u *HostProcessUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hpu *HostProcessUpdate) SaveX(ctx context.Context) int {
-	affected, err := hpu.Save(ctx)
+func (_u *HostProcessUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -256,108 +256,108 @@ func (hpu *HostProcessUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (hpu *HostProcessUpdate) Exec(ctx context.Context) error {
-	_, err := hpu.Save(ctx)
+func (_u *HostProcessUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hpu *HostProcessUpdate) ExecX(ctx context.Context) {
-	if err := hpu.Exec(ctx); err != nil {
+func (_u *HostProcessUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hpu *HostProcessUpdate) defaults() {
-	if _, ok := hpu.mutation.LastModifiedAt(); !ok {
+func (_u *HostProcessUpdate) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := hostprocess.UpdateDefaultLastModifiedAt()
-		hpu.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hpu *HostProcessUpdate) check() error {
-	if v, ok := hpu.mutation.Principal(); ok {
+func (_u *HostProcessUpdate) check() error {
+	if v, ok := _u.mutation.Principal(); ok {
 		if err := hostprocess.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostProcess.principal": %w`, err)}
 		}
 	}
-	if v, ok := hpu.mutation.Status(); ok {
+	if v, ok := _u.mutation.Status(); ok {
 		if err := hostprocess.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
 		}
 	}
-	if hpu.mutation.HostCleared() && len(hpu.mutation.HostIDs()) > 0 {
+	if _u.mutation.HostCleared() && len(_u.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.host"`)
 	}
-	if hpu.mutation.TaskCleared() && len(hpu.mutation.TaskIDs()) > 0 {
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.task"`)
 	}
 	return nil
 }
 
-func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := hpu.check(); err != nil {
-		return n, err
+func (_u *HostProcessUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(hostprocess.Table, hostprocess.Columns, sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt))
-	if ps := hpu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := hpu.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostprocess.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := hpu.mutation.Pid(); ok {
+	if value, ok := _u.mutation.Pid(); ok {
 		_spec.SetField(hostprocess.FieldPid, field.TypeUint64, value)
 	}
-	if value, ok := hpu.mutation.AddedPid(); ok {
+	if value, ok := _u.mutation.AddedPid(); ok {
 		_spec.AddField(hostprocess.FieldPid, field.TypeUint64, value)
 	}
-	if value, ok := hpu.mutation.Ppid(); ok {
+	if value, ok := _u.mutation.Ppid(); ok {
 		_spec.SetField(hostprocess.FieldPpid, field.TypeUint64, value)
 	}
-	if value, ok := hpu.mutation.AddedPpid(); ok {
+	if value, ok := _u.mutation.AddedPpid(); ok {
 		_spec.AddField(hostprocess.FieldPpid, field.TypeUint64, value)
 	}
-	if value, ok := hpu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(hostprocess.FieldName, field.TypeString, value)
 	}
-	if value, ok := hpu.mutation.Principal(); ok {
+	if value, ok := _u.mutation.Principal(); ok {
 		_spec.SetField(hostprocess.FieldPrincipal, field.TypeString, value)
 	}
-	if value, ok := hpu.mutation.Path(); ok {
+	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(hostprocess.FieldPath, field.TypeString, value)
 	}
-	if hpu.mutation.PathCleared() {
+	if _u.mutation.PathCleared() {
 		_spec.ClearField(hostprocess.FieldPath, field.TypeString)
 	}
-	if value, ok := hpu.mutation.Cmd(); ok {
+	if value, ok := _u.mutation.Cmd(); ok {
 		_spec.SetField(hostprocess.FieldCmd, field.TypeString, value)
 	}
-	if hpu.mutation.CmdCleared() {
+	if _u.mutation.CmdCleared() {
 		_spec.ClearField(hostprocess.FieldCmd, field.TypeString)
 	}
-	if value, ok := hpu.mutation.Env(); ok {
+	if value, ok := _u.mutation.Env(); ok {
 		_spec.SetField(hostprocess.FieldEnv, field.TypeString, value)
 	}
-	if hpu.mutation.EnvCleared() {
+	if _u.mutation.EnvCleared() {
 		_spec.ClearField(hostprocess.FieldEnv, field.TypeString)
 	}
-	if value, ok := hpu.mutation.Cwd(); ok {
+	if value, ok := _u.mutation.Cwd(); ok {
 		_spec.SetField(hostprocess.FieldCwd, field.TypeString, value)
 	}
-	if hpu.mutation.CwdCleared() {
+	if _u.mutation.CwdCleared() {
 		_spec.ClearField(hostprocess.FieldCwd, field.TypeString)
 	}
-	if value, ok := hpu.mutation.Status(); ok {
+	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(hostprocess.FieldStatus, field.TypeEnum, value)
 	}
-	if hpu.mutation.HostCleared() {
+	if _u.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -370,7 +370,7 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hpu.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -386,7 +386,7 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if hpu.mutation.TaskCleared() {
+	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -399,7 +399,7 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hpu.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -415,7 +415,7 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, hpu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{hostprocess.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -423,8 +423,8 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	hpu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // HostProcessUpdateOne is the builder for updating a single HostProcess entity.
@@ -436,236 +436,236 @@ type HostProcessUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hpuo *HostProcessUpdateOne) SetLastModifiedAt(t time.Time) *HostProcessUpdateOne {
-	hpuo.mutation.SetLastModifiedAt(t)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetLastModifiedAt(v time.Time) *HostProcessUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetPid sets the "pid" field.
-func (hpuo *HostProcessUpdateOne) SetPid(u uint64) *HostProcessUpdateOne {
-	hpuo.mutation.ResetPid()
-	hpuo.mutation.SetPid(u)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetPid(v uint64) *HostProcessUpdateOne {
+	_u.mutation.ResetPid()
+	_u.mutation.SetPid(v)
+	return _u
 }
 
 // SetNillablePid sets the "pid" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillablePid(u *uint64) *HostProcessUpdateOne {
-	if u != nil {
-		hpuo.SetPid(*u)
+func (_u *HostProcessUpdateOne) SetNillablePid(v *uint64) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetPid(*v)
 	}
-	return hpuo
+	return _u
 }
 
-// AddPid adds u to the "pid" field.
-func (hpuo *HostProcessUpdateOne) AddPid(u int64) *HostProcessUpdateOne {
-	hpuo.mutation.AddPid(u)
-	return hpuo
+// AddPid adds value to the "pid" field.
+func (_u *HostProcessUpdateOne) AddPid(v int64) *HostProcessUpdateOne {
+	_u.mutation.AddPid(v)
+	return _u
 }
 
 // SetPpid sets the "ppid" field.
-func (hpuo *HostProcessUpdateOne) SetPpid(u uint64) *HostProcessUpdateOne {
-	hpuo.mutation.ResetPpid()
-	hpuo.mutation.SetPpid(u)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetPpid(v uint64) *HostProcessUpdateOne {
+	_u.mutation.ResetPpid()
+	_u.mutation.SetPpid(v)
+	return _u
 }
 
 // SetNillablePpid sets the "ppid" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillablePpid(u *uint64) *HostProcessUpdateOne {
-	if u != nil {
-		hpuo.SetPpid(*u)
+func (_u *HostProcessUpdateOne) SetNillablePpid(v *uint64) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetPpid(*v)
 	}
-	return hpuo
+	return _u
 }
 
-// AddPpid adds u to the "ppid" field.
-func (hpuo *HostProcessUpdateOne) AddPpid(u int64) *HostProcessUpdateOne {
-	hpuo.mutation.AddPpid(u)
-	return hpuo
+// AddPpid adds value to the "ppid" field.
+func (_u *HostProcessUpdateOne) AddPpid(v int64) *HostProcessUpdateOne {
+	_u.mutation.AddPpid(v)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (hpuo *HostProcessUpdateOne) SetName(s string) *HostProcessUpdateOne {
-	hpuo.mutation.SetName(s)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetName(v string) *HostProcessUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableName(s *string) *HostProcessUpdateOne {
-	if s != nil {
-		hpuo.SetName(*s)
+func (_u *HostProcessUpdateOne) SetNillableName(v *string) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // SetPrincipal sets the "principal" field.
-func (hpuo *HostProcessUpdateOne) SetPrincipal(s string) *HostProcessUpdateOne {
-	hpuo.mutation.SetPrincipal(s)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetPrincipal(v string) *HostProcessUpdateOne {
+	_u.mutation.SetPrincipal(v)
+	return _u
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillablePrincipal(s *string) *HostProcessUpdateOne {
-	if s != nil {
-		hpuo.SetPrincipal(*s)
+func (_u *HostProcessUpdateOne) SetNillablePrincipal(v *string) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetPrincipal(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // SetPath sets the "path" field.
-func (hpuo *HostProcessUpdateOne) SetPath(s string) *HostProcessUpdateOne {
-	hpuo.mutation.SetPath(s)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetPath(v string) *HostProcessUpdateOne {
+	_u.mutation.SetPath(v)
+	return _u
 }
 
 // SetNillablePath sets the "path" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillablePath(s *string) *HostProcessUpdateOne {
-	if s != nil {
-		hpuo.SetPath(*s)
+func (_u *HostProcessUpdateOne) SetNillablePath(v *string) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetPath(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // ClearPath clears the value of the "path" field.
-func (hpuo *HostProcessUpdateOne) ClearPath() *HostProcessUpdateOne {
-	hpuo.mutation.ClearPath()
-	return hpuo
+func (_u *HostProcessUpdateOne) ClearPath() *HostProcessUpdateOne {
+	_u.mutation.ClearPath()
+	return _u
 }
 
 // SetCmd sets the "cmd" field.
-func (hpuo *HostProcessUpdateOne) SetCmd(s string) *HostProcessUpdateOne {
-	hpuo.mutation.SetCmd(s)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetCmd(v string) *HostProcessUpdateOne {
+	_u.mutation.SetCmd(v)
+	return _u
 }
 
 // SetNillableCmd sets the "cmd" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableCmd(s *string) *HostProcessUpdateOne {
-	if s != nil {
-		hpuo.SetCmd(*s)
+func (_u *HostProcessUpdateOne) SetNillableCmd(v *string) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetCmd(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // ClearCmd clears the value of the "cmd" field.
-func (hpuo *HostProcessUpdateOne) ClearCmd() *HostProcessUpdateOne {
-	hpuo.mutation.ClearCmd()
-	return hpuo
+func (_u *HostProcessUpdateOne) ClearCmd() *HostProcessUpdateOne {
+	_u.mutation.ClearCmd()
+	return _u
 }
 
 // SetEnv sets the "env" field.
-func (hpuo *HostProcessUpdateOne) SetEnv(s string) *HostProcessUpdateOne {
-	hpuo.mutation.SetEnv(s)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetEnv(v string) *HostProcessUpdateOne {
+	_u.mutation.SetEnv(v)
+	return _u
 }
 
 // SetNillableEnv sets the "env" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableEnv(s *string) *HostProcessUpdateOne {
-	if s != nil {
-		hpuo.SetEnv(*s)
+func (_u *HostProcessUpdateOne) SetNillableEnv(v *string) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetEnv(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // ClearEnv clears the value of the "env" field.
-func (hpuo *HostProcessUpdateOne) ClearEnv() *HostProcessUpdateOne {
-	hpuo.mutation.ClearEnv()
-	return hpuo
+func (_u *HostProcessUpdateOne) ClearEnv() *HostProcessUpdateOne {
+	_u.mutation.ClearEnv()
+	return _u
 }
 
 // SetCwd sets the "cwd" field.
-func (hpuo *HostProcessUpdateOne) SetCwd(s string) *HostProcessUpdateOne {
-	hpuo.mutation.SetCwd(s)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetCwd(v string) *HostProcessUpdateOne {
+	_u.mutation.SetCwd(v)
+	return _u
 }
 
 // SetNillableCwd sets the "cwd" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableCwd(s *string) *HostProcessUpdateOne {
-	if s != nil {
-		hpuo.SetCwd(*s)
+func (_u *HostProcessUpdateOne) SetNillableCwd(v *string) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetCwd(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // ClearCwd clears the value of the "cwd" field.
-func (hpuo *HostProcessUpdateOne) ClearCwd() *HostProcessUpdateOne {
-	hpuo.mutation.ClearCwd()
-	return hpuo
+func (_u *HostProcessUpdateOne) ClearCwd() *HostProcessUpdateOne {
+	_u.mutation.ClearCwd()
+	return _u
 }
 
 // SetStatus sets the "status" field.
-func (hpuo *HostProcessUpdateOne) SetStatus(es epb.Process_Status) *HostProcessUpdateOne {
-	hpuo.mutation.SetStatus(es)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetStatus(v epb.Process_Status) *HostProcessUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableStatus(es *epb.Process_Status) *HostProcessUpdateOne {
-	if es != nil {
-		hpuo.SetStatus(*es)
+func (_u *HostProcessUpdateOne) SetNillableStatus(v *epb.Process_Status) *HostProcessUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
 	}
-	return hpuo
+	return _u
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hpuo *HostProcessUpdateOne) SetHostID(id int) *HostProcessUpdateOne {
-	hpuo.mutation.SetHostID(id)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetHostID(id int) *HostProcessUpdateOne {
+	_u.mutation.SetHostID(id)
+	return _u
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hpuo *HostProcessUpdateOne) SetHost(h *Host) *HostProcessUpdateOne {
-	return hpuo.SetHostID(h.ID)
+func (_u *HostProcessUpdateOne) SetHost(v *Host) *HostProcessUpdateOne {
+	return _u.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hpuo *HostProcessUpdateOne) SetTaskID(id int) *HostProcessUpdateOne {
-	hpuo.mutation.SetTaskID(id)
-	return hpuo
+func (_u *HostProcessUpdateOne) SetTaskID(id int) *HostProcessUpdateOne {
+	_u.mutation.SetTaskID(id)
+	return _u
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hpuo *HostProcessUpdateOne) SetTask(t *Task) *HostProcessUpdateOne {
-	return hpuo.SetTaskID(t.ID)
+func (_u *HostProcessUpdateOne) SetTask(v *Task) *HostProcessUpdateOne {
+	return _u.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
-func (hpuo *HostProcessUpdateOne) Mutation() *HostProcessMutation {
-	return hpuo.mutation
+func (_u *HostProcessUpdateOne) Mutation() *HostProcessMutation {
+	return _u.mutation
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (hpuo *HostProcessUpdateOne) ClearHost() *HostProcessUpdateOne {
-	hpuo.mutation.ClearHost()
-	return hpuo
+func (_u *HostProcessUpdateOne) ClearHost() *HostProcessUpdateOne {
+	_u.mutation.ClearHost()
+	return _u
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (hpuo *HostProcessUpdateOne) ClearTask() *HostProcessUpdateOne {
-	hpuo.mutation.ClearTask()
-	return hpuo
+func (_u *HostProcessUpdateOne) ClearTask() *HostProcessUpdateOne {
+	_u.mutation.ClearTask()
+	return _u
 }
 
 // Where appends a list predicates to the HostProcessUpdate builder.
-func (hpuo *HostProcessUpdateOne) Where(ps ...predicate.HostProcess) *HostProcessUpdateOne {
-	hpuo.mutation.Where(ps...)
-	return hpuo
+func (_u *HostProcessUpdateOne) Where(ps ...predicate.HostProcess) *HostProcessUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (hpuo *HostProcessUpdateOne) Select(field string, fields ...string) *HostProcessUpdateOne {
-	hpuo.fields = append([]string{field}, fields...)
-	return hpuo
+func (_u *HostProcessUpdateOne) Select(field string, fields ...string) *HostProcessUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated HostProcess entity.
-func (hpuo *HostProcessUpdateOne) Save(ctx context.Context) (*HostProcess, error) {
-	hpuo.defaults()
-	return withHooks(ctx, hpuo.sqlSave, hpuo.mutation, hpuo.hooks)
+func (_u *HostProcessUpdateOne) Save(ctx context.Context) (*HostProcess, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hpuo *HostProcessUpdateOne) SaveX(ctx context.Context) *HostProcess {
-	node, err := hpuo.Save(ctx)
+func (_u *HostProcessUpdateOne) SaveX(ctx context.Context) *HostProcess {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -673,58 +673,58 @@ func (hpuo *HostProcessUpdateOne) SaveX(ctx context.Context) *HostProcess {
 }
 
 // Exec executes the query on the entity.
-func (hpuo *HostProcessUpdateOne) Exec(ctx context.Context) error {
-	_, err := hpuo.Save(ctx)
+func (_u *HostProcessUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hpuo *HostProcessUpdateOne) ExecX(ctx context.Context) {
-	if err := hpuo.Exec(ctx); err != nil {
+func (_u *HostProcessUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hpuo *HostProcessUpdateOne) defaults() {
-	if _, ok := hpuo.mutation.LastModifiedAt(); !ok {
+func (_u *HostProcessUpdateOne) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := hostprocess.UpdateDefaultLastModifiedAt()
-		hpuo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hpuo *HostProcessUpdateOne) check() error {
-	if v, ok := hpuo.mutation.Principal(); ok {
+func (_u *HostProcessUpdateOne) check() error {
+	if v, ok := _u.mutation.Principal(); ok {
 		if err := hostprocess.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostProcess.principal": %w`, err)}
 		}
 	}
-	if v, ok := hpuo.mutation.Status(); ok {
+	if v, ok := _u.mutation.Status(); ok {
 		if err := hostprocess.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
 		}
 	}
-	if hpuo.mutation.HostCleared() && len(hpuo.mutation.HostIDs()) > 0 {
+	if _u.mutation.HostCleared() && len(_u.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.host"`)
 	}
-	if hpuo.mutation.TaskCleared() && len(hpuo.mutation.TaskIDs()) > 0 {
+	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.task"`)
 	}
 	return nil
 }
 
-func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProcess, err error) {
-	if err := hpuo.check(); err != nil {
+func (_u *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProcess, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(hostprocess.Table, hostprocess.Columns, sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt))
-	id, ok := hpuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "HostProcess.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := hpuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, hostprocess.FieldID)
 		for _, f := range fields {
@@ -736,62 +736,62 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 			}
 		}
 	}
-	if ps := hpuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := hpuo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostprocess.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := hpuo.mutation.Pid(); ok {
+	if value, ok := _u.mutation.Pid(); ok {
 		_spec.SetField(hostprocess.FieldPid, field.TypeUint64, value)
 	}
-	if value, ok := hpuo.mutation.AddedPid(); ok {
+	if value, ok := _u.mutation.AddedPid(); ok {
 		_spec.AddField(hostprocess.FieldPid, field.TypeUint64, value)
 	}
-	if value, ok := hpuo.mutation.Ppid(); ok {
+	if value, ok := _u.mutation.Ppid(); ok {
 		_spec.SetField(hostprocess.FieldPpid, field.TypeUint64, value)
 	}
-	if value, ok := hpuo.mutation.AddedPpid(); ok {
+	if value, ok := _u.mutation.AddedPpid(); ok {
 		_spec.AddField(hostprocess.FieldPpid, field.TypeUint64, value)
 	}
-	if value, ok := hpuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(hostprocess.FieldName, field.TypeString, value)
 	}
-	if value, ok := hpuo.mutation.Principal(); ok {
+	if value, ok := _u.mutation.Principal(); ok {
 		_spec.SetField(hostprocess.FieldPrincipal, field.TypeString, value)
 	}
-	if value, ok := hpuo.mutation.Path(); ok {
+	if value, ok := _u.mutation.Path(); ok {
 		_spec.SetField(hostprocess.FieldPath, field.TypeString, value)
 	}
-	if hpuo.mutation.PathCleared() {
+	if _u.mutation.PathCleared() {
 		_spec.ClearField(hostprocess.FieldPath, field.TypeString)
 	}
-	if value, ok := hpuo.mutation.Cmd(); ok {
+	if value, ok := _u.mutation.Cmd(); ok {
 		_spec.SetField(hostprocess.FieldCmd, field.TypeString, value)
 	}
-	if hpuo.mutation.CmdCleared() {
+	if _u.mutation.CmdCleared() {
 		_spec.ClearField(hostprocess.FieldCmd, field.TypeString)
 	}
-	if value, ok := hpuo.mutation.Env(); ok {
+	if value, ok := _u.mutation.Env(); ok {
 		_spec.SetField(hostprocess.FieldEnv, field.TypeString, value)
 	}
-	if hpuo.mutation.EnvCleared() {
+	if _u.mutation.EnvCleared() {
 		_spec.ClearField(hostprocess.FieldEnv, field.TypeString)
 	}
-	if value, ok := hpuo.mutation.Cwd(); ok {
+	if value, ok := _u.mutation.Cwd(); ok {
 		_spec.SetField(hostprocess.FieldCwd, field.TypeString, value)
 	}
-	if hpuo.mutation.CwdCleared() {
+	if _u.mutation.CwdCleared() {
 		_spec.ClearField(hostprocess.FieldCwd, field.TypeString)
 	}
-	if value, ok := hpuo.mutation.Status(); ok {
+	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(hostprocess.FieldStatus, field.TypeEnum, value)
 	}
-	if hpuo.mutation.HostCleared() {
+	if _u.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -804,7 +804,7 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hpuo.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -820,7 +820,7 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if hpuo.mutation.TaskCleared() {
+	if _u.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -833,7 +833,7 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hpuo.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -849,10 +849,10 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &HostProcess{config: hpuo.config}
+	_node = &HostProcess{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, hpuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{hostprocess.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -860,6 +860,6 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		return nil, err
 	}
-	hpuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

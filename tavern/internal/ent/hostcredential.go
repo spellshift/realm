@@ -99,7 +99,7 @@ func (*HostCredential) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the HostCredential fields.
-func (hc *HostCredential) assignValues(columns []string, values []any) error {
+func (_m *HostCredential) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -110,53 +110,53 @@ func (hc *HostCredential) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			hc.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case hostcredential.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				hc.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case hostcredential.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				hc.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case hostcredential.FieldPrincipal:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field principal", values[i])
 			} else if value.Valid {
-				hc.Principal = value.String
+				_m.Principal = value.String
 			}
 		case hostcredential.FieldSecret:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field secret", values[i])
 			} else if value.Valid {
-				hc.Secret = value.String
+				_m.Secret = value.String
 			}
 		case hostcredential.FieldKind:
 			if value, ok := values[i].(*epb.Credential_Kind); !ok {
 				return fmt.Errorf("unexpected type %T for field kind", values[i])
 			} else if value != nil {
-				hc.Kind = *value
+				_m.Kind = *value
 			}
 		case hostcredential.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_credential_host", value)
 			} else if value.Valid {
-				hc.host_credential_host = new(int)
-				*hc.host_credential_host = int(value.Int64)
+				_m.host_credential_host = new(int)
+				*_m.host_credential_host = int(value.Int64)
 			}
 		case hostcredential.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_credentials", value)
 			} else if value.Valid {
-				hc.task_reported_credentials = new(int)
-				*hc.task_reported_credentials = int(value.Int64)
+				_m.task_reported_credentials = new(int)
+				*_m.task_reported_credentials = int(value.Int64)
 			}
 		default:
-			hc.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -164,57 +164,57 @@ func (hc *HostCredential) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the HostCredential.
 // This includes values selected through modifiers, order, etc.
-func (hc *HostCredential) Value(name string) (ent.Value, error) {
-	return hc.selectValues.Get(name)
+func (_m *HostCredential) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryHost queries the "host" edge of the HostCredential entity.
-func (hc *HostCredential) QueryHost() *HostQuery {
-	return NewHostCredentialClient(hc.config).QueryHost(hc)
+func (_m *HostCredential) QueryHost() *HostQuery {
+	return NewHostCredentialClient(_m.config).QueryHost(_m)
 }
 
 // QueryTask queries the "task" edge of the HostCredential entity.
-func (hc *HostCredential) QueryTask() *TaskQuery {
-	return NewHostCredentialClient(hc.config).QueryTask(hc)
+func (_m *HostCredential) QueryTask() *TaskQuery {
+	return NewHostCredentialClient(_m.config).QueryTask(_m)
 }
 
 // Update returns a builder for updating this HostCredential.
 // Note that you need to call HostCredential.Unwrap() before calling this method if this HostCredential
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (hc *HostCredential) Update() *HostCredentialUpdateOne {
-	return NewHostCredentialClient(hc.config).UpdateOne(hc)
+func (_m *HostCredential) Update() *HostCredentialUpdateOne {
+	return NewHostCredentialClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the HostCredential entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (hc *HostCredential) Unwrap() *HostCredential {
-	_tx, ok := hc.config.driver.(*txDriver)
+func (_m *HostCredential) Unwrap() *HostCredential {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: HostCredential is not a transactional entity")
 	}
-	hc.config.driver = _tx.drv
-	return hc
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (hc *HostCredential) String() string {
+func (_m *HostCredential) String() string {
 	var builder strings.Builder
 	builder.WriteString("HostCredential(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", hc.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(hc.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(hc.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("principal=")
-	builder.WriteString(hc.Principal)
+	builder.WriteString(_m.Principal)
 	builder.WriteString(", ")
 	builder.WriteString("secret=")
-	builder.WriteString(hc.Secret)
+	builder.WriteString(_m.Secret)
 	builder.WriteString(", ")
 	builder.WriteString("kind=")
-	builder.WriteString(fmt.Sprintf("%v", hc.Kind))
+	builder.WriteString(fmt.Sprintf("%v", _m.Kind))
 	builder.WriteByte(')')
 	return builder.String()
 }

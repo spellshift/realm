@@ -26,95 +26,95 @@ type HostCredentialCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (hcc *HostCredentialCreate) SetCreatedAt(t time.Time) *HostCredentialCreate {
-	hcc.mutation.SetCreatedAt(t)
-	return hcc
+func (_c *HostCredentialCreate) SetCreatedAt(v time.Time) *HostCredentialCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (hcc *HostCredentialCreate) SetNillableCreatedAt(t *time.Time) *HostCredentialCreate {
-	if t != nil {
-		hcc.SetCreatedAt(*t)
+func (_c *HostCredentialCreate) SetNillableCreatedAt(v *time.Time) *HostCredentialCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return hcc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hcc *HostCredentialCreate) SetLastModifiedAt(t time.Time) *HostCredentialCreate {
-	hcc.mutation.SetLastModifiedAt(t)
-	return hcc
+func (_c *HostCredentialCreate) SetLastModifiedAt(v time.Time) *HostCredentialCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (hcc *HostCredentialCreate) SetNillableLastModifiedAt(t *time.Time) *HostCredentialCreate {
-	if t != nil {
-		hcc.SetLastModifiedAt(*t)
+func (_c *HostCredentialCreate) SetNillableLastModifiedAt(v *time.Time) *HostCredentialCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return hcc
+	return _c
 }
 
 // SetPrincipal sets the "principal" field.
-func (hcc *HostCredentialCreate) SetPrincipal(s string) *HostCredentialCreate {
-	hcc.mutation.SetPrincipal(s)
-	return hcc
+func (_c *HostCredentialCreate) SetPrincipal(v string) *HostCredentialCreate {
+	_c.mutation.SetPrincipal(v)
+	return _c
 }
 
 // SetSecret sets the "secret" field.
-func (hcc *HostCredentialCreate) SetSecret(s string) *HostCredentialCreate {
-	hcc.mutation.SetSecret(s)
-	return hcc
+func (_c *HostCredentialCreate) SetSecret(v string) *HostCredentialCreate {
+	_c.mutation.SetSecret(v)
+	return _c
 }
 
 // SetKind sets the "kind" field.
-func (hcc *HostCredentialCreate) SetKind(ek epb.Credential_Kind) *HostCredentialCreate {
-	hcc.mutation.SetKind(ek)
-	return hcc
+func (_c *HostCredentialCreate) SetKind(v epb.Credential_Kind) *HostCredentialCreate {
+	_c.mutation.SetKind(v)
+	return _c
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hcc *HostCredentialCreate) SetHostID(id int) *HostCredentialCreate {
-	hcc.mutation.SetHostID(id)
-	return hcc
+func (_c *HostCredentialCreate) SetHostID(id int) *HostCredentialCreate {
+	_c.mutation.SetHostID(id)
+	return _c
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hcc *HostCredentialCreate) SetHost(h *Host) *HostCredentialCreate {
-	return hcc.SetHostID(h.ID)
+func (_c *HostCredentialCreate) SetHost(v *Host) *HostCredentialCreate {
+	return _c.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hcc *HostCredentialCreate) SetTaskID(id int) *HostCredentialCreate {
-	hcc.mutation.SetTaskID(id)
-	return hcc
+func (_c *HostCredentialCreate) SetTaskID(id int) *HostCredentialCreate {
+	_c.mutation.SetTaskID(id)
+	return _c
 }
 
 // SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
-func (hcc *HostCredentialCreate) SetNillableTaskID(id *int) *HostCredentialCreate {
+func (_c *HostCredentialCreate) SetNillableTaskID(id *int) *HostCredentialCreate {
 	if id != nil {
-		hcc = hcc.SetTaskID(*id)
+		_c = _c.SetTaskID(*id)
 	}
-	return hcc
+	return _c
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hcc *HostCredentialCreate) SetTask(t *Task) *HostCredentialCreate {
-	return hcc.SetTaskID(t.ID)
+func (_c *HostCredentialCreate) SetTask(v *Task) *HostCredentialCreate {
+	return _c.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostCredentialMutation object of the builder.
-func (hcc *HostCredentialCreate) Mutation() *HostCredentialMutation {
-	return hcc.mutation
+func (_c *HostCredentialCreate) Mutation() *HostCredentialMutation {
+	return _c.mutation
 }
 
 // Save creates the HostCredential in the database.
-func (hcc *HostCredentialCreate) Save(ctx context.Context) (*HostCredential, error) {
-	hcc.defaults()
-	return withHooks(ctx, hcc.sqlSave, hcc.mutation, hcc.hooks)
+func (_c *HostCredentialCreate) Save(ctx context.Context) (*HostCredential, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (hcc *HostCredentialCreate) SaveX(ctx context.Context) *HostCredential {
-	v, err := hcc.Save(ctx)
+func (_c *HostCredentialCreate) SaveX(ctx context.Context) *HostCredential {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -122,74 +122,74 @@ func (hcc *HostCredentialCreate) SaveX(ctx context.Context) *HostCredential {
 }
 
 // Exec executes the query.
-func (hcc *HostCredentialCreate) Exec(ctx context.Context) error {
-	_, err := hcc.Save(ctx)
+func (_c *HostCredentialCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hcc *HostCredentialCreate) ExecX(ctx context.Context) {
-	if err := hcc.Exec(ctx); err != nil {
+func (_c *HostCredentialCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hcc *HostCredentialCreate) defaults() {
-	if _, ok := hcc.mutation.CreatedAt(); !ok {
+func (_c *HostCredentialCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := hostcredential.DefaultCreatedAt()
-		hcc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := hcc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		v := hostcredential.DefaultLastModifiedAt()
-		hcc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hcc *HostCredentialCreate) check() error {
-	if _, ok := hcc.mutation.CreatedAt(); !ok {
+func (_c *HostCredentialCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "HostCredential.created_at"`)}
 	}
-	if _, ok := hcc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "HostCredential.last_modified_at"`)}
 	}
-	if _, ok := hcc.mutation.Principal(); !ok {
+	if _, ok := _c.mutation.Principal(); !ok {
 		return &ValidationError{Name: "principal", err: errors.New(`ent: missing required field "HostCredential.principal"`)}
 	}
-	if v, ok := hcc.mutation.Principal(); ok {
+	if v, ok := _c.mutation.Principal(); ok {
 		if err := hostcredential.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostCredential.principal": %w`, err)}
 		}
 	}
-	if _, ok := hcc.mutation.Secret(); !ok {
+	if _, ok := _c.mutation.Secret(); !ok {
 		return &ValidationError{Name: "secret", err: errors.New(`ent: missing required field "HostCredential.secret"`)}
 	}
-	if v, ok := hcc.mutation.Secret(); ok {
+	if v, ok := _c.mutation.Secret(); ok {
 		if err := hostcredential.SecretValidator(v); err != nil {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "HostCredential.secret": %w`, err)}
 		}
 	}
-	if _, ok := hcc.mutation.Kind(); !ok {
+	if _, ok := _c.mutation.Kind(); !ok {
 		return &ValidationError{Name: "kind", err: errors.New(`ent: missing required field "HostCredential.kind"`)}
 	}
-	if v, ok := hcc.mutation.Kind(); ok {
+	if v, ok := _c.mutation.Kind(); ok {
 		if err := hostcredential.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
 	}
-	if len(hcc.mutation.HostIDs()) == 0 {
+	if len(_c.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostCredential.host"`)}
 	}
 	return nil
 }
 
-func (hcc *HostCredentialCreate) sqlSave(ctx context.Context) (*HostCredential, error) {
-	if err := hcc.check(); err != nil {
+func (_c *HostCredentialCreate) sqlSave(ctx context.Context) (*HostCredential, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := hcc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, hcc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -197,38 +197,38 @@ func (hcc *HostCredentialCreate) sqlSave(ctx context.Context) (*HostCredential, 
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	hcc.mutation.id = &_node.ID
-	hcc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (hcc *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.CreateSpec) {
+func (_c *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.CreateSpec) {
 	var (
-		_node = &HostCredential{config: hcc.config}
+		_node = &HostCredential{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(hostcredential.Table, sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = hcc.conflict
-	if value, ok := hcc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(hostcredential.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := hcc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostcredential.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := hcc.mutation.Principal(); ok {
+	if value, ok := _c.mutation.Principal(); ok {
 		_spec.SetField(hostcredential.FieldPrincipal, field.TypeString, value)
 		_node.Principal = value
 	}
-	if value, ok := hcc.mutation.Secret(); ok {
+	if value, ok := _c.mutation.Secret(); ok {
 		_spec.SetField(hostcredential.FieldSecret, field.TypeString, value)
 		_node.Secret = value
 	}
-	if value, ok := hcc.mutation.Kind(); ok {
+	if value, ok := _c.mutation.Kind(); ok {
 		_spec.SetField(hostcredential.FieldKind, field.TypeEnum, value)
 		_node.Kind = value
 	}
-	if nodes := hcc.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -245,7 +245,7 @@ func (hcc *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.Create
 		_node.host_credential_host = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hcc.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -281,10 +281,10 @@ func (hcc *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.Create
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hcc *HostCredentialCreate) OnConflict(opts ...sql.ConflictOption) *HostCredentialUpsertOne {
-	hcc.conflict = opts
+func (_c *HostCredentialCreate) OnConflict(opts ...sql.ConflictOption) *HostCredentialUpsertOne {
+	_c.conflict = opts
 	return &HostCredentialUpsertOne{
-		create: hcc,
+		create: _c,
 	}
 }
 
@@ -294,10 +294,10 @@ func (hcc *HostCredentialCreate) OnConflict(opts ...sql.ConflictOption) *HostCre
 //	client.HostCredential.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hcc *HostCredentialCreate) OnConflictColumns(columns ...string) *HostCredentialUpsertOne {
-	hcc.conflict = append(hcc.conflict, sql.ConflictColumns(columns...))
+func (_c *HostCredentialCreate) OnConflictColumns(columns ...string) *HostCredentialUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostCredentialUpsertOne{
-		create: hcc,
+		create: _c,
 	}
 }
 
@@ -505,16 +505,16 @@ type HostCredentialCreateBulk struct {
 }
 
 // Save creates the HostCredential entities in the database.
-func (hccb *HostCredentialCreateBulk) Save(ctx context.Context) ([]*HostCredential, error) {
-	if hccb.err != nil {
-		return nil, hccb.err
+func (_c *HostCredentialCreateBulk) Save(ctx context.Context) ([]*HostCredential, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(hccb.builders))
-	nodes := make([]*HostCredential, len(hccb.builders))
-	mutators := make([]Mutator, len(hccb.builders))
-	for i := range hccb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*HostCredential, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := hccb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*HostCredentialMutation)
@@ -528,12 +528,12 @@ func (hccb *HostCredentialCreateBulk) Save(ctx context.Context) ([]*HostCredenti
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, hccb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = hccb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, hccb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -557,7 +557,7 @@ func (hccb *HostCredentialCreateBulk) Save(ctx context.Context) ([]*HostCredenti
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, hccb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -565,8 +565,8 @@ func (hccb *HostCredentialCreateBulk) Save(ctx context.Context) ([]*HostCredenti
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hccb *HostCredentialCreateBulk) SaveX(ctx context.Context) []*HostCredential {
-	v, err := hccb.Save(ctx)
+func (_c *HostCredentialCreateBulk) SaveX(ctx context.Context) []*HostCredential {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -574,14 +574,14 @@ func (hccb *HostCredentialCreateBulk) SaveX(ctx context.Context) []*HostCredenti
 }
 
 // Exec executes the query.
-func (hccb *HostCredentialCreateBulk) Exec(ctx context.Context) error {
-	_, err := hccb.Save(ctx)
+func (_c *HostCredentialCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hccb *HostCredentialCreateBulk) ExecX(ctx context.Context) {
-	if err := hccb.Exec(ctx); err != nil {
+func (_c *HostCredentialCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -601,10 +601,10 @@ func (hccb *HostCredentialCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hccb *HostCredentialCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostCredentialUpsertBulk {
-	hccb.conflict = opts
+func (_c *HostCredentialCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostCredentialUpsertBulk {
+	_c.conflict = opts
 	return &HostCredentialUpsertBulk{
-		create: hccb,
+		create: _c,
 	}
 }
 
@@ -614,10 +614,10 @@ func (hccb *HostCredentialCreateBulk) OnConflict(opts ...sql.ConflictOption) *Ho
 //	client.HostCredential.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hccb *HostCredentialCreateBulk) OnConflictColumns(columns ...string) *HostCredentialUpsertBulk {
-	hccb.conflict = append(hccb.conflict, sql.ConflictColumns(columns...))
+func (_c *HostCredentialCreateBulk) OnConflictColumns(columns ...string) *HostCredentialUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostCredentialUpsertBulk{
-		create: hccb,
+		create: _c,
 	}
 }
 

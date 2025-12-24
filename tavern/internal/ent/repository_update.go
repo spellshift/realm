@@ -25,156 +25,156 @@ type RepositoryUpdate struct {
 }
 
 // Where appends a list predicates to the RepositoryUpdate builder.
-func (ru *RepositoryUpdate) Where(ps ...predicate.Repository) *RepositoryUpdate {
-	ru.mutation.Where(ps...)
-	return ru
+func (_u *RepositoryUpdate) Where(ps ...predicate.Repository) *RepositoryUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (ru *RepositoryUpdate) SetLastModifiedAt(t time.Time) *RepositoryUpdate {
-	ru.mutation.SetLastModifiedAt(t)
-	return ru
+func (_u *RepositoryUpdate) SetLastModifiedAt(v time.Time) *RepositoryUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetURL sets the "url" field.
-func (ru *RepositoryUpdate) SetURL(s string) *RepositoryUpdate {
-	ru.mutation.SetURL(s)
-	return ru
+func (_u *RepositoryUpdate) SetURL(v string) *RepositoryUpdate {
+	_u.mutation.SetURL(v)
+	return _u
 }
 
 // SetNillableURL sets the "url" field if the given value is not nil.
-func (ru *RepositoryUpdate) SetNillableURL(s *string) *RepositoryUpdate {
-	if s != nil {
-		ru.SetURL(*s)
+func (_u *RepositoryUpdate) SetNillableURL(v *string) *RepositoryUpdate {
+	if v != nil {
+		_u.SetURL(*v)
 	}
-	return ru
+	return _u
 }
 
 // SetPublicKey sets the "public_key" field.
-func (ru *RepositoryUpdate) SetPublicKey(s string) *RepositoryUpdate {
-	ru.mutation.SetPublicKey(s)
-	return ru
+func (_u *RepositoryUpdate) SetPublicKey(v string) *RepositoryUpdate {
+	_u.mutation.SetPublicKey(v)
+	return _u
 }
 
 // SetNillablePublicKey sets the "public_key" field if the given value is not nil.
-func (ru *RepositoryUpdate) SetNillablePublicKey(s *string) *RepositoryUpdate {
-	if s != nil {
-		ru.SetPublicKey(*s)
+func (_u *RepositoryUpdate) SetNillablePublicKey(v *string) *RepositoryUpdate {
+	if v != nil {
+		_u.SetPublicKey(*v)
 	}
-	return ru
+	return _u
 }
 
 // SetPrivateKey sets the "private_key" field.
-func (ru *RepositoryUpdate) SetPrivateKey(s string) *RepositoryUpdate {
-	ru.mutation.SetPrivateKey(s)
-	return ru
+func (_u *RepositoryUpdate) SetPrivateKey(v string) *RepositoryUpdate {
+	_u.mutation.SetPrivateKey(v)
+	return _u
 }
 
 // SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
-func (ru *RepositoryUpdate) SetNillablePrivateKey(s *string) *RepositoryUpdate {
-	if s != nil {
-		ru.SetPrivateKey(*s)
+func (_u *RepositoryUpdate) SetNillablePrivateKey(v *string) *RepositoryUpdate {
+	if v != nil {
+		_u.SetPrivateKey(*v)
 	}
-	return ru
+	return _u
 }
 
 // SetLastImportedAt sets the "last_imported_at" field.
-func (ru *RepositoryUpdate) SetLastImportedAt(t time.Time) *RepositoryUpdate {
-	ru.mutation.SetLastImportedAt(t)
-	return ru
+func (_u *RepositoryUpdate) SetLastImportedAt(v time.Time) *RepositoryUpdate {
+	_u.mutation.SetLastImportedAt(v)
+	return _u
 }
 
 // SetNillableLastImportedAt sets the "last_imported_at" field if the given value is not nil.
-func (ru *RepositoryUpdate) SetNillableLastImportedAt(t *time.Time) *RepositoryUpdate {
-	if t != nil {
-		ru.SetLastImportedAt(*t)
+func (_u *RepositoryUpdate) SetNillableLastImportedAt(v *time.Time) *RepositoryUpdate {
+	if v != nil {
+		_u.SetLastImportedAt(*v)
 	}
-	return ru
+	return _u
 }
 
 // ClearLastImportedAt clears the value of the "last_imported_at" field.
-func (ru *RepositoryUpdate) ClearLastImportedAt() *RepositoryUpdate {
-	ru.mutation.ClearLastImportedAt()
-	return ru
+func (_u *RepositoryUpdate) ClearLastImportedAt() *RepositoryUpdate {
+	_u.mutation.ClearLastImportedAt()
+	return _u
 }
 
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
-func (ru *RepositoryUpdate) AddTomeIDs(ids ...int) *RepositoryUpdate {
-	ru.mutation.AddTomeIDs(ids...)
-	return ru
+func (_u *RepositoryUpdate) AddTomeIDs(ids ...int) *RepositoryUpdate {
+	_u.mutation.AddTomeIDs(ids...)
+	return _u
 }
 
 // AddTomes adds the "tomes" edges to the Tome entity.
-func (ru *RepositoryUpdate) AddTomes(t ...*Tome) *RepositoryUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *RepositoryUpdate) AddTomes(v ...*Tome) *RepositoryUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return ru.AddTomeIDs(ids...)
+	return _u.AddTomeIDs(ids...)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
-func (ru *RepositoryUpdate) SetOwnerID(id int) *RepositoryUpdate {
-	ru.mutation.SetOwnerID(id)
-	return ru
+func (_u *RepositoryUpdate) SetOwnerID(id int) *RepositoryUpdate {
+	_u.mutation.SetOwnerID(id)
+	return _u
 }
 
 // SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
-func (ru *RepositoryUpdate) SetNillableOwnerID(id *int) *RepositoryUpdate {
+func (_u *RepositoryUpdate) SetNillableOwnerID(id *int) *RepositoryUpdate {
 	if id != nil {
-		ru = ru.SetOwnerID(*id)
+		_u = _u.SetOwnerID(*id)
 	}
-	return ru
+	return _u
 }
 
 // SetOwner sets the "owner" edge to the User entity.
-func (ru *RepositoryUpdate) SetOwner(u *User) *RepositoryUpdate {
-	return ru.SetOwnerID(u.ID)
+func (_u *RepositoryUpdate) SetOwner(v *User) *RepositoryUpdate {
+	return _u.SetOwnerID(v.ID)
 }
 
 // Mutation returns the RepositoryMutation object of the builder.
-func (ru *RepositoryUpdate) Mutation() *RepositoryMutation {
-	return ru.mutation
+func (_u *RepositoryUpdate) Mutation() *RepositoryMutation {
+	return _u.mutation
 }
 
 // ClearTomes clears all "tomes" edges to the Tome entity.
-func (ru *RepositoryUpdate) ClearTomes() *RepositoryUpdate {
-	ru.mutation.ClearTomes()
-	return ru
+func (_u *RepositoryUpdate) ClearTomes() *RepositoryUpdate {
+	_u.mutation.ClearTomes()
+	return _u
 }
 
 // RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
-func (ru *RepositoryUpdate) RemoveTomeIDs(ids ...int) *RepositoryUpdate {
-	ru.mutation.RemoveTomeIDs(ids...)
-	return ru
+func (_u *RepositoryUpdate) RemoveTomeIDs(ids ...int) *RepositoryUpdate {
+	_u.mutation.RemoveTomeIDs(ids...)
+	return _u
 }
 
 // RemoveTomes removes "tomes" edges to Tome entities.
-func (ru *RepositoryUpdate) RemoveTomes(t ...*Tome) *RepositoryUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *RepositoryUpdate) RemoveTomes(v ...*Tome) *RepositoryUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return ru.RemoveTomeIDs(ids...)
+	return _u.RemoveTomeIDs(ids...)
 }
 
 // ClearOwner clears the "owner" edge to the User entity.
-func (ru *RepositoryUpdate) ClearOwner() *RepositoryUpdate {
-	ru.mutation.ClearOwner()
-	return ru
+func (_u *RepositoryUpdate) ClearOwner() *RepositoryUpdate {
+	_u.mutation.ClearOwner()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (ru *RepositoryUpdate) Save(ctx context.Context) (int, error) {
-	if err := ru.defaults(); err != nil {
+func (_u *RepositoryUpdate) Save(ctx context.Context) (int, error) {
+	if err := _u.defaults(); err != nil {
 		return 0, err
 	}
-	return withHooks(ctx, ru.sqlSave, ru.mutation, ru.hooks)
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (ru *RepositoryUpdate) SaveX(ctx context.Context) int {
-	affected, err := ru.Save(ctx)
+func (_u *RepositoryUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -182,43 +182,43 @@ func (ru *RepositoryUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (ru *RepositoryUpdate) Exec(ctx context.Context) error {
-	_, err := ru.Save(ctx)
+func (_u *RepositoryUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ru *RepositoryUpdate) ExecX(ctx context.Context) {
-	if err := ru.Exec(ctx); err != nil {
+func (_u *RepositoryUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (ru *RepositoryUpdate) defaults() error {
-	if _, ok := ru.mutation.LastModifiedAt(); !ok {
+func (_u *RepositoryUpdate) defaults() error {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		if repository.UpdateDefaultLastModifiedAt == nil {
 			return fmt.Errorf("ent: uninitialized repository.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
 		}
 		v := repository.UpdateDefaultLastModifiedAt()
-		ru.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (ru *RepositoryUpdate) check() error {
-	if v, ok := ru.mutation.URL(); ok {
+func (_u *RepositoryUpdate) check() error {
+	if v, ok := _u.mutation.URL(); ok {
 		if err := repository.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "Repository.url": %w`, err)}
 		}
 	}
-	if v, ok := ru.mutation.PublicKey(); ok {
+	if v, ok := _u.mutation.PublicKey(); ok {
 		if err := repository.PublicKeyValidator(v); err != nil {
 			return &ValidationError{Name: "public_key", err: fmt.Errorf(`ent: validator failed for field "Repository.public_key": %w`, err)}
 		}
 	}
-	if v, ok := ru.mutation.PrivateKey(); ok {
+	if v, ok := _u.mutation.PrivateKey(); ok {
 		if err := repository.PrivateKeyValidator(v); err != nil {
 			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Repository.private_key": %w`, err)}
 		}
@@ -226,37 +226,37 @@ func (ru *RepositoryUpdate) check() error {
 	return nil
 }
 
-func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := ru.check(); err != nil {
-		return n, err
+func (_u *RepositoryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(repository.Table, repository.Columns, sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt))
-	if ps := ru.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := ru.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(repository.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := ru.mutation.URL(); ok {
+	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(repository.FieldURL, field.TypeString, value)
 	}
-	if value, ok := ru.mutation.PublicKey(); ok {
+	if value, ok := _u.mutation.PublicKey(); ok {
 		_spec.SetField(repository.FieldPublicKey, field.TypeString, value)
 	}
-	if value, ok := ru.mutation.PrivateKey(); ok {
+	if value, ok := _u.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
 	}
-	if value, ok := ru.mutation.LastImportedAt(); ok {
+	if value, ok := _u.mutation.LastImportedAt(); ok {
 		_spec.SetField(repository.FieldLastImportedAt, field.TypeTime, value)
 	}
-	if ru.mutation.LastImportedAtCleared() {
+	if _u.mutation.LastImportedAtCleared() {
 		_spec.ClearField(repository.FieldLastImportedAt, field.TypeTime)
 	}
-	if ru.mutation.TomesCleared() {
+	if _u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -269,7 +269,7 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.RemovedTomesIDs(); len(nodes) > 0 && !ru.mutation.TomesCleared() {
+	if nodes := _u.mutation.RemovedTomesIDs(); len(nodes) > 0 && !_u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -285,7 +285,7 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.TomesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TomesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -301,7 +301,7 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ru.mutation.OwnerCleared() {
+	if _u.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -314,7 +314,7 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -330,7 +330,7 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{repository.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -338,8 +338,8 @@ func (ru *RepositoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	ru.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // RepositoryUpdateOne is the builder for updating a single Repository entity.
@@ -351,163 +351,163 @@ type RepositoryUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (ruo *RepositoryUpdateOne) SetLastModifiedAt(t time.Time) *RepositoryUpdateOne {
-	ruo.mutation.SetLastModifiedAt(t)
-	return ruo
+func (_u *RepositoryUpdateOne) SetLastModifiedAt(v time.Time) *RepositoryUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetURL sets the "url" field.
-func (ruo *RepositoryUpdateOne) SetURL(s string) *RepositoryUpdateOne {
-	ruo.mutation.SetURL(s)
-	return ruo
+func (_u *RepositoryUpdateOne) SetURL(v string) *RepositoryUpdateOne {
+	_u.mutation.SetURL(v)
+	return _u
 }
 
 // SetNillableURL sets the "url" field if the given value is not nil.
-func (ruo *RepositoryUpdateOne) SetNillableURL(s *string) *RepositoryUpdateOne {
-	if s != nil {
-		ruo.SetURL(*s)
+func (_u *RepositoryUpdateOne) SetNillableURL(v *string) *RepositoryUpdateOne {
+	if v != nil {
+		_u.SetURL(*v)
 	}
-	return ruo
+	return _u
 }
 
 // SetPublicKey sets the "public_key" field.
-func (ruo *RepositoryUpdateOne) SetPublicKey(s string) *RepositoryUpdateOne {
-	ruo.mutation.SetPublicKey(s)
-	return ruo
+func (_u *RepositoryUpdateOne) SetPublicKey(v string) *RepositoryUpdateOne {
+	_u.mutation.SetPublicKey(v)
+	return _u
 }
 
 // SetNillablePublicKey sets the "public_key" field if the given value is not nil.
-func (ruo *RepositoryUpdateOne) SetNillablePublicKey(s *string) *RepositoryUpdateOne {
-	if s != nil {
-		ruo.SetPublicKey(*s)
+func (_u *RepositoryUpdateOne) SetNillablePublicKey(v *string) *RepositoryUpdateOne {
+	if v != nil {
+		_u.SetPublicKey(*v)
 	}
-	return ruo
+	return _u
 }
 
 // SetPrivateKey sets the "private_key" field.
-func (ruo *RepositoryUpdateOne) SetPrivateKey(s string) *RepositoryUpdateOne {
-	ruo.mutation.SetPrivateKey(s)
-	return ruo
+func (_u *RepositoryUpdateOne) SetPrivateKey(v string) *RepositoryUpdateOne {
+	_u.mutation.SetPrivateKey(v)
+	return _u
 }
 
 // SetNillablePrivateKey sets the "private_key" field if the given value is not nil.
-func (ruo *RepositoryUpdateOne) SetNillablePrivateKey(s *string) *RepositoryUpdateOne {
-	if s != nil {
-		ruo.SetPrivateKey(*s)
+func (_u *RepositoryUpdateOne) SetNillablePrivateKey(v *string) *RepositoryUpdateOne {
+	if v != nil {
+		_u.SetPrivateKey(*v)
 	}
-	return ruo
+	return _u
 }
 
 // SetLastImportedAt sets the "last_imported_at" field.
-func (ruo *RepositoryUpdateOne) SetLastImportedAt(t time.Time) *RepositoryUpdateOne {
-	ruo.mutation.SetLastImportedAt(t)
-	return ruo
+func (_u *RepositoryUpdateOne) SetLastImportedAt(v time.Time) *RepositoryUpdateOne {
+	_u.mutation.SetLastImportedAt(v)
+	return _u
 }
 
 // SetNillableLastImportedAt sets the "last_imported_at" field if the given value is not nil.
-func (ruo *RepositoryUpdateOne) SetNillableLastImportedAt(t *time.Time) *RepositoryUpdateOne {
-	if t != nil {
-		ruo.SetLastImportedAt(*t)
+func (_u *RepositoryUpdateOne) SetNillableLastImportedAt(v *time.Time) *RepositoryUpdateOne {
+	if v != nil {
+		_u.SetLastImportedAt(*v)
 	}
-	return ruo
+	return _u
 }
 
 // ClearLastImportedAt clears the value of the "last_imported_at" field.
-func (ruo *RepositoryUpdateOne) ClearLastImportedAt() *RepositoryUpdateOne {
-	ruo.mutation.ClearLastImportedAt()
-	return ruo
+func (_u *RepositoryUpdateOne) ClearLastImportedAt() *RepositoryUpdateOne {
+	_u.mutation.ClearLastImportedAt()
+	return _u
 }
 
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
-func (ruo *RepositoryUpdateOne) AddTomeIDs(ids ...int) *RepositoryUpdateOne {
-	ruo.mutation.AddTomeIDs(ids...)
-	return ruo
+func (_u *RepositoryUpdateOne) AddTomeIDs(ids ...int) *RepositoryUpdateOne {
+	_u.mutation.AddTomeIDs(ids...)
+	return _u
 }
 
 // AddTomes adds the "tomes" edges to the Tome entity.
-func (ruo *RepositoryUpdateOne) AddTomes(t ...*Tome) *RepositoryUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *RepositoryUpdateOne) AddTomes(v ...*Tome) *RepositoryUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return ruo.AddTomeIDs(ids...)
+	return _u.AddTomeIDs(ids...)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
-func (ruo *RepositoryUpdateOne) SetOwnerID(id int) *RepositoryUpdateOne {
-	ruo.mutation.SetOwnerID(id)
-	return ruo
+func (_u *RepositoryUpdateOne) SetOwnerID(id int) *RepositoryUpdateOne {
+	_u.mutation.SetOwnerID(id)
+	return _u
 }
 
 // SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
-func (ruo *RepositoryUpdateOne) SetNillableOwnerID(id *int) *RepositoryUpdateOne {
+func (_u *RepositoryUpdateOne) SetNillableOwnerID(id *int) *RepositoryUpdateOne {
 	if id != nil {
-		ruo = ruo.SetOwnerID(*id)
+		_u = _u.SetOwnerID(*id)
 	}
-	return ruo
+	return _u
 }
 
 // SetOwner sets the "owner" edge to the User entity.
-func (ruo *RepositoryUpdateOne) SetOwner(u *User) *RepositoryUpdateOne {
-	return ruo.SetOwnerID(u.ID)
+func (_u *RepositoryUpdateOne) SetOwner(v *User) *RepositoryUpdateOne {
+	return _u.SetOwnerID(v.ID)
 }
 
 // Mutation returns the RepositoryMutation object of the builder.
-func (ruo *RepositoryUpdateOne) Mutation() *RepositoryMutation {
-	return ruo.mutation
+func (_u *RepositoryUpdateOne) Mutation() *RepositoryMutation {
+	return _u.mutation
 }
 
 // ClearTomes clears all "tomes" edges to the Tome entity.
-func (ruo *RepositoryUpdateOne) ClearTomes() *RepositoryUpdateOne {
-	ruo.mutation.ClearTomes()
-	return ruo
+func (_u *RepositoryUpdateOne) ClearTomes() *RepositoryUpdateOne {
+	_u.mutation.ClearTomes()
+	return _u
 }
 
 // RemoveTomeIDs removes the "tomes" edge to Tome entities by IDs.
-func (ruo *RepositoryUpdateOne) RemoveTomeIDs(ids ...int) *RepositoryUpdateOne {
-	ruo.mutation.RemoveTomeIDs(ids...)
-	return ruo
+func (_u *RepositoryUpdateOne) RemoveTomeIDs(ids ...int) *RepositoryUpdateOne {
+	_u.mutation.RemoveTomeIDs(ids...)
+	return _u
 }
 
 // RemoveTomes removes "tomes" edges to Tome entities.
-func (ruo *RepositoryUpdateOne) RemoveTomes(t ...*Tome) *RepositoryUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *RepositoryUpdateOne) RemoveTomes(v ...*Tome) *RepositoryUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return ruo.RemoveTomeIDs(ids...)
+	return _u.RemoveTomeIDs(ids...)
 }
 
 // ClearOwner clears the "owner" edge to the User entity.
-func (ruo *RepositoryUpdateOne) ClearOwner() *RepositoryUpdateOne {
-	ruo.mutation.ClearOwner()
-	return ruo
+func (_u *RepositoryUpdateOne) ClearOwner() *RepositoryUpdateOne {
+	_u.mutation.ClearOwner()
+	return _u
 }
 
 // Where appends a list predicates to the RepositoryUpdate builder.
-func (ruo *RepositoryUpdateOne) Where(ps ...predicate.Repository) *RepositoryUpdateOne {
-	ruo.mutation.Where(ps...)
-	return ruo
+func (_u *RepositoryUpdateOne) Where(ps ...predicate.Repository) *RepositoryUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (ruo *RepositoryUpdateOne) Select(field string, fields ...string) *RepositoryUpdateOne {
-	ruo.fields = append([]string{field}, fields...)
-	return ruo
+func (_u *RepositoryUpdateOne) Select(field string, fields ...string) *RepositoryUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Repository entity.
-func (ruo *RepositoryUpdateOne) Save(ctx context.Context) (*Repository, error) {
-	if err := ruo.defaults(); err != nil {
+func (_u *RepositoryUpdateOne) Save(ctx context.Context) (*Repository, error) {
+	if err := _u.defaults(); err != nil {
 		return nil, err
 	}
-	return withHooks(ctx, ruo.sqlSave, ruo.mutation, ruo.hooks)
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (ruo *RepositoryUpdateOne) SaveX(ctx context.Context) *Repository {
-	node, err := ruo.Save(ctx)
+func (_u *RepositoryUpdateOne) SaveX(ctx context.Context) *Repository {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -515,43 +515,43 @@ func (ruo *RepositoryUpdateOne) SaveX(ctx context.Context) *Repository {
 }
 
 // Exec executes the query on the entity.
-func (ruo *RepositoryUpdateOne) Exec(ctx context.Context) error {
-	_, err := ruo.Save(ctx)
+func (_u *RepositoryUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ruo *RepositoryUpdateOne) ExecX(ctx context.Context) {
-	if err := ruo.Exec(ctx); err != nil {
+func (_u *RepositoryUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (ruo *RepositoryUpdateOne) defaults() error {
-	if _, ok := ruo.mutation.LastModifiedAt(); !ok {
+func (_u *RepositoryUpdateOne) defaults() error {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		if repository.UpdateDefaultLastModifiedAt == nil {
 			return fmt.Errorf("ent: uninitialized repository.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
 		}
 		v := repository.UpdateDefaultLastModifiedAt()
-		ruo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (ruo *RepositoryUpdateOne) check() error {
-	if v, ok := ruo.mutation.URL(); ok {
+func (_u *RepositoryUpdateOne) check() error {
+	if v, ok := _u.mutation.URL(); ok {
 		if err := repository.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "Repository.url": %w`, err)}
 		}
 	}
-	if v, ok := ruo.mutation.PublicKey(); ok {
+	if v, ok := _u.mutation.PublicKey(); ok {
 		if err := repository.PublicKeyValidator(v); err != nil {
 			return &ValidationError{Name: "public_key", err: fmt.Errorf(`ent: validator failed for field "Repository.public_key": %w`, err)}
 		}
 	}
-	if v, ok := ruo.mutation.PrivateKey(); ok {
+	if v, ok := _u.mutation.PrivateKey(); ok {
 		if err := repository.PrivateKeyValidator(v); err != nil {
 			return &ValidationError{Name: "private_key", err: fmt.Errorf(`ent: validator failed for field "Repository.private_key": %w`, err)}
 		}
@@ -559,17 +559,17 @@ func (ruo *RepositoryUpdateOne) check() error {
 	return nil
 }
 
-func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository, err error) {
-	if err := ruo.check(); err != nil {
+func (_u *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(repository.Table, repository.Columns, sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt))
-	id, ok := ruo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Repository.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := ruo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, repository.FieldID)
 		for _, f := range fields {
@@ -581,32 +581,32 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 			}
 		}
 	}
-	if ps := ruo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := ruo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(repository.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := ruo.mutation.URL(); ok {
+	if value, ok := _u.mutation.URL(); ok {
 		_spec.SetField(repository.FieldURL, field.TypeString, value)
 	}
-	if value, ok := ruo.mutation.PublicKey(); ok {
+	if value, ok := _u.mutation.PublicKey(); ok {
 		_spec.SetField(repository.FieldPublicKey, field.TypeString, value)
 	}
-	if value, ok := ruo.mutation.PrivateKey(); ok {
+	if value, ok := _u.mutation.PrivateKey(); ok {
 		_spec.SetField(repository.FieldPrivateKey, field.TypeString, value)
 	}
-	if value, ok := ruo.mutation.LastImportedAt(); ok {
+	if value, ok := _u.mutation.LastImportedAt(); ok {
 		_spec.SetField(repository.FieldLastImportedAt, field.TypeTime, value)
 	}
-	if ruo.mutation.LastImportedAtCleared() {
+	if _u.mutation.LastImportedAtCleared() {
 		_spec.ClearField(repository.FieldLastImportedAt, field.TypeTime)
 	}
-	if ruo.mutation.TomesCleared() {
+	if _u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -619,7 +619,7 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.RemovedTomesIDs(); len(nodes) > 0 && !ruo.mutation.TomesCleared() {
+	if nodes := _u.mutation.RemovedTomesIDs(); len(nodes) > 0 && !_u.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -635,7 +635,7 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.TomesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TomesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -651,7 +651,7 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ruo.mutation.OwnerCleared() {
+	if _u.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -664,7 +664,7 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -680,10 +680,10 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Repository{config: ruo.config}
+	_node = &Repository{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, ruo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{repository.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -691,6 +691,6 @@ func (ruo *RepositoryUpdateOne) sqlSave(ctx context.Context) (_node *Repository,
 		}
 		return nil, err
 	}
-	ruo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

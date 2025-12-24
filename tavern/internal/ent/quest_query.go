@@ -41,44 +41,44 @@ type QuestQuery struct {
 }
 
 // Where adds a new predicate for the QuestQuery builder.
-func (qq *QuestQuery) Where(ps ...predicate.Quest) *QuestQuery {
-	qq.predicates = append(qq.predicates, ps...)
-	return qq
+func (_q *QuestQuery) Where(ps ...predicate.Quest) *QuestQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (qq *QuestQuery) Limit(limit int) *QuestQuery {
-	qq.ctx.Limit = &limit
-	return qq
+func (_q *QuestQuery) Limit(limit int) *QuestQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
 // Offset to start from.
-func (qq *QuestQuery) Offset(offset int) *QuestQuery {
-	qq.ctx.Offset = &offset
-	return qq
+func (_q *QuestQuery) Offset(offset int) *QuestQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (qq *QuestQuery) Unique(unique bool) *QuestQuery {
-	qq.ctx.Unique = &unique
-	return qq
+func (_q *QuestQuery) Unique(unique bool) *QuestQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (qq *QuestQuery) Order(o ...quest.OrderOption) *QuestQuery {
-	qq.order = append(qq.order, o...)
-	return qq
+func (_q *QuestQuery) Order(o ...quest.OrderOption) *QuestQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QueryTome chains the current query on the "tome" edge.
-func (qq *QuestQuery) QueryTome() *TomeQuery {
-	query := (&TomeClient{config: qq.config}).Query()
+func (_q *QuestQuery) QueryTome() *TomeQuery {
+	query := (&TomeClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := qq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := qq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -87,20 +87,20 @@ func (qq *QuestQuery) QueryTome() *TomeQuery {
 			sqlgraph.To(tome.Table, tome.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, quest.TomeTable, quest.TomeColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryBundle chains the current query on the "bundle" edge.
-func (qq *QuestQuery) QueryBundle() *FileQuery {
-	query := (&FileClient{config: qq.config}).Query()
+func (_q *QuestQuery) QueryBundle() *FileQuery {
+	query := (&FileClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := qq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := qq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -109,20 +109,20 @@ func (qq *QuestQuery) QueryBundle() *FileQuery {
 			sqlgraph.To(file.Table, file.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, quest.BundleTable, quest.BundleColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryTasks chains the current query on the "tasks" edge.
-func (qq *QuestQuery) QueryTasks() *TaskQuery {
-	query := (&TaskClient{config: qq.config}).Query()
+func (_q *QuestQuery) QueryTasks() *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := qq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := qq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -131,20 +131,20 @@ func (qq *QuestQuery) QueryTasks() *TaskQuery {
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, quest.TasksTable, quest.TasksColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryCreator chains the current query on the "creator" edge.
-func (qq *QuestQuery) QueryCreator() *UserQuery {
-	query := (&UserClient{config: qq.config}).Query()
+func (_q *QuestQuery) QueryCreator() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := qq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := qq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -153,7 +153,7 @@ func (qq *QuestQuery) QueryCreator() *UserQuery {
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, quest.CreatorTable, quest.CreatorColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -161,8 +161,8 @@ func (qq *QuestQuery) QueryCreator() *UserQuery {
 
 // First returns the first Quest entity from the query.
 // Returns a *NotFoundError when no Quest was found.
-func (qq *QuestQuery) First(ctx context.Context) (*Quest, error) {
-	nodes, err := qq.Limit(1).All(setContextOp(ctx, qq.ctx, ent.OpQueryFirst))
+func (_q *QuestQuery) First(ctx context.Context) (*Quest, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +173,8 @@ func (qq *QuestQuery) First(ctx context.Context) (*Quest, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (qq *QuestQuery) FirstX(ctx context.Context) *Quest {
-	node, err := qq.First(ctx)
+func (_q *QuestQuery) FirstX(ctx context.Context) *Quest {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -183,9 +183,9 @@ func (qq *QuestQuery) FirstX(ctx context.Context) *Quest {
 
 // FirstID returns the first Quest ID from the query.
 // Returns a *NotFoundError when no Quest ID was found.
-func (qq *QuestQuery) FirstID(ctx context.Context) (id int, err error) {
+func (_q *QuestQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = qq.Limit(1).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -196,8 +196,8 @@ func (qq *QuestQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (qq *QuestQuery) FirstIDX(ctx context.Context) int {
-	id, err := qq.FirstID(ctx)
+func (_q *QuestQuery) FirstIDX(ctx context.Context) int {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -207,8 +207,8 @@ func (qq *QuestQuery) FirstIDX(ctx context.Context) int {
 // Only returns a single Quest entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one Quest entity is found.
 // Returns a *NotFoundError when no Quest entities are found.
-func (qq *QuestQuery) Only(ctx context.Context) (*Quest, error) {
-	nodes, err := qq.Limit(2).All(setContextOp(ctx, qq.ctx, ent.OpQueryOnly))
+func (_q *QuestQuery) Only(ctx context.Context) (*Quest, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -223,8 +223,8 @@ func (qq *QuestQuery) Only(ctx context.Context) (*Quest, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (qq *QuestQuery) OnlyX(ctx context.Context) *Quest {
-	node, err := qq.Only(ctx)
+func (_q *QuestQuery) OnlyX(ctx context.Context) *Quest {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -234,9 +234,9 @@ func (qq *QuestQuery) OnlyX(ctx context.Context) *Quest {
 // OnlyID is like Only, but returns the only Quest ID in the query.
 // Returns a *NotSingularError when more than one Quest ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (qq *QuestQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *QuestQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = qq.Limit(2).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -251,8 +251,8 @@ func (qq *QuestQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (qq *QuestQuery) OnlyIDX(ctx context.Context) int {
-	id, err := qq.OnlyID(ctx)
+func (_q *QuestQuery) OnlyIDX(ctx context.Context) int {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -260,18 +260,18 @@ func (qq *QuestQuery) OnlyIDX(ctx context.Context) int {
 }
 
 // All executes the query and returns a list of Quests.
-func (qq *QuestQuery) All(ctx context.Context) ([]*Quest, error) {
-	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryAll)
-	if err := qq.prepareQuery(ctx); err != nil {
+func (_q *QuestQuery) All(ctx context.Context) ([]*Quest, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*Quest, *QuestQuery]()
-	return withInterceptors[[]*Quest](ctx, qq, qr, qq.inters)
+	return withInterceptors[[]*Quest](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (qq *QuestQuery) AllX(ctx context.Context) []*Quest {
-	nodes, err := qq.All(ctx)
+func (_q *QuestQuery) AllX(ctx context.Context) []*Quest {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -279,20 +279,20 @@ func (qq *QuestQuery) AllX(ctx context.Context) []*Quest {
 }
 
 // IDs executes the query and returns a list of Quest IDs.
-func (qq *QuestQuery) IDs(ctx context.Context) (ids []int, err error) {
-	if qq.ctx.Unique == nil && qq.path != nil {
-		qq.Unique(true)
+func (_q *QuestQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
 	}
-	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryIDs)
-	if err = qq.Select(quest.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(quest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (qq *QuestQuery) IDsX(ctx context.Context) []int {
-	ids, err := qq.IDs(ctx)
+func (_q *QuestQuery) IDsX(ctx context.Context) []int {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -300,17 +300,17 @@ func (qq *QuestQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (qq *QuestQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryCount)
-	if err := qq.prepareQuery(ctx); err != nil {
+func (_q *QuestQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, qq, querierCount[*QuestQuery](), qq.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*QuestQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (qq *QuestQuery) CountX(ctx context.Context) int {
-	count, err := qq.Count(ctx)
+func (_q *QuestQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -318,9 +318,9 @@ func (qq *QuestQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (qq *QuestQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryExist)
-	switch _, err := qq.FirstID(ctx); {
+func (_q *QuestQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -331,8 +331,8 @@ func (qq *QuestQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (qq *QuestQuery) ExistX(ctx context.Context) bool {
-	exist, err := qq.Exist(ctx)
+func (_q *QuestQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -341,68 +341,68 @@ func (qq *QuestQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the QuestQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (qq *QuestQuery) Clone() *QuestQuery {
-	if qq == nil {
+func (_q *QuestQuery) Clone() *QuestQuery {
+	if _q == nil {
 		return nil
 	}
 	return &QuestQuery{
-		config:      qq.config,
-		ctx:         qq.ctx.Clone(),
-		order:       append([]quest.OrderOption{}, qq.order...),
-		inters:      append([]Interceptor{}, qq.inters...),
-		predicates:  append([]predicate.Quest{}, qq.predicates...),
-		withTome:    qq.withTome.Clone(),
-		withBundle:  qq.withBundle.Clone(),
-		withTasks:   qq.withTasks.Clone(),
-		withCreator: qq.withCreator.Clone(),
+		config:      _q.config,
+		ctx:         _q.ctx.Clone(),
+		order:       append([]quest.OrderOption{}, _q.order...),
+		inters:      append([]Interceptor{}, _q.inters...),
+		predicates:  append([]predicate.Quest{}, _q.predicates...),
+		withTome:    _q.withTome.Clone(),
+		withBundle:  _q.withBundle.Clone(),
+		withTasks:   _q.withTasks.Clone(),
+		withCreator: _q.withCreator.Clone(),
 		// clone intermediate query.
-		sql:  qq.sql.Clone(),
-		path: qq.path,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithTome tells the query-builder to eager-load the nodes that are connected to
 // the "tome" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithTome(opts ...func(*TomeQuery)) *QuestQuery {
-	query := (&TomeClient{config: qq.config}).Query()
+func (_q *QuestQuery) WithTome(opts ...func(*TomeQuery)) *QuestQuery {
+	query := (&TomeClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	qq.withTome = query
-	return qq
+	_q.withTome = query
+	return _q
 }
 
 // WithBundle tells the query-builder to eager-load the nodes that are connected to
 // the "bundle" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithBundle(opts ...func(*FileQuery)) *QuestQuery {
-	query := (&FileClient{config: qq.config}).Query()
+func (_q *QuestQuery) WithBundle(opts ...func(*FileQuery)) *QuestQuery {
+	query := (&FileClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	qq.withBundle = query
-	return qq
+	_q.withBundle = query
+	return _q
 }
 
 // WithTasks tells the query-builder to eager-load the nodes that are connected to
 // the "tasks" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithTasks(opts ...func(*TaskQuery)) *QuestQuery {
-	query := (&TaskClient{config: qq.config}).Query()
+func (_q *QuestQuery) WithTasks(opts ...func(*TaskQuery)) *QuestQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	qq.withTasks = query
-	return qq
+	_q.withTasks = query
+	return _q
 }
 
 // WithCreator tells the query-builder to eager-load the nodes that are connected to
 // the "creator" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithCreator(opts ...func(*UserQuery)) *QuestQuery {
-	query := (&UserClient{config: qq.config}).Query()
+func (_q *QuestQuery) WithCreator(opts ...func(*UserQuery)) *QuestQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	qq.withCreator = query
-	return qq
+	_q.withCreator = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -419,10 +419,10 @@ func (qq *QuestQuery) WithCreator(opts ...func(*UserQuery)) *QuestQuery {
 //		GroupBy(quest.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (qq *QuestQuery) GroupBy(field string, fields ...string) *QuestGroupBy {
-	qq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &QuestGroupBy{build: qq}
-	grbuild.flds = &qq.ctx.Fields
+func (_q *QuestQuery) GroupBy(field string, fields ...string) *QuestGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &QuestGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = quest.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -440,58 +440,58 @@ func (qq *QuestQuery) GroupBy(field string, fields ...string) *QuestGroupBy {
 //	client.Quest.Query().
 //		Select(quest.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (qq *QuestQuery) Select(fields ...string) *QuestSelect {
-	qq.ctx.Fields = append(qq.ctx.Fields, fields...)
-	sbuild := &QuestSelect{QuestQuery: qq}
+func (_q *QuestQuery) Select(fields ...string) *QuestSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &QuestSelect{QuestQuery: _q}
 	sbuild.label = quest.Label
-	sbuild.flds, sbuild.scan = &qq.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a QuestSelect configured with the given aggregations.
-func (qq *QuestQuery) Aggregate(fns ...AggregateFunc) *QuestSelect {
-	return qq.Select().Aggregate(fns...)
+func (_q *QuestQuery) Aggregate(fns ...AggregateFunc) *QuestSelect {
+	return _q.Select().Aggregate(fns...)
 }
 
-func (qq *QuestQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range qq.inters {
+func (_q *QuestQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, qq); err != nil {
+			if err := trv.Traverse(ctx, _q); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range qq.ctx.Fields {
+	for _, f := range _q.ctx.Fields {
 		if !quest.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if qq.path != nil {
-		prev, err := qq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		qq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest, error) {
+func (_q *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest, error) {
 	var (
 		nodes       = []*Quest{}
-		withFKs     = qq.withFKs
-		_spec       = qq.querySpec()
+		withFKs     = _q.withFKs
+		_spec       = _q.querySpec()
 		loadedTypes = [4]bool{
-			qq.withTome != nil,
-			qq.withBundle != nil,
-			qq.withTasks != nil,
-			qq.withCreator != nil,
+			_q.withTome != nil,
+			_q.withBundle != nil,
+			_q.withTasks != nil,
+			_q.withCreator != nil,
 		}
 	)
-	if qq.withTome != nil || qq.withBundle != nil || qq.withCreator != nil {
+	if _q.withTome != nil || _q.withBundle != nil || _q.withCreator != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -501,64 +501,64 @@ func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest,
 		return (*Quest).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Quest{config: qq.config}
+		node := &Quest{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(qq.modifiers) > 0 {
-		_spec.Modifiers = qq.modifiers
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, qq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := qq.withTome; query != nil {
-		if err := qq.loadTome(ctx, query, nodes, nil,
+	if query := _q.withTome; query != nil {
+		if err := _q.loadTome(ctx, query, nodes, nil,
 			func(n *Quest, e *Tome) { n.Edges.Tome = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := qq.withBundle; query != nil {
-		if err := qq.loadBundle(ctx, query, nodes, nil,
+	if query := _q.withBundle; query != nil {
+		if err := _q.loadBundle(ctx, query, nodes, nil,
 			func(n *Quest, e *File) { n.Edges.Bundle = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := qq.withTasks; query != nil {
-		if err := qq.loadTasks(ctx, query, nodes,
+	if query := _q.withTasks; query != nil {
+		if err := _q.loadTasks(ctx, query, nodes,
 			func(n *Quest) { n.Edges.Tasks = []*Task{} },
 			func(n *Quest, e *Task) { n.Edges.Tasks = append(n.Edges.Tasks, e) }); err != nil {
 			return nil, err
 		}
 	}
-	if query := qq.withCreator; query != nil {
-		if err := qq.loadCreator(ctx, query, nodes, nil,
+	if query := _q.withCreator; query != nil {
+		if err := _q.loadCreator(ctx, query, nodes, nil,
 			func(n *Quest, e *User) { n.Edges.Creator = e }); err != nil {
 			return nil, err
 		}
 	}
-	for name, query := range qq.withNamedTasks {
-		if err := qq.loadTasks(ctx, query, nodes,
+	for name, query := range _q.withNamedTasks {
+		if err := _q.loadTasks(ctx, query, nodes,
 			func(n *Quest) { n.appendNamedTasks(name) },
 			func(n *Quest, e *Task) { n.appendNamedTasks(name, e) }); err != nil {
 			return nil, err
 		}
 	}
-	for i := range qq.loadTotal {
-		if err := qq.loadTotal[i](ctx, nodes); err != nil {
+	for i := range _q.loadTotal {
+		if err := _q.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (qq *QuestQuery) loadTome(ctx context.Context, query *TomeQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Tome)) error {
+func (_q *QuestQuery) loadTome(ctx context.Context, query *TomeQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Tome)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Quest)
 	for i := range nodes {
@@ -590,7 +590,7 @@ func (qq *QuestQuery) loadTome(ctx context.Context, query *TomeQuery, nodes []*Q
 	}
 	return nil
 }
-func (qq *QuestQuery) loadBundle(ctx context.Context, query *FileQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *File)) error {
+func (_q *QuestQuery) loadBundle(ctx context.Context, query *FileQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *File)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Quest)
 	for i := range nodes {
@@ -622,7 +622,7 @@ func (qq *QuestQuery) loadBundle(ctx context.Context, query *FileQuery, nodes []
 	}
 	return nil
 }
-func (qq *QuestQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Task)) error {
+func (_q *QuestQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Task)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Quest)
 	for i := range nodes {
@@ -653,7 +653,7 @@ func (qq *QuestQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []*
 	}
 	return nil
 }
-func (qq *QuestQuery) loadCreator(ctx context.Context, query *UserQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *User)) error {
+func (_q *QuestQuery) loadCreator(ctx context.Context, query *UserQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *User)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Quest)
 	for i := range nodes {
@@ -686,27 +686,27 @@ func (qq *QuestQuery) loadCreator(ctx context.Context, query *UserQuery, nodes [
 	return nil
 }
 
-func (qq *QuestQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := qq.querySpec()
-	if len(qq.modifiers) > 0 {
-		_spec.Modifiers = qq.modifiers
+func (_q *QuestQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
-	_spec.Node.Columns = qq.ctx.Fields
-	if len(qq.ctx.Fields) > 0 {
-		_spec.Unique = qq.ctx.Unique != nil && *qq.ctx.Unique
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, qq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (qq *QuestQuery) querySpec() *sqlgraph.QuerySpec {
+func (_q *QuestQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(quest.Table, quest.Columns, sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt))
-	_spec.From = qq.sql
-	if unique := qq.ctx.Unique; unique != nil {
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if qq.path != nil {
+	} else if _q.path != nil {
 		_spec.Unique = true
 	}
-	if fields := qq.ctx.Fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, quest.FieldID)
 		for i := range fields {
@@ -715,20 +715,20 @@ func (qq *QuestQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := qq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := qq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := qq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := qq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -738,33 +738,33 @@ func (qq *QuestQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (qq *QuestQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(qq.driver.Dialect())
+func (_q *QuestQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(quest.Table)
-	columns := qq.ctx.Fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = quest.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if qq.sql != nil {
-		selector = qq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if qq.ctx.Unique != nil && *qq.ctx.Unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range qq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range qq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := qq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := qq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -772,16 +772,16 @@ func (qq *QuestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // WithNamedTasks tells the query-builder to eager-load the nodes that are connected to the "tasks"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithNamedTasks(name string, opts ...func(*TaskQuery)) *QuestQuery {
-	query := (&TaskClient{config: qq.config}).Query()
+func (_q *QuestQuery) WithNamedTasks(name string, opts ...func(*TaskQuery)) *QuestQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	if qq.withNamedTasks == nil {
-		qq.withNamedTasks = make(map[string]*TaskQuery)
+	if _q.withNamedTasks == nil {
+		_q.withNamedTasks = make(map[string]*TaskQuery)
 	}
-	qq.withNamedTasks[name] = query
-	return qq
+	_q.withNamedTasks[name] = query
+	return _q
 }
 
 // QuestGroupBy is the group-by builder for Quest entities.
@@ -791,41 +791,41 @@ type QuestGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (qgb *QuestGroupBy) Aggregate(fns ...AggregateFunc) *QuestGroupBy {
-	qgb.fns = append(qgb.fns, fns...)
-	return qgb
+func (_g *QuestGroupBy) Aggregate(fns ...AggregateFunc) *QuestGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (qgb *QuestGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, qgb.build.ctx, ent.OpQueryGroupBy)
-	if err := qgb.build.prepareQuery(ctx); err != nil {
+func (_g *QuestGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*QuestQuery, *QuestGroupBy](ctx, qgb.build, qgb, qgb.build.inters, v)
+	return scanWithInterceptors[*QuestQuery, *QuestGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (qgb *QuestGroupBy) sqlScan(ctx context.Context, root *QuestQuery, v any) error {
+func (_g *QuestGroupBy) sqlScan(ctx context.Context, root *QuestQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(qgb.fns))
-	for _, fn := range qgb.fns {
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*qgb.flds)+len(qgb.fns))
-		for _, f := range *qgb.flds {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*qgb.flds...)...)
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := qgb.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -839,27 +839,27 @@ type QuestSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (qs *QuestSelect) Aggregate(fns ...AggregateFunc) *QuestSelect {
-	qs.fns = append(qs.fns, fns...)
-	return qs
+func (_s *QuestSelect) Aggregate(fns ...AggregateFunc) *QuestSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (qs *QuestSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, qs.ctx, ent.OpQuerySelect)
-	if err := qs.prepareQuery(ctx); err != nil {
+func (_s *QuestSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*QuestQuery, *QuestSelect](ctx, qs.QuestQuery, qs, qs.inters, v)
+	return scanWithInterceptors[*QuestQuery, *QuestSelect](ctx, _s.QuestQuery, _s, _s.inters, v)
 }
 
-func (qs *QuestSelect) sqlScan(ctx context.Context, root *QuestQuery, v any) error {
+func (_s *QuestSelect) sqlScan(ctx context.Context, root *QuestQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(qs.fns))
-	for _, fn := range qs.fns {
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*qs.selector.flds); {
+	switch n := len(*_s.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -867,7 +867,7 @@ func (qs *QuestSelect) sqlScan(ctx context.Context, root *QuestQuery, v any) err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := qs.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

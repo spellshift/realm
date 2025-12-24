@@ -26,241 +26,241 @@ type BeaconUpdate struct {
 }
 
 // Where appends a list predicates to the BeaconUpdate builder.
-func (bu *BeaconUpdate) Where(ps ...predicate.Beacon) *BeaconUpdate {
-	bu.mutation.Where(ps...)
-	return bu
+func (_u *BeaconUpdate) Where(ps ...predicate.Beacon) *BeaconUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (bu *BeaconUpdate) SetLastModifiedAt(t time.Time) *BeaconUpdate {
-	bu.mutation.SetLastModifiedAt(t)
-	return bu
+func (_u *BeaconUpdate) SetLastModifiedAt(v time.Time) *BeaconUpdate {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetPrincipal sets the "principal" field.
-func (bu *BeaconUpdate) SetPrincipal(s string) *BeaconUpdate {
-	bu.mutation.SetPrincipal(s)
-	return bu
+func (_u *BeaconUpdate) SetPrincipal(v string) *BeaconUpdate {
+	_u.mutation.SetPrincipal(v)
+	return _u
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillablePrincipal(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetPrincipal(*s)
+func (_u *BeaconUpdate) SetNillablePrincipal(v *string) *BeaconUpdate {
+	if v != nil {
+		_u.SetPrincipal(*v)
 	}
-	return bu
+	return _u
 }
 
 // ClearPrincipal clears the value of the "principal" field.
-func (bu *BeaconUpdate) ClearPrincipal() *BeaconUpdate {
-	bu.mutation.ClearPrincipal()
-	return bu
+func (_u *BeaconUpdate) ClearPrincipal() *BeaconUpdate {
+	_u.mutation.ClearPrincipal()
+	return _u
 }
 
 // SetIdentifier sets the "identifier" field.
-func (bu *BeaconUpdate) SetIdentifier(s string) *BeaconUpdate {
-	bu.mutation.SetIdentifier(s)
-	return bu
+func (_u *BeaconUpdate) SetIdentifier(v string) *BeaconUpdate {
+	_u.mutation.SetIdentifier(v)
+	return _u
 }
 
 // SetNillableIdentifier sets the "identifier" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableIdentifier(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetIdentifier(*s)
+func (_u *BeaconUpdate) SetNillableIdentifier(v *string) *BeaconUpdate {
+	if v != nil {
+		_u.SetIdentifier(*v)
 	}
-	return bu
+	return _u
 }
 
 // SetAgentIdentifier sets the "agent_identifier" field.
-func (bu *BeaconUpdate) SetAgentIdentifier(s string) *BeaconUpdate {
-	bu.mutation.SetAgentIdentifier(s)
-	return bu
+func (_u *BeaconUpdate) SetAgentIdentifier(v string) *BeaconUpdate {
+	_u.mutation.SetAgentIdentifier(v)
+	return _u
 }
 
 // SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableAgentIdentifier(s *string) *BeaconUpdate {
-	if s != nil {
-		bu.SetAgentIdentifier(*s)
+func (_u *BeaconUpdate) SetNillableAgentIdentifier(v *string) *BeaconUpdate {
+	if v != nil {
+		_u.SetAgentIdentifier(*v)
 	}
-	return bu
+	return _u
 }
 
 // ClearAgentIdentifier clears the value of the "agent_identifier" field.
-func (bu *BeaconUpdate) ClearAgentIdentifier() *BeaconUpdate {
-	bu.mutation.ClearAgentIdentifier()
-	return bu
+func (_u *BeaconUpdate) ClearAgentIdentifier() *BeaconUpdate {
+	_u.mutation.ClearAgentIdentifier()
+	return _u
 }
 
 // SetLastSeenAt sets the "last_seen_at" field.
-func (bu *BeaconUpdate) SetLastSeenAt(t time.Time) *BeaconUpdate {
-	bu.mutation.SetLastSeenAt(t)
-	return bu
+func (_u *BeaconUpdate) SetLastSeenAt(v time.Time) *BeaconUpdate {
+	_u.mutation.SetLastSeenAt(v)
+	return _u
 }
 
 // SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableLastSeenAt(t *time.Time) *BeaconUpdate {
-	if t != nil {
-		bu.SetLastSeenAt(*t)
+func (_u *BeaconUpdate) SetNillableLastSeenAt(v *time.Time) *BeaconUpdate {
+	if v != nil {
+		_u.SetLastSeenAt(*v)
 	}
-	return bu
+	return _u
 }
 
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
-func (bu *BeaconUpdate) ClearLastSeenAt() *BeaconUpdate {
-	bu.mutation.ClearLastSeenAt()
-	return bu
+func (_u *BeaconUpdate) ClearLastSeenAt() *BeaconUpdate {
+	_u.mutation.ClearLastSeenAt()
+	return _u
 }
 
 // SetNextSeenAt sets the "next_seen_at" field.
-func (bu *BeaconUpdate) SetNextSeenAt(t time.Time) *BeaconUpdate {
-	bu.mutation.SetNextSeenAt(t)
-	return bu
+func (_u *BeaconUpdate) SetNextSeenAt(v time.Time) *BeaconUpdate {
+	_u.mutation.SetNextSeenAt(v)
+	return _u
 }
 
 // SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableNextSeenAt(t *time.Time) *BeaconUpdate {
-	if t != nil {
-		bu.SetNextSeenAt(*t)
+func (_u *BeaconUpdate) SetNillableNextSeenAt(v *time.Time) *BeaconUpdate {
+	if v != nil {
+		_u.SetNextSeenAt(*v)
 	}
-	return bu
+	return _u
 }
 
 // ClearNextSeenAt clears the value of the "next_seen_at" field.
-func (bu *BeaconUpdate) ClearNextSeenAt() *BeaconUpdate {
-	bu.mutation.ClearNextSeenAt()
-	return bu
+func (_u *BeaconUpdate) ClearNextSeenAt() *BeaconUpdate {
+	_u.mutation.ClearNextSeenAt()
+	return _u
 }
 
 // SetInterval sets the "interval" field.
-func (bu *BeaconUpdate) SetInterval(u uint64) *BeaconUpdate {
-	bu.mutation.ResetInterval()
-	bu.mutation.SetInterval(u)
-	return bu
+func (_u *BeaconUpdate) SetInterval(v uint64) *BeaconUpdate {
+	_u.mutation.ResetInterval()
+	_u.mutation.SetInterval(v)
+	return _u
 }
 
 // SetNillableInterval sets the "interval" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableInterval(u *uint64) *BeaconUpdate {
-	if u != nil {
-		bu.SetInterval(*u)
+func (_u *BeaconUpdate) SetNillableInterval(v *uint64) *BeaconUpdate {
+	if v != nil {
+		_u.SetInterval(*v)
 	}
-	return bu
+	return _u
 }
 
-// AddInterval adds u to the "interval" field.
-func (bu *BeaconUpdate) AddInterval(u int64) *BeaconUpdate {
-	bu.mutation.AddInterval(u)
-	return bu
+// AddInterval adds value to the "interval" field.
+func (_u *BeaconUpdate) AddInterval(v int64) *BeaconUpdate {
+	_u.mutation.AddInterval(v)
+	return _u
 }
 
 // ClearInterval clears the value of the "interval" field.
-func (bu *BeaconUpdate) ClearInterval() *BeaconUpdate {
-	bu.mutation.ClearInterval()
-	return bu
+func (_u *BeaconUpdate) ClearInterval() *BeaconUpdate {
+	_u.mutation.ClearInterval()
+	return _u
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (bu *BeaconUpdate) SetHostID(id int) *BeaconUpdate {
-	bu.mutation.SetHostID(id)
-	return bu
+func (_u *BeaconUpdate) SetHostID(id int) *BeaconUpdate {
+	_u.mutation.SetHostID(id)
+	return _u
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (bu *BeaconUpdate) SetHost(h *Host) *BeaconUpdate {
-	return bu.SetHostID(h.ID)
+func (_u *BeaconUpdate) SetHost(v *Host) *BeaconUpdate {
+	return _u.SetHostID(v.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
-func (bu *BeaconUpdate) AddTaskIDs(ids ...int) *BeaconUpdate {
-	bu.mutation.AddTaskIDs(ids...)
-	return bu
+func (_u *BeaconUpdate) AddTaskIDs(ids ...int) *BeaconUpdate {
+	_u.mutation.AddTaskIDs(ids...)
+	return _u
 }
 
 // AddTasks adds the "tasks" edges to the Task entity.
-func (bu *BeaconUpdate) AddTasks(t ...*Task) *BeaconUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *BeaconUpdate) AddTasks(v ...*Task) *BeaconUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return bu.AddTaskIDs(ids...)
+	return _u.AddTaskIDs(ids...)
 }
 
 // AddShellIDs adds the "shells" edge to the Shell entity by IDs.
-func (bu *BeaconUpdate) AddShellIDs(ids ...int) *BeaconUpdate {
-	bu.mutation.AddShellIDs(ids...)
-	return bu
+func (_u *BeaconUpdate) AddShellIDs(ids ...int) *BeaconUpdate {
+	_u.mutation.AddShellIDs(ids...)
+	return _u
 }
 
 // AddShells adds the "shells" edges to the Shell entity.
-func (bu *BeaconUpdate) AddShells(s ...*Shell) *BeaconUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *BeaconUpdate) AddShells(v ...*Shell) *BeaconUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return bu.AddShellIDs(ids...)
+	return _u.AddShellIDs(ids...)
 }
 
 // Mutation returns the BeaconMutation object of the builder.
-func (bu *BeaconUpdate) Mutation() *BeaconMutation {
-	return bu.mutation
+func (_u *BeaconUpdate) Mutation() *BeaconMutation {
+	return _u.mutation
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (bu *BeaconUpdate) ClearHost() *BeaconUpdate {
-	bu.mutation.ClearHost()
-	return bu
+func (_u *BeaconUpdate) ClearHost() *BeaconUpdate {
+	_u.mutation.ClearHost()
+	return _u
 }
 
 // ClearTasks clears all "tasks" edges to the Task entity.
-func (bu *BeaconUpdate) ClearTasks() *BeaconUpdate {
-	bu.mutation.ClearTasks()
-	return bu
+func (_u *BeaconUpdate) ClearTasks() *BeaconUpdate {
+	_u.mutation.ClearTasks()
+	return _u
 }
 
 // RemoveTaskIDs removes the "tasks" edge to Task entities by IDs.
-func (bu *BeaconUpdate) RemoveTaskIDs(ids ...int) *BeaconUpdate {
-	bu.mutation.RemoveTaskIDs(ids...)
-	return bu
+func (_u *BeaconUpdate) RemoveTaskIDs(ids ...int) *BeaconUpdate {
+	_u.mutation.RemoveTaskIDs(ids...)
+	return _u
 }
 
 // RemoveTasks removes "tasks" edges to Task entities.
-func (bu *BeaconUpdate) RemoveTasks(t ...*Task) *BeaconUpdate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *BeaconUpdate) RemoveTasks(v ...*Task) *BeaconUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return bu.RemoveTaskIDs(ids...)
+	return _u.RemoveTaskIDs(ids...)
 }
 
 // ClearShells clears all "shells" edges to the Shell entity.
-func (bu *BeaconUpdate) ClearShells() *BeaconUpdate {
-	bu.mutation.ClearShells()
-	return bu
+func (_u *BeaconUpdate) ClearShells() *BeaconUpdate {
+	_u.mutation.ClearShells()
+	return _u
 }
 
 // RemoveShellIDs removes the "shells" edge to Shell entities by IDs.
-func (bu *BeaconUpdate) RemoveShellIDs(ids ...int) *BeaconUpdate {
-	bu.mutation.RemoveShellIDs(ids...)
-	return bu
+func (_u *BeaconUpdate) RemoveShellIDs(ids ...int) *BeaconUpdate {
+	_u.mutation.RemoveShellIDs(ids...)
+	return _u
 }
 
 // RemoveShells removes "shells" edges to Shell entities.
-func (bu *BeaconUpdate) RemoveShells(s ...*Shell) *BeaconUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *BeaconUpdate) RemoveShells(v ...*Shell) *BeaconUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return bu.RemoveShellIDs(ids...)
+	return _u.RemoveShellIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (bu *BeaconUpdate) Save(ctx context.Context) (int, error) {
-	bu.defaults()
-	return withHooks(ctx, bu.sqlSave, bu.mutation, bu.hooks)
+func (_u *BeaconUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (bu *BeaconUpdate) SaveX(ctx context.Context) int {
-	affected, err := bu.Save(ctx)
+func (_u *BeaconUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -268,101 +268,101 @@ func (bu *BeaconUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (bu *BeaconUpdate) Exec(ctx context.Context) error {
-	_, err := bu.Save(ctx)
+func (_u *BeaconUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bu *BeaconUpdate) ExecX(ctx context.Context) {
-	if err := bu.Exec(ctx); err != nil {
+func (_u *BeaconUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (bu *BeaconUpdate) defaults() {
-	if _, ok := bu.mutation.LastModifiedAt(); !ok {
+func (_u *BeaconUpdate) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := beacon.UpdateDefaultLastModifiedAt()
-		bu.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (bu *BeaconUpdate) check() error {
-	if v, ok := bu.mutation.Principal(); ok {
+func (_u *BeaconUpdate) check() error {
+	if v, ok := _u.mutation.Principal(); ok {
 		if err := beacon.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
 		}
 	}
-	if v, ok := bu.mutation.Identifier(); ok {
+	if v, ok := _u.mutation.Identifier(); ok {
 		if err := beacon.IdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.identifier": %w`, err)}
 		}
 	}
-	if v, ok := bu.mutation.AgentIdentifier(); ok {
+	if v, ok := _u.mutation.AgentIdentifier(); ok {
 		if err := beacon.AgentIdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if bu.mutation.HostCleared() && len(bu.mutation.HostIDs()) > 0 {
+	if _u.mutation.HostCleared() && len(_u.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
 }
 
-func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := bu.check(); err != nil {
-		return n, err
+func (_u *BeaconUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(beacon.Table, beacon.Columns, sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt))
-	if ps := bu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := bu.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(beacon.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := bu.mutation.Principal(); ok {
+	if value, ok := _u.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)
 	}
-	if bu.mutation.PrincipalCleared() {
+	if _u.mutation.PrincipalCleared() {
 		_spec.ClearField(beacon.FieldPrincipal, field.TypeString)
 	}
-	if value, ok := bu.mutation.Identifier(); ok {
+	if value, ok := _u.mutation.Identifier(); ok {
 		_spec.SetField(beacon.FieldIdentifier, field.TypeString, value)
 	}
-	if value, ok := bu.mutation.AgentIdentifier(); ok {
+	if value, ok := _u.mutation.AgentIdentifier(); ok {
 		_spec.SetField(beacon.FieldAgentIdentifier, field.TypeString, value)
 	}
-	if bu.mutation.AgentIdentifierCleared() {
+	if _u.mutation.AgentIdentifierCleared() {
 		_spec.ClearField(beacon.FieldAgentIdentifier, field.TypeString)
 	}
-	if value, ok := bu.mutation.LastSeenAt(); ok {
+	if value, ok := _u.mutation.LastSeenAt(); ok {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 	}
-	if bu.mutation.LastSeenAtCleared() {
+	if _u.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
 	}
-	if value, ok := bu.mutation.NextSeenAt(); ok {
+	if value, ok := _u.mutation.NextSeenAt(); ok {
 		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
 	}
-	if bu.mutation.NextSeenAtCleared() {
+	if _u.mutation.NextSeenAtCleared() {
 		_spec.ClearField(beacon.FieldNextSeenAt, field.TypeTime)
 	}
-	if value, ok := bu.mutation.Interval(); ok {
+	if value, ok := _u.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
 	}
-	if value, ok := bu.mutation.AddedInterval(); ok {
+	if value, ok := _u.mutation.AddedInterval(); ok {
 		_spec.AddField(beacon.FieldInterval, field.TypeUint64, value)
 	}
-	if bu.mutation.IntervalCleared() {
+	if _u.mutation.IntervalCleared() {
 		_spec.ClearField(beacon.FieldInterval, field.TypeUint64)
 	}
-	if bu.mutation.HostCleared() {
+	if _u.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -375,7 +375,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -391,7 +391,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if bu.mutation.TasksCleared() {
+	if _u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -404,7 +404,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.RemovedTasksIDs(); len(nodes) > 0 && !bu.mutation.TasksCleared() {
+	if nodes := _u.mutation.RemovedTasksIDs(); len(nodes) > 0 && !_u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -420,7 +420,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.TasksIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -436,7 +436,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if bu.mutation.ShellsCleared() {
+	if _u.mutation.ShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -449,7 +449,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.RemovedShellsIDs(); len(nodes) > 0 && !bu.mutation.ShellsCleared() {
+	if nodes := _u.mutation.RemovedShellsIDs(); len(nodes) > 0 && !_u.mutation.ShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -465,7 +465,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.ShellsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ShellsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -481,7 +481,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{beacon.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -489,8 +489,8 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	bu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // BeaconUpdateOne is the builder for updating a single Beacon entity.
@@ -502,248 +502,248 @@ type BeaconUpdateOne struct {
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (buo *BeaconUpdateOne) SetLastModifiedAt(t time.Time) *BeaconUpdateOne {
-	buo.mutation.SetLastModifiedAt(t)
-	return buo
+func (_u *BeaconUpdateOne) SetLastModifiedAt(v time.Time) *BeaconUpdateOne {
+	_u.mutation.SetLastModifiedAt(v)
+	return _u
 }
 
 // SetPrincipal sets the "principal" field.
-func (buo *BeaconUpdateOne) SetPrincipal(s string) *BeaconUpdateOne {
-	buo.mutation.SetPrincipal(s)
-	return buo
+func (_u *BeaconUpdateOne) SetPrincipal(v string) *BeaconUpdateOne {
+	_u.mutation.SetPrincipal(v)
+	return _u
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillablePrincipal(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetPrincipal(*s)
+func (_u *BeaconUpdateOne) SetNillablePrincipal(v *string) *BeaconUpdateOne {
+	if v != nil {
+		_u.SetPrincipal(*v)
 	}
-	return buo
+	return _u
 }
 
 // ClearPrincipal clears the value of the "principal" field.
-func (buo *BeaconUpdateOne) ClearPrincipal() *BeaconUpdateOne {
-	buo.mutation.ClearPrincipal()
-	return buo
+func (_u *BeaconUpdateOne) ClearPrincipal() *BeaconUpdateOne {
+	_u.mutation.ClearPrincipal()
+	return _u
 }
 
 // SetIdentifier sets the "identifier" field.
-func (buo *BeaconUpdateOne) SetIdentifier(s string) *BeaconUpdateOne {
-	buo.mutation.SetIdentifier(s)
-	return buo
+func (_u *BeaconUpdateOne) SetIdentifier(v string) *BeaconUpdateOne {
+	_u.mutation.SetIdentifier(v)
+	return _u
 }
 
 // SetNillableIdentifier sets the "identifier" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableIdentifier(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetIdentifier(*s)
+func (_u *BeaconUpdateOne) SetNillableIdentifier(v *string) *BeaconUpdateOne {
+	if v != nil {
+		_u.SetIdentifier(*v)
 	}
-	return buo
+	return _u
 }
 
 // SetAgentIdentifier sets the "agent_identifier" field.
-func (buo *BeaconUpdateOne) SetAgentIdentifier(s string) *BeaconUpdateOne {
-	buo.mutation.SetAgentIdentifier(s)
-	return buo
+func (_u *BeaconUpdateOne) SetAgentIdentifier(v string) *BeaconUpdateOne {
+	_u.mutation.SetAgentIdentifier(v)
+	return _u
 }
 
 // SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableAgentIdentifier(s *string) *BeaconUpdateOne {
-	if s != nil {
-		buo.SetAgentIdentifier(*s)
+func (_u *BeaconUpdateOne) SetNillableAgentIdentifier(v *string) *BeaconUpdateOne {
+	if v != nil {
+		_u.SetAgentIdentifier(*v)
 	}
-	return buo
+	return _u
 }
 
 // ClearAgentIdentifier clears the value of the "agent_identifier" field.
-func (buo *BeaconUpdateOne) ClearAgentIdentifier() *BeaconUpdateOne {
-	buo.mutation.ClearAgentIdentifier()
-	return buo
+func (_u *BeaconUpdateOne) ClearAgentIdentifier() *BeaconUpdateOne {
+	_u.mutation.ClearAgentIdentifier()
+	return _u
 }
 
 // SetLastSeenAt sets the "last_seen_at" field.
-func (buo *BeaconUpdateOne) SetLastSeenAt(t time.Time) *BeaconUpdateOne {
-	buo.mutation.SetLastSeenAt(t)
-	return buo
+func (_u *BeaconUpdateOne) SetLastSeenAt(v time.Time) *BeaconUpdateOne {
+	_u.mutation.SetLastSeenAt(v)
+	return _u
 }
 
 // SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableLastSeenAt(t *time.Time) *BeaconUpdateOne {
-	if t != nil {
-		buo.SetLastSeenAt(*t)
+func (_u *BeaconUpdateOne) SetNillableLastSeenAt(v *time.Time) *BeaconUpdateOne {
+	if v != nil {
+		_u.SetLastSeenAt(*v)
 	}
-	return buo
+	return _u
 }
 
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
-func (buo *BeaconUpdateOne) ClearLastSeenAt() *BeaconUpdateOne {
-	buo.mutation.ClearLastSeenAt()
-	return buo
+func (_u *BeaconUpdateOne) ClearLastSeenAt() *BeaconUpdateOne {
+	_u.mutation.ClearLastSeenAt()
+	return _u
 }
 
 // SetNextSeenAt sets the "next_seen_at" field.
-func (buo *BeaconUpdateOne) SetNextSeenAt(t time.Time) *BeaconUpdateOne {
-	buo.mutation.SetNextSeenAt(t)
-	return buo
+func (_u *BeaconUpdateOne) SetNextSeenAt(v time.Time) *BeaconUpdateOne {
+	_u.mutation.SetNextSeenAt(v)
+	return _u
 }
 
 // SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableNextSeenAt(t *time.Time) *BeaconUpdateOne {
-	if t != nil {
-		buo.SetNextSeenAt(*t)
+func (_u *BeaconUpdateOne) SetNillableNextSeenAt(v *time.Time) *BeaconUpdateOne {
+	if v != nil {
+		_u.SetNextSeenAt(*v)
 	}
-	return buo
+	return _u
 }
 
 // ClearNextSeenAt clears the value of the "next_seen_at" field.
-func (buo *BeaconUpdateOne) ClearNextSeenAt() *BeaconUpdateOne {
-	buo.mutation.ClearNextSeenAt()
-	return buo
+func (_u *BeaconUpdateOne) ClearNextSeenAt() *BeaconUpdateOne {
+	_u.mutation.ClearNextSeenAt()
+	return _u
 }
 
 // SetInterval sets the "interval" field.
-func (buo *BeaconUpdateOne) SetInterval(u uint64) *BeaconUpdateOne {
-	buo.mutation.ResetInterval()
-	buo.mutation.SetInterval(u)
-	return buo
+func (_u *BeaconUpdateOne) SetInterval(v uint64) *BeaconUpdateOne {
+	_u.mutation.ResetInterval()
+	_u.mutation.SetInterval(v)
+	return _u
 }
 
 // SetNillableInterval sets the "interval" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableInterval(u *uint64) *BeaconUpdateOne {
-	if u != nil {
-		buo.SetInterval(*u)
+func (_u *BeaconUpdateOne) SetNillableInterval(v *uint64) *BeaconUpdateOne {
+	if v != nil {
+		_u.SetInterval(*v)
 	}
-	return buo
+	return _u
 }
 
-// AddInterval adds u to the "interval" field.
-func (buo *BeaconUpdateOne) AddInterval(u int64) *BeaconUpdateOne {
-	buo.mutation.AddInterval(u)
-	return buo
+// AddInterval adds value to the "interval" field.
+func (_u *BeaconUpdateOne) AddInterval(v int64) *BeaconUpdateOne {
+	_u.mutation.AddInterval(v)
+	return _u
 }
 
 // ClearInterval clears the value of the "interval" field.
-func (buo *BeaconUpdateOne) ClearInterval() *BeaconUpdateOne {
-	buo.mutation.ClearInterval()
-	return buo
+func (_u *BeaconUpdateOne) ClearInterval() *BeaconUpdateOne {
+	_u.mutation.ClearInterval()
+	return _u
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (buo *BeaconUpdateOne) SetHostID(id int) *BeaconUpdateOne {
-	buo.mutation.SetHostID(id)
-	return buo
+func (_u *BeaconUpdateOne) SetHostID(id int) *BeaconUpdateOne {
+	_u.mutation.SetHostID(id)
+	return _u
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (buo *BeaconUpdateOne) SetHost(h *Host) *BeaconUpdateOne {
-	return buo.SetHostID(h.ID)
+func (_u *BeaconUpdateOne) SetHost(v *Host) *BeaconUpdateOne {
+	return _u.SetHostID(v.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
-func (buo *BeaconUpdateOne) AddTaskIDs(ids ...int) *BeaconUpdateOne {
-	buo.mutation.AddTaskIDs(ids...)
-	return buo
+func (_u *BeaconUpdateOne) AddTaskIDs(ids ...int) *BeaconUpdateOne {
+	_u.mutation.AddTaskIDs(ids...)
+	return _u
 }
 
 // AddTasks adds the "tasks" edges to the Task entity.
-func (buo *BeaconUpdateOne) AddTasks(t ...*Task) *BeaconUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *BeaconUpdateOne) AddTasks(v ...*Task) *BeaconUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return buo.AddTaskIDs(ids...)
+	return _u.AddTaskIDs(ids...)
 }
 
 // AddShellIDs adds the "shells" edge to the Shell entity by IDs.
-func (buo *BeaconUpdateOne) AddShellIDs(ids ...int) *BeaconUpdateOne {
-	buo.mutation.AddShellIDs(ids...)
-	return buo
+func (_u *BeaconUpdateOne) AddShellIDs(ids ...int) *BeaconUpdateOne {
+	_u.mutation.AddShellIDs(ids...)
+	return _u
 }
 
 // AddShells adds the "shells" edges to the Shell entity.
-func (buo *BeaconUpdateOne) AddShells(s ...*Shell) *BeaconUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *BeaconUpdateOne) AddShells(v ...*Shell) *BeaconUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return buo.AddShellIDs(ids...)
+	return _u.AddShellIDs(ids...)
 }
 
 // Mutation returns the BeaconMutation object of the builder.
-func (buo *BeaconUpdateOne) Mutation() *BeaconMutation {
-	return buo.mutation
+func (_u *BeaconUpdateOne) Mutation() *BeaconMutation {
+	return _u.mutation
 }
 
 // ClearHost clears the "host" edge to the Host entity.
-func (buo *BeaconUpdateOne) ClearHost() *BeaconUpdateOne {
-	buo.mutation.ClearHost()
-	return buo
+func (_u *BeaconUpdateOne) ClearHost() *BeaconUpdateOne {
+	_u.mutation.ClearHost()
+	return _u
 }
 
 // ClearTasks clears all "tasks" edges to the Task entity.
-func (buo *BeaconUpdateOne) ClearTasks() *BeaconUpdateOne {
-	buo.mutation.ClearTasks()
-	return buo
+func (_u *BeaconUpdateOne) ClearTasks() *BeaconUpdateOne {
+	_u.mutation.ClearTasks()
+	return _u
 }
 
 // RemoveTaskIDs removes the "tasks" edge to Task entities by IDs.
-func (buo *BeaconUpdateOne) RemoveTaskIDs(ids ...int) *BeaconUpdateOne {
-	buo.mutation.RemoveTaskIDs(ids...)
-	return buo
+func (_u *BeaconUpdateOne) RemoveTaskIDs(ids ...int) *BeaconUpdateOne {
+	_u.mutation.RemoveTaskIDs(ids...)
+	return _u
 }
 
 // RemoveTasks removes "tasks" edges to Task entities.
-func (buo *BeaconUpdateOne) RemoveTasks(t ...*Task) *BeaconUpdateOne {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_u *BeaconUpdateOne) RemoveTasks(v ...*Task) *BeaconUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return buo.RemoveTaskIDs(ids...)
+	return _u.RemoveTaskIDs(ids...)
 }
 
 // ClearShells clears all "shells" edges to the Shell entity.
-func (buo *BeaconUpdateOne) ClearShells() *BeaconUpdateOne {
-	buo.mutation.ClearShells()
-	return buo
+func (_u *BeaconUpdateOne) ClearShells() *BeaconUpdateOne {
+	_u.mutation.ClearShells()
+	return _u
 }
 
 // RemoveShellIDs removes the "shells" edge to Shell entities by IDs.
-func (buo *BeaconUpdateOne) RemoveShellIDs(ids ...int) *BeaconUpdateOne {
-	buo.mutation.RemoveShellIDs(ids...)
-	return buo
+func (_u *BeaconUpdateOne) RemoveShellIDs(ids ...int) *BeaconUpdateOne {
+	_u.mutation.RemoveShellIDs(ids...)
+	return _u
 }
 
 // RemoveShells removes "shells" edges to Shell entities.
-func (buo *BeaconUpdateOne) RemoveShells(s ...*Shell) *BeaconUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *BeaconUpdateOne) RemoveShells(v ...*Shell) *BeaconUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return buo.RemoveShellIDs(ids...)
+	return _u.RemoveShellIDs(ids...)
 }
 
 // Where appends a list predicates to the BeaconUpdate builder.
-func (buo *BeaconUpdateOne) Where(ps ...predicate.Beacon) *BeaconUpdateOne {
-	buo.mutation.Where(ps...)
-	return buo
+func (_u *BeaconUpdateOne) Where(ps ...predicate.Beacon) *BeaconUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (buo *BeaconUpdateOne) Select(field string, fields ...string) *BeaconUpdateOne {
-	buo.fields = append([]string{field}, fields...)
-	return buo
+func (_u *BeaconUpdateOne) Select(field string, fields ...string) *BeaconUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Beacon entity.
-func (buo *BeaconUpdateOne) Save(ctx context.Context) (*Beacon, error) {
-	buo.defaults()
-	return withHooks(ctx, buo.sqlSave, buo.mutation, buo.hooks)
+func (_u *BeaconUpdateOne) Save(ctx context.Context) (*Beacon, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (buo *BeaconUpdateOne) SaveX(ctx context.Context) *Beacon {
-	node, err := buo.Save(ctx)
+func (_u *BeaconUpdateOne) SaveX(ctx context.Context) *Beacon {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -751,60 +751,60 @@ func (buo *BeaconUpdateOne) SaveX(ctx context.Context) *Beacon {
 }
 
 // Exec executes the query on the entity.
-func (buo *BeaconUpdateOne) Exec(ctx context.Context) error {
-	_, err := buo.Save(ctx)
+func (_u *BeaconUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (buo *BeaconUpdateOne) ExecX(ctx context.Context) {
-	if err := buo.Exec(ctx); err != nil {
+func (_u *BeaconUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (buo *BeaconUpdateOne) defaults() {
-	if _, ok := buo.mutation.LastModifiedAt(); !ok {
+func (_u *BeaconUpdateOne) defaults() {
+	if _, ok := _u.mutation.LastModifiedAt(); !ok {
 		v := beacon.UpdateDefaultLastModifiedAt()
-		buo.mutation.SetLastModifiedAt(v)
+		_u.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (buo *BeaconUpdateOne) check() error {
-	if v, ok := buo.mutation.Principal(); ok {
+func (_u *BeaconUpdateOne) check() error {
+	if v, ok := _u.mutation.Principal(); ok {
 		if err := beacon.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
 		}
 	}
-	if v, ok := buo.mutation.Identifier(); ok {
+	if v, ok := _u.mutation.Identifier(); ok {
 		if err := beacon.IdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.identifier": %w`, err)}
 		}
 	}
-	if v, ok := buo.mutation.AgentIdentifier(); ok {
+	if v, ok := _u.mutation.AgentIdentifier(); ok {
 		if err := beacon.AgentIdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if buo.mutation.HostCleared() && len(buo.mutation.HostIDs()) > 0 {
+	if _u.mutation.HostCleared() && len(_u.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Beacon.host"`)
 	}
 	return nil
 }
 
-func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err error) {
-	if err := buo.check(); err != nil {
+func (_u *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(beacon.Table, beacon.Columns, sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt))
-	id, ok := buo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Beacon.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := buo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, beacon.FieldID)
 		for _, f := range fields {
@@ -816,53 +816,53 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			}
 		}
 	}
-	if ps := buo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := buo.mutation.LastModifiedAt(); ok {
+	if value, ok := _u.mutation.LastModifiedAt(); ok {
 		_spec.SetField(beacon.FieldLastModifiedAt, field.TypeTime, value)
 	}
-	if value, ok := buo.mutation.Principal(); ok {
+	if value, ok := _u.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)
 	}
-	if buo.mutation.PrincipalCleared() {
+	if _u.mutation.PrincipalCleared() {
 		_spec.ClearField(beacon.FieldPrincipal, field.TypeString)
 	}
-	if value, ok := buo.mutation.Identifier(); ok {
+	if value, ok := _u.mutation.Identifier(); ok {
 		_spec.SetField(beacon.FieldIdentifier, field.TypeString, value)
 	}
-	if value, ok := buo.mutation.AgentIdentifier(); ok {
+	if value, ok := _u.mutation.AgentIdentifier(); ok {
 		_spec.SetField(beacon.FieldAgentIdentifier, field.TypeString, value)
 	}
-	if buo.mutation.AgentIdentifierCleared() {
+	if _u.mutation.AgentIdentifierCleared() {
 		_spec.ClearField(beacon.FieldAgentIdentifier, field.TypeString)
 	}
-	if value, ok := buo.mutation.LastSeenAt(); ok {
+	if value, ok := _u.mutation.LastSeenAt(); ok {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 	}
-	if buo.mutation.LastSeenAtCleared() {
+	if _u.mutation.LastSeenAtCleared() {
 		_spec.ClearField(beacon.FieldLastSeenAt, field.TypeTime)
 	}
-	if value, ok := buo.mutation.NextSeenAt(); ok {
+	if value, ok := _u.mutation.NextSeenAt(); ok {
 		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
 	}
-	if buo.mutation.NextSeenAtCleared() {
+	if _u.mutation.NextSeenAtCleared() {
 		_spec.ClearField(beacon.FieldNextSeenAt, field.TypeTime)
 	}
-	if value, ok := buo.mutation.Interval(); ok {
+	if value, ok := _u.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
 	}
-	if value, ok := buo.mutation.AddedInterval(); ok {
+	if value, ok := _u.mutation.AddedInterval(); ok {
 		_spec.AddField(beacon.FieldInterval, field.TypeUint64, value)
 	}
-	if buo.mutation.IntervalCleared() {
+	if _u.mutation.IntervalCleared() {
 		_spec.ClearField(beacon.FieldInterval, field.TypeUint64)
 	}
-	if buo.mutation.HostCleared() {
+	if _u.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -875,7 +875,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -891,7 +891,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if buo.mutation.TasksCleared() {
+	if _u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -904,7 +904,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.RemovedTasksIDs(); len(nodes) > 0 && !buo.mutation.TasksCleared() {
+	if nodes := _u.mutation.RemovedTasksIDs(); len(nodes) > 0 && !_u.mutation.TasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -920,7 +920,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.TasksIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -936,7 +936,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if buo.mutation.ShellsCleared() {
+	if _u.mutation.ShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -949,7 +949,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.RemovedShellsIDs(); len(nodes) > 0 && !buo.mutation.ShellsCleared() {
+	if nodes := _u.mutation.RemovedShellsIDs(); len(nodes) > 0 && !_u.mutation.ShellsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -965,7 +965,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.ShellsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ShellsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -981,10 +981,10 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Beacon{config: buo.config}
+	_node = &Beacon{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, buo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{beacon.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -992,6 +992,6 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 		}
 		return nil, err
 	}
-	buo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

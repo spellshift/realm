@@ -35,44 +35,44 @@ type HostCredentialQuery struct {
 }
 
 // Where adds a new predicate for the HostCredentialQuery builder.
-func (hcq *HostCredentialQuery) Where(ps ...predicate.HostCredential) *HostCredentialQuery {
-	hcq.predicates = append(hcq.predicates, ps...)
-	return hcq
+func (_q *HostCredentialQuery) Where(ps ...predicate.HostCredential) *HostCredentialQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (hcq *HostCredentialQuery) Limit(limit int) *HostCredentialQuery {
-	hcq.ctx.Limit = &limit
-	return hcq
+func (_q *HostCredentialQuery) Limit(limit int) *HostCredentialQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
 // Offset to start from.
-func (hcq *HostCredentialQuery) Offset(offset int) *HostCredentialQuery {
-	hcq.ctx.Offset = &offset
-	return hcq
+func (_q *HostCredentialQuery) Offset(offset int) *HostCredentialQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (hcq *HostCredentialQuery) Unique(unique bool) *HostCredentialQuery {
-	hcq.ctx.Unique = &unique
-	return hcq
+func (_q *HostCredentialQuery) Unique(unique bool) *HostCredentialQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (hcq *HostCredentialQuery) Order(o ...hostcredential.OrderOption) *HostCredentialQuery {
-	hcq.order = append(hcq.order, o...)
-	return hcq
+func (_q *HostCredentialQuery) Order(o ...hostcredential.OrderOption) *HostCredentialQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QueryHost chains the current query on the "host" edge.
-func (hcq *HostCredentialQuery) QueryHost() *HostQuery {
-	query := (&HostClient{config: hcq.config}).Query()
+func (_q *HostCredentialQuery) QueryHost() *HostQuery {
+	query := (&HostClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := hcq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := hcq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -81,20 +81,20 @@ func (hcq *HostCredentialQuery) QueryHost() *HostQuery {
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, hostcredential.HostTable, hostcredential.HostColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryTask chains the current query on the "task" edge.
-func (hcq *HostCredentialQuery) QueryTask() *TaskQuery {
-	query := (&TaskClient{config: hcq.config}).Query()
+func (_q *HostCredentialQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := hcq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := hcq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (hcq *HostCredentialQuery) QueryTask() *TaskQuery {
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.TaskTable, hostcredential.TaskColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -111,8 +111,8 @@ func (hcq *HostCredentialQuery) QueryTask() *TaskQuery {
 
 // First returns the first HostCredential entity from the query.
 // Returns a *NotFoundError when no HostCredential was found.
-func (hcq *HostCredentialQuery) First(ctx context.Context) (*HostCredential, error) {
-	nodes, err := hcq.Limit(1).All(setContextOp(ctx, hcq.ctx, ent.OpQueryFirst))
+func (_q *HostCredentialQuery) First(ctx context.Context) (*HostCredential, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +123,8 @@ func (hcq *HostCredentialQuery) First(ctx context.Context) (*HostCredential, err
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (hcq *HostCredentialQuery) FirstX(ctx context.Context) *HostCredential {
-	node, err := hcq.First(ctx)
+func (_q *HostCredentialQuery) FirstX(ctx context.Context) *HostCredential {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -133,9 +133,9 @@ func (hcq *HostCredentialQuery) FirstX(ctx context.Context) *HostCredential {
 
 // FirstID returns the first HostCredential ID from the query.
 // Returns a *NotFoundError when no HostCredential ID was found.
-func (hcq *HostCredentialQuery) FirstID(ctx context.Context) (id int, err error) {
+func (_q *HostCredentialQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hcq.Limit(1).IDs(setContextOp(ctx, hcq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -146,8 +146,8 @@ func (hcq *HostCredentialQuery) FirstID(ctx context.Context) (id int, err error)
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hcq *HostCredentialQuery) FirstIDX(ctx context.Context) int {
-	id, err := hcq.FirstID(ctx)
+func (_q *HostCredentialQuery) FirstIDX(ctx context.Context) int {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -157,8 +157,8 @@ func (hcq *HostCredentialQuery) FirstIDX(ctx context.Context) int {
 // Only returns a single HostCredential entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one HostCredential entity is found.
 // Returns a *NotFoundError when no HostCredential entities are found.
-func (hcq *HostCredentialQuery) Only(ctx context.Context) (*HostCredential, error) {
-	nodes, err := hcq.Limit(2).All(setContextOp(ctx, hcq.ctx, ent.OpQueryOnly))
+func (_q *HostCredentialQuery) Only(ctx context.Context) (*HostCredential, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +173,8 @@ func (hcq *HostCredentialQuery) Only(ctx context.Context) (*HostCredential, erro
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (hcq *HostCredentialQuery) OnlyX(ctx context.Context) *HostCredential {
-	node, err := hcq.Only(ctx)
+func (_q *HostCredentialQuery) OnlyX(ctx context.Context) *HostCredential {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -184,9 +184,9 @@ func (hcq *HostCredentialQuery) OnlyX(ctx context.Context) *HostCredential {
 // OnlyID is like Only, but returns the only HostCredential ID in the query.
 // Returns a *NotSingularError when more than one HostCredential ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hcq *HostCredentialQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *HostCredentialQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hcq.Limit(2).IDs(setContextOp(ctx, hcq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -201,8 +201,8 @@ func (hcq *HostCredentialQuery) OnlyID(ctx context.Context) (id int, err error) 
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hcq *HostCredentialQuery) OnlyIDX(ctx context.Context) int {
-	id, err := hcq.OnlyID(ctx)
+func (_q *HostCredentialQuery) OnlyIDX(ctx context.Context) int {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -210,18 +210,18 @@ func (hcq *HostCredentialQuery) OnlyIDX(ctx context.Context) int {
 }
 
 // All executes the query and returns a list of HostCredentials.
-func (hcq *HostCredentialQuery) All(ctx context.Context) ([]*HostCredential, error) {
-	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryAll)
-	if err := hcq.prepareQuery(ctx); err != nil {
+func (_q *HostCredentialQuery) All(ctx context.Context) ([]*HostCredential, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*HostCredential, *HostCredentialQuery]()
-	return withInterceptors[[]*HostCredential](ctx, hcq, qr, hcq.inters)
+	return withInterceptors[[]*HostCredential](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (hcq *HostCredentialQuery) AllX(ctx context.Context) []*HostCredential {
-	nodes, err := hcq.All(ctx)
+func (_q *HostCredentialQuery) AllX(ctx context.Context) []*HostCredential {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -229,20 +229,20 @@ func (hcq *HostCredentialQuery) AllX(ctx context.Context) []*HostCredential {
 }
 
 // IDs executes the query and returns a list of HostCredential IDs.
-func (hcq *HostCredentialQuery) IDs(ctx context.Context) (ids []int, err error) {
-	if hcq.ctx.Unique == nil && hcq.path != nil {
-		hcq.Unique(true)
+func (_q *HostCredentialQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
 	}
-	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryIDs)
-	if err = hcq.Select(hostcredential.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(hostcredential.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hcq *HostCredentialQuery) IDsX(ctx context.Context) []int {
-	ids, err := hcq.IDs(ctx)
+func (_q *HostCredentialQuery) IDsX(ctx context.Context) []int {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -250,17 +250,17 @@ func (hcq *HostCredentialQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (hcq *HostCredentialQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryCount)
-	if err := hcq.prepareQuery(ctx); err != nil {
+func (_q *HostCredentialQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, hcq, querierCount[*HostCredentialQuery](), hcq.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*HostCredentialQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (hcq *HostCredentialQuery) CountX(ctx context.Context) int {
-	count, err := hcq.Count(ctx)
+func (_q *HostCredentialQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -268,9 +268,9 @@ func (hcq *HostCredentialQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (hcq *HostCredentialQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hcq.ctx, ent.OpQueryExist)
-	switch _, err := hcq.FirstID(ctx); {
+func (_q *HostCredentialQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -281,8 +281,8 @@ func (hcq *HostCredentialQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (hcq *HostCredentialQuery) ExistX(ctx context.Context) bool {
-	exist, err := hcq.Exist(ctx)
+func (_q *HostCredentialQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -291,44 +291,44 @@ func (hcq *HostCredentialQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the HostCredentialQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (hcq *HostCredentialQuery) Clone() *HostCredentialQuery {
-	if hcq == nil {
+func (_q *HostCredentialQuery) Clone() *HostCredentialQuery {
+	if _q == nil {
 		return nil
 	}
 	return &HostCredentialQuery{
-		config:     hcq.config,
-		ctx:        hcq.ctx.Clone(),
-		order:      append([]hostcredential.OrderOption{}, hcq.order...),
-		inters:     append([]Interceptor{}, hcq.inters...),
-		predicates: append([]predicate.HostCredential{}, hcq.predicates...),
-		withHost:   hcq.withHost.Clone(),
-		withTask:   hcq.withTask.Clone(),
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]hostcredential.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.HostCredential{}, _q.predicates...),
+		withHost:   _q.withHost.Clone(),
+		withTask:   _q.withTask.Clone(),
 		// clone intermediate query.
-		sql:  hcq.sql.Clone(),
-		path: hcq.path,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithHost tells the query-builder to eager-load the nodes that are connected to
 // the "host" edge. The optional arguments are used to configure the query builder of the edge.
-func (hcq *HostCredentialQuery) WithHost(opts ...func(*HostQuery)) *HostCredentialQuery {
-	query := (&HostClient{config: hcq.config}).Query()
+func (_q *HostCredentialQuery) WithHost(opts ...func(*HostQuery)) *HostCredentialQuery {
+	query := (&HostClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	hcq.withHost = query
-	return hcq
+	_q.withHost = query
+	return _q
 }
 
 // WithTask tells the query-builder to eager-load the nodes that are connected to
 // the "task" edge. The optional arguments are used to configure the query builder of the edge.
-func (hcq *HostCredentialQuery) WithTask(opts ...func(*TaskQuery)) *HostCredentialQuery {
-	query := (&TaskClient{config: hcq.config}).Query()
+func (_q *HostCredentialQuery) WithTask(opts ...func(*TaskQuery)) *HostCredentialQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	hcq.withTask = query
-	return hcq
+	_q.withTask = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -345,10 +345,10 @@ func (hcq *HostCredentialQuery) WithTask(opts ...func(*TaskQuery)) *HostCredenti
 //		GroupBy(hostcredential.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (hcq *HostCredentialQuery) GroupBy(field string, fields ...string) *HostCredentialGroupBy {
-	hcq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &HostCredentialGroupBy{build: hcq}
-	grbuild.flds = &hcq.ctx.Fields
+func (_q *HostCredentialQuery) GroupBy(field string, fields ...string) *HostCredentialGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &HostCredentialGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = hostcredential.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -366,56 +366,56 @@ func (hcq *HostCredentialQuery) GroupBy(field string, fields ...string) *HostCre
 //	client.HostCredential.Query().
 //		Select(hostcredential.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (hcq *HostCredentialQuery) Select(fields ...string) *HostCredentialSelect {
-	hcq.ctx.Fields = append(hcq.ctx.Fields, fields...)
-	sbuild := &HostCredentialSelect{HostCredentialQuery: hcq}
+func (_q *HostCredentialQuery) Select(fields ...string) *HostCredentialSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &HostCredentialSelect{HostCredentialQuery: _q}
 	sbuild.label = hostcredential.Label
-	sbuild.flds, sbuild.scan = &hcq.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a HostCredentialSelect configured with the given aggregations.
-func (hcq *HostCredentialQuery) Aggregate(fns ...AggregateFunc) *HostCredentialSelect {
-	return hcq.Select().Aggregate(fns...)
+func (_q *HostCredentialQuery) Aggregate(fns ...AggregateFunc) *HostCredentialSelect {
+	return _q.Select().Aggregate(fns...)
 }
 
-func (hcq *HostCredentialQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range hcq.inters {
+func (_q *HostCredentialQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, hcq); err != nil {
+			if err := trv.Traverse(ctx, _q); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range hcq.ctx.Fields {
+	for _, f := range _q.ctx.Fields {
 		if !hostcredential.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if hcq.path != nil {
-		prev, err := hcq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		hcq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (hcq *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*HostCredential, error) {
+func (_q *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*HostCredential, error) {
 	var (
 		nodes       = []*HostCredential{}
-		withFKs     = hcq.withFKs
-		_spec       = hcq.querySpec()
+		withFKs     = _q.withFKs
+		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			hcq.withHost != nil,
-			hcq.withTask != nil,
+			_q.withHost != nil,
+			_q.withTask != nil,
 		}
 	)
-	if hcq.withHost != nil || hcq.withTask != nil {
+	if _q.withHost != nil || _q.withTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -425,44 +425,44 @@ func (hcq *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		return (*HostCredential).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &HostCredential{config: hcq.config}
+		node := &HostCredential{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(hcq.modifiers) > 0 {
-		_spec.Modifiers = hcq.modifiers
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, hcq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := hcq.withHost; query != nil {
-		if err := hcq.loadHost(ctx, query, nodes, nil,
+	if query := _q.withHost; query != nil {
+		if err := _q.loadHost(ctx, query, nodes, nil,
 			func(n *HostCredential, e *Host) { n.Edges.Host = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := hcq.withTask; query != nil {
-		if err := hcq.loadTask(ctx, query, nodes, nil,
+	if query := _q.withTask; query != nil {
+		if err := _q.loadTask(ctx, query, nodes, nil,
 			func(n *HostCredential, e *Task) { n.Edges.Task = e }); err != nil {
 			return nil, err
 		}
 	}
-	for i := range hcq.loadTotal {
-		if err := hcq.loadTotal[i](ctx, nodes); err != nil {
+	for i := range _q.loadTotal {
+		if err := _q.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (hcq *HostCredentialQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *Host)) error {
+func (_q *HostCredentialQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *Host)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*HostCredential)
 	for i := range nodes {
@@ -494,7 +494,7 @@ func (hcq *HostCredentialQuery) loadHost(ctx context.Context, query *HostQuery, 
 	}
 	return nil
 }
-func (hcq *HostCredentialQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *Task)) error {
+func (_q *HostCredentialQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *Task)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*HostCredential)
 	for i := range nodes {
@@ -527,27 +527,27 @@ func (hcq *HostCredentialQuery) loadTask(ctx context.Context, query *TaskQuery, 
 	return nil
 }
 
-func (hcq *HostCredentialQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := hcq.querySpec()
-	if len(hcq.modifiers) > 0 {
-		_spec.Modifiers = hcq.modifiers
+func (_q *HostCredentialQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
-	_spec.Node.Columns = hcq.ctx.Fields
-	if len(hcq.ctx.Fields) > 0 {
-		_spec.Unique = hcq.ctx.Unique != nil && *hcq.ctx.Unique
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, hcq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (hcq *HostCredentialQuery) querySpec() *sqlgraph.QuerySpec {
+func (_q *HostCredentialQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(hostcredential.Table, hostcredential.Columns, sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt))
-	_spec.From = hcq.sql
-	if unique := hcq.ctx.Unique; unique != nil {
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if hcq.path != nil {
+	} else if _q.path != nil {
 		_spec.Unique = true
 	}
-	if fields := hcq.ctx.Fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, hostcredential.FieldID)
 		for i := range fields {
@@ -556,20 +556,20 @@ func (hcq *HostCredentialQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := hcq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := hcq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := hcq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := hcq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -579,33 +579,33 @@ func (hcq *HostCredentialQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (hcq *HostCredentialQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(hcq.driver.Dialect())
+func (_q *HostCredentialQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(hostcredential.Table)
-	columns := hcq.ctx.Fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = hostcredential.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if hcq.sql != nil {
-		selector = hcq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if hcq.ctx.Unique != nil && *hcq.ctx.Unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range hcq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range hcq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := hcq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := hcq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -618,41 +618,41 @@ type HostCredentialGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (hcgb *HostCredentialGroupBy) Aggregate(fns ...AggregateFunc) *HostCredentialGroupBy {
-	hcgb.fns = append(hcgb.fns, fns...)
-	return hcgb
+func (_g *HostCredentialGroupBy) Aggregate(fns ...AggregateFunc) *HostCredentialGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (hcgb *HostCredentialGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hcgb.build.ctx, ent.OpQueryGroupBy)
-	if err := hcgb.build.prepareQuery(ctx); err != nil {
+func (_g *HostCredentialGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*HostCredentialQuery, *HostCredentialGroupBy](ctx, hcgb.build, hcgb, hcgb.build.inters, v)
+	return scanWithInterceptors[*HostCredentialQuery, *HostCredentialGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (hcgb *HostCredentialGroupBy) sqlScan(ctx context.Context, root *HostCredentialQuery, v any) error {
+func (_g *HostCredentialGroupBy) sqlScan(ctx context.Context, root *HostCredentialQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(hcgb.fns))
-	for _, fn := range hcgb.fns {
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*hcgb.flds)+len(hcgb.fns))
-		for _, f := range *hcgb.flds {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*hcgb.flds...)...)
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := hcgb.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -666,27 +666,27 @@ type HostCredentialSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (hcs *HostCredentialSelect) Aggregate(fns ...AggregateFunc) *HostCredentialSelect {
-	hcs.fns = append(hcs.fns, fns...)
-	return hcs
+func (_s *HostCredentialSelect) Aggregate(fns ...AggregateFunc) *HostCredentialSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (hcs *HostCredentialSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hcs.ctx, ent.OpQuerySelect)
-	if err := hcs.prepareQuery(ctx); err != nil {
+func (_s *HostCredentialSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*HostCredentialQuery, *HostCredentialSelect](ctx, hcs.HostCredentialQuery, hcs, hcs.inters, v)
+	return scanWithInterceptors[*HostCredentialQuery, *HostCredentialSelect](ctx, _s.HostCredentialQuery, _s, _s.inters, v)
 }
 
-func (hcs *HostCredentialSelect) sqlScan(ctx context.Context, root *HostCredentialQuery, v any) error {
+func (_s *HostCredentialSelect) sqlScan(ctx context.Context, root *HostCredentialQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(hcs.fns))
-	for _, fn := range hcs.fns {
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*hcs.selector.flds); {
+	switch n := len(*_s.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -694,7 +694,7 @@ func (hcs *HostCredentialSelect) sqlScan(ctx context.Context, root *HostCredenti
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := hcs.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

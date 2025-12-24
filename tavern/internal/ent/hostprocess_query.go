@@ -35,44 +35,44 @@ type HostProcessQuery struct {
 }
 
 // Where adds a new predicate for the HostProcessQuery builder.
-func (hpq *HostProcessQuery) Where(ps ...predicate.HostProcess) *HostProcessQuery {
-	hpq.predicates = append(hpq.predicates, ps...)
-	return hpq
+func (_q *HostProcessQuery) Where(ps ...predicate.HostProcess) *HostProcessQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (hpq *HostProcessQuery) Limit(limit int) *HostProcessQuery {
-	hpq.ctx.Limit = &limit
-	return hpq
+func (_q *HostProcessQuery) Limit(limit int) *HostProcessQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
 // Offset to start from.
-func (hpq *HostProcessQuery) Offset(offset int) *HostProcessQuery {
-	hpq.ctx.Offset = &offset
-	return hpq
+func (_q *HostProcessQuery) Offset(offset int) *HostProcessQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (hpq *HostProcessQuery) Unique(unique bool) *HostProcessQuery {
-	hpq.ctx.Unique = &unique
-	return hpq
+func (_q *HostProcessQuery) Unique(unique bool) *HostProcessQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (hpq *HostProcessQuery) Order(o ...hostprocess.OrderOption) *HostProcessQuery {
-	hpq.order = append(hpq.order, o...)
-	return hpq
+func (_q *HostProcessQuery) Order(o ...hostprocess.OrderOption) *HostProcessQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QueryHost chains the current query on the "host" edge.
-func (hpq *HostProcessQuery) QueryHost() *HostQuery {
-	query := (&HostClient{config: hpq.config}).Query()
+func (_q *HostProcessQuery) QueryHost() *HostQuery {
+	query := (&HostClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := hpq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := hpq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -81,20 +81,20 @@ func (hpq *HostProcessQuery) QueryHost() *HostQuery {
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, hostprocess.HostTable, hostprocess.HostColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryTask chains the current query on the "task" edge.
-func (hpq *HostProcessQuery) QueryTask() *TaskQuery {
-	query := (&TaskClient{config: hpq.config}).Query()
+func (_q *HostProcessQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := hpq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := hpq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (hpq *HostProcessQuery) QueryTask() *TaskQuery {
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.TaskTable, hostprocess.TaskColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -111,8 +111,8 @@ func (hpq *HostProcessQuery) QueryTask() *TaskQuery {
 
 // First returns the first HostProcess entity from the query.
 // Returns a *NotFoundError when no HostProcess was found.
-func (hpq *HostProcessQuery) First(ctx context.Context) (*HostProcess, error) {
-	nodes, err := hpq.Limit(1).All(setContextOp(ctx, hpq.ctx, ent.OpQueryFirst))
+func (_q *HostProcessQuery) First(ctx context.Context) (*HostProcess, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +123,8 @@ func (hpq *HostProcessQuery) First(ctx context.Context) (*HostProcess, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (hpq *HostProcessQuery) FirstX(ctx context.Context) *HostProcess {
-	node, err := hpq.First(ctx)
+func (_q *HostProcessQuery) FirstX(ctx context.Context) *HostProcess {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -133,9 +133,9 @@ func (hpq *HostProcessQuery) FirstX(ctx context.Context) *HostProcess {
 
 // FirstID returns the first HostProcess ID from the query.
 // Returns a *NotFoundError when no HostProcess ID was found.
-func (hpq *HostProcessQuery) FirstID(ctx context.Context) (id int, err error) {
+func (_q *HostProcessQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hpq.Limit(1).IDs(setContextOp(ctx, hpq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -146,8 +146,8 @@ func (hpq *HostProcessQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hpq *HostProcessQuery) FirstIDX(ctx context.Context) int {
-	id, err := hpq.FirstID(ctx)
+func (_q *HostProcessQuery) FirstIDX(ctx context.Context) int {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -157,8 +157,8 @@ func (hpq *HostProcessQuery) FirstIDX(ctx context.Context) int {
 // Only returns a single HostProcess entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one HostProcess entity is found.
 // Returns a *NotFoundError when no HostProcess entities are found.
-func (hpq *HostProcessQuery) Only(ctx context.Context) (*HostProcess, error) {
-	nodes, err := hpq.Limit(2).All(setContextOp(ctx, hpq.ctx, ent.OpQueryOnly))
+func (_q *HostProcessQuery) Only(ctx context.Context) (*HostProcess, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +173,8 @@ func (hpq *HostProcessQuery) Only(ctx context.Context) (*HostProcess, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (hpq *HostProcessQuery) OnlyX(ctx context.Context) *HostProcess {
-	node, err := hpq.Only(ctx)
+func (_q *HostProcessQuery) OnlyX(ctx context.Context) *HostProcess {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -184,9 +184,9 @@ func (hpq *HostProcessQuery) OnlyX(ctx context.Context) *HostProcess {
 // OnlyID is like Only, but returns the only HostProcess ID in the query.
 // Returns a *NotSingularError when more than one HostProcess ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hpq *HostProcessQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *HostProcessQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hpq.Limit(2).IDs(setContextOp(ctx, hpq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -201,8 +201,8 @@ func (hpq *HostProcessQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hpq *HostProcessQuery) OnlyIDX(ctx context.Context) int {
-	id, err := hpq.OnlyID(ctx)
+func (_q *HostProcessQuery) OnlyIDX(ctx context.Context) int {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -210,18 +210,18 @@ func (hpq *HostProcessQuery) OnlyIDX(ctx context.Context) int {
 }
 
 // All executes the query and returns a list of HostProcesses.
-func (hpq *HostProcessQuery) All(ctx context.Context) ([]*HostProcess, error) {
-	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryAll)
-	if err := hpq.prepareQuery(ctx); err != nil {
+func (_q *HostProcessQuery) All(ctx context.Context) ([]*HostProcess, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*HostProcess, *HostProcessQuery]()
-	return withInterceptors[[]*HostProcess](ctx, hpq, qr, hpq.inters)
+	return withInterceptors[[]*HostProcess](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (hpq *HostProcessQuery) AllX(ctx context.Context) []*HostProcess {
-	nodes, err := hpq.All(ctx)
+func (_q *HostProcessQuery) AllX(ctx context.Context) []*HostProcess {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -229,20 +229,20 @@ func (hpq *HostProcessQuery) AllX(ctx context.Context) []*HostProcess {
 }
 
 // IDs executes the query and returns a list of HostProcess IDs.
-func (hpq *HostProcessQuery) IDs(ctx context.Context) (ids []int, err error) {
-	if hpq.ctx.Unique == nil && hpq.path != nil {
-		hpq.Unique(true)
+func (_q *HostProcessQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
 	}
-	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryIDs)
-	if err = hpq.Select(hostprocess.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(hostprocess.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hpq *HostProcessQuery) IDsX(ctx context.Context) []int {
-	ids, err := hpq.IDs(ctx)
+func (_q *HostProcessQuery) IDsX(ctx context.Context) []int {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -250,17 +250,17 @@ func (hpq *HostProcessQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (hpq *HostProcessQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryCount)
-	if err := hpq.prepareQuery(ctx); err != nil {
+func (_q *HostProcessQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, hpq, querierCount[*HostProcessQuery](), hpq.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*HostProcessQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (hpq *HostProcessQuery) CountX(ctx context.Context) int {
-	count, err := hpq.Count(ctx)
+func (_q *HostProcessQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -268,9 +268,9 @@ func (hpq *HostProcessQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (hpq *HostProcessQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hpq.ctx, ent.OpQueryExist)
-	switch _, err := hpq.FirstID(ctx); {
+func (_q *HostProcessQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -281,8 +281,8 @@ func (hpq *HostProcessQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (hpq *HostProcessQuery) ExistX(ctx context.Context) bool {
-	exist, err := hpq.Exist(ctx)
+func (_q *HostProcessQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -291,44 +291,44 @@ func (hpq *HostProcessQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the HostProcessQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (hpq *HostProcessQuery) Clone() *HostProcessQuery {
-	if hpq == nil {
+func (_q *HostProcessQuery) Clone() *HostProcessQuery {
+	if _q == nil {
 		return nil
 	}
 	return &HostProcessQuery{
-		config:     hpq.config,
-		ctx:        hpq.ctx.Clone(),
-		order:      append([]hostprocess.OrderOption{}, hpq.order...),
-		inters:     append([]Interceptor{}, hpq.inters...),
-		predicates: append([]predicate.HostProcess{}, hpq.predicates...),
-		withHost:   hpq.withHost.Clone(),
-		withTask:   hpq.withTask.Clone(),
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]hostprocess.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.HostProcess{}, _q.predicates...),
+		withHost:   _q.withHost.Clone(),
+		withTask:   _q.withTask.Clone(),
 		// clone intermediate query.
-		sql:  hpq.sql.Clone(),
-		path: hpq.path,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithHost tells the query-builder to eager-load the nodes that are connected to
 // the "host" edge. The optional arguments are used to configure the query builder of the edge.
-func (hpq *HostProcessQuery) WithHost(opts ...func(*HostQuery)) *HostProcessQuery {
-	query := (&HostClient{config: hpq.config}).Query()
+func (_q *HostProcessQuery) WithHost(opts ...func(*HostQuery)) *HostProcessQuery {
+	query := (&HostClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	hpq.withHost = query
-	return hpq
+	_q.withHost = query
+	return _q
 }
 
 // WithTask tells the query-builder to eager-load the nodes that are connected to
 // the "task" edge. The optional arguments are used to configure the query builder of the edge.
-func (hpq *HostProcessQuery) WithTask(opts ...func(*TaskQuery)) *HostProcessQuery {
-	query := (&TaskClient{config: hpq.config}).Query()
+func (_q *HostProcessQuery) WithTask(opts ...func(*TaskQuery)) *HostProcessQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	hpq.withTask = query
-	return hpq
+	_q.withTask = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -345,10 +345,10 @@ func (hpq *HostProcessQuery) WithTask(opts ...func(*TaskQuery)) *HostProcessQuer
 //		GroupBy(hostprocess.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (hpq *HostProcessQuery) GroupBy(field string, fields ...string) *HostProcessGroupBy {
-	hpq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &HostProcessGroupBy{build: hpq}
-	grbuild.flds = &hpq.ctx.Fields
+func (_q *HostProcessQuery) GroupBy(field string, fields ...string) *HostProcessGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &HostProcessGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = hostprocess.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -366,56 +366,56 @@ func (hpq *HostProcessQuery) GroupBy(field string, fields ...string) *HostProces
 //	client.HostProcess.Query().
 //		Select(hostprocess.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (hpq *HostProcessQuery) Select(fields ...string) *HostProcessSelect {
-	hpq.ctx.Fields = append(hpq.ctx.Fields, fields...)
-	sbuild := &HostProcessSelect{HostProcessQuery: hpq}
+func (_q *HostProcessQuery) Select(fields ...string) *HostProcessSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &HostProcessSelect{HostProcessQuery: _q}
 	sbuild.label = hostprocess.Label
-	sbuild.flds, sbuild.scan = &hpq.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a HostProcessSelect configured with the given aggregations.
-func (hpq *HostProcessQuery) Aggregate(fns ...AggregateFunc) *HostProcessSelect {
-	return hpq.Select().Aggregate(fns...)
+func (_q *HostProcessQuery) Aggregate(fns ...AggregateFunc) *HostProcessSelect {
+	return _q.Select().Aggregate(fns...)
 }
 
-func (hpq *HostProcessQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range hpq.inters {
+func (_q *HostProcessQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, hpq); err != nil {
+			if err := trv.Traverse(ctx, _q); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range hpq.ctx.Fields {
+	for _, f := range _q.ctx.Fields {
 		if !hostprocess.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if hpq.path != nil {
-		prev, err := hpq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		hpq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*HostProcess, error) {
+func (_q *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*HostProcess, error) {
 	var (
 		nodes       = []*HostProcess{}
-		withFKs     = hpq.withFKs
-		_spec       = hpq.querySpec()
+		withFKs     = _q.withFKs
+		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			hpq.withHost != nil,
-			hpq.withTask != nil,
+			_q.withHost != nil,
+			_q.withTask != nil,
 		}
 	)
-	if hpq.withHost != nil || hpq.withTask != nil {
+	if _q.withHost != nil || _q.withTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -425,44 +425,44 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		return (*HostProcess).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &HostProcess{config: hpq.config}
+		node := &HostProcess{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(hpq.modifiers) > 0 {
-		_spec.Modifiers = hpq.modifiers
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, hpq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := hpq.withHost; query != nil {
-		if err := hpq.loadHost(ctx, query, nodes, nil,
+	if query := _q.withHost; query != nil {
+		if err := _q.loadHost(ctx, query, nodes, nil,
 			func(n *HostProcess, e *Host) { n.Edges.Host = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := hpq.withTask; query != nil {
-		if err := hpq.loadTask(ctx, query, nodes, nil,
+	if query := _q.withTask; query != nil {
+		if err := _q.loadTask(ctx, query, nodes, nil,
 			func(n *HostProcess, e *Task) { n.Edges.Task = e }); err != nil {
 			return nil, err
 		}
 	}
-	for i := range hpq.loadTotal {
-		if err := hpq.loadTotal[i](ctx, nodes); err != nil {
+	for i := range _q.loadTotal {
+		if err := _q.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (hpq *HostProcessQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *Host)) error {
+func (_q *HostProcessQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *Host)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*HostProcess)
 	for i := range nodes {
@@ -494,7 +494,7 @@ func (hpq *HostProcessQuery) loadHost(ctx context.Context, query *HostQuery, nod
 	}
 	return nil
 }
-func (hpq *HostProcessQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *Task)) error {
+func (_q *HostProcessQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *Task)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*HostProcess)
 	for i := range nodes {
@@ -527,27 +527,27 @@ func (hpq *HostProcessQuery) loadTask(ctx context.Context, query *TaskQuery, nod
 	return nil
 }
 
-func (hpq *HostProcessQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := hpq.querySpec()
-	if len(hpq.modifiers) > 0 {
-		_spec.Modifiers = hpq.modifiers
+func (_q *HostProcessQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
-	_spec.Node.Columns = hpq.ctx.Fields
-	if len(hpq.ctx.Fields) > 0 {
-		_spec.Unique = hpq.ctx.Unique != nil && *hpq.ctx.Unique
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, hpq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (hpq *HostProcessQuery) querySpec() *sqlgraph.QuerySpec {
+func (_q *HostProcessQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(hostprocess.Table, hostprocess.Columns, sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt))
-	_spec.From = hpq.sql
-	if unique := hpq.ctx.Unique; unique != nil {
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if hpq.path != nil {
+	} else if _q.path != nil {
 		_spec.Unique = true
 	}
-	if fields := hpq.ctx.Fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, hostprocess.FieldID)
 		for i := range fields {
@@ -556,20 +556,20 @@ func (hpq *HostProcessQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := hpq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := hpq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := hpq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := hpq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -579,33 +579,33 @@ func (hpq *HostProcessQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (hpq *HostProcessQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(hpq.driver.Dialect())
+func (_q *HostProcessQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(hostprocess.Table)
-	columns := hpq.ctx.Fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = hostprocess.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if hpq.sql != nil {
-		selector = hpq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if hpq.ctx.Unique != nil && *hpq.ctx.Unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range hpq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range hpq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := hpq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := hpq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -618,41 +618,41 @@ type HostProcessGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (hpgb *HostProcessGroupBy) Aggregate(fns ...AggregateFunc) *HostProcessGroupBy {
-	hpgb.fns = append(hpgb.fns, fns...)
-	return hpgb
+func (_g *HostProcessGroupBy) Aggregate(fns ...AggregateFunc) *HostProcessGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (hpgb *HostProcessGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hpgb.build.ctx, ent.OpQueryGroupBy)
-	if err := hpgb.build.prepareQuery(ctx); err != nil {
+func (_g *HostProcessGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*HostProcessQuery, *HostProcessGroupBy](ctx, hpgb.build, hpgb, hpgb.build.inters, v)
+	return scanWithInterceptors[*HostProcessQuery, *HostProcessGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (hpgb *HostProcessGroupBy) sqlScan(ctx context.Context, root *HostProcessQuery, v any) error {
+func (_g *HostProcessGroupBy) sqlScan(ctx context.Context, root *HostProcessQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(hpgb.fns))
-	for _, fn := range hpgb.fns {
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*hpgb.flds)+len(hpgb.fns))
-		for _, f := range *hpgb.flds {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*hpgb.flds...)...)
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := hpgb.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -666,27 +666,27 @@ type HostProcessSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (hps *HostProcessSelect) Aggregate(fns ...AggregateFunc) *HostProcessSelect {
-	hps.fns = append(hps.fns, fns...)
-	return hps
+func (_s *HostProcessSelect) Aggregate(fns ...AggregateFunc) *HostProcessSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (hps *HostProcessSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hps.ctx, ent.OpQuerySelect)
-	if err := hps.prepareQuery(ctx); err != nil {
+func (_s *HostProcessSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*HostProcessQuery, *HostProcessSelect](ctx, hps.HostProcessQuery, hps, hps.inters, v)
+	return scanWithInterceptors[*HostProcessQuery, *HostProcessSelect](ctx, _s.HostProcessQuery, _s, _s.inters, v)
 }
 
-func (hps *HostProcessSelect) sqlScan(ctx context.Context, root *HostProcessQuery, v any) error {
+func (_s *HostProcessSelect) sqlScan(ctx context.Context, root *HostProcessQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(hps.fns))
-	for _, fn := range hps.fns {
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*hps.selector.flds); {
+	switch n := len(*_s.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -694,7 +694,7 @@ func (hps *HostProcessSelect) sqlScan(ctx context.Context, root *HostProcessQuer
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := hps.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

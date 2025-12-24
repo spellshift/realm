@@ -26,174 +26,174 @@ type TomeCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (tc *TomeCreate) SetCreatedAt(t time.Time) *TomeCreate {
-	tc.mutation.SetCreatedAt(t)
-	return tc
+func (_c *TomeCreate) SetCreatedAt(v time.Time) *TomeCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableCreatedAt(t *time.Time) *TomeCreate {
-	if t != nil {
-		tc.SetCreatedAt(*t)
+func (_c *TomeCreate) SetNillableCreatedAt(v *time.Time) *TomeCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return tc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (tc *TomeCreate) SetLastModifiedAt(t time.Time) *TomeCreate {
-	tc.mutation.SetLastModifiedAt(t)
-	return tc
+func (_c *TomeCreate) SetLastModifiedAt(v time.Time) *TomeCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableLastModifiedAt(t *time.Time) *TomeCreate {
-	if t != nil {
-		tc.SetLastModifiedAt(*t)
+func (_c *TomeCreate) SetNillableLastModifiedAt(v *time.Time) *TomeCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return tc
+	return _c
 }
 
 // SetName sets the "name" field.
-func (tc *TomeCreate) SetName(s string) *TomeCreate {
-	tc.mutation.SetName(s)
-	return tc
+func (_c *TomeCreate) SetName(v string) *TomeCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetDescription sets the "description" field.
-func (tc *TomeCreate) SetDescription(s string) *TomeCreate {
-	tc.mutation.SetDescription(s)
-	return tc
+func (_c *TomeCreate) SetDescription(v string) *TomeCreate {
+	_c.mutation.SetDescription(v)
+	return _c
 }
 
 // SetAuthor sets the "author" field.
-func (tc *TomeCreate) SetAuthor(s string) *TomeCreate {
-	tc.mutation.SetAuthor(s)
-	return tc
+func (_c *TomeCreate) SetAuthor(v string) *TomeCreate {
+	_c.mutation.SetAuthor(v)
+	return _c
 }
 
 // SetSupportModel sets the "support_model" field.
-func (tc *TomeCreate) SetSupportModel(tm tome.SupportModel) *TomeCreate {
-	tc.mutation.SetSupportModel(tm)
-	return tc
+func (_c *TomeCreate) SetSupportModel(v tome.SupportModel) *TomeCreate {
+	_c.mutation.SetSupportModel(v)
+	return _c
 }
 
 // SetNillableSupportModel sets the "support_model" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableSupportModel(tm *tome.SupportModel) *TomeCreate {
-	if tm != nil {
-		tc.SetSupportModel(*tm)
+func (_c *TomeCreate) SetNillableSupportModel(v *tome.SupportModel) *TomeCreate {
+	if v != nil {
+		_c.SetSupportModel(*v)
 	}
-	return tc
+	return _c
 }
 
 // SetTactic sets the "tactic" field.
-func (tc *TomeCreate) SetTactic(t tome.Tactic) *TomeCreate {
-	tc.mutation.SetTactic(t)
-	return tc
+func (_c *TomeCreate) SetTactic(v tome.Tactic) *TomeCreate {
+	_c.mutation.SetTactic(v)
+	return _c
 }
 
 // SetNillableTactic sets the "tactic" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableTactic(t *tome.Tactic) *TomeCreate {
-	if t != nil {
-		tc.SetTactic(*t)
+func (_c *TomeCreate) SetNillableTactic(v *tome.Tactic) *TomeCreate {
+	if v != nil {
+		_c.SetTactic(*v)
 	}
-	return tc
+	return _c
 }
 
 // SetParamDefs sets the "param_defs" field.
-func (tc *TomeCreate) SetParamDefs(s string) *TomeCreate {
-	tc.mutation.SetParamDefs(s)
-	return tc
+func (_c *TomeCreate) SetParamDefs(v string) *TomeCreate {
+	_c.mutation.SetParamDefs(v)
+	return _c
 }
 
 // SetNillableParamDefs sets the "param_defs" field if the given value is not nil.
-func (tc *TomeCreate) SetNillableParamDefs(s *string) *TomeCreate {
-	if s != nil {
-		tc.SetParamDefs(*s)
+func (_c *TomeCreate) SetNillableParamDefs(v *string) *TomeCreate {
+	if v != nil {
+		_c.SetParamDefs(*v)
 	}
-	return tc
+	return _c
 }
 
 // SetHash sets the "hash" field.
-func (tc *TomeCreate) SetHash(s string) *TomeCreate {
-	tc.mutation.SetHash(s)
-	return tc
+func (_c *TomeCreate) SetHash(v string) *TomeCreate {
+	_c.mutation.SetHash(v)
+	return _c
 }
 
 // SetEldritch sets the "eldritch" field.
-func (tc *TomeCreate) SetEldritch(s string) *TomeCreate {
-	tc.mutation.SetEldritch(s)
-	return tc
+func (_c *TomeCreate) SetEldritch(v string) *TomeCreate {
+	_c.mutation.SetEldritch(v)
+	return _c
 }
 
 // AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tc *TomeCreate) AddFileIDs(ids ...int) *TomeCreate {
-	tc.mutation.AddFileIDs(ids...)
-	return tc
+func (_c *TomeCreate) AddFileIDs(ids ...int) *TomeCreate {
+	_c.mutation.AddFileIDs(ids...)
+	return _c
 }
 
 // AddFiles adds the "files" edges to the File entity.
-func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+func (_c *TomeCreate) AddFiles(v ...*File) *TomeCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return tc.AddFileIDs(ids...)
+	return _c.AddFileIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
-func (tc *TomeCreate) SetUploaderID(id int) *TomeCreate {
-	tc.mutation.SetUploaderID(id)
-	return tc
+func (_c *TomeCreate) SetUploaderID(id int) *TomeCreate {
+	_c.mutation.SetUploaderID(id)
+	return _c
 }
 
 // SetNillableUploaderID sets the "uploader" edge to the User entity by ID if the given value is not nil.
-func (tc *TomeCreate) SetNillableUploaderID(id *int) *TomeCreate {
+func (_c *TomeCreate) SetNillableUploaderID(id *int) *TomeCreate {
 	if id != nil {
-		tc = tc.SetUploaderID(*id)
+		_c = _c.SetUploaderID(*id)
 	}
-	return tc
+	return _c
 }
 
 // SetUploader sets the "uploader" edge to the User entity.
-func (tc *TomeCreate) SetUploader(u *User) *TomeCreate {
-	return tc.SetUploaderID(u.ID)
+func (_c *TomeCreate) SetUploader(v *User) *TomeCreate {
+	return _c.SetUploaderID(v.ID)
 }
 
 // SetRepositoryID sets the "repository" edge to the Repository entity by ID.
-func (tc *TomeCreate) SetRepositoryID(id int) *TomeCreate {
-	tc.mutation.SetRepositoryID(id)
-	return tc
+func (_c *TomeCreate) SetRepositoryID(id int) *TomeCreate {
+	_c.mutation.SetRepositoryID(id)
+	return _c
 }
 
 // SetNillableRepositoryID sets the "repository" edge to the Repository entity by ID if the given value is not nil.
-func (tc *TomeCreate) SetNillableRepositoryID(id *int) *TomeCreate {
+func (_c *TomeCreate) SetNillableRepositoryID(id *int) *TomeCreate {
 	if id != nil {
-		tc = tc.SetRepositoryID(*id)
+		_c = _c.SetRepositoryID(*id)
 	}
-	return tc
+	return _c
 }
 
 // SetRepository sets the "repository" edge to the Repository entity.
-func (tc *TomeCreate) SetRepository(r *Repository) *TomeCreate {
-	return tc.SetRepositoryID(r.ID)
+func (_c *TomeCreate) SetRepository(v *Repository) *TomeCreate {
+	return _c.SetRepositoryID(v.ID)
 }
 
 // Mutation returns the TomeMutation object of the builder.
-func (tc *TomeCreate) Mutation() *TomeMutation {
-	return tc.mutation
+func (_c *TomeCreate) Mutation() *TomeMutation {
+	return _c.mutation
 }
 
 // Save creates the Tome in the database.
-func (tc *TomeCreate) Save(ctx context.Context) (*Tome, error) {
-	if err := tc.defaults(); err != nil {
+func (_c *TomeCreate) Save(ctx context.Context) (*Tome, error) {
+	if err := _c.defaults(); err != nil {
 		return nil, err
 	}
-	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (tc *TomeCreate) SaveX(ctx context.Context) *Tome {
-	v, err := tc.Save(ctx)
+func (_c *TomeCreate) SaveX(ctx context.Context) *Tome {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -201,108 +201,108 @@ func (tc *TomeCreate) SaveX(ctx context.Context) *Tome {
 }
 
 // Exec executes the query.
-func (tc *TomeCreate) Exec(ctx context.Context) error {
-	_, err := tc.Save(ctx)
+func (_c *TomeCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tc *TomeCreate) ExecX(ctx context.Context) {
-	if err := tc.Exec(ctx); err != nil {
+func (_c *TomeCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (tc *TomeCreate) defaults() error {
-	if _, ok := tc.mutation.CreatedAt(); !ok {
+func (_c *TomeCreate) defaults() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		if tome.DefaultCreatedAt == nil {
 			return fmt.Errorf("ent: uninitialized tome.DefaultCreatedAt (forgotten import ent/runtime?)")
 		}
 		v := tome.DefaultCreatedAt()
-		tc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := tc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		if tome.DefaultLastModifiedAt == nil {
 			return fmt.Errorf("ent: uninitialized tome.DefaultLastModifiedAt (forgotten import ent/runtime?)")
 		}
 		v := tome.DefaultLastModifiedAt()
-		tc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
-	if _, ok := tc.mutation.SupportModel(); !ok {
+	if _, ok := _c.mutation.SupportModel(); !ok {
 		v := tome.DefaultSupportModel
-		tc.mutation.SetSupportModel(v)
+		_c.mutation.SetSupportModel(v)
 	}
-	if _, ok := tc.mutation.Tactic(); !ok {
+	if _, ok := _c.mutation.Tactic(); !ok {
 		v := tome.DefaultTactic
-		tc.mutation.SetTactic(v)
+		_c.mutation.SetTactic(v)
 	}
 	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (tc *TomeCreate) check() error {
-	if _, ok := tc.mutation.CreatedAt(); !ok {
+func (_c *TomeCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Tome.created_at"`)}
 	}
-	if _, ok := tc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Tome.last_modified_at"`)}
 	}
-	if _, ok := tc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Tome.name"`)}
 	}
-	if v, ok := tc.mutation.Name(); ok {
+	if v, ok := _c.mutation.Name(); ok {
 		if err := tome.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tome.name": %w`, err)}
 		}
 	}
-	if _, ok := tc.mutation.Description(); !ok {
+	if _, ok := _c.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Tome.description"`)}
 	}
-	if _, ok := tc.mutation.Author(); !ok {
+	if _, ok := _c.mutation.Author(); !ok {
 		return &ValidationError{Name: "author", err: errors.New(`ent: missing required field "Tome.author"`)}
 	}
-	if _, ok := tc.mutation.SupportModel(); !ok {
+	if _, ok := _c.mutation.SupportModel(); !ok {
 		return &ValidationError{Name: "support_model", err: errors.New(`ent: missing required field "Tome.support_model"`)}
 	}
-	if v, ok := tc.mutation.SupportModel(); ok {
+	if v, ok := _c.mutation.SupportModel(); ok {
 		if err := tome.SupportModelValidator(v); err != nil {
 			return &ValidationError{Name: "support_model", err: fmt.Errorf(`ent: validator failed for field "Tome.support_model": %w`, err)}
 		}
 	}
-	if _, ok := tc.mutation.Tactic(); !ok {
+	if _, ok := _c.mutation.Tactic(); !ok {
 		return &ValidationError{Name: "tactic", err: errors.New(`ent: missing required field "Tome.tactic"`)}
 	}
-	if v, ok := tc.mutation.Tactic(); ok {
+	if v, ok := _c.mutation.Tactic(); ok {
 		if err := tome.TacticValidator(v); err != nil {
 			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
 		}
 	}
-	if v, ok := tc.mutation.ParamDefs(); ok {
+	if v, ok := _c.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs", err: fmt.Errorf(`ent: validator failed for field "Tome.param_defs": %w`, err)}
 		}
 	}
-	if _, ok := tc.mutation.Hash(); !ok {
+	if _, ok := _c.mutation.Hash(); !ok {
 		return &ValidationError{Name: "hash", err: errors.New(`ent: missing required field "Tome.hash"`)}
 	}
-	if v, ok := tc.mutation.Hash(); ok {
+	if v, ok := _c.mutation.Hash(); ok {
 		if err := tome.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "Tome.hash": %w`, err)}
 		}
 	}
-	if _, ok := tc.mutation.Eldritch(); !ok {
+	if _, ok := _c.mutation.Eldritch(); !ok {
 		return &ValidationError{Name: "eldritch", err: errors.New(`ent: missing required field "Tome.eldritch"`)}
 	}
 	return nil
 }
 
-func (tc *TomeCreate) sqlSave(ctx context.Context) (*Tome, error) {
-	if err := tc.check(); err != nil {
+func (_c *TomeCreate) sqlSave(ctx context.Context) (*Tome, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := tc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -310,58 +310,58 @@ func (tc *TomeCreate) sqlSave(ctx context.Context) (*Tome, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	tc.mutation.id = &_node.ID
-	tc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
+func (_c *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Tome{config: tc.config}
+		_node = &Tome{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(tome.Table, sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = tc.conflict
-	if value, ok := tc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(tome.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := tc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(tome.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := tc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(tome.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := tc.mutation.Description(); ok {
+	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(tome.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := tc.mutation.Author(); ok {
+	if value, ok := _c.mutation.Author(); ok {
 		_spec.SetField(tome.FieldAuthor, field.TypeString, value)
 		_node.Author = value
 	}
-	if value, ok := tc.mutation.SupportModel(); ok {
+	if value, ok := _c.mutation.SupportModel(); ok {
 		_spec.SetField(tome.FieldSupportModel, field.TypeEnum, value)
 		_node.SupportModel = value
 	}
-	if value, ok := tc.mutation.Tactic(); ok {
+	if value, ok := _c.mutation.Tactic(); ok {
 		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 		_node.Tactic = value
 	}
-	if value, ok := tc.mutation.ParamDefs(); ok {
+	if value, ok := _c.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 		_node.ParamDefs = value
 	}
-	if value, ok := tc.mutation.Hash(); ok {
+	if value, ok := _c.mutation.Hash(); ok {
 		_spec.SetField(tome.FieldHash, field.TypeString, value)
 		_node.Hash = value
 	}
-	if value, ok := tc.mutation.Eldritch(); ok {
+	if value, ok := _c.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 		_node.Eldritch = value
 	}
-	if nodes := tc.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.FilesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -377,7 +377,7 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.UploaderIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.UploaderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -394,7 +394,7 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_node.tome_uploader = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := tc.mutation.RepositoryIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.RepositoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -430,10 +430,10 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (tc *TomeCreate) OnConflict(opts ...sql.ConflictOption) *TomeUpsertOne {
-	tc.conflict = opts
+func (_c *TomeCreate) OnConflict(opts ...sql.ConflictOption) *TomeUpsertOne {
+	_c.conflict = opts
 	return &TomeUpsertOne{
-		create: tc,
+		create: _c,
 	}
 }
 
@@ -443,10 +443,10 @@ func (tc *TomeCreate) OnConflict(opts ...sql.ConflictOption) *TomeUpsertOne {
 //	client.Tome.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (tc *TomeCreate) OnConflictColumns(columns ...string) *TomeUpsertOne {
-	tc.conflict = append(tc.conflict, sql.ConflictColumns(columns...))
+func (_c *TomeCreate) OnConflictColumns(columns ...string) *TomeUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &TomeUpsertOne{
-		create: tc,
+		create: _c,
 	}
 }
 
@@ -797,16 +797,16 @@ type TomeCreateBulk struct {
 }
 
 // Save creates the Tome entities in the database.
-func (tcb *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
-	if tcb.err != nil {
-		return nil, tcb.err
+func (_c *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(tcb.builders))
-	nodes := make([]*Tome, len(tcb.builders))
-	mutators := make([]Mutator, len(tcb.builders))
-	for i := range tcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Tome, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := tcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TomeMutation)
@@ -820,12 +820,12 @@ func (tcb *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = tcb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, tcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -849,7 +849,7 @@ func (tcb *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, tcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -857,8 +857,8 @@ func (tcb *TomeCreateBulk) Save(ctx context.Context) ([]*Tome, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (tcb *TomeCreateBulk) SaveX(ctx context.Context) []*Tome {
-	v, err := tcb.Save(ctx)
+func (_c *TomeCreateBulk) SaveX(ctx context.Context) []*Tome {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -866,14 +866,14 @@ func (tcb *TomeCreateBulk) SaveX(ctx context.Context) []*Tome {
 }
 
 // Exec executes the query.
-func (tcb *TomeCreateBulk) Exec(ctx context.Context) error {
-	_, err := tcb.Save(ctx)
+func (_c *TomeCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (tcb *TomeCreateBulk) ExecX(ctx context.Context) {
-	if err := tcb.Exec(ctx); err != nil {
+func (_c *TomeCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -893,10 +893,10 @@ func (tcb *TomeCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (tcb *TomeCreateBulk) OnConflict(opts ...sql.ConflictOption) *TomeUpsertBulk {
-	tcb.conflict = opts
+func (_c *TomeCreateBulk) OnConflict(opts ...sql.ConflictOption) *TomeUpsertBulk {
+	_c.conflict = opts
 	return &TomeUpsertBulk{
-		create: tcb,
+		create: _c,
 	}
 }
 
@@ -906,10 +906,10 @@ func (tcb *TomeCreateBulk) OnConflict(opts ...sql.ConflictOption) *TomeUpsertBul
 //	client.Tome.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (tcb *TomeCreateBulk) OnConflictColumns(columns ...string) *TomeUpsertBulk {
-	tcb.conflict = append(tcb.conflict, sql.ConflictColumns(columns...))
+func (_c *TomeCreateBulk) OnConflictColumns(columns ...string) *TomeUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &TomeUpsertBulk{
-		create: tcb,
+		create: _c,
 	}
 }
 

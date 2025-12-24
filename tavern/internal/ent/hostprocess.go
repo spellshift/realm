@@ -114,7 +114,7 @@ func (*HostProcess) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the HostProcess fields.
-func (hp *HostProcess) assignValues(columns []string, values []any) error {
+func (_m *HostProcess) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -125,96 +125,96 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			hp.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case hostprocess.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				hp.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case hostprocess.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				hp.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case hostprocess.FieldPid:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field pid", values[i])
 			} else if value.Valid {
-				hp.Pid = uint64(value.Int64)
+				_m.Pid = uint64(value.Int64)
 			}
 		case hostprocess.FieldPpid:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field ppid", values[i])
 			} else if value.Valid {
-				hp.Ppid = uint64(value.Int64)
+				_m.Ppid = uint64(value.Int64)
 			}
 		case hostprocess.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				hp.Name = value.String
+				_m.Name = value.String
 			}
 		case hostprocess.FieldPrincipal:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field principal", values[i])
 			} else if value.Valid {
-				hp.Principal = value.String
+				_m.Principal = value.String
 			}
 		case hostprocess.FieldPath:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
-				hp.Path = value.String
+				_m.Path = value.String
 			}
 		case hostprocess.FieldCmd:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field cmd", values[i])
 			} else if value.Valid {
-				hp.Cmd = value.String
+				_m.Cmd = value.String
 			}
 		case hostprocess.FieldEnv:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field env", values[i])
 			} else if value.Valid {
-				hp.Env = value.String
+				_m.Env = value.String
 			}
 		case hostprocess.FieldCwd:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field cwd", values[i])
 			} else if value.Valid {
-				hp.Cwd = value.String
+				_m.Cwd = value.String
 			}
 		case hostprocess.FieldStatus:
 			if value, ok := values[i].(*epb.Process_Status); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value != nil {
-				hp.Status = *value
+				_m.Status = *value
 			}
 		case hostprocess.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_processes", value)
 			} else if value.Valid {
-				hp.host_processes = new(int)
-				*hp.host_processes = int(value.Int64)
+				_m.host_processes = new(int)
+				*_m.host_processes = int(value.Int64)
 			}
 		case hostprocess.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_process_host", value)
 			} else if value.Valid {
-				hp.host_process_host = new(int)
-				*hp.host_process_host = int(value.Int64)
+				_m.host_process_host = new(int)
+				*_m.host_process_host = int(value.Int64)
 			}
 		case hostprocess.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_processes", value)
 			} else if value.Valid {
-				hp.task_reported_processes = new(int)
-				*hp.task_reported_processes = int(value.Int64)
+				_m.task_reported_processes = new(int)
+				*_m.task_reported_processes = int(value.Int64)
 			}
 		default:
-			hp.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -222,75 +222,75 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the HostProcess.
 // This includes values selected through modifiers, order, etc.
-func (hp *HostProcess) Value(name string) (ent.Value, error) {
-	return hp.selectValues.Get(name)
+func (_m *HostProcess) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryHost queries the "host" edge of the HostProcess entity.
-func (hp *HostProcess) QueryHost() *HostQuery {
-	return NewHostProcessClient(hp.config).QueryHost(hp)
+func (_m *HostProcess) QueryHost() *HostQuery {
+	return NewHostProcessClient(_m.config).QueryHost(_m)
 }
 
 // QueryTask queries the "task" edge of the HostProcess entity.
-func (hp *HostProcess) QueryTask() *TaskQuery {
-	return NewHostProcessClient(hp.config).QueryTask(hp)
+func (_m *HostProcess) QueryTask() *TaskQuery {
+	return NewHostProcessClient(_m.config).QueryTask(_m)
 }
 
 // Update returns a builder for updating this HostProcess.
 // Note that you need to call HostProcess.Unwrap() before calling this method if this HostProcess
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (hp *HostProcess) Update() *HostProcessUpdateOne {
-	return NewHostProcessClient(hp.config).UpdateOne(hp)
+func (_m *HostProcess) Update() *HostProcessUpdateOne {
+	return NewHostProcessClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the HostProcess entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (hp *HostProcess) Unwrap() *HostProcess {
-	_tx, ok := hp.config.driver.(*txDriver)
+func (_m *HostProcess) Unwrap() *HostProcess {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: HostProcess is not a transactional entity")
 	}
-	hp.config.driver = _tx.drv
-	return hp
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (hp *HostProcess) String() string {
+func (_m *HostProcess) String() string {
 	var builder strings.Builder
 	builder.WriteString("HostProcess(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", hp.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(hp.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(hp.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("pid=")
-	builder.WriteString(fmt.Sprintf("%v", hp.Pid))
+	builder.WriteString(fmt.Sprintf("%v", _m.Pid))
 	builder.WriteString(", ")
 	builder.WriteString("ppid=")
-	builder.WriteString(fmt.Sprintf("%v", hp.Ppid))
+	builder.WriteString(fmt.Sprintf("%v", _m.Ppid))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(hp.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("principal=")
-	builder.WriteString(hp.Principal)
+	builder.WriteString(_m.Principal)
 	builder.WriteString(", ")
 	builder.WriteString("path=")
-	builder.WriteString(hp.Path)
+	builder.WriteString(_m.Path)
 	builder.WriteString(", ")
 	builder.WriteString("cmd=")
-	builder.WriteString(hp.Cmd)
+	builder.WriteString(_m.Cmd)
 	builder.WriteString(", ")
 	builder.WriteString("env=")
-	builder.WriteString(hp.Env)
+	builder.WriteString(_m.Env)
 	builder.WriteString(", ")
 	builder.WriteString("cwd=")
-	builder.WriteString(hp.Cwd)
+	builder.WriteString(_m.Cwd)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(fmt.Sprintf("%v", hp.Status))
+	builder.WriteString(fmt.Sprintf("%v", _m.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

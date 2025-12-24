@@ -134,7 +134,7 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Host fields.
-func (h *Host) assignValues(columns []string, values []any) error {
+func (_m *Host) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -145,63 +145,63 @@ func (h *Host) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			h.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case host.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				h.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case host.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				h.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case host.FieldIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field identifier", values[i])
 			} else if value.Valid {
-				h.Identifier = value.String
+				_m.Identifier = value.String
 			}
 		case host.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				h.Name = value.String
+				_m.Name = value.String
 			}
 		case host.FieldPrimaryIP:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field primary_ip", values[i])
 			} else if value.Valid {
-				h.PrimaryIP = value.String
+				_m.PrimaryIP = value.String
 			}
 		case host.FieldExternalIP:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field external_ip", values[i])
 			} else if value.Valid {
-				h.ExternalIP = value.String
+				_m.ExternalIP = value.String
 			}
 		case host.FieldPlatform:
 			if value, ok := values[i].(*c2pb.Host_Platform); !ok {
 				return fmt.Errorf("unexpected type %T for field platform", values[i])
 			} else if value != nil {
-				h.Platform = *value
+				_m.Platform = *value
 			}
 		case host.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
-				h.LastSeenAt = value.Time
+				_m.LastSeenAt = value.Time
 			}
 		case host.FieldNextSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field next_seen_at", values[i])
 			} else if value.Valid {
-				h.NextSeenAt = value.Time
+				_m.NextSeenAt = value.Time
 			}
 		default:
-			h.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -209,205 +209,205 @@ func (h *Host) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Host.
 // This includes values selected through modifiers, order, etc.
-func (h *Host) Value(name string) (ent.Value, error) {
-	return h.selectValues.Get(name)
+func (_m *Host) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryTags queries the "tags" edge of the Host entity.
-func (h *Host) QueryTags() *TagQuery {
-	return NewHostClient(h.config).QueryTags(h)
+func (_m *Host) QueryTags() *TagQuery {
+	return NewHostClient(_m.config).QueryTags(_m)
 }
 
 // QueryBeacons queries the "beacons" edge of the Host entity.
-func (h *Host) QueryBeacons() *BeaconQuery {
-	return NewHostClient(h.config).QueryBeacons(h)
+func (_m *Host) QueryBeacons() *BeaconQuery {
+	return NewHostClient(_m.config).QueryBeacons(_m)
 }
 
 // QueryFiles queries the "files" edge of the Host entity.
-func (h *Host) QueryFiles() *HostFileQuery {
-	return NewHostClient(h.config).QueryFiles(h)
+func (_m *Host) QueryFiles() *HostFileQuery {
+	return NewHostClient(_m.config).QueryFiles(_m)
 }
 
 // QueryProcesses queries the "processes" edge of the Host entity.
-func (h *Host) QueryProcesses() *HostProcessQuery {
-	return NewHostClient(h.config).QueryProcesses(h)
+func (_m *Host) QueryProcesses() *HostProcessQuery {
+	return NewHostClient(_m.config).QueryProcesses(_m)
 }
 
 // QueryCredentials queries the "credentials" edge of the Host entity.
-func (h *Host) QueryCredentials() *HostCredentialQuery {
-	return NewHostClient(h.config).QueryCredentials(h)
+func (_m *Host) QueryCredentials() *HostCredentialQuery {
+	return NewHostClient(_m.config).QueryCredentials(_m)
 }
 
 // Update returns a builder for updating this Host.
 // Note that you need to call Host.Unwrap() before calling this method if this Host
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (h *Host) Update() *HostUpdateOne {
-	return NewHostClient(h.config).UpdateOne(h)
+func (_m *Host) Update() *HostUpdateOne {
+	return NewHostClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Host entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (h *Host) Unwrap() *Host {
-	_tx, ok := h.config.driver.(*txDriver)
+func (_m *Host) Unwrap() *Host {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Host is not a transactional entity")
 	}
-	h.config.driver = _tx.drv
-	return h
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (h *Host) String() string {
+func (_m *Host) String() string {
 	var builder strings.Builder
 	builder.WriteString("Host(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", h.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(h.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(h.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("identifier=")
-	builder.WriteString(h.Identifier)
+	builder.WriteString(_m.Identifier)
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(h.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("primary_ip=")
-	builder.WriteString(h.PrimaryIP)
+	builder.WriteString(_m.PrimaryIP)
 	builder.WriteString(", ")
 	builder.WriteString("external_ip=")
-	builder.WriteString(h.ExternalIP)
+	builder.WriteString(_m.ExternalIP)
 	builder.WriteString(", ")
 	builder.WriteString("platform=")
-	builder.WriteString(fmt.Sprintf("%v", h.Platform))
+	builder.WriteString(fmt.Sprintf("%v", _m.Platform))
 	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
-	builder.WriteString(h.LastSeenAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastSeenAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("next_seen_at=")
-	builder.WriteString(h.NextSeenAt.Format(time.ANSIC))
+	builder.WriteString(_m.NextSeenAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTags returns the Tags named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedTags(name string) ([]*Tag, error) {
-	if h.Edges.namedTags == nil {
+func (_m *Host) NamedTags(name string) ([]*Tag, error) {
+	if _m.Edges.namedTags == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := h.Edges.namedTags[name]
+	nodes, ok := _m.Edges.namedTags[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (h *Host) appendNamedTags(name string, edges ...*Tag) {
-	if h.Edges.namedTags == nil {
-		h.Edges.namedTags = make(map[string][]*Tag)
+func (_m *Host) appendNamedTags(name string, edges ...*Tag) {
+	if _m.Edges.namedTags == nil {
+		_m.Edges.namedTags = make(map[string][]*Tag)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedTags[name] = []*Tag{}
+		_m.Edges.namedTags[name] = []*Tag{}
 	} else {
-		h.Edges.namedTags[name] = append(h.Edges.namedTags[name], edges...)
+		_m.Edges.namedTags[name] = append(_m.Edges.namedTags[name], edges...)
 	}
 }
 
 // NamedBeacons returns the Beacons named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedBeacons(name string) ([]*Beacon, error) {
-	if h.Edges.namedBeacons == nil {
+func (_m *Host) NamedBeacons(name string) ([]*Beacon, error) {
+	if _m.Edges.namedBeacons == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := h.Edges.namedBeacons[name]
+	nodes, ok := _m.Edges.namedBeacons[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (h *Host) appendNamedBeacons(name string, edges ...*Beacon) {
-	if h.Edges.namedBeacons == nil {
-		h.Edges.namedBeacons = make(map[string][]*Beacon)
+func (_m *Host) appendNamedBeacons(name string, edges ...*Beacon) {
+	if _m.Edges.namedBeacons == nil {
+		_m.Edges.namedBeacons = make(map[string][]*Beacon)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedBeacons[name] = []*Beacon{}
+		_m.Edges.namedBeacons[name] = []*Beacon{}
 	} else {
-		h.Edges.namedBeacons[name] = append(h.Edges.namedBeacons[name], edges...)
+		_m.Edges.namedBeacons[name] = append(_m.Edges.namedBeacons[name], edges...)
 	}
 }
 
 // NamedFiles returns the Files named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedFiles(name string) ([]*HostFile, error) {
-	if h.Edges.namedFiles == nil {
+func (_m *Host) NamedFiles(name string) ([]*HostFile, error) {
+	if _m.Edges.namedFiles == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := h.Edges.namedFiles[name]
+	nodes, ok := _m.Edges.namedFiles[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (h *Host) appendNamedFiles(name string, edges ...*HostFile) {
-	if h.Edges.namedFiles == nil {
-		h.Edges.namedFiles = make(map[string][]*HostFile)
+func (_m *Host) appendNamedFiles(name string, edges ...*HostFile) {
+	if _m.Edges.namedFiles == nil {
+		_m.Edges.namedFiles = make(map[string][]*HostFile)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedFiles[name] = []*HostFile{}
+		_m.Edges.namedFiles[name] = []*HostFile{}
 	} else {
-		h.Edges.namedFiles[name] = append(h.Edges.namedFiles[name], edges...)
+		_m.Edges.namedFiles[name] = append(_m.Edges.namedFiles[name], edges...)
 	}
 }
 
 // NamedProcesses returns the Processes named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedProcesses(name string) ([]*HostProcess, error) {
-	if h.Edges.namedProcesses == nil {
+func (_m *Host) NamedProcesses(name string) ([]*HostProcess, error) {
+	if _m.Edges.namedProcesses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := h.Edges.namedProcesses[name]
+	nodes, ok := _m.Edges.namedProcesses[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (h *Host) appendNamedProcesses(name string, edges ...*HostProcess) {
-	if h.Edges.namedProcesses == nil {
-		h.Edges.namedProcesses = make(map[string][]*HostProcess)
+func (_m *Host) appendNamedProcesses(name string, edges ...*HostProcess) {
+	if _m.Edges.namedProcesses == nil {
+		_m.Edges.namedProcesses = make(map[string][]*HostProcess)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedProcesses[name] = []*HostProcess{}
+		_m.Edges.namedProcesses[name] = []*HostProcess{}
 	} else {
-		h.Edges.namedProcesses[name] = append(h.Edges.namedProcesses[name], edges...)
+		_m.Edges.namedProcesses[name] = append(_m.Edges.namedProcesses[name], edges...)
 	}
 }
 
 // NamedCredentials returns the Credentials named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (h *Host) NamedCredentials(name string) ([]*HostCredential, error) {
-	if h.Edges.namedCredentials == nil {
+func (_m *Host) NamedCredentials(name string) ([]*HostCredential, error) {
+	if _m.Edges.namedCredentials == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := h.Edges.namedCredentials[name]
+	nodes, ok := _m.Edges.namedCredentials[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (h *Host) appendNamedCredentials(name string, edges ...*HostCredential) {
-	if h.Edges.namedCredentials == nil {
-		h.Edges.namedCredentials = make(map[string][]*HostCredential)
+func (_m *Host) appendNamedCredentials(name string, edges ...*HostCredential) {
+	if _m.Edges.namedCredentials == nil {
+		_m.Edges.namedCredentials = make(map[string][]*HostCredential)
 	}
 	if len(edges) == 0 {
-		h.Edges.namedCredentials[name] = []*HostCredential{}
+		_m.Edges.namedCredentials[name] = []*HostCredential{}
 	} else {
-		h.Edges.namedCredentials[name] = append(h.Edges.namedCredentials[name], edges...)
+		_m.Edges.namedCredentials[name] = append(_m.Edges.namedCredentials[name], edges...)
 	}
 }
 

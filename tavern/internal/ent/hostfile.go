@@ -109,7 +109,7 @@ func (*HostFile) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the HostFile fields.
-func (hf *HostFile) assignValues(columns []string, values []any) error {
+func (_m *HostFile) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -120,84 +120,84 @@ func (hf *HostFile) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			hf.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case hostfile.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				hf.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case hostfile.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				hf.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case hostfile.FieldPath:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
-				hf.Path = value.String
+				_m.Path = value.String
 			}
 		case hostfile.FieldOwner:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field owner", values[i])
 			} else if value.Valid {
-				hf.Owner = value.String
+				_m.Owner = value.String
 			}
 		case hostfile.FieldGroup:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field group", values[i])
 			} else if value.Valid {
-				hf.Group = value.String
+				_m.Group = value.String
 			}
 		case hostfile.FieldPermissions:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field permissions", values[i])
 			} else if value.Valid {
-				hf.Permissions = value.String
+				_m.Permissions = value.String
 			}
 		case hostfile.FieldSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
-				hf.Size = uint64(value.Int64)
+				_m.Size = uint64(value.Int64)
 			}
 		case hostfile.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
-				hf.Hash = value.String
+				_m.Hash = value.String
 			}
 		case hostfile.FieldContent:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
-				hf.Content = *value
+				_m.Content = *value
 			}
 		case hostfile.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_files", value)
 			} else if value.Valid {
-				hf.host_files = new(int)
-				*hf.host_files = int(value.Int64)
+				_m.host_files = new(int)
+				*_m.host_files = int(value.Int64)
 			}
 		case hostfile.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_file_host", value)
 			} else if value.Valid {
-				hf.host_file_host = new(int)
-				*hf.host_file_host = int(value.Int64)
+				_m.host_file_host = new(int)
+				*_m.host_file_host = int(value.Int64)
 			}
 		case hostfile.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_files", value)
 			} else if value.Valid {
-				hf.task_reported_files = new(int)
-				*hf.task_reported_files = int(value.Int64)
+				_m.task_reported_files = new(int)
+				*_m.task_reported_files = int(value.Int64)
 			}
 		default:
-			hf.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -205,69 +205,69 @@ func (hf *HostFile) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the HostFile.
 // This includes values selected through modifiers, order, etc.
-func (hf *HostFile) Value(name string) (ent.Value, error) {
-	return hf.selectValues.Get(name)
+func (_m *HostFile) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryHost queries the "host" edge of the HostFile entity.
-func (hf *HostFile) QueryHost() *HostQuery {
-	return NewHostFileClient(hf.config).QueryHost(hf)
+func (_m *HostFile) QueryHost() *HostQuery {
+	return NewHostFileClient(_m.config).QueryHost(_m)
 }
 
 // QueryTask queries the "task" edge of the HostFile entity.
-func (hf *HostFile) QueryTask() *TaskQuery {
-	return NewHostFileClient(hf.config).QueryTask(hf)
+func (_m *HostFile) QueryTask() *TaskQuery {
+	return NewHostFileClient(_m.config).QueryTask(_m)
 }
 
 // Update returns a builder for updating this HostFile.
 // Note that you need to call HostFile.Unwrap() before calling this method if this HostFile
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (hf *HostFile) Update() *HostFileUpdateOne {
-	return NewHostFileClient(hf.config).UpdateOne(hf)
+func (_m *HostFile) Update() *HostFileUpdateOne {
+	return NewHostFileClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the HostFile entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (hf *HostFile) Unwrap() *HostFile {
-	_tx, ok := hf.config.driver.(*txDriver)
+func (_m *HostFile) Unwrap() *HostFile {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: HostFile is not a transactional entity")
 	}
-	hf.config.driver = _tx.drv
-	return hf
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (hf *HostFile) String() string {
+func (_m *HostFile) String() string {
 	var builder strings.Builder
 	builder.WriteString("HostFile(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", hf.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(hf.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(hf.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("path=")
-	builder.WriteString(hf.Path)
+	builder.WriteString(_m.Path)
 	builder.WriteString(", ")
 	builder.WriteString("owner=")
-	builder.WriteString(hf.Owner)
+	builder.WriteString(_m.Owner)
 	builder.WriteString(", ")
 	builder.WriteString("group=")
-	builder.WriteString(hf.Group)
+	builder.WriteString(_m.Group)
 	builder.WriteString(", ")
 	builder.WriteString("permissions=")
-	builder.WriteString(hf.Permissions)
+	builder.WriteString(_m.Permissions)
 	builder.WriteString(", ")
 	builder.WriteString("size=")
-	builder.WriteString(fmt.Sprintf("%v", hf.Size))
+	builder.WriteString(fmt.Sprintf("%v", _m.Size))
 	builder.WriteString(", ")
 	builder.WriteString("hash=")
-	builder.WriteString(hf.Hash)
+	builder.WriteString(_m.Hash)
 	builder.WriteString(", ")
 	builder.WriteString("content=")
-	builder.WriteString(fmt.Sprintf("%v", hf.Content))
+	builder.WriteString(fmt.Sprintf("%v", _m.Content))
 	builder.WriteByte(')')
 	return builder.String()
 }

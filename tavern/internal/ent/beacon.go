@@ -112,7 +112,7 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Beacon fields.
-func (b *Beacon) assignValues(columns []string, values []any) error {
+func (_m *Beacon) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -123,70 +123,70 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			b.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case beacon.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				b.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case beacon.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				b.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case beacon.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				b.Name = value.String
+				_m.Name = value.String
 			}
 		case beacon.FieldPrincipal:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field principal", values[i])
 			} else if value.Valid {
-				b.Principal = value.String
+				_m.Principal = value.String
 			}
 		case beacon.FieldIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field identifier", values[i])
 			} else if value.Valid {
-				b.Identifier = value.String
+				_m.Identifier = value.String
 			}
 		case beacon.FieldAgentIdentifier:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field agent_identifier", values[i])
 			} else if value.Valid {
-				b.AgentIdentifier = value.String
+				_m.AgentIdentifier = value.String
 			}
 		case beacon.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
 			} else if value.Valid {
-				b.LastSeenAt = value.Time
+				_m.LastSeenAt = value.Time
 			}
 		case beacon.FieldNextSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field next_seen_at", values[i])
 			} else if value.Valid {
-				b.NextSeenAt = value.Time
+				_m.NextSeenAt = value.Time
 			}
 		case beacon.FieldInterval:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field interval", values[i])
 			} else if value.Valid {
-				b.Interval = uint64(value.Int64)
+				_m.Interval = uint64(value.Int64)
 			}
 		case beacon.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field beacon_host", value)
 			} else if value.Valid {
-				b.beacon_host = new(int)
-				*b.beacon_host = int(value.Int64)
+				_m.beacon_host = new(int)
+				*_m.beacon_host = int(value.Int64)
 			}
 		default:
-			b.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -194,123 +194,123 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Beacon.
 // This includes values selected through modifiers, order, etc.
-func (b *Beacon) Value(name string) (ent.Value, error) {
-	return b.selectValues.Get(name)
+func (_m *Beacon) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryHost queries the "host" edge of the Beacon entity.
-func (b *Beacon) QueryHost() *HostQuery {
-	return NewBeaconClient(b.config).QueryHost(b)
+func (_m *Beacon) QueryHost() *HostQuery {
+	return NewBeaconClient(_m.config).QueryHost(_m)
 }
 
 // QueryTasks queries the "tasks" edge of the Beacon entity.
-func (b *Beacon) QueryTasks() *TaskQuery {
-	return NewBeaconClient(b.config).QueryTasks(b)
+func (_m *Beacon) QueryTasks() *TaskQuery {
+	return NewBeaconClient(_m.config).QueryTasks(_m)
 }
 
 // QueryShells queries the "shells" edge of the Beacon entity.
-func (b *Beacon) QueryShells() *ShellQuery {
-	return NewBeaconClient(b.config).QueryShells(b)
+func (_m *Beacon) QueryShells() *ShellQuery {
+	return NewBeaconClient(_m.config).QueryShells(_m)
 }
 
 // Update returns a builder for updating this Beacon.
 // Note that you need to call Beacon.Unwrap() before calling this method if this Beacon
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (b *Beacon) Update() *BeaconUpdateOne {
-	return NewBeaconClient(b.config).UpdateOne(b)
+func (_m *Beacon) Update() *BeaconUpdateOne {
+	return NewBeaconClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Beacon entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (b *Beacon) Unwrap() *Beacon {
-	_tx, ok := b.config.driver.(*txDriver)
+func (_m *Beacon) Unwrap() *Beacon {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Beacon is not a transactional entity")
 	}
-	b.config.driver = _tx.drv
-	return b
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (b *Beacon) String() string {
+func (_m *Beacon) String() string {
 	var builder strings.Builder
 	builder.WriteString("Beacon(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(b.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(b.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(b.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("principal=")
-	builder.WriteString(b.Principal)
+	builder.WriteString(_m.Principal)
 	builder.WriteString(", ")
 	builder.WriteString("identifier=")
-	builder.WriteString(b.Identifier)
+	builder.WriteString(_m.Identifier)
 	builder.WriteString(", ")
 	builder.WriteString("agent_identifier=")
-	builder.WriteString(b.AgentIdentifier)
+	builder.WriteString(_m.AgentIdentifier)
 	builder.WriteString(", ")
 	builder.WriteString("last_seen_at=")
-	builder.WriteString(b.LastSeenAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastSeenAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("next_seen_at=")
-	builder.WriteString(b.NextSeenAt.Format(time.ANSIC))
+	builder.WriteString(_m.NextSeenAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("interval=")
-	builder.WriteString(fmt.Sprintf("%v", b.Interval))
+	builder.WriteString(fmt.Sprintf("%v", _m.Interval))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTasks returns the Tasks named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (b *Beacon) NamedTasks(name string) ([]*Task, error) {
-	if b.Edges.namedTasks == nil {
+func (_m *Beacon) NamedTasks(name string) ([]*Task, error) {
+	if _m.Edges.namedTasks == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := b.Edges.namedTasks[name]
+	nodes, ok := _m.Edges.namedTasks[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (b *Beacon) appendNamedTasks(name string, edges ...*Task) {
-	if b.Edges.namedTasks == nil {
-		b.Edges.namedTasks = make(map[string][]*Task)
+func (_m *Beacon) appendNamedTasks(name string, edges ...*Task) {
+	if _m.Edges.namedTasks == nil {
+		_m.Edges.namedTasks = make(map[string][]*Task)
 	}
 	if len(edges) == 0 {
-		b.Edges.namedTasks[name] = []*Task{}
+		_m.Edges.namedTasks[name] = []*Task{}
 	} else {
-		b.Edges.namedTasks[name] = append(b.Edges.namedTasks[name], edges...)
+		_m.Edges.namedTasks[name] = append(_m.Edges.namedTasks[name], edges...)
 	}
 }
 
 // NamedShells returns the Shells named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (b *Beacon) NamedShells(name string) ([]*Shell, error) {
-	if b.Edges.namedShells == nil {
+func (_m *Beacon) NamedShells(name string) ([]*Shell, error) {
+	if _m.Edges.namedShells == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := b.Edges.namedShells[name]
+	nodes, ok := _m.Edges.namedShells[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (b *Beacon) appendNamedShells(name string, edges ...*Shell) {
-	if b.Edges.namedShells == nil {
-		b.Edges.namedShells = make(map[string][]*Shell)
+func (_m *Beacon) appendNamedShells(name string, edges ...*Shell) {
+	if _m.Edges.namedShells == nil {
+		_m.Edges.namedShells = make(map[string][]*Shell)
 	}
 	if len(edges) == 0 {
-		b.Edges.namedShells[name] = []*Shell{}
+		_m.Edges.namedShells[name] = []*Shell{}
 	} else {
-		b.Edges.namedShells[name] = append(b.Edges.namedShells[name], edges...)
+		_m.Edges.namedShells[name] = append(_m.Edges.namedShells[name], edges...)
 	}
 }
 

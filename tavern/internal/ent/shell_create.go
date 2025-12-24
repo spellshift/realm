@@ -26,115 +26,115 @@ type ShellCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (sc *ShellCreate) SetCreatedAt(t time.Time) *ShellCreate {
-	sc.mutation.SetCreatedAt(t)
-	return sc
+func (_c *ShellCreate) SetCreatedAt(v time.Time) *ShellCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (sc *ShellCreate) SetNillableCreatedAt(t *time.Time) *ShellCreate {
-	if t != nil {
-		sc.SetCreatedAt(*t)
+func (_c *ShellCreate) SetNillableCreatedAt(v *time.Time) *ShellCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (sc *ShellCreate) SetLastModifiedAt(t time.Time) *ShellCreate {
-	sc.mutation.SetLastModifiedAt(t)
-	return sc
+func (_c *ShellCreate) SetLastModifiedAt(v time.Time) *ShellCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (sc *ShellCreate) SetNillableLastModifiedAt(t *time.Time) *ShellCreate {
-	if t != nil {
-		sc.SetLastModifiedAt(*t)
+func (_c *ShellCreate) SetNillableLastModifiedAt(v *time.Time) *ShellCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetClosedAt sets the "closed_at" field.
-func (sc *ShellCreate) SetClosedAt(t time.Time) *ShellCreate {
-	sc.mutation.SetClosedAt(t)
-	return sc
+func (_c *ShellCreate) SetClosedAt(v time.Time) *ShellCreate {
+	_c.mutation.SetClosedAt(v)
+	return _c
 }
 
 // SetNillableClosedAt sets the "closed_at" field if the given value is not nil.
-func (sc *ShellCreate) SetNillableClosedAt(t *time.Time) *ShellCreate {
-	if t != nil {
-		sc.SetClosedAt(*t)
+func (_c *ShellCreate) SetNillableClosedAt(v *time.Time) *ShellCreate {
+	if v != nil {
+		_c.SetClosedAt(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetData sets the "data" field.
-func (sc *ShellCreate) SetData(b []byte) *ShellCreate {
-	sc.mutation.SetData(b)
-	return sc
+func (_c *ShellCreate) SetData(v []byte) *ShellCreate {
+	_c.mutation.SetData(v)
+	return _c
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (sc *ShellCreate) SetTaskID(id int) *ShellCreate {
-	sc.mutation.SetTaskID(id)
-	return sc
+func (_c *ShellCreate) SetTaskID(id int) *ShellCreate {
+	_c.mutation.SetTaskID(id)
+	return _c
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (sc *ShellCreate) SetTask(t *Task) *ShellCreate {
-	return sc.SetTaskID(t.ID)
+func (_c *ShellCreate) SetTask(v *Task) *ShellCreate {
+	return _c.SetTaskID(v.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
-func (sc *ShellCreate) SetBeaconID(id int) *ShellCreate {
-	sc.mutation.SetBeaconID(id)
-	return sc
+func (_c *ShellCreate) SetBeaconID(id int) *ShellCreate {
+	_c.mutation.SetBeaconID(id)
+	return _c
 }
 
 // SetBeacon sets the "beacon" edge to the Beacon entity.
-func (sc *ShellCreate) SetBeacon(b *Beacon) *ShellCreate {
-	return sc.SetBeaconID(b.ID)
+func (_c *ShellCreate) SetBeacon(v *Beacon) *ShellCreate {
+	return _c.SetBeaconID(v.ID)
 }
 
 // SetOwnerID sets the "owner" edge to the User entity by ID.
-func (sc *ShellCreate) SetOwnerID(id int) *ShellCreate {
-	sc.mutation.SetOwnerID(id)
-	return sc
+func (_c *ShellCreate) SetOwnerID(id int) *ShellCreate {
+	_c.mutation.SetOwnerID(id)
+	return _c
 }
 
 // SetOwner sets the "owner" edge to the User entity.
-func (sc *ShellCreate) SetOwner(u *User) *ShellCreate {
-	return sc.SetOwnerID(u.ID)
+func (_c *ShellCreate) SetOwner(v *User) *ShellCreate {
+	return _c.SetOwnerID(v.ID)
 }
 
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
-func (sc *ShellCreate) AddActiveUserIDs(ids ...int) *ShellCreate {
-	sc.mutation.AddActiveUserIDs(ids...)
-	return sc
+func (_c *ShellCreate) AddActiveUserIDs(ids ...int) *ShellCreate {
+	_c.mutation.AddActiveUserIDs(ids...)
+	return _c
 }
 
 // AddActiveUsers adds the "active_users" edges to the User entity.
-func (sc *ShellCreate) AddActiveUsers(u ...*User) *ShellCreate {
-	ids := make([]int, len(u))
-	for i := range u {
-		ids[i] = u[i].ID
+func (_c *ShellCreate) AddActiveUsers(v ...*User) *ShellCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return sc.AddActiveUserIDs(ids...)
+	return _c.AddActiveUserIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
-func (sc *ShellCreate) Mutation() *ShellMutation {
-	return sc.mutation
+func (_c *ShellCreate) Mutation() *ShellMutation {
+	return _c.mutation
 }
 
 // Save creates the Shell in the database.
-func (sc *ShellCreate) Save(ctx context.Context) (*Shell, error) {
-	sc.defaults()
-	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
+func (_c *ShellCreate) Save(ctx context.Context) (*Shell, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (sc *ShellCreate) SaveX(ctx context.Context) *Shell {
-	v, err := sc.Save(ctx)
+func (_c *ShellCreate) SaveX(ctx context.Context) *Shell {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -142,59 +142,59 @@ func (sc *ShellCreate) SaveX(ctx context.Context) *Shell {
 }
 
 // Exec executes the query.
-func (sc *ShellCreate) Exec(ctx context.Context) error {
-	_, err := sc.Save(ctx)
+func (_c *ShellCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sc *ShellCreate) ExecX(ctx context.Context) {
-	if err := sc.Exec(ctx); err != nil {
+func (_c *ShellCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (sc *ShellCreate) defaults() {
-	if _, ok := sc.mutation.CreatedAt(); !ok {
+func (_c *ShellCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := shell.DefaultCreatedAt()
-		sc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := sc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		v := shell.DefaultLastModifiedAt()
-		sc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sc *ShellCreate) check() error {
-	if _, ok := sc.mutation.CreatedAt(); !ok {
+func (_c *ShellCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Shell.created_at"`)}
 	}
-	if _, ok := sc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Shell.last_modified_at"`)}
 	}
-	if _, ok := sc.mutation.Data(); !ok {
+	if _, ok := _c.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`ent: missing required field "Shell.data"`)}
 	}
-	if len(sc.mutation.TaskIDs()) == 0 {
+	if len(_c.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "Shell.task"`)}
 	}
-	if len(sc.mutation.BeaconIDs()) == 0 {
+	if len(_c.mutation.BeaconIDs()) == 0 {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Shell.beacon"`)}
 	}
-	if len(sc.mutation.OwnerIDs()) == 0 {
+	if len(_c.mutation.OwnerIDs()) == 0 {
 		return &ValidationError{Name: "owner", err: errors.New(`ent: missing required edge "Shell.owner"`)}
 	}
 	return nil
 }
 
-func (sc *ShellCreate) sqlSave(ctx context.Context) (*Shell, error) {
-	if err := sc.check(); err != nil {
+func (_c *ShellCreate) sqlSave(ctx context.Context) (*Shell, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := sc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -202,34 +202,34 @@ func (sc *ShellCreate) sqlSave(ctx context.Context) (*Shell, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	sc.mutation.id = &_node.ID
-	sc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
+func (_c *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Shell{config: sc.config}
+		_node = &Shell{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(shell.Table, sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = sc.conflict
-	if value, ok := sc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(shell.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := sc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(shell.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := sc.mutation.ClosedAt(); ok {
+	if value, ok := _c.mutation.ClosedAt(); ok {
 		_spec.SetField(shell.FieldClosedAt, field.TypeTime, value)
 		_node.ClosedAt = value
 	}
-	if value, ok := sc.mutation.Data(); ok {
+	if value, ok := _c.mutation.Data(); ok {
 		_spec.SetField(shell.FieldData, field.TypeBytes, value)
 		_node.Data = value
 	}
-	if nodes := sc.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -246,7 +246,7 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 		_node.shell_task = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.BeaconIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.BeaconIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -263,7 +263,7 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 		_node.shell_beacon = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -280,7 +280,7 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 		_node.shell_owner = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.ActiveUsersIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -315,10 +315,10 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (sc *ShellCreate) OnConflict(opts ...sql.ConflictOption) *ShellUpsertOne {
-	sc.conflict = opts
+func (_c *ShellCreate) OnConflict(opts ...sql.ConflictOption) *ShellUpsertOne {
+	_c.conflict = opts
 	return &ShellUpsertOne{
-		create: sc,
+		create: _c,
 	}
 }
 
@@ -328,10 +328,10 @@ func (sc *ShellCreate) OnConflict(opts ...sql.ConflictOption) *ShellUpsertOne {
 //	client.Shell.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (sc *ShellCreate) OnConflictColumns(columns ...string) *ShellUpsertOne {
-	sc.conflict = append(sc.conflict, sql.ConflictColumns(columns...))
+func (_c *ShellCreate) OnConflictColumns(columns ...string) *ShellUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &ShellUpsertOne{
-		create: sc,
+		create: _c,
 	}
 }
 
@@ -526,16 +526,16 @@ type ShellCreateBulk struct {
 }
 
 // Save creates the Shell entities in the database.
-func (scb *ShellCreateBulk) Save(ctx context.Context) ([]*Shell, error) {
-	if scb.err != nil {
-		return nil, scb.err
+func (_c *ShellCreateBulk) Save(ctx context.Context) ([]*Shell, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
-	nodes := make([]*Shell, len(scb.builders))
-	mutators := make([]Mutator, len(scb.builders))
-	for i := range scb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Shell, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := scb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*ShellMutation)
@@ -549,12 +549,12 @@ func (scb *ShellCreateBulk) Save(ctx context.Context) ([]*Shell, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = scb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -578,7 +578,7 @@ func (scb *ShellCreateBulk) Save(ctx context.Context) ([]*Shell, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, scb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -586,8 +586,8 @@ func (scb *ShellCreateBulk) Save(ctx context.Context) ([]*Shell, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (scb *ShellCreateBulk) SaveX(ctx context.Context) []*Shell {
-	v, err := scb.Save(ctx)
+func (_c *ShellCreateBulk) SaveX(ctx context.Context) []*Shell {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -595,14 +595,14 @@ func (scb *ShellCreateBulk) SaveX(ctx context.Context) []*Shell {
 }
 
 // Exec executes the query.
-func (scb *ShellCreateBulk) Exec(ctx context.Context) error {
-	_, err := scb.Save(ctx)
+func (_c *ShellCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (scb *ShellCreateBulk) ExecX(ctx context.Context) {
-	if err := scb.Exec(ctx); err != nil {
+func (_c *ShellCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -622,10 +622,10 @@ func (scb *ShellCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (scb *ShellCreateBulk) OnConflict(opts ...sql.ConflictOption) *ShellUpsertBulk {
-	scb.conflict = opts
+func (_c *ShellCreateBulk) OnConflict(opts ...sql.ConflictOption) *ShellUpsertBulk {
+	_c.conflict = opts
 	return &ShellUpsertBulk{
-		create: scb,
+		create: _c,
 	}
 }
 
@@ -635,10 +635,10 @@ func (scb *ShellCreateBulk) OnConflict(opts ...sql.ConflictOption) *ShellUpsertB
 //	client.Shell.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (scb *ShellCreateBulk) OnConflictColumns(columns ...string) *ShellUpsertBulk {
-	scb.conflict = append(scb.conflict, sql.ConflictColumns(columns...))
+func (_c *ShellCreateBulk) OnConflictColumns(columns ...string) *ShellUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &ShellUpsertBulk{
-		create: scb,
+		create: _c,
 	}
 }
 

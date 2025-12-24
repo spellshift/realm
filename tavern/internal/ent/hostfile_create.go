@@ -25,153 +25,153 @@ type HostFileCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (hfc *HostFileCreate) SetCreatedAt(t time.Time) *HostFileCreate {
-	hfc.mutation.SetCreatedAt(t)
-	return hfc
+func (_c *HostFileCreate) SetCreatedAt(v time.Time) *HostFileCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableCreatedAt(t *time.Time) *HostFileCreate {
-	if t != nil {
-		hfc.SetCreatedAt(*t)
+func (_c *HostFileCreate) SetNillableCreatedAt(v *time.Time) *HostFileCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hfc *HostFileCreate) SetLastModifiedAt(t time.Time) *HostFileCreate {
-	hfc.mutation.SetLastModifiedAt(t)
-	return hfc
+func (_c *HostFileCreate) SetLastModifiedAt(v time.Time) *HostFileCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableLastModifiedAt(t *time.Time) *HostFileCreate {
-	if t != nil {
-		hfc.SetLastModifiedAt(*t)
+func (_c *HostFileCreate) SetNillableLastModifiedAt(v *time.Time) *HostFileCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetPath sets the "path" field.
-func (hfc *HostFileCreate) SetPath(s string) *HostFileCreate {
-	hfc.mutation.SetPath(s)
-	return hfc
+func (_c *HostFileCreate) SetPath(v string) *HostFileCreate {
+	_c.mutation.SetPath(v)
+	return _c
 }
 
 // SetOwner sets the "owner" field.
-func (hfc *HostFileCreate) SetOwner(s string) *HostFileCreate {
-	hfc.mutation.SetOwner(s)
-	return hfc
+func (_c *HostFileCreate) SetOwner(v string) *HostFileCreate {
+	_c.mutation.SetOwner(v)
+	return _c
 }
 
 // SetNillableOwner sets the "owner" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableOwner(s *string) *HostFileCreate {
-	if s != nil {
-		hfc.SetOwner(*s)
+func (_c *HostFileCreate) SetNillableOwner(v *string) *HostFileCreate {
+	if v != nil {
+		_c.SetOwner(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetGroup sets the "group" field.
-func (hfc *HostFileCreate) SetGroup(s string) *HostFileCreate {
-	hfc.mutation.SetGroup(s)
-	return hfc
+func (_c *HostFileCreate) SetGroup(v string) *HostFileCreate {
+	_c.mutation.SetGroup(v)
+	return _c
 }
 
 // SetNillableGroup sets the "group" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableGroup(s *string) *HostFileCreate {
-	if s != nil {
-		hfc.SetGroup(*s)
+func (_c *HostFileCreate) SetNillableGroup(v *string) *HostFileCreate {
+	if v != nil {
+		_c.SetGroup(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetPermissions sets the "permissions" field.
-func (hfc *HostFileCreate) SetPermissions(s string) *HostFileCreate {
-	hfc.mutation.SetPermissions(s)
-	return hfc
+func (_c *HostFileCreate) SetPermissions(v string) *HostFileCreate {
+	_c.mutation.SetPermissions(v)
+	return _c
 }
 
 // SetNillablePermissions sets the "permissions" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillablePermissions(s *string) *HostFileCreate {
-	if s != nil {
-		hfc.SetPermissions(*s)
+func (_c *HostFileCreate) SetNillablePermissions(v *string) *HostFileCreate {
+	if v != nil {
+		_c.SetPermissions(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetSize sets the "size" field.
-func (hfc *HostFileCreate) SetSize(u uint64) *HostFileCreate {
-	hfc.mutation.SetSize(u)
-	return hfc
+func (_c *HostFileCreate) SetSize(v uint64) *HostFileCreate {
+	_c.mutation.SetSize(v)
+	return _c
 }
 
 // SetNillableSize sets the "size" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableSize(u *uint64) *HostFileCreate {
-	if u != nil {
-		hfc.SetSize(*u)
+func (_c *HostFileCreate) SetNillableSize(v *uint64) *HostFileCreate {
+	if v != nil {
+		_c.SetSize(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetHash sets the "hash" field.
-func (hfc *HostFileCreate) SetHash(s string) *HostFileCreate {
-	hfc.mutation.SetHash(s)
-	return hfc
+func (_c *HostFileCreate) SetHash(v string) *HostFileCreate {
+	_c.mutation.SetHash(v)
+	return _c
 }
 
 // SetNillableHash sets the "hash" field if the given value is not nil.
-func (hfc *HostFileCreate) SetNillableHash(s *string) *HostFileCreate {
-	if s != nil {
-		hfc.SetHash(*s)
+func (_c *HostFileCreate) SetNillableHash(v *string) *HostFileCreate {
+	if v != nil {
+		_c.SetHash(*v)
 	}
-	return hfc
+	return _c
 }
 
 // SetContent sets the "content" field.
-func (hfc *HostFileCreate) SetContent(b []byte) *HostFileCreate {
-	hfc.mutation.SetContent(b)
-	return hfc
+func (_c *HostFileCreate) SetContent(v []byte) *HostFileCreate {
+	_c.mutation.SetContent(v)
+	return _c
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hfc *HostFileCreate) SetHostID(id int) *HostFileCreate {
-	hfc.mutation.SetHostID(id)
-	return hfc
+func (_c *HostFileCreate) SetHostID(id int) *HostFileCreate {
+	_c.mutation.SetHostID(id)
+	return _c
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hfc *HostFileCreate) SetHost(h *Host) *HostFileCreate {
-	return hfc.SetHostID(h.ID)
+func (_c *HostFileCreate) SetHost(v *Host) *HostFileCreate {
+	return _c.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hfc *HostFileCreate) SetTaskID(id int) *HostFileCreate {
-	hfc.mutation.SetTaskID(id)
-	return hfc
+func (_c *HostFileCreate) SetTaskID(id int) *HostFileCreate {
+	_c.mutation.SetTaskID(id)
+	return _c
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hfc *HostFileCreate) SetTask(t *Task) *HostFileCreate {
-	return hfc.SetTaskID(t.ID)
+func (_c *HostFileCreate) SetTask(v *Task) *HostFileCreate {
+	return _c.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostFileMutation object of the builder.
-func (hfc *HostFileCreate) Mutation() *HostFileMutation {
-	return hfc.mutation
+func (_c *HostFileCreate) Mutation() *HostFileMutation {
+	return _c.mutation
 }
 
 // Save creates the HostFile in the database.
-func (hfc *HostFileCreate) Save(ctx context.Context) (*HostFile, error) {
-	if err := hfc.defaults(); err != nil {
+func (_c *HostFileCreate) Save(ctx context.Context) (*HostFile, error) {
+	if err := _c.defaults(); err != nil {
 		return nil, err
 	}
-	return withHooks(ctx, hfc.sqlSave, hfc.mutation, hfc.hooks)
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (hfc *HostFileCreate) SaveX(ctx context.Context) *HostFile {
-	v, err := hfc.Save(ctx)
+func (_c *HostFileCreate) SaveX(ctx context.Context) *HostFile {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -179,85 +179,85 @@ func (hfc *HostFileCreate) SaveX(ctx context.Context) *HostFile {
 }
 
 // Exec executes the query.
-func (hfc *HostFileCreate) Exec(ctx context.Context) error {
-	_, err := hfc.Save(ctx)
+func (_c *HostFileCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hfc *HostFileCreate) ExecX(ctx context.Context) {
-	if err := hfc.Exec(ctx); err != nil {
+func (_c *HostFileCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hfc *HostFileCreate) defaults() error {
-	if _, ok := hfc.mutation.CreatedAt(); !ok {
+func (_c *HostFileCreate) defaults() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		if hostfile.DefaultCreatedAt == nil {
 			return fmt.Errorf("ent: uninitialized hostfile.DefaultCreatedAt (forgotten import ent/runtime?)")
 		}
 		v := hostfile.DefaultCreatedAt()
-		hfc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := hfc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		if hostfile.DefaultLastModifiedAt == nil {
 			return fmt.Errorf("ent: uninitialized hostfile.DefaultLastModifiedAt (forgotten import ent/runtime?)")
 		}
 		v := hostfile.DefaultLastModifiedAt()
-		hfc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
-	if _, ok := hfc.mutation.Size(); !ok {
+	if _, ok := _c.mutation.Size(); !ok {
 		v := hostfile.DefaultSize
-		hfc.mutation.SetSize(v)
+		_c.mutation.SetSize(v)
 	}
 	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hfc *HostFileCreate) check() error {
-	if _, ok := hfc.mutation.CreatedAt(); !ok {
+func (_c *HostFileCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "HostFile.created_at"`)}
 	}
-	if _, ok := hfc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "HostFile.last_modified_at"`)}
 	}
-	if _, ok := hfc.mutation.Path(); !ok {
+	if _, ok := _c.mutation.Path(); !ok {
 		return &ValidationError{Name: "path", err: errors.New(`ent: missing required field "HostFile.path"`)}
 	}
-	if v, ok := hfc.mutation.Path(); ok {
+	if v, ok := _c.mutation.Path(); ok {
 		if err := hostfile.PathValidator(v); err != nil {
 			return &ValidationError{Name: "path", err: fmt.Errorf(`ent: validator failed for field "HostFile.path": %w`, err)}
 		}
 	}
-	if _, ok := hfc.mutation.Size(); !ok {
+	if _, ok := _c.mutation.Size(); !ok {
 		return &ValidationError{Name: "size", err: errors.New(`ent: missing required field "HostFile.size"`)}
 	}
-	if v, ok := hfc.mutation.Size(); ok {
+	if v, ok := _c.mutation.Size(); ok {
 		if err := hostfile.SizeValidator(v); err != nil {
 			return &ValidationError{Name: "size", err: fmt.Errorf(`ent: validator failed for field "HostFile.size": %w`, err)}
 		}
 	}
-	if v, ok := hfc.mutation.Hash(); ok {
+	if v, ok := _c.mutation.Hash(); ok {
 		if err := hostfile.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
-	if len(hfc.mutation.HostIDs()) == 0 {
+	if len(_c.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostFile.host"`)}
 	}
-	if len(hfc.mutation.TaskIDs()) == 0 {
+	if len(_c.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostFile.task"`)}
 	}
 	return nil
 }
 
-func (hfc *HostFileCreate) sqlSave(ctx context.Context) (*HostFile, error) {
-	if err := hfc.check(); err != nil {
+func (_c *HostFileCreate) sqlSave(ctx context.Context) (*HostFile, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := hfc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, hfc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -265,54 +265,54 @@ func (hfc *HostFileCreate) sqlSave(ctx context.Context) (*HostFile, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	hfc.mutation.id = &_node.ID
-	hfc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
+func (_c *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 	var (
-		_node = &HostFile{config: hfc.config}
+		_node = &HostFile{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(hostfile.Table, sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = hfc.conflict
-	if value, ok := hfc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(hostfile.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := hfc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostfile.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := hfc.mutation.Path(); ok {
+	if value, ok := _c.mutation.Path(); ok {
 		_spec.SetField(hostfile.FieldPath, field.TypeString, value)
 		_node.Path = value
 	}
-	if value, ok := hfc.mutation.Owner(); ok {
+	if value, ok := _c.mutation.Owner(); ok {
 		_spec.SetField(hostfile.FieldOwner, field.TypeString, value)
 		_node.Owner = value
 	}
-	if value, ok := hfc.mutation.Group(); ok {
+	if value, ok := _c.mutation.Group(); ok {
 		_spec.SetField(hostfile.FieldGroup, field.TypeString, value)
 		_node.Group = value
 	}
-	if value, ok := hfc.mutation.Permissions(); ok {
+	if value, ok := _c.mutation.Permissions(); ok {
 		_spec.SetField(hostfile.FieldPermissions, field.TypeString, value)
 		_node.Permissions = value
 	}
-	if value, ok := hfc.mutation.Size(); ok {
+	if value, ok := _c.mutation.Size(); ok {
 		_spec.SetField(hostfile.FieldSize, field.TypeUint64, value)
 		_node.Size = value
 	}
-	if value, ok := hfc.mutation.Hash(); ok {
+	if value, ok := _c.mutation.Hash(); ok {
 		_spec.SetField(hostfile.FieldHash, field.TypeString, value)
 		_node.Hash = value
 	}
-	if value, ok := hfc.mutation.Content(); ok {
+	if value, ok := _c.mutation.Content(); ok {
 		_spec.SetField(hostfile.FieldContent, field.TypeBytes, value)
 		_node.Content = value
 	}
-	if nodes := hfc.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -329,7 +329,7 @@ func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 		_node.host_file_host = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hfc.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -365,10 +365,10 @@ func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hfc *HostFileCreate) OnConflict(opts ...sql.ConflictOption) *HostFileUpsertOne {
-	hfc.conflict = opts
+func (_c *HostFileCreate) OnConflict(opts ...sql.ConflictOption) *HostFileUpsertOne {
+	_c.conflict = opts
 	return &HostFileUpsertOne{
-		create: hfc,
+		create: _c,
 	}
 }
 
@@ -378,10 +378,10 @@ func (hfc *HostFileCreate) OnConflict(opts ...sql.ConflictOption) *HostFileUpser
 //	client.HostFile.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hfc *HostFileCreate) OnConflictColumns(columns ...string) *HostFileUpsertOne {
-	hfc.conflict = append(hfc.conflict, sql.ConflictColumns(columns...))
+func (_c *HostFileCreate) OnConflictColumns(columns ...string) *HostFileUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostFileUpsertOne{
-		create: hfc,
+		create: _c,
 	}
 }
 
@@ -771,16 +771,16 @@ type HostFileCreateBulk struct {
 }
 
 // Save creates the HostFile entities in the database.
-func (hfcb *HostFileCreateBulk) Save(ctx context.Context) ([]*HostFile, error) {
-	if hfcb.err != nil {
-		return nil, hfcb.err
+func (_c *HostFileCreateBulk) Save(ctx context.Context) ([]*HostFile, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(hfcb.builders))
-	nodes := make([]*HostFile, len(hfcb.builders))
-	mutators := make([]Mutator, len(hfcb.builders))
-	for i := range hfcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*HostFile, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := hfcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*HostFileMutation)
@@ -794,12 +794,12 @@ func (hfcb *HostFileCreateBulk) Save(ctx context.Context) ([]*HostFile, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, hfcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = hfcb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, hfcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -823,7 +823,7 @@ func (hfcb *HostFileCreateBulk) Save(ctx context.Context) ([]*HostFile, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, hfcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -831,8 +831,8 @@ func (hfcb *HostFileCreateBulk) Save(ctx context.Context) ([]*HostFile, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hfcb *HostFileCreateBulk) SaveX(ctx context.Context) []*HostFile {
-	v, err := hfcb.Save(ctx)
+func (_c *HostFileCreateBulk) SaveX(ctx context.Context) []*HostFile {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -840,14 +840,14 @@ func (hfcb *HostFileCreateBulk) SaveX(ctx context.Context) []*HostFile {
 }
 
 // Exec executes the query.
-func (hfcb *HostFileCreateBulk) Exec(ctx context.Context) error {
-	_, err := hfcb.Save(ctx)
+func (_c *HostFileCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hfcb *HostFileCreateBulk) ExecX(ctx context.Context) {
-	if err := hfcb.Exec(ctx); err != nil {
+func (_c *HostFileCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -867,10 +867,10 @@ func (hfcb *HostFileCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hfcb *HostFileCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostFileUpsertBulk {
-	hfcb.conflict = opts
+func (_c *HostFileCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostFileUpsertBulk {
+	_c.conflict = opts
 	return &HostFileUpsertBulk{
-		create: hfcb,
+		create: _c,
 	}
 }
 
@@ -880,10 +880,10 @@ func (hfcb *HostFileCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostFile
 //	client.HostFile.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hfcb *HostFileCreateBulk) OnConflictColumns(columns ...string) *HostFileUpsertBulk {
-	hfcb.conflict = append(hfcb.conflict, sql.ConflictColumns(columns...))
+func (_c *HostFileCreateBulk) OnConflictColumns(columns ...string) *HostFileUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostFileUpsertBulk{
-		create: hfcb,
+		create: _c,
 	}
 }
 

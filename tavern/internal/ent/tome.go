@@ -119,7 +119,7 @@ func (*Tome) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Tome fields.
-func (t *Tome) assignValues(columns []string, values []any) error {
+func (_m *Tome) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -130,83 +130,83 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			t.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case tome.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				t.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case tome.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				t.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case tome.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				t.Name = value.String
+				_m.Name = value.String
 			}
 		case tome.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				t.Description = value.String
+				_m.Description = value.String
 			}
 		case tome.FieldAuthor:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field author", values[i])
 			} else if value.Valid {
-				t.Author = value.String
+				_m.Author = value.String
 			}
 		case tome.FieldSupportModel:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field support_model", values[i])
 			} else if value.Valid {
-				t.SupportModel = tome.SupportModel(value.String)
+				_m.SupportModel = tome.SupportModel(value.String)
 			}
 		case tome.FieldTactic:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field tactic", values[i])
 			} else if value.Valid {
-				t.Tactic = tome.Tactic(value.String)
+				_m.Tactic = tome.Tactic(value.String)
 			}
 		case tome.FieldParamDefs:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field param_defs", values[i])
 			} else if value.Valid {
-				t.ParamDefs = value.String
+				_m.ParamDefs = value.String
 			}
 		case tome.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
-				t.Hash = value.String
+				_m.Hash = value.String
 			}
 		case tome.FieldEldritch:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field eldritch", values[i])
 			} else if value.Valid {
-				t.Eldritch = value.String
+				_m.Eldritch = value.String
 			}
 		case tome.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field tome_uploader", value)
 			} else if value.Valid {
-				t.tome_uploader = new(int)
-				*t.tome_uploader = int(value.Int64)
+				_m.tome_uploader = new(int)
+				*_m.tome_uploader = int(value.Int64)
 			}
 		case tome.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field tome_repository", value)
 			} else if value.Valid {
-				t.tome_repository = new(int)
-				*t.tome_repository = int(value.Int64)
+				_m.tome_repository = new(int)
+				*_m.tome_repository = int(value.Int64)
 			}
 		default:
-			t.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -214,102 +214,102 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Tome.
 // This includes values selected through modifiers, order, etc.
-func (t *Tome) Value(name string) (ent.Value, error) {
-	return t.selectValues.Get(name)
+func (_m *Tome) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryFiles queries the "files" edge of the Tome entity.
-func (t *Tome) QueryFiles() *FileQuery {
-	return NewTomeClient(t.config).QueryFiles(t)
+func (_m *Tome) QueryFiles() *FileQuery {
+	return NewTomeClient(_m.config).QueryFiles(_m)
 }
 
 // QueryUploader queries the "uploader" edge of the Tome entity.
-func (t *Tome) QueryUploader() *UserQuery {
-	return NewTomeClient(t.config).QueryUploader(t)
+func (_m *Tome) QueryUploader() *UserQuery {
+	return NewTomeClient(_m.config).QueryUploader(_m)
 }
 
 // QueryRepository queries the "repository" edge of the Tome entity.
-func (t *Tome) QueryRepository() *RepositoryQuery {
-	return NewTomeClient(t.config).QueryRepository(t)
+func (_m *Tome) QueryRepository() *RepositoryQuery {
+	return NewTomeClient(_m.config).QueryRepository(_m)
 }
 
 // Update returns a builder for updating this Tome.
 // Note that you need to call Tome.Unwrap() before calling this method if this Tome
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (t *Tome) Update() *TomeUpdateOne {
-	return NewTomeClient(t.config).UpdateOne(t)
+func (_m *Tome) Update() *TomeUpdateOne {
+	return NewTomeClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Tome entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (t *Tome) Unwrap() *Tome {
-	_tx, ok := t.config.driver.(*txDriver)
+func (_m *Tome) Unwrap() *Tome {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Tome is not a transactional entity")
 	}
-	t.config.driver = _tx.drv
-	return t
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (t *Tome) String() string {
+func (_m *Tome) String() string {
 	var builder strings.Builder
 	builder.WriteString("Tome(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(t.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(t.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
-	builder.WriteString(t.Description)
+	builder.WriteString(_m.Description)
 	builder.WriteString(", ")
 	builder.WriteString("author=")
-	builder.WriteString(t.Author)
+	builder.WriteString(_m.Author)
 	builder.WriteString(", ")
 	builder.WriteString("support_model=")
-	builder.WriteString(fmt.Sprintf("%v", t.SupportModel))
+	builder.WriteString(fmt.Sprintf("%v", _m.SupportModel))
 	builder.WriteString(", ")
 	builder.WriteString("tactic=")
-	builder.WriteString(fmt.Sprintf("%v", t.Tactic))
+	builder.WriteString(fmt.Sprintf("%v", _m.Tactic))
 	builder.WriteString(", ")
 	builder.WriteString("param_defs=")
-	builder.WriteString(t.ParamDefs)
+	builder.WriteString(_m.ParamDefs)
 	builder.WriteString(", ")
 	builder.WriteString("hash=")
-	builder.WriteString(t.Hash)
+	builder.WriteString(_m.Hash)
 	builder.WriteString(", ")
 	builder.WriteString("eldritch=")
-	builder.WriteString(t.Eldritch)
+	builder.WriteString(_m.Eldritch)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedFiles returns the Files named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Tome) NamedFiles(name string) ([]*File, error) {
-	if t.Edges.namedFiles == nil {
+func (_m *Tome) NamedFiles(name string) ([]*File, error) {
+	if _m.Edges.namedFiles == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedFiles[name]
+	nodes, ok := _m.Edges.namedFiles[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Tome) appendNamedFiles(name string, edges ...*File) {
-	if t.Edges.namedFiles == nil {
-		t.Edges.namedFiles = make(map[string][]*File)
+func (_m *Tome) appendNamedFiles(name string, edges ...*File) {
+	if _m.Edges.namedFiles == nil {
+		_m.Edges.namedFiles = make(map[string][]*File)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedFiles[name] = []*File{}
+		_m.Edges.namedFiles[name] = []*File{}
 	} else {
-		t.Edges.namedFiles[name] = append(t.Edges.namedFiles[name], edges...)
+		_m.Edges.namedFiles[name] = append(_m.Edges.namedFiles[name], edges...)
 	}
 }
 

@@ -20,56 +20,56 @@ type HostCredentialDelete struct {
 }
 
 // Where appends a list predicates to the HostCredentialDelete builder.
-func (hcd *HostCredentialDelete) Where(ps ...predicate.HostCredential) *HostCredentialDelete {
-	hcd.mutation.Where(ps...)
-	return hcd
+func (_d *HostCredentialDelete) Where(ps ...predicate.HostCredential) *HostCredentialDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (hcd *HostCredentialDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, hcd.sqlExec, hcd.mutation, hcd.hooks)
+func (_d *HostCredentialDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hcd *HostCredentialDelete) ExecX(ctx context.Context) int {
-	n, err := hcd.Exec(ctx)
+func (_d *HostCredentialDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (hcd *HostCredentialDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *HostCredentialDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(hostcredential.Table, sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt))
-	if ps := hcd.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, hcd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	hcd.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // HostCredentialDeleteOne is the builder for deleting a single HostCredential entity.
 type HostCredentialDeleteOne struct {
-	hcd *HostCredentialDelete
+	_d *HostCredentialDelete
 }
 
 // Where appends a list predicates to the HostCredentialDelete builder.
-func (hcdo *HostCredentialDeleteOne) Where(ps ...predicate.HostCredential) *HostCredentialDeleteOne {
-	hcdo.hcd.mutation.Where(ps...)
-	return hcdo
+func (_d *HostCredentialDeleteOne) Where(ps ...predicate.HostCredential) *HostCredentialDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (hcdo *HostCredentialDeleteOne) Exec(ctx context.Context) error {
-	n, err := hcdo.hcd.Exec(ctx)
+func (_d *HostCredentialDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (hcdo *HostCredentialDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hcdo *HostCredentialDeleteOne) ExecX(ctx context.Context) {
-	if err := hcdo.Exec(ctx); err != nil {
+func (_d *HostCredentialDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

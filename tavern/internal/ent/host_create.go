@@ -29,204 +29,204 @@ type HostCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (hc *HostCreate) SetCreatedAt(t time.Time) *HostCreate {
-	hc.mutation.SetCreatedAt(t)
-	return hc
+func (_c *HostCreate) SetCreatedAt(v time.Time) *HostCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (hc *HostCreate) SetNillableCreatedAt(t *time.Time) *HostCreate {
-	if t != nil {
-		hc.SetCreatedAt(*t)
+func (_c *HostCreate) SetNillableCreatedAt(v *time.Time) *HostCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return hc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hc *HostCreate) SetLastModifiedAt(t time.Time) *HostCreate {
-	hc.mutation.SetLastModifiedAt(t)
-	return hc
+func (_c *HostCreate) SetLastModifiedAt(v time.Time) *HostCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (hc *HostCreate) SetNillableLastModifiedAt(t *time.Time) *HostCreate {
-	if t != nil {
-		hc.SetLastModifiedAt(*t)
+func (_c *HostCreate) SetNillableLastModifiedAt(v *time.Time) *HostCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return hc
+	return _c
 }
 
 // SetIdentifier sets the "identifier" field.
-func (hc *HostCreate) SetIdentifier(s string) *HostCreate {
-	hc.mutation.SetIdentifier(s)
-	return hc
+func (_c *HostCreate) SetIdentifier(v string) *HostCreate {
+	_c.mutation.SetIdentifier(v)
+	return _c
 }
 
 // SetName sets the "name" field.
-func (hc *HostCreate) SetName(s string) *HostCreate {
-	hc.mutation.SetName(s)
-	return hc
+func (_c *HostCreate) SetName(v string) *HostCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (hc *HostCreate) SetNillableName(s *string) *HostCreate {
-	if s != nil {
-		hc.SetName(*s)
+func (_c *HostCreate) SetNillableName(v *string) *HostCreate {
+	if v != nil {
+		_c.SetName(*v)
 	}
-	return hc
+	return _c
 }
 
 // SetPrimaryIP sets the "primary_ip" field.
-func (hc *HostCreate) SetPrimaryIP(s string) *HostCreate {
-	hc.mutation.SetPrimaryIP(s)
-	return hc
+func (_c *HostCreate) SetPrimaryIP(v string) *HostCreate {
+	_c.mutation.SetPrimaryIP(v)
+	return _c
 }
 
 // SetNillablePrimaryIP sets the "primary_ip" field if the given value is not nil.
-func (hc *HostCreate) SetNillablePrimaryIP(s *string) *HostCreate {
-	if s != nil {
-		hc.SetPrimaryIP(*s)
+func (_c *HostCreate) SetNillablePrimaryIP(v *string) *HostCreate {
+	if v != nil {
+		_c.SetPrimaryIP(*v)
 	}
-	return hc
+	return _c
 }
 
 // SetExternalIP sets the "external_ip" field.
-func (hc *HostCreate) SetExternalIP(s string) *HostCreate {
-	hc.mutation.SetExternalIP(s)
-	return hc
+func (_c *HostCreate) SetExternalIP(v string) *HostCreate {
+	_c.mutation.SetExternalIP(v)
+	return _c
 }
 
 // SetNillableExternalIP sets the "external_ip" field if the given value is not nil.
-func (hc *HostCreate) SetNillableExternalIP(s *string) *HostCreate {
-	if s != nil {
-		hc.SetExternalIP(*s)
+func (_c *HostCreate) SetNillableExternalIP(v *string) *HostCreate {
+	if v != nil {
+		_c.SetExternalIP(*v)
 	}
-	return hc
+	return _c
 }
 
 // SetPlatform sets the "platform" field.
-func (hc *HostCreate) SetPlatform(cp c2pb.Host_Platform) *HostCreate {
-	hc.mutation.SetPlatform(cp)
-	return hc
+func (_c *HostCreate) SetPlatform(v c2pb.Host_Platform) *HostCreate {
+	_c.mutation.SetPlatform(v)
+	return _c
 }
 
 // SetLastSeenAt sets the "last_seen_at" field.
-func (hc *HostCreate) SetLastSeenAt(t time.Time) *HostCreate {
-	hc.mutation.SetLastSeenAt(t)
-	return hc
+func (_c *HostCreate) SetLastSeenAt(v time.Time) *HostCreate {
+	_c.mutation.SetLastSeenAt(v)
+	return _c
 }
 
 // SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
-func (hc *HostCreate) SetNillableLastSeenAt(t *time.Time) *HostCreate {
-	if t != nil {
-		hc.SetLastSeenAt(*t)
+func (_c *HostCreate) SetNillableLastSeenAt(v *time.Time) *HostCreate {
+	if v != nil {
+		_c.SetLastSeenAt(*v)
 	}
-	return hc
+	return _c
 }
 
 // SetNextSeenAt sets the "next_seen_at" field.
-func (hc *HostCreate) SetNextSeenAt(t time.Time) *HostCreate {
-	hc.mutation.SetNextSeenAt(t)
-	return hc
+func (_c *HostCreate) SetNextSeenAt(v time.Time) *HostCreate {
+	_c.mutation.SetNextSeenAt(v)
+	return _c
 }
 
 // SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
-func (hc *HostCreate) SetNillableNextSeenAt(t *time.Time) *HostCreate {
-	if t != nil {
-		hc.SetNextSeenAt(*t)
+func (_c *HostCreate) SetNillableNextSeenAt(v *time.Time) *HostCreate {
+	if v != nil {
+		_c.SetNextSeenAt(*v)
 	}
-	return hc
+	return _c
 }
 
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
-func (hc *HostCreate) AddTagIDs(ids ...int) *HostCreate {
-	hc.mutation.AddTagIDs(ids...)
-	return hc
+func (_c *HostCreate) AddTagIDs(ids ...int) *HostCreate {
+	_c.mutation.AddTagIDs(ids...)
+	return _c
 }
 
 // AddTags adds the "tags" edges to the Tag entity.
-func (hc *HostCreate) AddTags(t ...*Tag) *HostCreate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_c *HostCreate) AddTags(v ...*Tag) *HostCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return hc.AddTagIDs(ids...)
+	return _c.AddTagIDs(ids...)
 }
 
 // AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
-func (hc *HostCreate) AddBeaconIDs(ids ...int) *HostCreate {
-	hc.mutation.AddBeaconIDs(ids...)
-	return hc
+func (_c *HostCreate) AddBeaconIDs(ids ...int) *HostCreate {
+	_c.mutation.AddBeaconIDs(ids...)
+	return _c
 }
 
 // AddBeacons adds the "beacons" edges to the Beacon entity.
-func (hc *HostCreate) AddBeacons(b ...*Beacon) *HostCreate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
+func (_c *HostCreate) AddBeacons(v ...*Beacon) *HostCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return hc.AddBeaconIDs(ids...)
+	return _c.AddBeaconIDs(ids...)
 }
 
 // AddFileIDs adds the "files" edge to the HostFile entity by IDs.
-func (hc *HostCreate) AddFileIDs(ids ...int) *HostCreate {
-	hc.mutation.AddFileIDs(ids...)
-	return hc
+func (_c *HostCreate) AddFileIDs(ids ...int) *HostCreate {
+	_c.mutation.AddFileIDs(ids...)
+	return _c
 }
 
 // AddFiles adds the "files" edges to the HostFile entity.
-func (hc *HostCreate) AddFiles(h ...*HostFile) *HostCreate {
-	ids := make([]int, len(h))
-	for i := range h {
-		ids[i] = h[i].ID
+func (_c *HostCreate) AddFiles(v ...*HostFile) *HostCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return hc.AddFileIDs(ids...)
+	return _c.AddFileIDs(ids...)
 }
 
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
-func (hc *HostCreate) AddProcessIDs(ids ...int) *HostCreate {
-	hc.mutation.AddProcessIDs(ids...)
-	return hc
+func (_c *HostCreate) AddProcessIDs(ids ...int) *HostCreate {
+	_c.mutation.AddProcessIDs(ids...)
+	return _c
 }
 
 // AddProcesses adds the "processes" edges to the HostProcess entity.
-func (hc *HostCreate) AddProcesses(h ...*HostProcess) *HostCreate {
-	ids := make([]int, len(h))
-	for i := range h {
-		ids[i] = h[i].ID
+func (_c *HostCreate) AddProcesses(v ...*HostProcess) *HostCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return hc.AddProcessIDs(ids...)
+	return _c.AddProcessIDs(ids...)
 }
 
 // AddCredentialIDs adds the "credentials" edge to the HostCredential entity by IDs.
-func (hc *HostCreate) AddCredentialIDs(ids ...int) *HostCreate {
-	hc.mutation.AddCredentialIDs(ids...)
-	return hc
+func (_c *HostCreate) AddCredentialIDs(ids ...int) *HostCreate {
+	_c.mutation.AddCredentialIDs(ids...)
+	return _c
 }
 
 // AddCredentials adds the "credentials" edges to the HostCredential entity.
-func (hc *HostCreate) AddCredentials(h ...*HostCredential) *HostCreate {
-	ids := make([]int, len(h))
-	for i := range h {
-		ids[i] = h[i].ID
+func (_c *HostCreate) AddCredentials(v ...*HostCredential) *HostCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return hc.AddCredentialIDs(ids...)
+	return _c.AddCredentialIDs(ids...)
 }
 
 // Mutation returns the HostMutation object of the builder.
-func (hc *HostCreate) Mutation() *HostMutation {
-	return hc.mutation
+func (_c *HostCreate) Mutation() *HostMutation {
+	return _c.mutation
 }
 
 // Save creates the Host in the database.
-func (hc *HostCreate) Save(ctx context.Context) (*Host, error) {
-	hc.defaults()
-	return withHooks(ctx, hc.sqlSave, hc.mutation, hc.hooks)
+func (_c *HostCreate) Save(ctx context.Context) (*Host, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (hc *HostCreate) SaveX(ctx context.Context) *Host {
-	v, err := hc.Save(ctx)
+func (_c *HostCreate) SaveX(ctx context.Context) *Host {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -234,55 +234,55 @@ func (hc *HostCreate) SaveX(ctx context.Context) *Host {
 }
 
 // Exec executes the query.
-func (hc *HostCreate) Exec(ctx context.Context) error {
-	_, err := hc.Save(ctx)
+func (_c *HostCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hc *HostCreate) ExecX(ctx context.Context) {
-	if err := hc.Exec(ctx); err != nil {
+func (_c *HostCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hc *HostCreate) defaults() {
-	if _, ok := hc.mutation.CreatedAt(); !ok {
+func (_c *HostCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := host.DefaultCreatedAt()
-		hc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := hc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		v := host.DefaultLastModifiedAt()
-		hc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hc *HostCreate) check() error {
-	if _, ok := hc.mutation.CreatedAt(); !ok {
+func (_c *HostCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Host.created_at"`)}
 	}
-	if _, ok := hc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Host.last_modified_at"`)}
 	}
-	if _, ok := hc.mutation.Identifier(); !ok {
+	if _, ok := _c.mutation.Identifier(); !ok {
 		return &ValidationError{Name: "identifier", err: errors.New(`ent: missing required field "Host.identifier"`)}
 	}
-	if v, ok := hc.mutation.Identifier(); ok {
+	if v, ok := _c.mutation.Identifier(); ok {
 		if err := host.IdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Host.identifier": %w`, err)}
 		}
 	}
-	if v, ok := hc.mutation.Name(); ok {
+	if v, ok := _c.mutation.Name(); ok {
 		if err := host.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Host.name": %w`, err)}
 		}
 	}
-	if _, ok := hc.mutation.Platform(); !ok {
+	if _, ok := _c.mutation.Platform(); !ok {
 		return &ValidationError{Name: "platform", err: errors.New(`ent: missing required field "Host.platform"`)}
 	}
-	if v, ok := hc.mutation.Platform(); ok {
+	if v, ok := _c.mutation.Platform(); ok {
 		if err := host.PlatformValidator(v); err != nil {
 			return &ValidationError{Name: "platform", err: fmt.Errorf(`ent: validator failed for field "Host.platform": %w`, err)}
 		}
@@ -290,12 +290,12 @@ func (hc *HostCreate) check() error {
 	return nil
 }
 
-func (hc *HostCreate) sqlSave(ctx context.Context) (*Host, error) {
-	if err := hc.check(); err != nil {
+func (_c *HostCreate) sqlSave(ctx context.Context) (*Host, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := hc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, hc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -303,54 +303,54 @@ func (hc *HostCreate) sqlSave(ctx context.Context) (*Host, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	hc.mutation.id = &_node.ID
-	hc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
+func (_c *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Host{config: hc.config}
+		_node = &Host{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(host.Table, sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = hc.conflict
-	if value, ok := hc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(host.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := hc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(host.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := hc.mutation.Identifier(); ok {
+	if value, ok := _c.mutation.Identifier(); ok {
 		_spec.SetField(host.FieldIdentifier, field.TypeString, value)
 		_node.Identifier = value
 	}
-	if value, ok := hc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(host.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := hc.mutation.PrimaryIP(); ok {
+	if value, ok := _c.mutation.PrimaryIP(); ok {
 		_spec.SetField(host.FieldPrimaryIP, field.TypeString, value)
 		_node.PrimaryIP = value
 	}
-	if value, ok := hc.mutation.ExternalIP(); ok {
+	if value, ok := _c.mutation.ExternalIP(); ok {
 		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
 		_node.ExternalIP = value
 	}
-	if value, ok := hc.mutation.Platform(); ok {
+	if value, ok := _c.mutation.Platform(); ok {
 		_spec.SetField(host.FieldPlatform, field.TypeEnum, value)
 		_node.Platform = value
 	}
-	if value, ok := hc.mutation.LastSeenAt(); ok {
+	if value, ok := _c.mutation.LastSeenAt(); ok {
 		_spec.SetField(host.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
 	}
-	if value, ok := hc.mutation.NextSeenAt(); ok {
+	if value, ok := _c.mutation.NextSeenAt(); ok {
 		_spec.SetField(host.FieldNextSeenAt, field.TypeTime, value)
 		_node.NextSeenAt = value
 	}
-	if nodes := hc.mutation.TagsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TagsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -366,7 +366,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hc.mutation.BeaconsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.BeaconsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -382,7 +382,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hc.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.FilesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -398,7 +398,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hc.mutation.ProcessesIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ProcessesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -414,7 +414,7 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hc.mutation.CredentialsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.CredentialsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -449,10 +449,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hc *HostCreate) OnConflict(opts ...sql.ConflictOption) *HostUpsertOne {
-	hc.conflict = opts
+func (_c *HostCreate) OnConflict(opts ...sql.ConflictOption) *HostUpsertOne {
+	_c.conflict = opts
 	return &HostUpsertOne{
-		create: hc,
+		create: _c,
 	}
 }
 
@@ -462,10 +462,10 @@ func (hc *HostCreate) OnConflict(opts ...sql.ConflictOption) *HostUpsertOne {
 //	client.Host.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hc *HostCreate) OnConflictColumns(columns ...string) *HostUpsertOne {
-	hc.conflict = append(hc.conflict, sql.ConflictColumns(columns...))
+func (_c *HostCreate) OnConflictColumns(columns ...string) *HostUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostUpsertOne{
-		create: hc,
+		create: _c,
 	}
 }
 
@@ -842,16 +842,16 @@ type HostCreateBulk struct {
 }
 
 // Save creates the Host entities in the database.
-func (hcb *HostCreateBulk) Save(ctx context.Context) ([]*Host, error) {
-	if hcb.err != nil {
-		return nil, hcb.err
+func (_c *HostCreateBulk) Save(ctx context.Context) ([]*Host, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(hcb.builders))
-	nodes := make([]*Host, len(hcb.builders))
-	mutators := make([]Mutator, len(hcb.builders))
-	for i := range hcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Host, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := hcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*HostMutation)
@@ -865,12 +865,12 @@ func (hcb *HostCreateBulk) Save(ctx context.Context) ([]*Host, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, hcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = hcb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, hcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -894,7 +894,7 @@ func (hcb *HostCreateBulk) Save(ctx context.Context) ([]*Host, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, hcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -902,8 +902,8 @@ func (hcb *HostCreateBulk) Save(ctx context.Context) ([]*Host, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hcb *HostCreateBulk) SaveX(ctx context.Context) []*Host {
-	v, err := hcb.Save(ctx)
+func (_c *HostCreateBulk) SaveX(ctx context.Context) []*Host {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -911,14 +911,14 @@ func (hcb *HostCreateBulk) SaveX(ctx context.Context) []*Host {
 }
 
 // Exec executes the query.
-func (hcb *HostCreateBulk) Exec(ctx context.Context) error {
-	_, err := hcb.Save(ctx)
+func (_c *HostCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hcb *HostCreateBulk) ExecX(ctx context.Context) {
-	if err := hcb.Exec(ctx); err != nil {
+func (_c *HostCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -938,10 +938,10 @@ func (hcb *HostCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hcb *HostCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostUpsertBulk {
-	hcb.conflict = opts
+func (_c *HostCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostUpsertBulk {
+	_c.conflict = opts
 	return &HostUpsertBulk{
-		create: hcb,
+		create: _c,
 	}
 }
 
@@ -951,10 +951,10 @@ func (hcb *HostCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostUpsertBul
 //	client.Host.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hcb *HostCreateBulk) OnConflictColumns(columns ...string) *HostUpsertBulk {
-	hcb.conflict = append(hcb.conflict, sql.ConflictColumns(columns...))
+func (_c *HostCreateBulk) OnConflictColumns(columns ...string) *HostUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostUpsertBulk{
-		create: hcb,
+		create: _c,
 	}
 }
 

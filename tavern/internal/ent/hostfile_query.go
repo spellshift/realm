@@ -35,44 +35,44 @@ type HostFileQuery struct {
 }
 
 // Where adds a new predicate for the HostFileQuery builder.
-func (hfq *HostFileQuery) Where(ps ...predicate.HostFile) *HostFileQuery {
-	hfq.predicates = append(hfq.predicates, ps...)
-	return hfq
+func (_q *HostFileQuery) Where(ps ...predicate.HostFile) *HostFileQuery {
+	_q.predicates = append(_q.predicates, ps...)
+	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (hfq *HostFileQuery) Limit(limit int) *HostFileQuery {
-	hfq.ctx.Limit = &limit
-	return hfq
+func (_q *HostFileQuery) Limit(limit int) *HostFileQuery {
+	_q.ctx.Limit = &limit
+	return _q
 }
 
 // Offset to start from.
-func (hfq *HostFileQuery) Offset(offset int) *HostFileQuery {
-	hfq.ctx.Offset = &offset
-	return hfq
+func (_q *HostFileQuery) Offset(offset int) *HostFileQuery {
+	_q.ctx.Offset = &offset
+	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (hfq *HostFileQuery) Unique(unique bool) *HostFileQuery {
-	hfq.ctx.Unique = &unique
-	return hfq
+func (_q *HostFileQuery) Unique(unique bool) *HostFileQuery {
+	_q.ctx.Unique = &unique
+	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (hfq *HostFileQuery) Order(o ...hostfile.OrderOption) *HostFileQuery {
-	hfq.order = append(hfq.order, o...)
-	return hfq
+func (_q *HostFileQuery) Order(o ...hostfile.OrderOption) *HostFileQuery {
+	_q.order = append(_q.order, o...)
+	return _q
 }
 
 // QueryHost chains the current query on the "host" edge.
-func (hfq *HostFileQuery) QueryHost() *HostQuery {
-	query := (&HostClient{config: hfq.config}).Query()
+func (_q *HostFileQuery) QueryHost() *HostQuery {
+	query := (&HostClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := hfq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := hfq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -81,20 +81,20 @@ func (hfq *HostFileQuery) QueryHost() *HostQuery {
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, hostfile.HostTable, hostfile.HostColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(hfq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryTask chains the current query on the "task" edge.
-func (hfq *HostFileQuery) QueryTask() *TaskQuery {
-	query := (&TaskClient{config: hfq.config}).Query()
+func (_q *HostFileQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := hfq.prepareQuery(ctx); err != nil {
+		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := hfq.sqlQuery(ctx)
+		selector := _q.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (hfq *HostFileQuery) QueryTask() *TaskQuery {
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.TaskTable, hostfile.TaskColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(hfq.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -111,8 +111,8 @@ func (hfq *HostFileQuery) QueryTask() *TaskQuery {
 
 // First returns the first HostFile entity from the query.
 // Returns a *NotFoundError when no HostFile was found.
-func (hfq *HostFileQuery) First(ctx context.Context) (*HostFile, error) {
-	nodes, err := hfq.Limit(1).All(setContextOp(ctx, hfq.ctx, ent.OpQueryFirst))
+func (_q *HostFileQuery) First(ctx context.Context) (*HostFile, error) {
+	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +123,8 @@ func (hfq *HostFileQuery) First(ctx context.Context) (*HostFile, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (hfq *HostFileQuery) FirstX(ctx context.Context) *HostFile {
-	node, err := hfq.First(ctx)
+func (_q *HostFileQuery) FirstX(ctx context.Context) *HostFile {
+	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -133,9 +133,9 @@ func (hfq *HostFileQuery) FirstX(ctx context.Context) *HostFile {
 
 // FirstID returns the first HostFile ID from the query.
 // Returns a *NotFoundError when no HostFile ID was found.
-func (hfq *HostFileQuery) FirstID(ctx context.Context) (id int, err error) {
+func (_q *HostFileQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hfq.Limit(1).IDs(setContextOp(ctx, hfq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -146,8 +146,8 @@ func (hfq *HostFileQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (hfq *HostFileQuery) FirstIDX(ctx context.Context) int {
-	id, err := hfq.FirstID(ctx)
+func (_q *HostFileQuery) FirstIDX(ctx context.Context) int {
+	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -157,8 +157,8 @@ func (hfq *HostFileQuery) FirstIDX(ctx context.Context) int {
 // Only returns a single HostFile entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one HostFile entity is found.
 // Returns a *NotFoundError when no HostFile entities are found.
-func (hfq *HostFileQuery) Only(ctx context.Context) (*HostFile, error) {
-	nodes, err := hfq.Limit(2).All(setContextOp(ctx, hfq.ctx, ent.OpQueryOnly))
+func (_q *HostFileQuery) Only(ctx context.Context) (*HostFile, error) {
+	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +173,8 @@ func (hfq *HostFileQuery) Only(ctx context.Context) (*HostFile, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (hfq *HostFileQuery) OnlyX(ctx context.Context) *HostFile {
-	node, err := hfq.Only(ctx)
+func (_q *HostFileQuery) OnlyX(ctx context.Context) *HostFile {
+	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -184,9 +184,9 @@ func (hfq *HostFileQuery) OnlyX(ctx context.Context) *HostFile {
 // OnlyID is like Only, but returns the only HostFile ID in the query.
 // Returns a *NotSingularError when more than one HostFile ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (hfq *HostFileQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (_q *HostFileQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = hfq.Limit(2).IDs(setContextOp(ctx, hfq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -201,8 +201,8 @@ func (hfq *HostFileQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (hfq *HostFileQuery) OnlyIDX(ctx context.Context) int {
-	id, err := hfq.OnlyID(ctx)
+func (_q *HostFileQuery) OnlyIDX(ctx context.Context) int {
+	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -210,18 +210,18 @@ func (hfq *HostFileQuery) OnlyIDX(ctx context.Context) int {
 }
 
 // All executes the query and returns a list of HostFiles.
-func (hfq *HostFileQuery) All(ctx context.Context) ([]*HostFile, error) {
-	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryAll)
-	if err := hfq.prepareQuery(ctx); err != nil {
+func (_q *HostFileQuery) All(ctx context.Context) ([]*HostFile, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*HostFile, *HostFileQuery]()
-	return withInterceptors[[]*HostFile](ctx, hfq, qr, hfq.inters)
+	return withInterceptors[[]*HostFile](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (hfq *HostFileQuery) AllX(ctx context.Context) []*HostFile {
-	nodes, err := hfq.All(ctx)
+func (_q *HostFileQuery) AllX(ctx context.Context) []*HostFile {
+	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -229,20 +229,20 @@ func (hfq *HostFileQuery) AllX(ctx context.Context) []*HostFile {
 }
 
 // IDs executes the query and returns a list of HostFile IDs.
-func (hfq *HostFileQuery) IDs(ctx context.Context) (ids []int, err error) {
-	if hfq.ctx.Unique == nil && hfq.path != nil {
-		hfq.Unique(true)
+func (_q *HostFileQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if _q.ctx.Unique == nil && _q.path != nil {
+		_q.Unique(true)
 	}
-	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryIDs)
-	if err = hfq.Select(hostfile.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
+	if err = _q.Select(hostfile.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (hfq *HostFileQuery) IDsX(ctx context.Context) []int {
-	ids, err := hfq.IDs(ctx)
+func (_q *HostFileQuery) IDsX(ctx context.Context) []int {
+	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -250,17 +250,17 @@ func (hfq *HostFileQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (hfq *HostFileQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryCount)
-	if err := hfq.prepareQuery(ctx); err != nil {
+func (_q *HostFileQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
+	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, hfq, querierCount[*HostFileQuery](), hfq.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*HostFileQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (hfq *HostFileQuery) CountX(ctx context.Context) int {
-	count, err := hfq.Count(ctx)
+func (_q *HostFileQuery) CountX(ctx context.Context) int {
+	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -268,9 +268,9 @@ func (hfq *HostFileQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (hfq *HostFileQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, hfq.ctx, ent.OpQueryExist)
-	switch _, err := hfq.FirstID(ctx); {
+func (_q *HostFileQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
+	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -281,8 +281,8 @@ func (hfq *HostFileQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (hfq *HostFileQuery) ExistX(ctx context.Context) bool {
-	exist, err := hfq.Exist(ctx)
+func (_q *HostFileQuery) ExistX(ctx context.Context) bool {
+	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -291,44 +291,44 @@ func (hfq *HostFileQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the HostFileQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (hfq *HostFileQuery) Clone() *HostFileQuery {
-	if hfq == nil {
+func (_q *HostFileQuery) Clone() *HostFileQuery {
+	if _q == nil {
 		return nil
 	}
 	return &HostFileQuery{
-		config:     hfq.config,
-		ctx:        hfq.ctx.Clone(),
-		order:      append([]hostfile.OrderOption{}, hfq.order...),
-		inters:     append([]Interceptor{}, hfq.inters...),
-		predicates: append([]predicate.HostFile{}, hfq.predicates...),
-		withHost:   hfq.withHost.Clone(),
-		withTask:   hfq.withTask.Clone(),
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]hostfile.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.HostFile{}, _q.predicates...),
+		withHost:   _q.withHost.Clone(),
+		withTask:   _q.withTask.Clone(),
 		// clone intermediate query.
-		sql:  hfq.sql.Clone(),
-		path: hfq.path,
+		sql:  _q.sql.Clone(),
+		path: _q.path,
 	}
 }
 
 // WithHost tells the query-builder to eager-load the nodes that are connected to
 // the "host" edge. The optional arguments are used to configure the query builder of the edge.
-func (hfq *HostFileQuery) WithHost(opts ...func(*HostQuery)) *HostFileQuery {
-	query := (&HostClient{config: hfq.config}).Query()
+func (_q *HostFileQuery) WithHost(opts ...func(*HostQuery)) *HostFileQuery {
+	query := (&HostClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	hfq.withHost = query
-	return hfq
+	_q.withHost = query
+	return _q
 }
 
 // WithTask tells the query-builder to eager-load the nodes that are connected to
 // the "task" edge. The optional arguments are used to configure the query builder of the edge.
-func (hfq *HostFileQuery) WithTask(opts ...func(*TaskQuery)) *HostFileQuery {
-	query := (&TaskClient{config: hfq.config}).Query()
+func (_q *HostFileQuery) WithTask(opts ...func(*TaskQuery)) *HostFileQuery {
+	query := (&TaskClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	hfq.withTask = query
-	return hfq
+	_q.withTask = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -345,10 +345,10 @@ func (hfq *HostFileQuery) WithTask(opts ...func(*TaskQuery)) *HostFileQuery {
 //		GroupBy(hostfile.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (hfq *HostFileQuery) GroupBy(field string, fields ...string) *HostFileGroupBy {
-	hfq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &HostFileGroupBy{build: hfq}
-	grbuild.flds = &hfq.ctx.Fields
+func (_q *HostFileQuery) GroupBy(field string, fields ...string) *HostFileGroupBy {
+	_q.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &HostFileGroupBy{build: _q}
+	grbuild.flds = &_q.ctx.Fields
 	grbuild.label = hostfile.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -366,56 +366,56 @@ func (hfq *HostFileQuery) GroupBy(field string, fields ...string) *HostFileGroup
 //	client.HostFile.Query().
 //		Select(hostfile.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (hfq *HostFileQuery) Select(fields ...string) *HostFileSelect {
-	hfq.ctx.Fields = append(hfq.ctx.Fields, fields...)
-	sbuild := &HostFileSelect{HostFileQuery: hfq}
+func (_q *HostFileQuery) Select(fields ...string) *HostFileSelect {
+	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
+	sbuild := &HostFileSelect{HostFileQuery: _q}
 	sbuild.label = hostfile.Label
-	sbuild.flds, sbuild.scan = &hfq.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a HostFileSelect configured with the given aggregations.
-func (hfq *HostFileQuery) Aggregate(fns ...AggregateFunc) *HostFileSelect {
-	return hfq.Select().Aggregate(fns...)
+func (_q *HostFileQuery) Aggregate(fns ...AggregateFunc) *HostFileSelect {
+	return _q.Select().Aggregate(fns...)
 }
 
-func (hfq *HostFileQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range hfq.inters {
+func (_q *HostFileQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, hfq); err != nil {
+			if err := trv.Traverse(ctx, _q); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range hfq.ctx.Fields {
+	for _, f := range _q.ctx.Fields {
 		if !hostfile.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if hfq.path != nil {
-		prev, err := hfq.path(ctx)
+	if _q.path != nil {
+		prev, err := _q.path(ctx)
 		if err != nil {
 			return err
 		}
-		hfq.sql = prev
+		_q.sql = prev
 	}
 	return nil
 }
 
-func (hfq *HostFileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*HostFile, error) {
+func (_q *HostFileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*HostFile, error) {
 	var (
 		nodes       = []*HostFile{}
-		withFKs     = hfq.withFKs
-		_spec       = hfq.querySpec()
+		withFKs     = _q.withFKs
+		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			hfq.withHost != nil,
-			hfq.withTask != nil,
+			_q.withHost != nil,
+			_q.withTask != nil,
 		}
 	)
-	if hfq.withHost != nil || hfq.withTask != nil {
+	if _q.withHost != nil || _q.withTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -425,44 +425,44 @@ func (hfq *HostFileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ho
 		return (*HostFile).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &HostFile{config: hfq.config}
+		node := &HostFile{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(hfq.modifiers) > 0 {
-		_spec.Modifiers = hfq.modifiers
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, hfq.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := hfq.withHost; query != nil {
-		if err := hfq.loadHost(ctx, query, nodes, nil,
+	if query := _q.withHost; query != nil {
+		if err := _q.loadHost(ctx, query, nodes, nil,
 			func(n *HostFile, e *Host) { n.Edges.Host = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := hfq.withTask; query != nil {
-		if err := hfq.loadTask(ctx, query, nodes, nil,
+	if query := _q.withTask; query != nil {
+		if err := _q.loadTask(ctx, query, nodes, nil,
 			func(n *HostFile, e *Task) { n.Edges.Task = e }); err != nil {
 			return nil, err
 		}
 	}
-	for i := range hfq.loadTotal {
-		if err := hfq.loadTotal[i](ctx, nodes); err != nil {
+	for i := range _q.loadTotal {
+		if err := _q.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (hfq *HostFileQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*HostFile, init func(*HostFile), assign func(*HostFile, *Host)) error {
+func (_q *HostFileQuery) loadHost(ctx context.Context, query *HostQuery, nodes []*HostFile, init func(*HostFile), assign func(*HostFile, *Host)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*HostFile)
 	for i := range nodes {
@@ -494,7 +494,7 @@ func (hfq *HostFileQuery) loadHost(ctx context.Context, query *HostQuery, nodes 
 	}
 	return nil
 }
-func (hfq *HostFileQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*HostFile, init func(*HostFile), assign func(*HostFile, *Task)) error {
+func (_q *HostFileQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*HostFile, init func(*HostFile), assign func(*HostFile, *Task)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*HostFile)
 	for i := range nodes {
@@ -527,27 +527,27 @@ func (hfq *HostFileQuery) loadTask(ctx context.Context, query *TaskQuery, nodes 
 	return nil
 }
 
-func (hfq *HostFileQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := hfq.querySpec()
-	if len(hfq.modifiers) > 0 {
-		_spec.Modifiers = hfq.modifiers
+func (_q *HostFileQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := _q.querySpec()
+	if len(_q.modifiers) > 0 {
+		_spec.Modifiers = _q.modifiers
 	}
-	_spec.Node.Columns = hfq.ctx.Fields
-	if len(hfq.ctx.Fields) > 0 {
-		_spec.Unique = hfq.ctx.Unique != nil && *hfq.ctx.Unique
+	_spec.Node.Columns = _q.ctx.Fields
+	if len(_q.ctx.Fields) > 0 {
+		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, hfq.driver, _spec)
+	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (hfq *HostFileQuery) querySpec() *sqlgraph.QuerySpec {
+func (_q *HostFileQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(hostfile.Table, hostfile.Columns, sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt))
-	_spec.From = hfq.sql
-	if unique := hfq.ctx.Unique; unique != nil {
+	_spec.From = _q.sql
+	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if hfq.path != nil {
+	} else if _q.path != nil {
 		_spec.Unique = true
 	}
-	if fields := hfq.ctx.Fields; len(fields) > 0 {
+	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, hostfile.FieldID)
 		for i := range fields {
@@ -556,20 +556,20 @@ func (hfq *HostFileQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := hfq.predicates; len(ps) > 0 {
+	if ps := _q.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := hfq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := hfq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := hfq.order; len(ps) > 0 {
+	if ps := _q.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -579,33 +579,33 @@ func (hfq *HostFileQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (hfq *HostFileQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(hfq.driver.Dialect())
+func (_q *HostFileQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(_q.driver.Dialect())
 	t1 := builder.Table(hostfile.Table)
-	columns := hfq.ctx.Fields
+	columns := _q.ctx.Fields
 	if len(columns) == 0 {
 		columns = hostfile.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if hfq.sql != nil {
-		selector = hfq.sql
+	if _q.sql != nil {
+		selector = _q.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if hfq.ctx.Unique != nil && *hfq.ctx.Unique {
+	if _q.ctx.Unique != nil && *_q.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range hfq.predicates {
+	for _, p := range _q.predicates {
 		p(selector)
 	}
-	for _, p := range hfq.order {
+	for _, p := range _q.order {
 		p(selector)
 	}
-	if offset := hfq.ctx.Offset; offset != nil {
+	if offset := _q.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := hfq.ctx.Limit; limit != nil {
+	if limit := _q.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -618,41 +618,41 @@ type HostFileGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (hfgb *HostFileGroupBy) Aggregate(fns ...AggregateFunc) *HostFileGroupBy {
-	hfgb.fns = append(hfgb.fns, fns...)
-	return hfgb
+func (_g *HostFileGroupBy) Aggregate(fns ...AggregateFunc) *HostFileGroupBy {
+	_g.fns = append(_g.fns, fns...)
+	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (hfgb *HostFileGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hfgb.build.ctx, ent.OpQueryGroupBy)
-	if err := hfgb.build.prepareQuery(ctx); err != nil {
+func (_g *HostFileGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
+	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*HostFileQuery, *HostFileGroupBy](ctx, hfgb.build, hfgb, hfgb.build.inters, v)
+	return scanWithInterceptors[*HostFileQuery, *HostFileGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (hfgb *HostFileGroupBy) sqlScan(ctx context.Context, root *HostFileQuery, v any) error {
+func (_g *HostFileGroupBy) sqlScan(ctx context.Context, root *HostFileQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(hfgb.fns))
-	for _, fn := range hfgb.fns {
+	aggregation := make([]string, 0, len(_g.fns))
+	for _, fn := range _g.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*hfgb.flds)+len(hfgb.fns))
-		for _, f := range *hfgb.flds {
+		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
+		for _, f := range *_g.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*hfgb.flds...)...)
+	selector.GroupBy(selector.Columns(*_g.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := hfgb.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -666,27 +666,27 @@ type HostFileSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (hfs *HostFileSelect) Aggregate(fns ...AggregateFunc) *HostFileSelect {
-	hfs.fns = append(hfs.fns, fns...)
-	return hfs
+func (_s *HostFileSelect) Aggregate(fns ...AggregateFunc) *HostFileSelect {
+	_s.fns = append(_s.fns, fns...)
+	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (hfs *HostFileSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hfs.ctx, ent.OpQuerySelect)
-	if err := hfs.prepareQuery(ctx); err != nil {
+func (_s *HostFileSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
+	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*HostFileQuery, *HostFileSelect](ctx, hfs.HostFileQuery, hfs, hfs.inters, v)
+	return scanWithInterceptors[*HostFileQuery, *HostFileSelect](ctx, _s.HostFileQuery, _s, _s.inters, v)
 }
 
-func (hfs *HostFileSelect) sqlScan(ctx context.Context, root *HostFileQuery, v any) error {
+func (_s *HostFileSelect) sqlScan(ctx context.Context, root *HostFileQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(hfs.fns))
-	for _, fn := range hfs.fns {
+	aggregation := make([]string, 0, len(_s.fns))
+	for _, fn := range _s.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*hfs.selector.flds); {
+	switch n := len(*_s.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -694,7 +694,7 @@ func (hfs *HostFileSelect) sqlScan(ctx context.Context, root *HostFileQuery, v a
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := hfs.driver.Query(ctx, query, args, rows); err != nil {
+	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

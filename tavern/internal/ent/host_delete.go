@@ -20,56 +20,56 @@ type HostDelete struct {
 }
 
 // Where appends a list predicates to the HostDelete builder.
-func (hd *HostDelete) Where(ps ...predicate.Host) *HostDelete {
-	hd.mutation.Where(ps...)
-	return hd
+func (_d *HostDelete) Where(ps ...predicate.Host) *HostDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (hd *HostDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, hd.sqlExec, hd.mutation, hd.hooks)
+func (_d *HostDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hd *HostDelete) ExecX(ctx context.Context) int {
-	n, err := hd.Exec(ctx)
+func (_d *HostDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (hd *HostDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *HostDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(host.Table, sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt))
-	if ps := hd.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, hd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	hd.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // HostDeleteOne is the builder for deleting a single Host entity.
 type HostDeleteOne struct {
-	hd *HostDelete
+	_d *HostDelete
 }
 
 // Where appends a list predicates to the HostDelete builder.
-func (hdo *HostDeleteOne) Where(ps ...predicate.Host) *HostDeleteOne {
-	hdo.hd.mutation.Where(ps...)
-	return hdo
+func (_d *HostDeleteOne) Where(ps ...predicate.Host) *HostDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (hdo *HostDeleteOne) Exec(ctx context.Context) error {
-	n, err := hdo.hd.Exec(ctx)
+func (_d *HostDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (hdo *HostDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hdo *HostDeleteOne) ExecX(ctx context.Context) {
-	if err := hdo.Exec(ctx); err != nil {
+func (_d *HostDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

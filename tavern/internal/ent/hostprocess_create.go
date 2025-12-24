@@ -26,155 +26,155 @@ type HostProcessCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (hpc *HostProcessCreate) SetCreatedAt(t time.Time) *HostProcessCreate {
-	hpc.mutation.SetCreatedAt(t)
-	return hpc
+func (_c *HostProcessCreate) SetCreatedAt(v time.Time) *HostProcessCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableCreatedAt(t *time.Time) *HostProcessCreate {
-	if t != nil {
-		hpc.SetCreatedAt(*t)
+func (_c *HostProcessCreate) SetNillableCreatedAt(v *time.Time) *HostProcessCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return hpc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (hpc *HostProcessCreate) SetLastModifiedAt(t time.Time) *HostProcessCreate {
-	hpc.mutation.SetLastModifiedAt(t)
-	return hpc
+func (_c *HostProcessCreate) SetLastModifiedAt(v time.Time) *HostProcessCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableLastModifiedAt(t *time.Time) *HostProcessCreate {
-	if t != nil {
-		hpc.SetLastModifiedAt(*t)
+func (_c *HostProcessCreate) SetNillableLastModifiedAt(v *time.Time) *HostProcessCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return hpc
+	return _c
 }
 
 // SetPid sets the "pid" field.
-func (hpc *HostProcessCreate) SetPid(u uint64) *HostProcessCreate {
-	hpc.mutation.SetPid(u)
-	return hpc
+func (_c *HostProcessCreate) SetPid(v uint64) *HostProcessCreate {
+	_c.mutation.SetPid(v)
+	return _c
 }
 
 // SetPpid sets the "ppid" field.
-func (hpc *HostProcessCreate) SetPpid(u uint64) *HostProcessCreate {
-	hpc.mutation.SetPpid(u)
-	return hpc
+func (_c *HostProcessCreate) SetPpid(v uint64) *HostProcessCreate {
+	_c.mutation.SetPpid(v)
+	return _c
 }
 
 // SetName sets the "name" field.
-func (hpc *HostProcessCreate) SetName(s string) *HostProcessCreate {
-	hpc.mutation.SetName(s)
-	return hpc
+func (_c *HostProcessCreate) SetName(v string) *HostProcessCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetPrincipal sets the "principal" field.
-func (hpc *HostProcessCreate) SetPrincipal(s string) *HostProcessCreate {
-	hpc.mutation.SetPrincipal(s)
-	return hpc
+func (_c *HostProcessCreate) SetPrincipal(v string) *HostProcessCreate {
+	_c.mutation.SetPrincipal(v)
+	return _c
 }
 
 // SetPath sets the "path" field.
-func (hpc *HostProcessCreate) SetPath(s string) *HostProcessCreate {
-	hpc.mutation.SetPath(s)
-	return hpc
+func (_c *HostProcessCreate) SetPath(v string) *HostProcessCreate {
+	_c.mutation.SetPath(v)
+	return _c
 }
 
 // SetNillablePath sets the "path" field if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillablePath(s *string) *HostProcessCreate {
-	if s != nil {
-		hpc.SetPath(*s)
+func (_c *HostProcessCreate) SetNillablePath(v *string) *HostProcessCreate {
+	if v != nil {
+		_c.SetPath(*v)
 	}
-	return hpc
+	return _c
 }
 
 // SetCmd sets the "cmd" field.
-func (hpc *HostProcessCreate) SetCmd(s string) *HostProcessCreate {
-	hpc.mutation.SetCmd(s)
-	return hpc
+func (_c *HostProcessCreate) SetCmd(v string) *HostProcessCreate {
+	_c.mutation.SetCmd(v)
+	return _c
 }
 
 // SetNillableCmd sets the "cmd" field if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableCmd(s *string) *HostProcessCreate {
-	if s != nil {
-		hpc.SetCmd(*s)
+func (_c *HostProcessCreate) SetNillableCmd(v *string) *HostProcessCreate {
+	if v != nil {
+		_c.SetCmd(*v)
 	}
-	return hpc
+	return _c
 }
 
 // SetEnv sets the "env" field.
-func (hpc *HostProcessCreate) SetEnv(s string) *HostProcessCreate {
-	hpc.mutation.SetEnv(s)
-	return hpc
+func (_c *HostProcessCreate) SetEnv(v string) *HostProcessCreate {
+	_c.mutation.SetEnv(v)
+	return _c
 }
 
 // SetNillableEnv sets the "env" field if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableEnv(s *string) *HostProcessCreate {
-	if s != nil {
-		hpc.SetEnv(*s)
+func (_c *HostProcessCreate) SetNillableEnv(v *string) *HostProcessCreate {
+	if v != nil {
+		_c.SetEnv(*v)
 	}
-	return hpc
+	return _c
 }
 
 // SetCwd sets the "cwd" field.
-func (hpc *HostProcessCreate) SetCwd(s string) *HostProcessCreate {
-	hpc.mutation.SetCwd(s)
-	return hpc
+func (_c *HostProcessCreate) SetCwd(v string) *HostProcessCreate {
+	_c.mutation.SetCwd(v)
+	return _c
 }
 
 // SetNillableCwd sets the "cwd" field if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableCwd(s *string) *HostProcessCreate {
-	if s != nil {
-		hpc.SetCwd(*s)
+func (_c *HostProcessCreate) SetNillableCwd(v *string) *HostProcessCreate {
+	if v != nil {
+		_c.SetCwd(*v)
 	}
-	return hpc
+	return _c
 }
 
 // SetStatus sets the "status" field.
-func (hpc *HostProcessCreate) SetStatus(es epb.Process_Status) *HostProcessCreate {
-	hpc.mutation.SetStatus(es)
-	return hpc
+func (_c *HostProcessCreate) SetStatus(v epb.Process_Status) *HostProcessCreate {
+	_c.mutation.SetStatus(v)
+	return _c
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (hpc *HostProcessCreate) SetHostID(id int) *HostProcessCreate {
-	hpc.mutation.SetHostID(id)
-	return hpc
+func (_c *HostProcessCreate) SetHostID(id int) *HostProcessCreate {
+	_c.mutation.SetHostID(id)
+	return _c
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (hpc *HostProcessCreate) SetHost(h *Host) *HostProcessCreate {
-	return hpc.SetHostID(h.ID)
+func (_c *HostProcessCreate) SetHost(v *Host) *HostProcessCreate {
+	return _c.SetHostID(v.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
-func (hpc *HostProcessCreate) SetTaskID(id int) *HostProcessCreate {
-	hpc.mutation.SetTaskID(id)
-	return hpc
+func (_c *HostProcessCreate) SetTaskID(id int) *HostProcessCreate {
+	_c.mutation.SetTaskID(id)
+	return _c
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (hpc *HostProcessCreate) SetTask(t *Task) *HostProcessCreate {
-	return hpc.SetTaskID(t.ID)
+func (_c *HostProcessCreate) SetTask(v *Task) *HostProcessCreate {
+	return _c.SetTaskID(v.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
-func (hpc *HostProcessCreate) Mutation() *HostProcessMutation {
-	return hpc.mutation
+func (_c *HostProcessCreate) Mutation() *HostProcessMutation {
+	return _c.mutation
 }
 
 // Save creates the HostProcess in the database.
-func (hpc *HostProcessCreate) Save(ctx context.Context) (*HostProcess, error) {
-	hpc.defaults()
-	return withHooks(ctx, hpc.sqlSave, hpc.mutation, hpc.hooks)
+func (_c *HostProcessCreate) Save(ctx context.Context) (*HostProcess, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (hpc *HostProcessCreate) SaveX(ctx context.Context) *HostProcess {
-	v, err := hpc.Save(ctx)
+func (_c *HostProcessCreate) SaveX(ctx context.Context) *HostProcess {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -182,78 +182,78 @@ func (hpc *HostProcessCreate) SaveX(ctx context.Context) *HostProcess {
 }
 
 // Exec executes the query.
-func (hpc *HostProcessCreate) Exec(ctx context.Context) error {
-	_, err := hpc.Save(ctx)
+func (_c *HostProcessCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hpc *HostProcessCreate) ExecX(ctx context.Context) {
-	if err := hpc.Exec(ctx); err != nil {
+func (_c *HostProcessCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (hpc *HostProcessCreate) defaults() {
-	if _, ok := hpc.mutation.CreatedAt(); !ok {
+func (_c *HostProcessCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := hostprocess.DefaultCreatedAt()
-		hpc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := hpc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		v := hostprocess.DefaultLastModifiedAt()
-		hpc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (hpc *HostProcessCreate) check() error {
-	if _, ok := hpc.mutation.CreatedAt(); !ok {
+func (_c *HostProcessCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "HostProcess.created_at"`)}
 	}
-	if _, ok := hpc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "HostProcess.last_modified_at"`)}
 	}
-	if _, ok := hpc.mutation.Pid(); !ok {
+	if _, ok := _c.mutation.Pid(); !ok {
 		return &ValidationError{Name: "pid", err: errors.New(`ent: missing required field "HostProcess.pid"`)}
 	}
-	if _, ok := hpc.mutation.Ppid(); !ok {
+	if _, ok := _c.mutation.Ppid(); !ok {
 		return &ValidationError{Name: "ppid", err: errors.New(`ent: missing required field "HostProcess.ppid"`)}
 	}
-	if _, ok := hpc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "HostProcess.name"`)}
 	}
-	if _, ok := hpc.mutation.Principal(); !ok {
+	if _, ok := _c.mutation.Principal(); !ok {
 		return &ValidationError{Name: "principal", err: errors.New(`ent: missing required field "HostProcess.principal"`)}
 	}
-	if v, ok := hpc.mutation.Principal(); ok {
+	if v, ok := _c.mutation.Principal(); ok {
 		if err := hostprocess.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostProcess.principal": %w`, err)}
 		}
 	}
-	if _, ok := hpc.mutation.Status(); !ok {
+	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "HostProcess.status"`)}
 	}
-	if v, ok := hpc.mutation.Status(); ok {
+	if v, ok := _c.mutation.Status(); ok {
 		if err := hostprocess.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
 		}
 	}
-	if len(hpc.mutation.HostIDs()) == 0 {
+	if len(_c.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostProcess.host"`)}
 	}
-	if len(hpc.mutation.TaskIDs()) == 0 {
+	if len(_c.mutation.TaskIDs()) == 0 {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostProcess.task"`)}
 	}
 	return nil
 }
 
-func (hpc *HostProcessCreate) sqlSave(ctx context.Context) (*HostProcess, error) {
-	if err := hpc.check(); err != nil {
+func (_c *HostProcessCreate) sqlSave(ctx context.Context) (*HostProcess, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := hpc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, hpc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -261,62 +261,62 @@ func (hpc *HostProcessCreate) sqlSave(ctx context.Context) (*HostProcess, error)
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	hpc.mutation.id = &_node.ID
-	hpc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) {
+func (_c *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) {
 	var (
-		_node = &HostProcess{config: hpc.config}
+		_node = &HostProcess{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(hostprocess.Table, sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = hpc.conflict
-	if value, ok := hpc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(hostprocess.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := hpc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(hostprocess.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := hpc.mutation.Pid(); ok {
+	if value, ok := _c.mutation.Pid(); ok {
 		_spec.SetField(hostprocess.FieldPid, field.TypeUint64, value)
 		_node.Pid = value
 	}
-	if value, ok := hpc.mutation.Ppid(); ok {
+	if value, ok := _c.mutation.Ppid(); ok {
 		_spec.SetField(hostprocess.FieldPpid, field.TypeUint64, value)
 		_node.Ppid = value
 	}
-	if value, ok := hpc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(hostprocess.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := hpc.mutation.Principal(); ok {
+	if value, ok := _c.mutation.Principal(); ok {
 		_spec.SetField(hostprocess.FieldPrincipal, field.TypeString, value)
 		_node.Principal = value
 	}
-	if value, ok := hpc.mutation.Path(); ok {
+	if value, ok := _c.mutation.Path(); ok {
 		_spec.SetField(hostprocess.FieldPath, field.TypeString, value)
 		_node.Path = value
 	}
-	if value, ok := hpc.mutation.Cmd(); ok {
+	if value, ok := _c.mutation.Cmd(); ok {
 		_spec.SetField(hostprocess.FieldCmd, field.TypeString, value)
 		_node.Cmd = value
 	}
-	if value, ok := hpc.mutation.Env(); ok {
+	if value, ok := _c.mutation.Env(); ok {
 		_spec.SetField(hostprocess.FieldEnv, field.TypeString, value)
 		_node.Env = value
 	}
-	if value, ok := hpc.mutation.Cwd(); ok {
+	if value, ok := _c.mutation.Cwd(); ok {
 		_spec.SetField(hostprocess.FieldCwd, field.TypeString, value)
 		_node.Cwd = value
 	}
-	if value, ok := hpc.mutation.Status(); ok {
+	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(hostprocess.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
-	if nodes := hpc.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -333,7 +333,7 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 		_node.host_process_host = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hpc.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -369,10 +369,10 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hpc *HostProcessCreate) OnConflict(opts ...sql.ConflictOption) *HostProcessUpsertOne {
-	hpc.conflict = opts
+func (_c *HostProcessCreate) OnConflict(opts ...sql.ConflictOption) *HostProcessUpsertOne {
+	_c.conflict = opts
 	return &HostProcessUpsertOne{
-		create: hpc,
+		create: _c,
 	}
 }
 
@@ -382,10 +382,10 @@ func (hpc *HostProcessCreate) OnConflict(opts ...sql.ConflictOption) *HostProces
 //	client.HostProcess.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hpc *HostProcessCreate) OnConflictColumns(columns ...string) *HostProcessUpsertOne {
-	hpc.conflict = append(hpc.conflict, sql.ConflictColumns(columns...))
+func (_c *HostProcessCreate) OnConflictColumns(columns ...string) *HostProcessUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostProcessUpsertOne{
-		create: hpc,
+		create: _c,
 	}
 }
 
@@ -827,16 +827,16 @@ type HostProcessCreateBulk struct {
 }
 
 // Save creates the HostProcess entities in the database.
-func (hpcb *HostProcessCreateBulk) Save(ctx context.Context) ([]*HostProcess, error) {
-	if hpcb.err != nil {
-		return nil, hpcb.err
+func (_c *HostProcessCreateBulk) Save(ctx context.Context) ([]*HostProcess, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(hpcb.builders))
-	nodes := make([]*HostProcess, len(hpcb.builders))
-	mutators := make([]Mutator, len(hpcb.builders))
-	for i := range hpcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*HostProcess, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := hpcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*HostProcessMutation)
@@ -850,12 +850,12 @@ func (hpcb *HostProcessCreateBulk) Save(ctx context.Context) ([]*HostProcess, er
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, hpcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = hpcb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, hpcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -879,7 +879,7 @@ func (hpcb *HostProcessCreateBulk) Save(ctx context.Context) ([]*HostProcess, er
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, hpcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -887,8 +887,8 @@ func (hpcb *HostProcessCreateBulk) Save(ctx context.Context) ([]*HostProcess, er
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (hpcb *HostProcessCreateBulk) SaveX(ctx context.Context) []*HostProcess {
-	v, err := hpcb.Save(ctx)
+func (_c *HostProcessCreateBulk) SaveX(ctx context.Context) []*HostProcess {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -896,14 +896,14 @@ func (hpcb *HostProcessCreateBulk) SaveX(ctx context.Context) []*HostProcess {
 }
 
 // Exec executes the query.
-func (hpcb *HostProcessCreateBulk) Exec(ctx context.Context) error {
-	_, err := hpcb.Save(ctx)
+func (_c *HostProcessCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (hpcb *HostProcessCreateBulk) ExecX(ctx context.Context) {
-	if err := hpcb.Exec(ctx); err != nil {
+func (_c *HostProcessCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -923,10 +923,10 @@ func (hpcb *HostProcessCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (hpcb *HostProcessCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostProcessUpsertBulk {
-	hpcb.conflict = opts
+func (_c *HostProcessCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostProcessUpsertBulk {
+	_c.conflict = opts
 	return &HostProcessUpsertBulk{
-		create: hpcb,
+		create: _c,
 	}
 }
 
@@ -936,10 +936,10 @@ func (hpcb *HostProcessCreateBulk) OnConflict(opts ...sql.ConflictOption) *HostP
 //	client.HostProcess.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (hpcb *HostProcessCreateBulk) OnConflictColumns(columns ...string) *HostProcessUpsertBulk {
-	hpcb.conflict = append(hpcb.conflict, sql.ConflictColumns(columns...))
+func (_c *HostProcessCreateBulk) OnConflictColumns(columns ...string) *HostProcessUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &HostProcessUpsertBulk{
-		create: hpcb,
+		create: _c,
 	}
 }
 

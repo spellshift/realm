@@ -128,7 +128,7 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Quest fields.
-func (q *Quest) assignValues(columns []string, values []any) error {
+func (_m *Quest) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -139,66 +139,66 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			q.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case quest.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				q.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case quest.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				q.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case quest.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				q.Name = value.String
+				_m.Name = value.String
 			}
 		case quest.FieldParameters:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field parameters", values[i])
 			} else if value.Valid {
-				q.Parameters = value.String
+				_m.Parameters = value.String
 			}
 		case quest.FieldParamDefsAtCreation:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field param_defs_at_creation", values[i])
 			} else if value.Valid {
-				q.ParamDefsAtCreation = value.String
+				_m.ParamDefsAtCreation = value.String
 			}
 		case quest.FieldEldritchAtCreation:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field eldritch_at_creation", values[i])
 			} else if value.Valid {
-				q.EldritchAtCreation = value.String
+				_m.EldritchAtCreation = value.String
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_tome", value)
 			} else if value.Valid {
-				q.quest_tome = new(int)
-				*q.quest_tome = int(value.Int64)
+				_m.quest_tome = new(int)
+				*_m.quest_tome = int(value.Int64)
 			}
 		case quest.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_bundle", value)
 			} else if value.Valid {
-				q.quest_bundle = new(int)
-				*q.quest_bundle = int(value.Int64)
+				_m.quest_bundle = new(int)
+				*_m.quest_bundle = int(value.Int64)
 			}
 		case quest.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_creator", value)
 			} else if value.Valid {
-				q.quest_creator = new(int)
-				*q.quest_creator = int(value.Int64)
+				_m.quest_creator = new(int)
+				*_m.quest_creator = int(value.Int64)
 			}
 		default:
-			q.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -206,95 +206,95 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Quest.
 // This includes values selected through modifiers, order, etc.
-func (q *Quest) Value(name string) (ent.Value, error) {
-	return q.selectValues.Get(name)
+func (_m *Quest) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryTome queries the "tome" edge of the Quest entity.
-func (q *Quest) QueryTome() *TomeQuery {
-	return NewQuestClient(q.config).QueryTome(q)
+func (_m *Quest) QueryTome() *TomeQuery {
+	return NewQuestClient(_m.config).QueryTome(_m)
 }
 
 // QueryBundle queries the "bundle" edge of the Quest entity.
-func (q *Quest) QueryBundle() *FileQuery {
-	return NewQuestClient(q.config).QueryBundle(q)
+func (_m *Quest) QueryBundle() *FileQuery {
+	return NewQuestClient(_m.config).QueryBundle(_m)
 }
 
 // QueryTasks queries the "tasks" edge of the Quest entity.
-func (q *Quest) QueryTasks() *TaskQuery {
-	return NewQuestClient(q.config).QueryTasks(q)
+func (_m *Quest) QueryTasks() *TaskQuery {
+	return NewQuestClient(_m.config).QueryTasks(_m)
 }
 
 // QueryCreator queries the "creator" edge of the Quest entity.
-func (q *Quest) QueryCreator() *UserQuery {
-	return NewQuestClient(q.config).QueryCreator(q)
+func (_m *Quest) QueryCreator() *UserQuery {
+	return NewQuestClient(_m.config).QueryCreator(_m)
 }
 
 // Update returns a builder for updating this Quest.
 // Note that you need to call Quest.Unwrap() before calling this method if this Quest
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (q *Quest) Update() *QuestUpdateOne {
-	return NewQuestClient(q.config).UpdateOne(q)
+func (_m *Quest) Update() *QuestUpdateOne {
+	return NewQuestClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Quest entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (q *Quest) Unwrap() *Quest {
-	_tx, ok := q.config.driver.(*txDriver)
+func (_m *Quest) Unwrap() *Quest {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Quest is not a transactional entity")
 	}
-	q.config.driver = _tx.drv
-	return q
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (q *Quest) String() string {
+func (_m *Quest) String() string {
 	var builder strings.Builder
 	builder.WriteString("Quest(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", q.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(q.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(q.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(q.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("parameters=")
-	builder.WriteString(q.Parameters)
+	builder.WriteString(_m.Parameters)
 	builder.WriteString(", ")
 	builder.WriteString("param_defs_at_creation=")
-	builder.WriteString(q.ParamDefsAtCreation)
+	builder.WriteString(_m.ParamDefsAtCreation)
 	builder.WriteString(", ")
 	builder.WriteString("eldritch_at_creation=")
-	builder.WriteString(q.EldritchAtCreation)
+	builder.WriteString(_m.EldritchAtCreation)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTasks returns the Tasks named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (q *Quest) NamedTasks(name string) ([]*Task, error) {
-	if q.Edges.namedTasks == nil {
+func (_m *Quest) NamedTasks(name string) ([]*Task, error) {
+	if _m.Edges.namedTasks == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := q.Edges.namedTasks[name]
+	nodes, ok := _m.Edges.namedTasks[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (q *Quest) appendNamedTasks(name string, edges ...*Task) {
-	if q.Edges.namedTasks == nil {
-		q.Edges.namedTasks = make(map[string][]*Task)
+func (_m *Quest) appendNamedTasks(name string, edges ...*Task) {
+	if _m.Edges.namedTasks == nil {
+		_m.Edges.namedTasks = make(map[string][]*Task)
 	}
 	if len(edges) == 0 {
-		q.Edges.namedTasks[name] = []*Task{}
+		_m.Edges.namedTasks[name] = []*Task{}
 	} else {
-		q.Edges.namedTasks[name] = append(q.Edges.namedTasks[name], edges...)
+		_m.Edges.namedTasks[name] = append(_m.Edges.namedTasks[name], edges...)
 	}
 }
 

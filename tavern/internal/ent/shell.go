@@ -124,7 +124,7 @@ func (*Shell) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Shell fields.
-func (s *Shell) assignValues(columns []string, values []any) error {
+func (_m *Shell) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -135,54 +135,54 @@ func (s *Shell) assignValues(columns []string, values []any) error {
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			s.ID = int(value.Int64)
+			_m.ID = int(value.Int64)
 		case shell.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				s.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case shell.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				s.LastModifiedAt = value.Time
+				_m.LastModifiedAt = value.Time
 			}
 		case shell.FieldClosedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field closed_at", values[i])
 			} else if value.Valid {
-				s.ClosedAt = value.Time
+				_m.ClosedAt = value.Time
 			}
 		case shell.FieldData:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field data", values[i])
 			} else if value != nil {
-				s.Data = *value
+				_m.Data = *value
 			}
 		case shell.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_task", value)
 			} else if value.Valid {
-				s.shell_task = new(int)
-				*s.shell_task = int(value.Int64)
+				_m.shell_task = new(int)
+				*_m.shell_task = int(value.Int64)
 			}
 		case shell.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_beacon", value)
 			} else if value.Valid {
-				s.shell_beacon = new(int)
-				*s.shell_beacon = int(value.Int64)
+				_m.shell_beacon = new(int)
+				*_m.shell_beacon = int(value.Int64)
 			}
 		case shell.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_owner", value)
 			} else if value.Valid {
-				s.shell_owner = new(int)
-				*s.shell_owner = int(value.Int64)
+				_m.shell_owner = new(int)
+				*_m.shell_owner = int(value.Int64)
 			}
 		default:
-			s.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -190,89 +190,89 @@ func (s *Shell) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Shell.
 // This includes values selected through modifiers, order, etc.
-func (s *Shell) Value(name string) (ent.Value, error) {
-	return s.selectValues.Get(name)
+func (_m *Shell) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryTask queries the "task" edge of the Shell entity.
-func (s *Shell) QueryTask() *TaskQuery {
-	return NewShellClient(s.config).QueryTask(s)
+func (_m *Shell) QueryTask() *TaskQuery {
+	return NewShellClient(_m.config).QueryTask(_m)
 }
 
 // QueryBeacon queries the "beacon" edge of the Shell entity.
-func (s *Shell) QueryBeacon() *BeaconQuery {
-	return NewShellClient(s.config).QueryBeacon(s)
+func (_m *Shell) QueryBeacon() *BeaconQuery {
+	return NewShellClient(_m.config).QueryBeacon(_m)
 }
 
 // QueryOwner queries the "owner" edge of the Shell entity.
-func (s *Shell) QueryOwner() *UserQuery {
-	return NewShellClient(s.config).QueryOwner(s)
+func (_m *Shell) QueryOwner() *UserQuery {
+	return NewShellClient(_m.config).QueryOwner(_m)
 }
 
 // QueryActiveUsers queries the "active_users" edge of the Shell entity.
-func (s *Shell) QueryActiveUsers() *UserQuery {
-	return NewShellClient(s.config).QueryActiveUsers(s)
+func (_m *Shell) QueryActiveUsers() *UserQuery {
+	return NewShellClient(_m.config).QueryActiveUsers(_m)
 }
 
 // Update returns a builder for updating this Shell.
 // Note that you need to call Shell.Unwrap() before calling this method if this Shell
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (s *Shell) Update() *ShellUpdateOne {
-	return NewShellClient(s.config).UpdateOne(s)
+func (_m *Shell) Update() *ShellUpdateOne {
+	return NewShellClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Shell entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (s *Shell) Unwrap() *Shell {
-	_tx, ok := s.config.driver.(*txDriver)
+func (_m *Shell) Unwrap() *Shell {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Shell is not a transactional entity")
 	}
-	s.config.driver = _tx.drv
-	return s
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (s *Shell) String() string {
+func (_m *Shell) String() string {
 	var builder strings.Builder
 	builder.WriteString("Shell(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(s.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(s.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(_m.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("closed_at=")
-	builder.WriteString(s.ClosedAt.Format(time.ANSIC))
+	builder.WriteString(_m.ClosedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("data=")
-	builder.WriteString(fmt.Sprintf("%v", s.Data))
+	builder.WriteString(fmt.Sprintf("%v", _m.Data))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedActiveUsers returns the ActiveUsers named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (s *Shell) NamedActiveUsers(name string) ([]*User, error) {
-	if s.Edges.namedActiveUsers == nil {
+func (_m *Shell) NamedActiveUsers(name string) ([]*User, error) {
+	if _m.Edges.namedActiveUsers == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := s.Edges.namedActiveUsers[name]
+	nodes, ok := _m.Edges.namedActiveUsers[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (s *Shell) appendNamedActiveUsers(name string, edges ...*User) {
-	if s.Edges.namedActiveUsers == nil {
-		s.Edges.namedActiveUsers = make(map[string][]*User)
+func (_m *Shell) appendNamedActiveUsers(name string, edges ...*User) {
+	if _m.Edges.namedActiveUsers == nil {
+		_m.Edges.namedActiveUsers = make(map[string][]*User)
 	}
 	if len(edges) == 0 {
-		s.Edges.namedActiveUsers[name] = []*User{}
+		_m.Edges.namedActiveUsers[name] = []*User{}
 	} else {
-		s.Edges.namedActiveUsers[name] = append(s.Edges.namedActiveUsers[name], edges...)
+		_m.Edges.namedActiveUsers[name] = append(_m.Edges.namedActiveUsers[name], edges...)
 	}
 }
 

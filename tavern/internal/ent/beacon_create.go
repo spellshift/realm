@@ -26,186 +26,186 @@ type BeaconCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (bc *BeaconCreate) SetCreatedAt(t time.Time) *BeaconCreate {
-	bc.mutation.SetCreatedAt(t)
-	return bc
+func (_c *BeaconCreate) SetCreatedAt(v time.Time) *BeaconCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableCreatedAt(t *time.Time) *BeaconCreate {
-	if t != nil {
-		bc.SetCreatedAt(*t)
+func (_c *BeaconCreate) SetNillableCreatedAt(v *time.Time) *BeaconCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (bc *BeaconCreate) SetLastModifiedAt(t time.Time) *BeaconCreate {
-	bc.mutation.SetLastModifiedAt(t)
-	return bc
+func (_c *BeaconCreate) SetLastModifiedAt(v time.Time) *BeaconCreate {
+	_c.mutation.SetLastModifiedAt(v)
+	return _c
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableLastModifiedAt(t *time.Time) *BeaconCreate {
-	if t != nil {
-		bc.SetLastModifiedAt(*t)
+func (_c *BeaconCreate) SetNillableLastModifiedAt(v *time.Time) *BeaconCreate {
+	if v != nil {
+		_c.SetLastModifiedAt(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetName sets the "name" field.
-func (bc *BeaconCreate) SetName(s string) *BeaconCreate {
-	bc.mutation.SetName(s)
-	return bc
+func (_c *BeaconCreate) SetName(v string) *BeaconCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableName(s *string) *BeaconCreate {
-	if s != nil {
-		bc.SetName(*s)
+func (_c *BeaconCreate) SetNillableName(v *string) *BeaconCreate {
+	if v != nil {
+		_c.SetName(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetPrincipal sets the "principal" field.
-func (bc *BeaconCreate) SetPrincipal(s string) *BeaconCreate {
-	bc.mutation.SetPrincipal(s)
-	return bc
+func (_c *BeaconCreate) SetPrincipal(v string) *BeaconCreate {
+	_c.mutation.SetPrincipal(v)
+	return _c
 }
 
 // SetNillablePrincipal sets the "principal" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillablePrincipal(s *string) *BeaconCreate {
-	if s != nil {
-		bc.SetPrincipal(*s)
+func (_c *BeaconCreate) SetNillablePrincipal(v *string) *BeaconCreate {
+	if v != nil {
+		_c.SetPrincipal(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetIdentifier sets the "identifier" field.
-func (bc *BeaconCreate) SetIdentifier(s string) *BeaconCreate {
-	bc.mutation.SetIdentifier(s)
-	return bc
+func (_c *BeaconCreate) SetIdentifier(v string) *BeaconCreate {
+	_c.mutation.SetIdentifier(v)
+	return _c
 }
 
 // SetNillableIdentifier sets the "identifier" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableIdentifier(s *string) *BeaconCreate {
-	if s != nil {
-		bc.SetIdentifier(*s)
+func (_c *BeaconCreate) SetNillableIdentifier(v *string) *BeaconCreate {
+	if v != nil {
+		_c.SetIdentifier(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetAgentIdentifier sets the "agent_identifier" field.
-func (bc *BeaconCreate) SetAgentIdentifier(s string) *BeaconCreate {
-	bc.mutation.SetAgentIdentifier(s)
-	return bc
+func (_c *BeaconCreate) SetAgentIdentifier(v string) *BeaconCreate {
+	_c.mutation.SetAgentIdentifier(v)
+	return _c
 }
 
 // SetNillableAgentIdentifier sets the "agent_identifier" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableAgentIdentifier(s *string) *BeaconCreate {
-	if s != nil {
-		bc.SetAgentIdentifier(*s)
+func (_c *BeaconCreate) SetNillableAgentIdentifier(v *string) *BeaconCreate {
+	if v != nil {
+		_c.SetAgentIdentifier(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetLastSeenAt sets the "last_seen_at" field.
-func (bc *BeaconCreate) SetLastSeenAt(t time.Time) *BeaconCreate {
-	bc.mutation.SetLastSeenAt(t)
-	return bc
+func (_c *BeaconCreate) SetLastSeenAt(v time.Time) *BeaconCreate {
+	_c.mutation.SetLastSeenAt(v)
+	return _c
 }
 
 // SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableLastSeenAt(t *time.Time) *BeaconCreate {
-	if t != nil {
-		bc.SetLastSeenAt(*t)
+func (_c *BeaconCreate) SetNillableLastSeenAt(v *time.Time) *BeaconCreate {
+	if v != nil {
+		_c.SetLastSeenAt(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetNextSeenAt sets the "next_seen_at" field.
-func (bc *BeaconCreate) SetNextSeenAt(t time.Time) *BeaconCreate {
-	bc.mutation.SetNextSeenAt(t)
-	return bc
+func (_c *BeaconCreate) SetNextSeenAt(v time.Time) *BeaconCreate {
+	_c.mutation.SetNextSeenAt(v)
+	return _c
 }
 
 // SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableNextSeenAt(t *time.Time) *BeaconCreate {
-	if t != nil {
-		bc.SetNextSeenAt(*t)
+func (_c *BeaconCreate) SetNillableNextSeenAt(v *time.Time) *BeaconCreate {
+	if v != nil {
+		_c.SetNextSeenAt(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetInterval sets the "interval" field.
-func (bc *BeaconCreate) SetInterval(u uint64) *BeaconCreate {
-	bc.mutation.SetInterval(u)
-	return bc
+func (_c *BeaconCreate) SetInterval(v uint64) *BeaconCreate {
+	_c.mutation.SetInterval(v)
+	return _c
 }
 
 // SetNillableInterval sets the "interval" field if the given value is not nil.
-func (bc *BeaconCreate) SetNillableInterval(u *uint64) *BeaconCreate {
-	if u != nil {
-		bc.SetInterval(*u)
+func (_c *BeaconCreate) SetNillableInterval(v *uint64) *BeaconCreate {
+	if v != nil {
+		_c.SetInterval(*v)
 	}
-	return bc
+	return _c
 }
 
 // SetHostID sets the "host" edge to the Host entity by ID.
-func (bc *BeaconCreate) SetHostID(id int) *BeaconCreate {
-	bc.mutation.SetHostID(id)
-	return bc
+func (_c *BeaconCreate) SetHostID(id int) *BeaconCreate {
+	_c.mutation.SetHostID(id)
+	return _c
 }
 
 // SetHost sets the "host" edge to the Host entity.
-func (bc *BeaconCreate) SetHost(h *Host) *BeaconCreate {
-	return bc.SetHostID(h.ID)
+func (_c *BeaconCreate) SetHost(v *Host) *BeaconCreate {
+	return _c.SetHostID(v.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
-func (bc *BeaconCreate) AddTaskIDs(ids ...int) *BeaconCreate {
-	bc.mutation.AddTaskIDs(ids...)
-	return bc
+func (_c *BeaconCreate) AddTaskIDs(ids ...int) *BeaconCreate {
+	_c.mutation.AddTaskIDs(ids...)
+	return _c
 }
 
 // AddTasks adds the "tasks" edges to the Task entity.
-func (bc *BeaconCreate) AddTasks(t ...*Task) *BeaconCreate {
-	ids := make([]int, len(t))
-	for i := range t {
-		ids[i] = t[i].ID
+func (_c *BeaconCreate) AddTasks(v ...*Task) *BeaconCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return bc.AddTaskIDs(ids...)
+	return _c.AddTaskIDs(ids...)
 }
 
 // AddShellIDs adds the "shells" edge to the Shell entity by IDs.
-func (bc *BeaconCreate) AddShellIDs(ids ...int) *BeaconCreate {
-	bc.mutation.AddShellIDs(ids...)
-	return bc
+func (_c *BeaconCreate) AddShellIDs(ids ...int) *BeaconCreate {
+	_c.mutation.AddShellIDs(ids...)
+	return _c
 }
 
 // AddShells adds the "shells" edges to the Shell entity.
-func (bc *BeaconCreate) AddShells(s ...*Shell) *BeaconCreate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_c *BeaconCreate) AddShells(v ...*Shell) *BeaconCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return bc.AddShellIDs(ids...)
+	return _c.AddShellIDs(ids...)
 }
 
 // Mutation returns the BeaconMutation object of the builder.
-func (bc *BeaconCreate) Mutation() *BeaconMutation {
-	return bc.mutation
+func (_c *BeaconCreate) Mutation() *BeaconMutation {
+	return _c.mutation
 }
 
 // Save creates the Beacon in the database.
-func (bc *BeaconCreate) Save(ctx context.Context) (*Beacon, error) {
-	bc.defaults()
-	return withHooks(ctx, bc.sqlSave, bc.mutation, bc.hooks)
+func (_c *BeaconCreate) Save(ctx context.Context) (*Beacon, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (bc *BeaconCreate) SaveX(ctx context.Context) *Beacon {
-	v, err := bc.Save(ctx)
+func (_c *BeaconCreate) SaveX(ctx context.Context) *Beacon {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -213,84 +213,84 @@ func (bc *BeaconCreate) SaveX(ctx context.Context) *Beacon {
 }
 
 // Exec executes the query.
-func (bc *BeaconCreate) Exec(ctx context.Context) error {
-	_, err := bc.Save(ctx)
+func (_c *BeaconCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bc *BeaconCreate) ExecX(ctx context.Context) {
-	if err := bc.Exec(ctx); err != nil {
+func (_c *BeaconCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (bc *BeaconCreate) defaults() {
-	if _, ok := bc.mutation.CreatedAt(); !ok {
+func (_c *BeaconCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := beacon.DefaultCreatedAt()
-		bc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := bc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		v := beacon.DefaultLastModifiedAt()
-		bc.mutation.SetLastModifiedAt(v)
+		_c.mutation.SetLastModifiedAt(v)
 	}
-	if _, ok := bc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		v := beacon.DefaultName()
-		bc.mutation.SetName(v)
+		_c.mutation.SetName(v)
 	}
-	if _, ok := bc.mutation.Identifier(); !ok {
+	if _, ok := _c.mutation.Identifier(); !ok {
 		v := beacon.DefaultIdentifier()
-		bc.mutation.SetIdentifier(v)
+		_c.mutation.SetIdentifier(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (bc *BeaconCreate) check() error {
-	if _, ok := bc.mutation.CreatedAt(); !ok {
+func (_c *BeaconCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Beacon.created_at"`)}
 	}
-	if _, ok := bc.mutation.LastModifiedAt(); !ok {
+	if _, ok := _c.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Beacon.last_modified_at"`)}
 	}
-	if _, ok := bc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Beacon.name"`)}
 	}
-	if v, ok := bc.mutation.Name(); ok {
+	if v, ok := _c.mutation.Name(); ok {
 		if err := beacon.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Beacon.name": %w`, err)}
 		}
 	}
-	if v, ok := bc.mutation.Principal(); ok {
+	if v, ok := _c.mutation.Principal(); ok {
 		if err := beacon.PrincipalValidator(v); err != nil {
 			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "Beacon.principal": %w`, err)}
 		}
 	}
-	if _, ok := bc.mutation.Identifier(); !ok {
+	if _, ok := _c.mutation.Identifier(); !ok {
 		return &ValidationError{Name: "identifier", err: errors.New(`ent: missing required field "Beacon.identifier"`)}
 	}
-	if v, ok := bc.mutation.Identifier(); ok {
+	if v, ok := _c.mutation.Identifier(); ok {
 		if err := beacon.IdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.identifier": %w`, err)}
 		}
 	}
-	if v, ok := bc.mutation.AgentIdentifier(); ok {
+	if v, ok := _c.mutation.AgentIdentifier(); ok {
 		if err := beacon.AgentIdentifierValidator(v); err != nil {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
-	if len(bc.mutation.HostIDs()) == 0 {
+	if len(_c.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Beacon.host"`)}
 	}
 	return nil
 }
 
-func (bc *BeaconCreate) sqlSave(ctx context.Context) (*Beacon, error) {
-	if err := bc.check(); err != nil {
+func (_c *BeaconCreate) sqlSave(ctx context.Context) (*Beacon, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := bc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, bc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -298,54 +298,54 @@ func (bc *BeaconCreate) sqlSave(ctx context.Context) (*Beacon, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
-	bc.mutation.id = &_node.ID
-	bc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
+func (_c *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Beacon{config: bc.config}
+		_node = &Beacon{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(beacon.Table, sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt))
 	)
-	_spec.OnConflict = bc.conflict
-	if value, ok := bc.mutation.CreatedAt(); ok {
+	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(beacon.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := bc.mutation.LastModifiedAt(); ok {
+	if value, ok := _c.mutation.LastModifiedAt(); ok {
 		_spec.SetField(beacon.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
-	if value, ok := bc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(beacon.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := bc.mutation.Principal(); ok {
+	if value, ok := _c.mutation.Principal(); ok {
 		_spec.SetField(beacon.FieldPrincipal, field.TypeString, value)
 		_node.Principal = value
 	}
-	if value, ok := bc.mutation.Identifier(); ok {
+	if value, ok := _c.mutation.Identifier(); ok {
 		_spec.SetField(beacon.FieldIdentifier, field.TypeString, value)
 		_node.Identifier = value
 	}
-	if value, ok := bc.mutation.AgentIdentifier(); ok {
+	if value, ok := _c.mutation.AgentIdentifier(); ok {
 		_spec.SetField(beacon.FieldAgentIdentifier, field.TypeString, value)
 		_node.AgentIdentifier = value
 	}
-	if value, ok := bc.mutation.LastSeenAt(); ok {
+	if value, ok := _c.mutation.LastSeenAt(); ok {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
 	}
-	if value, ok := bc.mutation.NextSeenAt(); ok {
+	if value, ok := _c.mutation.NextSeenAt(); ok {
 		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
 		_node.NextSeenAt = value
 	}
-	if value, ok := bc.mutation.Interval(); ok {
+	if value, ok := _c.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
 		_node.Interval = value
 	}
-	if nodes := bc.mutation.HostIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -362,7 +362,7 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 		_node.beacon_host = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := bc.mutation.TasksIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.TasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -378,7 +378,7 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := bc.mutation.ShellsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ShellsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -413,10 +413,10 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (bc *BeaconCreate) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertOne {
-	bc.conflict = opts
+func (_c *BeaconCreate) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertOne {
+	_c.conflict = opts
 	return &BeaconUpsertOne{
-		create: bc,
+		create: _c,
 	}
 }
 
@@ -426,10 +426,10 @@ func (bc *BeaconCreate) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertOne 
 //	client.Beacon.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (bc *BeaconCreate) OnConflictColumns(columns ...string) *BeaconUpsertOne {
-	bc.conflict = append(bc.conflict, sql.ConflictColumns(columns...))
+func (_c *BeaconCreate) OnConflictColumns(columns ...string) *BeaconUpsertOne {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &BeaconUpsertOne{
-		create: bc,
+		create: _c,
 	}
 }
 
@@ -796,16 +796,16 @@ type BeaconCreateBulk struct {
 }
 
 // Save creates the Beacon entities in the database.
-func (bcb *BeaconCreateBulk) Save(ctx context.Context) ([]*Beacon, error) {
-	if bcb.err != nil {
-		return nil, bcb.err
+func (_c *BeaconCreateBulk) Save(ctx context.Context) ([]*Beacon, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(bcb.builders))
-	nodes := make([]*Beacon, len(bcb.builders))
-	mutators := make([]Mutator, len(bcb.builders))
-	for i := range bcb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Beacon, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := bcb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*BeaconMutation)
@@ -819,12 +819,12 @@ func (bcb *BeaconCreateBulk) Save(ctx context.Context) ([]*Beacon, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, bcb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = bcb.conflict
+					spec.OnConflict = _c.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, bcb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -848,7 +848,7 @@ func (bcb *BeaconCreateBulk) Save(ctx context.Context) ([]*Beacon, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, bcb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -856,8 +856,8 @@ func (bcb *BeaconCreateBulk) Save(ctx context.Context) ([]*Beacon, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (bcb *BeaconCreateBulk) SaveX(ctx context.Context) []*Beacon {
-	v, err := bcb.Save(ctx)
+func (_c *BeaconCreateBulk) SaveX(ctx context.Context) []*Beacon {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -865,14 +865,14 @@ func (bcb *BeaconCreateBulk) SaveX(ctx context.Context) []*Beacon {
 }
 
 // Exec executes the query.
-func (bcb *BeaconCreateBulk) Exec(ctx context.Context) error {
-	_, err := bcb.Save(ctx)
+func (_c *BeaconCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bcb *BeaconCreateBulk) ExecX(ctx context.Context) {
-	if err := bcb.Exec(ctx); err != nil {
+func (_c *BeaconCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
@@ -892,10 +892,10 @@ func (bcb *BeaconCreateBulk) ExecX(ctx context.Context) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (bcb *BeaconCreateBulk) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertBulk {
-	bcb.conflict = opts
+func (_c *BeaconCreateBulk) OnConflict(opts ...sql.ConflictOption) *BeaconUpsertBulk {
+	_c.conflict = opts
 	return &BeaconUpsertBulk{
-		create: bcb,
+		create: _c,
 	}
 }
 
@@ -905,10 +905,10 @@ func (bcb *BeaconCreateBulk) OnConflict(opts ...sql.ConflictOption) *BeaconUpser
 //	client.Beacon.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (bcb *BeaconCreateBulk) OnConflictColumns(columns ...string) *BeaconUpsertBulk {
-	bcb.conflict = append(bcb.conflict, sql.ConflictColumns(columns...))
+func (_c *BeaconCreateBulk) OnConflictColumns(columns ...string) *BeaconUpsertBulk {
+	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
 	return &BeaconUpsertBulk{
-		create: bcb,
+		create: _c,
 	}
 }
 
