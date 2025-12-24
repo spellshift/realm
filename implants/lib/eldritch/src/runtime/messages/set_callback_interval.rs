@@ -14,7 +14,7 @@ pub struct SetCallbackIntervalMessage {
 }
 
 impl SyncDispatcher for SetCallbackIntervalMessage {
-    fn dispatch(self, _transport: &mut impl Transport, cfg: Config) -> Result<Config> {
+    fn dispatch(self, transport: &mut impl Transport, cfg: Config) -> Result<Config> {
         let mut c = cfg.clone();
         let b = match cfg.info {
             Some(i) => Ok(i),
@@ -28,6 +28,7 @@ impl SyncDispatcher for SetCallbackIntervalMessage {
             host: b.host,
             agent: b.agent,
             interval: self.new_interval,
+            transport: transport.get_type() as i32,
         });
         Ok(c)
     }

@@ -42,3 +42,4 @@ implants/golem/embed_files_golem_prod/*
 
 .venv
 *.tfvars
+node_modules/

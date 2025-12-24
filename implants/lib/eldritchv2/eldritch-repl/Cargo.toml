@@ -1,0 +1,19 @@
+[package]
+name = "eldritch-repl"
+version = "0.3.0"
+edition = "2024"
+
+[[bench]]
+name = "repl_bench"
+harness = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eldritch-core = { workspace = true }
+spin = { workspace = true, features = ["rwlock"] }
+log = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

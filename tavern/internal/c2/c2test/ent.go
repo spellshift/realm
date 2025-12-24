@@ -26,6 +26,7 @@ func NewRandomBeacon(ctx context.Context, graph *ent.Client) *ent.Beacon {
 	return graph.Beacon.Create().
 		SetIdentifier(namegen.NewComplex()).
 		SetHost(host).
+		SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
 		SaveX(ctx)
 }
 

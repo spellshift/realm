@@ -24,6 +24,7 @@ static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
 static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub struct GRPC {
     grpc: Option<tonic::client::Grpc<tonic::transport::Channel>>,
@@ -191,6 +192,21 @@ impl Transport for GRPC {
         });
 
         Ok(())
+    }
+
+    fn get_type(&mut self) -> pb::c2::beacon::Transport {
+        return pb::c2::beacon::Transport::Grpc;
+    }
+    fn is_active(&self) -> bool {
+        self.grpc.is_some()
+    }
+
+    fn name(&self) -> &'static str {
+        "grpc"
+    }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["grpc".to_string()]
     }
 }
 
