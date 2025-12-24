@@ -2,6 +2,8 @@ use eldritch_core::{ExprKind, Span, Stmt, StmtKind, Value, Argument, Param};
 use eldritchv2::Interpreter;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range};
 use std::collections::{BTreeMap, HashSet};
+use std::sync::Arc;
+use spin::RwLock;
 
 pub trait LintRule {
     #[allow(dead_code)]
@@ -25,7 +27,14 @@ impl Linter {
     }
 
     pub fn check(&self, stmts: &[Stmt], source: &str) -> Vec<Diagnostic> {
-        let interp = Interpreter::new().with_default_libs().with_fake_agent();
+        let mut interp = Interpreter::new().with_default_libs().with_fake_agent();
+
+        // Inject input_params
+        #[allow(clippy::mutable_key_type)]
+        let params = BTreeMap::new();
+        let params_val = Value::Dictionary(Arc::new(RwLock::new(params)));
+        interp.define_variable("input_params", params_val);
+
         let mut diagnostics = Vec::new();
         for rule in &self.rules {
             diagnostics.extend(rule.check(stmts, source, &interp));
@@ -841,5 +850,20 @@ mod tests {
         let name_errors: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("NameError")).collect();
         assert_eq!(name_errors.len(), 1);
         assert!(name_errors[0].message.contains("'i' is not defined"));
+    }
+
+    #[test]
+    fn test_input_params_defined() {
+        let code = "print(input_params)";
+        let mut lexer = Lexer::new(code.to_string());
+        let tokens = lexer.scan_tokens().unwrap();
+        let mut parser = Parser::new(tokens);
+        let stmts = parser.parse().unwrap();
+
+        let linter = Linter::new();
+        let diagnostics = linter.check(&stmts, code);
+
+        let name_errors: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("NameError")).collect();
+        assert!(name_errors.is_empty(), "Found NameError for input_params: {:?}", name_errors);
     }
 }

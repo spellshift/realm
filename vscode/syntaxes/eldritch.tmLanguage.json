@@ -15,6 +15,10 @@
             "match": "\\b(tprint)\\b"
         },
         {
+            "name": "support.variable.magic.eldritch",
+            "match": "\\b(input_params)\\b"
+        },
+        {
             "include": "source.python"
         }
     ]
