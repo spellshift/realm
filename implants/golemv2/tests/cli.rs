@@ -74,6 +74,8 @@ fn test_golem_main_loaded_files() -> anyhow::Result<()> {
 }
 
 // Test running `./golem -a ../../bin/golem_cli_test/ -e`
+// NOTE: Depending on how this test is run, the commands may not actually be run
+// therefor we only test the output of eldritch and not the stdlib
 #[test]
 fn test_golem_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golemv2"));
