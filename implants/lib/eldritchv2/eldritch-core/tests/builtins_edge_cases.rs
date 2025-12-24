@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     extern crate alloc;
-    use eldritch_core::{Interpreter, Value};
     use alloc::string::ToString;
+    use eldritch_core::{Interpreter, Value};
 
     fn run_code(code: &str) -> Result<Value, String> {
         let mut interp = Interpreter::new();
@@ -72,10 +72,10 @@ mod tests {
                     Value::Tuple(t) => {
                         assert_eq!(t[0], Value::Int(1));
                         assert_eq!(t[1], Value::String("a".to_string()));
-                    },
+                    }
                     _ => panic!("Expected tuple"),
                 }
-            },
+            }
             _ => panic!("Expected list"),
         }
 
