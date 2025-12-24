@@ -8,8 +8,9 @@ use {
     std::{os::raw::c_void, ptr::null_mut},
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
+    windows_sys::core::BOOL,
     windows_sys::Win32::{
-        Foundation::{BOOL, FALSE, GetLastError, HANDLE},
+        Foundation::{FALSE, GetLastError, HANDLE},
         System::{
             Diagnostics::Debug::WriteProcessMemory,
             Memory::{
@@ -85,7 +86,7 @@ fn open_process(
 ) -> anyhow::Result<HANDLE> {
     let process_handle: HANDLE =
         unsafe { OpenProcess(dwdesiredaccess, binherithandle, dwprocessid) };
-    if process_handle == 0 {
+    if process_handle == std::ptr::null_mut() {
         let error_code = unsafe { GetLastError() };
         if error_code != 0 {
             return Err(anyhow::anyhow!(
@@ -151,14 +152,14 @@ fn write_process_memory(
 
 #[cfg(target_os = "windows")]
 fn create_remote_thread(
-    hprocess: isize,
+    hprocess: *mut c_void,
     lpthreadattributes: *const SECURITY_ATTRIBUTES,
     dwstacksize: usize,
     lpstartaddress: Option<*mut c_void>,
     lpparameter: *const c_void,
     dwcreationflags: u32,
     lpthreadid: *mut u32,
-) -> anyhow::Result<isize> {
+) -> anyhow::Result<*mut c_void> {
     let tmp_lpstartaddress: Option<unsafe extern "system" fn(_) -> _> = match lpstartaddress {
         Some(local_lpstartaddress) => Some(unsafe { std::mem::transmute(local_lpstartaddress) }),
         None => todo!(),
@@ -174,7 +175,7 @@ fn create_remote_thread(
             lpthreadid,
         )
     };
-    if res == 0 {
+    if res == std::ptr::null_mut() {
         let error_code = unsafe { GetLastError() };
         if error_code != 0 {
             return Err(anyhow::anyhow!(
@@ -254,7 +255,7 @@ fn handle_dll_reflect(
 
     let image_size = reflective_loader_dll.len();
 
-    let process_handle = open_process(PROCESS_ALL_ACCESS, 0, pid)?;
+    let process_handle: *mut std::ffi::c_void = open_process(PROCESS_ALL_ACCESS, 0, pid)?;
 
     let remote_buffer = virtual_alloc_ex(
         process_handle,
