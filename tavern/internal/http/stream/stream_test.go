@@ -17,10 +17,11 @@ func TestStream_SendMessage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://stream-test-send")
+	topicName := fmt.Sprintf("mem://stream-test-send-%d", time.Now().UnixNano())
+	topic, err := pubsub.OpenTopic(ctx, topicName)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://stream-test-send")
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
