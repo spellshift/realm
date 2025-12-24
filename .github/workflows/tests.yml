@@ -33,11 +33,13 @@ jobs:
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
       # Use gotestsum for human-readable output to stdout, and capture JSON to file for reporting
+      shell: bash
       run: |
         $(go env GOPATH)/bin/gotestsum --jsonfile test-output.json -- \
           -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
     - name: 🔄 Convert to CTRF
       if: always() # Run even if tests fail so we report the failures
+      shell: bash
       run: |
         if [ -f test-output.json ]; then
           cat test-output.json | $(go env GOPATH)/bin/go-ctrf-json-reporter -o ctrf-tavern-${{ matrix.os }}.json
@@ -116,6 +118,7 @@ jobs:
         cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF
       if: always()
+      shell: bash # Explicitly use bash to support standard shell syntax on Windows
       run: |
         cd ./implants/
         # Move junit report if it exists
