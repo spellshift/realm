@@ -15,3 +15,7 @@ netstat = { workspace = true }
 default = ["stdlib"]
 stdlib = ["dep:sysinfo", "dep:listeners"]
 fake_bindings = []
+
+[dev-dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true, features = ["rt", "macros", "net", "io-util"] }
