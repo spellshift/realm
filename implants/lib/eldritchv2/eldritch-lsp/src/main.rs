@@ -10,6 +10,7 @@ use lsp_types::{
     Diagnostic, DiagnosticSeverity, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
     InitializeParams, Position, Range, ServerCapabilities, TextDocumentSyncCapability,
     TextDocumentSyncKind, Url, DidCloseTextDocumentParams, PublishDiagnosticsParams,
+    InitializeResult,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -58,7 +59,12 @@ fn main() -> Result<()> {
         ..ServerCapabilities::default()
     };
 
-    connection.initialize_finish(id, serde_json::to_value(&capabilities)?)?;
+    let result = InitializeResult {
+        capabilities,
+        server_info: None,
+    };
+
+    connection.initialize_finish(id, serde_json::to_value(&result)?)?;
 
     let state = Arc::new(Mutex::new(ServerState::new()));
 
