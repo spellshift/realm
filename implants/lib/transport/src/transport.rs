@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pb::c2::*;
+use pb::c2::{beacon, *};
 use std::sync::mpsc::{Receiver, Sender};
 
 #[trait_variant::make(Transport: Send)]
@@ -79,6 +79,8 @@ pub trait UnsafeTransport: Clone + Send {
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()>;
 
+    #[allow(dead_code)]
+    fn get_type(&mut self) -> beacon::Transport;
     /// Returns true if the transport is fully initialized and active
     #[allow(dead_code)]
     fn is_active(&self) -> bool;
