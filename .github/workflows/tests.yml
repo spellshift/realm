@@ -220,4 +220,6 @@ jobs:
           slowest-report: true
           failed-folded-report: true
           flaky-rate-report: true
+          fail-rate-report: true
+          previous-results-report: true
           previous-results-max: 100
