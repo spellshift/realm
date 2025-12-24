@@ -373,7 +373,12 @@ impl Interpreter {
         let mut target_val: Option<Value> = None;
         let meaningful_tokens: Vec<&super::super::token::Token> = tokens
             .iter()
-            .filter(|t| t.kind != TokenKind::Eof && t.kind != TokenKind::Newline)
+            .filter(|t| {
+                t.kind != TokenKind::Eof
+                    && t.kind != TokenKind::Newline
+                    && t.kind != TokenKind::Indent
+                    && t.kind != TokenKind::Dedent
+            })
             .collect();
 
         if !meaningful_tokens.is_empty() {

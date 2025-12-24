@@ -10,7 +10,7 @@ use lsp_types::{
     Diagnostic, DiagnosticSeverity, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
     InitializeParams, Position, Range, ServerCapabilities, TextDocumentSyncCapability,
     TextDocumentSyncKind, Url, DidCloseTextDocumentParams, PublishDiagnosticsParams,
-    InitializeResult, ServerInfo,
+    InitializeResult,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -59,18 +59,16 @@ fn main() -> Result<()> {
         ..ServerCapabilities::default()
     };
 
-    let result = InitializeResult {
-        capabilities,
-        server_info: Some(ServerInfo {
-            name: "eldritch-lsp".to_string(),
-            version: Some("0.1.0".to_string()),
-        }),
-    };
+    // Manually constructing JSON result to ensure correct structure
+    let result = serde_json::json!({
+        "capabilities": capabilities,
+        "serverInfo": {
+            "name": "eldritch-lsp",
+            "version": "0.1.0"
+        }
+    });
 
-    let result_json = serde_json::to_value(&result)?;
-    eprintln!("InitializeResult: {}", result_json);
-
-    connection.initialize_finish(id, result_json)?;
+    connection.initialize_finish(id, result)?;
 
     let state = Arc::new(Mutex::new(ServerState::new()));
 
@@ -239,4 +237,34 @@ fn position_to_offset(text: &str, position: Position) -> usize {
         return text.len();
     }
     offset
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eldritch_core::Interpreter;
+
+    #[test]
+    fn test_completion_string_method() {
+        let code = r#"
+def get_env():
+    envs = sys.get_env()
+    for key, value in envs.items():
+        print(f"{key}={value}")
+    "".s"#;
+
+        // Offset of the end of the string
+        let offset = code.len();
+
+        let core = Interpreter::new();
+        let (_start, candidates) = core.complete(code, offset);
+
+        // We expect string methods starting with 's'
+        assert!(candidates.contains(&"split".to_string()));
+        assert!(candidates.contains(&"strip".to_string()));
+
+        // We expect NO globals like "set" or "sorted"
+        assert!(!candidates.contains(&"set".to_string()));
+        assert!(!candidates.contains(&"sorted".to_string()));
+    }
 }
