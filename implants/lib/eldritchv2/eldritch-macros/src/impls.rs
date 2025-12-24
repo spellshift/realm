@@ -39,6 +39,7 @@ pub fn expand_eldritch_library(
 
     let mut method_dispatches = Vec::new();
     let mut method_registrations = Vec::new();
+    let mut method_signatures = Vec::new();
 
     for item in &mut trait_def.items {
         if let TraitItem::Method(method) = item {
@@ -64,6 +65,7 @@ pub fn expand_eldritch_library(
                 let method_name = &method.sig.ident;
                 let bind_name = rename.unwrap_or_else(|| method_name.to_string());
                 let (args_parsing, arg_names) = generate_args_parsing(&method.sig)?;
+                let signature_gen = generate_signature(&method.sig, &bind_name)?;
 
                 method_dispatches.push(quote! {
                     #(#cfg_attrs)*
@@ -77,6 +79,11 @@ pub fn expand_eldritch_library(
                 method_registrations.push(quote! {
                     #(#cfg_attrs)*
                     names.push(alloc::string::String::from(#bind_name));
+                });
+
+                method_signatures.push(quote! {
+                    #(#cfg_attrs)*
+                    #bind_name => Some(#signature_gen),
                 });
             }
         }
@@ -94,6 +101,15 @@ pub fn expand_eldritch_library(
             let mut names = alloc::vec::Vec::new();
             #(#method_registrations)*
             names
+        }
+    });
+
+    trait_def.items.push(parse_quote! {
+        fn _eldritch_get_method_signature(&self, name: &str) -> Option<eldritch_core::MethodSignature> {
+            match name {
+                #(#method_signatures)*
+                _ => None,
+            }
         }
     });
 
@@ -147,6 +163,10 @@ pub fn expand_eldritch_library_impl(
 
             fn method_names(&self) -> alloc::vec::Vec<alloc::string::String> {
                 <Self as #trait_ident>::_eldritch_method_names(self)
+            }
+
+            fn get_method_signature(&self, name: &str) -> Option<eldritch_core::MethodSignature> {
+                <Self as #trait_ident>::_eldritch_get_method_signature(self, name)
             }
 
             fn call_method(
@@ -298,4 +318,43 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
     final_parsing.push(quote! { #(#parsing)* });
 
     Ok((quote! { #(#final_parsing)* }, quote! { #(#call_args),* }))
+}
+
+fn generate_signature(sig: &Signature, bind_name: &str) -> Result<TokenStream, syn::Error> {
+    let mut params = Vec::new();
+
+    for input in &sig.inputs {
+        match input {
+            FnArg::Receiver(_) => continue,
+            FnArg::Typed(pat_type) => {
+                let ty = &pat_type.ty;
+                if is_interpreter_type(ty) {
+                    continue;
+                }
+
+                let pat = &pat_type.pat;
+                let arg_name_str = quote!(#pat).to_string();
+                let is_optional = is_option_type(ty);
+                let type_name_str = quote!(#ty).to_string(); // Simple string representation for now
+
+                params.push(quote! {
+                    eldritch_core::ParameterSignature {
+                        name: alloc::string::String::from(#arg_name_str),
+                        type_name: Some(alloc::string::String::from(#type_name_str)),
+                        is_optional: #is_optional,
+                        is_variadic: false,
+                        is_kwargs: false,
+                    }
+                });
+            }
+        }
+    }
+
+    Ok(quote! {
+        eldritch_core::MethodSignature {
+            name: alloc::string::String::from(#bind_name),
+            params: alloc::vec![#(#params),*],
+            return_type: None, // TODO: Inspect return type if needed
+        }
+    })
 }
