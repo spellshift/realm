@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossbeam_channel::Sender;
 use eldritch_core::{Parser, Lexer};
-use eldritchv2::Interpreter as V2Interpreter;
+use eldritchv2::{Interpreter as V2Interpreter, Value};
 use lsp_server::{Connection, Message, Notification, Request, Response};
 use lsp_types::{
     notification::{DidChangeTextDocument, DidOpenTextDocument, DidCloseTextDocument, PublishDiagnostics, Notification as LspNotification},
@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 mod linter;
-use linter::Linter;
+use linter::{Linter, span_to_range};
 
 struct ServerState {
     // Map of document URI to (version, content)
@@ -177,9 +177,9 @@ fn run_diagnostics(state: &ServerState, text: &str) -> Vec<Diagnostic> {
                 }
                 Err(e) => {
                      diagnostics.push(Diagnostic {
-                        range: Range::default(),
+                        range: span_to_range(e.span, text),
                         severity: Some(DiagnosticSeverity::ERROR),
-                        message: e.to_string(),
+                        message: e.message,
                         ..Default::default()
                     });
                 }
@@ -187,9 +187,9 @@ fn run_diagnostics(state: &ServerState, text: &str) -> Vec<Diagnostic> {
         }
         Err(e) => {
              diagnostics.push(Diagnostic {
-                range: Range::default(),
+                range: span_to_range(e.span, text),
                 severity: Some(DiagnosticSeverity::ERROR),
-                message: e.to_string(),
+                message: e.message,
                 ..Default::default()
             });
         }
@@ -213,9 +213,23 @@ fn handle_completion(state: Arc<Mutex<ServerState>>, params: CompletionParams) -
         let (_start_idx, candidates) = interp.complete(text, offset);
 
         let items: Vec<CompletionItem> = candidates.into_iter().map(|c| {
+            // Determine Kind
+            let kind = if let Some(val) = interp.lookup_variable(&c) {
+                match val {
+                    Value::Foreign(_) => Some(CompletionItemKind::MODULE), // Libraries
+                    Value::NativeFunction(_, _)
+                    | Value::NativeFunctionWithKwargs(_, _)
+                    | Value::Function(_) => Some(CompletionItemKind::FUNCTION), // Builtins
+                    _ => Some(CompletionItemKind::VARIABLE),
+                }
+            } else {
+                // If resolving fails, it's likely a method or property from dot-completion
+                Some(CompletionItemKind::METHOD)
+            };
+
             CompletionItem {
                 label: c,
-                kind: Some(CompletionItemKind::FUNCTION),
+                kind,
                 ..Default::default()
             }
         }).collect();

@@ -32,8 +32,8 @@
             {
                 "id": "eldritch",
                 "icon": {
-                    "light": "client/src/images/eldritch.png",
-                    "dark": "client/src/images/eldritch.png"
+                    "light": "./images/eldritch.png",
+                    "dark": "./images/eldritch.png"
                 },
                 "aliases": [
                     "Eldritch",

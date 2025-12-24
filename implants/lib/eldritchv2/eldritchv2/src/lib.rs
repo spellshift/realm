@@ -210,6 +210,11 @@ impl Interpreter {
     pub fn complete(&self, code: &str, cursor: usize) -> (usize, Vec<String>) {
         self.inner.complete(code, cursor)
     }
+
+    pub fn lookup_variable(&self, name: &str) -> Option<Value> {
+        // Use lookup_variable but discard error (return None)
+        self.inner.lookup_variable(name, Span::new(0, 0, 0)).ok()
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

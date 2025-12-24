@@ -7,6 +7,14 @@
             "match": "\\b(?<!\\.)(as|class|del|except|finally|from|global|import|is|nonlocal|raise|try|while|with|yield)\\b"
         },
         {
+            "name": "support.class.eldritch",
+            "match": "\\b(agent|assets|crypto|file|http|pivot|process|random|regex|report|sys|time)\\b"
+        },
+        {
+            "name": "support.function.builtin.eldritch",
+            "match": "\\b(tprint)\\b"
+        },
+        {
             "include": "source.python"
         }
     ]

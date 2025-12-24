@@ -86,7 +86,7 @@ where F: FnMut(&Stmt)
     }
 }
 
-fn span_to_range(span: Span, source: &str) -> Range {
+pub fn span_to_range(span: Span, source: &str) -> Range {
     // Span: start (byte), end (byte), line (1-based)
     // We need to calculate columns.
 
