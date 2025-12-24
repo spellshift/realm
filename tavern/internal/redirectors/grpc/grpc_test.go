@@ -82,30 +82,6 @@ func setupRawUpstreamServer(t *testing.T) (string, func()) {
 	}
 }
 
-// dialWithRetry attempts to dial the given address, retrying on failure.
-// This is necessary because the redirector is started in a goroutine and might not be ready immediately.
-func dialWithRetry(t *testing.T, target string, opts ...grpc.DialOption) *grpc.ClientConn {
-	t.Helper()
-
-	var conn *grpc.ClientConn
-	var err error
-
-	deadline := time.Now().Add(5 * time.Second)
-	for time.Now().Before(deadline) {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		// Let's use WithBlock to ensure it's connected, with a short timeout context.
-		optsWithBlock := append([]grpc.DialOption{grpc.WithBlock()}, opts...)
-		conn, err = grpc.DialContext(ctx, target, optsWithBlock...)
-		cancel() // Call cancel explicitly to avoid defer pile-up in loop
-		if err == nil {
-			return conn
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	require.NoError(t, err, "failed to dial redirector")
-	return nil
-}
-
 func TestRedirector_FullDuplexCall(t *testing.T) {
 	// 1. Setup the raw upstream test server.
 	upstreamAddr, upstreamCleanup := setupRawUpstreamServer(t)
@@ -127,7 +103,8 @@ func TestRedirector_FullDuplexCall(t *testing.T) {
 	}()
 
 	// 3. Connect a client to the redirector, also using the raw codec.
-	conn := dialWithRetry(t, addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.CallContentSubtype("raw")))
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.CallContentSubtype("raw")))
+	require.NoError(t, err)
 	defer conn.Close()
 
 	// 4. Perform a bidirectional streaming call through the redirector.
@@ -179,10 +156,7 @@ func TestRedirector_ContextCancellation(t *testing.T) {
 	}()
 
 	// Wait a moment for the server to start listening.
-	// Since we are testing cancellation, we can just poll until we can connect, or sleep.
-	// Sleeping is okay here as we aren't asserting on immediate start, but ensuring shutdown works.
-	// A robust way is to try to dial.
-	dialWithRetry(t, addr, grpc.WithTransportCredentials(insecure.NewCredentials())).Close()
+	time.Sleep(100 * time.Millisecond)
 
 	// Cancel the context, which should trigger GracefulStop.
 	cancel()
@@ -217,7 +191,8 @@ func TestRedirector_UpstreamFailure(t *testing.T) {
 	}()
 
 	// 2. Connect a client to the redirector.
-	conn := dialWithRetry(t, addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.CallContentSubtype("raw")))
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.CallContentSubtype("raw")))
+	require.NoError(t, err)
 	defer conn.Close()
 
 	// 3. Attempt a streaming call.

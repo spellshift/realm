@@ -412,9 +412,8 @@ impl Interpreter {
                             }
                             TokenKind::RBrace => {
                                 // Assume Dictionary (could be Set, but Dict is safer default)
-                                target_val = Some(Value::Dictionary(Arc::new(RwLock::new(
-                                    BTreeMap::new(),
-                                ))));
+                                target_val =
+                                    Some(Value::Dictionary(Arc::new(RwLock::new(BTreeMap::new()))));
                             }
                             TokenKind::RParen => {
                                 // Assume Tuple

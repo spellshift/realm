@@ -1,5 +1,5 @@
-use eldritch_core::{Stmt, StmtKind, ExprKind, Span};
-use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Position};
+use eldritch_core::{ExprKind, Span, Stmt, StmtKind};
+use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range};
 
 pub trait LintRule {
     fn name(&self) -> &str;
@@ -13,9 +13,7 @@ pub struct Linter {
 impl Linter {
     pub fn new() -> Self {
         Self {
-            rules: vec![
-                Box::new(DeprecationRule),
-            ],
+            rules: vec![Box::new(DeprecationRule)],
         }
     }
 
@@ -38,24 +36,25 @@ impl LintRule for DeprecationRule {
         let mut diags = Vec::new();
         visit_stmts(stmts, &mut |stmt| {
             if let StmtKind::Expression(expr) = &stmt.kind {
-                 // Check for os.system -> sys.exec
-                 // ExprKind::Call(callee, args)
-                 if let ExprKind::Call(callee, _) = &expr.kind {
-                     // ExprKind::GetAttr(obj, name)
-                     if let ExprKind::GetAttr(obj, name) = &callee.kind {
-                         // ExprKind::Identifier(name)
-                         if let ExprKind::Identifier(v) = &obj.kind {
-                             if v == "os" && name == "system" {
-                                 diags.push(Diagnostic {
-                                     range: span_to_range(expr.span, source),
-                                     severity: Some(DiagnosticSeverity::WARNING),
-                                     message: "os.system is deprecated. Use sys.exec instead.".to_string(),
-                                     ..Default::default()
-                                 });
-                             }
-                         }
-                     }
-                 }
+                // Check for os.system -> sys.exec
+                // ExprKind::Call(callee, args)
+                if let ExprKind::Call(callee, _) = &expr.kind {
+                    // ExprKind::GetAttr(obj, name)
+                    if let ExprKind::GetAttr(obj, name) = &callee.kind {
+                        // ExprKind::Identifier(name)
+                        if let ExprKind::Identifier(v) = &obj.kind {
+                            if v == "os" && name == "system" {
+                                diags.push(Diagnostic {
+                                    range: span_to_range(expr.span, source),
+                                    severity: Some(DiagnosticSeverity::WARNING),
+                                    message: "os.system is deprecated. Use sys.exec instead."
+                                        .to_string(),
+                                    ..Default::default()
+                                });
+                            }
+                        }
+                    }
+                }
             }
         });
         diags
@@ -63,16 +62,17 @@ impl LintRule for DeprecationRule {
 }
 
 fn visit_stmts<F>(stmts: &[Stmt], callback: &mut F)
-where F: FnMut(&Stmt)
+where
+    F: FnMut(&Stmt),
 {
     for stmt in stmts {
         callback(stmt);
         match &stmt.kind {
             StmtKind::If(_, then_branch, else_branch) => {
-                 visit_stmts(then_branch, callback);
-                 if let Some(else_b) = else_branch {
-                     visit_stmts(else_b, callback);
-                 }
+                visit_stmts(then_branch, callback);
+                if let Some(else_b) = else_branch {
+                    visit_stmts(else_b, callback);
+                }
             }
             StmtKind::For(_, _, body) => {
                 visit_stmts(body, callback);

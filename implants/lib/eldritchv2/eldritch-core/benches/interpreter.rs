@@ -38,7 +38,7 @@ fn bench_function_call(c: &mut Criterion) {
         b.iter(|| {
             let mut interpreter = Interpreter::new();
             let code = "
-def add(a, b):
+fn add(a, b):
     return a + b
 
 add(5, 10)

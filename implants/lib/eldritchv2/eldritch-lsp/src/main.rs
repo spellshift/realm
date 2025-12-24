@@ -1,22 +1,25 @@
 use anyhow::Result;
 use crossbeam_channel::Sender;
-use eldritch_core::{Parser, Lexer};
+use eldritch_core::{Lexer, Parser};
 use eldritchv2::{Interpreter as V2Interpreter, Value};
 use lsp_server::{Connection, Message, Notification, Request, Response};
 use lsp_types::{
-    notification::{DidChangeTextDocument, DidOpenTextDocument, DidCloseTextDocument, PublishDiagnostics, Notification as LspNotification},
+    notification::{
+        DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument,
+        Notification as LspNotification, PublishDiagnostics,
+    },
     request::{Completion, Initialize, Request as LspRequest},
-    CompletionItem, CompletionItemKind, CompletionParams, CompletionResponse,
-    Diagnostic, DiagnosticSeverity, DidChangeTextDocumentParams, DidOpenTextDocumentParams,
-    InitializeParams, Position, Range, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, Url, DidCloseTextDocumentParams, PublishDiagnosticsParams,
-    InitializeResult,
+    CompletionItem, CompletionItemKind, CompletionParams, CompletionResponse, Diagnostic,
+    DiagnosticSeverity, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams, InitializeParams, InitializeResult, Position,
+    PublishDiagnosticsParams, Range, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, Url,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 mod linter;
-use linter::{Linter, span_to_range};
+use linter::{span_to_range, Linter};
 
 struct ServerState {
     // Map of document URI to (version, content)
@@ -38,7 +41,8 @@ fn main() -> Result<()> {
     let _ = simplelog::WriteLogger::init(
         simplelog::LevelFilter::Info,
         simplelog::Config::default(),
-        std::fs::File::create("/tmp/eldritch-lsp.log").unwrap_or_else(|_| std::fs::File::create("eldritch-lsp.log").unwrap()),
+        std::fs::File::create("/tmp/eldritch-lsp.log")
+            .unwrap_or_else(|_| std::fs::File::create("eldritch-lsp.log").unwrap()),
     );
 
     log::info!("Starting Eldritch LSP...");
@@ -89,14 +93,16 @@ fn main() -> Result<()> {
                         let params: CompletionParams = serde_json::from_value(req.params).unwrap();
                         let resp = handle_completion(state, params);
                         let result = serde_json::to_value(&resp).unwrap();
-                        sender.send(Message::Response(Response {
-                            id: req.id,
-                            result: Some(result),
-                            error: None,
-                        })).unwrap();
+                        sender
+                            .send(Message::Response(Response {
+                                id: req.id,
+                                result: Some(result),
+                                error: None,
+                            }))
+                            .unwrap();
                     }
                     _ => {
-                         // forward unknown requests or ignore
+                        // forward unknown requests or ignore
                     }
                 }
             }
@@ -107,17 +113,20 @@ fn main() -> Result<()> {
 
                 match not.method.as_str() {
                     DidOpenTextDocument::METHOD => {
-                        let params: DidOpenTextDocumentParams = serde_json::from_value(not.params).unwrap();
+                        let params: DidOpenTextDocumentParams =
+                            serde_json::from_value(not.params).unwrap();
                         handle_did_open(state, sender, params);
                     }
                     DidChangeTextDocument::METHOD => {
-                        let params: DidChangeTextDocumentParams = serde_json::from_value(not.params).unwrap();
+                        let params: DidChangeTextDocumentParams =
+                            serde_json::from_value(not.params).unwrap();
                         handle_did_change(state, sender, params);
                     }
                     DidCloseTextDocument::METHOD => {
-                         let params: DidCloseTextDocumentParams = serde_json::from_value(not.params).unwrap();
-                         let mut state = state.lock().unwrap();
-                         state.documents.remove(&params.text_document.uri);
+                        let params: DidCloseTextDocumentParams =
+                            serde_json::from_value(not.params).unwrap();
+                        let mut state = state.lock().unwrap();
+                        state.documents.remove(&params.text_document.uri);
                     }
                     _ => {}
                 }
@@ -129,27 +138,59 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn handle_did_open(state: Arc<Mutex<ServerState>>, sender: Sender<Message>, params: DidOpenTextDocumentParams) {
+fn handle_did_open(
+    state: Arc<Mutex<ServerState>>,
+    sender: Sender<Message>,
+    params: DidOpenTextDocumentParams,
+) {
     let mut s = state.lock().unwrap();
-    s.documents.insert(params.text_document.uri.clone(), (params.text_document.version, params.text_document.text.clone()));
+    s.documents.insert(
+        params.text_document.uri.clone(),
+        (
+            params.text_document.version,
+            params.text_document.text.clone(),
+        ),
+    );
 
     // Run diagnostics
     let diagnostics = run_diagnostics(&s, &params.text_document.text);
-    publish_diagnostics(sender, params.text_document.uri, diagnostics, Some(params.text_document.version));
+    publish_diagnostics(
+        sender,
+        params.text_document.uri,
+        diagnostics,
+        Some(params.text_document.version),
+    );
 }
 
-fn handle_did_change(state: Arc<Mutex<ServerState>>, sender: Sender<Message>, params: DidChangeTextDocumentParams) {
+fn handle_did_change(
+    state: Arc<Mutex<ServerState>>,
+    sender: Sender<Message>,
+    params: DidChangeTextDocumentParams,
+) {
     let mut s = state.lock().unwrap();
     // We requested Full sync, so content_changes[0].text is the full text
     if let Some(change) = params.content_changes.first() {
-        s.documents.insert(params.text_document.uri.clone(), (params.text_document.version, change.text.clone()));
+        s.documents.insert(
+            params.text_document.uri.clone(),
+            (params.text_document.version, change.text.clone()),
+        );
 
         let diagnostics = run_diagnostics(&s, &change.text);
-        publish_diagnostics(sender, params.text_document.uri, diagnostics, Some(params.text_document.version));
+        publish_diagnostics(
+            sender,
+            params.text_document.uri,
+            diagnostics,
+            Some(params.text_document.version),
+        );
     }
 }
 
-fn publish_diagnostics(sender: Sender<Message>, uri: Url, diagnostics: Vec<Diagnostic>, version: Option<i32>) {
+fn publish_diagnostics(
+    sender: Sender<Message>,
+    uri: Url,
+    diagnostics: Vec<Diagnostic>,
+    version: Option<i32>,
+) {
     let params = PublishDiagnosticsParams {
         uri,
         diagnostics,
@@ -176,7 +217,7 @@ fn run_diagnostics(state: &ServerState, text: &str) -> Vec<Diagnostic> {
                     diagnostics.extend(state.linter.check(&stmts, text));
                 }
                 Err(e) => {
-                     diagnostics.push(Diagnostic {
+                    diagnostics.push(Diagnostic {
                         range: span_to_range(e.span, text),
                         severity: Some(DiagnosticSeverity::ERROR),
                         message: e.message,
@@ -186,7 +227,7 @@ fn run_diagnostics(state: &ServerState, text: &str) -> Vec<Diagnostic> {
             }
         }
         Err(e) => {
-             diagnostics.push(Diagnostic {
+            diagnostics.push(Diagnostic {
                 range: span_to_range(e.span, text),
                 severity: Some(DiagnosticSeverity::ERROR),
                 message: e.message,
@@ -198,7 +239,10 @@ fn run_diagnostics(state: &ServerState, text: &str) -> Vec<Diagnostic> {
     diagnostics
 }
 
-fn handle_completion(state: Arc<Mutex<ServerState>>, params: CompletionParams) -> CompletionResponse {
+fn handle_completion(
+    state: Arc<Mutex<ServerState>>,
+    params: CompletionParams,
+) -> CompletionResponse {
     let s = state.lock().unwrap();
     let uri = params.text_document_position.text_document.uri;
 
@@ -206,33 +250,34 @@ fn handle_completion(state: Arc<Mutex<ServerState>>, params: CompletionParams) -
         let offset = position_to_offset(text, params.text_document_position.position);
 
         // Use facade interpreter with all libraries loaded (including fake agent for completion)
-        let interp = V2Interpreter::new()
-            .with_default_libs()
-            .with_fake_agent();
+        let interp = V2Interpreter::new().with_default_libs().with_fake_agent();
 
         let (_start_idx, candidates) = interp.complete(text, offset);
 
-        let items: Vec<CompletionItem> = candidates.into_iter().map(|c| {
-            // Determine Kind
-            let kind = if let Some(val) = interp.lookup_variable(&c) {
-                match val {
-                    Value::Foreign(_) => Some(CompletionItemKind::MODULE), // Libraries
-                    Value::NativeFunction(_, _)
-                    | Value::NativeFunctionWithKwargs(_, _)
-                    | Value::Function(_) => Some(CompletionItemKind::FUNCTION), // Builtins
-                    _ => Some(CompletionItemKind::VARIABLE),
-                }
-            } else {
-                // If resolving fails, it's likely a method or property from dot-completion
-                Some(CompletionItemKind::METHOD)
-            };
+        let items: Vec<CompletionItem> = candidates
+            .into_iter()
+            .map(|c| {
+                // Determine Kind
+                let kind = if let Some(val) = interp.lookup_variable(&c) {
+                    match val {
+                        Value::Foreign(_) => Some(CompletionItemKind::MODULE), // Libraries
+                        Value::NativeFunction(_, _)
+                        | Value::NativeFunctionWithKwargs(_, _)
+                        | Value::Function(_) => Some(CompletionItemKind::FUNCTION), // Builtins
+                        _ => Some(CompletionItemKind::VARIABLE),
+                    }
+                } else {
+                    // If resolving fails, it's likely a method or property from dot-completion
+                    Some(CompletionItemKind::METHOD)
+                };
 
-            CompletionItem {
-                label: c,
-                kind,
-                ..Default::default()
-            }
-        }).collect();
+                CompletionItem {
+                    label: c,
+                    kind,
+                    ..Default::default()
+                }
+            })
+            .collect();
 
         return CompletionResponse::Array(items);
     }
