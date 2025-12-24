@@ -7,7 +7,6 @@ edition = "2024"
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 sysinfo = { workspace = true, optional = true }
-listeners = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 netstat = { workspace = true }
 
