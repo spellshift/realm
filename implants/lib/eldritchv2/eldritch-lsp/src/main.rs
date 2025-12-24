@@ -59,12 +59,16 @@ fn main() -> Result<()> {
         ..ServerCapabilities::default()
     };
 
-    let result = InitializeResult {
-        capabilities,
-        server_info: None,
-    };
+    // Manually constructing JSON result to ensure correct structure
+    let result = serde_json::json!({
+        "capabilities": capabilities,
+        "serverInfo": {
+            "name": "eldritch-lsp",
+            "version": "0.1.0"
+        }
+    });
 
-    connection.initialize_finish(id, serde_json::to_value(&result)?)?;
+    connection.initialize_finish(id, result)?;
 
     let state = Arc::new(Mutex::new(ServerState::new()));
 
