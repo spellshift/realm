@@ -1,4 +1,4 @@
-import { ExtensionContext } from 'vscode';
+import { ExtensionContext, window } from 'vscode';
 import {
     LanguageClient,
     LanguageClientOptions,
@@ -8,26 +8,38 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-    // Otherwise to spawn the server
     // We assume eldritch-lsp is in the PATH.
-    let serverOptions: ServerOptions = { command: "eldritch-lsp", args: [] };
+    let serverOptions: ServerOptions = {
+        command: "eldritch-lsp",
+        args: []
+    };
 
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
         // Register the server for Eldritch documents
         documentSelector: [{ scheme: 'file', language: 'eldritch' }],
+        outputChannelName: 'Eldritch LSP',
+        // Reveal output channel if there is an error
+        revealOutputChannelOn: 4 // RevealOutputChannelOn.Error
     };
 
     // Create the language client and start the client.
     client = new LanguageClient(
         'Eldritch',
-        'Eldritch language server',
+        'Eldritch Language Server',
         serverOptions,
         clientOptions
     );
 
-    // Start the client. This will also launch the server
     client.start();
+
+    client.onReady().then(() => {
+        // Server started successfully
+        console.log("Eldritch LSP started.");
+    }, (error) => {
+        window.showErrorMessage(`Eldritch LSP failed to initialize: ${error}`);
+        console.error("Eldritch LSP initialization error:", error);
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {
