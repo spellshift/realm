@@ -84,7 +84,7 @@ fn test_golem_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(
-            r#"hello from an embedded shell script"#,
+            r#"hello from an embedded script"#,
         ))
         .stdout(predicate::str::contains(r#"hello from an asset directory"#));
     Ok(())

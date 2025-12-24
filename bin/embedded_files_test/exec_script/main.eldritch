@@ -11,3 +11,4 @@ def copy_script_and_execute():
         print("\n")
 
 copy_script_and_execute()
+print("hello from an embedded script")
