@@ -14,3 +14,5 @@ pub use self::error::EldritchError;
 #[allow(unused_imports)]
 pub use self::error::EldritchErrorKind;
 pub use self::printer::{BufferPrinter, Printer, StdoutPrinter};
+pub mod signature;
+pub use self::signature::{MethodSignature, ParameterSignature};

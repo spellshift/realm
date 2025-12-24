@@ -11,6 +11,7 @@ use spin::RwLock;
 
 // Resolve circular reference for ForeignValue signature
 use crate::interpreter::Interpreter;
+use crate::interpreter::signature::MethodSignature;
 
 #[derive(Debug)]
 pub struct Environment {
@@ -59,6 +60,9 @@ pub type BuiltinFnWithKwargs =
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;
     fn method_names(&self) -> Vec<String>;
+    fn get_method_signature(&self, name: &str) -> Option<MethodSignature> {
+        None
+    }
     fn call_method(
         &self,
         interp: &mut Interpreter,
