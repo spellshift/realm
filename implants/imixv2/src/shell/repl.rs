@@ -64,11 +64,10 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
-        let backend = Arc::new(EmptyAssets{});
-        let mut interpreter =
-            Interpreter::new_with_printer(printer)
-                .with_default_libs()
-                .with_task_context(Arc::new(agent), task_id, Vec::new(), backend);
+        let backend = Arc::new(EmptyAssets {});
+        let mut interpreter = Interpreter::new_with_printer(printer)
+            .with_default_libs()
+            .with_task_context(Arc::new(agent), task_id, Vec::new(), backend);
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),

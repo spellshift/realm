@@ -30,9 +30,9 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     cmd.arg(format!(
         "{GOLEM_CLI_TEST_DIR}_shadow/syntax_fail/main.eldritch"
     ));
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains(r#"Parse error: unexpected string literal"#.to_string()));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        r#"Parse error: unexpected string literal"#.to_string(),
+    ));
 
     Ok(())
 }
