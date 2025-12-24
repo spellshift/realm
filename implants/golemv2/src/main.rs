@@ -85,7 +85,6 @@ fn main() -> anyhow::Result<()> {
         )
         .get_matches();
 
-    //let mut parsed_tomes: Vec<ParsedTome> = Vec::new();
     let mut locker = StdAssetsLibrary::new();
 
     let asset_directories: Vec<String> = matches
@@ -95,7 +94,7 @@ fn main() -> anyhow::Result<()> {
         .collect();
 
     // If we have specified asset sources, we need to manually include embedded
-    if asset_directories.len() == 0 || matches.get_flag("embedded") {
+    if asset_directories.is_empty() || matches.get_flag("embedded") {
         let backend = EmbeddedAssets::<GolemEmbeddedAssets>::new();
         locker.add(Arc::new(backend))?;
     }
@@ -128,7 +127,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
     // If we havent specified tomes in INPUT, we need to look through the asset locker for tomes to run
-    if parsed_tomes.len() == 0 {
+    if parsed_tomes.is_empty() {
         match locker.list() {
             Ok(assets) => {
                 for asset in assets {
