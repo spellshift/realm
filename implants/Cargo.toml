@@ -11,6 +11,7 @@ members = [
     "lib/eldritchv2/eldritch-macros",
     "lib/eldritchv2/eldritch-repl",
     "lib/eldritchv2/eldritch-agent",
+    "lib/eldritchv2/eldritch-lsp",
     "lib/eldritchv2/stdlib/eldritch-libagent",
     "lib/eldritchv2/stdlib/eldritch-libassets",
     "lib/eldritchv2/stdlib/eldritch-libcrypto",
