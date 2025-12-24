@@ -195,11 +195,12 @@ fn is_option_type(ty: &Type) -> bool {
 fn is_interpreter_type(ty: &Type) -> bool {
     // Check if type is `Interpreter`, `&Interpreter`, or `&mut Interpreter`
     // Or fully qualified `eldritch_core::Interpreter`
-    if let Type::Reference(type_ref) = ty
-        && let Type::Path(type_path) = &*type_ref.elem
-        && let Some(segment) = type_path.path.segments.last()
-    {
-        return segment.ident == "Interpreter";
+    if let Type::Reference(type_ref) = ty {
+        if let Type::Path(type_path) = &*type_ref.elem {
+            if let Some(segment) = type_path.path.segments.last() {
+                return segment.ident == "Interpreter";
+            }
+        }
     }
     false
 }
