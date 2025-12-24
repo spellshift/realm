@@ -64,8 +64,8 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
-        "build-lsp": "cd ../implants && cargo build -p eldritch-lsp --release && cp target/release/eldritch-lsp ../vscode/bin/",
-        "postinstall": "cd client && npm install && cd .. && npm run build-lsp"
+        "build-lsp": "node install.js",
+        "postinstall": "cd client && npm install && cd .. && node install.js"
     },
     "devDependencies": {
         "@types/mocha": "^9.0.0",
