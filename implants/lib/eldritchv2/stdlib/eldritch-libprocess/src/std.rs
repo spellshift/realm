@@ -219,6 +219,15 @@ impl ProcessLibrary for StdProcessLibrary {
                 Value::String(entry.connection_state.to_string()),
             );
             map.insert("pid".to_string(), Value::Int(entry.pid as i64));
+            map.insert(
+                "process_name".to_string(),
+                Value::String(
+                    entry
+                        .process_name
+                        .unwrap_or(UNKNOWN.to_string())
+                        .to_string(),
+                ),
+            );
             out.push(map);
         }
         Ok(out)
