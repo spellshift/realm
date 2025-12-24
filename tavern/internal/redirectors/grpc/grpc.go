@@ -59,14 +59,7 @@ func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
 		}
 
 		// Set x-redirected-for header with the client IP
-		if clientIP != "" {
-			outMd, _ := metadata.FromOutgoingContext(ctx)
-			if outMd == nil {
-				outMd = metadata.New(nil)
-			}
-			outMd.Set("x-redirected-for", clientIP)
-			ctx = metadata.NewOutgoingContext(ctx, outMd)
-		}
+		ctx = redirectors.SetRedirectedForHeader(ctx, clientIP)
 
 		cs, err := upstream.NewStream(ctx, &grpc.StreamDesc{
 			StreamName:    fullMethodName,

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
+	"realm.pub/tavern/internal/redirectors"
 )
 
 func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
@@ -215,12 +215,7 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request, conn *grpc.Client
 	defer cancel()
 
 	// Set x-redirected-for header with the client IP
-	if clientIp != "" {
-		md := metadata.New(map[string]string{
-			"x-redirected-for": clientIp,
-		})
-		ctx = metadata.NewOutgoingContext(ctx, md)
-	}
+	ctx = redirectors.SetRedirectedForHeader(ctx, clientIp)
 
 	var responseBody []byte
 	err := conn.Invoke(
