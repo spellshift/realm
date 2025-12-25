@@ -52,21 +52,17 @@ jobs:
         echo "Waiting for Tavern to start..."
         # Wait for port 8000
         timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 8000
-    - name: 🔑 Get Server Pubkey and Run Agent
-      working-directory: implants/imixv2
-      run: |
-        echo "Fetching Tavern public key..."
-        export IMIX_SERVER_PUBKEY=$(curl -s http://127.0.0.1:8000/status | jq -r .Pubkey)
-        echo "Got pubkey: $IMIX_SERVER_PUBKEY"
-        echo "Building imixv2..."
-        cargo run --release
     - name: 🤖 Run Agent
       working-directory: implants/imixv2
       env:
         IMIX_CALLBACK_URI: "http://127.0.0.1:8000"
         IMIX_CALLBACK_INTERVAL: 2
       run: |
-        ./target/release/imixv2 &
+        echo "Fetching Tavern public key..."
+        export IMIX_SERVER_PUBKEY=$(curl -s http://127.0.0.1:8000/status | jq -r .Pubkey)
+        echo "Got pubkey: $IMIX_SERVER_PUBKEY"
+        echo "Building imixv2..."
+        cargo run --release &
     - name: 🎭 Install Playwright
       working-directory: tests/e2e
       run: |
