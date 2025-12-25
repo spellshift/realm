@@ -905,7 +905,7 @@ var (
 		"merry",
 		"nippy",
 		"polar",
-		"raw",
+		"radiant",
 		"rejoicing",
 		"shivering",
 		"snowy",
