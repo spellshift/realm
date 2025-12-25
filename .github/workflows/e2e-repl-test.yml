@@ -68,9 +68,9 @@ jobs:
         echo "Got pubkey: $IMIX_SERVER_PUBKEY"
 
         echo "Building imixv2..."
-        cargo build --release --bin imixv2 --target-dir ./build
+        cargo build --bin imixv2 --target-dir ./build
         # Run agent and pipe logs to a file
-        ./build/release/imixv2 > agent.log 2>&1 &
+        ./build/debug/imixv2 > agent.log 2>&1 &
 
         # Give the agent a moment to perform the initial handshake
         echo "Agent started. Waiting for initial callback..."
@@ -80,6 +80,12 @@ jobs:
       run: |
         npm ci
         npx playwright install --with-deps chromium
+    - name: Debug
+      run: |
+        echo "Tavern Status:"
+        curl -s http://localhost:8000/status | jq .
+        echo "Agent Log Tail:"
+        tail -n 20 implants/imixv2/agent.log
     - name: 🧪 Run E2E Tests
       working-directory: tests/e2e
       run: |
