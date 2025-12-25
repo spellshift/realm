@@ -52,12 +52,7 @@ jobs:
         echo "Waiting for Tavern to start..."
         # Wait for port 8000
         timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 8000
-    - name: 🎭 Install Playwright
-      working-directory: tests/e2e
-      run: |
-        npm ci
-        npx playwright install --with-deps chromium
-    - name: 🤖 Run E2E Tests
+    - name: 🤖 Run Agent
       working-directory: implants/imixv2
       env:
         IMIX_CALLBACK_URI: "http://127.0.0.1:8000"
@@ -67,5 +62,14 @@ jobs:
         export IMIX_SERVER_PUBKEY=$(curl -s http://127.0.0.1:8000/status | jq -r .Pubkey)
         echo "Got pubkey: $IMIX_SERVER_PUBKEY"
         echo "Building imixv2..."
-        cargo run --release &
+        cargo build --release --bin imixv2 --target-dir ./build
+        ./build/release/imixv2 &
+    - name: 🎭 Install Playwright
+      working-directory: tests/e2e
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+    - name: 🤖 Run E2E Tests
+      working-directory: tests/e2e
+      run: |
         npx playwright test
