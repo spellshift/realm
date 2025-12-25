@@ -10,6 +10,7 @@ use tokio::net::UdpSocket;
 const MAX_LABEL_LENGTH: usize = 63;
 const MAX_DNS_NAME_LENGTH: usize = 253;
 const CONV_ID_LENGTH: usize = 8;
+const DNS_RESPONSE_BUF_SIZE: usize = 4096;
 
 // Async protocol configuration
 const SEND_WINDOW_SIZE: usize = 10; // Packets in flight
@@ -215,7 +216,7 @@ impl DNS {
         socket.send(query).await?;
 
         // Receive response with timeout
-        let mut buf = vec![0u8; 4096];
+        let mut buf = vec![0u8; DNS_RESPONSE_BUF_SIZE];
         let timeout_duration = std::time::Duration::from_secs(5);
         let len = tokio::time::timeout(timeout_duration, socket.recv(&mut buf))
             .await
@@ -424,6 +425,7 @@ impl DNS {
 
         let data_crc = Self::calculate_crc32(request_data);
 
+        #[cfg(debug_assertions)]
         log::debug!(
             "DNS: Request size={} bytes, chunks={}, chunk_size={} bytes, crc32={:#x}",
             request_data.len(),
@@ -453,6 +455,7 @@ impl DNS {
         let mut init_payload_bytes = Vec::new();
         init_payload.encode(&mut init_payload_bytes)?;
 
+        #[cfg(debug_assertions)]
         log::debug!(
             "DNS: INIT packet - conv_id={}, method={}, total_chunks={}, file_size={}, data_crc32={:#x}",
             conv_id, method_code, total_chunks, data_size, data_crc
@@ -472,6 +475,8 @@ impl DNS {
         self.send_packet(init_packet)
             .await
             .context("failed to send INIT packet")?;
+
+        #[cfg(debug_assertions)]
         log::debug!("DNS: INIT sent for conv_id={}", conv_id);
 
         Ok(())
@@ -503,6 +508,7 @@ impl DNS {
                 }
             }
         } else {
+            #[cfg(debug_assertions)]
             log::debug!(
                 "DNS: Unknown response format ({} bytes), retrying chunk",
                 response_data.len()
@@ -705,6 +711,7 @@ impl DNS {
 
     /// Fetch response from server, handling potentially chunked responses
     async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
+        #[cfg(debug_assertions)]
         log::debug!(
             "DNS: All {} chunks acknowledged, sending FETCH",
             total_chunks
@@ -725,6 +732,8 @@ impl DNS {
             .send_packet(fetch_packet)
             .await
             .context("failed to fetch response from server")?;
+
+        #[cfg(debug_assertions)]
         log::debug!(
             "DNS: FETCH response received ({} bytes)",
             end_response.len()
