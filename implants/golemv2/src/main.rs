@@ -5,7 +5,9 @@ use clap::{Arg, ArgAction, Command};
 use eldritch_libagent::fake::AgentFake;
 use eldritch_libassets::AssetsLibrary;
 use eldritch_libassets::std::{EmbeddedAssets, StdAssetsLibrary};
+use eldritchv2::conversion::ToValue;
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
+use std::collections::BTreeMap;
 use std::fs;
 use std::process::exit;
 use std::sync::Arc;
@@ -170,6 +172,10 @@ fn main() -> anyhow::Result<()> {
 
     // Time to run some commands
     for tome in parsed_tomes {
+        // In the future we would like to set input params here.
+        // We could compile them in for the default dropper assets
+        let params: BTreeMap<String, String> = BTreeMap::new();
+        interp.define_variable("input_params", params.to_value());
         match interp.interpret(&tome.eldritch) {
             Ok(_) => {}
             Err(e) => {
