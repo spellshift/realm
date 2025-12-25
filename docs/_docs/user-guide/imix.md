@@ -182,31 +182,59 @@ cargo build --release --lib --target=x86_64-pc-windows-gnu
 
 ## DNS Transport Configuration
 
-The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either a specific DNS server or the system's default resolver.
+The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either specific DNS servers or the system's default resolver with automatic fallback.
 
 ### DNS URI Format
 
 When using the DNS transport, configure `IMIX_CALLBACK_URI` with the following format:
 
 ```
-dns://<server>/<domain>[?type=<TYPE>&fallback=<true|false>]
+dns://<server>?domain=<DOMAIN>[&type=<TYPE>]
 ```
 
 **Parameters:**
-- `<server>` - DNS server IP address, or `*` to use system resolver (recommended)
-- `<domain>` - Base domain for DNS queries (e.g., `c2.example.com` will result in queries like `abcd1234.c2.example.com`)
-- `type` (optional) - Preferred DNS record type: `TXT` (default), `A`, or `AAAA`
-- `fallback` (optional) - Enable automatic fallback to other record types on failure (default: `true`)
+- `<server>` - DNS server address(es), `*` to use system resolver, or comma-separated list (e.g., `8.8.8.8:53,1.1.1.1:53`)
+- `domain` - Base domain for DNS queries (e.g., `c2.example.com`)
+- `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
 
 **Examples:**
 
 ```bash
-# Use specific DNS server (8.8.8.8) with TXT records and fallback enabled
-export IMIX_CALLBACK_URI="dns://8.8.8.8/c2.example.com"
+# Use specific DNS server with TXT records (default)
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com"
 
-# Use system resolver, prefer A records only
-export IMIX_CALLBACK_URI="dns://*/c2.example.com?type=A"
+# Use system resolver with fallbacks
+export IMIX_CALLBACK_URI="dns://*?domain=c2.example.com"
 
-# Use system resolver with AAAA records and no fallback
-export IMIX_CALLBACK_URI="dns://*/c2.example.com?type=AAAA&fallback=false"
+# Use multiple DNS servers with A records
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a"
+
+# Use AAAA records
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com&type=aaaa"
 ```
+
+### DNS Resolver Fallback
+
+When using `*` as the server, the agent uses system DNS servers followed by public resolvers (1.1.1.1, 8.8.8.8) as fallbacks. If system configuration cannot be read, only the public resolvers are used. When multiple servers are configured, the agent tries each server in order on every failed request until one succeeds, then uses the working server for subsequent requests.
+
+### Record Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| TXT | Text records (default) | Best throughput, data encoded in TXT RDATA |
+| A | IPv4 address records | Lower profile, data encoded across multiple A records |
+| AAAA | IPv6 address records | Medium profile, more data per record than A |
+
+### Protocol Details
+
+The DNS transport uses an async windowed protocol to handle UDP unreliability:
+
+- **Chunked transmission**: Large requests are split into chunks that fit within DNS query limits (253 bytes total domain length)
+- **Windowed sending**: Up to 10 packets are sent concurrently
+- **ACK/NACK protocol**: The server responds with acknowledgments for received chunks and requests retransmission of missing chunks
+- **Automatic retries**: Failed chunks are retried up to 3 times before the request fails
+- **CRC32 verification**: Data integrity is verified using CRC32 checksums
+
+**Limits:**
+- Maximum data size: 50MB per request
+- Maximum concurrent conversations on server: 10,000

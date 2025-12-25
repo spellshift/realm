@@ -17,8 +17,8 @@ enum PacketType {
 // It is serialized to protobuf, then encoded (Base64/Base58/Base32), and sent as DNS subdomain
 message DNSPacket {
     PacketType type = 1;           // Packet type
-    uint32 sequence = 2;            // Chunk sequence number (0-based)
-    string conversation_id = 3;     // 12-character random conversation ID
+    uint32 sequence = 2;            // Chunk sequence number (0-Based for INIT, 1-based for DATA)
+    string conversation_id = 3;     // 8-character random conversation ID
     bytes data = 4;                 // Chunk payload (or InitPayload for INIT packets)
     uint32 crc32 = 5;               // Optional CRC32 for validation
 
@@ -46,7 +46,7 @@ message InitPayload {
 // FetchPayload is the payload for FETCH packets
 // It specifies which response chunk to retrieve
 message FetchPayload {
-    uint32 chunk_index = 1;         // Which chunk to fetch (0-based)
+    uint32 chunk_index = 1;         // Which chunk to fetch (1-based)
 }
 
 // ResponseMetadata indicates the response is chunked and must be fetched

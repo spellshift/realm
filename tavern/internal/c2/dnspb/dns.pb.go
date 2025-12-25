@@ -82,8 +82,8 @@ func (PacketType) EnumDescriptor() ([]byte, []int) {
 type DNSPacket struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Type           PacketType             `protobuf:"varint,1,opt,name=type,proto3,enum=dns.PacketType" json:"type,omitempty"`                      // Packet type
-	Sequence       uint32                 `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`                                  // Chunk sequence number (0-based)
-	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 12-character random conversation ID
+	Sequence       uint32                 `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`                                  // Chunk sequence number (0-Based for INIT, 1-based for DATA)
+	ConversationId string                 `protobuf:"bytes,3,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"` // 8-character random conversation ID
 	Data           []byte                 `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`                                           // Chunk payload (or InitPayload for INIT packets)
 	Crc32          uint32                 `protobuf:"varint,5,opt,name=crc32,proto3" json:"crc32,omitempty"`                                        // Optional CRC32 for validation
 	// Async protocol fields for windowed transmission
@@ -307,7 +307,7 @@ func (x *InitPayload) GetFileSize() uint32 {
 // It specifies which response chunk to retrieve
 type FetchPayload struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkIndex    uint32                 `protobuf:"varint,1,opt,name=chunk_index,json=chunkIndex,proto3" json:"chunk_index,omitempty"` // Which chunk to fetch (0-based)
+	ChunkIndex    uint32                 `protobuf:"varint,1,opt,name=chunk_index,json=chunkIndex,proto3" json:"chunk_index,omitempty"` // Which chunk to fetch (1-based)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

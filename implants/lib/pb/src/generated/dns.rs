@@ -7,10 +7,10 @@ pub struct DnsPacket {
     /// Packet type
     #[prost(enumeration = "PacketType", tag = "1")]
     pub r#type: i32,
-    /// Chunk sequence number (0-based)
+    /// Chunk sequence number (0-Based for INIT, 1-based for DATA)
     #[prost(uint32, tag = "2")]
     pub sequence: u32,
-    /// 12-character random conversation ID
+    /// 8-character random conversation ID
     #[prost(string, tag = "3")]
     pub conversation_id: ::prost::alloc::string::String,
     /// Chunk payload (or InitPayload for INIT packets)
@@ -65,7 +65,7 @@ pub struct InitPayload {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FetchPayload {
-    /// Which chunk to fetch (0-based)
+    /// Which chunk to fetch (1-based)
     #[prost(uint32, tag = "1")]
     pub chunk_index: u32,
 }
