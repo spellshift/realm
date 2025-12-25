@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Set timeout for this specific test file to 60 seconds
+test.setTimeout(60000);
+
 test('End-to-end reverse shell repl test', async ({ page }) => {
   // 1. Connect to tavern's UI using playwright at http://127.0.0.1:8000/createQuest
   console.log('Navigating to /createQuest');
@@ -30,13 +33,20 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
   console.log('Submitting Quest');
   await page.getByRole('button', { name: 'Submit' }).click();
 
-  // 5. Wait at least 11 seconds for agent execution
-  console.log('Waiting 12s for execution');
-  await page.waitForTimeout(12000);
+  // 5. Wait for agent execution. We poll by reloading the page until the "Shells" tab appears.
+  console.log('Waiting for execution and Shells tab...');
 
-  // 6. Refresh the page
-  console.log('Reloading page');
-  await page.reload();
+  await expect(async () => {
+    console.log('Reloading page to check for Shells tab...');
+    await page.reload();
+    // Check if the shells tab exists. We use a short timeout here because we want to fail fast and retry reloading.
+    await expect(page.getByRole('tab', { name: 'Shells' })).toBeVisible({ timeout: 2000 });
+  }).toPass({
+    // We wait up to 45 seconds for the shell to appear.
+    // The agent interval is 5s, plus execution time, plus network latency.
+    timeout: 45000,
+    intervals: [2000, 5000] // Retry after 2s, then every 5s
+  });
 
   // 7. See a "Shells" tab in the output, select it
   console.log('Clicking Shells tab');
