@@ -771,6 +771,153 @@ var (
 		"wormy",
 		"wretched",
 	}
+
+	noun_winter = [...]string{
+		"blizzard",
+		"boots",
+		"candle",
+		"candy-cane",
+		"carol",
+		"celebration",
+		"chimney",
+		"chocolate",
+		"cider",
+		"cold",
+		"comet",
+		"cookie",
+		"decoration",
+		"drummer",
+		"elf",
+		"eve",
+		"evergreen",
+		"family",
+		"feast",
+		"festival",
+		"fireplace",
+		"fireworks",
+		"flannel",
+		"fleece",
+		"frost",
+		"gift",
+		"gingerbread",
+		"glacier",
+		"gloves",
+		"holiday",
+		"holly",
+		"ice",
+		"ice-skate",
+		"icicle",
+		"igloo",
+		"ivy",
+		"jacket",
+		"joy",
+		"jubilee",
+		"jumper",
+		"knits",
+		"log-fire",
+		"mistletoe",
+		"mittens",
+		"night",
+		"north-pole",
+		"nutcracker",
+		"ornament",
+		"parka",
+		"party",
+		"penguin",
+		"pine-cone",
+		"poinsettia",
+		"polar-bear",
+		"present",
+		"pudding",
+		"quilt",
+		"reindeer",
+		"ribbon",
+		"rudolph",
+		"santa",
+		"scarf",
+		"shovel",
+		"skis",
+		"sled",
+		"sleigh",
+		"sleigh-bells",
+		"snow",
+		"snow-angel",
+		"snow-globe",
+		"snowball",
+		"snowboard",
+		"snowflake",
+		"snowman",
+		"socks",
+		"solstice",
+		"spirit",
+		"star",
+		"stocking",
+		"storm",
+		"sugar-plum",
+		"sweater",
+		"tinsel",
+		"toboggan",
+		"toy",
+		"tradition",
+		"tree",
+		"vacation",
+		"winter",
+		"wreath",
+		"yule-log",
+	}
+
+	adjectives_winter = [...]string{
+		"arctic",
+		"biting",
+		"bitter",
+		"blanketed",
+		"blustery",
+		"bright",
+		"brisk",
+		"celebratory",
+		"cheerful",
+		"chilly",
+		"cold",
+		"comforting",
+		"cozy",
+		"crisp",
+		"dazzling",
+		"delightful",
+		"enchanting",
+		"festive",
+		"fluffy",
+		"freezing",
+		"frigid",
+		"frosty",
+		"frozen",
+		"glittering",
+		"glowing",
+		"gusty",
+		"happy",
+		"harsh",
+		"hibernating",
+		"holiday",
+		"icy",
+		"jolly",
+		"joyful",
+		"jubilant",
+		"magical",
+		"merry",
+		"nippy",
+		"polar",
+		"raw",
+		"rejoicing",
+		"shivering",
+		"snowy",
+		"sparkling",
+		"spirited",
+		"stormy",
+		"white",
+		"windy",
+		"wintery",
+		"wondrous",
+		"woolly",
+	}
 )
 
 // NewSimple generates a random name with one adjective and one noun.
@@ -796,9 +943,13 @@ func NewComplex() string {
 func getRandomAdjNoun() (string, string) {
 	var adj, noun string
 
-	if time.Now().Month() == time.October {
+	month := time.Now().Month()
+	if month == time.October {
 		adj = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
 		noun = noun_halloween[newRandInt(int64(len(noun_halloween)))]
+	} else if month == time.December {
+		adj = adjectives_winter[newRandInt(int64(len(adjectives_winter)))]
+		noun = noun_winter[newRandInt(int64(len(noun_winter)))]
 	} else {
 		adj = adjectives[newRandInt(int64(len(adjectives)))]
 		noun = nouns[newRandInt(int64(len(nouns)))]
@@ -810,8 +961,11 @@ func getRandomAdjNoun() (string, string) {
 func getRandomAdjAdjNoun() (string, string, string) {
 	adj1, noun := getRandomAdjNoun()
 	var adj2 string
-	if time.Now().Month() == time.October {
+	month := time.Now().Month()
+	if month == time.October {
 		adj2 = adjectives_halloween[newRandInt(int64(len(adjectives_halloween)))]
+	} else if month == time.December {
+		adj2 = adjectives_winter[newRandInt(int64(len(adjectives_winter)))]
 	} else {
 		adj2 = adjectives[newRandInt(int64(len(adjectives)))]
 	}
