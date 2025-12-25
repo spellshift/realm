@@ -94,7 +94,7 @@ func runTestCase(t *testing.T, path string) {
 	// Server
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importerFake{graph})),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importerFake{graph}, "")),
 		},
 		tavernhttp.WithAuthentication(graph),
 	)

@@ -1,6 +1,6 @@
 module realm.pub
 
-go 1.23.4
+go 1.24.0
 
 require (
 	cloud.google.com/go/pubsub v1.45.3
@@ -11,6 +11,7 @@ require (
 	github.com/cloudflare/circl v1.5.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/generative-ai-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-sqlite3 v1.14.16
@@ -18,10 +19,10 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.5
 	github.com/vektah/gqlparser/v2 v2.5.21
-	golang.org/x/crypto v0.38.0
-	golang.org/x/net v0.40.0
+	golang.org/x/crypto v0.46.0
+	golang.org/x/net v0.48.0
 	golang.org/x/oauth2 v0.26.0
-	golang.org/x/sync v0.14.0
+	golang.org/x/sync v0.19.0
 	google.golang.org/api v0.210.0
 	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.6
@@ -30,9 +31,11 @@ require (
 
 require (
 	cloud.google.com/go v0.116.0 // indirect
+	cloud.google.com/go/ai v0.8.0 // indirect
 	cloud.google.com/go/auth v0.11.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
 	cloud.google.com/go/iam v1.2.2 // indirect
+	cloud.google.com/go/longrunning v0.6.2 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -102,9 +105,9 @@ require (
 	github.com/zclconf/go-cty v1.14.4 // indirect
 	gocloud.dev v0.37.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/tools v0.40.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237 // indirect
 )

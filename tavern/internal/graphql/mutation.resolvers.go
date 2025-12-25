@@ -6,15 +6,22 @@ package graphql
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/option"
+	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
+	tavernTomes "realm.pub/tavern/tomes"
 )
 
 // DropAllData is the resolver for the dropAllData field.
@@ -177,10 +184,72 @@ func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeI
 		uploaderID = &uploader.ID
 	}
 
-	return r.client.Tome.Create().
+	t, err := r.client.Tome.Create().
 		SetNillableUploaderID(uploaderID).
 		SetInput(input).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Write files to "AI Generated Tomes" directory
+	go func() {
+		// Sanitize name to prevent path traversal
+		safeName := filepath.Base(input.Name)
+		if safeName == "." || safeName == "/" || strings.Contains(safeName, "..") {
+			fmt.Printf("invalid tome name %q\n", input.Name)
+			return
+		}
+
+		dirPath := filepath.Join("AI Generated Tomes", safeName)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			fmt.Printf("failed to create directory for tome %q: %v\n", input.Name, err)
+			return
+		}
+
+		// Construct Metadata
+		var paramDefs []tavernTomes.ParamDefinition
+		if input.ParamDefs != nil && *input.ParamDefs != "" {
+			if err := json.Unmarshal([]byte(*input.ParamDefs), &paramDefs); err != nil {
+				fmt.Printf("failed to unmarshal param defs for tome %q: %v\n", input.Name, err)
+			}
+		}
+
+		metadata := tavernTomes.MetadataDefinition{
+			Name:        input.Name,
+			Description: input.Description,
+			Author:      input.Author,
+			ParamDefs:   paramDefs,
+		}
+
+		if input.SupportModel == nil {
+			metadata.SupportModel = "UNSPECIFIED"
+		} else {
+			metadata.SupportModel = string(*input.SupportModel)
+		}
+
+		if input.Tactic == nil {
+			metadata.Tactic = "UNSPECIFIED"
+		} else {
+			metadata.Tactic = string(*input.Tactic)
+		}
+
+		metaBytes, err := yaml.Marshal(metadata)
+		if err != nil {
+			fmt.Printf("failed to marshal metadata for tome %q: %v\n", input.Name, err)
+		} else {
+			if err := os.WriteFile(filepath.Join(dirPath, "metadata.yml"), metaBytes, 0644); err != nil {
+				fmt.Printf("failed to write metadata.yml for tome %q: %v\n", input.Name, err)
+			}
+		}
+
+		// Write eldritch
+		if err := os.WriteFile(filepath.Join(dirPath, "main.eldritch"), []byte(input.Eldritch), 0644); err != nil {
+			fmt.Printf("failed to write main.eldritch for tome %q: %v\n", input.Name, err)
+		}
+	}()
+
+	return t, nil
 }
 
 // UpdateTome is the resolver for the updateTome field.
@@ -251,6 +320,102 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error) {
 	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
+}
+
+// GenerateTomeAi is the resolver for the generateTomeAI field.
+func (r *mutationResolver) GenerateTomeAi(ctx context.Context, prompt string) (*models.GeneratedTomeData, error) {
+	if r.geminiAPIKey == "" {
+		return nil, fmt.Errorf("Gemini API key not configured")
+	}
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(r.geminiAPIKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
+	}
+	defer client.Close()
+
+	model := client.GenerativeModel("gemini-2.0-flash")
+	model.ResponseMIMEType = "application/json"
+
+	systemPrompt := `You are an expert in creating "Realm Tomes" for the Tavern security platform.
+A Tome consists of metadata and an execution script in the "Eldritch" language (a Starlark/Python dialect).
+
+You must generate a valid JSON object with the following structure:
+{
+  "name": "Tome Name",
+  "description": "Description of what the tome does",
+  "author": "AI Assistant",
+  "tactic": "RECON",
+  "paramDefs": [
+    { "name": "param_name", "label": "Parameter Label", "type": "string", "placeholder": "example value" }
+  ],
+  "eldritch": "print('hello world')"
+}
+
+Valid tactics are: RECON, RESOURCE_DEVELOPMENT, INITIAL_ACCESS, EXECUTION, PERSISTENCE, PRIVILEGE_ESCALATION, DEFENSE_EVASION, CREDENTIAL_ACCESS, DISCOVERY, LATERAL_MOVEMENT, COLLECTION, COMMAND_AND_CONTROL, EXFILTRATION, IMPACT.
+
+The "eldritch" script supports Python-like syntax. Use 'print()' for output. Input parameters are available in the 'input_params' dictionary, e.g., input_params['param_name'].
+
+Example script that lists files:
+usernfo = sys.get_user()
+def list_files(path):
+    res = file.list(path)
+    for f in res:
+        print(f['absolute_path'])
+list_files(input_params['path'])
+
+Generate only the JSON object. Do not include markdown formatting.`
+
+	model.SystemInstruction = genai.NewUserContent(genai.Text(systemPrompt))
+
+	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate content: %w", err)
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("no content generated")
+	}
+
+	part := resp.Candidates[0].Content.Parts[0]
+	txt, ok := part.(genai.Text)
+	if !ok {
+		return nil, fmt.Errorf("unexpected response type")
+	}
+
+	cleaned := string(txt)
+	cleaned = strings.TrimSpace(cleaned)
+	if strings.HasPrefix(cleaned, "```json") {
+		cleaned = strings.TrimPrefix(cleaned, "```json")
+		cleaned = strings.TrimSuffix(cleaned, "```")
+	} else if strings.HasPrefix(cleaned, "```") {
+		cleaned = strings.TrimPrefix(cleaned, "```")
+		cleaned = strings.TrimSuffix(cleaned, "```")
+	}
+	cleaned = strings.TrimSpace(cleaned)
+
+	var respData struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Author      string `json:"author"`
+		Tactic      string `json:"tactic"`
+		ParamDefs   any    `json:"paramDefs"`
+		Eldritch    string `json:"eldritch"`
+	}
+	if err := json.Unmarshal([]byte(cleaned), &respData); err != nil {
+		return nil, fmt.Errorf("failed to parse generated JSON: %w", err)
+	}
+
+	paramDefsBytes, _ := json.Marshal(respData.ParamDefs)
+
+	return &models.GeneratedTomeData{
+		Name:        respData.Name,
+		Description: respData.Description,
+		Author:      respData.Author,
+		Tactic:      respData.Tactic,
+		ParamDefs:   string(paramDefsBytes),
+		Eldritch:    respData.Eldritch,
+	}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

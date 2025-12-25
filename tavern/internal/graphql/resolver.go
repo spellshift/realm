@@ -19,14 +19,15 @@ type RepoImporter interface {
 
 // Resolver is the resolver root.
 type Resolver struct {
-	client   *ent.Client
-	importer RepoImporter
+	client       *ent.Client
+	importer     RepoImporter
+	geminiAPIKey string
 }
 
 // NewSchema creates a graphql executable schema.
-func NewSchema(client *ent.Client, importer RepoImporter) graphql.ExecutableSchema {
+func NewSchema(client *ent.Client, importer RepoImporter, geminiAPIKey string) graphql.ExecutableSchema {
 	cfg := generated.Config{
-		Resolvers: &Resolver{client, importer},
+		Resolvers: &Resolver{client, importer, geminiAPIKey},
 	}
 	cfg.Directives.RequireRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, requiredRole models.Role) (interface{}, error) {
 		// Allow unauthenticated contexts to continue for open endpoints

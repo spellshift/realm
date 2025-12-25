@@ -28,6 +28,15 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+type GeneratedTomeData struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Author      string `json:"author"`
+	Tactic      string `json:"tactic"`
+	ParamDefs   string `json:"paramDefs"`
+	Eldritch    string `json:"eldritch"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.

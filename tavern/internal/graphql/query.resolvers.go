@@ -13,6 +13,11 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
+// AiAvailability is the resolver for the aiAvailability field.
+func (r *queryResolver) AiAvailability(ctx context.Context) (bool, error) {
+	return r.geminiAPIKey != "", nil
+}
+
 // Files is the resolver for the files field.
 func (r *queryResolver) Files(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) (*ent.FileConnection, error) {
 	query, err := r.client.File.Query().CollectFields(ctx)

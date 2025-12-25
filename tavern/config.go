@@ -91,6 +91,9 @@ var (
 	EnvEnableMetrics = EnvBool{"ENABLE_METRICS"}
 
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
+
+	// EnvGeminiAPIKey is the API key for Google Gemini.
+	EnvGeminiAPIKey = EnvString{"GEMINI_API_KEY", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern
