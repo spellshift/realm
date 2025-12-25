@@ -519,7 +519,10 @@ impl DNS {
         chunks: &[Vec<u8>],
         conv_id: &str,
         total_chunks: usize,
-    ) -> Result<(std::collections::HashSet<u32>, std::collections::HashSet<u32>)> {
+    ) -> Result<(
+        std::collections::HashSet<u32>,
+        std::collections::HashSet<u32>,
+    )> {
         use std::collections::HashSet;
 
         let mut acknowledged = HashSet::new();
@@ -669,8 +672,11 @@ impl DNS {
 
                     match self.send_packet(retransmit_packet).await {
                         Ok(response_data) => {
-                            let (acks, nacks) =
-                                Self::process_chunk_response(&response_data, nack_seq, total_chunks)?;
+                            let (acks, nacks) = Self::process_chunk_response(
+                                &response_data,
+                                nack_seq,
+                                total_chunks,
+                            )?;
 
                             // Process ACKs
                             for ack_seq in acks {
@@ -698,11 +704,7 @@ impl DNS {
     }
 
     /// Fetch response from server, handling potentially chunked responses
-    async fn fetch_response(
-        &mut self,
-        conv_id: &str,
-        total_chunks: usize,
-    ) -> Result<Vec<u8>> {
+    async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
         log::debug!(
             "DNS: All {} chunks acknowledged, sending FETCH",
             total_chunks
@@ -736,7 +738,9 @@ impl DNS {
         // Check if response is chunked
         if let Ok(metadata) = ResponseMetadata::decode(&end_response[..]) {
             if metadata.total_chunks > 0 {
-                return self.fetch_chunked_response(conv_id, total_chunks, &metadata).await;
+                return self
+                    .fetch_chunked_response(conv_id, total_chunks, &metadata)
+                    .await;
             }
         }
 
@@ -794,14 +798,21 @@ impl DNS {
         method_code: &str,
     ) -> Result<Vec<u8>> {
         // Validate and prepare chunks
-        let (chunk_size, total_chunks, data_crc) = self.validate_and_prepare_chunks(&request_data)?;
+        let (chunk_size, total_chunks, data_crc) =
+            self.validate_and_prepare_chunks(&request_data)?;
 
         // Generate conversation ID
         let conv_id = Self::generate_conv_id();
 
         // Send INIT packet
-        self.send_init_packet(&conv_id, method_code, total_chunks, request_data.len(), data_crc)
-            .await?;
+        self.send_init_packet(
+            &conv_id,
+            method_code,
+            total_chunks,
+            request_data.len(),
+            data_crc,
+        )
+        .await?;
 
         // Prepare chunks
         let chunks: Vec<Vec<u8>> = request_data
@@ -1150,8 +1161,8 @@ mod tests {
 
     #[test]
     fn test_new_single_server() {
-        let dns =
-            DNS::new("dns://8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let dns = DNS::new("dns://8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None)
+            .expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
         assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
@@ -1174,8 +1185,11 @@ mod tests {
 
     #[test]
     fn test_new_record_type_a() {
-        let dns = DNS::new("dns://8.8.8.8?domain=dnsc2.realm.pub&type=a".to_string(), None)
-            .expect("should parse");
+        let dns = DNS::new(
+            "dns://8.8.8.8?domain=dnsc2.realm.pub&type=a".to_string(),
+            None,
+        )
+        .expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::A);
     }
 
@@ -1198,14 +1212,16 @@ mod tests {
 
     #[test]
     fn test_new_wildcard_uses_fallbacks() {
-        let dns = DNS::new("dns://*?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let dns =
+            DNS::new("dns://*?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
 
         // Should have fallback servers
         assert!(!dns.dns_servers.is_empty());
         // Fallback servers include known DNS resolvers
-        let has_fallback = dns.dns_servers.iter().any(|s| {
-            s.contains("1.1.1.1") || s.contains("8.8.8.8")
-        });
+        let has_fallback = dns
+            .dns_servers
+            .iter()
+            .any(|s| s.contains("1.1.1.1") || s.contains("8.8.8.8"));
         assert!(has_fallback, "Should have fallback DNS servers");
     }
 
@@ -1213,12 +1229,16 @@ mod tests {
     fn test_new_missing_domain() {
         let result = DNS::new("dns://8.8.8.8:53".to_string(), None);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("domain parameter is required"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("domain parameter is required"));
     }
 
     #[test]
     fn test_new_without_scheme() {
-        let dns = DNS::new("8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let dns =
+            DNS::new("8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
     }
 
@@ -1256,7 +1276,11 @@ mod tests {
 
         // Each label should be <= 63 chars
         for label in subdomain.split('.') {
-            assert!(label.len() <= MAX_LABEL_LENGTH, "Label too long: {}", label.len());
+            assert!(
+                label.len() <= MAX_LABEL_LENGTH,
+                "Label too long: {}",
+                label.len()
+            );
         }
     }
 
@@ -1285,7 +1309,11 @@ mod tests {
 
         // Should have multiple labels (dots)
         let label_count = subdomain.matches('.').count();
-        assert!(label_count > 1, "Expected multiple labels, got {}", label_count);
+        assert!(
+            label_count > 1,
+            "Expected multiple labels, got {}",
+            label_count
+        );
     }
 
     // ============================================================
@@ -1301,7 +1329,9 @@ mod tests {
             record_type: DnsRecordType::TXT,
         };
 
-        let (query, txid) = dns.build_dns_query("test.dnsc2.realm.pub").expect("should build");
+        let (query, txid) = dns
+            .build_dns_query("test.dnsc2.realm.pub")
+            .expect("should build");
 
         // Header should be 12 bytes minimum
         assert!(query.len() > 12);
@@ -1400,7 +1430,7 @@ mod tests {
 
         assert!(chunk_size > 0);
         assert_eq!(total_chunks, 1); // Even empty data needs 1 chunk
-        // CRC is deterministic - just verify it's calculated
+                                     // CRC is deterministic - just verify it's calculated
         assert_eq!(crc, DNS::calculate_crc32(&[]));
     }
 
