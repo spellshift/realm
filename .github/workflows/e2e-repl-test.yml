@@ -86,6 +86,7 @@ jobs:
         curl -s http://localhost:8000/status | jq .
         echo "Agent Log Tail:"
         tail -n 20 implants/imixv2/agent.log
+        curl -X POST -H "Content-Type: application/json" -d '{"query": "query { beacons { edges { node { id createdAt lastSeenAt shells { edges { node { id } } } tasks { edges { node { createdAt execStartedAt execFinishedAt quest { tome { name } } } } } } } } }"}' http://localhost:8000/query | jq
     - name: 🧪 Run E2E Tests
       working-directory: tests/e2e
       run: |
