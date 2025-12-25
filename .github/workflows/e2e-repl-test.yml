@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 jobs:
-  e2e:
+  repl_e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -46,7 +46,6 @@ jobs:
     - name: 🚀 Run Tavern
       env:
         HTTP_LISTEN_ADDR: ":8000"
-        ENABLE_TEST_DATA: "true"
       run: |
         ./tavern_bin &
         echo "Waiting for Tavern to start..."
