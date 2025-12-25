@@ -12,7 +12,11 @@
         },
         {
             "name": "support.function.builtin.eldritch",
-            "match": "\\b(tprint)\\b"
+            "match": "\\b(abs|all|any|assert|assert_eq|bool|builtins|bytes|chr|dict|dir|enumerate|eprint|eval|fail|filter|float|int|len|libs|list|map|max|min|ord|pprint|print|range|reduce|repr|reversed|set|sorted|str|tprint|tuple|type|zip)\\b"
+        },
+        {
+            "name": "entity.name.function.eldritch",
+            "match": "\\b(?!(?:if|elif|else|for|while|return|def|class|lambda|and|or|not|in|is|as|try|except|finally|with|from|import|global|nonlocal|raise|del|yield|pass)\\b)([a-zA-Z_]\\w*)\\s*(?=\\()"
         },
         {
             "name": "support.variable.magic.eldritch",
