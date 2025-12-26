@@ -16,7 +16,9 @@ pub use ast::{Environment, ForeignValue, Value};
 // Export AST nodes for LSP/Tooling
 pub use ast::{Argument, Expr, ExprKind, FStringSegment, Param, Stmt, StmtKind};
 
-pub use interpreter::{get_native_method_signature, BufferPrinter, Interpreter, Printer, StdoutPrinter};
+pub use interpreter::{
+    BufferPrinter, Interpreter, Printer, StdoutPrinter, get_native_method_signature,
+};
 pub use lexer::Lexer;
 pub use token::{Span, TokenKind};
 
@@ -29,5 +31,5 @@ pub use interpreter::introspection;
 // Tests integration via `tests/` directory sees `eldritch_core` as an external crate.
 // So we must `pub use` it here for tests to see it.
 // The `Lexer` and `TokenKind` are already re-exported.
-pub use parser::Parser;
 pub use interpreter::{MethodSignature, ParameterSignature};
+pub use parser::Parser;

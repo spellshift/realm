@@ -111,7 +111,7 @@ mod tests {
         // Let's check if it returns an error or works.
         // Assuming current implementation requires a callable.
         // If it errors, that's fine, we just want to ensure it doesn't panic.
-        let res = run_code("filter(None, [1, 0, 2])");
+        let _res = run_code("filter(None, [1, 0, 2])");
         // If it's not supported, it might error with "not callable" or similar.
         // We'll just assert it doesn't panic.
 

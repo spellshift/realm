@@ -14,7 +14,12 @@ fn param(name: &str, type_name: Option<&str>, is_optional: bool) -> ParameterSig
     }
 }
 
-fn sig(name: &str, params: Vec<ParameterSignature>, ret: Option<&str>, doc: Option<&str>) -> MethodSignature {
+fn sig(
+    name: &str,
+    params: Vec<ParameterSignature>,
+    ret: Option<&str>,
+    doc: Option<&str>,
+) -> MethodSignature {
     MethodSignature {
         name: String::from(name),
         params,
@@ -151,7 +156,9 @@ fn get_dict_signature(method: &str) -> Option<MethodSignature> {
                 param("default", Some("any"), true),
             ],
             Some("any"),
-            Some("If key is in the dictionary, return its value. If not, insert key with a value of default and return default."),
+            Some(
+                "If key is in the dictionary, return its value. If not, insert key with a value of default and return default.",
+            ),
         )),
         _ => None,
     }
@@ -275,10 +282,30 @@ fn get_string_signature(method: &str) -> Option<MethodSignature> {
             Some("str"),
             Some("Returns a copy of the string with trailing characters removed."),
         )),
-        "lower" => Some(sig("lower", vec![], Some("str"), Some("Returns a copy of the string converted to lowercase."))),
-        "upper" => Some(sig("upper", vec![], Some("str"), Some("Returns a copy of the string converted to uppercase."))),
-        "capitalize" => Some(sig("capitalize", vec![], Some("str"), Some("Returns a copy of the string with its first character capitalized."))),
-        "title" => Some(sig("title", vec![], Some("str"), Some("Returns a version of the string where each word is titlecased."))),
+        "lower" => Some(sig(
+            "lower",
+            vec![],
+            Some("str"),
+            Some("Returns a copy of the string converted to lowercase."),
+        )),
+        "upper" => Some(sig(
+            "upper",
+            vec![],
+            Some("str"),
+            Some("Returns a copy of the string converted to uppercase."),
+        )),
+        "capitalize" => Some(sig(
+            "capitalize",
+            vec![],
+            Some("str"),
+            Some("Returns a copy of the string with its first character capitalized."),
+        )),
+        "title" => Some(sig(
+            "title",
+            vec![],
+            Some("str"),
+            Some("Returns a version of the string where each word is titlecased."),
+        )),
         "startswith" => Some(sig(
             "startswith",
             vec![param("prefix", Some("str"), false)],
@@ -340,7 +367,9 @@ fn get_string_signature(method: &str) -> Option<MethodSignature> {
                 param("new", Some("str"), false),
             ],
             Some("str"),
-            Some("Returns a copy of the string with all occurrences of substring old replaced by new."),
+            Some(
+                "Returns a copy of the string with all occurrences of substring old replaced by new.",
+            ),
         )),
         "join" => Some(sig(
             "join",
@@ -374,13 +403,48 @@ fn get_string_signature(method: &str) -> Option<MethodSignature> {
             Some("list"),
             Some("Returns a list of the characters in the string."),
         )),
-        "isalnum" => Some(sig("isalnum", vec![], Some("bool"), Some("Returns True if all characters in the string are alphanumeric."))),
-        "isalpha" => Some(sig("isalpha", vec![], Some("bool"), Some("Returns True if all characters in the string are alphabetic."))),
-        "isdigit" => Some(sig("isdigit", vec![], Some("bool"), Some("Returns True if all characters in the string are digits."))),
-        "islower" => Some(sig("islower", vec![], Some("bool"), Some("Returns True if all cased characters in the string are lowercase."))),
-        "isupper" => Some(sig("isupper", vec![], Some("bool"), Some("Returns True if all cased characters in the string are uppercase."))),
-        "isspace" => Some(sig("isspace", vec![], Some("bool"), Some("Returns True if there are only whitespace characters in the string."))),
-        "istitle" => Some(sig("istitle", vec![], Some("bool"), Some("Returns True if the string is a titlecased string."))),
+        "isalnum" => Some(sig(
+            "isalnum",
+            vec![],
+            Some("bool"),
+            Some("Returns True if all characters in the string are alphanumeric."),
+        )),
+        "isalpha" => Some(sig(
+            "isalpha",
+            vec![],
+            Some("bool"),
+            Some("Returns True if all characters in the string are alphabetic."),
+        )),
+        "isdigit" => Some(sig(
+            "isdigit",
+            vec![],
+            Some("bool"),
+            Some("Returns True if all characters in the string are digits."),
+        )),
+        "islower" => Some(sig(
+            "islower",
+            vec![],
+            Some("bool"),
+            Some("Returns True if all cased characters in the string are lowercase."),
+        )),
+        "isupper" => Some(sig(
+            "isupper",
+            vec![],
+            Some("bool"),
+            Some("Returns True if all cased characters in the string are uppercase."),
+        )),
+        "isspace" => Some(sig(
+            "isspace",
+            vec![],
+            Some("bool"),
+            Some("Returns True if there are only whitespace characters in the string."),
+        )),
+        "istitle" => Some(sig(
+            "istitle",
+            vec![],
+            Some("bool"),
+            Some("Returns True if the string is a titlecased string."),
+        )),
         _ => None,
     }
 }

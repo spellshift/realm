@@ -60,7 +60,7 @@ pub type BuiltinFnWithKwargs =
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;
     fn method_names(&self) -> Vec<String>;
-    fn get_method_signature(&self, name: &str) -> Option<MethodSignature> {
+    fn get_method_signature(&self, _name: &str) -> Option<MethodSignature> {
         None
     }
     fn call_method(
