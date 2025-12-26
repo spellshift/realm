@@ -118,10 +118,10 @@ func (s *Stream) processOneMessage(ctx context.Context, msg *pubsub.Message) {
 	}
 
 	// Write Message (or buffer it)
-	buf.writeMessage(ctx, msg, s.recvOrdered)
-
-	// Flush possible messages from buffer
-	buf.flushBuffer(ctx, s.recvOrdered)
+	emit := func(m *pubsub.Message) {
+		s.recvOrdered <- m
+	}
+	buf.writeMessage(ctx, msg, emit)
 }
 
 func parseOrderKey(msg *pubsub.Message) string {
@@ -168,11 +168,11 @@ type sessionBuffer struct {
 	data       map[uint64]*pubsub.Message
 }
 
-func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, dst chan<- *pubsub.Message) {
+func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, emit func(*pubsub.Message)) {
 	index, ok := parseOrderIndex(msg)
 	if !ok {
 		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
-		dst <- msg
+		emit(msg)
 		return
 	}
 
@@ -186,10 +186,10 @@ func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message,
 	}
 
 	buf.data[index] = msg
-	buf.flushBuffer(ctx, dst)
+	buf.flushBuffer(ctx, emit)
 }
 
-func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Message) {
+func (buf *sessionBuffer) flushBuffer(ctx context.Context, emit func(*pubsub.Message)) {
 	for {
 		msg, ok := buf.data[buf.nextToSend]
 		if !ok {
@@ -211,7 +211,7 @@ func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Me
 			}
 			break
 		}
-		dst <- msg
+		emit(msg)
 		delete(buf.data, buf.nextToSend)
 		buf.nextToSend++
 	}

@@ -2,6 +2,7 @@ package stream_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -145,5 +146,86 @@ func TestMuxHistory(t *testing.T) {
 		assert.Equal(t, "SYNC", string(msg.Body))
 	case <-time.After(1 * time.Second):
 		t.Fatal("stream did not receive new message in time")
+	}
+}
+
+func TestMuxHistoryOrdering(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Setup Topic and Subscription
+	topic, err := pubsub.OpenTopic(ctx, "mem://mux-history-ordering-test")
+	require.NoError(t, err)
+	defer topic.Shutdown(ctx)
+	sub, err := pubsub.OpenSubscription(ctx, "mem://mux-history-ordering-test")
+	require.NoError(t, err)
+	defer sub.Shutdown(ctx)
+
+	// Create Mux
+	mux := stream.NewMux(topic, sub, stream.WithHistorySize(100))
+	go mux.Start(ctx)
+
+	// Create monitor stream to wait for processing
+	monitor := stream.New("ordering_stream")
+	mux.Register(monitor)
+	defer mux.Unregister(monitor)
+
+	// Send messages out of order: 2, 0, 1
+	orderKey := "session1"
+	messages := []struct {
+		body  string
+		index int
+	}{
+		{"C", 2},
+		{"A", 0},
+		{"B", 1},
+	}
+
+	for _, m := range messages {
+		err = topic.Send(ctx, &pubsub.Message{
+			Body: []byte(m.body),
+			Metadata: map[string]string{
+				"id":          "ordering_stream",
+				"order-key":   orderKey,
+				"order-index": fmt.Sprintf("%d", m.index),
+			},
+		})
+		require.NoError(t, err)
+		// Small sleep to ensure mux processes it and doesn't batch/race oddly
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Wait for monitor to receive all 3 messages.
+	// Monitor (Stream) performs its own reordering, so it should see A, B, C.
+	// But we really care about what's in Mux History.
+	received := ""
+	for i := 0; i < 3; i++ {
+		select {
+		case msg := <-monitor.Messages():
+			received += string(msg.Body)
+		case <-time.After(1 * time.Second):
+			t.Fatal("monitor did not receive message in time")
+		}
+	}
+	assert.Equal(t, "ABC", received)
+
+	// Now register a new stream to check history
+	s := stream.New("ordering_stream")
+	mux.Register(s)
+	defer mux.Unregister(s)
+
+	// Send SYNC
+	err = topic.Send(ctx, &pubsub.Message{
+		Body:     []byte("SYNC"),
+		Metadata: map[string]string{"id": "ordering_stream"},
+	})
+	require.NoError(t, err)
+
+	// Expect history: "ABC"
+	select {
+	case msg := <-s.Messages():
+		assert.Equal(t, "ABC", string(msg.Body))
+	case <-time.After(1 * time.Second):
+		t.Fatal("stream did not receive history message in time")
 	}
 }

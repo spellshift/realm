@@ -24,6 +24,11 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+type historyState struct {
+	buffer   *CircularBuffer
+	sessions map[string]*sessionBuffer
+}
+
 // A Mux enables multiplexing subscription messages to multiple Streams.
 // Streams will only receive a Message if their configured ID matches the incoming metadata of a Message.
 // Additionally, new messages may be published using the Mux.
@@ -33,7 +38,7 @@ type Mux struct {
 	register    chan *Stream
 	unregister  chan *Stream
 	streams     map[*Stream]bool
-	history     map[string]*CircularBuffer
+	history     map[string]*historyState
 	historySize int
 }
 
@@ -55,7 +60,7 @@ func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription, options ...MuxOption) *
 		register:    make(chan *Stream, maxRegistrationBufSize),
 		unregister:  make(chan *Stream, maxRegistrationBufSize),
 		streams:     make(map[*Stream]bool),
-		history:     make(map[string]*CircularBuffer),
+		history:     make(map[string]*historyState),
 		historySize: defaultHistorySize,
 	}
 	for _, opt := range options {
@@ -88,8 +93,8 @@ func (mux *Mux) registerStreams(ctx context.Context) {
 			mux.streams[s] = true
 
 			// Send history to the new stream
-			if hist, ok := mux.history[s.id]; ok {
-				data := hist.Bytes()
+			if state, ok := mux.history[s.id]; ok && state.buffer != nil {
+				data := state.buffer.Bytes()
 				if len(data) > 0 {
 					slog.DebugContext(ctx, "mux sending history to new stream", "stream_id", s.id, "bytes", len(data))
 					msg := &pubsub.Message{
@@ -193,12 +198,28 @@ func (mux *Mux) poll(ctx context.Context) error {
 	// Only buffer "data" messages (or messages with no kind specified, which default to data)
 	kind, hasKind := msg.Metadata[MetadataMsgKind]
 	if !hasKind || kind == "data" {
-		hist, ok := mux.history[msgID]
+		state, ok := mux.history[msgID]
 		if !ok {
-			hist = NewCircularBuffer(mux.historySize)
-			mux.history[msgID] = hist
+			state = &historyState{
+				buffer:   NewCircularBuffer(mux.historySize),
+				sessions: make(map[string]*sessionBuffer),
+			}
+			mux.history[msgID] = state
 		}
-		hist.Write(msg.Body)
+
+		// Use sessionBuffer to reorder messages before writing to circular buffer
+		key := parseOrderKey(msg)
+		sessBuf, ok := state.sessions[key]
+		if !ok {
+			sessBuf = &sessionBuffer{
+				data: make(map[uint64]*pubsub.Message, maxStreamOrderBuf),
+			}
+			state.sessions[key] = sessBuf
+		}
+
+		sessBuf.writeMessage(ctx, msg, func(m *pubsub.Message) {
+			state.buffer.Write(m.Body)
+		})
 	}
 
 	// Broadcast Message
