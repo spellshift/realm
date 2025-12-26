@@ -351,21 +351,29 @@ impl Interpreter {
         let mut lexer = Lexer::new(line_up_to_cursor.to_string());
         let tokens = match lexer.scan_tokens() {
             Ok(t) => t,
-            // If scanning fails (e.g. open string), we might still want to try?
-            // For now, if lexer fails, we fallback to simple word splitting or empty.
+            // If scanning fails (e.g. due to syntax error earlier in the file),
+            // we try to be resilient and just scan the current line.
             Err(_) => {
-                // Fallback: Check if we are typing a simple identifier at end
-                let last_word = line_up_to_cursor
-                    .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
-                    .next_back()
-                    .unwrap_or("");
-                if !last_word.is_empty() {
-                    prefix = last_word.to_string();
+                // Attempt to scan just the last line
+                let last_line = line_up_to_cursor.lines().last().unwrap_or("");
+                let mut fallback_lexer = Lexer::new(last_line.to_string());
+                match fallback_lexer.scan_tokens() {
+                    Ok(t) => t,
+                    Err(_) => {
+                        // Fallback: Check if we are typing a simple identifier at end
+                        let last_word = line_up_to_cursor
+                            .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
+                            .next_back()
+                            .unwrap_or("");
+                        if !last_word.is_empty() {
+                            prefix = last_word.to_string();
+                        }
+                        // If we can't tokenize, we assume we can't do dot-access analysis safely.
+                        // But we can still try to suggest globals matching the prefix.
+                        // We return empty tokens list, but allow execution to proceed to prefix filtering.
+                        Vec::new()
+                    }
                 }
-                // If we can't tokenize, we assume we can't do dot-access analysis safely.
-                // But we can still try to suggest globals matching the prefix.
-                // We return empty tokens list, but allow execution to proceed to prefix filtering.
-                Vec::new()
             }
         };
 
