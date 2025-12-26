@@ -377,12 +377,12 @@ impl Interpreter {
             }
         };
 
-        // Extra check: if tokens is empty (lexer failure), but line ends with '.',
-        // we should attempt to infer context manually to avoid showing globals for dot access.
-        let mut manual_dot_check = false;
+        // Extra check: if line ends with '.', we should attempt to infer context manually
+        // to avoid showing globals for dot access, especially if tokens are empty or standard logic fails.
+        let line_ends_with_dot = line_up_to_cursor.trim_end().ends_with('.');
         let mut manual_target: Option<Value> = None;
-        if tokens.is_empty() && line_up_to_cursor.trim_end().ends_with('.') {
-            manual_dot_check = true;
+
+        if line_ends_with_dot {
             // Try to find what's before the dot
             let trimmed = line_up_to_cursor.trim_end();
             let before_dot = &trimmed[..trimmed.len() - 1].trim_end();
@@ -451,7 +451,7 @@ impl Interpreter {
         }
 
         // Determine context from tokens
-        let mut target_val: Option<Value> = manual_target;
+        let mut target_val: Option<Value> = None;
         let meaningful_tokens: Vec<&super::super::token::Token> = tokens
             .iter()
             .filter(|t| {
@@ -573,6 +573,11 @@ impl Interpreter {
             // Lexer failed but we extracted a prefix manually
         }
 
+        // Fallback to manual target if standard token logic didn't find one
+        if target_val.is_none() {
+            target_val = manual_target;
+        }
+
         if let Some(val) = target_val {
             // Suggest methods/properties of val
             match &val {
@@ -628,7 +633,7 @@ impl Interpreter {
                 }
             }
 
-            if !is_dot_access && !manual_dot_check {
+            if !is_dot_access && !line_ends_with_dot {
                 // 1. Keywords
                 let keywords = vec![
                     "def", "if", "elif", "else", "return", "for", "in", "True", "False", "None",
