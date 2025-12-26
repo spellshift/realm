@@ -1,4 +1,4 @@
-name: E2E REPL Test
+name: E2E REPL Test 🧪
 
 on:
   workflow_dispatch: ~
@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 jobs:
-  repl_e2e:
+  E2E REPL Test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
