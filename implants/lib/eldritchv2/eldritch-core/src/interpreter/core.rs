@@ -377,8 +377,42 @@ impl Interpreter {
             }
         };
 
+        // Extra check: if tokens is empty (lexer failure), but line ends with '.',
+        // we should attempt to infer context manually to avoid showing globals for dot access.
+        let mut manual_dot_check = false;
+        let mut manual_target: Option<Value> = None;
+        if tokens.is_empty() && line_up_to_cursor.trim_end().ends_with('.') {
+            manual_dot_check = true;
+            // Try to find what's before the dot
+            let trimmed = line_up_to_cursor.trim_end();
+            let before_dot = &trimmed[..trimmed.len() - 1].trim_end();
+
+            // Simple check for string literal at end
+            if before_dot.ends_with('"') || before_dot.ends_with('\'') {
+                // Assume string
+                manual_target = Some(Value::String(String::new()));
+            } else if before_dot.ends_with("[]") {
+                // Assume list
+                manual_target = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+            } else if before_dot.ends_with("{}") {
+                // Assume dict
+                manual_target = Some(Value::Dictionary(Arc::new(RwLock::new(BTreeMap::new()))));
+            } else {
+                // Assume identifier
+                let last_word = before_dot
+                    .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
+                    .next_back()
+                    .unwrap_or("");
+                if !last_word.is_empty() {
+                    if let Ok(val) = self.lookup_variable(last_word, Span::new(0, 0, 0)) {
+                        manual_target = Some(val);
+                    }
+                }
+            }
+        }
+
         // Determine context from tokens
-        let mut target_val: Option<Value> = None;
+        let mut target_val: Option<Value> = manual_target;
         let meaningful_tokens: Vec<&super::super::token::Token> = tokens
             .iter()
             .filter(|t| {
@@ -522,7 +556,7 @@ impl Interpreter {
                 }
             }
 
-            if !is_dot_access {
+            if !is_dot_access && !manual_dot_check {
                 // 1. Keywords
                 let keywords = vec![
                     "def", "if", "elif", "else", "return", "for", "in", "True", "False", "None",
