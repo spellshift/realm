@@ -7,9 +7,6 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
-🚨 **DEPRECATION WARNING:** Eldritch v1 will soon be deprecated and replaced with v2 🚨
-
-
 Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
@@ -234,6 +231,22 @@ The <b>assets.read</b> method returns a UTF-8 string representation of the asset
 
 ## Crypto
 
+### crypto.aes_decrypt
+
+`crypto.aes_decrypt(key: List<int>, iv: List<int>, data: List<int>) -> List<int>`
+
+The <b>crypto.aes_decrypt</b> method decrypts the given data using the given key and iv (CBC mode).
+
+Key must be 16, 24, or 32 Bytes. IV must be 16 Bytes.
+
+### crypto.aes_encrypt
+
+`crypto.aes_encrypt(key: List<int>, iv: List<int>, data: List<int>) -> List<int>`
+
+The <b>crypto.aes_encrypt</b> method encrypts the given data using the given key and iv (CBC mode).
+
+Key must be 16, 24, or 32 Bytes. IV must be 16 Bytes.
+
 ### crypto.aes_decrypt_file
 
 `crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
@@ -323,6 +336,24 @@ The <b>crypto.hash_file</b> method will produce the hash of the given file's con
 - SHA256
 - SHA512
 
+### crypto.md5
+
+`crypto.md5(data: List<int>) -> str`
+
+The <b>crypto.md5</b> method returns the MD5 hash of the given data as a hex string.
+
+### crypto.sha1
+
+`crypto.sha1(data: List<int>) -> str`
+
+The <b>crypto.sha1</b> method returns the SHA1 hash of the given data as a hex string.
+
+### crypto.sha256
+
+`crypto.sha256(data: List<int>) -> str`
+
+The <b>crypto.sha256</b> method returns the SHA256 hash of the given data as a hex string.
+
 ---
 
 ## File
@@ -388,9 +419,9 @@ The <b>file.is_file</b> method checks if a path exists and is a file. If it does
 
 ### file.list
 
-`file.list(path: str) -> List<Dict>`
+`file.list(path: Optional<str>) -> List<Dict>`
 
-The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
+The <b>file.list</b> method returns a list of files at the specified path. If no path is provided, it defaults to the current working directory. The path is relative to your current working directory and can be traversed with `../`.
 This function also supports globbing with `*` for example:
 
 ```python
@@ -443,11 +474,11 @@ Here is an example of the Dict layout:
 
 The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
-### file.moveto
+### file.move
 
-`file.moveto(src: str, dst: str) -> None`
+`file.move(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
@@ -516,9 +547,9 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 ### file.timestomp
 
-`file.timestomp(src: str, dst: str) -> None`
+`file.timestomp(path: str, mtime: Optional<Value>, atime: Optional<Value>, ctime: Optional<Value>, ref_file: Optional<str>) -> None`
 
-Unimplemented.
+The <b>file.timestomp</b> method modifies the timestamps of a file. Timestamps (mtime, atime, ctime) can be provided as an integer (epoch seconds) or string (RFC3339). Alternatively, a `ref_file` can be provided to copy timestamps from.
 
 ### file.write
 
@@ -620,7 +651,7 @@ The <b>pivot.port_forward</b> method is being proposed to provide socat like fun
 
 ### pivot.port_scan
 
-`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int) -> List<str>`
+`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Optional<int>) -> List<Dict>`
 
 The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.
 Inputs:
@@ -629,6 +660,7 @@ Inputs:
 - `ports` can be a list of any number of integers between 1 and 65535.
 - `protocol` must be: `tcp` or `udp`. These are the only supported options.
 - `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
+- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).
 
 Results will be in the format:
 
@@ -661,6 +693,12 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
+### pivot.reverse_shell_repl
+
+`pivot.reverse_shell_repl() -> None`
+
+The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter. This is useful if a PTY is not available.
+
 ### pivot.smb_exec
 
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
@@ -679,7 +717,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_exec
 
-`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
+`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> Dict`
 
 The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
 Stdout returns the string result from the command output.
@@ -808,6 +846,12 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.bytes
+
+`random.bytes(len: int) -> List<int>`
+
+The <b>random.bytes</b> method returns a list of randomly generated bytes.
+
 ### random.int
 
 `random.int(min: i32, max: i32) -> i32`
@@ -818,6 +862,12 @@ The <b>random.int</b> method returns randomly generated integer value between a 
 
 `random.string(length: uint, charset: Optional<str>) -> str`
 The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
+### random.uuid
+
+`random.uuid() -> str`
+
+The <b>random.uuid</b> method returns a randomly generated UUID (v4).
 
 ---
 
@@ -902,9 +952,9 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
-The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
+The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list. The `input` argument allows passing a string to stdin.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
