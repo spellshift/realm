@@ -22,7 +22,7 @@ impl LintRule for DeprecationRule {
                         if let ExprKind::Identifier(var_name) = &obj.kind {
                             // We can only check global variables or imported modules if they are present in the interpreter
                             // This is a best-effort check since we don't have full type inference.
-                            if let Ok(val) = interp.lookup_variable(var_name, obj.span) {
+                            if let Some(val) = interp.lookup_variable(var_name) {
                                 if let Value::Foreign(foreign_obj) = val {
                                     if let Some(sig) = foreign_obj.get_method_signature(name) {
                                         if let Some(reason) = sig.deprecated {

@@ -20,6 +20,7 @@ fn sig(name: &str, params: Vec<ParameterSignature>, ret: Option<&str>, doc: Opti
         params,
         return_type: ret.map(String::from),
         doc: doc.map(String::from),
+        deprecated: None, // No native methods are deprecated
     }
 }
 
