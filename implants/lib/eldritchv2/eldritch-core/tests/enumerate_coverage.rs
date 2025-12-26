@@ -43,7 +43,10 @@ fn test_enumerate_empty() {
 #[test]
 fn test_enumerate_errors() {
     assert::fail("enumerate()", "enumerate() takes at least one argument");
-    assert::fail("enumerate([1], 'a')", "enumerate() start must be an integer");
+    assert::fail(
+        "enumerate([1], 'a')",
+        "enumerate() start must be an integer",
+    );
     assert::fail("enumerate(1)", "Type '\"int\"' is not iterable");
 }
 

@@ -43,7 +43,10 @@ fn test_reversed_empty() {
 
 #[test]
 fn test_reversed_errors() {
-    assert::fail("reversed()", "reversed() takes exactly one argument (0 given)");
+    assert::fail(
+        "reversed()",
+        "reversed() takes exactly one argument (0 given)",
+    );
     assert::fail(
         "reversed(1, 2)",
         "reversed() takes exactly one argument (2 given)",

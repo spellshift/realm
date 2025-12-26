@@ -70,9 +70,21 @@ fn test_range_empty() {
 
 #[test]
 fn test_range_types() {
-    assert::fail("range('a')", "TypeError: range expects 1-3 integer arguments");
-    assert::fail("range(1, 'b')", "TypeError: range expects 1-3 integer arguments");
-    assert::fail("range(1, 2, 'c')", "TypeError: range expects 1-3 integer arguments");
+    assert::fail(
+        "range('a')",
+        "TypeError: range expects 1-3 integer arguments",
+    );
+    assert::fail(
+        "range(1, 'b')",
+        "TypeError: range expects 1-3 integer arguments",
+    );
+    assert::fail(
+        "range(1, 2, 'c')",
+        "TypeError: range expects 1-3 integer arguments",
+    );
     assert::fail("range()", "TypeError: range expects 1-3 integer arguments");
-    assert::fail("range(1, 2, 3, 4)", "TypeError: range expects 1-3 integer arguments");
+    assert::fail(
+        "range(1, 2, 3, 4)",
+        "TypeError: range expects 1-3 integer arguments",
+    );
 }
