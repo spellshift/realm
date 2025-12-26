@@ -124,6 +124,12 @@ impl FileLibrary for StdFileLibrary {
         fs::read(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
     }
 
+    fn pwd(&self) -> Result<Option<String>, String> {
+        Ok(::std::env::current_dir()
+            .ok()
+            .map(|p| p.to_string_lossy().to_string()))
+    }
+
     fn remove(&self, path: String) -> Result<(), String> {
         let p = Path::new(&path);
         if p.is_dir() {
@@ -1344,6 +1350,16 @@ cb
         assert!(dst.exists());
         assert_eq!(fs::read_to_string(dst)?, "copy me");
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_pwd() -> AnyhowResult<()> {
+        let lib = StdFileLibrary;
+        let pwd = lib.pwd().unwrap();
+        assert!(pwd.is_some());
+        let pwd = pwd.unwrap();
+        assert!(std::path::Path::new(&pwd).is_absolute());
         Ok(())
     }
 }
