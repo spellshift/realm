@@ -464,6 +464,7 @@ impl Interpreter {
             match &val {
                 Value::Foreign(obj) => {
                     for m in obj.method_names() {
+                        #[allow(clippy::collapsible_if)]
                         if let Some(sig) = obj.get_method_signature(&m) {
                             if sig.deprecated.is_some() {
                                 continue;

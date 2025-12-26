@@ -29,7 +29,10 @@ impl LintRule for DeprecationRule {
                                             diags.push(Diagnostic {
                                                 range: span_to_range(expr.span, source),
                                                 severity: Some(DiagnosticSeverity::WARNING),
-                                                message: format!("Method '{}.{}' is deprecated: {}", var_name, name, reason),
+                                                message: format!(
+                                                    "Method '{}.{}' is deprecated: {}",
+                                                    var_name, name, reason
+                                                ),
                                                 ..Default::default()
                                             });
                                         }

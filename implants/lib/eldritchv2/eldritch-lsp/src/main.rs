@@ -19,8 +19,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 mod linter;
-use linter::Linter;
 use linter::utils::span_to_range;
+use linter::Linter;
 
 struct ServerState {
     // Map of document URI to (version, content)
