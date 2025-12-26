@@ -15,7 +15,7 @@ const (
 	// before new calls to `mux.Register()` and `mux.Unregister()` will block.
 	maxRegistrationBufSize = 256
 	// defaultHistorySize is the default size of the circular buffer for stream history.
-	defaultHistorySize = 1024 * 5 // 5KB
+	defaultHistorySize = 1024
 )
 
 var upgrader = websocket.Upgrader{
@@ -111,10 +111,11 @@ func (mux *Mux) Start(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case msgChan <- pollResult{msg: msg, err: err}:
-				if err != nil {
-					// Assuming Receive returns a permanent error or we stop on any error
+				// If context is done, stop.
+				if ctx.Err() != nil {
 					return
 				}
+				// Otherwise, loop again (retry on error).
 			}
 		}
 	}()
@@ -155,14 +156,20 @@ func (mux *Mux) Start(ctx context.Context) error {
 
 		case res, ok := <-msgChan:
 			if !ok {
-				// Poller exited
+				// Poller exited. If due to context cancel, return that error.
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
 				return fmt.Errorf("poller exited unexpectedly")
 			}
 			if res.err != nil {
+				// Log error and continue, matching original behavior (retry loop).
+				// Unless context is done.
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
 				slog.ErrorContext(ctx, "mux failed to poll subscription", "error", res.err)
-				// If the error is transient, we could continue.
-				// But generally Receive() errors are fatal for the subscription or context.
-				return res.err
+				continue
 			}
 
 			// Handle Message

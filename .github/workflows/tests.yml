@@ -188,3 +188,40 @@ jobs:
       with:
         name: ctrf-ui-${{ matrix.os }}
         path: tavern/internal/www/ctrf-ui-${{ matrix.os }}.json
+
+  flaky-monitor:
+    needs: [tavern, implants, ui-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📥 Download CTRF Results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ctrf-*
+          path: ctrf-reports
+          merge-multiple: true
+
+      - name: 📊 Publish Test Report
+        uses: ctrf-io/github-test-reporter@v1
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          report-path: 'ctrf-reports/*.json'
+          upload-artifact: true
+          fetch-previous-results: true
+          pull-request: true
+          overwrite-comment: true
+
+          # Report Config
+          # https://github.com/ctrf-io/github-test-reporter/blob/main/docs/report-showcase.md
+          summary-delta-report: true
+          tests-changed-report: true
+          insights-report: true
+          slowest-report: true
+          failed-folded-report: true
+          flaky-rate-report: true
+          fail-rate-report: true
+          previous-results-report: true
+          previous-results-max: 100
+          artifact-name: 'flaky-report'
