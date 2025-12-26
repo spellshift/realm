@@ -356,6 +356,7 @@ fn generate_signature(sig: &Signature, bind_name: &str) -> Result<TokenStream, s
             name: alloc::string::String::from(#bind_name),
             params: alloc::vec![#(#params),*],
             return_type: None, // TODO: Inspect return type if needed
+            doc: None,
         }
     })
 }

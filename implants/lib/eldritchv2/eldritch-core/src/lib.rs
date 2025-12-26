@@ -16,7 +16,7 @@ pub use ast::{Environment, ForeignValue, Value};
 // Export AST nodes for LSP/Tooling
 pub use ast::{Argument, Expr, ExprKind, FStringSegment, Param, Stmt, StmtKind};
 
-pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
+pub use interpreter::{get_native_method_signature, BufferPrinter, Interpreter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
 pub use token::{Span, TokenKind};
 
