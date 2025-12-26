@@ -4,10 +4,11 @@ pub mod error;
 mod eval;
 mod exec;
 pub mod introspection;
-mod methods;
+pub mod methods;
 pub mod operations;
 pub mod printer;
 
+pub use self::methods::get_native_method_signature;
 pub use self::core::Interpreter;
 #[allow(unused_imports)]
 pub use self::error::EldritchError;

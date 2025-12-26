@@ -8,11 +8,13 @@ use alloc::vec::Vec;
 mod dict;
 mod list;
 mod set;
+mod signatures;
 mod str;
 
 use dict::handle_dict_methods;
 use list::handle_list_methods;
 use set::handle_set_methods;
+pub use signatures::get_native_method_signature;
 use str::handle_string_methods;
 
 // --- Argument Validation Helper ---
