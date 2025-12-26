@@ -46,14 +46,37 @@ pub fn expand_eldritch_library(
             // Check for eldritch_method attribute
             let mut is_eldritch = false;
             let mut rename = None;
+            let mut deprecated = None;
             let mut cfg_attrs = Vec::new();
 
             for attr in &method.attrs {
                 if attr.path.is_ident("eldritch_method") {
                     is_eldritch = true;
                     if let Ok(Meta::List(meta)) = attr.parse_meta() {
-                        if let Some(NestedMeta::Lit(Lit::Str(lit))) = meta.nested.first() {
-                            rename = Some(lit.value());
+                        for nested in meta.nested {
+                            match nested {
+                                NestedMeta::Lit(Lit::Str(lit)) => {
+                                    // Positional string is the rename
+                                    rename = Some(lit.value());
+                                }
+                                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                                    if nv.path.is_ident("deprecated") {
+                                        if let Lit::Bool(b) = nv.lit {
+                                            if b.value {
+                                                deprecated = Some("Deprecated".to_string());
+                                            }
+                                        } else if let Lit::Str(s) = nv.lit {
+                                             deprecated = Some(s.value());
+                                        }
+                                    } else if nv.path.is_ident("name") {
+                                        // Support named argument "name" for rename
+                                        if let Lit::Str(s) = nv.lit {
+                                            rename = Some(s.value());
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
                         }
                     }
                 } else if attr.path.is_ident("cfg") {
@@ -65,7 +88,7 @@ pub fn expand_eldritch_library(
                 let method_name = &method.sig.ident;
                 let bind_name = rename.unwrap_or_else(|| method_name.to_string());
                 let (args_parsing, arg_names) = generate_args_parsing(&method.sig)?;
-                let signature_gen = generate_signature(&method.sig, &bind_name)?;
+                let signature_gen = generate_signature(&method.sig, &bind_name, deprecated)?;
 
                 method_dispatches.push(quote! {
                     #(#cfg_attrs)*
@@ -321,7 +344,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
     Ok((quote! { #(#final_parsing)* }, quote! { #(#call_args),* }))
 }
 
-fn generate_signature(sig: &Signature, bind_name: &str) -> Result<TokenStream, syn::Error> {
+fn generate_signature(sig: &Signature, bind_name: &str, deprecated: Option<String>) -> Result<TokenStream, syn::Error> {
     let mut params = Vec::new();
 
     for input in &sig.inputs {
@@ -351,12 +374,19 @@ fn generate_signature(sig: &Signature, bind_name: &str) -> Result<TokenStream, s
         }
     }
 
+    let deprecated_field = if let Some(reason) = deprecated {
+        quote! { Some(alloc::string::String::from(#reason)) }
+    } else {
+        quote! { None }
+    };
+
     Ok(quote! {
         eldritch_core::MethodSignature {
             name: alloc::string::String::from(#bind_name),
             params: alloc::vec![#(#params),*],
             return_type: None, // TODO: Inspect return type if needed
             doc: None,
+            deprecated: #deprecated_field,
         }
     })
 }

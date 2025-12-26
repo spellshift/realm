@@ -464,6 +464,11 @@ impl Interpreter {
             match &val {
                 Value::Foreign(obj) => {
                     for m in obj.method_names() {
+                        if let Some(sig) = obj.get_method_signature(&m) {
+                            if sig.deprecated.is_some() {
+                                continue;
+                            }
+                        }
                         candidates.insert(m);
                     }
                 }

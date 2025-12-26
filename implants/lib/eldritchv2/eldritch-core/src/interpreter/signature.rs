@@ -16,4 +16,5 @@ pub struct MethodSignature {
     pub params: Vec<ParameterSignature>,
     pub return_type: Option<String>,
     pub doc: Option<String>,
+    pub deprecated: Option<String>,
 }
