@@ -1,19 +1,19 @@
 use anyhow::Result;
 use crossbeam_channel::Sender;
 use eldritch_core::{Lexer, Parser};
-use eldritchv2::{Interpreter as V2Interpreter, Value};
-use lsp_server::{Connection, Message, Notification, Request, Response};
+use eldritchv2::{Interpreter, Value};
+use lsp_server::{Connection, Message, Notification, Response};
 use lsp_types::{
     notification::{
         DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument,
         Notification as LspNotification, PublishDiagnostics,
     },
-    request::{Completion, HoverRequest, Initialize, Request as LspRequest},
+    request::{Completion, HoverRequest, Request as LspRequest},
     CompletionItem, CompletionItemKind, CompletionParams, CompletionResponse, Diagnostic,
     DiagnosticSeverity, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams, Hover, HoverContents, HoverParams, InitializeParams,
-    InitializeResult, MarkupContent, MarkupKind, Position, PublishDiagnosticsParams, Range,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    DidOpenTextDocumentParams, Hover, HoverContents, HoverParams, InitializeParams, MarkupContent,
+    MarkupKind, Position, PublishDiagnosticsParams, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, Url,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -263,7 +263,7 @@ fn handle_completion(
         let offset = position_to_offset(text, params.text_document_position.position);
 
         // Use facade interpreter with all libraries loaded (including fake agent for completion)
-        let interp = V2Interpreter::new().with_default_libs().with_fake_agent();
+        let interp = Interpreter::new().with_default_libs().with_fake_agent();
 
         let (_start_idx, candidates) = interp.complete(text, offset);
 
@@ -310,7 +310,7 @@ fn handle_hover(state: Arc<Mutex<ServerState>>, params: HoverParams) -> Option<H
         // e.g. "file.append" -> we want to resolve "file", then check "append" on it.
         // Or simple variable lookup.
 
-        let interp = V2Interpreter::new().with_default_libs().with_fake_agent();
+        let interp = Interpreter::new().with_default_libs().with_fake_agent();
 
         let (start, end) = find_word_bounds(text, offset);
         let _word = &text[start..end];
@@ -348,13 +348,13 @@ fn handle_hover(state: Arc<Mutex<ServerState>>, params: HoverParams) -> Option<H
                     Value::Function(f) => format!("Function: {}", f.name),
                     _ => format!("Variable: {}", full_expr),
                 };
-                 return Some(Hover {
-                        contents: HoverContents::Markup(MarkupContent {
-                            kind: MarkupKind::Markdown,
-                            value: desc,
-                        }),
-                        range: None,
-                    });
+                return Some(Hover {
+                    contents: HoverContents::Markup(MarkupContent {
+                        kind: MarkupKind::Markdown,
+                        value: desc,
+                    }),
+                    range: None,
+                });
             }
         }
     }
@@ -447,7 +447,7 @@ fn expand_dotted_chain(text: &str, start_byte: usize, end_byte: usize) -> String
         if c == '.' {
             s -= 1;
             // Now verify identifier
-            let mut id_end = s;
+            let id_end = s;
             while s > 0 {
                 let (_, c2) = char_indices[s - 1];
                 if !c2.is_alphanumeric() && c2 != '_' {
@@ -554,17 +554,15 @@ fn position_to_offset(text: &str, position: Position) -> usize {
         } else if c == '\r' {
             // Check for \r\n
             if let Some(&'\n') = chars.peek() {
-                 // Next is \n, consume it in next iteration
-                 // line increment happens on \n
+                // Next is \n, consume it in next iteration
+                // line increment happens on \n
             } else {
                 // Just \r (classic mac or weirdness)
                 line += 1;
                 utf16_col = 0;
             }
-        } else {
-             if line == target_line {
-                 utf16_col += c.len_utf16();
-             }
+        } else if line == target_line {
+            utf16_col += c.len_utf16();
         }
     }
 
@@ -588,7 +586,7 @@ def get_env():
         let offset = code.len();
 
         // Use facade
-        let interp = V2Interpreter::new().with_default_libs();
+        let interp = Interpreter::new().with_default_libs();
         let (_start, candidates) = interp.complete(code, offset);
 
         // We expect string methods starting with 's'
@@ -604,7 +602,7 @@ def get_env():
     fn test_completion_libraries_and_literals() {
         // Test library "agent" presence
         let code1 = "ag";
-        let interp = V2Interpreter::new().with_default_libs().with_fake_agent();
+        let interp = Interpreter::new().with_default_libs().with_fake_agent();
         let (_, candidates1) = interp.complete(code1, code1.len());
         assert!(candidates1.contains(&"agent".to_string()));
 
@@ -632,8 +630,10 @@ def get_env():
         let _offset = 7; // end
 
         // We can manually call helper logic
-        let interp = V2Interpreter::new().with_default_libs();
-        let val = interp.lookup_variable("file").expect("file lib should be present");
+        let interp = Interpreter::new().with_default_libs();
+        let val = interp
+            .lookup_variable("file")
+            .expect("file lib should be present");
         let sig = get_method_signature(&val, "list");
 
         assert!(sig.is_some());

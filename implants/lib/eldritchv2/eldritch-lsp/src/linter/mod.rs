@@ -1,9 +1,9 @@
-use eldritch_core::{ExprKind, Span, Stmt, StmtKind, Value, Argument, Param};
+use eldritch_core::{Argument, ExprKind, Param, Span, Stmt, StmtKind, Value};
 use eldritchv2::Interpreter;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range};
+use spin::RwLock;
 use std::collections::{BTreeMap, HashSet};
 use std::sync::Arc;
-use spin::RwLock;
 
 pub trait LintRule {
     #[allow(dead_code)]
@@ -86,21 +86,24 @@ impl LintRule for TypeCheckRule {
         visit_stmts_exprs(stmts, &mut |expr| {
             // Check invalid binary ops
             if let ExprKind::BinaryOp(lhs, op, rhs) = &expr.kind {
-                 if let (Some(l_type), Some(r_type)) = (infer_type(lhs), infer_type(rhs)) {
-                     match op {
-                         eldritch_core::TokenKind::Plus => {
-                             if l_type == "List" && r_type == "String" {
-                                 diags.push(Diagnostic {
-                                     range: span_to_range(expr.span, source),
-                                     severity: Some(DiagnosticSeverity::ERROR),
-                                     message: format!("TypeError: Unsupported operand types for +: '{}' and '{}'", l_type, r_type),
-                                     ..Default::default()
-                                 });
-                             }
-                         }
-                         _ => {}
-                     }
-                 }
+                if let (Some(l_type), Some(r_type)) = (infer_type(lhs), infer_type(rhs)) {
+                    match op {
+                        eldritch_core::TokenKind::Plus => {
+                            if l_type == "List" && r_type == "String" {
+                                diags.push(Diagnostic {
+                                    range: span_to_range(expr.span, source),
+                                    severity: Some(DiagnosticSeverity::ERROR),
+                                    message: format!(
+                                        "TypeError: Unsupported operand types for +: '{}' and '{}'",
+                                        l_type, r_type
+                                    ),
+                                    ..Default::default()
+                                });
+                            }
+                        }
+                        _ => {}
+                    }
+                }
             }
 
             // Check calls
@@ -116,12 +119,17 @@ impl LintRule for TypeCheckRule {
                                     diags.push(Diagnostic {
                                         range: span_to_range(callee.span, source),
                                         severity: Some(DiagnosticSeverity::ERROR),
-                                        message: format!("AttributeError: '{}' object has no attribute '{}'", foreign_obj.type_name(), method_name),
+                                        message: format!(
+                                            "AttributeError: '{}' object has no attribute '{}'",
+                                            foreign_obj.type_name(),
+                                            method_name
+                                        ),
                                         ..Default::default()
                                     });
                                 } else {
                                     // 2. Check arguments if signature is available
-                                    if let Some(sig) = foreign_obj.get_method_signature(method_name) {
+                                    if let Some(sig) = foreign_obj.get_method_signature(method_name)
+                                    {
                                         check_arguments(&sig, args, expr.span, source, &mut diags);
                                     }
                                 }
@@ -162,7 +170,9 @@ struct SymbolVisitor<'a> {
 impl<'a> SymbolVisitor<'a> {
     fn new(source: &'a str, interp: &'a Interpreter) -> Self {
         Self {
-            scopes: vec![Scope { vars: HashSet::new() }], // Module scope
+            scopes: vec![Scope {
+                vars: HashSet::new(),
+            }], // Module scope
             diagnostics: Vec::new(),
             source,
             interp,
@@ -170,7 +180,9 @@ impl<'a> SymbolVisitor<'a> {
     }
 
     fn push_scope(&mut self) {
-        self.scopes.push(Scope { vars: HashSet::new() });
+        self.scopes.push(Scope {
+            vars: HashSet::new(),
+        });
     }
 
     fn pop_scope(&mut self) {
@@ -238,18 +250,26 @@ impl<'a> SymbolVisitor<'a> {
                 for param in params {
                     match param {
                         Param::Normal(_, hint) => {
-                            if let Some(h) = hint { self.visit_expr(h); }
-                        },
+                            if let Some(h) = hint {
+                                self.visit_expr(h);
+                            }
+                        }
                         Param::WithDefault(_, hint, default) => {
-                            if let Some(h) = hint { self.visit_expr(h); }
+                            if let Some(h) = hint {
+                                self.visit_expr(h);
+                            }
                             self.visit_expr(default);
-                        },
+                        }
                         Param::Star(_, hint) => {
-                            if let Some(h) = hint { self.visit_expr(h); }
-                        },
+                            if let Some(h) = hint {
+                                self.visit_expr(h);
+                            }
+                        }
                         Param::StarStar(_, hint) => {
-                            if let Some(h) = hint { self.visit_expr(h); }
-                        },
+                            if let Some(h) = hint {
+                                self.visit_expr(h);
+                            }
+                        }
                     }
                 }
                 if let Some(h) = ret_hint {
@@ -343,10 +363,14 @@ impl<'a> SymbolVisitor<'a> {
                 }
             }
             ExprKind::List(exprs) => {
-                for e in exprs { self.visit_expr(e); }
+                for e in exprs {
+                    self.visit_expr(e);
+                }
             }
             ExprKind::Tuple(exprs) => {
-                for e in exprs { self.visit_expr(e); }
+                for e in exprs {
+                    self.visit_expr(e);
+                }
             }
             ExprKind::Dictionary(kv_pairs) => {
                 for (k, v) in kv_pairs {
@@ -355,7 +379,9 @@ impl<'a> SymbolVisitor<'a> {
                 }
             }
             ExprKind::Set(exprs) => {
-                for e in exprs { self.visit_expr(e); }
+                for e in exprs {
+                    self.visit_expr(e);
+                }
             }
             ExprKind::Index(obj, idx) => {
                 self.visit_expr(obj);
@@ -366,9 +392,15 @@ impl<'a> SymbolVisitor<'a> {
             }
             ExprKind::Slice(obj, start, end, step) => {
                 self.visit_expr(obj);
-                if let Some(e) = start { self.visit_expr(e); }
-                if let Some(e) = end { self.visit_expr(e); }
-                if let Some(e) = step { self.visit_expr(e); }
+                if let Some(e) = start {
+                    self.visit_expr(e);
+                }
+                if let Some(e) = end {
+                    self.visit_expr(e);
+                }
+                if let Some(e) = step {
+                    self.visit_expr(e);
+                }
             }
             ExprKind::FString(segments) => {
                 for seg in segments {
@@ -377,40 +409,68 @@ impl<'a> SymbolVisitor<'a> {
                     }
                 }
             }
-            ExprKind::ListComp { body, var, iterable, cond } => {
+            ExprKind::ListComp {
+                body,
+                var,
+                iterable,
+                cond,
+            } => {
                 self.visit_expr(iterable);
                 self.push_scope();
                 self.define(var);
-                if let Some(c) = cond { self.visit_expr(c); }
+                if let Some(c) = cond {
+                    self.visit_expr(c);
+                }
                 self.visit_expr(body);
                 self.pop_scope();
             }
-            ExprKind::DictComp { key, value, var, iterable, cond } => {
+            ExprKind::DictComp {
+                key,
+                value,
+                var,
+                iterable,
+                cond,
+            } => {
                 self.visit_expr(iterable);
                 self.push_scope();
                 self.define(var);
-                if let Some(c) = cond { self.visit_expr(c); }
+                if let Some(c) = cond {
+                    self.visit_expr(c);
+                }
                 self.visit_expr(key);
                 self.visit_expr(value);
                 self.pop_scope();
             }
-            ExprKind::SetComp { body, var, iterable, cond } => {
+            ExprKind::SetComp {
+                body,
+                var,
+                iterable,
+                cond,
+            } => {
                 self.visit_expr(iterable);
                 self.push_scope();
                 self.define(var);
-                if let Some(c) = cond { self.visit_expr(c); }
+                if let Some(c) = cond {
+                    self.visit_expr(c);
+                }
                 self.visit_expr(body);
                 self.pop_scope();
             }
             ExprKind::Lambda { params, body } => {
-                 for param in params {
+                for param in params {
                     match param {
                         Param::WithDefault(_, hint, default) => {
-                            if let Some(h) = hint { self.visit_expr(h); }
+                            if let Some(h) = hint {
+                                self.visit_expr(h);
+                            }
                             self.visit_expr(default);
-                        },
-                        Param::Normal(_, hint) | Param::Star(_, hint) | Param::StarStar(_, hint) => {
-                            if let Some(h) = hint { self.visit_expr(h); }
+                        }
+                        Param::Normal(_, hint)
+                        | Param::Star(_, hint)
+                        | Param::StarStar(_, hint) => {
+                            if let Some(h) = hint {
+                                self.visit_expr(h);
+                            }
                         }
                     }
                 }
@@ -426,7 +486,11 @@ impl<'a> SymbolVisitor<'a> {
                 self.visit_expr(body);
                 self.pop_scope();
             }
-            ExprKind::If { cond, then_branch, else_branch } => {
+            ExprKind::If {
+                cond,
+                then_branch,
+                else_branch,
+            } => {
                 self.visit_expr(cond);
                 self.visit_expr(then_branch);
                 self.visit_expr(else_branch);
@@ -440,7 +504,7 @@ fn check_arguments(
     args: &[Argument],
     span: Span,
     source: &str,
-    diags: &mut Vec<Diagnostic>
+    diags: &mut Vec<Diagnostic>,
 ) {
     let mut positional_count = 0;
     let mut kw_args_present = BTreeMap::new();
@@ -448,7 +512,9 @@ fn check_arguments(
     for arg in args {
         match arg {
             Argument::Positional(_) => positional_count += 1,
-            Argument::Keyword(k, _) => { kw_args_present.insert(k.clone(), ()); },
+            Argument::Keyword(k, _) => {
+                kw_args_present.insert(k.clone(), ());
+            }
             _ => return, // Give up on *args / **kwargs for now
         }
     }
@@ -467,23 +533,26 @@ fn check_arguments(
     // This is a naive check, doesn't handle mix of positional + keyword for same param perfectly
     // But good enough for basic cases
     if positional_count < required_params {
-         // Check if missing are covered by kwargs
-         let mut missing = Vec::new();
-         for i in positional_count..sig.params.len() {
-             let p = &sig.params[i];
-             if !p.is_optional && !kw_args_present.contains_key(&p.name) {
-                 missing.push(p.name.clone());
-             }
-         }
+        // Check if missing are covered by kwargs
+        let mut missing = Vec::new();
+        for i in positional_count..sig.params.len() {
+            let p = &sig.params[i];
+            if !p.is_optional && !kw_args_present.contains_key(&p.name) {
+                missing.push(p.name.clone());
+            }
+        }
 
-         if !missing.is_empty() {
-             diags.push(Diagnostic {
-                 range: span_to_range(span, source),
-                 severity: Some(DiagnosticSeverity::ERROR),
-                 message: format!("TypeError: Missing required arguments: {}", missing.join(", ")),
-                 ..Default::default()
-             });
-         }
+        if !missing.is_empty() {
+            diags.push(Diagnostic {
+                range: span_to_range(span, source),
+                severity: Some(DiagnosticSeverity::ERROR),
+                message: format!(
+                    "TypeError: Missing required arguments: {}",
+                    missing.join(", ")
+                ),
+                ..Default::default()
+            });
+        }
     }
 
     // Type checking for arguments
@@ -500,7 +569,7 @@ fn check_arguments(
             Argument::Keyword(name, expr) => {
                 // Find param by name
                 if let Some(param) = sig.params.iter().find(|p| &p.name == name) {
-                     check_arg_type(param, expr, source, diags);
+                    check_arg_type(param, expr, source, diags);
                 }
             }
             _ => {}
@@ -512,28 +581,37 @@ fn check_arg_type(
     param: &eldritch_core::ParameterSignature,
     expr: &eldritch_core::Expr,
     source: &str,
-    diags: &mut Vec<Diagnostic>
+    diags: &mut Vec<Diagnostic>,
 ) {
     if let Some(expected_type_raw) = &param.type_name {
         // Clean up expected type (e.g. "Option < String >" -> "String", "Vec < String >" -> "List")
         let expected_type = clean_type_name(expected_type_raw);
         if let Some(actual_type) = infer_type(expr) {
             if !is_type_compatible(&expected_type, actual_type) {
-                 diags.push(Diagnostic {
-                     range: span_to_range(expr.span, source),
-                     severity: Some(DiagnosticSeverity::ERROR),
-                     message: format!("TypeError: Argument '{}' expected type '{}', got '{}'", param.name, expected_type, actual_type),
-                     ..Default::default()
-                 });
+                diags.push(Diagnostic {
+                    range: span_to_range(expr.span, source),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    message: format!(
+                        "TypeError: Argument '{}' expected type '{}', got '{}'",
+                        param.name, expected_type, actual_type
+                    ),
+                    ..Default::default()
+                });
             }
         }
     }
 }
 
 fn clean_type_name(raw: &str) -> String {
-    let raw = raw.replace("alloc :: string :: ", "").replace("alloc :: vec :: ", "");
+    let raw = raw
+        .replace("alloc :: string :: ", "")
+        .replace("alloc :: vec :: ", "");
     if raw.contains("Option <") {
-        return raw.replace("Option <", "").replace(">", "").trim().to_string();
+        return raw
+            .replace("Option <", "")
+            .replace(">", "")
+            .trim()
+            .to_string();
     }
     if raw.contains("Vec <") {
         return "List".to_string(); // Approximate Vec as List
@@ -541,7 +619,11 @@ fn clean_type_name(raw: &str) -> String {
     if raw.contains("BTreeMap <") {
         return "Dictionary".to_string();
     }
-    raw.replace("String", "str").replace("i64", "int").replace("f64", "float").replace("bool", "bool").replace("Vec < u8 >", "bytes")
+    raw.replace("String", "str")
+        .replace("i64", "int")
+        .replace("f64", "float")
+        .replace("bool", "bool")
+        .replace("Vec < u8 >", "bytes")
 }
 
 fn is_type_compatible(expected: &str, actual: &str) -> bool {
@@ -564,13 +646,13 @@ fn infer_type(expr: &eldritch_core::Expr) -> Option<&'static str> {
             Value::List(_) => Some("List"),
             Value::Dictionary(_) => Some("Dictionary"),
             Value::Int(_) => Some("Int"),
-            _ => None
+            _ => None,
         },
         ExprKind::List(_) => Some("List"),
         ExprKind::Dictionary(_) => Some("Dictionary"),
         ExprKind::Tuple(_) => Some("Tuple"),
         ExprKind::Set(_) => Some("Set"),
-        _ => None
+        _ => None,
     }
 }
 
@@ -616,14 +698,14 @@ where
                 visit_expr(cond, callback);
                 visit_stmts_exprs(then_b, callback);
                 if let Some(b) = else_b {
-                     visit_stmts_exprs(b, callback);
+                    visit_stmts_exprs(b, callback);
                 }
             }
-             StmtKind::For(_, iter, body) => {
+            StmtKind::For(_, iter, body) => {
                 visit_expr(iter, callback);
                 visit_stmts_exprs(body, callback);
             }
-             StmtKind::Def(_, _, _, body) => {
+            StmtKind::Def(_, _, _, body) => {
                 visit_stmts_exprs(body, callback);
             }
             _ => {}
@@ -645,9 +727,9 @@ where
             visit_expr(callee, callback);
             for arg in args {
                 match arg {
-                     Argument::Positional(e) => visit_expr(e, callback),
-                     Argument::Keyword(_, e) => visit_expr(e, callback),
-                     _ => {}
+                    Argument::Positional(e) => visit_expr(e, callback),
+                    Argument::Keyword(_, e) => visit_expr(e, callback),
+                    _ => {}
                 }
             }
         }
@@ -716,77 +798,92 @@ mod tests {
         let diagnostics = linter.check(&stmts, code);
 
         // We expect at least one diagnostic warning about deprecation
-        let warnings: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("os.system is deprecated")).collect();
+        let warnings: Vec<_> = diagnostics
+            .iter()
+            .filter(|d| d.message.contains("os.system is deprecated"))
+            .collect();
         assert_eq!(warnings.len(), 1);
         assert_eq!(warnings[0].severity, Some(DiagnosticSeverity::WARNING));
     }
 
     #[test]
     fn test_type_check_missing_method() {
-         let code = "agent.not_a_method()";
-         let mut lexer = Lexer::new(code.to_string());
-         let tokens = lexer.scan_tokens().unwrap();
-         let mut parser = Parser::new(tokens);
-         let stmts = parser.parse().unwrap();
+        let code = "agent.not_a_method()";
+        let mut lexer = Lexer::new(code.to_string());
+        let tokens = lexer.scan_tokens().unwrap();
+        let mut parser = Parser::new(tokens);
+        let stmts = parser.parse().unwrap();
 
-         let linter = Linter::new();
-         let diagnostics = linter.check(&stmts, code);
+        let linter = Linter::new();
+        let diagnostics = linter.check(&stmts, code);
 
-         assert!(!diagnostics.is_empty());
-         assert!(diagnostics[0].message.contains("has no attribute 'not_a_method'"));
+        assert!(!diagnostics.is_empty());
+        assert!(diagnostics[0]
+            .message
+            .contains("has no attribute 'not_a_method'"));
     }
 
-     #[test]
+    #[test]
     fn test_type_check_binary_op() {
-         let code = "x = [] + \"a\"";
-         let mut lexer = Lexer::new(code.to_string());
-         let tokens = lexer.scan_tokens().unwrap();
-         let mut parser = Parser::new(tokens);
-         let stmts = parser.parse().unwrap();
+        let code = "x = [] + \"a\"";
+        let mut lexer = Lexer::new(code.to_string());
+        let tokens = lexer.scan_tokens().unwrap();
+        let mut parser = Parser::new(tokens);
+        let stmts = parser.parse().unwrap();
 
-         let linter = Linter::new();
-         let diagnostics = linter.check(&stmts, code);
+        let linter = Linter::new();
+        let diagnostics = linter.check(&stmts, code);
 
-         assert!(!diagnostics.is_empty());
-         assert!(diagnostics[0].message.contains("Unsupported operand types"));
+        assert!(!diagnostics.is_empty());
+        assert!(diagnostics[0].message.contains("Unsupported operand types"));
     }
 
     #[test]
     fn test_type_check_wrong_arg_type() {
-         let code = "sys.exec({'what': 'adict'})";
-         let mut lexer = Lexer::new(code.to_string());
-         let tokens = lexer.scan_tokens().unwrap();
-         let mut parser = Parser::new(tokens);
-         let stmts = parser.parse().unwrap();
+        let code = "sys.exec({'what': 'adict'})";
+        let mut lexer = Lexer::new(code.to_string());
+        let tokens = lexer.scan_tokens().unwrap();
+        let mut parser = Parser::new(tokens);
+        let stmts = parser.parse().unwrap();
 
-         let linter = Linter::new();
-         let diagnostics = linter.check(&stmts, code);
+        let linter = Linter::new();
+        let diagnostics = linter.check(&stmts, code);
 
-         if diagnostics.is_empty() {
-             panic!("No diagnostics found");
-         }
-         println!("Diagnostics: {:?}", diagnostics);
+        if diagnostics.is_empty() {
+            panic!("No diagnostics found");
+        }
+        println!("Diagnostics: {:?}", diagnostics);
 
-         assert!(!diagnostics.is_empty());
-         let found = diagnostics.iter().any(|d| d.message.contains("TypeError: Argument 'path' expected type 'str', got 'Dictionary'"));
-         assert!(found, "Expected error not found");
+        assert!(!diagnostics.is_empty());
+        let found = diagnostics.iter().any(|d| {
+            d.message
+                .contains("TypeError: Argument 'path' expected type 'str', got 'Dictionary'")
+        });
+        assert!(found, "Expected error not found");
     }
 
     #[test]
     fn test_type_check_missing_args() {
-         let code = "sys.exec()";
-         let mut lexer = Lexer::new(code.to_string());
-         let tokens = lexer.scan_tokens().unwrap();
-         let mut parser = Parser::new(tokens);
-         let stmts = parser.parse().unwrap();
+        let code = "sys.exec()";
+        let mut lexer = Lexer::new(code.to_string());
+        let tokens = lexer.scan_tokens().unwrap();
+        let mut parser = Parser::new(tokens);
+        let stmts = parser.parse().unwrap();
 
-         let linter = Linter::new();
-         let diagnostics = linter.check(&stmts, code);
+        let linter = Linter::new();
+        let diagnostics = linter.check(&stmts, code);
 
-         assert!(!diagnostics.is_empty());
-         // sys.exec takes path, args.
-         let found = diagnostics.iter().any(|d| d.message.contains("TypeError: Missing required arguments: path, args"));
-         assert!(found, "Expected missing args error not found. Diagnostics: {:?}", diagnostics);
+        assert!(!diagnostics.is_empty());
+        // sys.exec takes path, args.
+        let found = diagnostics.iter().any(|d| {
+            d.message
+                .contains("TypeError: Missing required arguments: path, args")
+        });
+        assert!(
+            found,
+            "Expected missing args error not found. Diagnostics: {:?}",
+            diagnostics
+        );
     }
 
     #[test]
@@ -801,7 +898,9 @@ mod tests {
         let diagnostics = linter.check(&stmts, code);
 
         assert!(!diagnostics.is_empty());
-        assert!(diagnostics.iter().any(|d| d.message.contains("NameError: name 'not_defined' is not defined")));
+        assert!(diagnostics.iter().any(|d| d
+            .message
+            .contains("NameError: name 'not_defined' is not defined")));
     }
 
     #[test]
@@ -816,7 +915,10 @@ mod tests {
         let diagnostics = linter.check(&stmts, code);
 
         // Filter out irrelevant diagnostics (like type checks if any)
-        let name_errors: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("NameError")).collect();
+        let name_errors: Vec<_> = diagnostics
+            .iter()
+            .filter(|d| d.message.contains("NameError"))
+            .collect();
         assert!(name_errors.is_empty(), "Found NameError: {:?}", name_errors);
     }
 
@@ -831,7 +933,10 @@ mod tests {
         let linter = Linter::new();
         let diagnostics = linter.check(&stmts, code);
 
-        let name_errors: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("NameError")).collect();
+        let name_errors: Vec<_> = diagnostics
+            .iter()
+            .filter(|d| d.message.contains("NameError"))
+            .collect();
         assert_eq!(name_errors.len(), 1);
         assert!(name_errors[0].message.contains("'b' is not defined"));
     }
@@ -847,7 +952,10 @@ mod tests {
         let linter = Linter::new();
         let diagnostics = linter.check(&stmts, code);
 
-        let name_errors: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("NameError")).collect();
+        let name_errors: Vec<_> = diagnostics
+            .iter()
+            .filter(|d| d.message.contains("NameError"))
+            .collect();
         assert_eq!(name_errors.len(), 1);
         assert!(name_errors[0].message.contains("'i' is not defined"));
     }
@@ -863,7 +971,14 @@ mod tests {
         let linter = Linter::new();
         let diagnostics = linter.check(&stmts, code);
 
-        let name_errors: Vec<_> = diagnostics.iter().filter(|d| d.message.contains("NameError")).collect();
-        assert!(name_errors.is_empty(), "Found NameError for input_params: {:?}", name_errors);
+        let name_errors: Vec<_> = diagnostics
+            .iter()
+            .filter(|d| d.message.contains("NameError"))
+            .collect();
+        assert!(
+            name_errors.is_empty(),
+            "Found NameError for input_params: {:?}",
+            name_errors
+        );
     }
 }
