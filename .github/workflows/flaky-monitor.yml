@@ -1,0 +1,57 @@
+name: Flaky Monitor
+
+on:
+  workflow_run:
+    workflows: [Tests]
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  flaky-monitor:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: 📥 Download CTRF Results
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: ctrf-*
+          path: ctrf-reports
+          merge-multiple: true
+
+      - name: Get PR Number
+        id: pr_info
+        run: |
+          echo "pr_number=${{ github.event.workflow_run.pull_requests[0].number }}" >> $GITHUB_OUTPUT
+
+      - name: 📊 Publish Test Report
+        uses: ctrf-io/github-test-reporter@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          report-path: 'ctrf-reports/*.json'
+          upload-artifact: true
+          fetch-previous-results: true
+          pull-request: false
+          issue: ${{ steps.pr_info.outputs.pr_number }}
+          overwrite-comment: true
+
+          # Report Config
+          # https://github.com/ctrf-io/github-test-reporter/blob/main/docs/report-showcase.md
+          summary-delta-report: true
+          tests-changed-report: true
+          insights-report: true
+          slowest-report: true
+          failed-folded-report: true
+          flaky-rate-report: true
+          fail-rate-report: true
+          previous-results-report: true
+          previous-results-max: 100
+          artifact-name: 'flaky-report'
