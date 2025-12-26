@@ -14,6 +14,8 @@ const (
 	// maxRegistrationBufSize defines the maximum receivers that can be buffered in the registration / unregistration channel
 	// before new calls to `mux.Register()` and `mux.Unregister()` will block.
 	maxRegistrationBufSize = 256
+	// defaultHistorySize is the default size of the circular buffer for stream history.
+	defaultHistorySize = 1024
 )
 
 var upgrader = websocket.Upgrader{
@@ -26,24 +28,35 @@ var upgrader = websocket.Upgrader{
 // Streams will only receive a Message if their configured ID matches the incoming metadata of a Message.
 // Additionally, new messages may be published using the Mux.
 type Mux struct {
-	pub        *pubsub.Topic
-	sub        *pubsub.Subscription
-	register   chan *Stream
-	unregister chan *Stream
-	streams    map[*Stream]bool
+	pub         *pubsub.Topic
+	sub         *pubsub.Subscription
+	register    chan *Stream
+	unregister  chan *Stream
+	streams     map[*Stream]bool
+	history     map[string]*CircularBuffer
+	historySize int
 }
 
 // A MuxOption is used to provide further configuration to the Mux.
 type MuxOption func(*Mux)
 
+// WithHistorySize sets the size of the circular buffer for stream history.
+func WithHistorySize(size int) MuxOption {
+	return func(m *Mux) {
+		m.historySize = size
+	}
+}
+
 // NewMux initializes and returns a new Mux with the provided pubsub info.
 func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription, options ...MuxOption) *Mux {
 	mux := &Mux{
-		pub:        pub,
-		sub:        sub,
-		register:   make(chan *Stream, maxRegistrationBufSize),
-		unregister: make(chan *Stream, maxRegistrationBufSize),
-		streams:    make(map[*Stream]bool),
+		pub:         pub,
+		sub:         sub,
+		register:    make(chan *Stream, maxRegistrationBufSize),
+		unregister:  make(chan *Stream, maxRegistrationBufSize),
+		streams:     make(map[*Stream]bool),
+		history:     make(map[string]*CircularBuffer),
+		historySize: defaultHistorySize,
 	}
 	for _, opt := range options {
 		opt(mux)
@@ -73,6 +86,29 @@ func (mux *Mux) registerStreams(ctx context.Context) {
 		case s := <-mux.register:
 			slog.DebugContext(ctx, "mux registering new stream", "stream_id", s.id)
 			mux.streams[s] = true
+
+			// Send history to the new stream
+			if hist, ok := mux.history[s.id]; ok {
+				data := hist.Bytes()
+				if len(data) > 0 {
+					slog.DebugContext(ctx, "mux sending history to new stream", "stream_id", s.id, "bytes", len(data))
+					msg := &pubsub.Message{
+						Body: data,
+						Metadata: map[string]string{
+							metadataID:      s.id,
+							MetadataMsgKind: "data",
+							// Use a special order key or just let it be unordered?
+							// processOneMessage expects order key.
+							// But here we are injecting history.
+							// Let's rely on processOneMessage to handle it.
+							// If we don't provide order key/index, processOneMessage logs debug and sends immediately.
+							// That is exactly what we want for history.
+						},
+					}
+					s.processOneMessage(ctx, msg)
+				}
+			}
+
 		default:
 			return
 		}
@@ -151,6 +187,18 @@ func (mux *Mux) poll(ctx context.Context) error {
 	msgOrderIndex, ok := msg.Metadata[metadataOrderIndex]
 	if !ok {
 		slog.DebugContext(ctx, "mux received message without msgOrderIndex")
+	}
+
+	// Update History
+	// Only buffer "data" messages (or messages with no kind specified, which default to data)
+	kind, hasKind := msg.Metadata[MetadataMsgKind]
+	if !hasKind || kind == "data" {
+		hist, ok := mux.history[msgID]
+		if !ok {
+			hist = NewCircularBuffer(mux.historySize)
+			mux.history[msgID] = hist
+		}
+		hist.Write(msg.Body)
 	}
 
 	// Broadcast Message
