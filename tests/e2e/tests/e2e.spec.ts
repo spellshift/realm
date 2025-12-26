@@ -10,8 +10,15 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
   await expect(page.getByText('Loading beacons...')).toBeHidden({ timeout: 15000 });
 
   // Select the checkbox. Using force: true because Chakra UI hides the actual input.
+  // Define the locator for the beacon checkboxes
+  const beacons = page.locator('.chakra-card input[type="checkbox"]');
+
+  // Assert that exactly one beacon exists
+  await expect(beacons).toHaveCount(1);
+
+  // Select the beacon
   console.log('Selecting beacon');
-  await page.locator('.chakra-card input[type="checkbox"]').first().check({ force: true });
+  await beacons.first().check({ force: true });
 
   // Click Continue
   console.log('Clicking Continue (Beacon)');
