@@ -117,7 +117,7 @@ tar = { version = "0.4.38", default-features = false }
 tempfile = "3.20.0"
 tera = { version = "1.17.1", default-features = false }
 thiserror = "1.0.30"
-tokio = "1.19.1"
+tokio = "1.35.0"
 tokio-stream = { version = "0.1.9", default-features = false }
 tokio-test = "*"
 tokio-util = { version = "0.7.10", features = ["io"] }
