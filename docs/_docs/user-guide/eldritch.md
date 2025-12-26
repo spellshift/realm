@@ -455,6 +455,12 @@ The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If 
 
 The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
 
+### file.pwd (V2-Only)
+
+`file.pwd() -> Option<str>`
+
+The <b>file.pwd</b> method returns the current working directory of the process. If it could not be determined, `None` is returned.
+
 ### file.read
 
 `file.read(path: str) -> str`
