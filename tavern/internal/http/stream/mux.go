@@ -15,7 +15,7 @@ const (
 	// before new calls to `mux.Register()` and `mux.Unregister()` will block.
 	maxRegistrationBufSize = 256
 	// defaultHistorySize is the default size of the circular buffer for stream history.
-	defaultHistorySize = 1024
+	defaultHistorySize = 1024 * 5 // 5KB
 )
 
 var upgrader = websocket.Upgrader{
