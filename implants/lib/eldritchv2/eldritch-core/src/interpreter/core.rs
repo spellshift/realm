@@ -377,6 +377,79 @@ impl Interpreter {
             }
         };
 
+        // Extra check: if line ends with '.', we should attempt to infer context manually
+        // to avoid showing globals for dot access, especially if tokens are empty or standard logic fails.
+        let line_ends_with_dot = line_up_to_cursor.trim_end().ends_with('.');
+        let mut manual_target: Option<Value> = None;
+
+        if line_ends_with_dot {
+            // Try to find what's before the dot
+            let trimmed = line_up_to_cursor.trim_end();
+            let before_dot = &trimmed[..trimmed.len() - 1].trim_end();
+
+            // Check for string literal at end
+            if before_dot.ends_with('"') || before_dot.ends_with('\'') {
+                manual_target = Some(Value::String(String::new()));
+            }
+            // Check for list literal or index access
+            else if before_dot.ends_with(']') {
+                // Scan backwards to find matching [
+                let mut balance = 0;
+                let mut idx = before_dot.len();
+                let chars: Vec<char> = before_dot.chars().collect();
+                let mut found_open = false;
+
+                for i in (0..chars.len()).rev() {
+                    match chars[i] {
+                        ']' => balance += 1,
+                        '[' => {
+                            balance -= 1;
+                            if balance == 0 {
+                                idx = i;
+                                found_open = true;
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                if found_open {
+                    // Check character before [
+                    let mut is_index_access = false;
+                    if idx > 0 {
+                        let prev = chars[idx - 1];
+                        if prev.is_alphanumeric() || prev == '_' {
+                            is_index_access = true;
+                        }
+                    }
+
+                    if !is_index_access {
+                        // Likely a list literal [1, 2]
+                        manual_target = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                    }
+                }
+            }
+            // Check for dict/set literal
+            else if before_dot.ends_with('}') {
+                // Assume dict for now (sets are less common for method calls, and dict is safer default)
+                manual_target = Some(Value::Dictionary(Arc::new(RwLock::new(BTreeMap::new()))));
+            }
+            else {
+                // Assume identifier
+                let last_word = before_dot
+                    .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
+                    .next_back()
+                    .unwrap_or("");
+
+                if !last_word.is_empty() {
+                    if let Ok(val) = self.lookup_variable(last_word, Span::new(0, 0, 0)) {
+                        manual_target = Some(val);
+                    }
+                }
+            }
+        }
+
         // Determine context from tokens
         let mut target_val: Option<Value> = None;
         let meaningful_tokens: Vec<&super::super::token::Token> = tokens
@@ -416,7 +489,40 @@ impl Interpreter {
                             }
                             TokenKind::RBracket => {
                                 // Assume List
-                                target_val = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                                let mut is_index_access = false;
+                                // Check token before matching LBracket
+                                // Since we don't have AST, we have to scan back tokens
+                                let mut balance = 0;
+                                let mut idx = meaningful_tokens.len() - 2; // Start at RBracket
+                                let mut found_open = false;
+
+                                for i in (0..=idx).rev() {
+                                    match meaningful_tokens[i].kind {
+                                        TokenKind::RBracket => balance += 1,
+                                        TokenKind::LBracket => {
+                                            balance -= 1;
+                                            if balance == 0 {
+                                                idx = i;
+                                                found_open = true;
+                                                break;
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                if found_open && idx > 0 {
+                                    match meaningful_tokens[idx - 1].kind {
+                                        TokenKind::Identifier(_) | TokenKind::RBracket | TokenKind::RParen | TokenKind::String(_) => {
+                                            is_index_access = true;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                if !is_index_access {
+                                    target_val = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                                }
                             }
                             TokenKind::RBrace => {
                                 // Assume Dictionary (could be Set, but Dict is safer default)
@@ -465,6 +571,11 @@ impl Interpreter {
             }
         } else if !prefix.is_empty() {
             // Lexer failed but we extracted a prefix manually
+        }
+
+        // Fallback to manual target if standard token logic didn't find one
+        if target_val.is_none() {
+            target_val = manual_target;
         }
 
         if let Some(val) = target_val {
@@ -522,7 +633,7 @@ impl Interpreter {
                 }
             }
 
-            if !is_dot_access {
+            if !is_dot_access && !line_ends_with_dot {
                 // 1. Keywords
                 let keywords = vec![
                     "def", "if", "elif", "else", "return", "for", "in", "True", "False", "None",
