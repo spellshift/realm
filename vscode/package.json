@@ -1,13 +1,13 @@
 {
     "name": "eldritch",
-    "description": "An Eldritch language server",
+    "description": "Eldritch language support for Visual Studio Code",
     "author": "realm",
     "license": "GNU GPL v3.0",
-    "version": "0.0.3",
+    "version": "0.3.0",
     "icon": "images/eldritch.png",
     "repository": {
         "type": "git",
-        "url": "https://realm.pub"
+        "url": "https://github.com/spellshift/realm"
     },
     "publisher": "realm",
     "categories": [],
