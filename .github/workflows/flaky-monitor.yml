@@ -8,7 +8,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
   pull-requests: write
   checks: write
 
@@ -23,12 +23,50 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: ctrf-*
-          path: ctrf-reports
+          path: ctrf-blob
           merge-multiple: true
+
+      - name: 📂 Checkout Flaky History
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: flaky-monitor-results
+          path: flaky-history
+          fetch-depth: 0
+
+      - name: 📦 Prepare Reports
+        run: |
+          mkdir -p all-reports
+
+          # initialize history branch if checkout failed (branch doesn't exist)
+          if [ ! -d "flaky-history" ]; then
+            echo "Creating orphan branch directory"
+            mkdir -p flaky-history
+            cd flaky-history
+            git init
+            git checkout --orphan flaky-monitor-results
+            cd ..
+          fi
+
+          # Copy history to processing dir
+          # (Ignore errors if empty)
+          cp flaky-history/*.json all-reports/ 2>/dev/null || true
+
+          # Process current run artifacts
+          # Rename to avoid collisions and track run ID
+          # We expect files like ctrf-tavern-ubuntu-latest.json
+          for file in ctrf-blob/*.json; do
+            if [ -e "$file" ]; then
+              filename=$(basename "$file" .json)
+              cp "$file" "all-reports/${filename}-${{ github.event.workflow_run.id }}.json"
+            fi
+          done
 
       - name: Get PR Number
         id: pr_info
         run: |
+          # Retrieve PR number for commenting
+          # Note: workflow_run context has limited PR info depending on trigger
           echo "pr_number=${{ github.event.workflow_run.pull_requests[0].number }}" >> $GITHUB_OUTPUT
 
       - name: 📊 Publish Test Report
@@ -36,15 +74,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          report-path: 'ctrf-reports/*.json'
+          report-path: 'all-reports/*.json'
           upload-artifact: true
-          fetch-previous-results: true
+          fetch-previous-results: false # Using orphan branch instead
           pull-request: false
           issue: ${{ steps.pr_info.outputs.pr_number }}
           overwrite-comment: true
 
           # Report Config
-          # https://github.com/ctrf-io/github-test-reporter/blob/main/docs/report-showcase.md
           summary-delta-report: true
           tests-changed-report: true
           insights-report: true
@@ -55,3 +92,38 @@ jobs:
           previous-results-report: true
           previous-results-max: 100
           artifact-name: 'flaky-report'
+
+      - name: 💾 Persist Results (Main Only)
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        run: |
+          cd flaky-history
+
+          # Configure git identity
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure remote is set up correctly regardless of checkout success/fail
+          # First, remove origin if it exists to avoid errors on re-add
+          git remote remove origin 2>/dev/null || true
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+          # Fetch origin to make sure we have the latest state if checkout failed earlier but branch exists
+          # (This handles race conditions or edge cases where checkout failed for other reasons)
+          git fetch origin flaky-monitor-results 2>/dev/null || true
+
+          # If we are on a detached head or master (from init), ensure we are on the orphan branch
+          current_branch=$(git branch --show-current)
+          if [ "$current_branch" != "flaky-monitor-results" ]; then
+             git checkout -b flaky-monitor-results || git checkout flaky-monitor-results
+          fi
+
+          # Copy NEW reports from current run to history
+          # Note: We copy from the renamed versions in all-reports to ensure uniqueness
+          # Filter for files ending in this run-id
+          cp ../all-reports/*-${{ github.event.workflow_run.id }}.json .
+
+          git add .
+          git commit -m "Add test results from run ${{ github.event.workflow_run.id }}"
+
+          # Push to the orphan branch
+          git push origin flaky-monitor-results
