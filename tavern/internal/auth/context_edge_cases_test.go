@@ -7,11 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 )
 
-func TestContextFromTokens_Invalid(t *testing.T) {
+func TestContextEdgeCases(t *testing.T) {
 	// Setup Dependencies
+	ctx := context.Background()
 	var (
 		driverName     = "sqlite3"
 		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
@@ -19,35 +21,60 @@ func TestContextFromTokens_Invalid(t *testing.T) {
 	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
 	defer graph.Close()
 
-	// Test ContextFromSessionToken with invalid token
+	// Test Data
+	existingUser := graph.User.Create().
+		SetName("test_user_edge").
+		SetOauthID("test_user_edge").
+		SetPhotoURL("http://google.com/").
+		SetIsActivated(true).
+		SetIsAdmin(false).
+		SaveX(ctx)
+
 	t.Run("ContextFromSessionToken_NotFound", func(t *testing.T) {
-		// Pass a nil context first to check if it panics? No, Background is fine.
-		ctx, err := auth.ContextFromSessionToken(context.Background(), graph, "invalid-token")
+		authCtx, err := auth.ContextFromSessionToken(context.Background(), graph, "invalid_token")
 		require.Error(t, err)
-		// Usually ent returns "ent: user not found"
-		assert.Contains(t, err.Error(), "user not found")
-		// The returned context should be nil if error?
-		// Looking at context.go: if err != nil { return nil, err }
-		assert.Nil(t, ctx)
+		assert.True(t, ent.IsNotFound(err))
+		assert.Nil(t, authCtx)
 	})
 
-	// Test ContextFromAccessToken with invalid token
 	t.Run("ContextFromAccessToken_NotFound", func(t *testing.T) {
-		ctx, err := auth.ContextFromAccessToken(context.Background(), graph, "invalid-token")
+		authCtx, err := auth.ContextFromAccessToken(context.Background(), graph, "invalid_token")
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "user not found")
-		assert.Nil(t, ctx)
+		assert.True(t, ent.IsNotFound(err))
+		assert.Nil(t, authCtx)
 	})
-}
 
-func TestContextHelpers_EdgeCases(t *testing.T) {
-	ctx := context.Background()
+	t.Run("IdentityFromContext_Nil", func(t *testing.T) {
+		id := auth.IdentityFromContext(context.Background())
+		assert.Nil(t, id)
+	})
 
-	t.Run("EmptyContext", func(t *testing.T) {
-		assert.Nil(t, auth.IdentityFromContext(ctx))
-		assert.Nil(t, auth.UserFromContext(ctx))
-		assert.False(t, auth.IsAuthenticatedContext(ctx))
-		assert.False(t, auth.IsActivatedContext(ctx))
-		assert.False(t, auth.IsAdminContext(ctx))
+	t.Run("UserFromContext_Nil", func(t *testing.T) {
+		u := auth.UserFromContext(context.Background())
+		assert.Nil(t, u)
+	})
+
+	t.Run("IsAuthenticatedContext_False", func(t *testing.T) {
+		assert.False(t, auth.IsAuthenticatedContext(context.Background()))
+	})
+
+	t.Run("IsActivatedContext_False", func(t *testing.T) {
+		assert.False(t, auth.IsActivatedContext(context.Background()))
+	})
+
+	t.Run("IsAdminContext_False", func(t *testing.T) {
+		assert.False(t, auth.IsAdminContext(context.Background()))
+	})
+
+	t.Run("ValidUser_CheckMethods", func(t *testing.T) {
+		authCtx, err := auth.ContextFromSessionToken(context.Background(), graph, existingUser.SessionToken)
+		require.NoError(t, err)
+
+		id := auth.IdentityFromContext(authCtx)
+		require.NotNil(t, id)
+		assert.Equal(t, "test_user_edge", id.String())
+		assert.True(t, id.IsAuthenticated())
+		assert.True(t, id.IsActivated())
+		assert.False(t, id.IsAdmin())
 	})
 }
