@@ -84,11 +84,49 @@ func (mux *Mux) Register(s *Stream) {
 	mux.register <- s
 }
 
-// registerStreams inserts all registered streams into the streams map.
-func (mux *Mux) registerStreams(ctx context.Context) {
+// Unregister a stream when it should no longer receive Messages from the Mux.
+// Typically this is done via defer after registering a Stream.
+// Unregistering a stream that is not registered will still close the stream channel.
+func (mux *Mux) Unregister(s *Stream) {
+	mux.unregister <- s
+}
+
+// Start the mux, returning an error if polling ever fails.
+func (mux *Mux) Start(ctx context.Context) error {
+	slog.DebugContext(ctx, "mux starting to manage streams and polling")
+
+	// Message channel to receive messages from the poller
+	type pollResult struct {
+		msg *pubsub.Message
+		err error
+	}
+	msgChan := make(chan pollResult)
+
+	// Start poller goroutine
+	go func() {
+		defer close(msgChan)
+		for {
+			msg, err := mux.sub.Receive(ctx)
+			select {
+			case <-ctx.Done():
+				return
+			case msgChan <- pollResult{msg: msg, err: err}:
+				if err != nil {
+					// Assuming Receive returns a permanent error or we stop on any error
+					return
+				}
+			}
+		}
+	}()
+
 	for {
 		select {
+		case <-ctx.Done():
+			slog.DebugContext(ctx, "mux context finished, exiting")
+			return ctx.Err()
+
 		case s := <-mux.register:
+			// Handle Registration
 			slog.DebugContext(ctx, "mux registering new stream", "stream_id", s.id)
 			mux.streams[s] = true
 
@@ -102,88 +140,47 @@ func (mux *Mux) registerStreams(ctx context.Context) {
 						Metadata: map[string]string{
 							metadataID:      s.id,
 							MetadataMsgKind: "data",
-							// Use a special order key or just let it be unordered?
-							// processOneMessage expects order key.
-							// But here we are injecting history.
-							// Let's rely on processOneMessage to handle it.
-							// If we don't provide order key/index, processOneMessage logs debug and sends immediately.
-							// That is exactly what we want for history.
+							// No order key needed for history injection
 						},
 					}
 					s.processOneMessage(ctx, msg)
 				}
 			}
 
-		default:
-			return
-		}
-	}
-}
-
-// Unregister a stream when it should no longer receive Messages from the Mux.
-// Typically this is done via defer after registering a Stream.
-// Unregistering a stream that is not registered will still close the stream channel.
-func (mux *Mux) Unregister(s *Stream) {
-	mux.unregister <- s
-}
-
-// unregisterStreams deletes all unregistered streams from the streams map.
-func (mux *Mux) unregisterStreams(ctx context.Context) {
-	for {
-		select {
 		case s := <-mux.unregister:
+			// Handle Unregistration
 			slog.DebugContext(ctx, "mux unregistering stream", "stream_id", s.id)
 			delete(mux.streams, s)
 			s.Close()
-		default:
-			return
-		}
-	}
-}
 
-// Start the mux, returning an error if polling ever fails.
-func (mux *Mux) Start(ctx context.Context) error {
-	slog.DebugContext(ctx, "mux starting to manage streams and polling")
-	for {
-		// Manage Streams
-		mux.registerStreams(ctx)
-		mux.unregisterStreams(ctx)
-
-		// Poll for new messages
-		select {
-		case <-ctx.Done():
-			slog.DebugContext(ctx, "mux context finished, exiting")
-			return ctx.Err()
-		default:
-			slog.DebugContext(ctx, "mux polling for message")
-			if err := mux.poll(ctx); err != nil {
-				slog.ErrorContext(ctx, "mux failed to poll subscription", "error", err)
+		case res, ok := <-msgChan:
+			if !ok {
+				// Poller exited
+				return fmt.Errorf("poller exited unexpectedly")
 			}
+			if res.err != nil {
+				slog.ErrorContext(ctx, "mux failed to poll subscription", "error", res.err)
+				// If the error is transient, we could continue.
+				// But generally Receive() errors are fatal for the subscription or context.
+				return res.err
+			}
+
+			// Handle Message
+			mux.handleMessage(ctx, res.msg)
 		}
 	}
 }
 
-// poll for a new message, broadcasting to all registered streams.
-// poll will also register & unregister streams after a new message is received.
-func (mux *Mux) poll(ctx context.Context) error {
-	// Block waiting for message
-	msg, err := mux.sub.Receive(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to poll for new message: %w", err)
-	}
-
+// handleMessage processes a new message, updating history and broadcasting to streams.
+func (mux *Mux) handleMessage(ctx context.Context, msg *pubsub.Message) {
 	// Always acknowledge the message
 	defer msg.Ack()
-
-	// Manage Streams
-	mux.registerStreams(ctx)
-	mux.unregisterStreams(ctx)
 
 	// Get Message Metadata
 	msgID, ok := msg.Metadata["id"]
 	if !ok {
 		slog.DebugContext(ctx, "mux received message without 'id' for stream, ignoring")
-		return nil
+		return
 	}
 	msgOrderKey, ok := msg.Metadata[metadataOrderKey]
 	if !ok {
@@ -245,6 +242,4 @@ func (mux *Mux) poll(ctx context.Context) error {
 			s.processOneMessage(ctx, msg)
 		}
 	}
-
-	return nil
 }
