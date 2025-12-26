@@ -387,22 +387,61 @@ impl Interpreter {
             let trimmed = line_up_to_cursor.trim_end();
             let before_dot = &trimmed[..trimmed.len() - 1].trim_end();
 
-            // Simple check for string literal at end
+            // Check for string literal at end
             if before_dot.ends_with('"') || before_dot.ends_with('\'') {
-                // Assume string
                 manual_target = Some(Value::String(String::new()));
-            } else if before_dot.ends_with("[]") {
-                // Assume list
-                manual_target = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
-            } else if before_dot.ends_with("{}") {
-                // Assume dict
+            }
+            // Check for list literal or index access
+            else if before_dot.ends_with(']') {
+                // Scan backwards to find matching [
+                let mut balance = 0;
+                let mut idx = before_dot.len();
+                let chars: Vec<char> = before_dot.chars().collect();
+                let mut found_open = false;
+
+                for i in (0..chars.len()).rev() {
+                    match chars[i] {
+                        ']' => balance += 1,
+                        '[' => {
+                            balance -= 1;
+                            if balance == 0 {
+                                idx = i;
+                                found_open = true;
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                if found_open {
+                    // Check character before [
+                    let mut is_index_access = false;
+                    if idx > 0 {
+                        let prev = chars[idx - 1];
+                        if prev.is_alphanumeric() || prev == '_' {
+                            is_index_access = true;
+                        }
+                    }
+
+                    if !is_index_access {
+                        // Likely a list literal [1, 2]
+                        manual_target = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                    }
+                }
+            }
+            // Check for dict/set literal
+            else if before_dot.ends_with('}') {
+                // Assume dict for now (sets are less common for method calls, and dict is safer default)
                 manual_target = Some(Value::Dictionary(Arc::new(RwLock::new(BTreeMap::new()))));
-            } else {
+            }
+            else {
                 // Assume identifier
                 let last_word = before_dot
                     .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
                     .next_back()
                     .unwrap_or("");
+
                 if !last_word.is_empty() {
                     if let Ok(val) = self.lookup_variable(last_word, Span::new(0, 0, 0)) {
                         manual_target = Some(val);
@@ -450,7 +489,40 @@ impl Interpreter {
                             }
                             TokenKind::RBracket => {
                                 // Assume List
-                                target_val = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                                let mut is_index_access = false;
+                                // Check token before matching LBracket
+                                // Since we don't have AST, we have to scan back tokens
+                                let mut balance = 0;
+                                let mut idx = meaningful_tokens.len() - 2; // Start at RBracket
+                                let mut found_open = false;
+
+                                for i in (0..=idx).rev() {
+                                    match meaningful_tokens[i].kind {
+                                        TokenKind::RBracket => balance += 1,
+                                        TokenKind::LBracket => {
+                                            balance -= 1;
+                                            if balance == 0 {
+                                                idx = i;
+                                                found_open = true;
+                                                break;
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                if found_open && idx > 0 {
+                                    match meaningful_tokens[idx - 1].kind {
+                                        TokenKind::Identifier(_) | TokenKind::RBracket | TokenKind::RParen | TokenKind::String(_) => {
+                                            is_index_access = true;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                if !is_index_access {
+                                    target_val = Some(Value::List(Arc::new(RwLock::new(Vec::new()))));
+                                }
                             }
                             TokenKind::RBrace => {
                                 // Assume Dictionary (could be Set, but Dict is safer default)
