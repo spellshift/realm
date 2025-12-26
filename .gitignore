@@ -13,6 +13,10 @@
 # Build artifacts
 dist/**
 
+# Playwright E2E Test Results
+tests/e2e/test-results/**
+tests/e2e/playwright-report/**
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
