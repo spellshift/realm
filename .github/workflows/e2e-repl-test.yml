@@ -12,10 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v4
-
+    - uses: actions/checkout@v5
     - name: ⚡ Setup Golang
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
         cache: true
@@ -79,13 +78,6 @@ jobs:
       run: |
         npm ci
         npx playwright install --with-deps chromium
-    - name: Debug
-      run: |
-        echo "Tavern Status:"
-        curl -s http://localhost:8000/status | jq .
-        echo "Agent Log Tail:"
-        tail -n 20 implants/imixv2/agent.log
-        curl -X POST -H "Content-Type: application/json" -d '{"query": "query { beacons { edges { node { id createdAt lastSeenAt shells { edges { node { id } } } tasks { edges { node { createdAt execStartedAt execFinishedAt quest { tome { name } } } } } } } } }"}' http://localhost:8000/graphql | jq
     - name: 🧪 Run E2E Tests
       working-directory: tests/e2e
       run: |
