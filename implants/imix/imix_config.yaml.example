@@ -40,7 +40,7 @@ callbacks:
     retry_interval: 5     # Retry after 5 seconds on error
 
   # Secondary callback - HTTP/1.1 fallback with different timing and proxy
-  - uri: "http://tavern.example.com:8000"
+  - uri: "http1://tavern.example.com:8000"
     interval: 30          # Check every 30 seconds
     retry_interval: 15    # Retry after 15 seconds on error
     proxy_uri: "http://proxy.example.com:8080"  # Optional: HTTP(S) proxy (http1/grpc only)

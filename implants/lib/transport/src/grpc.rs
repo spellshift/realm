@@ -44,26 +44,10 @@ impl Transport for GRPC {
             .find(|param| param.starts_with("doh="))
             .and_then(|param| param.strip_prefix("doh="));
 
-        // Create the endpoint without the doh query parameter
-        let clean_callback = if doh_provider.is_some() && !query.is_empty() {
-            // Remove doh parameter from query string
-            let remaining_params: Vec<&str> = query
-                .split('&')
-                .filter(|param| !param.starts_with("doh="))
-                .collect();
+        // Extract the base URI (before query parameters)
+        let base_uri = callback.split('?').next().unwrap_or(&callback);
 
-            if remaining_params.is_empty() {
-                // No other params, remove the ? as well
-                callback.split('?').next().unwrap().to_string()
-            } else {
-                // Keep other params
-                format!("{}?{}", callback.split('?').next().unwrap(), remaining_params.join("&"))
-            }
-        } else {
-            callback.clone()
-        };
-
-        let endpoint = tonic::transport::Endpoint::from_shared(clean_callback)?;
+        let endpoint = tonic::transport::Endpoint::from_shared(base_uri.to_string())?;
 
         // Create HTTP connector based on DoH configuration
         let mut http = if let Some(provider_str) = doh_provider {

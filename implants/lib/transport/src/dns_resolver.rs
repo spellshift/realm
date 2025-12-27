@@ -1,7 +1,6 @@
 //! DNS resolution module for gRPC transport
 //!
 //! This module provides DNS-over-HTTPS (DoH) support for gRPC connections.
-//! DoH is now configured at runtime via the doh_provider parameter.
 
 pub mod doh {
     use hickory_resolver::config::{ResolverConfig, ResolverOpts};
