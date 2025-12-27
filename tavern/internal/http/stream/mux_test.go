@@ -170,15 +170,16 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	mux.Register(monitor)
 	defer mux.Unregister(monitor)
 
-	// Send messages out of order: 2, 0, 1
+	// Send messages in an order that respects the new "Late Join" logic.
+	// We must send the anchor (0) first so the stream knows where it starts.
 	orderKey := "session1"
 	messages := []struct {
 		body  string
 		index int
 	}{
-		{"C", 2},
-		{"A", 0},
-		{"B", 1},
+		{"A", 0}, // Anchor
+		{"C", 2}, // Out of order, will buffer
+		{"B", 1}, // Fills gap
 	}
 
 	for _, m := range messages {
@@ -196,8 +197,6 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	}
 
 	// Wait for monitor to receive all 3 messages.
-	// Monitor (Stream) performs its own reordering, so it should see A, B, C.
-	// But we really care about what's in Mux History.
 	received := ""
 	for i := 0; i < 3; i++ {
 		select {
