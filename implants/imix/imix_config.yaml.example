@@ -1,0 +1,82 @@
+# Imix Build Configuration Example
+# Copy this file to imix_config.yaml and customize for your deployment
+#
+# All fields are optional. If not specified, the build process will use:
+# 1. Environment variables (e.g., IMIX_CALLBACK_URI)
+# 2. Default values
+#
+# To use a custom config file location, set IMIX_BUILD_CONFIG environment variable:
+#   export IMIX_BUILD_CONFIG=/path/to/my/config.yaml
+
+# URI for initial callbacks (must specify a scheme)
+# Valid schemes: http://, https://, dns://
+# Default: http://127.0.0.1:8000
+callback_uri: "http://tavern.example.com:8000"
+
+# The public key for the tavern server
+# Obtain from server using: curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+# If not specified, the build will attempt to fetch it automatically
+# Required when using redirectors
+server_pubkey: "your-base64-encoded-server-public-key-here"
+
+# Duration between callbacks, in seconds
+# Default: 5
+callback_interval: 10
+
+# Duration to wait before restarting the agent loop if an error occurs, in seconds
+# Default: 5
+retry_interval: 10
+
+# Override system settings for proxy URI over HTTP(S)
+# Must specify a scheme (e.g., http://, https://)
+# If not specified, system proxy settings will be used (Linux only)
+proxy_uri: "http://proxy.example.com:8080"
+
+# Manually specify the host ID for this beacon
+# This supersedes the file on disk
+# Useful for avoiding disk writes
+# host_id: "custom-host-identifier"
+
+# Imix will only do one callback and execution of queued tasks
+# May want to pair with runtime environment variable IMIX_BEACON_ID
+# Default: false
+run_once: false
+
+# Feature flags for conditional compilation
+# Valid values:
+#   - grpc: Default gRPC transport (included by default)
+#   - http1: Use HTTP/1.1 instead of HTTP/2 (requires http redirector)
+#   - dns: Use DNS transport (requires dns redirector)
+#   - transport-grpc-doh: Enable DNS over HTTPS for gRPC transport
+#   - win_service: Enable Windows service support
+#
+# Note: When using http1 or dns, you typically want to exclude grpc
+# Example for DNS transport:
+#   features:
+#     - dns
+#
+# Example for HTTP/1.1 transport:
+#   features:
+#     - http1
+#
+# Example for gRPC with DNS over HTTPS:
+#   features:
+#     - grpc
+#     - transport-grpc-doh
+features:
+  - grpc
+
+# DNS Transport Configuration Examples:
+# When using DNS transport, configure callback_uri with the dns:// scheme:
+#
+# Use specific DNS server with TXT records (default):
+#   callback_uri: "dns://8.8.8.8:53?domain=c2.example.com"
+#
+# Use system resolver with fallbacks:
+#   callback_uri: "dns://*?domain=c2.example.com"
+#
+# Use multiple DNS servers with A records:
+#   callback_uri: "dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a"
+#
+# Use AAAA records:
+#   callback_uri: "dns://8.8.8.8:53?domain=c2.example.com&type=aaaa"
