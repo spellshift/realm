@@ -74,16 +74,26 @@ var (
 
 	// EnvGCPProjectID represents the project id tavern is deployed in for Google Cloud Platform deployments (leave empty otherwise).
 	// EnvGCPPubsubKeepAliveIntervalMs is the interval to publish no-op pubsub messages to help avoid gcppubsub coldstart latency. 0 disables this feature.
+	EnvGCPProjectID                 = EnvString{"GCP_PROJECT_ID", ""}
+	EnvGCPPubsubKeepAliveIntervalMs = EnvInteger{"GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS", 1000}
+
 	// EnvPubSubTopicShellInput defines the topic to publish shell input to.
 	// EnvPubSubSubscriptionShellInput defines the subscription to receive shell input from.
 	// EnvPubSubTopicShellOutput defines the topic to publish shell output to.
 	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
-	EnvGCPProjectID                  = EnvString{"GCP_PROJECT_ID", ""}
-	EnvGCPPubsubKeepAliveIntervalMs  = EnvInteger{"GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS", 1000}
 	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
 	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
+
+	// EnvPubSubTopicPortalInput defines the topic to publish portal input to.
+	// EnvPubSubSubscriptionPortalInput defines the subscription to receive portal input from.
+	// EnvPubSubTopicPortalOutput defines the topic to publish portal output to.
+	// EnvPubSubSubscriptionPortalOutput defines the subscription to receive portal output from.
+	EnvPubSubTopicPortalInput         = EnvString{"PUBSUB_TOPIC_PORTAL_INPUT", "mem://portal_input"}
+	EnvPubSubSubscriptionPortalInput  = EnvString{"PUBSUB_SUBSCRIPTION_PORTAL_INPUT", "mem://portal_input"}
+	EnvPubSubTopicPortalOutput        = EnvString{"PUBSUB_TOPIC_PORTAL_OUTPUT", "mem://portal_output"}
+	EnvPubSubSubscriptionPortalOutput = EnvString{"PUBSUB_SUBSCRIPTION_PORTAL_OUTPUT", "mem://portal_output"}
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
@@ -146,6 +156,109 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+// NewPortalMuxes configures two stream.Mux instances for portal i/o.
+// The clientMux will be used by users to subscribe to portal output and publish new input.
+// The relayMux will be used by agents to subscribe to portal input and publish new output.
+func (cfg *Config) NewPortalMuxes(ctx context.Context) (clientMux *stream.Mux, relayMux *stream.Mux) {
+	var (
+		projectID         = EnvGCPProjectID.String()
+		gcpTopicPrefix    = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
+		topicPortalInput  = EnvPubSubTopicPortalInput.String()
+		topicPortalOutput = EnvPubSubTopicPortalOutput.String()
+		subPortalInput    = EnvPubSubSubscriptionPortalInput.String()
+		subPortalOutput   = EnvPubSubSubscriptionPortalOutput.String()
+	)
+
+	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
+	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
+	// appropriate input/output from shells. For more information, see the information here:
+	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
+	if strings.HasPrefix(subPortalInput, "gcppubsub://") && strings.HasPrefix(subPortalOutput, "gcppubsub://") {
+		if projectID == "" {
+			log.Fatalf("[FATAL] must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
+		}
+
+		client, err := gcppubsub.NewClient(ctx, projectID)
+		if err != nil {
+			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
+		}
+		defer client.Close()
+
+		createGCPSubscription := func(ctx context.Context, topic *gcppubsub.Topic) string {
+			name := fmt.Sprintf("%s-sub_%s", topic.ID(), GlobalInstanceID)
+
+			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
+				Topic:            topic,
+				AckDeadline:      10 * time.Second,
+				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
+			})
+			if err != nil {
+				panic(fmt.Errorf(
+					"failed to create gcppubsub subscription (topic=%q,subscription_name=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v",
+					topic.ID(),
+					name,
+					EnvPubSubSubscriptionPortalInput.Key,
+					err,
+				))
+			}
+			exists, err := sub.Exists(ctx)
+			if err != nil {
+				panic(fmt.Errorf("failed to check if gcppubsub subscription was successfully created: %w", err))
+			}
+			if !exists {
+				panic(fmt.Errorf("failed to create gcppubsub subscription, it does not exist! name=%q", name))
+			}
+			return name
+		}
+
+		portalInputTopic := client.Topic(strings.TrimPrefix(topicPortalInput, gcpTopicPrefix))
+		portalOutputTopic := client.Topic(strings.TrimPrefix(topicPortalOutput, gcpTopicPrefix))
+
+		// Overwrite env var specification with newly created GCP PubSub Subscriptions
+		subPortalInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, portalInputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for portal input", "subscription_name", subPortalInput)
+		subPortalOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, portalOutputTopic))
+		slog.DebugContext(ctx, "created GCP PubSub subscription for portal output", "subscription_name", subPortalOutput)
+
+		// Start a goroutine to publish noop messages on an interval.
+		// This reduces cold-start latency for GCP PubSub which can improve shell user experience.
+		if interval := EnvGCPPubsubKeepAliveIntervalMs.Int(); interval > 0 {
+			go stream.PreventPubSubColdStarts(
+				ctx,
+				time.Duration(interval)*time.Millisecond,
+				topicPortalOutput,
+				topicPortalInput,
+			)
+		}
+	}
+
+	pubOutput, err := pubsub.OpenTopic(ctx, topicPortalOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicPortalOutput, err)
+	}
+
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for portal output", "subscription_name", subPortalOutput)
+	subOutput, err := pubsub.OpenSubscription(ctx, subPortalOutput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subPortalOutput, err)
+	}
+
+	pubInput, err := pubsub.OpenTopic(ctx, topicPortalInput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicPortalInput, err)
+	}
+
+	slog.DebugContext(ctx, "opening GCP PubSub subscription for portal input", "subscription_name", subPortalInput)
+	subInput, err := pubsub.OpenSubscription(ctx, subPortalInput)
+	if err != nil {
+		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subPortalInput, err)
+	}
+
+	clientMux = stream.NewMux(pubInput, subOutput)
+	relayMux = stream.NewMux(pubOutput, subInput)
+	return
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.

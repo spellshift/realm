@@ -17,14 +17,16 @@ type Server struct {
 	MaxFileChunkSize uint64
 	graph            *ent.Client
 	mux              *stream.Mux
+	portalRelayMux   *stream.Mux
 	c2pb.UnimplementedC2Server
 }
 
-func New(graph *ent.Client, mux *stream.Mux) *Server {
+func New(graph *ent.Client, mux *stream.Mux, portalRelayMux *stream.Mux) *Server {
 	return &Server{
 		MaxFileChunkSize: 1024 * 1024, // 1 MB
 		graph:            graph,
 		mux:              mux,
+		portalRelayMux:   portalRelayMux,
 	}
 }
 

@@ -26,7 +26,7 @@ const (
 	C2_ReportProcessList_FullMethodName = "/c2.C2/ReportProcessList"
 	C2_ReportTaskOutput_FullMethodName  = "/c2.C2/ReportTaskOutput"
 	C2_ReverseShell_FullMethodName      = "/c2.C2/ReverseShell"
-	C2_SummonPortal_FullMethodName      = "/c2.C2/SummonPortal"
+	C2_ConjurePortal_FullMethodName     = "/c2.C2/ConjurePortal"
 )
 
 // C2Client is the client API for C2 service.
@@ -61,7 +61,7 @@ type C2Client interface {
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error)
 	// Open a portal bi-directional stream.
-	SummonPortal(ctx context.Context, opts ...grpc.CallOption) (C2_SummonPortalClient, error)
+	ConjurePortal(ctx context.Context, opts ...grpc.CallOption) (C2_ConjurePortalClient, error)
 }
 
 type c2Client struct {
@@ -212,32 +212,32 @@ func (x *c2ReverseShellClient) Recv() (*ReverseShellResponse, error) {
 	return m, nil
 }
 
-func (c *c2Client) SummonPortal(ctx context.Context, opts ...grpc.CallOption) (C2_SummonPortalClient, error) {
+func (c *c2Client) ConjurePortal(ctx context.Context, opts ...grpc.CallOption) (C2_ConjurePortalClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[3], C2_SummonPortal_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[3], C2_ConjurePortal_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &c2SummonPortalClient{ClientStream: stream}
+	x := &c2ConjurePortalClient{ClientStream: stream}
 	return x, nil
 }
 
-type C2_SummonPortalClient interface {
-	Send(*SummonPortalRequest) error
-	Recv() (*SummonPortalResponse, error)
+type C2_ConjurePortalClient interface {
+	Send(*ConjurePortalRequest) error
+	Recv() (*ConjurePortalResponse, error)
 	grpc.ClientStream
 }
 
-type c2SummonPortalClient struct {
+type c2ConjurePortalClient struct {
 	grpc.ClientStream
 }
 
-func (x *c2SummonPortalClient) Send(m *SummonPortalRequest) error {
+func (x *c2ConjurePortalClient) Send(m *ConjurePortalRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *c2SummonPortalClient) Recv() (*SummonPortalResponse, error) {
-	m := new(SummonPortalResponse)
+func (x *c2ConjurePortalClient) Recv() (*ConjurePortalResponse, error) {
+	m := new(ConjurePortalResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -276,7 +276,7 @@ type C2Server interface {
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(C2_ReverseShellServer) error
 	// Open a portal bi-directional stream.
-	SummonPortal(C2_SummonPortalServer) error
+	ConjurePortal(C2_ConjurePortalServer) error
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -305,8 +305,8 @@ func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutput
 func (UnimplementedC2Server) ReverseShell(C2_ReverseShellServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReverseShell not implemented")
 }
-func (UnimplementedC2Server) SummonPortal(C2_SummonPortalServer) error {
-	return status.Errorf(codes.Unimplemented, "method SummonPortal not implemented")
+func (UnimplementedC2Server) ConjurePortal(C2_ConjurePortalServer) error {
+	return status.Errorf(codes.Unimplemented, "method ConjurePortal not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -466,26 +466,26 @@ func (x *c2ReverseShellServer) Recv() (*ReverseShellRequest, error) {
 	return m, nil
 }
 
-func _C2_SummonPortal_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(C2Server).SummonPortal(&c2SummonPortalServer{ServerStream: stream})
+func _C2_ConjurePortal_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(C2Server).ConjurePortal(&c2ConjurePortalServer{ServerStream: stream})
 }
 
-type C2_SummonPortalServer interface {
-	Send(*SummonPortalResponse) error
-	Recv() (*SummonPortalRequest, error)
+type C2_ConjurePortalServer interface {
+	Send(*ConjurePortalResponse) error
+	Recv() (*ConjurePortalRequest, error)
 	grpc.ServerStream
 }
 
-type c2SummonPortalServer struct {
+type c2ConjurePortalServer struct {
 	grpc.ServerStream
 }
 
-func (x *c2SummonPortalServer) Send(m *SummonPortalResponse) error {
+func (x *c2ConjurePortalServer) Send(m *ConjurePortalResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *c2SummonPortalServer) Recv() (*SummonPortalRequest, error) {
-	m := new(SummonPortalRequest)
+func (x *c2ConjurePortalServer) Recv() (*ConjurePortalRequest, error) {
+	m := new(ConjurePortalRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -534,8 +534,8 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "SummonPortal",
-			Handler:       _C2_SummonPortal_Handler,
+			StreamName:    "ConjurePortal",
+			Handler:       _C2_ConjurePortal_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

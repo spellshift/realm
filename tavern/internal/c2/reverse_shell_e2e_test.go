@@ -63,7 +63,7 @@ func TestReverseShell_E2E(t *testing.T) {
 	go wsMux.Start(ctx)
 	go grpcMux.Start(ctx)
 
-	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux))
+	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, nil))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			t.Logf("Server exited with error: %v", err)

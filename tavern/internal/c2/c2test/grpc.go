@@ -47,10 +47,23 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	require.NoError(t, err)
 	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
 
+	// Portals
+	var (
+		portalPubOutput = "mem://portal_output"
+		portalSubInput  = "mem://portal_input"
+	)
+	portalOutTopic, err := pubsub.OpenTopic(ctx, portalPubOutput)
+	require.NoError(t, err)
+	_, err = pubsub.OpenTopic(ctx, portalSubInput)
+	require.NoError(t, err)
+	portalInSub, err := pubsub.OpenSubscription(ctx, portalSubInput)
+	require.NoError(t, err)
+	relayPortalMux := stream.NewMux(portalOutTopic, portalInSub)
+
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, relayPortalMux))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

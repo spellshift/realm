@@ -138,22 +138,13 @@ message ReverseShellResponse{
     bytes data = 2;
 }
 
-message SummonPortalRequest {
+message ConjurePortalRequest {
     int64 task_id = 1;
-    oneof payload {
-        portal.UDPMessage udp = 2;
-        portal.TCPMessage tcp = 3;
-        portal.BytesMessage bytes = 4;
-    }
+    portal.Payload payload = 2;
 }
-message SummonPortalResponse {
-    oneof payload {
-        portal.UDPMessage udp = 2;
-        portal.TCPMessage tcp = 3;
-        portal.BytesMessage bytes = 4;
-    };
+message ConjurePortalResponse {
+    portal.Payload payload = 2;
 }
-
 
 /*
  * Service
@@ -211,5 +202,5 @@ service C2 {
     /*
      * Open a portal bi-directional stream.
      */
-    rpc SummonPortal(stream SummonPortalRequest) returns (stream SummonPortalResponse) {}
+    rpc ConjurePortal(stream ConjurePortalRequest) returns (stream ConjurePortalResponse) {}
 }

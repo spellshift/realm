@@ -26,3 +26,27 @@ message BytesMessage {
     bytes data = 1;
     BytesMessageKind kind = 2;
 }
+
+message Payload {
+    oneof payload {
+        UDPMessage udp = 1;
+        TCPMessage tcp = 2;
+        BytesMessage bytes = 3;
+    }
+}
+
+message InvokePortalRequest {
+    int64 portal_id = 1;
+    Payload payload = 2;
+}
+message InvokePortalResponse {
+    Payload payload = 2;
+}
+
+/*
+ * Service
+ */
+
+service Portal {
+    rpc InvokePortal(stream InvokePortalRequest) returns (stream InvokePortalResponse) {}
+}
