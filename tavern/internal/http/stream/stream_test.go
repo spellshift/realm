@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -12,15 +13,20 @@ import (
 	_ "gocloud.dev/pubsub/mempubsub"
 )
 
+func newTopicName(base string) string {
+	return fmt.Sprintf("mem://%s-%d", base, rand.Int())
+}
+
 func TestStream_SendMessage(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://stream-test-send")
+	topicName := newTopicName("stream-test-send")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://stream-test-send")
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -46,7 +52,16 @@ func TestStream_MessageOrdering(t *testing.T) {
 
 	stream := New("ordering-stream")
 	go func() {
-		// Send messages out of order
+		// Send 0 first to anchor the stream
+		stream.processOneMessage(ctx, &pubsub.Message{
+			Body: []byte("message 0"),
+			Metadata: map[string]string{
+				"id":               "ordering-stream",
+				metadataOrderKey:   "test-key",
+				metadataOrderIndex: "0",
+			},
+		})
+		// Then send 2 (buffered)
 		stream.processOneMessage(ctx, &pubsub.Message{
 			Body: []byte("message 2"),
 			Metadata: map[string]string{
@@ -55,20 +70,13 @@ func TestStream_MessageOrdering(t *testing.T) {
 				metadataOrderIndex: "2",
 			},
 		})
+		// Then send 1 (fills gap)
 		stream.processOneMessage(ctx, &pubsub.Message{
 			Body: []byte("message 1"),
 			Metadata: map[string]string{
 				"id":               "ordering-stream",
 				metadataOrderKey:   "test-key",
 				metadataOrderIndex: "1",
-			},
-		})
-		stream.processOneMessage(ctx, &pubsub.Message{
-			Body: []byte("message 0"),
-			Metadata: map[string]string{
-				"id":               "ordering-stream",
-				metadataOrderKey:   "test-key",
-				metadataOrderIndex: "0",
 			},
 		})
 	}()
@@ -82,6 +90,32 @@ func TestStream_MessageOrdering(t *testing.T) {
 		case <-time.After(1 * time.Second):
 			t.Fatalf("timed out waiting for message %d", i)
 		}
+	}
+}
+
+func TestStream_LateJoin(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	stream := New("late-join-stream")
+	go func() {
+		// Simulate joining late: receive message 10 first
+		stream.processOneMessage(ctx, &pubsub.Message{
+			Body: []byte("message 10"),
+			Metadata: map[string]string{
+				"id":               "late-join-stream",
+				metadataOrderKey:   "test-key",
+				metadataOrderIndex: "10",
+			},
+		})
+	}()
+
+	select {
+	case msg := <-stream.Messages():
+		assert.Equal(t, "message 10", string(msg.Body))
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for message 10 (late join failed)")
 	}
 }
 
