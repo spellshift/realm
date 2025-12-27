@@ -29,56 +29,37 @@
 # ============================================================================
 # CALLBACKS CONFIGURATION
 # ============================================================================
-# You can specify callbacks in two formats:
-#
-# 1. NEW FORMAT (recommended): List of callbacks with individual settings
-# 2. LEGACY FORMAT: Single callback with global interval/retry settings
-#
-# The new format takes precedence if both are specified.
+# Callbacks are specified as a list of callback configurations.
+# Each callback can have its own URI, interval, retry_interval, and proxy_uri.
 
-# --- NEW FORMAT: Multiple Callbacks ---
-# Each callback can have its own URI, interval, and retry_interval
+# Multiple Callbacks with individual settings
 callbacks:
   # Primary callback - DNS transport with custom intervals
   - uri: "dns://8.8.8.8:53?domain=c2.example.com&type=txt"
     interval: 10          # Check every 10 seconds
     retry_interval: 5     # Retry after 5 seconds on error
 
-  # Secondary callback - HTTP fallback with different timing
+  # Secondary callback - HTTP fallback with different timing and proxy
   - uri: "http://tavern.example.com:8000"
     interval: 30          # Check every 30 seconds
     retry_interval: 15    # Retry after 15 seconds on error
+    proxy_uri: "http://proxy.example.com:8080"  # Optional: HTTP(S) proxy (http1/grpc only)
 
   # Tertiary callback - HTTPS with longer intervals
   - uri: "https://backup.example.com:443"
     interval: 60          # Check every 60 seconds
     retry_interval: 30    # Retry after 30 seconds on error
 
-# --- LEGACY FORMAT: Single Callback (for backward compatibility) ---
-# Uncomment these and comment out the 'callbacks' section above to use legacy format
-#
-# callback_uri: "http://tavern.example.com:8000"
-# callback_interval: 10
-# retry_interval: 10
-
 # ============================================================================
 # SERVER CONFIGURATION
 # ============================================================================
 
 # The public key for the tavern server
-# Obtain from server using: curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+# This is the first HTTPS callback URI in the callbacks list
+# Obtain from server using: curl https://your-server/status | jq -r '.Pubkey'
 # If not specified, the build will attempt to fetch it automatically
 # Required when using redirectors
 server_pubkey: "your-base64-encoded-server-public-key-here"
-
-# ============================================================================
-# NETWORK CONFIGURATION
-# ============================================================================
-
-# Override system settings for proxy URI over HTTP(S)
-# Must specify a scheme (e.g., http://, https://)
-# If not specified, system proxy settings will be used (Linux only)
-proxy_uri: "http://proxy.example.com:8080"
 
 # ============================================================================
 # BEACON CONFIGURATION
@@ -100,46 +81,39 @@ run_once: false
 
 # Feature flags for conditional compilation
 # Valid values:
-#   - grpc: Default gRPC transport (included by default)
+#   - grpc: Default gRPC transport
 #   - http1: Use HTTP/1.1 instead of HTTP/2 (requires http redirector)
 #   - dns: Use DNS transport (requires dns redirector)
 #   - transport-grpc-doh: Enable DNS over HTTPS for gRPC transport
 #   - win_service: Enable Windows service support
 #
-# Note: When using http1 or dns, you typically want to exclude grpc
-# Example for DNS transport:
-#   features:
-#     - dns
-#
-# Example for HTTP/1.1 transport:
-#   features:
-#     - http1
-#
-# Example for gRPC with DNS over HTTPS:
-#   features:
-#     - grpc
-#     - transport-grpc-doh
+# By default, all transports are included for maximum flexibility
+# You can customize this list to include only the transports you need
 features:
   - grpc
+  - http1
+  - dns
 
 # ============================================================================
 # CONFIGURATION EXAMPLES
 # ============================================================================
 
-# --- Example 1: Simple single callback (legacy format) ---
-# callbacks: null
-# callback_uri: "http://tavern.example.com:8000"
-# callback_interval: 10
-# retry_interval: 5
+# --- Example 1: Simple single callback ---
+# callbacks:
+#   - uri: "http://tavern.example.com:8000"
+#     interval: 10
+#     retry_interval: 5
 
-# --- Example 2: Multiple HTTP/HTTPS callbacks with failover ---
+# --- Example 2: Multiple HTTP/HTTPS callbacks with failover and proxies ---
 # callbacks:
 #   - uri: "https://primary.example.com:443"
 #     interval: 15
 #     retry_interval: 5
+#     proxy_uri: "http://proxy1.example.com:8080"
 #   - uri: "https://backup1.example.com:443"
 #     interval: 30
 #     retry_interval: 10
+#     proxy_uri: "http://proxy2.example.com:8080"
 #   - uri: "https://backup2.example.com:443"
 #     interval: 60
 #     retry_interval: 20
@@ -161,6 +135,7 @@ features:
 #   - uri: "http://fallback.example.com:8000"
 #     interval: 60
 #     retry_interval: 30
+#     proxy_uri: "http://proxy.example.com:8080"
 
 # --- Example 5: Single callback with optional intervals ---
 # Intervals will use defaults if not specified

@@ -16,6 +16,12 @@ struct CallbackConfig {
     /// Default: `5`
     #[serde(skip_serializing_if = "Option::is_none")]
     retry_interval: Option<u32>,
+
+    /// Override system settings for proxy URI over HTTP(S)
+    /// Only supported for http1 and grpc transports
+    /// (must specify a scheme, e.g. `https://`)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    proxy_uri: Option<String>,
 }
 
 /// Build configuration structure matching the environment variables
@@ -23,36 +29,15 @@ struct CallbackConfig {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 struct ImixBuildConfig {
-    /// List of callback configurations (new format)
-    /// Each callback can have its own URI, interval, and retry_interval
+    /// List of callback configurations
+    /// Each callback can have its own URI, interval, retry_interval, and proxy_uri
     #[serde(skip_serializing_if = "Option::is_none")]
     callbacks: Option<Vec<CallbackConfig>>,
-
-    /// URI for initial callbacks (legacy single callback format)
-    /// (must specify a scheme, e.g. `http://` or `dns://`)
-    /// Default: `http://127.0.0.1:8000`
-    #[serde(skip_serializing_if = "Option::is_none")]
-    callback_uri: Option<String>,
 
     /// The public key for the tavern server
     /// (obtain from server using `curl $IMIX_CALLBACK_URI/status`)
     #[serde(skip_serializing_if = "Option::is_none")]
     server_pubkey: Option<String>,
-
-    /// Duration between callbacks, in seconds (legacy format)
-    /// Default: `5`
-    #[serde(skip_serializing_if = "Option::is_none")]
-    callback_interval: Option<u32>,
-
-    /// Duration to wait before restarting the agent loop if an error occurs, in seconds (legacy format)
-    /// Default: `5`
-    #[serde(skip_serializing_if = "Option::is_none")]
-    retry_interval: Option<u32>,
-
-    /// Override system settings for proxy URI over HTTP(S)
-    /// (must specify a scheme, e.g. `https://`)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    proxy_uri: Option<String>,
 
     /// Manually specify the host ID for this beacon
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -77,29 +62,38 @@ fn parse_yaml_build_config(yaml_content: &str) -> Result<ImixBuildConfig, Box<dy
 
 /// Apply build configuration by setting cargo environment variables
 fn apply_build_config(config: &ImixBuildConfig) {
-    // Handle callbacks - new format takes precedence over legacy format
+    // Handle callbacks
     if let Some(ref callbacks) = config.callbacks {
         if !callbacks.is_empty() {
+            // Validate proxy_uri is only set for supported transports
+            for callback in callbacks {
+                if let Some(ref proxy_uri) = callback.proxy_uri {
+                    let uri_lower = callback.uri.to_lowercase();
+                    if uri_lower.starts_with("dns://") {
+                        panic!(
+                            "cargo:error=proxy_uri is not supported for DNS callbacks. \
+                            Callback URI: {}, proxy_uri: {}. \
+                            Only http:// and https:// (grpc/http1) callbacks support proxy_uri.",
+                            callback.uri, proxy_uri
+                        );
+                    }
+                }
+            }
+
             // Serialize callbacks list as YAML for runtime consumption
             match serde_yaml::to_string(callbacks) {
                 Ok(yaml) => {
                     println!("cargo:rustc-env=IMIX_CALLBACKS={}", yaml);
                     println!("cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)", callbacks.len());
 
-                    // Also set the first callback as the primary for backward compatibility
-                    if let Some(first) = callbacks.first() {
-                        println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", first.uri);
-                        println!("cargo:warning=Setting IMIX_CALLBACK_URI={} (primary)", first.uri);
+                    // Find first https:// callback to set as IMIX_CALLBACK_URI
+                    let https_callback = callbacks.iter().find(|cb| cb.uri.to_lowercase().starts_with("https://"));
 
-                        if let Some(interval) = first.interval {
-                            println!("cargo:rustc-env=IMIX_CALLBACK_INTERVAL={}", interval);
-                            println!("cargo:warning=Setting IMIX_CALLBACK_INTERVAL={} (primary)", interval);
-                        }
-
-                        if let Some(retry) = first.retry_interval {
-                            println!("cargo:rustc-env=IMIX_RETRY_INTERVAL={}", retry);
-                            println!("cargo:warning=Setting IMIX_RETRY_INTERVAL={} (primary)", retry);
-                        }
+                    if let Some(https_cb) = https_callback {
+                        println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", https_cb.uri);
+                        println!("cargo:warning=Setting IMIX_CALLBACK_URI={} (first https:// callback)", https_cb.uri);
+                    } else {
+                        println!("cargo:warning=No https:// callback found, IMIX_CALLBACK_URI not set");
                     }
                 }
                 Err(e) => {
@@ -107,33 +101,12 @@ fn apply_build_config(config: &ImixBuildConfig) {
                 }
             }
         }
-    } else {
-        // Legacy single callback format
-        if let Some(ref callback_uri) = config.callback_uri {
-            println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", callback_uri);
-            println!("cargo:warning=Setting IMIX_CALLBACK_URI={}", callback_uri);
-        }
-
-        if let Some(callback_interval) = config.callback_interval {
-            println!("cargo:rustc-env=IMIX_CALLBACK_INTERVAL={}", callback_interval);
-            println!("cargo:warning=Setting IMIX_CALLBACK_INTERVAL={}", callback_interval);
-        }
-
-        if let Some(retry_interval) = config.retry_interval {
-            println!("cargo:rustc-env=IMIX_RETRY_INTERVAL={}", retry_interval);
-            println!("cargo:warning=Setting IMIX_RETRY_INTERVAL={}", retry_interval);
-        }
     }
 
     // Set other configuration options
     if let Some(ref server_pubkey) = config.server_pubkey {
         println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", server_pubkey);
         println!("cargo:warning=Setting IMIX_SERVER_PUBKEY=(redacted for security)");
-    }
-
-    if let Some(ref proxy_uri) = config.proxy_uri {
-        println!("cargo:rustc-env=IMIX_PROXY_URI={}", proxy_uri);
-        println!("cargo:warning=Setting IMIX_PROXY_URI={}", proxy_uri);
     }
 
     if let Some(ref host_id) = config.host_id {
@@ -165,10 +138,29 @@ fn apply_build_config(config: &ImixBuildConfig) {
 }
 
 fn main() {
+    // Check for legacy environment variables
+    let has_legacy_callback_uri = env::var("IMIX_CALLBACK_URI").is_ok();
+    let has_legacy_callback_interval = env::var("IMIX_CALLBACK_INTERVAL").is_ok();
+    let has_legacy_retry_interval = env::var("IMIX_RETRY_INTERVAL").is_ok();
+    let has_legacy_proxy_uri = env::var("IMIX_PROXY_URI").is_ok();
+    let has_any_legacy = has_legacy_callback_uri || has_legacy_callback_interval
+                         || has_legacy_retry_interval || has_legacy_proxy_uri;
+
     // Try to read YAML configuration from environment variable
     if let Ok(yaml_content) = env::var("IMIX_BUILD_CONFIG") {
         println!("cargo:warning=Found IMIX_BUILD_CONFIG environment variable");
         println!("cargo:rerun-if-env-changed=IMIX_BUILD_CONFIG");
+
+        // Error if both YAML config and legacy env vars are set
+        if has_any_legacy {
+            panic!(
+                "Cannot use both IMIX_BUILD_CONFIG and legacy environment variables. \
+                Found IMIX_BUILD_CONFIG along with one or more of: \
+                IMIX_CALLBACK_URI, IMIX_CALLBACK_INTERVAL, IMIX_RETRY_INTERVAL, IMIX_PROXY_URI. \
+                Please use either the YAML configuration (IMIX_BUILD_CONFIG) or the individual \
+                environment variables, but not both."
+            );
+        }
 
         match parse_yaml_build_config(&yaml_content) {
             Ok(config) => {
@@ -176,14 +168,16 @@ fn main() {
                 apply_build_config(&config);
             }
             Err(e) => {
-                println!("cargo:warning=Failed to parse YAML build configuration: {}", e);
-                println!("cargo:warning=Continuing with default/environment variable configuration");
+                panic!("Failed to parse YAML build configuration: {}", e);
             }
         }
     } else {
         println!("cargo:warning=No IMIX_BUILD_CONFIG environment variable found");
-        println!("cargo:warning=Set IMIX_BUILD_CONFIG with YAML content to use YAML-based configuration");
-        println!("cargo:warning=Using individual environment variables for build configuration");
+        if has_any_legacy {
+            println!("cargo:warning=Using legacy individual environment variables for build configuration");
+        } else {
+            println!("cargo:warning=No configuration provided. Using defaults.");
+        }
     }
 
     // Windows-specific build configuration
