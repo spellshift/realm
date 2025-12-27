@@ -31,7 +31,7 @@ hyper-proxy = {version = "0.9.1", default-features = false, features = ["rustls"
 hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "webpki-roots"], optional = true }
 base32 = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
-url = { version = "2.5", optional = true }
+url = { workspace = true, optional = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }

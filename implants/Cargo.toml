@@ -127,6 +127,7 @@ tonic-build = { git = "https://github.com/hyperium/tonic.git", rev = "c783652" }
 trait-variant = "0.1.1"
 uuid = "1.5.0"
 static_vcruntime = "2.0"
+url = "2.5"
 which = "4.4.2"
 whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"
