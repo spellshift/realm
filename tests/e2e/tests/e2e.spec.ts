@@ -70,7 +70,10 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
   // Verify output.
   console.log('Verifying output');
   // xterm rows usually contain the text.
-  await expect(page.locator('.xterm-rows')).toContainText('Hello E2E', { timeout: 10000 });
+  // We expect the command echoed, output, and a new prompt.
+  // The prompt might contain trailing spaces or non-breaking spaces depending on rendering.
+  await expect(page.locator('.xterm-rows')).toContainText('Hello E2E');
+  await expect(page.locator('.xterm-rows')).toContainText('>>>');
 
   console.log('Test Complete');
 });
