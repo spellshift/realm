@@ -251,6 +251,20 @@ pub struct ReverseShellResponse {
     #[prost(bytes = "vec", tag = "2")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConjurePortalRequest {
+    #[prost(int64, tag = "1")]
+    pub task_id: i64,
+    #[prost(message, optional, tag = "2")]
+    pub payload: ::core::option::Option<super::portal::Payload>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConjurePortalResponse {
+    #[prost(message, optional, tag = "2")]
+    pub payload: ::core::option::Option<super::portal::Payload>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ReverseShellMessageKind {
@@ -548,6 +562,32 @@ pub mod c2_client {
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReverseShell");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReverseShell"));
+            self.inner.streaming(req, path, codec).await
+        }
+        ///
+        /// Open a portal bi-directional stream.
+        pub async fn conjure_portal(
+            &mut self,
+            request: impl tonic::IntoStreamingRequest<
+                Message = super::ConjurePortalRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::ConjurePortalResponse>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = crate::xchacha::ChachaCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ConjurePortal");
+            let mut req = request.into_streaming_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ConjurePortal"));
             self.inner.streaming(req, path, codec).await
         }
     }

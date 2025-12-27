@@ -85,8 +85,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
-    {
+        .compile(
+            &["eldritch.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/internal/portal/proto/",
+            ],
+        ) {
         Err(err) => {
             println!("WARNING: Failed to compile eldritch protos: {}", err);
             panic!("{}", err);
@@ -100,8 +105,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .codec_path("crate::xchacha::ChachaCodec")
         .build_server(false)
         .extern_path(".eldritch", "crate::eldritch")
-        .compile(&["c2.proto"], &["../../../tavern/internal/c2/proto/"])
-    {
+        .compile(
+            &["c2.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/internal/portal/proto/",
+            ],
+        ) {
         Err(err) => {
             println!("WARNING: Failed to compile c2 protos: {}", err);
             panic!("{}", err);
@@ -114,8 +124,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .out_dir("./src/generated")
         .build_server(false)
         .build_client(false)
-        .compile(&["dns.proto"], &["../../../tavern/internal/c2/proto/"])
-    {
+        .compile(
+            &["dns.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/internal/portal/proto/",
+            ],
+        ) {
         Err(err) => {
             println!("WARNING: Failed to compile dns protos: {}", err);
             panic!("{}", err);
