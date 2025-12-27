@@ -48,10 +48,6 @@ jobs:
             cd ..
           fi
 
-          # Copy history to processing dir
-          # (Ignore errors if empty)
-          cp flaky-history/*.json all-reports/ 2>/dev/null || true
-
           # Process current run artifacts
           # Rename to avoid collisions and track run ID
           # We expect files like ctrf-tavern-ubuntu-latest.json
@@ -76,7 +72,7 @@ jobs:
         with:
           report-path: 'all-reports/*.json'
           upload-artifact: true
-          fetch-previous-results: false # Using orphan branch instead
+          fetch-previous-results: true
           pull-request: false
           issue: ${{ steps.pr_info.outputs.pr_number }}
           overwrite-comment: true
