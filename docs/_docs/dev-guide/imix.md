@@ -91,29 +91,45 @@ pub use mac_address::MacAddress;
 
 ## Develop a New Transport
 
-We've tried to make Imix super extensible for transport development. In fact, all of the transport specific logic is complete abstracted from how Imix operates for callbacks/tome excution. For Imix all Transports live in the `realm/implants/lib/transport/src` directory.
+We've tried to make Imix super extensible for transport development. In fact, all of the transport specific logic is completely abstracted from how Imix operates for callbacks/tome execution. For Imix all Transports live in the `realm/implants/lib/transport/src` directory.
 
-If creating a new Transport create a new file in the directory and name it after the protocol you plan to use. For example, if writing a DNS Transport then call your file `dns.rs`. Then define your public struct where any connection state/clients will be. For example,
+### Current Available Transports
+
+Realm currently includes three transport implementations:
+
+- **`grpc`** - Default gRPC transport (with optional DoH support via `grpc-doh` feature)
+- **`http1`** - HTTP/1.1 transport
+- **`dns`** - DNS-based covert channel transport
+
+**Note:** Only one transport may be selected at compile time. The build will fail if multiple transport features are enabled simultaneously.
+
+### Creating a New Transport
+
+If creating a new Transport, create a new file in the `realm/implants/lib/transport/src` directory and name it after the protocol you plan to use. For example, if writing a new protocol called "Custom" then call your file `custom.rs`. Then define your public struct where any connection state/clients will be stored. For example,
 
 ```rust
 #[derive(Debug, Clone)]
-pub struct DNS {
-    dns_client: Option<hickory_dns::Client>
+pub struct Custom {
+    // Your connection state here
+    // e.g., client: Option<CustomClient>
 }
 ```
 
-NOTE: Depending on the struct you build, you may need to derive certain features, see above we derive `Debug` and `Clone`.
+**NOTE:** Your struct **must** derive `Clone` and `Send` as these are required by the Transport trait. Deriving `Debug` is also recommended for troubleshooting.
 
 Next, we need to implement the Transport trait for our new struct. This will look like:
 
 ```rust
-impl Transport for DNS {
+impl Transport for Custom {
     fn init() -> Self {
-        DNS{ dns_client: None }
+        Custom {
+            // Initialize your connection state here
+            // e.g., client: None
+        }
     }
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
         // TODO: setup connection/client hook in proxy, anything else needed
-        // before fuctions get called.
+        // before functions get called.
         Err(anyhow!("Unimplemented!"))
     }
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
@@ -169,20 +185,35 @@ impl Transport for DNS {
 
 NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/reciever while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currenlty it would just result in performance loss/less maintainable code.
 
-After you implement all the functions/write in a decent error message for operators to understand why the function call failed then you need to import the Transport to the broader lib scope. To do this open up `realm/implants/lib/transport/src/lib.rs` and add in your new Transport like so:
+After you implement all the functions and write descriptive error messages for operators to understand why function calls failed, you need to:
+
+#### 1. Add Compile-Time Exclusivity Checks
+
+In `realm/implants/lib/transport/src/lib.rs`, add compile-time checks to ensure your new transport cannot be compiled alongside others:
 
 ```rust
-// more stuff above
+// Add your transport to the mutual exclusivity checks
+#[cfg(all(feature = "grpc", feature = "custom"))]
+compile_error!("only one transport may be selected");
+#[cfg(all(feature = "http1", feature = "custom"))]
+compile_error!("only one transport may be selected");
+#[cfg(all(feature = "dns", feature = "custom"))]
+compile_error!("only one transport may be selected");
 
-#[cfg(feature = "dns")]
-mod dns;
-#[cfg(feature = "dns")]
-pub use dns::DNS as ActiveTransport;
+// ... existing checks above ...
 
-// more stuff below
+// Add your transport module and export
+#[cfg(feature = "custom")]
+mod custom;
+#[cfg(feature = "custom")]
+pub use custom::Custom as ActiveTransport;
 ```
 
-Also add your new feature to the Transport Cargo.toml at `realm/implants/lib/transport/Cargo.toml`.
+**Important:** The transport is exported as `ActiveTransport`, not by its type name. This allows the imix agent code to remain transport-agnostic.
+
+#### 2. Update Transport Library Dependencies
+
+Add your new feature and any required dependencies to `realm/implants/lib/transport/Cargo.toml`:
 
 ```toml
 # more stuff above
@@ -190,23 +221,65 @@ Also add your new feature to the Transport Cargo.toml at `realm/implants/lib/tra
 [features]
 default = []
 grpc = []
-dns = [] # <-- see here
+grpc-doh = ["grpc", "dep:hickory-resolver"]
+http1 = []
+dns = ["dep:data-encoding", "dep:rand"]
+custom = ["dep:your-custom-dependency"] # <-- Add your feature here
 mock = ["dep:mockall"]
+
+[dependencies]
+# ... existing dependencies ...
+
+# Add any dependencies needed by your transport
+your-custom-dependency = { version = "1.0", optional = true }
 
 # more stuff below
 ```
 
-Then make sure the feature flag is populated down from the imix crate `realm/implants/imix/Cargo.toml`
+#### 3. Enable Your Transport in Imix
+
+To use your new transport, update the imix Cargo.toml at `realm/implants/imix/Cargo.toml`:
+
 ```toml
 # more stuff above
 
 [features]
-default = ["transport/grpc"]
+# Check if compiled by imix
+win_service = []
+default = ["transport/grpc"]  # Default transport
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
+custom = ["transport/custom"]  # <-- Add your feature here
 transport-grpc-doh = ["transport/grpc-doh"]
 
 # more stuff below
 ```
 
-And that's all that is needed for Imix to use a new Transport! Now all there is to do is setup the Tarver redirector see the [tavern dev docs here](/dev-guide/tavern#transport-development)
+#### 4. Build Imix with Your Transport
+
+Compile imix with your custom transport:
+
+```bash
+# From the repository root
+cd implants/imix
+
+# Build with your transport feature
+cargo build --release --features custom --no-default-features
+
+# Or for the default transport (grpc)
+cargo build --release
+```
+
+**Important:** Only specify one transport feature at a time. The build will fail if multiple transport features are enabled. Ensure you include `--no-default-features` when building with a non-default transport.
+
+#### 5. Set Up the Corresponding Redirector
+
+For your agent to communicate, you'll need to implement a corresponding redirector in Tavern. See the redirector implementations in `tavern/internal/redirectors/` for examples:
+
+- `tavern/internal/redirectors/grpc/` - gRPC redirector
+- `tavern/internal/redirectors/http1/` - HTTP/1.1 redirector
+- `tavern/internal/redirectors/dns/` - DNS redirector
+
+Your redirector must implement the `Redirector` interface and register itself in the redirector registry. See `tavern/internal/redirectors/redirector.go` for the interface definition.
+
+And that's all that is needed for Imix to use a new Transport! The agent code automatically uses whichever transport is enabled at compile time via the `ActiveTransport` type alias.

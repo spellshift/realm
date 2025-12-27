@@ -109,5 +109,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(_) => println!("generated c2 protos"),
     };
 
+    // Build DNS Protos (no encryption codec - used for transport layer only)
+    match tonic_build::configure()
+        .out_dir("./src/generated")
+        .build_server(false)
+        .build_client(false)
+        .compile(&["dns.proto"], &["../../../tavern/internal/c2/proto/"])
+    {
+        Err(err) => {
+            println!("WARNING: Failed to compile dns protos: {}", err);
+            panic!("{}", err);
+        }
+        Ok(_) => println!("generated dns protos"),
+    };
+
     Ok(())
 }
