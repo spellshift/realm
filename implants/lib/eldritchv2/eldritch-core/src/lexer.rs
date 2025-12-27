@@ -508,7 +508,10 @@ impl Lexer {
                 if self.match_char('=') {
                     self.add_token(TokenKind::NotEq)
                 } else {
-                    self.error_token(&format!("Unexpected character: {} on line {}", c, self.line))
+                    self.error_token(&format!(
+                        "Unexpected character: {} on line {}",
+                        c, self.line
+                    ))
                 }
             }
             '#' => {
@@ -552,7 +555,10 @@ impl Lexer {
             }
             _ if c.is_ascii_digit() => self.number(),
             _ if c.is_alphabetic() || c == '_' => self.identifier(),
-            _ => self.error_token(&format!("Unexpected character: {} on line {}", c, self.line)),
+            _ => self.error_token(&format!(
+                "Unexpected character: {} on line {}",
+                c, self.line
+            )),
         }
     }
 }
