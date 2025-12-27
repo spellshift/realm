@@ -1,9 +1,8 @@
 //! DNS resolution module for gRPC transport
 //!
-//! This module provides DNS-over-HTTPS (DoH) support for gRPC connections
-//! when the `grpc-doh` feature is enabled.
+//! This module provides DNS-over-HTTPS (DoH) support for gRPC connections.
+//! DoH is now configured at runtime via the doh_provider parameter.
 
-#[cfg(feature = "grpc-doh")]
 pub mod doh {
     use hickory_resolver::config::{ResolverConfig, ResolverOpts};
     use hickory_resolver::TokioAsyncResolver;
@@ -107,24 +106,20 @@ pub mod doh {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "grpc-doh")]
     use super::doh::*;
 
-    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_resolver_creation() {
         let result = HickoryResolverService::new(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH resolver");
     }
 
-    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_connector_creation() {
         let result = create_doh_connector(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH connector");
     }
 
-    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_dns_resolution() {
         use hyper::client::connect::dns::Name;

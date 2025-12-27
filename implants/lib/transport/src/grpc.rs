@@ -6,10 +6,8 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
 
-#[cfg(feature = "grpc-doh")]
 use hyper::client::HttpConnector;
 
-#[cfg(feature = "grpc-doh")]
 use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use crate::Transport;
@@ -36,15 +34,61 @@ impl Transport for GRPC {
     }
 
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+        // Parse the callback URI to check for doh query parameter
+        let parsed_uri = Uri::from_str(&callback)?;
+        let query = parsed_uri.query().unwrap_or("");
 
-        // Create HTTP connector with DNS-over-HTTPS support if enabled
-        #[cfg(feature = "grpc-doh")]
-        let mut http: HttpConnector<HickoryResolverService> =
-            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
+        // Check for doh parameter in query string
+        let doh_provider = query
+            .split('&')
+            .find(|param| param.starts_with("doh="))
+            .and_then(|param| param.strip_prefix("doh="));
 
-        #[cfg(not(feature = "grpc-doh"))]
-        let mut http = hyper::client::HttpConnector::new();
+        // Create the endpoint without the doh query parameter
+        let clean_callback = if doh_provider.is_some() && !query.is_empty() {
+            // Remove doh parameter from query string
+            let remaining_params: Vec<&str> = query
+                .split('&')
+                .filter(|param| !param.starts_with("doh="))
+                .collect();
+
+            if remaining_params.is_empty() {
+                // No other params, remove the ? as well
+                callback.split('?').next().unwrap().to_string()
+            } else {
+                // Keep other params
+                format!("{}?{}", callback.split('?').next().unwrap(), remaining_params.join("&"))
+            }
+        } else {
+            callback.clone()
+        };
+
+        let endpoint = tonic::transport::Endpoint::from_shared(clean_callback)?;
+
+        // Create HTTP connector based on DoH configuration
+        let mut http = if let Some(provider_str) = doh_provider {
+            // Parse the DoH provider
+            let provider = match provider_str.to_lowercase().as_str() {
+                "cloudflare" => DohProvider::Cloudflare,
+                "google" => DohProvider::Google,
+                "quad9" => DohProvider::Quad9,
+                _ => {
+                    #[cfg(debug_assertions)]
+                    log::warn!("Unknown DoH provider '{}', using Cloudflare", provider_str);
+                    DohProvider::Cloudflare
+                }
+            };
+
+            #[cfg(debug_assertions)]
+            log::info!("Using DNS-over-HTTPS provider: {:?}", provider);
+
+            crate::dns_resolver::doh::create_doh_connector(provider)?
+        } else {
+            #[cfg(debug_assertions)]
+            log::info!("Using system DNS resolver");
+
+            HttpConnector::new()
+        };
 
         http.enforce_http(false);
         http.set_nodelay(true);

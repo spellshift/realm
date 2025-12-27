@@ -5,8 +5,8 @@ edition = "2021"
 
 [features]
 default = []
-grpc = ["pb/grpc"]
-grpc-doh = ["grpc", "dep:hickory-resolver"]
+grpc = ["pb/grpc", "dep:hickory-resolver"]
+grpc-doh = ["grpc"]  # Deprecated: DoH is now configured at runtime via doh_provider
 http1 = ["pb/http1"]
 dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 mock = ["dep:mockall"]

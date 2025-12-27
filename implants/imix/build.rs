@@ -22,6 +22,13 @@ struct CallbackConfig {
     /// (must specify a scheme, e.g. `https://`)
     #[serde(skip_serializing_if = "Option::is_none")]
     proxy_uri: Option<String>,
+
+    /// DNS-over-HTTPS provider for gRPC transport
+    /// Valid values: "cloudflare", "google", "quad9"
+    /// If not specified, system DNS resolver will be used
+    /// Only supported for grpc transport
+    #[serde(skip_serializing_if = "Option::is_none")]
+    doh_provider: Option<String>,
 }
 
 /// Build configuration structure matching the environment variables
@@ -49,7 +56,8 @@ struct ImixBuildConfig {
     run_once: Option<bool>,
 
     /// Feature flags for conditional compilation
-    /// Valid values: grpc, http1, dns, transport-grpc-doh, win_service
+    /// Valid values: grpc, http1, dns, win_service
+    /// Note: DoH is now configured per-callback via doh_provider field
     #[serde(skip_serializing_if = "Option::is_none")]
     features: Option<Vec<String>>,
 }
@@ -65,10 +73,12 @@ fn apply_build_config(config: &ImixBuildConfig) {
     // Handle callbacks
     if let Some(ref callbacks) = config.callbacks {
         if !callbacks.is_empty() {
-            // Validate proxy_uri is only set for supported transports
+            // Validate proxy_uri and doh_provider are only set for supported transports
             for callback in callbacks {
+                let uri_lower = callback.uri.to_lowercase();
+
+                // Validate proxy_uri
                 if let Some(ref proxy_uri) = callback.proxy_uri {
-                    let uri_lower = callback.uri.to_lowercase();
                     if uri_lower.starts_with("dns://") {
                         panic!(
                             "cargo:error=proxy_uri is not supported for DNS callbacks. \
@@ -78,18 +88,59 @@ fn apply_build_config(config: &ImixBuildConfig) {
                         );
                     }
                 }
+
+                // Validate doh_provider
+                if let Some(ref doh_provider) = callback.doh_provider {
+                    if !uri_lower.starts_with("https://") && !uri_lower.starts_with("http://") {
+                        panic!(
+                            "cargo:error=doh_provider is only supported for gRPC callbacks (http:// or https://). \
+                            Callback URI: {}, doh_provider: {}.",
+                            callback.uri, doh_provider
+                        );
+                    }
+
+                    // Validate doh_provider value
+                    let provider_lower = doh_provider.to_lowercase();
+                    if provider_lower != "cloudflare" && provider_lower != "google" && provider_lower != "quad9" {
+                        panic!(
+                            "cargo:error=Invalid doh_provider '{}'. \
+                            Valid values are: cloudflare, google, quad9",
+                            doh_provider
+                        );
+                    }
+                }
             }
 
+            // Prepare callbacks for runtime by encoding doh_provider in URI query params
+            let runtime_callbacks: Vec<CallbackConfig> = callbacks
+                .iter()
+                .map(|cb| {
+                    let mut runtime_cb = cb.clone();
+
+                    // If doh_provider is set, append it to the URI as a query parameter
+                    if let Some(ref doh_provider) = cb.doh_provider {
+                        let separator = if runtime_cb.uri.contains('?') { "&" } else { "?" };
+                        runtime_cb.uri = format!("{}{}doh={}", runtime_cb.uri, separator, doh_provider);
+                        // Clear doh_provider from the struct since it's now in the URI
+                        runtime_cb.doh_provider = None;
+                    }
+
+                    runtime_cb
+                })
+                .collect();
+
             // Serialize callbacks list as YAML for runtime consumption
-            match serde_yaml::to_string(callbacks) {
+            match serde_yaml::to_string(&runtime_callbacks) {
                 Ok(yaml) => {
                     println!("cargo:rustc-env=IMIX_CALLBACKS={}", yaml);
                     println!("cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)", callbacks.len());
 
                     // Find first https:// callback to set as IMIX_CALLBACK_URI
-                    let https_callback = callbacks.iter().find(|cb| cb.uri.to_lowercase().starts_with("https://"));
+                    let https_callback_runtime = runtime_callbacks
+                        .iter()
+                        .find(|cb| cb.uri.to_lowercase().starts_with("https://"));
 
-                    if let Some(https_cb) = https_callback {
+                    if let Some(https_cb) = https_callback_runtime {
                         println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", https_cb.uri);
                         println!("cargo:warning=Setting IMIX_CALLBACK_URI={} (first https:// callback)", https_cb.uri);
                     } else {
@@ -129,8 +180,10 @@ fn apply_build_config(config: &ImixBuildConfig) {
                 "grpc" => println!("cargo:rustc-cfg=feature=\"transport_grpc\""),
                 "http1" => println!("cargo:rustc-cfg=feature=\"transport_http1\""),
                 "dns" => println!("cargo:rustc-cfg=feature=\"transport_dns\""),
-                "transport-grpc-doh" => println!("cargo:rustc-cfg=feature=\"transport_grpc_doh\""),
                 "win_service" => println!("cargo:rustc-cfg=feature=\"win_service\""),
+                "transport-grpc-doh" => {
+                    println!("cargo:warning=transport-grpc-doh feature is deprecated. DoH is now configured per-callback via doh_provider field.");
+                }
                 _ => println!("cargo:warning=Unknown feature: {}", feature),
             }
         }
