@@ -1,12 +1,30 @@
 # Imix Build Configuration Example
-# Copy this file to imix_config.yaml and customize for your deployment
 #
 # All fields are optional. If not specified, the build process will use:
-# 1. Environment variables (e.g., IMIX_CALLBACK_URI)
+# 1. Individual environment variables (e.g., IMIX_CALLBACK_URI)
 # 2. Default values
 #
-# To use a custom config file location, set IMIX_BUILD_CONFIG environment variable:
-#   export IMIX_BUILD_CONFIG=/path/to/my/config.yaml
+# Usage (container-friendly pattern):
+#   Set IMIX_BUILD_CONFIG environment variable with the YAML content:
+#
+#   export IMIX_BUILD_CONFIG="$(cat imix_config.yaml.example)"
+#   cargo build --release
+#
+# Or inline:
+#   export IMIX_BUILD_CONFIG='
+#   callback_uri: "http://tavern.example.com:8000"
+#   callback_interval: 10
+#   '
+#   cargo build --release
+#
+# In Dockerfile:
+#   ENV IMIX_BUILD_CONFIG="callback_uri: http://tavern.example.com:8000\ncallback_interval: 10"
+#
+# In docker-compose.yml:
+#   environment:
+#     IMIX_BUILD_CONFIG: |
+#       callback_uri: "http://tavern.example.com:8000"
+#       callback_interval: 10
 
 # URI for initial callbacks (must specify a scheme)
 # Valid schemes: http://, https://, dns://

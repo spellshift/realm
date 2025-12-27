@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::fs;
-use std::path::PathBuf;
 
 /// Build configuration structure matching the environment variables
 /// documented in the user guide
@@ -48,10 +46,9 @@ struct ImixBuildConfig {
     features: Option<Vec<String>>,
 }
 
-/// Parse YAML configuration file and set build-time environment variables
-fn parse_yaml_build_config(config_path: &str) -> Result<ImixBuildConfig, Box<dyn std::error::Error>> {
-    let yaml_content = fs::read_to_string(config_path)?;
-    let config: ImixBuildConfig = serde_yaml::from_str(&yaml_content)?;
+/// Parse YAML configuration from string content
+fn parse_yaml_build_config(yaml_content: &str) -> Result<ImixBuildConfig, Box<dyn std::error::Error>> {
+    let config: ImixBuildConfig = serde_yaml::from_str(yaml_content)?;
     Ok(config)
 }
 
@@ -112,18 +109,12 @@ fn apply_build_config(config: &ImixBuildConfig) {
 }
 
 fn main() {
-    // Try to find and parse YAML configuration file
-    let config_file = env::var("IMIX_BUILD_CONFIG")
-        .unwrap_or_else(|_| "imix_config.yaml".to_string());
+    // Try to read YAML configuration from environment variable
+    if let Ok(yaml_content) = env::var("IMIX_BUILD_CONFIG") {
+        println!("cargo:warning=Found IMIX_BUILD_CONFIG environment variable");
+        println!("cargo:rerun-if-env-changed=IMIX_BUILD_CONFIG");
 
-    let config_path = PathBuf::from(&config_file);
-
-    // If config file exists, parse and apply it
-    if config_path.exists() {
-        println!("cargo:warning=Found build configuration file: {}", config_file);
-        println!("cargo:rerun-if-changed={}", config_file);
-
-        match parse_yaml_build_config(&config_file) {
+        match parse_yaml_build_config(&yaml_content) {
             Ok(config) => {
                 println!("cargo:warning=Successfully parsed YAML build configuration");
                 apply_build_config(&config);
@@ -134,9 +125,9 @@ fn main() {
             }
         }
     } else {
-        println!("cargo:warning=No build configuration file found at: {}", config_file);
-        println!("cargo:warning=You can specify a config file with IMIX_BUILD_CONFIG environment variable");
-        println!("cargo:warning=Using environment variables for build configuration");
+        println!("cargo:warning=No IMIX_BUILD_CONFIG environment variable found");
+        println!("cargo:warning=Set IMIX_BUILD_CONFIG with YAML content to use YAML-based configuration");
+        println!("cargo:warning=Using individual environment variables for build configuration");
     }
 
     // Windows-specific build configuration
