@@ -29,6 +29,7 @@ message Beacon {
         TRANSPORT_UNSPECIFIED = 0;
         TRANSPORT_GRPC = 1;
         TRANSPORT_HTTP1 = 2;
+        TRANSPORT_DNS = 3;
     }
 
     Transport transport = 6;
