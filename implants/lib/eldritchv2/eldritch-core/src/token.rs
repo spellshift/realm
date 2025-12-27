@@ -102,6 +102,9 @@ pub enum TokenKind {
     Indent,
     Dedent,
     Eof,
+
+    // Error
+    Error(String),
 }
 
 impl fmt::Display for TokenKind {
