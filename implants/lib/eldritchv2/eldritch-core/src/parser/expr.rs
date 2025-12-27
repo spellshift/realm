@@ -821,7 +821,7 @@ impl Parser {
             }
         }
 
-        self.error(&format!("Expect expression. Found {:?}", self.peek()))
+        self.error(&format!("Unexpected token \"{}\"", self.peek().kind))
     }
 
     fn parse_fstring_content(
