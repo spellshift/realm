@@ -1,5 +1,5 @@
-use alloc::string::String;
 use ::std::path::Path;
+use alloc::string::String;
 
 pub fn is_file(path: String) -> Result<bool, String> {
     Ok(Path::new(&path).is_file())

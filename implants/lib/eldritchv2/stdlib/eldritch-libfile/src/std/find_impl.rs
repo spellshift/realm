@@ -1,11 +1,11 @@
 #[cfg(feature = "stdlib")]
-use anyhow::Result as AnyhowResult;
+use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::string::ToString;
 #[cfg(feature = "stdlib")]
-use alloc::string::String;
-#[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
+#[cfg(feature = "stdlib")]
+use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use std::fs;
 #[cfg(feature = "stdlib")]
@@ -32,7 +32,14 @@ pub fn find(
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn find(_path: alloc::string::String, _name: Option<alloc::string::String>, _file_type: Option<alloc::string::String>, _permissions: Option<i64>, _modified_time: Option<i64>, _create_time: Option<i64>) -> Result<Vec<alloc::string::String>, alloc::string::String> {
+pub fn find(
+    _path: alloc::string::String,
+    _name: Option<alloc::string::String>,
+    _file_type: Option<alloc::string::String>,
+    _permissions: Option<i64>,
+    _modified_time: Option<i64>,
+    _create_time: Option<i64>,
+) -> Result<Vec<alloc::string::String>, alloc::string::String> {
     Err("find requires stdlib feature".into())
 }
 
@@ -184,8 +191,8 @@ fn check_path(
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile;
     use std::fs;
+    use tempfile;
 
     #[test]
     fn test_find() {
@@ -205,8 +212,7 @@ mod tests {
         let base_path_str = base_path.to_string_lossy().to_string();
 
         // 1. Basic list all
-        let res = find(base_path_str.clone(), None, None, None, None, None)
-            .unwrap();
+        let res = find(base_path_str.clone(), None, None, None, None, None).unwrap();
         // Should contain file1, file2, file3. Might contain dir1 too.
         // Logic says: `if path.is_dir() { recurse } if check_path() { push }`
         // check_path without filters returns true. So it should return dirs too.

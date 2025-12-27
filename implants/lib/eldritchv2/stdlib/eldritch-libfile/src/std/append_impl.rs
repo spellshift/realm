@@ -1,7 +1,7 @@
-use alloc::format;
-use alloc::string::String;
 use ::std::fs::OpenOptions;
 use ::std::io::Write;
+use alloc::format;
+use alloc::string::String;
 
 pub fn append(path: String, content: String) -> Result<(), String> {
     let mut file = OpenOptions::new()

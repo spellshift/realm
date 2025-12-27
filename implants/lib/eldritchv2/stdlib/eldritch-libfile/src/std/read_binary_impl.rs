@@ -1,7 +1,7 @@
+use ::std::fs;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use ::std::fs;
 
 pub fn read_binary(path: String) -> Result<Vec<u8>, String> {
     fs::read(&path).map_err(|e| format!("Failed to read file {path}: {e}"))

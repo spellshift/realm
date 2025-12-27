@@ -1,9 +1,9 @@
 #[cfg(feature = "stdlib")]
-use anyhow::Result as AnyhowResult;
+use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::string::ToString;
 #[cfg(feature = "stdlib")]
-use alloc::string::String;
+use anyhow::Result as AnyhowResult;
 
 #[cfg(feature = "stdlib")]
 pub fn replace(path: String, pattern: String, value: String) -> Result<(), String> {
@@ -11,14 +11,18 @@ pub fn replace(path: String, pattern: String, value: String) -> Result<(), Strin
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn replace(_path: alloc::string::String, _pattern: alloc::string::String, _value: alloc::string::String) -> Result<(), alloc::string::String> {
+pub fn replace(
+    _path: alloc::string::String,
+    _pattern: alloc::string::String,
+    _value: alloc::string::String,
+) -> Result<(), alloc::string::String> {
     Err("replace requires stdlib feature".into())
 }
 
 #[cfg(feature = "stdlib")]
 fn replace_impl(path: String, pattern: String, value: String) -> AnyhowResult<()> {
-    use std::fs;
     use regex::bytes::{NoExpand, Regex};
+    use std::fs;
 
     let data = fs::read(&path)?;
     let re = Regex::new(&pattern)?;
@@ -33,8 +37,8 @@ fn replace_impl(path: String, pattern: String, value: String) -> AnyhowResult<()
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::fs;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_replace() {
@@ -43,8 +47,7 @@ mod tests {
 
         fs::write(&path, "hello world hello universe").unwrap();
 
-        replace(path.clone(), "hello".to_string(), "hi".to_string())
-            .unwrap();
+        replace(path.clone(), "hello".to_string(), "hi".to_string()).unwrap();
         let content = fs::read_to_string(&path).unwrap();
         assert_eq!(content, "hi world hello universe");
     }

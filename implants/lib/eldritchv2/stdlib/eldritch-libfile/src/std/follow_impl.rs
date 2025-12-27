@@ -1,9 +1,9 @@
 #[cfg(feature = "stdlib")]
-use anyhow::Result as AnyhowResult;
+use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::string::ToString;
 #[cfg(feature = "stdlib")]
-use alloc::string::String;
+use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
 
@@ -19,11 +19,11 @@ pub fn follow(_path: alloc::string::String, _fn_val: Value) -> Result<(), alloc:
 
 #[cfg(feature = "stdlib")]
 fn follow_impl(path: String, fn_val: Value) -> AnyhowResult<()> {
+    use eldritch_core::Interpreter;
+    use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
     use std::fs::{self, File};
     use std::io::{BufRead, BufReader, Seek, SeekFrom};
     use std::path::Path;
-    use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
-    use eldritch_core::Interpreter;
 
     // get pos to end of file
     let mut file = File::open(&path)?;
@@ -110,10 +110,10 @@ fn follow_impl(path: String, fn_val: Value) -> AnyhowResult<()> {
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
-    use std::fs::OpenOptions;
     use eldritch_core::Interpreter;
+    use std::fs::OpenOptions;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_follow() {

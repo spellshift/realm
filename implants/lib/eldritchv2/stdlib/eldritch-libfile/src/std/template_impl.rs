@@ -1,11 +1,11 @@
 #[cfg(feature = "stdlib")]
-use anyhow::Result as AnyhowResult;
-#[cfg(feature = "stdlib")]
-use alloc::string::ToString;
+use alloc::collections::BTreeMap;
 #[cfg(feature = "stdlib")]
 use alloc::string::String;
 #[cfg(feature = "stdlib")]
-use alloc::collections::BTreeMap;
+use alloc::string::ToString;
+#[cfg(feature = "stdlib")]
+use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
 
@@ -20,7 +20,12 @@ pub fn template(
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn template(_template_path: alloc::string::String, _dst: alloc::string::String, _args: alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>, _autoescape: bool) -> Result<(), alloc::string::String> {
+pub fn template(
+    _template_path: alloc::string::String,
+    _dst: alloc::string::String,
+    _args: alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>,
+    _autoescape: bool,
+) -> Result<(), alloc::string::String> {
     Err("template requires stdlib feature".into())
 }
 
@@ -31,8 +36,8 @@ fn template_impl(
     args: BTreeMap<String, Value>,
     autoescape: bool,
 ) -> AnyhowResult<()> {
-    use tera::{Context as TeraContext, Tera};
     use std::fs;
+    use tera::{Context as TeraContext, Tera};
 
     let mut context = TeraContext::new();
     for (k, v) in args {
@@ -87,8 +92,8 @@ fn value_to_json(v: Value) -> serde_json::Value {
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::fs;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_template() {
@@ -103,8 +108,7 @@ mod tests {
         let mut args = BTreeMap::new();
         args.insert("name".to_string(), Value::String("World".to_string()));
 
-        template(tmpl_path, out_path.clone(), args, true)
-            .unwrap();
+        template(tmpl_path, out_path.clone(), args, true).unwrap();
 
         assert_eq!(fs::read_to_string(&out_path).unwrap(), "Hello World");
     }

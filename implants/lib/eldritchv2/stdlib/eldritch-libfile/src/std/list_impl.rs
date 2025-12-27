@@ -1,21 +1,21 @@
 #[cfg(feature = "stdlib")]
-use anyhow::Result as AnyhowResult;
-#[cfg(feature = "stdlib")]
-use alloc::string::ToString;
+use alloc::collections::BTreeMap;
 #[cfg(feature = "stdlib")]
 use alloc::string::String;
 #[cfg(feature = "stdlib")]
+use alloc::string::ToString;
+#[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
-use alloc::collections::BTreeMap;
-#[cfg(feature = "stdlib")]
-use std::fs;
-#[cfg(feature = "stdlib")]
-use std::path::Path;
+use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
 #[cfg(unix)]
 use nix::unistd::{Gid, Group, Uid, User};
+#[cfg(feature = "stdlib")]
+use std::fs;
+#[cfg(feature = "stdlib")]
+use std::path::Path;
 
 #[cfg(feature = "stdlib")]
 pub fn list(path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
@@ -34,7 +34,12 @@ pub fn list(path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn list(_path: Option<alloc::string::String>) -> Result<alloc::vec::Vec<alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>>, alloc::string::String> {
+pub fn list(
+    _path: Option<alloc::string::String>,
+) -> Result<
+    alloc::vec::Vec<alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>>,
+    alloc::string::String,
+> {
     Err("list requires stdlib feature".into())
 }
 
@@ -146,8 +151,8 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use regex::bytes::Regex;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_list_owner_group() {

@@ -10,6 +10,7 @@ pub mod compress_impl;
 pub mod copy_impl;
 pub mod decompress_impl;
 pub mod exists_impl;
+pub mod find_impl;
 pub mod follow_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
@@ -27,7 +28,6 @@ pub mod temp_file_impl;
 pub mod template_impl;
 pub mod timestomp_impl;
 pub mod write_impl;
-pub mod find_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]

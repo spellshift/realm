@@ -1,13 +1,13 @@
 #[cfg(feature = "stdlib")]
-use anyhow::{Context, Result as AnyhowResult};
+use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::string::ToString;
 #[cfg(feature = "stdlib")]
-use alloc::string::String;
-#[cfg(feature = "stdlib")]
-use std::path::Path;
+use anyhow::{Context, Result as AnyhowResult};
 #[cfg(feature = "stdlib")]
 use std::fs::File;
+#[cfg(feature = "stdlib")]
+use std::path::Path;
 
 #[cfg(feature = "stdlib")]
 pub fn compress(src: String, dst: String) -> Result<(), String> {
@@ -15,15 +15,18 @@ pub fn compress(src: String, dst: String) -> Result<(), String> {
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn compress(_src: alloc::string::String, _dst: alloc::string::String) -> Result<(), alloc::string::String> {
+pub fn compress(
+    _src: alloc::string::String,
+    _dst: alloc::string::String,
+) -> Result<(), alloc::string::String> {
     Err("compress requires stdlib feature".into())
 }
 
 #[cfg(feature = "stdlib")]
 fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
     use flate2::Compression;
-    use tempfile::NamedTempFile;
     use std::fs::OpenOptions;
+    use tempfile::NamedTempFile;
 
     let src_path = Path::new(&src);
 
@@ -74,8 +77,8 @@ fn tar_dir(src: &str, dst: &str) -> AnyhowResult<()> {
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::fs;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_compress() {

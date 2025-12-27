@@ -1,17 +1,17 @@
 #[cfg(feature = "stdlib")]
-use anyhow::Result as AnyhowResult;
+use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::string::ToString;
 #[cfg(feature = "stdlib")]
-use alloc::string::String;
-#[cfg(feature = "stdlib")]
 use alloc::vec::Vec;
+#[cfg(feature = "stdlib")]
+use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use std::fs::{self, File};
 #[cfg(feature = "stdlib")]
-use std::path::Path;
-#[cfg(feature = "stdlib")]
 use std::io::Read;
+#[cfg(feature = "stdlib")]
+use std::path::Path;
 
 #[cfg(feature = "stdlib")]
 pub fn decompress(src: String, dst: String) -> Result<(), String> {
@@ -19,7 +19,10 @@ pub fn decompress(src: String, dst: String) -> Result<(), String> {
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn decompress(_src: alloc::string::String, _dst: alloc::string::String) -> Result<(), alloc::string::String> {
+pub fn decompress(
+    _src: alloc::string::String,
+    _dst: alloc::string::String,
+) -> Result<(), alloc::string::String> {
     Err("decompress requires stdlib feature".into())
 }
 
@@ -77,10 +80,10 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
-    use std::io::Write;
-    use flate2::write::GzEncoder;
     use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_decompress() {

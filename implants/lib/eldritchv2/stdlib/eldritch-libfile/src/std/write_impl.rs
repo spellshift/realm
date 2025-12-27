@@ -1,6 +1,6 @@
+use ::std::fs;
 use alloc::format;
 use alloc::string::String;
-use ::std::fs;
 
 pub fn write(path: String, content: String) -> Result<(), String> {
     fs::write(&path, content).map_err(|e| format!("Failed to write to file {path}: {e}"))

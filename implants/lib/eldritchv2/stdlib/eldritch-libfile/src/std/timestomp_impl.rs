@@ -1,9 +1,9 @@
 #[cfg(feature = "stdlib")]
-use anyhow::{Context, Result as AnyhowResult};
+use alloc::string::String;
 #[cfg(feature = "stdlib")]
 use alloc::string::ToString;
 #[cfg(feature = "stdlib")]
-use alloc::string::String;
+use anyhow::{Context, Result as AnyhowResult};
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
 
@@ -19,7 +19,13 @@ pub fn timestomp(
 }
 
 #[cfg(not(feature = "stdlib"))]
-pub fn timestomp(_path: alloc::string::String, _mtime: Option<eldritch_core::Value>, _atime: Option<eldritch_core::Value>, _ctime: Option<eldritch_core::Value>, _ref_file: Option<alloc::string::String>) -> Result<(), alloc::string::String> {
+pub fn timestomp(
+    _path: alloc::string::String,
+    _mtime: Option<eldritch_core::Value>,
+    _atime: Option<eldritch_core::Value>,
+    _ctime: Option<eldritch_core::Value>,
+    _ref_file: Option<alloc::string::String>,
+) -> Result<(), alloc::string::String> {
     Err("timestomp requires stdlib feature".into())
 }
 
@@ -105,8 +111,8 @@ fn apply_timestamps(
     atime: Option<::std::time::SystemTime>,
     _ctime: Option<::std::time::SystemTime>, // Not supported on standard Linux
 ) -> AnyhowResult<()> {
-    use std::fs;
     use nix::sys::time::TimeVal;
+    use std::fs;
 
     // We need both atime and mtime for utimes. If one is missing, we should probably read the current one?
     // Or if ref_file wasn't provided, use current time?
@@ -162,9 +168,9 @@ fn apply_timestamps(
     atime: Option<::std::time::SystemTime>,
     ctime: Option<::std::time::SystemTime>,
 ) -> AnyhowResult<()> {
+    use std::fs::OpenOptions;
     use windows_sys::Win32::Foundation::{FILETIME, HANDLE};
     use windows_sys::Win32::Storage::FileSystem::SetFileTime;
-    use std::fs::OpenOptions;
 
     // We need to open the file handle
     // windows-sys takes raw pointers.
@@ -237,8 +243,8 @@ fn apply_timestamps(
 #[cfg(feature = "stdlib")]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::fs;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_timestomp() {
@@ -254,7 +260,10 @@ mod tests {
 
         // 1. Set specific mtime (Int)
         let target_time = std::time::SystemTime::now();
-        let target_secs = target_time.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let target_secs = target_time
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         timestomp(
             path.clone(),
@@ -267,7 +276,10 @@ mod tests {
 
         let new_meta = fs::metadata(&path).unwrap();
         let new_mtime = new_meta.modified().unwrap();
-        let new_secs = new_mtime.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let new_secs = new_mtime
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         // Allow small skew if file system has low resolution (e.g. some only support seconds)
         // But since we use same secs, should be equal or close.
@@ -286,7 +298,10 @@ mod tests {
 
         let meta2 = fs::metadata(&path).unwrap();
         let atime2 = meta2.accessed().unwrap();
-        let atime_secs = atime2.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let atime_secs = atime2
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         // 2020-01-01 12:00:00 UTC = 1577880000
         assert_eq!(atime_secs, 1577880000);
@@ -305,17 +320,20 @@ mod tests {
         fs::write(&ref_path, "update").unwrap();
         let ref_meta = fs::metadata(&ref_path).unwrap();
         let ref_mtime = ref_meta
-            .modified().unwrap()
-            .duration_since(std::time::UNIX_EPOCH).unwrap()
+            .modified()
+            .unwrap()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
             .as_secs();
 
-        timestomp(path.clone(), None, None, None, Some(ref_path))
-            .unwrap();
+        timestomp(path.clone(), None, None, None, Some(ref_path)).unwrap();
 
         let final_meta = fs::metadata(&path).unwrap();
         let final_mtime = final_meta
-            .modified().unwrap()
-            .duration_since(std::time::UNIX_EPOCH).unwrap()
+            .modified()
+            .unwrap()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
             .as_secs();
 
         assert_eq!(final_mtime, ref_mtime);

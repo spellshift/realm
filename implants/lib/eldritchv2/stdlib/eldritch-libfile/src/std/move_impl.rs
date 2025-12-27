@@ -1,6 +1,6 @@
+use ::std::fs;
 use alloc::format;
 use alloc::string::String;
-use ::std::fs;
 
 pub fn move_(src: String, dst: String) -> Result<(), String> {
     fs::rename(&src, &dst).map_err(|e| format!("Failed to move {src} to {dst}: {e}"))

@@ -1,6 +1,6 @@
+use ::std::fs;
 use alloc::format;
 use alloc::string::String;
-use ::std::fs;
 
 pub fn copy(src: String, dst: String) -> Result<(), String> {
     fs::copy(&src, &dst).map_err(|e| format!("Failed to copy {src} to {dst}: {e}"))?;

@@ -1,6 +1,6 @@
-use alloc::string::ToString;
-use alloc::string::String;
 use ::std::path::Path;
+use alloc::string::String;
+use alloc::string::ToString;
 
 pub fn parent_dir(path: String) -> Result<String, String> {
     let path = Path::new(&path);
@@ -24,8 +24,7 @@ mod tests {
         let base_path = tmp_dir.path();
         let file_path = base_path.join("test.txt");
 
-        let parent = parent_dir(file_path.to_string_lossy().to_string())
-            .unwrap();
+        let parent = parent_dir(file_path.to_string_lossy().to_string()).unwrap();
         // parent_dir returns string of parent path
         // On temp dir, it might be complex, but let's check it ends with what we expect or is equal
         assert_eq!(parent, base_path.to_string_lossy().to_string());

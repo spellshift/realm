@@ -1,6 +1,6 @@
+use ::std::fs;
 use alloc::format;
 use alloc::string::String;
-use ::std::fs;
 
 pub fn read(path: String) -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
