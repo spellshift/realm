@@ -1,0 +1,471 @@
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.0",
+  "generatedBy": "junit-to-ctrf",
+  "timestamp": "2025-12-27T17:53:16.416Z",
+  "results": {
+    "tool": {
+      "name": "junit-to-ctrf"
+    },
+    "summary": {
+      "tests": 56,
+      "passed": 56,
+      "failed": 0,
+      "skipped": 0,
+      "pending": 0,
+      "other": 0,
+      "start": 0,
+      "stop": 0
+    },
+    "tests": [
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > FilterProvider initialization > should provide default filters on initial load",
+        "status": "passed",
+        "duration": 24,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > FilterProvider initialization > should load filters from sessionStorage if available",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > FilterProvider initialization > should throw error when useFilters is used outside FilterProvider",
+        "status": "passed",
+        "duration": 22,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should return default filters if sessionStorage contains invalid JSON",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should reject data with invalid field types",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should reject beaconFields with missing required fields",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should accept valid FilterBarOption with optional fields",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should update filters with partial updates",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should update multiple filter fields at once",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should persist updated filters to sessionStorage",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should update array fields",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > resetFilters > should reset all filters to default values",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > resetFilters > should persist default filters to sessionStorage after reset",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > storage event listener > should update filters when storage event is triggered",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > storage event listener > should ignore storage events with different keys",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should render all filters for QUEST page",
+        "status": "passed",
+        "duration": 76,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should render only beacon filter for HOST page",
+        "status": "passed",
+        "duration": 14,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should display \"Filter (disabled)\" when filters are disabled",
+        "status": "passed",
+        "duration": 261,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should display \"Filters (0)\" when no filters are active",
+        "status": "passed",
+        "duration": 13,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should count text search filters correctly",
+        "status": "passed",
+        "duration": 118,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should count beacon field filters by array length",
+        "status": "passed",
+        "duration": 45,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should count multiple active filters correctly",
+        "status": "passed",
+        "duration": 150,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter enable/disable toggle > should toggle filtersEnabled when switch is clicked",
+        "status": "passed",
+        "duration": 73,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter enable/disable toggle > should disable filter components when filtersEnabled is false",
+        "status": "passed",
+        "duration": 77,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter component interactions > should update filter state when inputs change",
+        "status": "passed",
+        "duration": 273,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter component interactions > should update beaconFields and tomeFields arrays",
+        "status": "passed",
+        "duration": 66,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter component interactions > should preserve filter values when toggling enabled/disabled",
+        "status": "passed",
+        "duration": 187,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > SortsProvider initialization > should provide default sorts on initial load",
+        "status": "passed",
+        "duration": 16,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > SortsProvider initialization > should load sorts from sessionStorage if available",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > SortsProvider initialization > should throw error when useSorts is used outside SortsProvider",
+        "status": "passed",
+        "duration": 18,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should return default sorts if sessionStorage contains invalid JSON",
+        "status": "passed",
+        "duration": 1,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should reject data with missing required fields",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should reject data with invalid direction value",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should accept valid OrderByField structure",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > updateSorts > should update sorts with partial updates",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > updateSorts > should update multiple sort fields at once",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > updateSorts > should persist updated sorts to sessionStorage",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > resetSorts > should reset all sorts to default values",
+        "status": "passed",
+        "duration": 1,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > resetSorts > should persist default sorts to sessionStorage after reset",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > storage event listener > should update sorts when storage event is triggered",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > storage event listener > should ignore storage events with different keys",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default host sort settings",
+        "status": "passed",
+        "duration": 44,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default quest sort settings",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default task sort settings",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort field dropdown > should display correct field options for hosts page",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort field dropdown > should display correct field options for quests page",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort field dropdown > should display correct field options for tasks page",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort direction dropdown > should display ascending and descending options",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort direction dropdown > should default to descending direction",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update sort field when field dropdown changes",
+        "status": "passed",
+        "duration": 214,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update sort direction when direction dropdown changes",
+        "status": "passed",
+        "duration": 55,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update label when field changes",
+        "status": "passed",
+        "duration": 47,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update icon when direction changes to ascending",
+        "status": "passed",
+        "duration": 57,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should only update sorts for the current page type",
+        "status": "passed",
+        "duration": 39,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Label formatting > should format enum values correctly",
+        "status": "passed",
+        "duration": 40,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Label formatting > should handle single word enum values",
+        "status": "passed",
+        "duration": 38,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      }
+    ]
+  }
+}
