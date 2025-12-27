@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Span {
@@ -101,6 +102,84 @@ pub enum TokenKind {
     Indent,
     Dedent,
     Eof,
+}
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TokenKind::LParen => write!(f, "("),
+            TokenKind::RParen => write!(f, ")"),
+            TokenKind::LBracket => write!(f, "["),
+            TokenKind::RBracket => write!(f, "]"),
+            TokenKind::LBrace => write!(f, "{{"),
+            TokenKind::RBrace => write!(f, "}}"),
+            TokenKind::Comma => write!(f, ","),
+            TokenKind::Colon => write!(f, ":"),
+            TokenKind::Dot => write!(f, "."),
+            TokenKind::Minus => write!(f, "-"),
+            TokenKind::Plus => write!(f, "+"),
+            TokenKind::Star => write!(f, "*"),
+            TokenKind::Slash => write!(f, "/"),
+            TokenKind::Percent => write!(f, "%"),
+            TokenKind::Assign => write!(f, "="),
+            TokenKind::Newline => write!(f, "newline"),
+
+            TokenKind::BitAnd => write!(f, "&"),
+            TokenKind::BitOr => write!(f, "|"),
+            TokenKind::BitXor => write!(f, "^"),
+            TokenKind::BitNot => write!(f, "~"),
+            TokenKind::LShift => write!(f, "<<"),
+            TokenKind::RShift => write!(f, ">>"),
+            TokenKind::StarStar => write!(f, "**"),
+            TokenKind::SlashSlash => write!(f, "//"),
+
+            TokenKind::PlusAssign => write!(f, "+="),
+            TokenKind::MinusAssign => write!(f, "-="),
+            TokenKind::StarAssign => write!(f, "*="),
+            TokenKind::SlashAssign => write!(f, "/="),
+            TokenKind::PercentAssign => write!(f, "%="),
+            TokenKind::SlashSlashAssign => write!(f, "//="),
+
+            TokenKind::Arrow => write!(f, "->"),
+
+            TokenKind::Eq => write!(f, "=="),
+            TokenKind::NotEq => write!(f, "!="),
+            TokenKind::Lt => write!(f, "<"),
+            TokenKind::Gt => write!(f, ">"),
+            TokenKind::LtEq => write!(f, "<="),
+            TokenKind::GtEq => write!(f, ">="),
+
+            TokenKind::Identifier(s) => write!(f, "identifier \"{}\"", s),
+            TokenKind::String(s) => write!(f, "string {:?}", s),
+            TokenKind::Bytes(_) => write!(f, "bytes"),
+            TokenKind::Integer(i) => write!(f, "{}", i),
+            TokenKind::Float(v) => write!(f, "{}", v),
+            TokenKind::FStringContent(_) => write!(f, "f-string"),
+
+            TokenKind::Def => write!(f, "def"),
+            TokenKind::If => write!(f, "if"),
+            TokenKind::Elif => write!(f, "elif"),
+            TokenKind::Else => write!(f, "else"),
+            TokenKind::Return => write!(f, "return"),
+            TokenKind::For => write!(f, "for"),
+            TokenKind::In => write!(f, "in"),
+            TokenKind::NotIn => write!(f, "not in"),
+            TokenKind::True => write!(f, "True"),
+            TokenKind::False => write!(f, "False"),
+            TokenKind::None => write!(f, "None"),
+            TokenKind::And => write!(f, "and"),
+            TokenKind::Or => write!(f, "or"),
+            TokenKind::Not => write!(f, "not"),
+            TokenKind::Break => write!(f, "break"),
+            TokenKind::Continue => write!(f, "continue"),
+            TokenKind::Pass => write!(f, "pass"),
+            TokenKind::Lambda => write!(f, "lambda"),
+
+            TokenKind::Indent => write!(f, "indent"),
+            TokenKind::Dedent => write!(f, "dedent"),
+            TokenKind::Eof => write!(f, "EOF"),
+        }
+    }
 }
 
 impl TokenKind {
