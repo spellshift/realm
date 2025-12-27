@@ -63,7 +63,9 @@ struct ImixBuildConfig {
 }
 
 /// Parse YAML configuration from string content
-fn parse_yaml_build_config(yaml_content: &str) -> Result<ImixBuildConfig, Box<dyn std::error::Error>> {
+fn parse_yaml_build_config(
+    yaml_content: &str,
+) -> Result<ImixBuildConfig, Box<dyn std::error::Error>> {
     let config: ImixBuildConfig = serde_yaml::from_str(yaml_content)?;
     Ok(config)
 }
@@ -101,7 +103,10 @@ fn apply_build_config(config: &ImixBuildConfig) {
 
                     // Validate doh_provider value
                     let provider_lower = doh_provider.to_lowercase();
-                    if provider_lower != "cloudflare" && provider_lower != "google" && provider_lower != "quad9" {
+                    if provider_lower != "cloudflare"
+                        && provider_lower != "google"
+                        && provider_lower != "quad9"
+                    {
                         panic!(
                             "cargo:error=Invalid doh_provider '{}'. \
                             Valid values are: cloudflare, google, quad9",
@@ -119,8 +124,13 @@ fn apply_build_config(config: &ImixBuildConfig) {
 
                     // If doh_provider is set, append it to the URI as a query parameter
                     if let Some(ref doh_provider) = cb.doh_provider {
-                        let separator = if runtime_cb.uri.contains('?') { "&" } else { "?" };
-                        runtime_cb.uri = format!("{}{}doh={}", runtime_cb.uri, separator, doh_provider);
+                        let separator = if runtime_cb.uri.contains('?') {
+                            "&"
+                        } else {
+                            "?"
+                        };
+                        runtime_cb.uri =
+                            format!("{}{}doh={}", runtime_cb.uri, separator, doh_provider);
                         // Clear doh_provider from the struct since it's now in the URI
                         runtime_cb.doh_provider = None;
                     }
@@ -133,7 +143,10 @@ fn apply_build_config(config: &ImixBuildConfig) {
             match serde_yaml::to_string(&runtime_callbacks) {
                 Ok(yaml) => {
                     println!("cargo:rustc-env=IMIX_CALLBACKS={}", yaml);
-                    println!("cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)", callbacks.len());
+                    println!(
+                        "cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)",
+                        callbacks.len()
+                    );
 
                     // Find first https:// callback to set as IMIX_CALLBACK_URI
                     let https_callback_runtime = runtime_callbacks
@@ -142,9 +155,14 @@ fn apply_build_config(config: &ImixBuildConfig) {
 
                     if let Some(https_cb) = https_callback_runtime {
                         println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", https_cb.uri);
-                        println!("cargo:warning=Setting IMIX_CALLBACK_URI={} (first https:// callback)", https_cb.uri);
+                        println!(
+                            "cargo:warning=Setting IMIX_CALLBACK_URI={} (first https:// callback)",
+                            https_cb.uri
+                        );
                     } else {
-                        println!("cargo:warning=No https:// callback found, IMIX_CALLBACK_URI not set");
+                        println!(
+                            "cargo:warning=No https:// callback found, IMIX_CALLBACK_URI not set"
+                        );
                     }
                 }
                 Err(e) => {
@@ -196,8 +214,10 @@ fn main() {
     let has_legacy_callback_interval = env::var("IMIX_CALLBACK_INTERVAL").is_ok();
     let has_legacy_retry_interval = env::var("IMIX_RETRY_INTERVAL").is_ok();
     let has_legacy_proxy_uri = env::var("IMIX_PROXY_URI").is_ok();
-    let has_any_legacy = has_legacy_callback_uri || has_legacy_callback_interval
-                         || has_legacy_retry_interval || has_legacy_proxy_uri;
+    let has_any_legacy = has_legacy_callback_uri
+        || has_legacy_callback_interval
+        || has_legacy_retry_interval
+        || has_legacy_proxy_uri;
 
     // Try to read YAML configuration from environment variable
     if let Ok(yaml_content) = env::var("IMIX_BUILD_CONFIG") {
