@@ -48,6 +48,12 @@ pub mod doh {
 
             Ok(Self { resolver })
         }
+
+        /// Create a new resolver service using system DNS configuration
+        pub fn system() -> Result<Self, anyhow::Error> {
+            let resolver = TokioAsyncResolver::tokio_from_system_conf()?;
+            Ok(Self { resolver })
+        }
     }
 
     impl Service<Name> for HickoryResolverService {
@@ -99,6 +105,13 @@ pub mod doh {
         provider: DohProvider,
     ) -> Result<HttpConnector<HickoryResolverService>, anyhow::Error> {
         let resolver = HickoryResolverService::new(provider)?;
+        Ok(HttpConnector::new_with_resolver(resolver))
+    }
+
+    /// Create an HTTP connector using system DNS configuration
+    pub fn create_system_connector() -> Result<HttpConnector<HickoryResolverService>, anyhow::Error>
+    {
+        let resolver = HickoryResolverService::system()?;
         Ok(HttpConnector::new_with_resolver(resolver))
     }
 }

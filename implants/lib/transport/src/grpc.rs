@@ -8,7 +8,7 @@ use tonic::Request;
 
 use hyper::client::HttpConnector;
 
-use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
+use crate::dns_resolver::doh::DohProvider;
 
 use crate::Transport;
 
@@ -71,7 +71,7 @@ impl Transport for GRPC {
             #[cfg(debug_assertions)]
             log::info!("Using system DNS resolver");
 
-            HttpConnector::new()
+            crate::dns_resolver::doh::create_system_connector()?
         };
 
         http.enforce_http(false);
