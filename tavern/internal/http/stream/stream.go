@@ -164,8 +164,9 @@ func newOrderKey() string {
 // In this example, websockets could race to add data, but all the data they add will be in order
 // with respect to the websocket.
 type sessionBuffer struct {
-	nextToSend uint64
-	data       map[uint64]*pubsub.Message
+	nextToSend  uint64
+	data        map[uint64]*pubsub.Message
+	initialized bool
 }
 
 func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, emit func(*pubsub.Message)) {
@@ -174,6 +175,11 @@ func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message,
 		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
 		emit(msg)
 		return
+	}
+
+	if !buf.initialized {
+		buf.nextToSend = index
+		buf.initialized = true
 	}
 
 	if index < buf.nextToSend {

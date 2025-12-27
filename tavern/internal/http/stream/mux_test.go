@@ -3,6 +3,7 @@ package stream_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -13,15 +14,20 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 )
 
+func newTopicName(base string) string {
+	return fmt.Sprintf("mem://%s-%d", base, rand.Int())
+}
+
 func TestMux(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Setup Topic and Subscription
-	topic, err := pubsub.OpenTopic(ctx, "mem://mux-test")
+	topicName := newTopicName("mux-test")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://mux-test")
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -78,14 +84,15 @@ func TestMux(t *testing.T) {
 }
 
 func TestMuxHistory(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Setup Topic and Subscription
-	topic, err := pubsub.OpenTopic(ctx, "mem://mux-history-test")
+	topicName := newTopicName("mux-history-test")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://mux-history-test")
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -150,14 +157,15 @@ func TestMuxHistory(t *testing.T) {
 }
 
 func TestMuxHistoryOrdering(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Setup Topic and Subscription
-	topic, err := pubsub.OpenTopic(ctx, "mem://mux-history-ordering-test")
+	topicName := newTopicName("mux-history-ordering-test")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://mux-history-ordering-test")
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
@@ -170,15 +178,16 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	mux.Register(monitor)
 	defer mux.Unregister(monitor)
 
-	// Send messages out of order: 2, 0, 1
+	// Send messages in an order that respects the new "Late Join" logic.
+	// We must send the anchor (0) first so the stream knows where it starts.
 	orderKey := "session1"
 	messages := []struct {
 		body  string
 		index int
 	}{
-		{"C", 2},
-		{"A", 0},
-		{"B", 1},
+		{"A", 0}, // Anchor
+		{"C", 2}, // Out of order, will buffer
+		{"B", 1}, // Fills gap
 	}
 
 	for _, m := range messages {
@@ -196,8 +205,6 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	}
 
 	// Wait for monitor to receive all 3 messages.
-	// Monitor (Stream) performs its own reordering, so it should see A, B, C.
-	// But we really care about what's in Mux History.
 	received := ""
 	for i := 0; i < 3; i++ {
 		select {
