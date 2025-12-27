@@ -3,6 +3,7 @@ package stream
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -12,15 +13,20 @@ import (
 	_ "gocloud.dev/pubsub/mempubsub"
 )
 
+func newTopicName(base string) string {
+	return fmt.Sprintf("mem://%s-%d", base, rand.Int())
+}
+
 func TestStream_SendMessage(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://stream-test-send")
+	topicName := newTopicName("stream-test-send")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
 	require.NoError(t, err)
 	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://stream-test-send")
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
 	require.NoError(t, err)
 	defer sub.Shutdown(ctx)
 
