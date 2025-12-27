@@ -687,8 +687,7 @@ fn expand_macros(code: &str) -> String {
                         "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
                     );
 
-                    let mut new_lines: Vec<String> =
-                        lines.iter().map(|s| s.to_string()).collect();
+                    let mut new_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
                     new_lines[line_idx] = replacement;
 
                     expanded_code = new_lines.join("\n");
