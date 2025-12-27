@@ -31,7 +31,6 @@ windows-service = "0.6.0"
 [build-dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_yaml = { workspace = true }
-serde_json = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }

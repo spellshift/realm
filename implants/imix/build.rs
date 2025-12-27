@@ -80,10 +80,10 @@ fn apply_build_config(config: &ImixBuildConfig) {
     // Handle callbacks - new format takes precedence over legacy format
     if let Some(ref callbacks) = config.callbacks {
         if !callbacks.is_empty() {
-            // Serialize callbacks list as JSON for runtime consumption
-            match serde_json::to_string(callbacks) {
-                Ok(json) => {
-                    println!("cargo:rustc-env=IMIX_CALLBACKS={}", json);
+            // Serialize callbacks list as YAML for runtime consumption
+            match serde_yaml::to_string(callbacks) {
+                Ok(yaml) => {
+                    println!("cargo:rustc-env=IMIX_CALLBACKS={}", yaml);
                     println!("cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)", callbacks.len());
 
                     // Also set the first callback as the primary for backward compatibility
@@ -103,7 +103,7 @@ fn apply_build_config(config: &ImixBuildConfig) {
                     }
                 }
                 Err(e) => {
-                    println!("cargo:warning=Failed to serialize callbacks to JSON: {}", e);
+                    println!("cargo:warning=Failed to serialize callbacks to YAML: {}", e);
                 }
             }
         }
