@@ -101,6 +101,9 @@ pub enum TokenKind {
     Indent,
     Dedent,
     Eof,
+
+    // Error
+    Error(String),
 }
 
 impl TokenKind {

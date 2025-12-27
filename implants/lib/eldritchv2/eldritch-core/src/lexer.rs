@@ -1,4 +1,3 @@
-use super::interpreter::error::{EldritchError, EldritchErrorKind};
 use super::token::{Span, Token, TokenKind};
 use alloc::collections::VecDeque;
 use alloc::format;
@@ -71,12 +70,11 @@ impl Lexer {
         }
     }
 
-    fn error<T>(&self, message: &str) -> Result<T, EldritchError> {
-        Err(EldritchError::new(
-            EldritchErrorKind::SyntaxError,
-            message,
-            Span::new(self.start, self.current, self.line),
-        ))
+    fn error_token(&self, message: &str) -> Token {
+        Token {
+            kind: TokenKind::Error(String::from(message)),
+            span: Span::new(self.start, self.current, self.line),
+        }
     }
 
     fn skip_comment(&mut self) {
@@ -126,7 +124,7 @@ impl Lexer {
         is_fstring: bool,
         is_bytes: bool,
         is_raw: bool,
-    ) -> Result<Token, EldritchError> {
+    ) -> Token {
         if is_fstring || is_bytes || is_raw {
             self.start = self.current;
         } else {
@@ -146,7 +144,7 @@ impl Lexer {
 
         loop {
             if self.is_at_end() {
-                return self.error(&format!(
+                return self.error_token(&format!(
                     "Unterminated string literal on line {}",
                     self.line
                 ));
@@ -173,7 +171,7 @@ impl Lexer {
 
             if c == '\n' {
                 if !is_triple {
-                    return self.error(&format!(
+                    return self.error_token(&format!(
                         "Unterminated string literal (newline) on line {}",
                         self.line
                     ));
@@ -187,7 +185,7 @@ impl Lexer {
                     current_literal.clear();
                 }
                 self.advance();
-                let expr_tokens = self.tokenize_fstring_expression()?;
+                let expr_tokens = self.tokenize_fstring_expression();
                 fstring_tokens.extend(expr_tokens);
                 continue;
             }
@@ -195,7 +193,7 @@ impl Lexer {
             if c == '\\' {
                 self.advance();
                 if self.is_at_end() {
-                    return self.error("Unterminated string literal");
+                    return self.error_token("Unterminated string literal");
                 }
 
                 if is_raw {
@@ -234,14 +232,14 @@ impl Lexer {
 
         if is_bytes {
             let bytes: Vec<u8> = current_literal.chars().map(|c| c as u8).collect();
-            Ok(self.add_token(TokenKind::Bytes(bytes)))
+            self.add_token(TokenKind::Bytes(bytes))
         } else if is_fstring {
             if !current_literal.is_empty() {
                 fstring_tokens.push(self.create_string_token(current_literal));
             }
-            Ok(self.add_token(TokenKind::FStringContent(fstring_tokens)))
+            self.add_token(TokenKind::FStringContent(fstring_tokens))
         } else {
-            Ok(self.add_token(TokenKind::String(current_literal)))
+            self.add_token(TokenKind::String(current_literal))
         }
     }
 
@@ -252,7 +250,7 @@ impl Lexer {
         }
     }
 
-    fn tokenize_fstring_expression(&mut self) -> Result<Vec<Token>, EldritchError> {
+    fn tokenize_fstring_expression(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         let initial_start = self.current;
         let mut nesting_level = 1;
@@ -269,18 +267,19 @@ impl Lexer {
         }
 
         if nesting_level > 0 {
-            return self.error(&format!(
+            return vec![self.error_token(&format!(
                 "Unmatched '{{' in f-string expression starting at line {}",
                 self.line
-            ));
+            ))];
         }
 
         let end_of_expr = self.current;
         let expr_source: String = self.source[initial_start..end_of_expr].iter().collect();
         let mut expr_lexer = Lexer::new(expr_source);
 
-        loop {
-            let token = expr_lexer.next_token()?;
+        // Recursively tokenize the expression inside the f-string
+        let sub_tokens = expr_lexer.scan_tokens();
+        for token in sub_tokens {
             match token.kind {
                 TokenKind::Eof => break,
                 TokenKind::Newline | TokenKind::Indent | TokenKind::Dedent => continue,
@@ -291,37 +290,36 @@ impl Lexer {
                 _ => tokens.push(token),
             }
         }
+
         self.advance();
 
         let mut final_tokens = vec![self.add_token(TokenKind::LParen)];
         final_tokens.extend(tokens);
         final_tokens.push(self.add_token(TokenKind::RParen));
-        Ok(final_tokens)
+        final_tokens
     }
 
-    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, EldritchError> {
+    pub fn scan_tokens(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         loop {
-            match self.next_token() {
-                Ok(token) => match token.kind {
-                    TokenKind::Eof => {
-                        while *self.indent_stack.last().unwrap() > 0 {
-                            self.indent_stack.pop();
-                            tokens.push(self.add_token(TokenKind::Dedent));
-                        }
-                        tokens.push(self.add_token(TokenKind::Eof));
-                        return Ok(tokens);
+            let token = self.next_token();
+            match token.kind {
+                TokenKind::Eof => {
+                    while *self.indent_stack.last().unwrap() > 0 {
+                        self.indent_stack.pop();
+                        tokens.push(self.add_token(TokenKind::Dedent));
                     }
-                    _ => tokens.push(token),
-                },
-                Err(e) => return Err(e),
+                    tokens.push(self.add_token(TokenKind::Eof));
+                    return tokens;
+                }
+                _ => tokens.push(token),
             }
         }
     }
 
-    fn next_token(&mut self) -> Result<Token, EldritchError> {
+    fn next_token(&mut self) -> Token {
         if let Some(token) = self.pending_tokens.pop_front() {
-            return Ok(token);
+            return token;
         }
 
         self.start = self.current;
@@ -338,14 +336,14 @@ impl Lexer {
                 indent_count += 1;
             }
             if self.is_at_end() {
-                return Ok(self.add_token(TokenKind::Eof));
+                return self.add_token(TokenKind::Eof);
             }
 
             if self.peek() != '\n' {
                 let current_indent = *self.indent_stack.last().unwrap();
                 if indent_count > current_indent {
                     self.indent_stack.push(indent_count);
-                    return Ok(self.add_token(TokenKind::Indent));
+                    return self.add_token(TokenKind::Indent);
                 } else if indent_count < current_indent {
                     let mut dedents = Vec::new();
                     while *self.indent_stack.last().unwrap() > indent_count {
@@ -353,8 +351,10 @@ impl Lexer {
                         dedents.push(self.add_token(TokenKind::Dedent));
                     }
                     if *self.indent_stack.last().unwrap() != indent_count {
-                        return self
-                            .error(&format!("Inconsistent indentation on line {}", self.line));
+                        return self.error_token(&format!(
+                            "Inconsistent indentation on line {}",
+                            self.line
+                        ));
                     }
                     self.current = self.start + indent_count;
                     if !dedents.is_empty() {
@@ -362,7 +362,7 @@ impl Lexer {
                         for t in dedents {
                             self.pending_tokens.push_back(t);
                         }
-                        return Ok(first);
+                        return first;
                     }
                 }
             } else {
@@ -377,7 +377,7 @@ impl Lexer {
         }
         self.start = self.current;
         if self.is_at_end() {
-            return Ok(self.add_token(TokenKind::Eof));
+            return self.add_token(TokenKind::Eof);
         }
 
         let c = self.advance();
@@ -385,36 +385,36 @@ impl Lexer {
         match c {
             '(' => {
                 self.nesting += 1;
-                Ok(self.add_token(TokenKind::LParen))
+                self.add_token(TokenKind::LParen)
             }
             ')' => {
                 if self.nesting > 0 {
                     self.nesting -= 1;
                 }
-                Ok(self.add_token(TokenKind::RParen))
+                self.add_token(TokenKind::RParen)
             }
             '[' => {
                 self.nesting += 1;
-                Ok(self.add_token(TokenKind::LBracket))
+                self.add_token(TokenKind::LBracket)
             }
             ']' => {
                 if self.nesting > 0 {
                     self.nesting -= 1;
                 }
-                Ok(self.add_token(TokenKind::RBracket))
+                self.add_token(TokenKind::RBracket)
             }
             '{' => {
                 self.nesting += 1;
-                Ok(self.add_token(TokenKind::LBrace))
+                self.add_token(TokenKind::LBrace)
             }
             '}' => {
                 if self.nesting > 0 {
                     self.nesting -= 1;
                 }
-                Ok(self.add_token(TokenKind::RBrace))
+                self.add_token(TokenKind::RBrace)
             }
-            ',' => Ok(self.add_token(TokenKind::Comma)),
-            ':' => Ok(self.add_token(TokenKind::Colon)),
+            ',' => self.add_token(TokenKind::Comma),
+            ':' => self.add_token(TokenKind::Colon),
             '.' => {
                 // Check for leading dot float: .5
                 if self.peek().is_ascii_digit() {
@@ -424,99 +424,100 @@ impl Lexer {
                     }
                     let value: String = self.source[self.start..self.current].iter().collect();
                     let float_val: f64 = value.parse().unwrap_or(0.0);
-                    Ok(self.add_token(TokenKind::Float(float_val)))
+                    self.add_token(TokenKind::Float(float_val))
                 } else {
-                    Ok(self.add_token(TokenKind::Dot))
+                    self.add_token(TokenKind::Dot)
                 }
             }
-            ';' => Ok(self.add_token(TokenKind::Newline)),
+            ';' => self.add_token(TokenKind::Newline),
             '+' => {
                 if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::PlusAssign))
+                    self.add_token(TokenKind::PlusAssign)
                 } else {
-                    Ok(self.add_token(TokenKind::Plus))
+                    self.add_token(TokenKind::Plus)
                 }
             }
             '-' => {
                 if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::MinusAssign))
+                    self.add_token(TokenKind::MinusAssign)
                 } else if self.match_char('>') {
-                    Ok(self.add_token(TokenKind::Arrow))
+                    self.add_token(TokenKind::Arrow)
                 } else {
-                    Ok(self.add_token(TokenKind::Minus))
+                    self.add_token(TokenKind::Minus)
                 }
             }
             '*' => {
                 if self.match_char('*') {
-                    Ok(self.add_token(TokenKind::StarStar))
+                    self.add_token(TokenKind::StarStar)
                 } else if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::StarAssign))
+                    self.add_token(TokenKind::StarAssign)
                 } else {
-                    Ok(self.add_token(TokenKind::Star))
+                    self.add_token(TokenKind::Star)
                 }
             }
             '/' => {
                 if self.match_char('/') {
                     if self.match_char('=') {
-                        Ok(self.add_token(TokenKind::SlashSlashAssign))
+                        self.add_token(TokenKind::SlashSlashAssign)
                     } else {
-                        Ok(self.add_token(TokenKind::SlashSlash))
+                        self.add_token(TokenKind::SlashSlash)
                     }
                 } else if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::SlashAssign))
+                    self.add_token(TokenKind::SlashAssign)
                 } else {
-                    Ok(self.add_token(TokenKind::Slash))
+                    self.add_token(TokenKind::Slash)
                 }
             }
             '%' => {
                 if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::PercentAssign))
+                    self.add_token(TokenKind::PercentAssign)
                 } else {
-                    Ok(self.add_token(TokenKind::Percent))
+                    self.add_token(TokenKind::Percent)
                 }
             }
-            '&' => Ok(self.add_token(TokenKind::BitAnd)),
-            '|' => Ok(self.add_token(TokenKind::BitOr)),
-            '^' => Ok(self.add_token(TokenKind::BitXor)),
-            '~' => Ok(self.add_token(TokenKind::BitNot)),
-            '=' => Ok(if self.match_char('=') {
-                self.add_token(TokenKind::Eq)
-            } else {
-                self.add_token(TokenKind::Assign)
-            }),
+            '&' => self.add_token(TokenKind::BitAnd),
+            '|' => self.add_token(TokenKind::BitOr),
+            '^' => self.add_token(TokenKind::BitXor),
+            '~' => self.add_token(TokenKind::BitNot),
+            '=' => {
+                if self.match_char('=') {
+                    self.add_token(TokenKind::Eq)
+                } else {
+                    self.add_token(TokenKind::Assign)
+                }
+            }
             '<' => {
                 if self.match_char('<') {
-                    Ok(self.add_token(TokenKind::LShift))
+                    self.add_token(TokenKind::LShift)
                 } else if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::LtEq))
+                    self.add_token(TokenKind::LtEq)
                 } else {
-                    Ok(self.add_token(TokenKind::Lt))
+                    self.add_token(TokenKind::Lt)
                 }
             }
             '>' => {
                 if self.match_char('>') {
-                    Ok(self.add_token(TokenKind::RShift))
+                    self.add_token(TokenKind::RShift)
                 } else if self.match_char('=') {
-                    Ok(self.add_token(TokenKind::GtEq))
+                    self.add_token(TokenKind::GtEq)
                 } else {
-                    Ok(self.add_token(TokenKind::Gt))
+                    self.add_token(TokenKind::Gt)
                 }
             }
-            '!' => Ok(if self.match_char('=') {
-                self.add_token(TokenKind::NotEq)
-            } else {
-                return self.error(&format!(
-                    "Unexpected character: {} on line {}",
-                    c, self.line
-                ));
-            }),
+            '!' => {
+                if self.match_char('=') {
+                    self.add_token(TokenKind::NotEq)
+                } else {
+                    self.error_token(&format!("Unexpected character: {} on line {}", c, self.line))
+                }
+            }
             '#' => {
                 self.skip_comment();
                 self.next_token()
             }
             '\n' => {
                 self.line += 1;
-                Ok(self.add_token(TokenKind::Newline))
+                self.add_token(TokenKind::Newline)
             }
             '"' | '\'' => self.string(c, false, false, false),
             'b' => {
@@ -526,7 +527,7 @@ impl Lexer {
                     self.string(quote_char, false, true, false) // is_fstring=false, is_bytes=true
                 } else {
                     self.current = self.start;
-                    Ok(self.identifier())
+                    self.identifier()
                 }
             }
             'f' | 'F' => {
@@ -536,7 +537,7 @@ impl Lexer {
                     self.string(quote_char, true, false, false)
                 } else {
                     self.current = self.start;
-                    Ok(self.identifier())
+                    self.identifier()
                 }
             }
             'r' | 'R' => {
@@ -546,15 +547,12 @@ impl Lexer {
                     self.string(quote_char, false, false, true) // is_fstring=false, is_bytes=false, is_raw=true
                 } else {
                     self.current = self.start;
-                    Ok(self.identifier())
+                    self.identifier()
                 }
             }
-            _ if c.is_ascii_digit() => Ok(self.number()),
-            _ if c.is_alphabetic() || c == '_' => Ok(self.identifier()),
-            _ => self.error(&format!(
-                "Unexpected character: {} on line {}",
-                c, self.line
-            )),
+            _ if c.is_ascii_digit() => self.number(),
+            _ if c.is_alphabetic() || c == '_' => self.identifier(),
+            _ => self.error_token(&format!("Unexpected character: {} on line {}", c, self.line)),
         }
     }
 }

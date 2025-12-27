@@ -177,10 +177,15 @@ impl Interpreter {
 
     pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
         let mut lexer = Lexer::new(input.to_string());
-        let tokens = match lexer.scan_tokens() {
-            Ok(t) => t,
-            Err(e) => return Err(format!("Lexer Error: {e}")),
-        };
+        let tokens = lexer.scan_tokens();
+
+        // Check for lexer errors first to maintain behavior
+        for token in &tokens {
+            if let TokenKind::Error(msg) = &token.kind {
+                return Err(format!("Lexer Error: {}", msg));
+            }
+        }
+
         let mut parser = Parser::new(tokens);
         let stmts = match parser.parse() {
             Ok(s) => s,
@@ -349,31 +354,20 @@ impl Interpreter {
         // Try to find the token we are on.
         // We can scan the whole string, but we really care about the last token(s).
         let mut lexer = Lexer::new(line_up_to_cursor.to_string());
-        let tokens = match lexer.scan_tokens() {
-            Ok(t) => t,
-            // If scanning fails (e.g. open string), we might still want to try?
-            // For now, if lexer fails, we fallback to simple word splitting or empty.
-            Err(_) => {
-                // Fallback: Check if we are typing a simple identifier at end
-                let last_word = line_up_to_cursor
-                    .split_terminator(|c: char| !c.is_alphanumeric() && c != '_')
-                    .next_back()
-                    .unwrap_or("");
-                if !last_word.is_empty() {
-                    prefix = last_word.to_string();
-                }
-                // If we can't tokenize, we assume we can't do dot-access analysis safely.
-                // But we can still try to suggest globals matching the prefix.
-                // We return empty tokens list, but allow execution to proceed to prefix filtering.
-                Vec::new()
-            }
-        };
+        // Since lexer is now infallible, we get tokens directly.
+        // Even if there are errors, we might still have useful tokens.
+        let tokens = lexer.scan_tokens();
 
         // Determine context from tokens
         let mut target_val: Option<Value> = None;
         let meaningful_tokens: Vec<&super::super::token::Token> = tokens
             .iter()
-            .filter(|t| t.kind != TokenKind::Eof && t.kind != TokenKind::Newline)
+            .filter(|t| {
+                !matches!(
+                    t.kind,
+                    TokenKind::Eof | TokenKind::Newline | TokenKind::Error(_)
+                )
+            })
             .collect();
 
         if !meaningful_tokens.is_empty() {
