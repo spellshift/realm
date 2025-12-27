@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(feature = "http1"))]
+    #[cfg(feature = "http1")]
     async fn test_routes_to_http1_transport() {
         // All these prefixes should result in the Http1 variant
         let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
