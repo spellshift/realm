@@ -1,0 +1,28 @@
+syntax = "proto3";
+// edition = "2024";
+
+package portal;
+
+option go_package = "realm.pub/tavern/internal/portal/portalpb";
+
+message UDPMessage {
+    bytes data = 1;
+    string dst_addr = 2;
+    uint32 dst_port = 3;
+    uint32 src_port = 4;
+}
+message TCPMessage {
+    bytes data = 1;
+    string dst_addr = 2;
+    uint32 dst_port = 3;
+    uint32 src_port = 4;
+}
+enum BytesMessageKind {
+    BYTES_MESSAGE_KIND_UNSPECIFIED = 0;
+    BYTES_MESSAGE_KIND_DATA = 1;
+    BYTES_MESSAGE_KIND_PING = 2;
+}
+message BytesMessage {
+    bytes data = 1;
+    BytesMessageKind kind = 2;
+}

@@ -26,6 +26,7 @@ const (
 	C2_ReportProcessList_FullMethodName = "/c2.C2/ReportProcessList"
 	C2_ReportTaskOutput_FullMethodName  = "/c2.C2/ReportTaskOutput"
 	C2_ReverseShell_FullMethodName      = "/c2.C2/ReverseShell"
+	C2_SummonPortal_FullMethodName      = "/c2.C2/SummonPortal"
 )
 
 // C2Client is the client API for C2 service.
@@ -59,6 +60,8 @@ type C2Client interface {
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error)
+	// Open a portal bi-directional stream.
+	SummonPortal(ctx context.Context, opts ...grpc.CallOption) (C2_SummonPortalClient, error)
 }
 
 type c2Client struct {
@@ -209,6 +212,38 @@ func (x *c2ReverseShellClient) Recv() (*ReverseShellResponse, error) {
 	return m, nil
 }
 
+func (c *c2Client) SummonPortal(ctx context.Context, opts ...grpc.CallOption) (C2_SummonPortalClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &C2_ServiceDesc.Streams[3], C2_SummonPortal_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &c2SummonPortalClient{ClientStream: stream}
+	return x, nil
+}
+
+type C2_SummonPortalClient interface {
+	Send(*SummonPortalRequest) error
+	Recv() (*SummonPortalResponse, error)
+	grpc.ClientStream
+}
+
+type c2SummonPortalClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2SummonPortalClient) Send(m *SummonPortalRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *c2SummonPortalClient) Recv() (*SummonPortalResponse, error) {
+	m := new(SummonPortalResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // C2Server is the server API for C2 service.
 // All implementations must embed UnimplementedC2Server
 // for forward compatibility
@@ -240,6 +275,8 @@ type C2Server interface {
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(C2_ReverseShellServer) error
+	// Open a portal bi-directional stream.
+	SummonPortal(C2_SummonPortalServer) error
 	mustEmbedUnimplementedC2Server()
 }
 
@@ -267,6 +304,9 @@ func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutput
 }
 func (UnimplementedC2Server) ReverseShell(C2_ReverseShellServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReverseShell not implemented")
+}
+func (UnimplementedC2Server) SummonPortal(C2_SummonPortalServer) error {
+	return status.Errorf(codes.Unimplemented, "method SummonPortal not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
 
@@ -426,6 +466,32 @@ func (x *c2ReverseShellServer) Recv() (*ReverseShellRequest, error) {
 	return m, nil
 }
 
+func _C2_SummonPortal_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(C2Server).SummonPortal(&c2SummonPortalServer{ServerStream: stream})
+}
+
+type C2_SummonPortalServer interface {
+	Send(*SummonPortalResponse) error
+	Recv() (*SummonPortalRequest, error)
+	grpc.ServerStream
+}
+
+type c2SummonPortalServer struct {
+	grpc.ServerStream
+}
+
+func (x *c2SummonPortalServer) Send(m *SummonPortalResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *c2SummonPortalServer) Recv() (*SummonPortalRequest, error) {
+	m := new(SummonPortalRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // C2_ServiceDesc is the grpc.ServiceDesc for C2 service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -464,6 +530,12 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ReverseShell",
 			Handler:       _C2_ReverseShell_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "SummonPortal",
+			Handler:       _C2_SummonPortal_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
