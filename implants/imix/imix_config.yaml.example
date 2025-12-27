@@ -26,10 +26,44 @@
 #       callback_uri: "http://tavern.example.com:8000"
 #       callback_interval: 10
 
-# URI for initial callbacks (must specify a scheme)
-# Valid schemes: http://, https://, dns://
-# Default: http://127.0.0.1:8000
-callback_uri: "http://tavern.example.com:8000"
+# ============================================================================
+# CALLBACKS CONFIGURATION
+# ============================================================================
+# You can specify callbacks in two formats:
+#
+# 1. NEW FORMAT (recommended): List of callbacks with individual settings
+# 2. LEGACY FORMAT: Single callback with global interval/retry settings
+#
+# The new format takes precedence if both are specified.
+
+# --- NEW FORMAT: Multiple Callbacks ---
+# Each callback can have its own URI, interval, and retry_interval
+callbacks:
+  # Primary callback - DNS transport with custom intervals
+  - uri: "dns://8.8.8.8:53?domain=c2.example.com&type=txt"
+    interval: 10          # Check every 10 seconds
+    retry_interval: 5     # Retry after 5 seconds on error
+
+  # Secondary callback - HTTP fallback with different timing
+  - uri: "http://tavern.example.com:8000"
+    interval: 30          # Check every 30 seconds
+    retry_interval: 15    # Retry after 15 seconds on error
+
+  # Tertiary callback - HTTPS with longer intervals
+  - uri: "https://backup.example.com:443"
+    interval: 60          # Check every 60 seconds
+    retry_interval: 30    # Retry after 30 seconds on error
+
+# --- LEGACY FORMAT: Single Callback (for backward compatibility) ---
+# Uncomment these and comment out the 'callbacks' section above to use legacy format
+#
+# callback_uri: "http://tavern.example.com:8000"
+# callback_interval: 10
+# retry_interval: 10
+
+# ============================================================================
+# SERVER CONFIGURATION
+# ============================================================================
 
 # The public key for the tavern server
 # Obtain from server using: curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
@@ -37,18 +71,18 @@ callback_uri: "http://tavern.example.com:8000"
 # Required when using redirectors
 server_pubkey: "your-base64-encoded-server-public-key-here"
 
-# Duration between callbacks, in seconds
-# Default: 5
-callback_interval: 10
-
-# Duration to wait before restarting the agent loop if an error occurs, in seconds
-# Default: 5
-retry_interval: 10
+# ============================================================================
+# NETWORK CONFIGURATION
+# ============================================================================
 
 # Override system settings for proxy URI over HTTP(S)
 # Must specify a scheme (e.g., http://, https://)
 # If not specified, system proxy settings will be used (Linux only)
 proxy_uri: "http://proxy.example.com:8080"
+
+# ============================================================================
+# BEACON CONFIGURATION
+# ============================================================================
 
 # Manually specify the host ID for this beacon
 # This supersedes the file on disk
@@ -59,6 +93,10 @@ proxy_uri: "http://proxy.example.com:8080"
 # May want to pair with runtime environment variable IMIX_BEACON_ID
 # Default: false
 run_once: false
+
+# ============================================================================
+# FEATURE FLAGS
+# ============================================================================
 
 # Feature flags for conditional compilation
 # Valid values:
@@ -84,17 +122,61 @@ run_once: false
 features:
   - grpc
 
-# DNS Transport Configuration Examples:
-# When using DNS transport, configure callback_uri with the dns:// scheme:
+# ============================================================================
+# CONFIGURATION EXAMPLES
+# ============================================================================
+
+# --- Example 1: Simple single callback (legacy format) ---
+# callbacks: null
+# callback_uri: "http://tavern.example.com:8000"
+# callback_interval: 10
+# retry_interval: 5
+
+# --- Example 2: Multiple HTTP/HTTPS callbacks with failover ---
+# callbacks:
+#   - uri: "https://primary.example.com:443"
+#     interval: 15
+#     retry_interval: 5
+#   - uri: "https://backup1.example.com:443"
+#     interval: 30
+#     retry_interval: 10
+#   - uri: "https://backup2.example.com:443"
+#     interval: 60
+#     retry_interval: 20
+
+# --- Example 3: DNS-only callbacks with different record types ---
+# callbacks:
+#   - uri: "dns://8.8.8.8:53?domain=c2.example.com&type=txt"
+#     interval: 20
+#     retry_interval: 10
+#   - uri: "dns://1.1.1.1:53?domain=c2.example.com&type=a"
+#     interval: 30
+#     retry_interval: 15
+
+# --- Example 4: Mixed transport (DNS primary, HTTP fallback) ---
+# callbacks:
+#   - uri: "dns://*?domain=c2.example.com"
+#     interval: 10
+#     retry_interval: 5
+#   - uri: "http://fallback.example.com:8000"
+#     interval: 60
+#     retry_interval: 30
+
+# --- Example 5: Single callback with optional intervals ---
+# Intervals will use defaults if not specified
+# callbacks:
+#   - uri: "http://tavern.example.com:8000"
+
+# DNS Transport URI Format Reference:
+# dns://<server>?domain=<DOMAIN>[&type=<TYPE>]
 #
-# Use specific DNS server with TXT records (default):
-#   callback_uri: "dns://8.8.8.8:53?domain=c2.example.com"
+# Parameters:
+#   - server: DNS server address (e.g., 8.8.8.8:53) or * for system resolver
+#   - domain: Base domain for DNS queries (e.g., c2.example.com)
+#   - type: DNS record type - txt (default), a, or aaaa
 #
-# Use system resolver with fallbacks:
-#   callback_uri: "dns://*?domain=c2.example.com"
-#
-# Use multiple DNS servers with A records:
-#   callback_uri: "dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a"
-#
-# Use AAAA records:
-#   callback_uri: "dns://8.8.8.8:53?domain=c2.example.com&type=aaaa"
+# Examples:
+#   - dns://8.8.8.8:53?domain=c2.example.com (TXT records via Google DNS)
+#   - dns://*?domain=c2.example.com (System resolver with fallback)
+#   - dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a (Multiple servers, A records)
+#   - dns://8.8.8.8:53?domain=c2.example.com&type=aaaa (AAAA records)

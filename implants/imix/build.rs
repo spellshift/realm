@@ -1,12 +1,35 @@
 use serde::{Deserialize, Serialize};
 use std::env;
 
+/// Individual callback configuration
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct CallbackConfig {
+    /// URI for this callback (must specify a scheme, e.g. `http://` or `dns://`)
+    uri: String,
+
+    /// Duration between callbacks for this URI, in seconds
+    /// Default: `5`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    interval: Option<u32>,
+
+    /// Duration to wait before retrying this callback if an error occurs, in seconds
+    /// Default: `5`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    retry_interval: Option<u32>,
+}
+
 /// Build configuration structure matching the environment variables
 /// documented in the user guide
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 struct ImixBuildConfig {
-    /// URI for initial callbacks (must specify a scheme, e.g. `http://` or `dns://`)
+    /// List of callback configurations (new format)
+    /// Each callback can have its own URI, interval, and retry_interval
+    #[serde(skip_serializing_if = "Option::is_none")]
+    callbacks: Option<Vec<CallbackConfig>>,
+
+    /// URI for initial callbacks (legacy single callback format)
+    /// (must specify a scheme, e.g. `http://` or `dns://`)
     /// Default: `http://127.0.0.1:8000`
     #[serde(skip_serializing_if = "Option::is_none")]
     callback_uri: Option<String>,
@@ -16,12 +39,12 @@ struct ImixBuildConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     server_pubkey: Option<String>,
 
-    /// Duration between callbacks, in seconds
+    /// Duration between callbacks, in seconds (legacy format)
     /// Default: `5`
     #[serde(skip_serializing_if = "Option::is_none")]
     callback_interval: Option<u32>,
 
-    /// Duration to wait before restarting the agent loop if an error occurs, in seconds
+    /// Duration to wait before restarting the agent loop if an error occurs, in seconds (legacy format)
     /// Default: `5`
     #[serde(skip_serializing_if = "Option::is_none")]
     retry_interval: Option<u32>,
@@ -54,25 +77,58 @@ fn parse_yaml_build_config(yaml_content: &str) -> Result<ImixBuildConfig, Box<dy
 
 /// Apply build configuration by setting cargo environment variables
 fn apply_build_config(config: &ImixBuildConfig) {
-    // Set environment variables for compile-time configuration
-    if let Some(ref callback_uri) = config.callback_uri {
-        println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", callback_uri);
-        println!("cargo:warning=Setting IMIX_CALLBACK_URI={}", callback_uri);
+    // Handle callbacks - new format takes precedence over legacy format
+    if let Some(ref callbacks) = config.callbacks {
+        if !callbacks.is_empty() {
+            // Serialize callbacks list as JSON for runtime consumption
+            match serde_json::to_string(callbacks) {
+                Ok(json) => {
+                    println!("cargo:rustc-env=IMIX_CALLBACKS={}", json);
+                    println!("cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)", callbacks.len());
+
+                    // Also set the first callback as the primary for backward compatibility
+                    if let Some(first) = callbacks.first() {
+                        println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", first.uri);
+                        println!("cargo:warning=Setting IMIX_CALLBACK_URI={} (primary)", first.uri);
+
+                        if let Some(interval) = first.interval {
+                            println!("cargo:rustc-env=IMIX_CALLBACK_INTERVAL={}", interval);
+                            println!("cargo:warning=Setting IMIX_CALLBACK_INTERVAL={} (primary)", interval);
+                        }
+
+                        if let Some(retry) = first.retry_interval {
+                            println!("cargo:rustc-env=IMIX_RETRY_INTERVAL={}", retry);
+                            println!("cargo:warning=Setting IMIX_RETRY_INTERVAL={} (primary)", retry);
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("cargo:warning=Failed to serialize callbacks to JSON: {}", e);
+                }
+            }
+        }
+    } else {
+        // Legacy single callback format
+        if let Some(ref callback_uri) = config.callback_uri {
+            println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", callback_uri);
+            println!("cargo:warning=Setting IMIX_CALLBACK_URI={}", callback_uri);
+        }
+
+        if let Some(callback_interval) = config.callback_interval {
+            println!("cargo:rustc-env=IMIX_CALLBACK_INTERVAL={}", callback_interval);
+            println!("cargo:warning=Setting IMIX_CALLBACK_INTERVAL={}", callback_interval);
+        }
+
+        if let Some(retry_interval) = config.retry_interval {
+            println!("cargo:rustc-env=IMIX_RETRY_INTERVAL={}", retry_interval);
+            println!("cargo:warning=Setting IMIX_RETRY_INTERVAL={}", retry_interval);
+        }
     }
 
+    // Set other configuration options
     if let Some(ref server_pubkey) = config.server_pubkey {
         println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", server_pubkey);
         println!("cargo:warning=Setting IMIX_SERVER_PUBKEY=(redacted for security)");
-    }
-
-    if let Some(callback_interval) = config.callback_interval {
-        println!("cargo:rustc-env=IMIX_CALLBACK_INTERVAL={}", callback_interval);
-        println!("cargo:warning=Setting IMIX_CALLBACK_INTERVAL={}", callback_interval);
-    }
-
-    if let Some(retry_interval) = config.retry_interval {
-        println!("cargo:rustc-env=IMIX_RETRY_INTERVAL={}", retry_interval);
-        println!("cargo:warning=Setting IMIX_RETRY_INTERVAL={}", retry_interval);
     }
 
     if let Some(ref proxy_uri) = config.proxy_uri {
