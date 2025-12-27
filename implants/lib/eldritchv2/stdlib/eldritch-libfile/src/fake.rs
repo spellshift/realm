@@ -253,6 +253,10 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
+    fn pwd(&self) -> Result<Option<String>, String> {
+        Ok(Some("/home/user".to_string()))
+    }
+
     fn remove(&self, path: String) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
