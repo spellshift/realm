@@ -18,7 +18,7 @@ Building in the dev container limits variables that might cause issues and is th
 
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
-| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:8000` | No |
+| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://` or `dns://`) | `http://127.0.0.1:8000` | No |
 | IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | automatic | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
@@ -32,6 +32,65 @@ Imix has run-time configuration, that may be specified using environment variabl
 | ------- | ----------- | ------- | -------- |
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
 | IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
+
+## DNS Transport Configuration
+
+The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either specific DNS servers or the system's default resolver with automatic fallback.
+
+### DNS URI Format
+
+When using the DNS transport, configure `IMIX_CALLBACK_URI` with the following format:
+
+```
+dns://<server>?domain=<DOMAIN>[&type=<TYPE>]
+```
+
+**Parameters:**
+- `<server>` - DNS server address(es), `*` to use system resolver, or comma-separated list (e.g., `8.8.8.8:53,1.1.1.1:53`)
+- `domain` - Base domain for DNS queries (e.g., `c2.example.com`)
+- `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
+
+**Examples:**
+
+```bash
+# Use specific DNS server with TXT records (default)
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com"
+
+# Use system resolver with fallbacks
+export IMIX_CALLBACK_URI="dns://*?domain=c2.example.com"
+
+# Use multiple DNS servers with A records
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a"
+
+# Use AAAA records
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com&type=aaaa"
+```
+
+### DNS Resolver Fallback
+
+When using `*` as the server, the agent uses system DNS servers followed by public resolvers (1.1.1.1, 8.8.8.8) as fallbacks. If system configuration cannot be read, only the public resolvers are used. When multiple servers are configured, the agent tries each server in order on every failed request until one succeeds, then uses the working server for subsequent requests.
+
+### Record Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| TXT | Text records (default) | Best throughput, data encoded in TXT RDATA |
+| A | IPv4 address records | Lower profile, data encoded across multiple A records |
+| AAAA | IPv6 address records | Medium profile, more data per record than A |
+
+### Protocol Details
+
+The DNS transport uses an async windowed protocol to handle UDP unreliability:
+
+- **Chunked transmission**: Large requests are split into chunks that fit within DNS query limits (253 bytes total domain length)
+- **Windowed sending**: Up to 10 packets are sent concurrently
+- **ACK/NACK protocol**: The server responds with acknowledgments for received chunks and requests retransmission of missing chunks
+- **Automatic retries**: Failed chunks are retried up to 3 times before the request fails
+- **CRC32 verification**: Data integrity is verified using CRC32 checksums
+
+**Limits:**
+- Maximum data size: 50MB per request
+- Maximum concurrent conversations on server: 10,000
 
 ## Logging
 
@@ -100,6 +159,7 @@ These flags are passed to cargo build Eg.:
 
 - `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
 - `--features http1 --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
+- `--features dns --no-default-features` - Changes the default grpc transport to use DNS. Requires running the dns redirector. See the [DNS Transport Configuration](#dns-transport-configuration) section for more information on how to configure the DNS transport URI.
 
 ## Setting encryption key
 
