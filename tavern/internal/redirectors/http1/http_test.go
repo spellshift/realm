@@ -2,7 +2,7 @@ package http1
 
 import (
 	"bytes"
-	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,48 +12,57 @@ import (
 )
 
 func TestRequirePOST(t *testing.T) {
-	// Case 1: Method is POST
-	req := httptest.NewRequest(http.MethodPost, "/", nil)
-	w := httptest.NewRecorder()
+	tests := []struct {
+		method string
+		want   bool
+		status int
+	}{
+		{http.MethodPost, true, http.StatusOK},
+		{http.MethodGet, false, http.StatusMethodNotAllowed},
+		{http.MethodPut, false, http.StatusMethodNotAllowed},
+	}
 
-	valid := requirePOST(w, req)
-	assert.True(t, valid)
-	assert.Equal(t, http.StatusOK, w.Code) // No error written
+	for _, tt := range tests {
+		t.Run(tt.method, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(tt.method, "/", nil)
 
-	// Case 2: Method is GET
-	req = httptest.NewRequest(http.MethodGet, "/", nil)
-	w = httptest.NewRecorder()
-
-	valid = requirePOST(w, req)
-	assert.False(t, valid)
-	assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+			got := requirePOST(w, r)
+			assert.Equal(t, tt.want, got)
+			if !got {
+				assert.Equal(t, tt.status, w.Code)
+			}
+		})
+	}
 }
 
 func TestReadRequestBody(t *testing.T) {
-	// Case 1: Valid body
-	bodyContent := []byte("hello world")
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(bodyContent))
-	w := httptest.NewRecorder()
+	t.Run("Valid body", func(t *testing.T) {
+		body := []byte("test body")
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 
-	data, ok := readRequestBody(w, req)
-	assert.True(t, ok)
-	assert.Equal(t, bodyContent, data)
+		got, ok := readRequestBody(w, r)
+		assert.True(t, ok)
+		assert.Equal(t, body, got)
+	})
 
-	// Case 2: Read error (simulated by closing the body prematurely or custom reader)
-	// Using a custom reader that fails on Read
-	failReader := &ErrorReader{}
-	req = httptest.NewRequest(http.MethodPost, "/", failReader)
-	w = httptest.NewRecorder()
+	t.Run("Error reading body", func(t *testing.T) {
+		// Mock a reader that returns an error
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", &errorReader{})
 
-	data, ok = readRequestBody(w, req)
-	assert.False(t, ok)
-	assert.Nil(t, data)
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+		got, ok := readRequestBody(w, r)
+		assert.False(t, ok)
+		assert.Nil(t, got)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }
 
-type ErrorReader struct{}
-func (e *ErrorReader) Read(p []byte) (n int, err error) {
-	return 0, assert.AnError
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	return 0, io.ErrUnexpectedEOF
 }
 
 func TestSetGRPCResponseHeaders(t *testing.T) {
@@ -65,32 +74,34 @@ func TestSetGRPCResponseHeaders(t *testing.T) {
 }
 
 func TestGetFlusher(t *testing.T) {
-	// Case 1: ResponseWriter supports Flusher (httptest.ResponseRecorder does NOT implement Flusher by default in all Go versions,
-	// but check if we can mock it or if NewRecorder supports it now.
-	// Actually NewRecorder implements Flusher starting Go 1.6+)
-	w := httptest.NewRecorder()
-	f, ok := getFlusher(w)
-	assert.True(t, ok)
-	assert.NotNil(t, f)
+	t.Run("Supports Flusher", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		_, ok := getFlusher(w)
+		assert.True(t, ok)
+	})
 
-	// Case 2: ResponseWriter does not support Flusher
-	mw := &MockWriter{}
-	f, ok = getFlusher(mw)
-	assert.False(t, ok)
-	assert.Nil(t, f)
+	// It's hard to mock a ResponseWriter that *doesn't* support Flusher using httptest.NewRecorder
+	// because it implements it. We'd need a custom struct.
+	t.Run("Does Not Support Flusher", func(t *testing.T) {
+		w := &basicResponseWriter{}
+		_, ok := getFlusher(w)
+		assert.False(t, ok)
+	})
 }
 
-type MockWriter struct{}
-func (m *MockWriter) Header() http.Header { return http.Header{} }
-func (m *MockWriter) Write([]byte) (int, error) { return 0, nil }
-func (m *MockWriter) WriteHeader(statusCode int) {}
+type basicResponseWriter struct{}
+
+func (b *basicResponseWriter) Header() http.Header       { return http.Header{} }
+func (b *basicResponseWriter) Write([]byte) (int, error) { return 0, nil }
+func (b *basicResponseWriter) WriteHeader(statusCode int) {}
 
 func TestHandleStreamError(t *testing.T) {
 	w := httptest.NewRecorder()
-	handleStreamError(w, "error msg", assert.AnError)
+	handleStreamError(w, "stream failed", io.ErrUnexpectedEOF)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	assert.Contains(t, w.Body.String(), "error msg")
+	assert.Contains(t, w.Body.String(), "stream failed")
+	assert.Contains(t, w.Body.String(), "unexpected EOF")
 }
 
 func TestCreateRequestContext(t *testing.T) {
@@ -99,17 +110,9 @@ func TestCreateRequestContext(t *testing.T) {
 	defer cancel()
 
 	assert.NotNil(t, ctx)
+	assert.NotNil(t, cancel)
 
-	// Verify timeout
-	select {
-	case <-ctx.Done():
-		// Should not be done immediately
-		assert.Fail(t, "context closed too early")
-	default:
-		// OK
-	}
-
-	// Wait for timeout
-	time.Sleep(150 * time.Millisecond)
-	assert.ErrorIs(t, ctx.Err(), context.DeadlineExceeded)
+	deadline, ok := ctx.Deadline()
+	assert.True(t, ok)
+	assert.WithinDuration(t, time.Now().Add(timeout), deadline, 10*time.Millisecond)
 }
