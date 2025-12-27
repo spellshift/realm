@@ -71,7 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           report-path: 'all-reports/*.json'
-          upload-artifact: true
+          upload-artifact: false
           fetch-previous-results: true
           pull-request: false
           issue: ${{ steps.pr_info.outputs.pr_number }}
@@ -123,3 +123,11 @@ jobs:
 
           # Push to the orphan branch
           git push origin flaky-monitor-results
+
+      - name: 📤 Upload History Artifact
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-report
+          path: flaky-history/
+          overwrite: true
