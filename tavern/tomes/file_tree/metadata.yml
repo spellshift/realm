@@ -8,3 +8,7 @@ paramdefs:
   type: string
   label: File path
   placeholder: "/etc/"
+- name: depth
+  type: int
+  label: Recurse Depth
+  placeholder: "3, or -1 for infinite recursion"

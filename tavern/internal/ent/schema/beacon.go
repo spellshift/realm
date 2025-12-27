@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/namegen"
 )
 
@@ -73,6 +74,12 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Duration until next callback, in seconds."),
+		field.Enum("transport").
+			GoType(c2pb.Beacon_Transport(0)).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Beacons current transport."),
 	}
 }
 

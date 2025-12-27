@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
@@ -37,37 +34,9 @@ func init() {
 	prometheus.MustRegister(metricHostCallbacksTotal)
 }
 
-func getRemoteIP(ctx context.Context) string {
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		return "unknown"
-	}
-
-	host, _, err := net.SplitHostPort(p.Addr.String())
-	if err != nil {
-		return "unknown"
-	}
-
-	return host
-}
-
-func getClientIP(ctx context.Context) string {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		if forwardedFor, exists := md["x-forwarded-for"]; exists && len(forwardedFor) > 0 {
-			// X-Forwarded-For is a comma-separated list, the first IP is the original client
-			clientIP := strings.Split(forwardedFor[0], ",")[0]
-			return strings.TrimSpace(clientIP)
-		}
-	}
-
-	// Fallback to peer address
-	return getRemoteIP(ctx)
-}
-
 func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) (*c2pb.ClaimTasksResponse, error) {
 	now := time.Now()
-	clientIP := getClientIP(ctx)
+	clientIP := GetClientIP(ctx)
 
 	// Validate input
 	if req.Beacon == nil {
@@ -195,6 +164,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetLastSeenAt(now).
 		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
 		SetInterval(req.Beacon.Interval).
+		SetTransport(req.Beacon.Transport).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)

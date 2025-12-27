@@ -15,7 +15,7 @@ const FreeTextSearch = (props: Props) => {
     const debouncedSearch = useRef(
         debounce(async (criteria) => {
             setSearch(criteria);
-        }, 300)
+        }, 400)
     ).current;
 
     async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {

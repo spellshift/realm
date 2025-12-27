@@ -1,0 +1,48 @@
+[package]
+name = "imixv2"
+version = "0.3.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["install", "grpc", "http1", "dns"]
+grpc = ["transport/grpc"]
+http1 = ["transport/http1"]
+dns = ["transport/dns"]
+win_service = []
+install = []
+
+[dependencies]
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+] }
+anyhow = { workspace = true }
+log = { workspace = true }
+futures = { workspace = true }
+crossterm = { workspace = true }
+prost-types = { workspace = true }
+pretty_env_logger = { workspace = true }
+eldritch-core = { workspace = true }
+eldritchv2 = { workspace = true, features = ["std", "stdlib"] }
+eldritch-repl = { workspace = true }
+eldritch-agent = { workspace = true }
+eldritch-libagent = { workspace = true, features = ["stdlib"] }
+eldritch-libassets = { workspace = true, features = ["stdlib"] }
+transport = { workspace = true }
+pb = { workspace = true, features = ["imix"] }
+portable-pty = { workspace = true }
+rust-embed = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-service = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+static_vcruntime = { workspace = true }
+
+[dev-dependencies]
+transport = { workspace = true, features = ["mock", "grpc"] }

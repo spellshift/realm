@@ -39,6 +39,7 @@ import (
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/tomes"
 
+	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 )
@@ -285,6 +286,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/shell/ws": tavernhttp.Endpoint{
 			Handler: stream.NewShellHandler(client, wsShellMux),
+		},
+		"/shell/ping": tavernhttp.Endpoint{
+			Handler: stream.NewPingHandler(client, wsShellMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
