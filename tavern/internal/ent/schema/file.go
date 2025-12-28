@@ -61,6 +61,13 @@ func (File) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Ref("files"),
+		edge.From("links", Link.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Ref("file").
+			Comment("Links that point to this file"),
 	}
 }
 

@@ -57,8 +57,13 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 				SaveX(ctx).ID
 		}
 
-		// Respond with JSON of the file ID
-		fmt.Fprintf(w, `{"data":{"file":{"id":%d}}}`, fileID)
+		// Create a Link entity for this file
+		link := graph.Link.Create().
+			SetFileID(fileID).
+			SaveX(ctx)
+
+		// Respond with JSON of the file ID and link path
+		fmt.Fprintf(w, `{"data":{"file":{"id":%d},"link":{"path":"%s"}}}`, fileID, link.Path)
 		return nil
 	})
 }

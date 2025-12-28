@@ -6,14 +6,14 @@ require (
 	cloud.google.com/go/pubsub v1.45.3
 	cloud.google.com/go/secretmanager v1.14.2
 	entgo.io/contrib v0.6.0
-	entgo.io/ent v0.14.1
+	entgo.io/ent v0.14.5
 	github.com/99designs/gqlgen v0.17.62
 	github.com/cloudflare/circl v1.5.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/prometheus/client_golang v1.20.4
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.5
@@ -74,7 +74,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.25.1-0.20240717145915-af51d3945208 // indirect
+	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.2.0 // indirect
@@ -102,9 +102,9 @@ require (
 	github.com/zclconf/go-cty v1.14.4 // indirect
 	gocloud.dev v0.37.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-	golang.org/x/mod v0.20.0 // indirect
+	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237 // indirect
 )
