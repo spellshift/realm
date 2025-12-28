@@ -4,9 +4,13 @@ use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(feature = "grpc")]
 mod grpc;
+#[cfg(feature = "grpc")]
+pub use grpc::GRPC;
 
 #[cfg(feature = "grpc-doh")]
 mod dns_resolver;
+#[cfg(feature = "grpc-doh")]
+pub use dns_resolver::doh::DohProvider;
 
 #[cfg(feature = "http1")]
 mod http;

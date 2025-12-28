@@ -6,11 +6,10 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
 
-#[cfg(feature = "grpc-doh")]
 use hyper::client::HttpConnector;
 
 #[cfg(feature = "grpc-doh")]
-use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
+pub use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use crate::Transport;
 
@@ -36,40 +35,8 @@ impl Transport for GRPC {
     }
 
     fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
-
-        // Create HTTP connector with DNS-over-HTTPS support if enabled
-        #[cfg(feature = "grpc-doh")]
-        let mut http: HttpConnector<HickoryResolverService> =
-            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
-
-        #[cfg(not(feature = "grpc-doh"))]
-        let mut http = hyper::client::HttpConnector::new();
-
-        http.enforce_http(false);
-        http.set_nodelay(true);
-
-        let channel = match proxy_uri {
-            Some(proxy_uri_string) => {
-                let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
-                    hyper_proxy::Intercept::All,
-                    Uri::from_str(proxy_uri_string.as_str())?,
-                );
-                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
-                proxy_connector.set_tls(None);
-
-                endpoint
-                    .rate_limit(1, Duration::from_millis(25))
-                    .connect_with_connector_lazy(proxy_connector)
-            }
-            #[allow(non_snake_case) /* None is a reserved keyword */]
-            None => endpoint
-                .rate_limit(1, Duration::from_millis(25))
-                .connect_with_connector_lazy(http),
-        };
-
-        let grpc = tonic::client::Grpc::new(channel);
-        Ok(Self { grpc: Some(grpc) })
+        // Default to no DoH provider
+        Self::new_with_doh(callback, proxy_uri, None)
     }
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
@@ -211,6 +178,85 @@ impl Transport for GRPC {
 }
 
 impl GRPC {
+    /// Create a new GRPC transport with optional DoH provider
+    #[cfg(feature = "grpc-doh")]
+    pub fn new_with_doh(
+        callback: String,
+        proxy_uri: Option<String>,
+        doh_provider: Option<DohProvider>,
+    ) -> Result<Self> {
+        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+
+        // Create HTTP connector with optional DNS-over-HTTPS support
+        let mut http = if let Some(provider) = doh_provider {
+            crate::dns_resolver::doh::create_doh_connector(provider)?
+        } else {
+            // Default to standard HTTP connector when no DoH provider is specified
+            HttpConnector::new()
+        };
+
+        http.enforce_http(false);
+        http.set_nodelay(true);
+
+        let channel = match proxy_uri {
+            Some(proxy_uri_string) => {
+                let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
+                    hyper_proxy::Intercept::All,
+                    Uri::from_str(proxy_uri_string.as_str())?,
+                );
+                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
+                proxy_connector.set_tls(None);
+
+                endpoint
+                    .rate_limit(1, Duration::from_millis(25))
+                    .connect_with_connector_lazy(proxy_connector)
+            }
+            #[allow(non_snake_case) /* None is a reserved keyword */]
+            None => endpoint
+                .rate_limit(1, Duration::from_millis(25))
+                .connect_with_connector_lazy(http),
+        };
+
+        let grpc = tonic::client::Grpc::new(channel);
+        Ok(Self { grpc: Some(grpc) })
+    }
+
+    /// Create a new GRPC transport with optional DoH provider (non-DoH version)
+    #[cfg(not(feature = "grpc-doh"))]
+    pub fn new_with_doh(
+        callback: String,
+        proxy_uri: Option<String>,
+        _doh_provider: Option<()>,
+    ) -> Result<Self> {
+        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+
+        let mut http = hyper::client::HttpConnector::new();
+        http.enforce_http(false);
+        http.set_nodelay(true);
+
+        let channel = match proxy_uri {
+            Some(proxy_uri_string) => {
+                let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
+                    hyper_proxy::Intercept::All,
+                    Uri::from_str(proxy_uri_string.as_str())?,
+                );
+                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
+                proxy_connector.set_tls(None);
+
+                endpoint
+                    .rate_limit(1, Duration::from_millis(25))
+                    .connect_with_connector_lazy(proxy_connector)
+            }
+            #[allow(non_snake_case) /* None is a reserved keyword */]
+            None => endpoint
+                .rate_limit(1, Duration::from_millis(25))
+                .connect_with_connector_lazy(http),
+        };
+
+        let grpc = tonic::client::Grpc::new(channel);
+        Ok(Self { grpc: Some(grpc) })
+    }
+
     ///
     /// Contact the server for new tasks to execute.
     pub async fn claim_tasks_impl(

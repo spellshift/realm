@@ -3,6 +3,90 @@ use uuid::Uuid;
 
 use crate::c2::beacon::Transport;
 
+/// Parsed callback information from the URI
+#[derive(Debug, Clone)]
+pub struct CallbackInfo {
+    pub uri: String,
+    pub callback_type: CallbackType,
+    pub doh_provider: Option<String>,
+    pub proxy_uri: Option<String>,
+    pub domain: Option<String>,
+    pub query_type: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CallbackType {
+    Grpc,
+    Http1,
+    Dns,
+}
+
+impl CallbackInfo {
+    /// Parse a callback URI with query parameters
+    /// Format: scheme://host:port?doh=cloudflare&proxy_uri=http://...&domain=...&query_type=...
+    pub fn parse(uri_str: &str) -> Result<Self, String> {
+        // Split on '?' to separate base URI from query parameters
+        let parts: Vec<&str> = uri_str.splitn(2, '?').collect();
+        let base_uri = parts[0];
+
+        // Determine callback type from scheme
+        let callback_type = if base_uri.starts_with("http://") || base_uri.starts_with("https://") {
+            CallbackType::Grpc
+        } else if base_uri.starts_with("http1://") || base_uri.starts_with("https1://") {
+            CallbackType::Http1
+        } else if base_uri.starts_with("dns://") {
+            CallbackType::Dns
+        } else {
+            return Err(format!("Unknown callback URI scheme: {}", base_uri));
+        };
+
+        // Parse query parameters if present
+        let mut doh_provider = None;
+        let mut proxy_uri = None;
+        let mut domain = None;
+        let mut query_type = None;
+
+        if parts.len() > 1 {
+            for param in parts[1].split('&') {
+                if let Some((key, value)) = param.split_once('=') {
+                    match key {
+                        "doh" => doh_provider = Some(value.to_string()),
+                        "proxy_uri" => {
+                            // URL decode the proxy_uri
+                            proxy_uri = Some(
+                                urlencoding::decode(value)
+                                    .map_err(|e| format!("Failed to decode proxy_uri: {}", e))?
+                                    .to_string(),
+                            );
+                        }
+                        "domain" => domain = Some(value.to_string()),
+                        "query_type" => query_type = Some(value.to_string()),
+                        _ => {} // Ignore unknown parameters
+                    }
+                }
+            }
+        }
+
+        Ok(CallbackInfo {
+            uri: base_uri.to_string(),
+            callback_type,
+            doh_provider,
+            proxy_uri,
+            domain,
+            query_type,
+        })
+    }
+
+    /// Parse a list of callback URIs from a semicolon-delimited string
+    pub fn parse_list(uri_list: &str) -> Result<Vec<Self>, String> {
+        uri_list
+            .split(';')
+            .filter(|s| !s.is_empty())
+            .map(|uri| Self::parse(uri.trim()))
+            .collect()
+    }
+}
+
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
