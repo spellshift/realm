@@ -201,7 +201,9 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 	}
 
 	// Reply: [VER, METHOD] (No Auth)
-	conn.Write([]byte{0x05, 0x00})
+	if _, err := conn.Write([]byte{0x05, 0x00}); err != nil {
+		return
+	}
 
 	// 2. Request
 	// Client sends: [VER, CMD, RSV, ATYP, DST.ADDR, DST.PORT]
@@ -210,8 +212,13 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 		return
 	}
 
+	if buf[0] != 0x05 { // VER must be 5
+		reply(conn, 0x01) // General failure
+		return
+	}
+
 	if buf[1] != 0x01 { // CMD must be CONNECT
-		reply(conn, 0x07)
+		reply(conn, 0x07) // Command not supported
 		return
 	}
 
@@ -222,33 +229,38 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 	case 0x01: // IPv4
 		ipBuf := make([]byte, 4)
 		if _, err := io.ReadFull(conn, ipBuf); err != nil {
+			reply(conn, 0x01)
 			return
 		}
 		dstAddr = net.IP(ipBuf).String()
 	case 0x03: // Domain name
 		lenBuf := make([]byte, 1)
 		if _, err := io.ReadFull(conn, lenBuf); err != nil {
+			reply(conn, 0x01)
 			return
 		}
 		domainLen := int(lenBuf[0])
 		domainBuf := make([]byte, domainLen)
 		if _, err := io.ReadFull(conn, domainBuf); err != nil {
+			reply(conn, 0x01)
 			return
 		}
 		dstAddr = string(domainBuf)
 	case 0x04: // IPv6
 		ipBuf := make([]byte, 16)
 		if _, err := io.ReadFull(conn, ipBuf); err != nil {
+			reply(conn, 0x01)
 			return
 		}
 		dstAddr = net.IP(ipBuf).String()
 	default:
-		reply(conn, 0x08)
+		reply(conn, 0x08) // Address type not supported
 		return
 	}
 
 	portBuf := make([]byte, 2)
 	if _, err := io.ReadFull(conn, portBuf); err != nil {
+		reply(conn, 0x01)
 		return
 	}
 	dstPort := binary.BigEndian.Uint16(portBuf)
