@@ -1,7 +1,4 @@
-use tonic::transport;
 use uuid::Uuid;
-
-use crate::c2::beacon::Transport;
 
 /// Parsed callback information from the URI
 #[derive(Debug, Clone)]
