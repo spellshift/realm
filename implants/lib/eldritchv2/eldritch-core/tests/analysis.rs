@@ -1,4 +1,4 @@
-use eldritch_core::{analysis::Node, find_node_at_offset, ExprKind, Lexer, Parser, Stmt};
+use eldritch_core::{ExprKind, Lexer, Parser, Stmt, analysis::Node, find_node_at_offset};
 
 fn parse(source: &str) -> Vec<Stmt> {
     let mut lexer = Lexer::new(source.to_string());
@@ -70,11 +70,11 @@ fn test_find_node_at_offset_dot_nested() {
                 // LHS should be GetAttr(sys, path)
                 match &lhs.kind {
                     ExprKind::GetAttr(inner_lhs, inner_name) => {
-                         match &inner_lhs.kind {
+                        match &inner_lhs.kind {
                             ExprKind::Identifier(s) => assert_eq!(s, "sys"),
                             _ => panic!("Expected Identifier 'sys'"),
-                         }
-                         assert_eq!(inner_name, "path");
+                        }
+                        assert_eq!(inner_name, "path");
                     }
                     _ => panic!("Expected GetAttr on LHS"),
                 }
