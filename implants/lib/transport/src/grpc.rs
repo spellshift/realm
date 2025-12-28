@@ -14,11 +14,11 @@ use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use crate::Transport;
 
+use pb::portal::payload::Payload as PortalPayloadEnum;
+use pb::portal::{BytesMessageKind, TcpMessage, UdpMessage};
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_stream::StreamExt;
-use pb::portal::payload::Payload as PortalPayloadEnum;
-use pb::portal::{TcpMessage, UdpMessage, BytesMessageKind};
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
@@ -311,8 +311,9 @@ impl GRPC {
 
         // Map stores Sender to the connection handler task
         // Key: src_port
-        let connections: Arc<Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>> =
-            Arc::new(Mutex::new(std::collections::HashMap::new()));
+        let connections: Arc<
+            Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>,
+        > = Arc::new(Mutex::new(std::collections::HashMap::new()));
 
         while let Some(msg_result) = resp_stream.next().await {
             let msg = match msg_result {
@@ -452,9 +453,7 @@ impl GRPC {
         dst_port: u32,
         outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
         connections: std::sync::Arc<
-            std::sync::Mutex<
-                std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>,
-            >,
+            std::sync::Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>,
         >,
         task_id: i64,
     ) {
@@ -517,9 +516,7 @@ impl GRPC {
         dst_port: u32,
         outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
         connections: std::sync::Arc<
-            std::sync::Mutex<
-                std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>,
-            >,
+            std::sync::Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>,
         >,
         task_id: i64,
     ) {
@@ -792,9 +789,9 @@ impl GRPC {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::sync::mpsc;
-    use pb::portal::TcpMessage;
     use pb::portal::payload::Payload as PortalPayloadEnum;
+    use pb::portal::TcpMessage;
+    use tokio::sync::mpsc;
 
     #[tokio::test]
     async fn test_run_portal_loop_tcp() {
@@ -818,21 +815,23 @@ mod tests {
         let (server_tx, server_rx) = mpsc::channel(10);
         let stream = tokio_stream::wrappers::ReceiverStream::new(server_rx);
 
-        let loop_handle = tokio::spawn(async move {
-            GRPC::run_portal_loop(stream, outbound_tx, task_id).await
-        });
+        let loop_handle =
+            tokio::spawn(async move { GRPC::run_portal_loop(stream, outbound_tx, task_id).await });
 
         // Send message to portal loop
-        server_tx.send(Ok(CreatePortalResponse {
-            payload: Some(pb::portal::Payload {
-                payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
-                    data: b"ping".to_vec(),
-                    dst_addr: "127.0.0.1".to_string(),
-                    dst_port: addr.port() as u32,
-                    src_port: 5555,
-                }))
-            })
-        })).await.unwrap();
+        server_tx
+            .send(Ok(CreatePortalResponse {
+                payload: Some(pb::portal::Payload {
+                    payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
+                        data: b"ping".to_vec(),
+                        dst_addr: "127.0.0.1".to_string(),
+                        dst_port: addr.port() as u32,
+                        src_port: 5555,
+                    })),
+                }),
+            }))
+            .await
+            .unwrap();
 
         // Verify target received data
         // Use timeout to avoid hanging
