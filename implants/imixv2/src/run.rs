@@ -19,6 +19,8 @@ pub async fn run_agent() -> Result<()> {
     #[cfg(debug_assertions)]
     log::info!("Loaded config: {config:#?}");
 
+    let run_once = config.run_once;
+
     // Initial transport is just a placeholder, we create active ones in the loop
     let transport = ActiveTransport::init();
 
@@ -44,7 +46,7 @@ pub async fn run_agent() -> Result<()> {
 
         run_agent_cycle(agent_ref, registry_ref).await;
 
-        if SHUTDOWN.load(Ordering::Relaxed) || config.run_once {
+        if SHUTDOWN.load(Ordering::Relaxed) || run_once {
             break;
         }
 
