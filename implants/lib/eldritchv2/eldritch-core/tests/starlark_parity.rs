@@ -1,12 +1,20 @@
-use eldritch_core::Lexer;
-use eldritch_core::Parser;
+use eldritch_core::{Lexer, Parser, TokenKind};
 
 fn parse(code: &str) -> Result<(), String> {
-    let tokens = Lexer::new(code.to_string())
-        .scan_tokens()
-        .map_err(|e| e.to_string())?;
+    let tokens = Lexer::new(code.to_string()).scan_tokens();
+    // Check for Lexer errors explicitly
+    for token in &tokens {
+        if let TokenKind::Error(msg) = &token.kind {
+            return Err(msg.clone());
+        }
+    }
     let mut parser = Parser::new(tokens);
-    parser.parse().map(|_| ()).map_err(|e| e.to_string())
+    let (_, errors) = parser.parse();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors[0].message.clone())
+    }
 }
 
 // Tests from starlark-rust/starlark_syntax/src/syntax/def_tests
