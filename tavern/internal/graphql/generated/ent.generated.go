@@ -36,6 +36,7 @@ type QueryResolver interface {
 	Tags(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) (*ent.TagConnection, error)
 	Tomes(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) (*ent.TomeConnection, error)
 	Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error)
+	Portals(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) (*ent.PortalConnection, error)
 	Shells(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) (*ent.ShellConnection, error)
 	Me(ctx context.Context) (*ent.User, error)
 }
@@ -1841,6 +1842,149 @@ func (ec *executionContext) field_Query_nodes_argsIds(
 	}
 
 	var zeroVal []int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_portals_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_portals_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := ec.field_Query_portals_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := ec.field_Query_portals_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := ec.field_Query_portals_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := ec.field_Query_portals_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := ec.field_Query_portals_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+func (ec *executionContext) field_Query_portals_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_portals_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_portals_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[int], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[int]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[int]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_portals_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_portals_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*ent.PortalOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal []*ent.PortalOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOPortalOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*ent.PortalOrder
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_portals_argsWhere(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*ent.PortalWhereInput, error) {
+	if _, ok := rawArgs["where"]; !ok {
+		var zeroVal *ent.PortalWhereInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+	if tmp, ok := rawArgs["where"]; ok {
+		return ec.unmarshalOPortalWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInput(ctx, tmp)
+	}
+
+	var zeroVal *ent.PortalWhereInput
 	return zeroVal, nil
 }
 
@@ -11086,6 +11230,96 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_users_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_portals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_portals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		directive0 := func(rctx context.Context) (any, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Portals(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.PortalOrder), fc.Args["where"].(*ent.PortalWhereInput))
+		}
+
+		directive1 := func(ctx context.Context) (any, error) {
+			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+			if err != nil {
+				var zeroVal *ent.PortalConnection
+				return zeroVal, err
+			}
+			if ec.directives.RequireRole == nil {
+				var zeroVal *ent.PortalConnection
+				return zeroVal, errors.New("directive requireRole is not implemented")
+			}
+			return ec.directives.RequireRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.PortalConnection); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.PortalConnection`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.PortalConnection)
+	fc.Result = res
+	return ec.marshalNPortalConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_portals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_PortalConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_PortalConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PortalConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PortalConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_portals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -28158,6 +28392,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "portals":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_portals(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "shells":
 			field := field
 
@@ -30445,6 +30701,25 @@ func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPag
 	return ec._PageInfo(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNPortalConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection(ctx context.Context, sel ast.SelectionSet, v ent.PortalConnection) graphql.Marshaler {
+	return ec._PortalConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPortalConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection(ctx context.Context, sel ast.SelectionSet, v *ent.PortalConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PortalConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPortalOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrder(ctx context.Context, v any) (*ent.PortalOrder, error) {
+	res, err := ec.unmarshalInputPortalOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNPortalOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderField(ctx context.Context, v any) (*ent.PortalOrderField, error) {
 	var res = new(ent.PortalOrderField)
 	err := res.UnmarshalGQL(v)
@@ -31903,6 +32178,26 @@ func (ec *executionContext) marshalOPortalEdge2ᚖrealmᚗpubᚋtavernᚋinterna
 		return graphql.Null
 	}
 	return ec._PortalEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPortalOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderᚄ(ctx context.Context, v any) ([]*ent.PortalOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*ent.PortalOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPortalOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOPortalWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInputᚄ(ctx context.Context, v any) ([]*ent.PortalWhereInput, error) {

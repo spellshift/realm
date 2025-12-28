@@ -110,6 +110,10 @@ impl Agent for MockAgent {
     fn stop_task(&self, _: i64) -> Result<(), String> {
         Err("".into())
     }
+
+    fn start_create_portal(&self, _task_id: i64) -> Result<(), String> {
+        Err("".into())
+    }
 }
 
 #[test]

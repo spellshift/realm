@@ -12,9 +12,9 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"syscall"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"realm.pub/bin/imix_connect/portalpb"
@@ -31,7 +31,7 @@ type ProxyServer struct {
 }
 
 func main() {
-	serverAddr := flag.String("server", "127.0.0.1:9090", "Tavern server address (e.g. 127.0.0.1:9090)")
+	serverAddr := flag.String("server", "http://127.0.0.1:8000", "Tavern server address (e.g. http://127.0.0.1:8000)")
 	portalID := flag.Int64("portal_id", 0, "Portal ID to connect to")
 	listenAddr := flag.String("listen", "127.0.0.1:1080", "Local SOCKS5 listen address")
 	flag.Parse()
@@ -153,9 +153,9 @@ func (s *ProxyServer) handleInboundStream() error {
 		}
 
 		if tcpMsg := payload.GetTcp(); tcpMsg != nil {
-			// We use src_port in the *incoming* message to route back to the correct SOCKS client.
-			// Per PR feedback: SrcPort is used as the session ID.
-			connID := tcpMsg.GetSrcPort()
+			// We use src_id in the *incoming* message to route back to the correct SOCKS client.
+			// Per PR feedback: SrcId is used as the session ID.
+			connID := tcpMsg.GetSrcId()
 
 			// Try to find the connection
 			if val, ok := s.socksConns.Load(connID); ok {
@@ -177,7 +177,7 @@ func (s *ProxyServer) handleInboundStream() error {
 
 func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 	// Generate a unique ID for this connection
-	id := atomic.AddUint32(&s.connIDSeq, 1)
+	id := uuid.NewString()
 
 	defer func() {
 		conn.Close()
@@ -288,7 +288,7 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 							Data:    buffer[:n],
 							DstAddr: dstAddr,
 							DstPort: uint32(dstPort),
-							SrcPort: id, // Route back to us using this ID
+							SrcId:   id, // Route back to us using this ID
 						},
 					},
 				},
@@ -300,7 +300,7 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 			s.streamMu.Unlock()
 
 			if err != nil {
-				log.Printf("[%d] Failed to send to Tavern: %v", id, err)
+				log.Printf("[%s] Failed to send to Tavern: %v", id, err)
 				return
 			}
 		}

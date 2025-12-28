@@ -171,4 +171,8 @@ impl Agent for AgentFake {
     fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
         Ok(())
     }
+
+    fn start_create_portal(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
 }

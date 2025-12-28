@@ -27,7 +27,8 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
                     if let Ok(n) = socket.read(&mut buf).await {
                         let request = String::from_utf8_lossy(&buf[..n]);
                         if request.contains("GET / HTTP/1.1") {
-                            let response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!";
+                            let response =
+                                "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!";
                             let _ = socket.write_all(response.as_bytes()).await;
                         }
                     }
@@ -115,14 +116,17 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
 
         t.expect_is_active().returning(|| true);
         t.expect_name().returning(|| "mock");
-        t.expect_list_available().returning(|| vec!["mock".to_string()]);
+        t.expect_list_available()
+            .returning(|| vec!["mock".to_string()]);
 
         t
     });
 
     mock_transport.expect_is_active().returning(|| true);
     mock_transport.expect_name().returning(|| "mock");
-    mock_transport.expect_list_available().returning(|| vec!["mock".to_string()]);
+    mock_transport
+        .expect_list_available()
+        .returning(|| vec!["mock".to_string()]);
 
     // 3. Init Agent
     let runtime = tokio::runtime::Handle::current();
@@ -136,7 +140,8 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
     // 5. Handshake (Agent sends initial empty request)
     let init_req = tokio::time::timeout(Duration::from_secs(5), c2_inbox_rx.recv())
         .await
-        .ok().flatten()
+        .ok()
+        .flatten()
         .ok_or_else(|| anyhow::anyhow!("Timeout or channel closed waiting for init request"))?;
 
     assert_eq!(init_req.task_id, task_id);
@@ -150,7 +155,7 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
                 data: tcp_data.clone(),
                 dst_addr: "127.0.0.1".to_string(),
                 dst_port,
-                src_port: 12345,
+                src_id: "12345".to_string(),
             })),
         }),
     };
@@ -160,7 +165,8 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
     // 7. Agent receives, fwd to server, gets response, sends back to C2
     let reply_req = tokio::time::timeout(Duration::from_secs(5), c2_inbox_rx.recv())
         .await
-        .ok().flatten()
+        .ok()
+        .flatten()
         .ok_or_else(|| anyhow::anyhow!("Timeout or channel closed waiting for reply"))?;
 
     assert_eq!(reply_req.task_id, task_id);
@@ -168,7 +174,7 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
         let reply_str = String::from_utf8_lossy(&tcp.data);
         assert!(reply_str.contains("HTTP/1.1 200 OK"));
         assert!(reply_str.contains("Hello World!"));
-        assert_eq!(tcp.src_port, 12345);
+        assert_eq!(tcp.src_id, "12345".to_string());
     } else {
         panic!("Expected TCP message");
     }
@@ -212,7 +218,8 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
     let c2_inbox_tx_1 = c2_inbox_tx_proto.clone();
     let c2_outbox_rx_container_1 = c2_outbox_rx_container_proto.clone();
 
-    mock_transport.expect_create_portal()
+    mock_transport
+        .expect_create_portal()
         .returning(move |mut agent_rx, agent_tx| {
             let c2_inbox_tx = c2_inbox_tx_1.clone();
             let c2_outbox_rx_container = c2_outbox_rx_container_1.clone();
@@ -234,8 +241,9 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
         });
     mock_transport.expect_is_active().returning(|| true);
     mock_transport.expect_name().returning(|| "mock");
-    mock_transport.expect_list_available().returning(|| vec!["mock".to_string()]);
-
+    mock_transport
+        .expect_list_available()
+        .returning(|| vec!["mock".to_string()]);
 
     mock_transport.expect_clone().returning(move || {
         let mut t = MockTransport::default();
@@ -264,7 +272,8 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
             });
         t.expect_is_active().returning(|| true);
         t.expect_name().returning(|| "mock");
-        t.expect_list_available().returning(|| vec!["mock".to_string()]);
+        t.expect_list_available()
+            .returning(|| vec!["mock".to_string()]);
         t
     });
 
@@ -280,7 +289,8 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
     // 5. Handshake
     let init_req = tokio::time::timeout(Duration::from_secs(5), c2_inbox_rx.recv())
         .await
-        .ok().flatten()
+        .ok()
+        .flatten()
         .ok_or_else(|| anyhow::anyhow!("Timeout or channel closed waiting for init request"))?;
     assert_eq!(init_req.task_id, task_id);
 
@@ -292,7 +302,7 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
                 data: udp_data.clone(),
                 dst_addr: "127.0.0.1".to_string(),
                 dst_port,
-                src_port: 54321,
+                src_id: "54321".to_string(),
             })),
         }),
     };
@@ -302,13 +312,14 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
     // 7. Assert Response
     let reply_req = tokio::time::timeout(Duration::from_secs(5), c2_inbox_rx.recv())
         .await
-        .ok().flatten()
+        .ok()
+        .flatten()
         .ok_or_else(|| anyhow::anyhow!("Timeout or channel closed waiting for reply"))?;
 
     assert_eq!(reply_req.task_id, task_id);
     if let Some(PortalPayloadEnum::Udp(udp)) = reply_req.payload.unwrap().payload {
         assert_eq!(udp.data, b"PONG");
-        assert_eq!(udp.src_port, 54321);
+        assert_eq!(udp.src_id, "54321".to_string());
     } else {
         panic!("Expected UDP message");
     }

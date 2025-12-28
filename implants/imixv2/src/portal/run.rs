@@ -9,7 +9,10 @@ use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 use transport::Transport;
 
-pub async fn run_create_portal<T: Transport + 'static>(task_id: i64, mut transport: T) -> Result<()> {
+pub async fn run_create_portal<T: Transport + 'static>(
+    task_id: i64,
+    mut transport: T,
+) -> Result<()> {
     // 1. Setup channels
     let (outbound_tx, outbound_rx) = mpsc::channel(32);
     let (inbound_tx, inbound_rx) = mpsc::channel(32);
@@ -60,18 +63,18 @@ where
     S: tokio_stream::Stream<Item = CreatePortalResponse> + Unpin,
 {
     // Map stores Sender to the connection handler task
-    // Key: src_port
-    let connections: Arc<Mutex<HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>> =
+    // Key: src_id
+    let connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<Vec<u8>>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 
     while let Some(msg) = resp_stream.next().await {
         if let Some(payload_enum) = msg.payload.and_then(|p| p.payload) {
             match payload_enum {
                 PortalPayloadEnum::Tcp(tcp_msg) => {
-                    let src_port = tcp_msg.src_port;
+                    let src_id = tcp_msg.src_id.clone();
                     let mut map = connections.lock().unwrap();
 
-                    let tx = if let Some(tx) = map.get(&src_port) {
+                    let tx = if let Some(tx) = map.get(&src_id) {
                         if tx.is_closed() {
                             None
                         } else {
@@ -89,7 +92,7 @@ where
                         }
                     } else {
                         let (tx, rx) = tokio::sync::mpsc::channel(100);
-                        map.insert(src_port, tx.clone());
+                        map.insert(src_id.clone(), tx.clone());
 
                         let map_clone = connections.clone();
                         let outbound_tx_clone = outbound_tx.clone();
@@ -107,7 +110,7 @@ where
                         tokio::spawn(async move {
                             handle_tcp_connection(
                                 rx,
-                                src_port,
+                                src_id,
                                 dst_addr,
                                 dst_port,
                                 outbound_tx_clone,
@@ -119,10 +122,10 @@ where
                     }
                 }
                 PortalPayloadEnum::Udp(udp_msg) => {
-                    let src_port = udp_msg.src_port;
+                    let src_id = udp_msg.src_id.clone();
                     let mut map = connections.lock().unwrap();
 
-                    let tx = if let Some(tx) = map.get(&src_port) {
+                    let tx = if let Some(tx) = map.get(&src_id) {
                         if tx.is_closed() {
                             None
                         } else {
@@ -140,7 +143,7 @@ where
                         }
                     } else {
                         let (tx, rx) = tokio::sync::mpsc::channel(100);
-                        map.insert(src_port, tx.clone());
+                        map.insert(src_id.clone(), tx.clone());
 
                         let map_clone = connections.clone();
                         let outbound_tx_clone = outbound_tx.clone();
@@ -158,7 +161,7 @@ where
                         tokio::spawn(async move {
                             handle_udp_connection(
                                 rx,
-                                src_port,
+                                src_id,
                                 dst_addr,
                                 dst_port,
                                 outbound_tx_clone,
@@ -189,11 +192,11 @@ where
 
 async fn handle_tcp_connection(
     mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
-    src_port: u32,
+    src_id: String,
     dst_addr: String,
     dst_port: u32,
     outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-    connections: Arc<Mutex<HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>>,
+    connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<Vec<u8>>>>>,
     task_id: i64,
 ) {
     let addr = format!("{}:{}", dst_addr, dst_port);
@@ -215,7 +218,7 @@ async fn handle_tcp_connection(
                                             data: buf[0..n].to_vec(),
                                             dst_addr: dst_addr.clone(),
                                             dst_port,
-                                            src_port,
+                                            src_id: src_id.clone(),
                                         })),
                                     }),
                                 };
@@ -246,16 +249,16 @@ async fn handle_tcp_connection(
     }
 
     // Cleanup
-    connections.lock().unwrap().remove(&src_port);
+    connections.lock().unwrap().remove(&src_id);
 }
 
 async fn handle_udp_connection(
     mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
-    src_port: u32,
+    src_id: String,
     dst_addr: String,
     dst_port: u32,
     outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-    connections: Arc<Mutex<HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>>,
+    connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<Vec<u8>>>>>,
     task_id: i64,
 ) {
     let addr = format!("{}:{}", dst_addr, dst_port);
@@ -263,12 +266,12 @@ async fn handle_udp_connection(
     let socket = match tokio::net::UdpSocket::bind("0.0.0.0:0").await {
         Ok(s) => s,
         Err(_) => {
-            connections.lock().unwrap().remove(&src_port);
+            connections.lock().unwrap().remove(&src_id);
             return;
         }
     };
     if socket.connect(&addr).await.is_err() {
-        connections.lock().unwrap().remove(&src_port);
+        connections.lock().unwrap().remove(&src_id);
         return;
     }
 
@@ -286,7 +289,7 @@ async fn handle_udp_connection(
                                     data: buf[0..n].to_vec(),
                                     dst_addr: dst_addr.clone(),
                                     dst_port,
-                                    src_port,
+                                    src_id: src_id.clone(),
                                 })),
                             }),
                         };
@@ -309,16 +312,16 @@ async fn handle_udp_connection(
             }
         }
     }
-    connections.lock().unwrap().remove(&src_port);
+    connections.lock().unwrap().remove(&src_id);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pb::portal::payload::Payload as PortalPayloadEnum;
     use pb::portal::TcpMessage;
-    use tokio::sync::mpsc;
+    use pb::portal::payload::Payload as PortalPayloadEnum;
     use std::time::Duration;
+    use tokio::sync::mpsc;
 
     #[tokio::test]
     async fn test_run_portal_loop_tcp() {
@@ -353,7 +356,7 @@ mod tests {
                         data: b"ping".to_vec(),
                         dst_addr: "127.0.0.1".to_string(),
                         dst_port: addr.port() as u32,
-                        src_port: 5555,
+                        src_id: "abcdefg".to_string(),
                     })),
                 }),
             })
@@ -377,7 +380,7 @@ mod tests {
         assert_eq!(resp.task_id, task_id);
         if let Some(PortalPayloadEnum::Tcp(tcp)) = resp.payload.unwrap().payload {
             assert_eq!(tcp.data, b"pong");
-            assert_eq!(tcp.src_port, 5555);
+            assert_eq!(tcp.src_id, "abcdefg".to_string());
         } else {
             panic!("Expected TCP message");
         }

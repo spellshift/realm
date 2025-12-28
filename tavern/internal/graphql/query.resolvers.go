@@ -157,6 +157,22 @@ func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[int], fi
 	return query.Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy))
 }
 
+// Portals is the resolver for the portals field.
+func (r *queryResolver) Portals(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) (*ent.PortalConnection, error) {
+	query, err := r.client.Portal.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithPortalOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithPortalOrder(orderBy))
+}
+
 // Shells is the resolver for the shells field.
 func (r *queryResolver) Shells(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) (*ent.ShellConnection, error) {
 	query, err := r.client.Shell.Query().CollectFields(ctx)

@@ -170,6 +170,27 @@ extend type Query {
     """Filtering options for Users returned from the connection."""
     where: UserWhereInput
   ): UserConnection! @requireRole(role: USER)
+
+  portals(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Portals returned from the connection."""
+    orderBy: [PortalOrder!]
+
+    """Filtering options for Portals returned from the connection."""
+    where: PortalWhereInput
+  ): PortalConnection! @requireRole(role: USER)
+
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

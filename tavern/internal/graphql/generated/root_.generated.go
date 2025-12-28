@@ -249,6 +249,7 @@ type ComplexityRoot struct {
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
 		Nodes        func(childComplexity int, ids []int) int
+		Portals      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
@@ -1516,6 +1517,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
+
+	case "Query.portals":
+		if e.complexity.Query.Portals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_portals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Portals(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.PortalOrder), args["where"].(*ent.PortalWhereInput)), true
 
 	case "Query.quests":
 		if e.complexity.Query.Quests == nil {
@@ -6547,6 +6560,27 @@ scalar Uint64
     """Filtering options for Users returned from the connection."""
     where: UserWhereInput
   ): UserConnection! @requireRole(role: USER)
+
+  portals(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Portals returned from the connection."""
+    orderBy: [PortalOrder!]
+
+    """Filtering options for Portals returned from the connection."""
+    where: PortalWhereInput
+  ): PortalConnection! @requireRole(role: USER)
+
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

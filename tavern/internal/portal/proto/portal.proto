@@ -9,13 +9,17 @@ message UDPMessage {
     bytes data = 1;
     string dst_addr = 2;
     uint32 dst_port = 3;
-    uint32 src_port = 4;
+
+    // Unique identifier used to route reply traffic back to original port
+    string src_id = 4;
 }
 message TCPMessage {
     bytes data = 1;
     string dst_addr = 2;
     uint32 dst_port = 3;
-    uint32 src_port = 4;
+
+    // Unique identifier used to route reply traffic back to original port
+    string src_id = 4;
 }
 enum BytesMessageKind {
     BYTES_MESSAGE_KIND_UNSPECIFIED = 0;

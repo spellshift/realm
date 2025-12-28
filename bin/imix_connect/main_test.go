@@ -19,10 +19,10 @@ import (
 // MockPortalServer implements portalpb.PortalServer
 type MockPortalServer struct {
 	portalpb.UnimplementedPortalServer
-	mu             sync.Mutex
-	activeStreams  map[int64]portalpb.Portal_InvokePortalServer
-	receivedReg    bool
-	portalID       int64
+	mu            sync.Mutex
+	activeStreams map[int64]portalpb.Portal_InvokePortalServer
+	receivedReg   bool
+	portalID      int64
 }
 
 func (s *MockPortalServer) InvokePortal(stream portalpb.Portal_InvokePortalServer) error {
@@ -51,16 +51,16 @@ func (s *MockPortalServer) InvokePortal(stream portalpb.Portal_InvokePortalServe
 		if payload := req.GetPayload(); payload != nil {
 			if tcp := payload.GetTcp(); tcp != nil {
 				// Echo back with slight modification (reverse bytes)
-				// Use src_port as dst_port to route back to the client ID
+				// Use src_id as dst_port to route back to the client ID
 
 				// Mocking a remote echo server:
 				// Received Data for DstAddr:DstPort.
 				// We reply FROM DstAddr:DstPort TO the client.
-				// The proxy expects the reply to have DstPort = ClientID (req.SrcPort).
+				// The proxy expects the reply to have DstPort = ClientID (req.SrcId).
 
 				replyData := reverse(tcp.Data)
 
-				// NOTE: We now use SrcPort as the session ID carrier for the return path too,
+				// NOTE: We now use SrcId as the session ID carrier for the return path too,
 				// matching the proxy implementation update.
 
 				resp := &portalpb.InvokePortalResponse{
@@ -70,7 +70,7 @@ func (s *MockPortalServer) InvokePortal(stream portalpb.Portal_InvokePortalServe
 								Data:    replyData,
 								DstAddr: tcp.DstAddr,
 								DstPort: tcp.DstPort, // Target port (e.g. 80)
-								SrcPort: tcp.SrcPort, // Session ID (echoed back in SrcPort)
+								SrcId:   tcp.SrcId,   // Session ID (echoed back in SrcId)
 							},
 						},
 					},

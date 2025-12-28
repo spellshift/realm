@@ -8,8 +8,9 @@ pub struct UdpMessage {
     pub dst_addr: ::prost::alloc::string::String,
     #[prost(uint32, tag = "3")]
     pub dst_port: u32,
-    #[prost(uint32, tag = "4")]
-    pub src_port: u32,
+    /// Unique identifier used to route reply traffic back to original port
+    #[prost(string, tag = "4")]
+    pub src_id: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -20,8 +21,9 @@ pub struct TcpMessage {
     pub dst_addr: ::prost::alloc::string::String,
     #[prost(uint32, tag = "3")]
     pub dst_port: u32,
-    #[prost(uint32, tag = "4")]
-    pub src_port: u32,
+    /// Unique identifier used to route reply traffic back to original port
+    #[prost(string, tag = "4")]
+    pub src_id: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
