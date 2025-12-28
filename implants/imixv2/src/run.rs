@@ -16,6 +16,8 @@ pub async fn run_agent() -> Result<()> {
 
     // Load config / defaults
     let config = Config::default_with_imix_verison(VERSION);
+    #[cfg(debug_assertions)]
+    log::info!("Loaded config: {config:#?}");
 
     // Initial transport is just a placeholder, we create active ones in the loop
     let transport = ActiveTransport::init();
@@ -42,7 +44,7 @@ pub async fn run_agent() -> Result<()> {
 
         run_agent_cycle(agent_ref, registry_ref).await;
 
-        if SHUTDOWN.load(Ordering::Relaxed) {
+        if SHUTDOWN.load(Ordering::Relaxed) || config.run_once {
             break;
         }
 
