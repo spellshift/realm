@@ -680,10 +680,17 @@ impl Parser {
                             Err(e) => {
                                 self.errors.push(e.clone());
                                 // Recover: skip until comma or RBracket
-                                while !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBracket) && !self.is_at_end() {
+                                while !self.check(&TokenKind::Comma)
+                                    && !self.check(&TokenKind::RBracket)
+                                    && !self.is_at_end()
+                                {
                                     self.advance();
                                 }
-                                elements.push(self.make_expr(ExprKind::Error(e.message), e.span, e.span));
+                                elements.push(self.make_expr(
+                                    ExprKind::Error(e.message),
+                                    e.span,
+                                    e.span,
+                                ));
                             }
                         }
 
@@ -699,13 +706,15 @@ impl Parser {
                     )?
                     .span;
                 return Ok(self.make_expr(ExprKind::List(elements), span, end));
-
             } else {
                 // First expression failed. Must be a list literal with error at start.
                 let e = first_expr_res.unwrap_err();
                 self.errors.push(e.clone());
-                 // Recover: skip until comma or RBracket
-                while !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBracket) && !self.is_at_end() {
+                // Recover: skip until comma or RBracket
+                while !self.check(&TokenKind::Comma)
+                    && !self.check(&TokenKind::RBracket)
+                    && !self.is_at_end()
+                {
                     self.advance();
                 }
                 let err_expr = self.make_expr(ExprKind::Error(e.message), e.span, e.span);
@@ -716,14 +725,21 @@ impl Parser {
                         if self.check(&TokenKind::RBracket) {
                             break;
                         }
-                         match self.expression() {
+                        match self.expression() {
                             Ok(e) => elements.push(e),
                             Err(e) => {
                                 self.errors.push(e.clone());
-                                while !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBracket) && !self.is_at_end() {
+                                while !self.check(&TokenKind::Comma)
+                                    && !self.check(&TokenKind::RBracket)
+                                    && !self.is_at_end()
+                                {
                                     self.advance();
                                 }
-                                elements.push(self.make_expr(ExprKind::Error(e.message), e.span, e.span));
+                                elements.push(self.make_expr(
+                                    ExprKind::Error(e.message),
+                                    e.span,
+                                    e.span,
+                                ));
                             }
                         }
                         if !self.match_token(&[TokenKind::Comma]) {
@@ -731,7 +747,7 @@ impl Parser {
                         }
                     }
                 }
-                 let end = self
+                let end = self
                     .consume(
                         |t| matches!(t, TokenKind::RBracket),
                         "Expected ']' after list.",
