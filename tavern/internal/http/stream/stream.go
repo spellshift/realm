@@ -33,7 +33,7 @@ const (
 	maxStreamMsgBufSize = 1024
 
 	// maxStreamOrderBuf defines how many messages to wait before dropping an out-of-order message and move on.
-	maxStreamOrderBuf = 10
+	maxStreamOrderBuf = 1024 // TODO FIX
 )
 
 // A Stream is registered with a Mux to receive filtered messages from a pubsub subscription.
