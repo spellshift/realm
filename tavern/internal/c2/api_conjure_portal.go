@@ -127,8 +127,8 @@ func (srv *Server) ConjurePortal(gstream c2pb.C2_ConjurePortalServer) error {
 	}()
 
 	// Register stream with Mux
-	srv.mux.Register(pubsubStream)
-	defer srv.mux.Unregister(pubsubStream)
+	srv.portalRelayMux.Register(pubsubStream)
+	defer srv.portalRelayMux.Unregister(pubsubStream)
 
 	// WaitGroup to manage tasks
 	var wg sync.WaitGroup
@@ -161,7 +161,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_ConjureP
 		case <-ctx.Done():
 			return
 		case msg := <-pubsubStream.Messages():
-			var payload *portalpb.Payload
+			payload := &portalpb.Payload{}
 			if err := proto.Unmarshal(msg.Body, payload); err != nil {
 				slog.ErrorContext(ctx, "failed to unmarshal portal input message",
 					"portal_id", portalID,

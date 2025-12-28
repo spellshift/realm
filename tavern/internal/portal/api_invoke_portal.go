@@ -85,7 +85,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_
 		case <-ctx.Done():
 			return
 		case msg := <-pubsubStream.Messages():
-			var payload *portalpb.Payload
+			payload := &portalpb.Payload{}
 			if err := proto.Unmarshal(msg.Body, payload); err != nil {
 				slog.ErrorContext(ctx, "failed to unmarshal portal input message",
 					"portal_id", portalID,
