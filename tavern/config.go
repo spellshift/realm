@@ -256,8 +256,8 @@ func (cfg *Config) NewPortalMuxes(ctx context.Context) (clientMux *stream.Mux, r
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subPortalInput, err)
 	}
 
-	clientMux = stream.NewMux(pubInput, subOutput)
-	relayMux = stream.NewMux(pubOutput, subInput)
+	clientMux = stream.NewMux(pubInput, subOutput, stream.WithHistorySize(0))
+	relayMux = stream.NewMux(pubOutput, subInput, stream.WithHistorySize(0))
 	return
 }
 

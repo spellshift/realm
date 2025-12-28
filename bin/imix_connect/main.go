@@ -37,7 +37,7 @@ type UDPSession struct {
 }
 
 func main() {
-	serverAddr := flag.String("server", "http://127.0.0.1:8000", "Tavern server address (e.g. http://127.0.0.1:8000)")
+	serverAddr := flag.String("server", "127.0.0.1:8000", "Tavern server address (e.g. 127.0.0.1:8000)")
 	portalID := flag.Int64("portal_id", 0, "Portal ID to connect to")
 	listenAddr := flag.String("listen", "127.0.0.1:1080", "Local SOCKS5 listen address")
 	flag.Parse()
@@ -69,11 +69,15 @@ func main() {
 func (s *ProxyServer) run(ctx context.Context, serverAddr string, listenAddr string) error {
 	// 1. Connect to Tavern gRPC
 	log.Printf("Connecting to Tavern at %s...", serverAddr)
-	// We use WithBlock to ensure we fail fast if server is not up
-	conn, err := grpc.DialContext(ctx, serverAddr,
+	conn, err := grpc.NewClient(
+		serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 	)
+	// We use WithBlock to ensure we fail fast if server is not up
+	// conn, err := grpc.DialContext(ctx, serverAddr,
+	// 	grpc.WithTransportCredentials(insecure.NewCredentials()),
+	// 	grpc.WithBlock(),
+	// )
 	if err != nil {
 		return fmt.Errorf("failed to connect to Tavern: %v", err)
 	}
@@ -210,6 +214,8 @@ func (s *ProxyServer) handleInboundStream() error {
 			} else {
 				// No listener found, drop
 			}
+		} else if bytesMsg := payload.GetBytes(); bytesMsg != nil && bytesMsg.GetKind() == portalpb.BytesMessageKind_BYTES_MESSAGE_KIND_PING {
+			slog.Debug("received ping from server")
 		} else {
 			slog.Warn("received unexpected payload type", "payload", payload)
 		}
