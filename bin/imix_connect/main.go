@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -147,6 +148,7 @@ func (s *ProxyServer) handleInboundStream() error {
 		// Dispatch based on payload type
 		payload := resp.GetPayload()
 		if payload == nil {
+			slog.Warn("received message with nil payload")
 			continue
 		}
 
@@ -159,11 +161,15 @@ func (s *ProxyServer) handleInboundStream() error {
 				conn := val.(net.Conn)
 				_, writeErr := conn.Write(tcpMsg.GetData())
 				if writeErr != nil {
-					log.Printf("[%d] Write to SOCKS client failed: %v", connID, writeErr)
+					slog.Error("write to SOCKS client failed", "conn_id", connID, "error", writeErr)
 					conn.Close()
 					s.socksConns.Delete(connID)
 				}
+			} else {
+				slog.Warn("received data for unknown connection", "conn_id", connID)
 			}
+		} else {
+			slog.Warn("received unexpected payload type", "payload", payload)
 		}
 	}
 }
