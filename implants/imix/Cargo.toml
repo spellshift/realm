@@ -28,6 +28,7 @@ pretty_env_logger = { workspace = true }
 windows-service = "0.6.0"
 
 [build-dependencies]
+imix-config = { path = "../../bin/imix-config" }
 serde = { workspace = true, features = ["derive"] }
 serde_yaml = { workspace = true }
 
