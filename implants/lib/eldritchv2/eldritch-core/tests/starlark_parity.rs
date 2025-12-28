@@ -9,7 +9,12 @@ fn parse(code: &str) -> Result<(), String> {
         }
     }
     let mut parser = Parser::new(tokens);
-    parser.parse().map(|_| ()).map_err(|e| e.to_string())
+    let (_, errors) = parser.parse();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors[0].message.clone())
+    }
 }
 
 // Tests from starlark-rust/starlark_syntax/src/syntax/def_tests

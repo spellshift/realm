@@ -77,5 +77,9 @@ pub fn evaluate(interp: &mut Interpreter, expr: &Expr) -> Result<Value, Eldritch
                 evaluate(interp, else_branch)
             }
         }
+        ExprKind::Error(msg) => interp.runtime_error(
+            &format!("Runtime encountered syntax error node: {}", msg),
+            span,
+        ),
     }
 }

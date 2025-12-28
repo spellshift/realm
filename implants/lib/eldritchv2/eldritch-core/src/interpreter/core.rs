@@ -187,10 +187,14 @@ impl Interpreter {
         }
 
         let mut parser = Parser::new(tokens);
-        let stmts = match parser.parse() {
-            Ok(s) => s,
-            Err(e) => return Err(format!("Parser Error: {e}")),
-        };
+        let (stmts, errors) = parser.parse();
+
+        if !errors.is_empty() {
+            // If we have parsing errors, we return the first one formatted
+            // Or maybe a combined list? Usually first is enough to abort execution.
+            // The prompt says "interpreter does not attempt to evaluate / execute statements from ASTs with error tokens"
+            return Err(self.format_error(input, errors[0].clone()));
+        }
 
         let mut last_val = Value::None;
 

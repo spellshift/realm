@@ -626,68 +626,119 @@ impl Parser {
                 return Ok(self.make_expr(ExprKind::List(Vec::new()), span, end));
             }
 
-            let first_expr = self.expression()?;
+            // Attempt to parse first expression.
+            // If it fails, we assume it's a List of expressions and try to recover.
+            // But if it succeeds, we check for comprehension syntax.
+            let first_expr_res = self.expression();
 
-            if self.match_token(&[TokenKind::For]) {
-                let (var, _) = {
-                    let t = self.consume(
-                        |t| matches!(t, TokenKind::Identifier(_)),
-                        "Expected iteration variable.",
-                    )?;
-                    let v = if let TokenKind::Identifier(s) = &t.kind {
-                        s.clone()
-                    } else {
-                        unreachable!()
+            // If first expression is valid, check for comprehension
+            if let Ok(first_expr) = first_expr_res {
+                if self.match_token(&[TokenKind::For]) {
+                    let (var, _) = {
+                        let t = self.consume(
+                            |t| matches!(t, TokenKind::Identifier(_)),
+                            "Expected iteration variable.",
+                        )?;
+                        let v = if let TokenKind::Identifier(s) = &t.kind {
+                            s.clone()
+                        } else {
+                            unreachable!()
+                        };
+                        (v, t.span)
                     };
-                    (v, t.span)
-                };
 
-                self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
-                // Use logic_or to avoid consuming the 'if' of the comprehension
-                let iterable = self.logic_or()?;
-                let mut cond = None;
-                if self.match_token(&[TokenKind::If]) {
-                    // Condition can be a full expression (ternary allowed inside it if parenthesized? no, generally allowed)
-                    // The condition of a comprehension: [x for x in y if (a if b else c)]
-                    // If we use expression(), it might consume 'else' if there was one after the comprehension?
-                    // But comprehensions are closed by ']'.
-                    // So expression() is safe here.
-                    cond = Some(Box::new(self.expression()?));
+                    self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
+                    let iterable = self.logic_or()?;
+                    let mut cond = None;
+                    if self.match_token(&[TokenKind::If]) {
+                        cond = Some(Box::new(self.expression()?));
+                    }
+                    let end = self
+                        .consume(|t| matches!(t, TokenKind::RBracket), "Expected ']'.")?
+                        .span;
+                    return Ok(self.make_expr(
+                        ExprKind::ListComp {
+                            body: Box::new(first_expr),
+                            var,
+                            iterable: Box::new(iterable),
+                            cond,
+                        },
+                        span,
+                        end,
+                    ));
+                }
+
+                // Not a comprehension, so it's a list literal starting with first_expr
+                let mut elements = vec![first_expr];
+                if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBracket) {
+                    loop {
+                        if self.check(&TokenKind::RBracket) {
+                            break;
+                        }
+                        match self.expression() {
+                            Ok(e) => elements.push(e),
+                            Err(e) => {
+                                self.errors.push(e.clone());
+                                // Recover: skip until comma or RBracket
+                                while !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBracket) && !self.is_at_end() {
+                                    self.advance();
+                                }
+                                elements.push(self.make_expr(ExprKind::Error(e.message), e.span, e.span));
+                            }
+                        }
+
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
+                    }
                 }
                 let end = self
-                    .consume(|t| matches!(t, TokenKind::RBracket), "Expected ']'.")?
+                    .consume(
+                        |t| matches!(t, TokenKind::RBracket),
+                        "Expected ']' after list.",
+                    )?
                     .span;
-                return Ok(self.make_expr(
-                    ExprKind::ListComp {
-                        body: Box::new(first_expr),
-                        var,
-                        iterable: Box::new(iterable),
-                        cond,
-                    },
-                    span,
-                    end,
-                ));
-            }
+                return Ok(self.make_expr(ExprKind::List(elements), span, end));
 
-            let mut elements = vec![first_expr];
-            if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBracket) {
-                loop {
-                    if self.check(&TokenKind::RBracket) {
-                        break;
-                    }
-                    elements.push(self.expression()?);
-                    if !self.match_token(&[TokenKind::Comma]) {
-                        break;
+            } else {
+                // First expression failed. Must be a list literal with error at start.
+                let e = first_expr_res.unwrap_err();
+                self.errors.push(e.clone());
+                 // Recover: skip until comma or RBracket
+                while !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBracket) && !self.is_at_end() {
+                    self.advance();
+                }
+                let err_expr = self.make_expr(ExprKind::Error(e.message), e.span, e.span);
+                let mut elements = vec![err_expr];
+
+                if self.match_token(&[TokenKind::Comma]) && !self.check(&TokenKind::RBracket) {
+                    loop {
+                        if self.check(&TokenKind::RBracket) {
+                            break;
+                        }
+                         match self.expression() {
+                            Ok(e) => elements.push(e),
+                            Err(e) => {
+                                self.errors.push(e.clone());
+                                while !self.check(&TokenKind::Comma) && !self.check(&TokenKind::RBracket) && !self.is_at_end() {
+                                    self.advance();
+                                }
+                                elements.push(self.make_expr(ExprKind::Error(e.message), e.span, e.span));
+                            }
+                        }
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
                     }
                 }
+                 let end = self
+                    .consume(
+                        |t| matches!(t, TokenKind::RBracket),
+                        "Expected ']' after list.",
+                    )?
+                    .span;
+                return Ok(self.make_expr(ExprKind::List(elements), span, end));
             }
-            let end = self
-                .consume(
-                    |t| matches!(t, TokenKind::RBracket),
-                    "Expected ']' after list.",
-                )?
-                .span;
-            return Ok(self.make_expr(ExprKind::List(elements), span, end));
         }
 
         if self.match_token(&[TokenKind::LBrace]) {
