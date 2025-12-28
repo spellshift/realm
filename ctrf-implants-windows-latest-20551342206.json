@@ -1,0 +1,993 @@
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.0",
+  "generatedBy": "junit-to-ctrf",
+  "timestamp": "2025-12-28T08:51:46.645Z",
+  "results": {
+    "tool": {
+      "name": "junit-to-ctrf"
+    },
+    "summary": {
+      "tests": 118,
+      "passed": 116,
+      "failed": 2,
+      "skipped": 0,
+      "pending": 0,
+      "other": 0,
+      "start": 0,
+      "stop": 0
+    },
+    "tests": [
+      {
+        "name": "eldritch: agent::set_callback_uri_impl::test::change_interval",
+        "status": "passed",
+        "duration": 130,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: agent::eval_impl::tests::test_eval_fail",
+        "status": "passed",
+        "duration": 129,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: agent::eval_impl::tests::test_eval",
+        "status": "passed",
+        "duration": 130,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: agent::set_callback_interval_impl::test::change_interval",
+        "status": "passed",
+        "duration": 136,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::copy_impl::tests::test_remote_copy",
+        "status": "passed",
+        "duration": 86,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::list_impl::tests::test_asset_list_local",
+        "status": "passed",
+        "duration": 107,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::copy_impl::tests::test_embedded_copy",
+        "status": "passed",
+        "duration": 111,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_binary_impl::tests::test_assets_read_binary",
+        "status": "passed",
+        "duration": 48,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::list_impl::tests::test_asset_list_remote",
+        "status": "passed",
+        "duration": 85,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::copy_impl::tests::test_remote_copy_full",
+        "status": "passed",
+        "duration": 210,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_impl::tests::test_asset_read_local",
+        "status": "passed",
+        "duration": 99,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_decrypt_file_impl::tests::test_decrypt",
+        "status": "passed",
+        "duration": 48,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_binary_impl::tests::test_asset_read_binary_remote",
+        "status": "passed",
+        "duration": 191,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_decrypt_file_impl::tests::test_decrypt_bad_size",
+        "status": "passed",
+        "duration": 50,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_decrypt_file_impl::tests::test_decrypt_bad_password",
+        "status": "passed",
+        "duration": 50,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_decrypt_file_impl::tests::test_decrypt_no_file",
+        "status": "passed",
+        "duration": 54,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_encrypt_file_impl::tests::test_encrypt_bad_password",
+        "status": "passed",
+        "duration": 52,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_encrypt_file_impl::tests::test_encrypt",
+        "status": "passed",
+        "duration": 55,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_impl::tests::test_asset_read_remote",
+        "status": "passed",
+        "duration": 207,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_encrypt_file_impl::tests::test_encrypt_no_file",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::decode_b64_impl::tests::test_decode_b64",
+        "status": "passed",
+        "duration": 54,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::decode_b64_impl::tests::test_decode_b64_default_type",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::decode_b64_impl::tests::test_decode_b64_invalid_content",
+        "status": "passed",
+        "duration": 54,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::decode_b64_impl::tests::test_decode_b64_invalid_type",
+        "status": "passed",
+        "duration": 54,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::encode_b64_impl::tests::test_encode_b64",
+        "status": "passed",
+        "duration": 56,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::encode_b64_impl::tests::test_encode_b64_default_type",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::encode_b64_impl::tests::test_encode_b64_invalid_type",
+        "status": "passed",
+        "duration": 57,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::from_json_impl::tests::test_from_json_invalid",
+        "status": "passed",
+        "duration": 56,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::from_json_impl::tests::test_from_json_list",
+        "status": "passed",
+        "duration": 58,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::from_json_impl::tests::test_from_json_object",
+        "status": "passed",
+        "duration": 56,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::hash_file_impl::tests::test_hash",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::hash_file_impl::tests::test_hash_invalid",
+        "status": "passed",
+        "duration": 55,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::hash_file_impl::tests::test_hash_no_file",
+        "status": "passed",
+        "duration": 75,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::is_json_impl::tests::test_from_json_invalid",
+        "status": "passed",
+        "duration": 73,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::is_json_impl::tests::test_from_json_list",
+        "status": "passed",
+        "duration": 70,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::is_json_impl::tests::test_from_json_object",
+        "status": "passed",
+        "duration": 54,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::to_json_impl::tests::to_json_list",
+        "status": "passed",
+        "duration": 57,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::to_json_impl::tests::to_json_object",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::append_impl::tests::test_append_existing",
+        "status": "passed",
+        "duration": 62,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::append_impl::tests::test_append_nonexisting",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::compress_impl::tests::test_compress_basic",
+        "status": "passed",
+        "duration": 65,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::copy_impl::tests::test_copy",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::compress_impl::tests::test_compress_tar_dir",
+        "status": "passed",
+        "duration": 72,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::decompress_impl::tests::test_decompress_basic",
+        "status": "passed",
+        "duration": 66,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::exists_impl::tests::test_exists_dir",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::decompress_impl::tests::test_decompress_tar_dir",
+        "status": "passed",
+        "duration": 75,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::exists_impl::tests::test_exists_file",
+        "status": "passed",
+        "duration": 69,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::exists_impl::tests::test_exists_no_dir",
+        "status": "passed",
+        "duration": 62,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::exists_impl::tests::test_exists_no_file",
+        "status": "passed",
+        "duration": 70,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::find_impl::tests::test_provided_file",
+        "status": "passed",
+        "duration": 71,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::is_dir_impl::tests::test_is_dir_file",
+        "status": "passed",
+        "duration": 66,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::find_impl::tests::test_find_dir",
+        "status": "passed",
+        "duration": 123,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::is_dir_impl::tests::test_is_dir_nonexistent",
+        "status": "passed",
+        "duration": 63,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::is_dir_impl::tests::test_is_dir_true",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::is_file_impl::tests::test_is_file_basic",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::is_file_impl::tests::test_is_file_dir",
+        "status": "passed",
+        "duration": 58,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::is_file_impl::tests::test_is_file_negative",
+        "status": "passed",
+        "duration": 62,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::list_impl::tests::test_file_list_dir",
+        "status": "passed",
+        "duration": 1375,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::list_impl::tests::test_file_list_glob",
+        "status": "passed",
+        "duration": 1337,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::mkdir_impl::tests::test_error_mkdir",
+        "status": "passed",
+        "duration": 1324,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::list_impl::tests::test_file_list_file",
+        "status": "passed",
+        "duration": 1378,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::moveto_impl::tests::test_moveto_dir_overwrites",
+        "status": "passed",
+        "duration": 102,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::mkdir_impl::tests::test_mkdir_with_parent",
+        "status": "passed",
+        "duration": 105,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::moveto_impl::tests::test_moveto_dir",
+        "status": "passed",
+        "duration": 105,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::mkdir_impl::tests::test_successful_mkdir",
+        "status": "passed",
+        "duration": 107,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::moveto_impl::tests::test_moveto_file_overwrites",
+        "status": "passed",
+        "duration": 76,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::moveto_impl::tests::test_moveto_file",
+        "status": "passed",
+        "duration": 78,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_binary_impl::tests::test_read_glob",
+        "status": "passed",
+        "duration": 78,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::parent_dir_impl::test::simple_ssh",
+        "status": "passed",
+        "duration": 135,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_binary_impl::tests::test_read_nonexistent",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_binary_impl::tests::test_read_large",
+        "status": "passed",
+        "duration": 71,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_binary_impl::tests::test_read_simple",
+        "status": "passed",
+        "duration": 73,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_impl::tests::test_read_glob",
+        "status": "passed",
+        "duration": 68,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_impl::tests::test_read_large",
+        "status": "passed",
+        "duration": 65,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_impl::tests::test_read_simple",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::read_impl::tests::test_read_nonexistent",
+        "status": "passed",
+        "duration": 87,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::remove_impl::tests::remove_dir",
+        "status": "passed",
+        "duration": 58,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::remove_impl::tests::remove_file",
+        "status": "passed",
+        "duration": 99,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_all_impl::tests::test_replace_all_multiline",
+        "status": "passed",
+        "duration": 92,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_all_impl::tests::test_replace_all_regex_binary",
+        "status": "passed",
+        "duration": 108,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_all_impl::tests::test_replace_all_regex_complex",
+        "status": "passed",
+        "duration": 88,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_impl::tests::test_replace_multiline",
+        "status": "passed",
+        "duration": 88,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_all_impl::tests::test_replace_all_regex_simple",
+        "status": "passed",
+        "duration": 91,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_impl::tests::test_replace_regex_binary",
+        "status": "passed",
+        "duration": 63,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_impl::tests::test_replace_regex_complex",
+        "status": "passed",
+        "duration": 61,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::replace_impl::tests::test_replace_regex_simple",
+        "status": "passed",
+        "duration": 60,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::temp_file_impl::tests::test_temp_file_r_name",
+        "status": "passed",
+        "duration": 92,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::temp_file_impl::tests::test_temp_file_w_name",
+        "status": "passed",
+        "duration": 80,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::template_impl::tests::test_template_basic",
+        "status": "passed",
+        "duration": 83,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::template_impl::tests::test_template_build_context",
+        "status": "passed",
+        "duration": 98,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::template_impl::tests::test_template_loops_and_lists",
+        "status": "passed",
+        "duration": 73,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::write_impl::tests::test_write_fail_directory_exists",
+        "status": "passed",
+        "duration": 110,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::write_impl::tests::test_write_file_exists",
+        "status": "passed",
+        "duration": 108,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: file::write_impl::tests::test_write_file_success",
+        "status": "passed",
+        "duration": 54,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::download_impl::tests::test_download_file",
+        "status": "passed",
+        "duration": 98,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::get_impl::tests::test_get_no_params_or_headers",
+        "status": "passed",
+        "duration": 91,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::get_impl::tests::test_get_empty_params_and_headers",
+        "status": "passed",
+        "duration": 96,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::get_impl::tests::test_get_with_headers",
+        "status": "passed",
+        "duration": 92,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::get_impl::tests::test_get_with_hybrid_params",
+        "status": "passed",
+        "duration": 50,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::get_impl::tests::test_get_with_params",
+        "status": "passed",
+        "duration": 2162,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::post_impl::tests::test_post_empty_params_and_headers",
+        "status": "passed",
+        "duration": 2156,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::get_impl::tests::test_get_with_params_and_headers",
+        "status": "passed",
+        "duration": 2162,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::post_impl::tests::test_post_no_body_or_params_or_headers",
+        "status": "passed",
+        "duration": 2150,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::post_impl::tests::test_post_with_body_and_header",
+        "status": "passed",
+        "duration": 81,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::post_impl::tests::test_post_with_params_and_headers",
+        "status": "passed",
+        "duration": 79,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::post_impl::tests::test_post_with_headers",
+        "status": "passed",
+        "duration": 90,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: http::post_impl::tests::test_post_with_params",
+        "status": "passed",
+        "duration": 90,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::port_scan_impl::tests::test_portscan_cidrparse",
+        "status": "passed",
+        "duration": 94,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::port_scan_impl::tests::test_portscan_get_network_and_broadcast",
+        "status": "passed",
+        "duration": 93,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::ncat_impl::tests::test_ncat_send_tcp",
+        "status": "passed",
+        "duration": 103,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::ncat_impl::tests::test_ncat_send_udp",
+        "status": "passed",
+        "duration": 105,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::port_scan_impl::tests::test_portscan_int_to_string",
+        "status": "passed",
+        "duration": 61,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::port_scan_impl::tests::test_portscan_vec_to_int",
+        "status": "passed",
+        "duration": 62,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::port_scan_impl::tests::test_portscan_tcp",
+        "status": "passed",
+        "duration": 74,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::ssh_copy_impl::tests::test_pivot_ssh_copy",
+        "status": "failed",
+        "duration": 7515,
+        "message": "Error: deadline has elapsed",
+        "trace": "Error: deadline has elapsed",
+        "suite": [
+          "eldritch"
+        ],
+        "stdout": [
+          "running 1 test",
+          "test pivot::ssh_copy_impl::tests::test_pivot_ssh_copy ... FAILED",
+          "failures:",
+          "failures:",
+          "pivot::ssh_copy_impl::tests::test_pivot_ssh_copy",
+          "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 198 filtered out; finished in 7.48s"
+        ],
+        "stderr": [
+          "Error: deadline has elapsed"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::port_scan_impl::tests::test_portscan_return_type_starlark_dict_from_interpreter",
+        "status": "passed",
+        "duration": 7594,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: process::info_impl::tests::test_info_default",
+        "status": "passed",
+        "duration": 8152,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: pivot::ssh_exec_impl::tests::test_pivot_ssh_exec",
+        "status": "failed",
+        "duration": 37475,
+        "message": "Error: deadline has elapsed",
+        "trace": "Error: deadline has elapsed",
+        "suite": [
+          "eldritch"
+        ],
+        "stdout": [
+          "running 1 test",
+          "test pivot::ssh_exec_impl::tests::test_pivot_ssh_exec ... FAILED",
+          "failures:",
+          "failures:",
+          "pivot::ssh_exec_impl::tests::test_pivot_ssh_exec",
+          "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 198 filtered out; finished in 37.45s"
+        ],
+        "stderr": [
+          "Error: deadline has elapsed"
+        ]
+      }
+    ]
+  }
+}
