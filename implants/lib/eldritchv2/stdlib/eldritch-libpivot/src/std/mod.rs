@@ -74,6 +74,19 @@ impl PivotLibrary for StdPivotLibrary {
             .map_err(|e| e.to_string())
     }
 
+    fn create_portal(&self) -> Result<(), String> {
+        let agent = self
+            .agent
+            .as_ref()
+            .ok_or_else(|| "No agent available".to_string())?;
+        let task_id = self
+            .task_id
+            .ok_or_else(|| "No task_id available".to_string())?;
+        agent
+            .start_create_portal(task_id)
+            .map_err(|e| e.to_string())
+    }
+
     fn ssh_exec(
         &self,
         target: String,

@@ -52,6 +52,18 @@ pub trait PivotLibrary {
     /// - Returns an error string if failure occurs.
     fn reverse_shell_repl(&self) -> Result<(), String>;
 
+    #[eldritch_method]
+    /// Opens a portal (reverse proxy/SOCKS) connection via the C2 channel.
+    ///
+    /// This establishes a bidirectional stream allowing the server to tunnel traffic through the agent.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if failure occurs.
+    fn create_portal(&self) -> Result<(), String>;
+
     #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
     /// Executes a command on a remote host via SSH.
