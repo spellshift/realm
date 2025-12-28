@@ -253,7 +253,7 @@ pub struct ReverseShellResponse {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConjurePortalRequest {
+pub struct CreatePortalRequest {
     #[prost(int64, tag = "1")]
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
@@ -261,7 +261,7 @@ pub struct ConjurePortalRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConjurePortalResponse {
+pub struct CreatePortalResponse {
     #[prost(message, optional, tag = "2")]
     pub payload: ::core::option::Option<super::portal::Payload>,
 }
@@ -566,13 +566,13 @@ pub mod c2_client {
         }
         ///
         /// Open a portal bi-directional stream.
-        pub async fn conjure_portal(
+        pub async fn create_portal(
             &mut self,
             request: impl tonic::IntoStreamingRequest<
-                Message = super::ConjurePortalRequest,
+                Message = super::CreatePortalRequest,
             >,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::ConjurePortalResponse>>,
+            tonic::Response<tonic::codec::Streaming<super::CreatePortalResponse>>,
             tonic::Status,
         > {
             self.inner
@@ -585,9 +585,9 @@ pub mod c2_client {
                     )
                 })?;
             let codec = crate::xchacha::ChachaCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/ConjurePortal");
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/CreatePortal");
             let mut req = request.into_streaming_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ConjurePortal"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "CreatePortal"));
             self.inner.streaming(req, path, codec).await
         }
     }

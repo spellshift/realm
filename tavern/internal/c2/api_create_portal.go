@@ -18,7 +18,7 @@ import (
 	"realm.pub/tavern/internal/portal/portalpb"
 )
 
-func (srv *Server) ConjurePortal(gstream c2pb.C2_ConjurePortalServer) error {
+func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	// Setup Context
 	ctx := gstream.Context()
 
@@ -32,25 +32,25 @@ func (srv *Server) ConjurePortal(gstream c2pb.C2_ConjurePortalServer) error {
 	task, err := srv.graph.Task.Get(ctx, int(registerMsg.TaskId))
 	if err != nil {
 		if ent.IsNotFound(err) {
-			slog.ErrorContext(ctx, "Conjure portal failed: associated task does not exist", "task_id", registerMsg.TaskId, "error", err)
+			slog.ErrorContext(ctx, "Create portal failed: associated task does not exist", "task_id", registerMsg.TaskId, "error", err)
 			return status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", registerMsg.TaskId)
 		}
-		slog.ErrorContext(ctx, "Conjure portal failed: could not load associated task", "task_id", registerMsg.TaskId, "error", err)
+		slog.ErrorContext(ctx, "Create portal failed: could not load associated task", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 	beacon, err := task.Beacon(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Conjure portal failed: could not load associated beacon", "task_id", registerMsg.TaskId, "error", err)
+		slog.ErrorContext(ctx, "Create portal failed: could not load associated beacon", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load beacon ent (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 	quest, err := task.Quest(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Conjure portal failed: could not load associated quest", "task_id", registerMsg.TaskId, "error", err)
+		slog.ErrorContext(ctx, "Create portal failed: could not load associated quest", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load quest ent (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 	creator, err := quest.Creator(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Conjure portal failed: could not load associated quest creator", "task_id", registerMsg.TaskId, "error", err)
+		slog.ErrorContext(ctx, "Create portal failed: could not load associated quest creator", "task_id", registerMsg.TaskId, "error", err)
 		return status.Errorf(codes.Internal, "failed to load quest creator (task_id=%d): %v", registerMsg.TaskId, err)
 	}
 
@@ -61,8 +61,8 @@ func (srv *Server) ConjurePortal(gstream c2pb.C2_ConjurePortalServer) error {
 		SetTask(task).
 		Save(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Conjure portal failed: could not Conjure entity", "task_id", registerMsg.TaskId, "error", err)
-		return status.Errorf(codes.Internal, "failed to Conjure portal: %v", err)
+		slog.ErrorContext(ctx, "Create portal failed: could not Create entity", "task_id", registerMsg.TaskId, "error", err)
+		return status.Errorf(codes.Internal, "failed to Create portal: %v", err)
 	}
 	portalID := portal.ID
 
@@ -155,7 +155,7 @@ func (srv *Server) ConjurePortal(gstream c2pb.C2_ConjurePortalServer) error {
 	return err
 }
 
-func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_ConjurePortalServer, pubsubStream *stream.Stream) {
+func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, pubsubStream *stream.Stream) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -170,7 +170,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_ConjureP
 				continue
 			}
 			msgLen := len(msg.Body)
-			if err := gstream.Send(&c2pb.ConjurePortalResponse{
+			if err := gstream.Send(&c2pb.CreatePortalResponse{
 				Payload: payload,
 			}); err != nil {
 				slog.ErrorContext(ctx, "failed to send input through portal",
@@ -188,7 +188,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_ConjureP
 	}
 }
 
-func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_ConjurePortalServer, pubsubStream *stream.Stream, mux *stream.Mux) error {
+func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, pubsubStream *stream.Stream, mux *stream.Mux) error {
 	for {
 		req, err := gstream.Recv()
 		if err == io.EOF {
@@ -222,7 +222,7 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_Conjure
 	}
 }
 
-func sendPortalKeepAlives(ctx context.Context, gstream c2pb.C2_ConjurePortalServer) {
+func sendPortalKeepAlives(ctx context.Context, gstream c2pb.C2_CreatePortalServer) {
 	ticker := time.NewTicker(keepAlivePingInterval)
 	defer ticker.Stop()
 
@@ -231,7 +231,7 @@ func sendPortalKeepAlives(ctx context.Context, gstream c2pb.C2_ConjurePortalServ
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := gstream.Send(&c2pb.ConjurePortalResponse{
+			if err := gstream.Send(&c2pb.CreatePortalResponse{
 				Payload: &portalpb.Payload{
 					Payload: &portalpb.Payload_Bytes{
 						Bytes: &portalpb.BytesMessage{

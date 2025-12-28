@@ -138,11 +138,11 @@ message ReverseShellResponse{
     bytes data = 2;
 }
 
-message ConjurePortalRequest {
+message CreatePortalRequest {
     int64 task_id = 1;
     portal.Payload payload = 2;
 }
-message ConjurePortalResponse {
+message CreatePortalResponse {
     portal.Payload payload = 2;
 }
 
@@ -202,5 +202,5 @@ service C2 {
     /*
      * Open a portal bi-directional stream.
      */
-    rpc ConjurePortal(stream ConjurePortalRequest) returns (stream ConjurePortalResponse) {}
+    rpc CreatePortal(stream CreatePortalRequest) returns (stream CreatePortalResponse) {}
 }

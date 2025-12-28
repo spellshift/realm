@@ -1070,6 +1070,14 @@ impl Transport for DNS {
         ))
     }
 
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!("dns transport does not support portals"))
+    }
+
     fn get_type(&mut self) -> beacon::Transport {
         beacon::Transport::Dns
     }

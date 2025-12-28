@@ -1,4 +1,4 @@
-package portal_integration_test
+package main_test
 
 import (
 	"context"
@@ -106,12 +106,12 @@ func TestPortal_E2E(t *testing.T) {
 	task, err := graph.Task.Create().SetQuest(quest).SetBeacon(beacon).Save(ctx)
 	require.NoError(t, err)
 
-	// 6. Test Scenario: Agent Connects (ConjurePortal)
-	agentStream, err := c2Client.ConjurePortal(ctx)
+	// 6. Test Scenario: Agent Connects (CreatePortal)
+	agentStream, err := c2Client.CreatePortal(ctx)
 	require.NoError(t, err)
 
 	// Send initial request with TaskID to register the portal
-	err = agentStream.Send(&c2pb.ConjurePortalRequest{
+	err = agentStream.Send(&c2pb.CreatePortalRequest{
 		TaskId: int64(task.ID),
 	})
 	require.NoError(t, err)
@@ -142,7 +142,7 @@ func TestPortal_E2E(t *testing.T) {
 
 	// Case A: Agent sends BytesMessage -> Client receives
 	agentBytesMsg := []byte("hello from agent")
-	err = agentStream.Send(&c2pb.ConjurePortalRequest{
+	err = agentStream.Send(&c2pb.CreatePortalRequest{
 		Payload: &portalpb.Payload{
 			Payload: &portalpb.Payload_Bytes{
 				Bytes: &portalpb.BytesMessage{
@@ -185,7 +185,7 @@ func TestPortal_E2E(t *testing.T) {
 
 	// Case C: Agent sends UDPMessage -> Client receives
 	agentUDPData := []byte("udp data from agent")
-	err = agentStream.Send(&c2pb.ConjurePortalRequest{
+	err = agentStream.Send(&c2pb.CreatePortalRequest{
 		Payload: &portalpb.Payload{
 			Payload: &portalpb.Payload_Udp{
 				Udp: &portalpb.UDPMessage{

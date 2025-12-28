@@ -194,6 +194,16 @@ impl Transport for GRPC {
         Ok(())
     }
 
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "Unimplemented: create_portal for gRPC transport"
+        ))
+    }
+
     fn get_type(&mut self) -> pb::c2::beacon::Transport {
         return pb::c2::beacon::Transport::Grpc;
     }
