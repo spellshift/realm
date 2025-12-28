@@ -181,32 +181,53 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	// Send messages in an order that respects the new "Late Join" logic.
 	// We must send the anchor (0) first so the stream knows where it starts.
 	orderKey := "session1"
-	messages := []struct {
-		body  string
-		index int
-	}{
-		{"A", 0}, // Anchor
-		{"C", 2}, // Out of order, will buffer
-		{"B", 1}, // Fills gap
+
+	// 1. Send Anchor (0)
+	err = topic.Send(ctx, &pubsub.Message{
+		Body: []byte("A"),
+		Metadata: map[string]string{
+			"id":          "ordering_stream",
+			"order-key":   orderKey,
+			"order-index": "0",
+		},
+	})
+	require.NoError(t, err)
+
+	// Wait for Anchor to be processed to ensure stream initialization
+	select {
+	case msg := <-monitor.Messages():
+		assert.Equal(t, "A", string(msg.Body))
+	case <-time.After(1 * time.Second):
+		t.Fatal("monitor did not receive anchor message in time")
 	}
 
-	for _, m := range messages {
-		err = topic.Send(ctx, &pubsub.Message{
-			Body: []byte(m.body),
-			Metadata: map[string]string{
-				"id":          "ordering_stream",
-				"order-key":   orderKey,
-				"order-index": fmt.Sprintf("%d", m.index),
-			},
-		})
-		require.NoError(t, err)
-		// Small sleep to ensure mux processes it and doesn't batch/race oddly
-		time.Sleep(10 * time.Millisecond)
-	}
+	// 2. Send C (2) - Out of order
+	err = topic.Send(ctx, &pubsub.Message{
+		Body: []byte("C"),
+		Metadata: map[string]string{
+			"id":          "ordering_stream",
+			"order-key":   orderKey,
+			"order-index": "2",
+		},
+	})
+	require.NoError(t, err)
 
-	// Wait for monitor to receive all 3 messages.
+	// 3. Send B (1) - Fills gap
+	// Sleep to ensure C arrives at Mux before B (testing the buffer logic)
+	time.Sleep(10 * time.Millisecond)
+	err = topic.Send(ctx, &pubsub.Message{
+		Body: []byte("B"),
+		Metadata: map[string]string{
+			"id":          "ordering_stream",
+			"order-key":   orderKey,
+			"order-index": "1",
+		},
+	})
+	require.NoError(t, err)
+
+	// Wait for monitor to receive remaining messages.
 	received := ""
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		select {
 		case msg := <-monitor.Messages():
 			received += string(msg.Body)
@@ -214,7 +235,7 @@ func TestMuxHistoryOrdering(t *testing.T) {
 			t.Fatal("monitor did not receive message in time")
 		}
 	}
-	assert.Equal(t, "ABC", received)
+	assert.Equal(t, "BC", received)
 
 	// Now register a new stream to check history
 	s := stream.New("ordering_stream")

@@ -144,6 +144,12 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
         StmtKind::Break => interp.flow = Flow::Break,
         StmtKind::Continue => interp.flow = Flow::Continue,
         StmtKind::Pass => {} // Do nothing
+        StmtKind::Error(msg) => {
+            return interp.runtime_error(
+                &format!("Runtime encountered syntax error node: {}", msg),
+                stmt.span,
+            );
+        }
     }
     Ok(())
 }
