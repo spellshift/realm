@@ -17,13 +17,16 @@ pub async fn run_agent() -> Result<()> {
     // Load config / defaults
     let config = Config::default_with_imix_verison(VERSION);
 
+    #[cfg(debug_assertions)]
+    log::info!("Config: {:#?}", config);
+
     // Initial transport is just a placeholder, we create active ones in the loop
     let transport = ActiveTransport::init();
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
     let agent = Arc::new(ImixAgent::new(
-        config,
+        config.clone(),
         transport,
         handle,
         task_registry.clone(),
@@ -42,7 +45,7 @@ pub async fn run_agent() -> Result<()> {
 
         run_agent_cycle(agent_ref, registry_ref).await;
 
-        if SHUTDOWN.load(Ordering::Relaxed) {
+        if SHUTDOWN.load(Ordering::Relaxed) || config.clone().run_once {
             break;
         }
 
