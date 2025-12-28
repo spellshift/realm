@@ -10,6 +10,7 @@ struct MockAgent {
     #[allow(clippy::type_complexity)]
     start_calls: Arc<Mutex<Vec<(i64, Option<String>)>>>,
     repl_calls: Arc<Mutex<Vec<i64>>>,
+    portal_calls: Arc<Mutex<Vec<i64>>>,
 }
 
 impl MockAgent {
@@ -17,6 +18,7 @@ impl MockAgent {
         Self {
             start_calls: Arc::new(Mutex::new(Vec::new())),
             repl_calls: Arc::new(Mutex::new(Vec::new())),
+            portal_calls: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
@@ -82,6 +84,10 @@ impl Agent for MockAgent {
         self.repl_calls.lock().unwrap().push(task_id);
         Ok(())
     }
+    fn start_create_portal(&self, task_id: i64) -> Result<(), String> {
+        self.portal_calls.lock().unwrap().push(task_id);
+        Ok(())
+    }
     fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
         Ok(())
     }
@@ -121,6 +127,27 @@ fn test_reverse_shell_pty_delegation() {
 fn test_reverse_shell_pty_no_agent() {
     let lib = StdPivotLibrary::default();
     let result = lib.reverse_shell_pty(None);
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), "No agent available");
+}
+
+#[test]
+fn test_create_portal_delegation() {
+    let agent = Arc::new(MockAgent::new());
+    let task_id = 456;
+    let lib = StdPivotLibrary::new(agent.clone(), task_id);
+
+    lib.create_portal().unwrap();
+
+    let calls = agent.portal_calls.lock().unwrap();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0], task_id);
+}
+
+#[test]
+fn test_create_portal_no_agent() {
+    let lib = StdPivotLibrary::default();
+    let result = lib.create_portal();
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), "No agent available");
 }
