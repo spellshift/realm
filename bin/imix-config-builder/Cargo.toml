@@ -3,6 +3,14 @@ name = "imix-config-builder"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "imix_config_builder"
+path = "src/lib.rs"
+
+[[bin]]
+name = "imix-config-builder"
+path = "src/main.rs"
+
 [dependencies]
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }

@@ -41,6 +41,9 @@ rust-embed = { workspace = true }
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
 
+[build-dependencies]
+imix-config-builder = { path = "../../bin/imix-config-builder" }
+
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
 

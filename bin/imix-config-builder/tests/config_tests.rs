@@ -1,5 +1,7 @@
-use assert_cmd::Command;
+use assert_cmd::prelude::*;
+use assert_cmd::cargo;
 use predicates::prelude::*;
+use std::process::Command;
 
 const VALID_CONFIG: &str = r#"
 server_pubkey: "4RKWp9WVrVrEcaTQK7MuZHdFOlFg2pP33G4c7qFZGTQ="
@@ -33,7 +35,7 @@ features:
 
 #[test]
 fn test_valid_config() {
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", VALID_CONFIG);
 
     cmd.assert()
@@ -62,7 +64,7 @@ fn test_valid_config() {
 
 #[test]
 fn test_callback_uri_format() {
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", VALID_CONFIG);
 
     let output = cmd.output().unwrap();
@@ -89,14 +91,14 @@ fn test_callback_uri_format() {
 
 #[test]
 fn test_no_config_env_var() {
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     // Don't set IMIX_CONFIG - should exit silently
     cmd.assert().success();
 }
 
 #[test]
 fn test_invalid_yaml() {
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", "invalid: yaml: syntax");
 
     cmd.assert()
@@ -117,7 +119,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -138,7 +140,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -157,7 +159,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -178,7 +180,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -199,7 +201,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -220,7 +222,7 @@ features:
   - http1
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -243,7 +245,7 @@ features:
   - dns
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -265,7 +267,7 @@ features:
   - dns
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -287,7 +289,7 @@ features:
   - dns
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -309,7 +311,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -331,7 +333,7 @@ features:
   - http1
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -353,7 +355,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -374,7 +376,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -395,7 +397,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert().failure().stderr(predicate::str::contains(
@@ -417,7 +419,7 @@ features:
   - invalid_feature
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     cmd.assert()
@@ -427,7 +429,7 @@ features:
 
 #[test]
 fn test_legacy_env_vars_conflict() {
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", VALID_CONFIG);
     cmd.env("IMIX_CALLBACK_URI", "http://localhost:8080");
 
@@ -450,7 +452,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     let output = cmd.output().unwrap();
@@ -476,7 +478,7 @@ features:
   - grpc
 "#;
 
-    let mut cmd = Command::cargo_bin("imix-config-builder").unwrap();
+    let mut cmd = Command::new(cargo::cargo_bin!("imix-config-builder"));
     cmd.env("IMIX_CONFIG", config);
 
     let output = cmd.output().unwrap();
