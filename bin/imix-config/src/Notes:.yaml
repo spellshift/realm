@@ -1,0 +1,60 @@
+Notes:
+- imix is deprecated use imixv2 for all changes
+- before committing run `cargo fmt` in the realm/implants directory.
+- Use `realm/bin` for crates that need to exist outside the workspace to avoid circurlar dependencies when working with build.rs
+
+Task:
+Build a crate for use in a build script in realm/bin that parses a YAML config to a struct.
+Change grpc-doh from a compile time option to a runtime option parsed from the IMIX_CALLBACK_URI environment variable as a DSN using ? &
+Update lib/pb/src/config.rs Config constructors to parse CALLBACK_URI as a list of callbacks from the YAML config file using `;` delimiter.
+
+Validate the config for correct YAML and business logic rulses:
+- server_pubkey must be a valid base64 string of length 44
+- callbacks must have at least one entry
+- each callback must have a valid type (grpc, http1, dns)
+- each callback uri must be a valid URI according to its type
+- interval and retry_interval must be positive integers
+- if type is dns, domain and query_type must be present
+- if type is grpc and doh is present, it must be either "cloudflare", "google", or "quad9"
+- if type is grpc and doh is not present it should not be set.
+- if type is grpc and proxy_uri is present, it must be a valid URI
+- features must only contain valid features (grpc, http1, dns)
+- run_once is optional if it's set to anything emit the environment variable as IMIX_RUN_ONCE=true
+- ensure that both a config file and a legacy IMIX_CALLBACK_URI, IMIX_PROXY_URI, IMIX_CALLBACK_INTERVAL, IMIX_PROXY_URI environment variable are not set at the same time error if they are.
+
+Use feature flags for conditional compilation and environment variables for compile time values.
+Use the `assert_cmd` crate to write CLI tests for this new crate.
+Write tests that validate the config parsing and business logic rules.
+Test that the values in stdout match the expected build.rs diretctives.
+Use this new crate in the imixv2 build.rs file to parse a YAML config from an environment variable (the full file should be passed instead of a file path to make this more container friednly).
+
+Example YAML config:
+```yaml
+server_pubkey: "4RKWp9WVrVrEcaTQK7MuZHdFOlFg2pP33G4c7qFZGTQ="
+interval: 5
+retry_interval: 5
+
+callbacks:
+  - type: grpc
+    uri: "http://localhost:8080"
+    doh: cloudflare
+    proxy_uri: "http://localhost:3128"
+  - type: grpc
+    uri: "https://localhost:8443"
+    doh: google
+  - type: http1
+    uri: "https1://localhost:8443"
+  - type: http1
+    uri: "http1://localhost:8080"
+  - type: dns
+    uri: "dns://localhost:53"
+    domain: "example.com"
+    query_type: "TXT"
+
+run_once: true
+
+features:
+  - grpc
+  - http1
+  - dns
+```

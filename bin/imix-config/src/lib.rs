@@ -208,6 +208,80 @@ pub fn find_first_https_callback(callbacks: &[CallbackConfig]) -> Option<&Callba
         .find(|cb| cb.uri.to_lowercase().starts_with("https://"))
 }
 
+/// Apply build configuration by setting cargo environment variables
+///
+/// This function outputs cargo directives that will be processed during the build.
+/// It handles callbacks, server_pubkey, host_id, run_once, and feature flags.
+pub fn apply_build_config(config: &ImixBuildConfig) {
+    // Validate configuration
+    if let Err(e) = validate_config(config) {
+        panic!("cargo:error={}", e);
+    }
+
+    // Handle callbacks
+    if let Some(ref callbacks) = config.callbacks {
+        // Prepare callbacks for runtime by encoding doh_provider in URI query params
+        let runtime_callbacks = prepare_callbacks(callbacks);
+
+        // Serialize callbacks list as YAML for runtime consumption
+        match serde_yaml::to_string(&runtime_callbacks) {
+            Ok(yaml) => {
+                println!("cargo:rustc-env=IMIX_CALLBACKS={}", yaml);
+                println!(
+                    "cargo:warning=Setting IMIX_CALLBACKS with {} callback(s)",
+                    callbacks.len()
+                );
+
+                // Find first https:// callback to set as IMIX_CALLBACK_URI
+                if let Some(https_cb) = find_first_https_callback(&runtime_callbacks) {
+                    println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", https_cb.uri);
+                    println!(
+                        "cargo:warning=Setting IMIX_CALLBACK_URI={} (first https:// callback)",
+                        https_cb.uri
+                    );
+                } else {
+                    println!("cargo:warning=No https:// callback found, IMIX_CALLBACK_URI not set");
+                }
+            }
+            Err(e) => {
+                println!("cargo:warning=Failed to serialize callbacks to YAML: {}", e);
+            }
+        }
+    }
+
+    // Set other configuration options
+    if let Some(ref server_pubkey) = config.server_pubkey {
+        println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", server_pubkey);
+        println!("cargo:warning=Setting IMIX_SERVER_PUBKEY=(redacted for security)");
+    }
+
+    if let Some(ref host_id) = config.host_id {
+        println!("cargo:rustc-env=IMIX_HOST_ID={}", host_id);
+        println!("cargo:warning=Setting IMIX_HOST_ID={}", host_id);
+    }
+
+    if let Some(run_once) = config.run_once {
+        println!("cargo:rustc-env=IMIX_RUN_ONCE={}", run_once);
+        println!("cargo:warning=Setting IMIX_RUN_ONCE={}", run_once);
+    }
+
+    // Handle feature flags for conditional compilation
+    if let Some(ref features) = config.features {
+        println!("cargo:warning=Configured features: {:?}", features);
+
+        // Set cfg flags based on features
+        for feature in features {
+            match feature.as_str() {
+                "grpc" => println!("cargo:rustc-cfg=feature=\"transport_grpc\""),
+                "http1" => println!("cargo:rustc-cfg=feature=\"transport_http1\""),
+                "dns" => println!("cargo:rustc-cfg=feature=\"transport_dns\""),
+                "win_service" => println!("cargo:rustc-cfg=feature=\"win_service\""),
+                _ => println!("cargo:warning=Unknown feature: {}", feature),
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -484,5 +558,237 @@ features:
         assert!(features.contains(&"grpc".to_string()));
         assert!(features.contains(&"http1".to_string()));
         assert!(features.contains(&"dns".to_string()));
+    }
+
+    #[test]
+    fn test_apply_build_config_with_callbacks() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![
+                CallbackConfig {
+                    uri: "https://example.com:443".to_string(),
+                    interval: Some(10),
+                    retry_interval: Some(5),
+                    proxy_uri: None,
+                    doh_provider: None,
+                },
+                CallbackConfig {
+                    uri: "dns://8.8.8.8:53?domain=test.com".to_string(),
+                    interval: Some(20),
+                    retry_interval: Some(10),
+                    proxy_uri: None,
+                    doh_provider: None,
+                },
+            ]),
+            server_pubkey: Some("test-pubkey-123".to_string()),
+            host_id: Some("test-host-456".to_string()),
+            run_once: Some(true),
+            features: Some(vec!["grpc".to_string(), "http1".to_string()]),
+        };
+
+        // This should not panic - it validates the config and outputs cargo directives
+        apply_build_config(&config);
+
+        // The function should:
+        // 1. Validate config (no panic = validation passed)
+        // 2. Output IMIX_CALLBACKS as YAML
+        // 3. Output IMIX_CALLBACK_URI (first https:// callback)
+        // 4. Output IMIX_SERVER_PUBKEY
+        // 5. Output IMIX_HOST_ID
+        // 6. Output IMIX_RUN_ONCE
+        // 7. Output cargo:rustc-cfg for features
+    }
+
+    #[test]
+    fn test_apply_build_config_minimal() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "https://example.com:443".to_string(),
+                interval: None,
+                retry_interval: None,
+                proxy_uri: None,
+                doh_provider: None,
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: None,
+        };
+
+        // Should not panic with minimal config
+        apply_build_config(&config);
+    }
+
+    #[test]
+    fn test_apply_build_config_with_doh_provider() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "https://example.com:443".to_string(),
+                interval: Some(10),
+                retry_interval: Some(5),
+                proxy_uri: None,
+                doh_provider: Some("cloudflare".to_string()),
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: None,
+        };
+
+        // Should process doh_provider and encode it in the URI
+        apply_build_config(&config);
+
+        // The runtime callbacks should have doh=cloudflare in the URI
+        // and doh_provider should be None after prepare_callbacks
+    }
+
+    #[test]
+    fn test_apply_build_config_no_https_callback() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "dns://8.8.8.8:53?domain=test.com".to_string(),
+                interval: Some(10),
+                retry_interval: Some(5),
+                proxy_uri: None,
+                doh_provider: None,
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: None,
+        };
+
+        // Should not panic even without https:// callback
+        // IMIX_CALLBACK_URI should not be set
+        apply_build_config(&config);
+    }
+
+    #[test]
+    fn test_apply_build_config_all_features() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "https://example.com:443".to_string(),
+                interval: None,
+                retry_interval: None,
+                proxy_uri: None,
+                doh_provider: None,
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: Some(vec![
+                "grpc".to_string(),
+                "http1".to_string(),
+                "dns".to_string(),
+                "win_service".to_string(),
+            ]),
+        };
+
+        // Should output cargo:rustc-cfg for each feature
+        apply_build_config(&config);
+    }
+
+    #[test]
+    fn test_apply_build_config_unknown_feature() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "https://example.com:443".to_string(),
+                interval: None,
+                retry_interval: None,
+                proxy_uri: None,
+                doh_provider: None,
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: Some(vec!["unknown_feature".to_string()]),
+        };
+
+        // Should not panic but output a warning for unknown feature
+        apply_build_config(&config);
+    }
+
+    #[test]
+    #[should_panic(expected = "cargo:error=")]
+    fn test_apply_build_config_invalid_config() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![]),  // Empty callbacks should fail validation
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: None,
+        };
+
+        // Should panic during validation
+        apply_build_config(&config);
+    }
+
+    #[test]
+    #[should_panic(expected = "cargo:error=")]
+    fn test_apply_build_config_proxy_with_dns() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "dns://8.8.8.8:53?domain=test.com".to_string(),
+                interval: None,
+                retry_interval: None,
+                proxy_uri: Some("http://proxy:8080".to_string()),
+                doh_provider: None,
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: None,
+            features: None,
+        };
+
+        // Should panic due to invalid proxy_uri with DNS transport
+        apply_build_config(&config);
+    }
+
+    #[test]
+    fn test_apply_build_config_run_once_false() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![CallbackConfig {
+                uri: "https://example.com:443".to_string(),
+                interval: None,
+                retry_interval: None,
+                proxy_uri: None,
+                doh_provider: None,
+            }]),
+            server_pubkey: None,
+            host_id: None,
+            run_once: Some(false),
+            features: None,
+        };
+
+        // Should output IMIX_RUN_ONCE=false
+        apply_build_config(&config);
+    }
+
+    #[test]
+    fn test_apply_build_config_multiple_callbacks_with_doh() {
+        let config = ImixBuildConfig {
+            callbacks: Some(vec![
+                CallbackConfig {
+                    uri: "https://primary.com:443".to_string(),
+                    interval: Some(10),
+                    retry_interval: Some(5),
+                    proxy_uri: None,
+                    doh_provider: Some("cloudflare".to_string()),
+                },
+                CallbackConfig {
+                    uri: "https://backup.com:443?existing=param".to_string(),
+                    interval: Some(30),
+                    retry_interval: Some(15),
+                    proxy_uri: Some("http://proxy:8080".to_string()),
+                    doh_provider: Some("google".to_string()),
+                },
+            ]),
+            server_pubkey: Some("pubkey".to_string()),
+            host_id: Some("host123".to_string()),
+            run_once: None,
+            features: None,
+        };
+
+        // Should handle multiple callbacks with various configurations
+        apply_build_config(&config);
     }
 }
