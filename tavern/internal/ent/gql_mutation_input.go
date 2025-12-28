@@ -156,6 +156,70 @@ func (c *HostCredentialCreate) SetInput(i CreateHostCredentialInput) *HostCreden
 	return c
 }
 
+// CreateLinkInput represents a mutation input for creating links.
+type CreateLinkInput struct {
+	Path         *string
+	ActiveBefore *time.Time
+	ActiveClicks *int
+	FileID       int
+}
+
+// Mutate applies the CreateLinkInput on the LinkMutation builder.
+func (i *CreateLinkInput) Mutate(m *LinkMutation) {
+	if v := i.Path; v != nil {
+		m.SetPath(*v)
+	}
+	if v := i.ActiveBefore; v != nil {
+		m.SetActiveBefore(*v)
+	}
+	if v := i.ActiveClicks; v != nil {
+		m.SetActiveClicks(*v)
+	}
+	m.SetFileID(i.FileID)
+}
+
+// SetInput applies the change-set in the CreateLinkInput on the LinkCreate builder.
+func (c *LinkCreate) SetInput(i CreateLinkInput) *LinkCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateLinkInput represents a mutation input for updating links.
+type UpdateLinkInput struct {
+	LastModifiedAt *time.Time
+	Path           *string
+	ActiveBefore   *time.Time
+	ActiveClicks   *int
+}
+
+// Mutate applies the UpdateLinkInput on the LinkMutation builder.
+func (i *UpdateLinkInput) Mutate(m *LinkMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Path; v != nil {
+		m.SetPath(*v)
+	}
+	if v := i.ActiveBefore; v != nil {
+		m.SetActiveBefore(*v)
+	}
+	if v := i.ActiveClicks; v != nil {
+		m.SetActiveClicks(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateLinkInput on the LinkUpdate builder.
+func (c *LinkUpdate) SetInput(i UpdateLinkInput) *LinkUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateLinkInput on the LinkUpdateOne builder.
+func (c *LinkUpdateOne) SetInput(i UpdateLinkInput) *LinkUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateQuestInput represents a mutation input for creating quests.
 type CreateQuestInput struct {
 	Name       string

@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
@@ -187,6 +188,37 @@ func init() {
 	hostprocessDescPrincipal := hostprocessFields[3].Descriptor()
 	// hostprocess.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	hostprocess.PrincipalValidator = hostprocessDescPrincipal.Validators[0].(func(string) error)
+	linkMixin := schema.Link{}.Mixin()
+	linkMixinFields0 := linkMixin[0].Fields()
+	_ = linkMixinFields0
+	linkFields := schema.Link{}.Fields()
+	_ = linkFields
+	// linkDescCreatedAt is the schema descriptor for created_at field.
+	linkDescCreatedAt := linkMixinFields0[0].Descriptor()
+	// link.DefaultCreatedAt holds the default value on creation for the created_at field.
+	link.DefaultCreatedAt = linkDescCreatedAt.Default.(func() time.Time)
+	// linkDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	linkDescLastModifiedAt := linkMixinFields0[1].Descriptor()
+	// link.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	link.DefaultLastModifiedAt = linkDescLastModifiedAt.Default.(func() time.Time)
+	// link.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	link.UpdateDefaultLastModifiedAt = linkDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// linkDescPath is the schema descriptor for path field.
+	linkDescPath := linkFields[0].Descriptor()
+	// link.DefaultPath holds the default value on creation for the path field.
+	link.DefaultPath = linkDescPath.Default.(func() string)
+	// link.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	link.PathValidator = linkDescPath.Validators[0].(func(string) error)
+	// linkDescActiveBefore is the schema descriptor for active_before field.
+	linkDescActiveBefore := linkFields[1].Descriptor()
+	// link.DefaultActiveBefore holds the default value on creation for the active_before field.
+	link.DefaultActiveBefore = linkDescActiveBefore.Default.(time.Time)
+	// linkDescActiveClicks is the schema descriptor for active_clicks field.
+	linkDescActiveClicks := linkFields[2].Descriptor()
+	// link.DefaultActiveClicks holds the default value on creation for the active_clicks field.
+	link.DefaultActiveClicks = linkDescActiveClicks.Default.(int)
+	// link.ActiveClicksValidator is a validator for the "active_clicks" field. It is called by the builders before save.
+	link.ActiveClicksValidator = linkDescActiveClicks.Validators[0].(func(int) error)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0

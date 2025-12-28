@@ -21,7 +21,7 @@ var (
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
-		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_DNS", "TRANSPORT_UNSPECIFIED"}},
+		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED"}},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
@@ -186,6 +186,30 @@ var (
 				Symbol:     "host_processes_tasks_reported_processes",
 				Columns:    []*schema.Column{HostProcessesColumns[14]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// LinksColumns holds the columns for the "links" table.
+	LinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "path", Type: field.TypeString, Unique: true},
+		{Name: "active_before", Type: field.TypeTime},
+		{Name: "active_clicks", Type: field.TypeInt, Default: 0},
+		{Name: "link_file", Type: field.TypeInt},
+	}
+	// LinksTable holds the schema information for the "links" table.
+	LinksTable = &schema.Table{
+		Name:       "links",
+		Columns:    LinksColumns,
+		PrimaryKey: []*schema.Column{LinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "links_files_file",
+				Columns:    []*schema.Column{LinksColumns[6]},
+				RefColumns: []*schema.Column{FilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -473,6 +497,7 @@ var (
 		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
+		LinksTable,
 		QuestsTable,
 		RepositoriesTable,
 		ShellsTable,
@@ -512,6 +537,10 @@ func init() {
 	HostProcessesTable.ForeignKeys[1].RefTable = HostsTable
 	HostProcessesTable.ForeignKeys[2].RefTable = TasksTable
 	HostProcessesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	LinksTable.ForeignKeys[0].RefTable = FilesTable
+	LinksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
