@@ -60,14 +60,17 @@ func (s *MockPortalServer) InvokePortal(stream portalpb.Portal_InvokePortalServe
 
 				replyData := reverse(tcp.Data)
 
+				// NOTE: We now use SrcPort as the session ID carrier for the return path too,
+				// matching the proxy implementation update.
+
 				resp := &portalpb.InvokePortalResponse{
 					Payload: &portalpb.Payload{
 						Payload: &portalpb.Payload_Tcp{
 							Tcp: &portalpb.TCPMessage{
 								Data:    replyData,
-								DstAddr: tcp.DstAddr, // Ideally this would be src addr of the echo server, but proxy doesn't care
-								DstPort: tcp.SrcPort, // Route back to the specific connection ID
-								SrcPort: tcp.DstPort, // From the target service
+								DstAddr: tcp.DstAddr,
+								DstPort: tcp.DstPort, // Target port (e.g. 80)
+								SrcPort: tcp.SrcPort, // Session ID (echoed back in SrcPort)
 							},
 						},
 					},

@@ -153,8 +153,9 @@ func (s *ProxyServer) handleInboundStream() error {
 		}
 
 		if tcpMsg := payload.GetTcp(); tcpMsg != nil {
-			// We use dst_port in the *incoming* message to route back to the correct SOCKS client.
-			connID := tcpMsg.GetDstPort()
+			// We use src_port in the *incoming* message to route back to the correct SOCKS client.
+			// Per PR feedback: SrcPort is used as the session ID.
+			connID := tcpMsg.GetSrcPort()
 
 			// Try to find the connection
 			if val, ok := s.socksConns.Load(connID); ok {
