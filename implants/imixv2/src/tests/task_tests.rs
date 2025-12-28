@@ -52,6 +52,9 @@ impl Agent for MockAgent {
     fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
+    fn start_create_portal(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         Ok(c2::ClaimTasksResponse { tasks: vec![] })
     }

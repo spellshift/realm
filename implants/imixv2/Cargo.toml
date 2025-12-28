@@ -37,6 +37,7 @@ transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
+tokio-stream.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
