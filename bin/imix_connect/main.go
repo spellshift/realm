@@ -166,6 +166,7 @@ func (s *ProxyServer) handleInboundStream() error {
 
 		if tcpMsg := payload.GetTcp(); tcpMsg != nil {
 			connID := tcpMsg.GetSrcId()
+			slog.Info("← Received TCP from Upstream", "first_byte", tcpMsg.GetData()[0], "data_len", len(tcpMsg.GetData()), "conn_id", connID)
 			if val, ok := s.socksConns.Load(connID); ok {
 				conn := val.(net.Conn)
 				_, writeErr := conn.Write(tcpMsg.GetData())
@@ -174,6 +175,7 @@ func (s *ProxyServer) handleInboundStream() error {
 					conn.Close()
 					s.socksConns.Delete(connID)
 				}
+				slog.Info("→ Sent TCP to Client", "first_byte", tcpMsg.GetData()[0], "data_len", len(tcpMsg.GetData()), "conn_id", connID)
 			} else {
 				slog.Warn("received TCP data for unknown connection", "conn_id", connID)
 			}
@@ -274,6 +276,8 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 	atyp := buf[3]
 	var dstAddr string
 
+	slog.Info("SOCKS5 command received", "id", id, "cmd", cmd, "atyp", atyp)
+
 	switch atyp {
 	case 0x01: // IPv4
 		ipBuf := make([]byte, 4)
@@ -295,6 +299,7 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 			return
 		}
 		dstAddr = string(domainBuf)
+		slog.Info("SOCKS5 resolved domain address", "domain", dstAddr)
 	case 0x04: // IPv6
 		ipBuf := make([]byte, 16)
 		if _, err := io.ReadFull(conn, ipBuf); err != nil {
@@ -317,6 +322,7 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 	if cmd == 0x01 { // CONNECT (TCP)
 		// Handshake success
 		reply(conn, 0x00)
+		slog.Info("SOCKS5 CONNECT established (TCP)", "id", id, "dst_addr", dstAddr, "dst_port", dstPort)
 
 		// Register connection
 		s.socksConns.Store(id, conn)
@@ -324,17 +330,14 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 		// --- Data Forwarding Loop ---
 		buffer := make([]byte, 32*1024)
 		for {
-			n, err := conn.Read(buffer)
-			if err != nil {
-				return
-			}
-
+			n, connReadErr := conn.Read(buffer)
 			if n > 0 {
+				slog.Info("← Received TCP from Client", "bytes", n, "first_byte", buffer[0])
 				msg := &portalpb.InvokePortalRequest{
 					Payload: &portalpb.Payload{
 						Payload: &portalpb.Payload_Tcp{
 							Tcp: &portalpb.TCPMessage{
-								Data:    buffer[:n],
+								Data:    append([]byte(nil), buffer[:n]...),
 								DstAddr: dstAddr,
 								DstPort: uint32(dstPort),
 								SrcId:   id, // Route back to us using this ID
@@ -342,11 +345,20 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 						},
 					},
 				}
+				slog.Info("→ Sending TCP to Upstream", "dst_addr", dstAddr, "dst_port", dstPort, "conn_id", id, "data_len", n, "first_byte", buffer[0])
 
 				if err := s.sendRequest(msg); err != nil {
 					log.Printf("[%s] Failed to send to Tavern: %v", id, err)
 					return
 				}
+
+			}
+			// Exit if conn read error
+			if connReadErr != nil {
+				if connReadErr != io.EOF {
+					log.Printf("[%s] Connection read error: %v", id, connReadErr)
+				}
+				return
 			}
 		}
 	} else if cmd == 0x03 { // UDP ASSOCIATE
@@ -385,9 +397,15 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 				}
 
 				// Parse SOCKS header
-				if n < 10 { continue }
-				if buf[0] != 0 || buf[1] != 0 { continue } // RSV must be 0
-				if buf[2] != 0 { continue } // FRAG not supported
+				if n < 10 {
+					continue
+				}
+				if buf[0] != 0 || buf[1] != 0 {
+					continue
+				} // RSV must be 0
+				if buf[2] != 0 {
+					continue
+				} // FRAG not supported
 
 				pos := 4
 				atyp := buf[3]
@@ -395,26 +413,36 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 
 				switch atyp {
 				case 0x01: // IPv4
-					if n < pos+4 { continue }
-					targetAddr = net.IP(buf[pos:pos+4]).String()
+					if n < pos+4 {
+						continue
+					}
+					targetAddr = net.IP(buf[pos : pos+4]).String()
 					pos += 4
 				case 0x03: // Domain
-					if n < pos+1 { continue }
+					if n < pos+1 {
+						continue
+					}
 					l := int(buf[pos])
 					pos++
-					if n < pos+l { continue }
-					targetAddr = string(buf[pos:pos+l])
+					if n < pos+l {
+						continue
+					}
+					targetAddr = string(buf[pos : pos+l])
 					pos += l
 				case 0x04: // IPv6
-					if n < pos+16 { continue }
-					targetAddr = net.IP(buf[pos:pos+16]).String()
+					if n < pos+16 {
+						continue
+					}
+					targetAddr = net.IP(buf[pos : pos+16]).String()
 					pos += 16
 				default:
 					continue
 				}
 
-				if n < pos+2 { continue }
-				targetPort := binary.BigEndian.Uint16(buf[pos:pos+2])
+				if n < pos+2 {
+					continue
+				}
+				targetPort := binary.BigEndian.Uint16(buf[pos : pos+2])
 				pos += 2
 
 				data := buf[pos:n]
@@ -424,10 +452,10 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 					Payload: &portalpb.Payload{
 						Payload: &portalpb.Payload_Udp{
 							Udp: &portalpb.UDPMessage{
-								Data: data,
+								Data:    append([]byte(nil), data...),
 								DstAddr: targetAddr,
 								DstPort: uint32(targetPort),
-								SrcId: id,
+								SrcId:   id,
 							},
 						},
 					},
@@ -452,10 +480,10 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 }
 
 func (s *ProxyServer) sendRequest(req *portalpb.InvokePortalRequest) error {
-    s.streamMu.Lock()
-    defer s.streamMu.Unlock()
-    req.PortalId = s.portalID
-    return s.stream.Send(req)
+	s.streamMu.Lock()
+	defer s.streamMu.Unlock()
+	req.PortalId = s.portalID
+	return s.stream.Send(req)
 }
 
 func reply(conn net.Conn, respCode byte) {

