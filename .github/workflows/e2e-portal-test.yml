@@ -1,0 +1,133 @@
+name: E2E Portal Test 🌀
+
+on:
+  workflow_dispatch: ~
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e_portal_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: ⚡ Setup Golang
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: '1.91.1'
+        default: true
+        profile: minimal
+        components: rustfmt, clippy
+
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: tavern/internal/www/package-lock.json
+
+    - name: 📦 Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler libssl-dev socat jq
+
+    - name: 🔨 Build Tavern
+      run: |
+        go mod download
+        go build -v -o tavern_bin ./tavern
+
+    - name: 🔨 Build Imix Connect
+      run: |
+        go build -v -o imix_connect ./bin/imix_connect
+
+    - name: 🚀 Run Tavern
+      env:
+        HTTP_LISTEN_ADDR: ":8000"
+      run: |
+        ./tavern_bin &
+        echo "Waiting for Tavern to start..."
+        timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 8000
+
+    - name: 🤖 Run Agent
+      working-directory: implants/imixv2
+      env:
+        IMIX_CALLBACK_URI: "http://localhost:8000"
+        IMIX_CALLBACK_INTERVAL: 1
+      run: |
+        PUBKEY=$(curl -s http://localhost:8000/status | jq -r .Pubkey)
+        if [ -z "$PUBKEY" ] || [ "$PUBKEY" == "null" ]; then
+          echo "Error: Could not fetch Pubkey from Tavern"
+          exit 1
+        fi
+        export IMIX_SERVER_PUBKEY=$PUBKEY
+
+        echo "Building imixv2..."
+        cargo build --bin imixv2 --target-dir ./build
+
+        ./build/debug/imixv2 > agent.log 2>&1 &
+        echo "Agent started. Waiting for initial callback..."
+        sleep 5
+
+    - name: 🎭 Install Playwright
+      working-directory: tests/e2e
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+
+    - name: 🧪 Run Portal Creation Test
+      working-directory: tests/e2e
+      run: |
+        # Run only the portal spec
+        npx playwright test tests/portal.spec.ts
+
+    - name: 🔍 Get Portal ID
+      id: get_portal
+      run: |
+        sleep 5
+        # Query GraphQL for the last portal created
+        QUERY='{"query": "{ portals { edges { node { id } } } }"}'
+        RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -d "$QUERY" http://localhost:8000/query)
+        echo "GraphQL Response: $RESPONSE"
+
+        # Extract ID (assuming Relay connection format)
+        PORTAL_ID=$(echo $RESPONSE | jq -r '.data.portals.edges[-1].node.id')
+
+        if [ "$PORTAL_ID" == "null" ] || [ -z "$PORTAL_ID" ]; then
+            echo "Failed to get Portal ID from response"
+            exit 1
+        fi
+
+        echo "Found Portal ID: $PORTAL_ID"
+        echo "portal_id=$PORTAL_ID" >> $GITHUB_OUTPUT
+
+    - name: 🔌 Run Imix Connect
+      env:
+        PORTAL_ID: ${{ steps.get_portal.outputs.portal_id }}
+      run: |
+        ./imix_connect -server "127.0.0.1:8000" -portal_id $PORTAL_ID -listen "127.0.0.1:1080" > imix_connect.log 2>&1 &
+        echo "imix_connect started"
+        sleep 2
+
+    - name: 🚦 Run Traffic Verification
+      working-directory: tests/e2e
+      run: |
+        go run traffic_test.go 127.0.0.1:1080
+
+    - name: 📂 Upload Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-portal-logs
+        path: |
+          tavern.log
+          implants/imixv2/agent.log
+          imix_connect.log
