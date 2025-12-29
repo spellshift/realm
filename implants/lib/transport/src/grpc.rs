@@ -220,9 +220,9 @@ impl Transport for GRPC {
                     }
                     Ok(None) => break,
                     Err(e) => {
-                         #[cfg(debug_assertions)]
-                         log::error!("Portal stream error: {}", e);
-                         break;
+                        #[cfg(debug_assertions)]
+                        log::error!("Portal stream error: {}", e);
+                        break;
                     }
                 }
             }

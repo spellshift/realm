@@ -63,6 +63,17 @@ func (s *MockPortalServer) InvokePortal(stream portalpb.Portal_InvokePortalServe
 				// NOTE: We now use SrcId as the session ID carrier for the return path too,
 				// matching the proxy implementation update.
 
+				// Also need to echo SeqID if we want reassembler to work properly in test?
+				// The client sends seq_id 0, 1, 2...
+				// The reassembler on client side expects incoming packets to have seq_id 0, 1, 2...
+				// If we just echo, we should probably set seq_id on the response TCP message.
+				// Since we are mocking the SERVER side, we are generating "Response" messages.
+				// The client treats these as incoming TCP from "Upstream".
+
+				// Let's assume we reply with one packet, so seq_id=0.
+				// If we send multiple, we need to increment.
+				// For this simple test, we just reply once.
+
 				resp := &portalpb.InvokePortalResponse{
 					Payload: &portalpb.Payload{
 						Payload: &portalpb.Payload_Tcp{
@@ -71,6 +82,7 @@ func (s *MockPortalServer) InvokePortal(stream portalpb.Portal_InvokePortalServe
 								DstAddr: tcp.DstAddr,
 								DstPort: tcp.DstPort, // Target port (e.g. 80)
 								SrcId:   tcp.SrcId,   // Session ID (echoed back in SrcId)
+								SeqId:   0,           // Start at 0
 							},
 						},
 					},
@@ -116,8 +128,11 @@ func TestImixConnect(t *testing.T) {
 	// Run imix_connect in background
 	go func() {
 		// New instance for each test
-		proxy := &ProxyServer{}
-		err := proxy.run(ctx, serverAddr, portalID, socksAddr)
+		proxy := &ProxyServer{
+			portalID: portalID, // Set ID here
+		}
+		// Run now takes 3 args
+		err := proxy.run(ctx, serverAddr, socksAddr)
 		if err != nil && err != context.Canceled {
 			fmt.Printf("imix_connect exited: %v\n", err)
 		}

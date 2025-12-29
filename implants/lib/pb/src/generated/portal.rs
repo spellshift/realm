@@ -11,6 +11,8 @@ pub struct UdpMessage {
     /// Unique identifier used to route reply traffic back to original port
     #[prost(string, tag = "4")]
     pub src_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "5")]
+    pub seq_id: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -24,6 +26,8 @@ pub struct TcpMessage {
     /// Unique identifier used to route reply traffic back to original port
     #[prost(string, tag = "4")]
     pub src_id: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "5")]
+    pub seq_id: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -32,13 +36,13 @@ pub struct BytesMessage {
     pub data: ::prost::alloc::vec::Vec<u8>,
     #[prost(enumeration = "BytesMessageKind", tag = "2")]
     pub kind: i32,
+    #[prost(uint64, tag = "3")]
+    pub seq_id: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Payload {
-    #[prost(uint64, tag = "1")]
-    pub seq_id: u64,
-    #[prost(oneof = "payload::Payload", tags = "2, 3, 4")]
+    #[prost(oneof = "payload::Payload", tags = "1, 2, 3")]
     pub payload: ::core::option::Option<payload::Payload>,
 }
 /// Nested message and enum types in `Payload`.
@@ -46,11 +50,11 @@ pub mod payload {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Payload {
-        #[prost(message, tag = "2")]
+        #[prost(message, tag = "1")]
         Udp(super::UdpMessage),
-        #[prost(message, tag = "3")]
+        #[prost(message, tag = "2")]
         Tcp(super::TcpMessage),
-        #[prost(message, tag = "4")]
+        #[prost(message, tag = "3")]
         Bytes(super::BytesMessage),
     }
 }

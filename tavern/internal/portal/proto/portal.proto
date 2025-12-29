@@ -12,6 +12,7 @@ message UDPMessage {
 
     // Unique identifier used to route reply traffic back to original port
     string src_id = 4;
+    uint64 seq_id = 5;
 }
 message TCPMessage {
     bytes data = 1;
@@ -20,6 +21,7 @@ message TCPMessage {
 
     // Unique identifier used to route reply traffic back to original port
     string src_id = 4;
+    uint64 seq_id = 5;
 }
 enum BytesMessageKind {
     BYTES_MESSAGE_KIND_UNSPECIFIED = 0;
@@ -29,6 +31,7 @@ enum BytesMessageKind {
 message BytesMessage {
     bytes data = 1;
     BytesMessageKind kind = 2;
+    uint64 seq_id = 3;
 }
 
 message Payload {

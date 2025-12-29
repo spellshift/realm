@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
+use tokio::task::JoinSet;
 use tokio_stream::StreamExt;
 use transport::Transport;
 
@@ -57,7 +58,8 @@ where
 {
     // Map stores Sender to the connection handler task
     // Key: src_id
-    let connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<Vec<u8>>>>> =
+    // Value: Sender for (seq_id, data)
+    let connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<(u64, Vec<u8>)>>>> =
         Arc::new(Mutex::new(HashMap::new()));
 
     while let Some(msg) = resp_stream.next().await {
@@ -66,7 +68,6 @@ where
                 PortalPayloadEnum::Tcp(tcp_msg) => {
                     let src_id = tcp_msg.src_id.clone();
 
-                    // We scope the lock to release it before the await
                     let tx = {
                         let mut map = connections.lock().unwrap();
                         if let Some(tx) = map.get(&src_id) {
@@ -82,15 +83,11 @@ where
 
                     if let Some(tx) = tx {
                         if !tcp_msg.data.is_empty() {
-                            // CRITICAL FIX: Do NOT spawn here.
-                            // We must await directly to preserve packet ordering (FIFO).
-                            // If we spawn, Packet B might arrive at the socket before Packet A.
-                            let _ = tx.send(tcp_msg.data).await;
+                            let _ = tx.send((tcp_msg.seq_id, tcp_msg.data)).await;
                         }
                     } else {
                         let (tx, rx) = tokio::sync::mpsc::channel(100);
 
-                        // Re-lock to insert
                         connections
                             .lock()
                             .unwrap()
@@ -101,8 +98,8 @@ where
                         let dst_addr = tcp_msg.dst_addr;
                         let dst_port = tcp_msg.dst_port;
                         let initial_data = tcp_msg.data;
+                        let seq_id = tcp_msg.seq_id;
 
-                        // Spawn the connection handler
                         tokio::spawn(async move {
                             handle_tcp_connection(
                                 rx,
@@ -116,9 +113,8 @@ where
                             .await;
                         });
 
-                        // CRITICAL FIX: Send initial data immediately and ordered
                         if !initial_data.is_empty() {
-                            let _ = tx.send(initial_data).await;
+                            let _ = tx.send((seq_id, initial_data)).await;
                         }
                     }
                 }
@@ -140,8 +136,7 @@ where
 
                     if let Some(tx) = tx {
                         if !udp_msg.data.is_empty() {
-                            // Keep UDP ordered too, just in case
-                            let _ = tx.send(udp_msg.data).await;
+                            let _ = tx.send((udp_msg.seq_id, udp_msg.data)).await;
                         }
                     } else {
                         let (tx, rx) = tokio::sync::mpsc::channel(100);
@@ -155,6 +150,7 @@ where
                         let dst_addr = udp_msg.dst_addr;
                         let dst_port = udp_msg.dst_port;
                         let initial_data = udp_msg.data;
+                        let seq_id = udp_msg.seq_id;
 
                         tokio::spawn(async move {
                             handle_udp_connection(
@@ -170,7 +166,7 @@ where
                         });
 
                         if !initial_data.is_empty() {
-                            let _ = tx.send(initial_data).await;
+                            let _ = tx.send((seq_id, initial_data)).await;
                         }
                     }
                 }
@@ -193,45 +189,60 @@ where
 }
 
 async fn handle_tcp_connection(
-    mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+    mut rx: tokio::sync::mpsc::Receiver<(u64, Vec<u8>)>,
     src_id: String,
     dst_addr: String,
     dst_port: u32,
     outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-    connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<Vec<u8>>>>>,
+    connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<(u64, Vec<u8>)>>>>,
     task_id: i64,
 ) {
     let addr = format!("{}:{}", dst_addr, dst_port);
     match tokio::net::TcpStream::connect(&addr).await {
         Ok(stream) => {
-            // CRITICAL FIX: Disable Nagle's algorithm.
-            // This prevents the OS from buffering tiny TLS ChangeCipherSpec packets.
             if let Err(e) = stream.set_nodelay(true) {
                 #[cfg(debug_assertions)]
                 log::warn!("Failed to set nodelay: {}", e);
             }
 
             let (mut reader, mut writer) = stream.into_split();
-            let mut buf = [0u8; 64 * 1024]; // 64KB buffer
+            let mut buf = [0u8; 64 * 1024];
+
+            let mut join_set = JoinSet::new();
+            let mut out_seq_id = 0u64;
+
+            let mut reorder_buf: HashMap<u64, Vec<u8>> = HashMap::new();
+            let mut next_expected_seq = 0u64;
+            let buffer_limit = 100;
+
             loop {
                 tokio::select! {
                     res = reader.read(&mut buf) => {
                         match res {
                             Ok(0) => break, // EOF
                             Ok(n) => {
+                                let data = buf[0..n].to_vec();
                                 let req = CreatePortalRequest {
                                     task_id,
                                     payload: Some(pb::portal::Payload {
                                         payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
-                                            data: buf[0..n].to_vec(),
+                                            data,
                                             dst_addr: dst_addr.clone(),
                                             dst_port,
                                             src_id: src_id.clone(),
+                                            seq_id: out_seq_id,
                                         })),
                                     }),
                                 };
-                                if outbound_tx.send(req).await.is_err() {
-                                    break;
+                                out_seq_id += 1;
+
+                                let tx_clone = outbound_tx.clone();
+                                join_set.spawn(async move {
+                                    tx_clone.send(req).await
+                                });
+
+                                if join_set.len() >= 50 {
+                                    join_set.join_next().await;
                                 }
                             }
                             Err(_) => break,
@@ -239,13 +250,29 @@ async fn handle_tcp_connection(
                     }
                     res = rx.recv() => {
                         match res {
-                            Some(data) => {
-                                // write_all ensures short writes are handled automatically
-                                if writer.write_all(&data).await.is_err() {
-                                    break;
+                            Some((seq_id, data)) => {
+                                if seq_id > next_expected_seq {
+                                    if reorder_buf.len() >= buffer_limit {
+                                        #[cfg(debug_assertions)]
+                                        log::warn!("Stall detected, closing connection {}", src_id);
+                                        break;
+                                    }
+                                    reorder_buf.insert(seq_id, data);
+                                } else if seq_id == next_expected_seq {
+                                    if writer.write_all(&data).await.is_err() {
+                                        break;
+                                    }
+                                    next_expected_seq += 1;
+
+                                    while let Some(next_data) = reorder_buf.remove(&next_expected_seq) {
+                                        if writer.write_all(&next_data).await.is_err() {
+                                            break;
+                                        }
+                                        next_expected_seq += 1;
+                                    }
                                 }
                             }
-                            None => break, // Channel closed
+                            None => break,
                         }
                     }
                 }
@@ -257,21 +284,19 @@ async fn handle_tcp_connection(
         }
     }
 
-    // Cleanup
     connections.lock().unwrap().remove(&src_id);
 }
 
 async fn handle_udp_connection(
-    mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+    mut rx: tokio::sync::mpsc::Receiver<(u64, Vec<u8>)>,
     src_id: String,
     dst_addr: String,
     dst_port: u32,
     outbound_tx: tokio::sync::mpsc::Sender<CreatePortalRequest>,
-    connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<Vec<u8>>>>>,
+    connections: Arc<Mutex<HashMap<String, tokio::sync::mpsc::Sender<(u64, Vec<u8>)>>>>,
     task_id: i64,
 ) {
     let addr = format!("{}:{}", dst_addr, dst_port);
-    // Bind 0.0.0.0:0
     let socket = match tokio::net::UdpSocket::bind("0.0.0.0:0").await {
         Ok(s) => s,
         Err(_) => {
@@ -286,6 +311,10 @@ async fn handle_udp_connection(
 
     let socket = Arc::new(socket);
     let mut buf = [0u8; 65535];
+
+    let mut out_seq_id = 0u64;
+    let mut join_set = JoinSet::new();
+
     loop {
         tokio::select! {
             res = socket.recv(&mut buf) => {
@@ -299,11 +328,19 @@ async fn handle_udp_connection(
                                     dst_addr: dst_addr.clone(),
                                     dst_port,
                                     src_id: src_id.clone(),
+                                    seq_id: out_seq_id,
                                 })),
                             }),
                         };
-                        if outbound_tx.send(req).await.is_err() {
-                            break;
+                        out_seq_id += 1;
+
+                        let tx_clone = outbound_tx.clone();
+                        join_set.spawn(async move {
+                            tx_clone.send(req).await
+                        });
+
+                        if join_set.len() >= 50 {
+                            join_set.join_next().await;
                         }
                     }
                     Err(_) => break,
@@ -311,7 +348,7 @@ async fn handle_udp_connection(
             }
             res = rx.recv() => {
                 match res {
-                    Some(data) => {
+                    Some((_seq, data)) => {
                         if socket.send(&data).await.is_err() {
                             break;
                         }
@@ -334,7 +371,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_run_portal_loop_tcp() {
-        // Start a local TCP listener to act as target
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let (target_tx, mut target_rx) = mpsc::channel(10);
@@ -347,7 +383,6 @@ mod tests {
             socket.write_all(b"pong").await.unwrap();
         });
 
-        // Setup stream
         let (outbound_tx, mut outbound_rx) = mpsc::channel(10);
         let task_id = 123;
 
@@ -357,7 +392,6 @@ mod tests {
         let loop_handle =
             tokio::spawn(async move { run_portal_loop(stream, outbound_tx, task_id).await });
 
-        // Send message to portal loop
         server_tx
             .send(CreatePortalResponse {
                 payload: Some(pb::portal::Payload {
@@ -366,21 +400,19 @@ mod tests {
                         dst_addr: "127.0.0.1".to_string(),
                         dst_port: addr.port() as u32,
                         src_id: "abcdefg".to_string(),
+                        seq_id: 0,
                     })),
                 }),
             })
             .await
             .unwrap();
 
-        // Verify target received data
-        // Use timeout to avoid hanging
         let received = tokio::time::timeout(Duration::from_secs(2), target_rx.recv())
             .await
             .expect("timeout waiting for target receive")
             .expect("target channel closed");
         assert_eq!(received, b"ping");
 
-        // Verify we get response back in outbound_tx
         let resp = tokio::time::timeout(Duration::from_secs(2), outbound_rx.recv())
             .await
             .expect("timeout waiting for outbound response")
@@ -390,11 +422,11 @@ mod tests {
         if let Some(PortalPayloadEnum::Tcp(tcp)) = resp.payload.unwrap().payload {
             assert_eq!(tcp.data, b"pong");
             assert_eq!(tcp.src_id, "abcdefg".to_string());
+            assert_eq!(tcp.seq_id, 0);
         } else {
             panic!("Expected TCP message");
         }
 
-        // Cleanup
         drop(server_tx);
         loop_handle.await.unwrap().unwrap();
     }
