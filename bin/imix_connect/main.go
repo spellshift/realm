@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -416,11 +415,7 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 
 				slog.Info("→ Sending TCP to Upstream", "conn_id", id, "seq_id", seqID-1)
 
-				select {
-				case sendCh <- msg:
-				case <-time.After(0):
-					sendCh <- msg
-				}
+				sendCh <- msg
 			}
 			if connReadErr != nil {
 				if connReadErr != io.EOF {

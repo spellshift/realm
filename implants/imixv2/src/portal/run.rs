@@ -70,7 +70,7 @@ where
                     let src_id = tcp_msg.src_id.clone();
 
                     let tx = {
-                        let mut map = connections.lock().unwrap();
+                        let map = connections.lock().unwrap();
                         if let Some(tx) = map.get(&src_id) {
                             if tx.is_closed() {
                                 None
@@ -123,7 +123,7 @@ where
                     let src_id = udp_msg.src_id.clone();
 
                     let tx = {
-                        let mut map = connections.lock().unwrap();
+                        let map = connections.lock().unwrap();
                         if let Some(tx) = map.get(&src_id) {
                             if tx.is_closed() {
                                 None
