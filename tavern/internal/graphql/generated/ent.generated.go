@@ -30204,6 +30204,11 @@ func (ec *executionContext) unmarshalNCreateHostCredentialInput2realmᚗpubᚋta
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateLinkInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateLinkInput(ctx context.Context, v any) (ent.CreateLinkInput, error) {
+	res, err := ec.unmarshalInputCreateLinkInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateQuestInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateQuestInput(ctx context.Context, v any) (ent.CreateQuestInput, error) {
 	res, err := ec.unmarshalInputCreateQuestInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -30488,6 +30493,20 @@ func (ec *executionContext) unmarshalNHostProcessWhereInput2ᚖrealmᚗpubᚋtav
 func (ec *executionContext) unmarshalNHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput(ctx context.Context, v any) (*ent.HostWhereInput, error) {
 	res, err := ec.unmarshalInputHostWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLink2realmᚗpubᚋtavernᚋinternalᚋentᚐLink(ctx context.Context, sel ast.SelectionSet, v ent.Link) graphql.Marshaler {
+	return ec._Link(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLink2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLink(ctx context.Context, sel ast.SelectionSet, v *ent.Link) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Link(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNLinkConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkConnection(ctx context.Context, sel ast.SelectionSet, v *ent.LinkConnection) graphql.Marshaler {
@@ -30917,6 +30936,11 @@ func (ec *executionContext) unmarshalNUpdateBeaconInput2realmᚗpubᚋtavernᚋi
 
 func (ec *executionContext) unmarshalNUpdateHostInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateHostInput(ctx context.Context, v any) (ent.UpdateHostInput, error) {
 	res, err := ec.unmarshalInputUpdateHostInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateLinkInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateLinkInput(ctx context.Context, v any) (ent.UpdateLinkInput, error) {
+	res, err := ec.unmarshalInputUpdateLinkInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

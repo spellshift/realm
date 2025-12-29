@@ -221,15 +221,18 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateCredential func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink       func(childComplexity int, input ent.CreateLinkInput) int
 		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
 		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteTome       func(childComplexity int, tomeID int) int
+		DisableLink      func(childComplexity int, linkID int) int
 		DropAllData      func(childComplexity int) int
 		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
 		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
 		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
 		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
@@ -1283,6 +1286,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateCredential(childComplexity, args["input"].(ent.CreateHostCredentialInput)), true
 
+	case "Mutation.createLink":
+		if e.complexity.Mutation.CreateLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateLink(childComplexity, args["input"].(ent.CreateLinkInput)), true
+
 	case "Mutation.createQuest":
 		if e.complexity.Mutation.CreateQuest == nil {
 			break
@@ -1343,6 +1358,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteTome(childComplexity, args["tomeID"].(int)), true
 
+	case "Mutation.disableLink":
+		if e.complexity.Mutation.DisableLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_disableLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DisableLink(childComplexity, args["linkID"].(int)), true
+
 	case "Mutation.dropAllData":
 		if e.complexity.Mutation.DropAllData == nil {
 			break
@@ -1385,6 +1412,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateHost(childComplexity, args["hostID"].(int), args["input"].(ent.UpdateHostInput)), true
+
+	case "Mutation.updateLink":
+		if e.complexity.Mutation.UpdateLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateLink(childComplexity, args["linkID"].(int), args["input"].(ent.UpdateLinkInput)), true
 
 	case "Mutation.updateTag":
 		if e.complexity.Mutation.UpdateTag == nil {
@@ -6677,6 +6716,13 @@ scalar Uint64
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # Link
+    ###
+    createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
+    updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
+    disableLink(linkID: ID!): Link! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

@@ -4015,6 +4015,13 @@ type Mutation {
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # Link
+    ###
+    createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
+    updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
+    disableLink(linkID: ID!): Link! @requireRole(role: USER)
 }
 extend type Query {
   files(
