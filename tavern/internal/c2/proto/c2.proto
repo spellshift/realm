@@ -23,7 +23,6 @@ message Beacon {
     string principal = 2;
     Host host = 3;
     Agent agent = 4;
-    uint64 interval = 5; // Duration until next callback, in seconds.
 
     enum Transport {
         TRANSPORT_UNSPECIFIED = 0;
@@ -50,6 +49,21 @@ message Host {
 
     Platform platform = 3;
     string primary_ip = 4;
+}
+
+// ActiveCallback contains configuration for agent callback behavior.
+message ActiveCallback {
+    uint64 retry_interval = 1;      // Duration between retry attempts on failure, in seconds.
+    uint64 callback_interval = 2;   // Duration between successful callbacks, in seconds.
+    string callback_uri = 3;         // Base callback URI (scheme + host + port + path, no query params).
+    string transport_config = 4;     // JSON string containing transport-specific parameters.
+}
+
+// Config holds values necessary to configure an Agent.
+message Config {
+    Beacon info = 1;                      // Beacon identification and metadata.
+    ActiveCallback active_callback = 2;   // Callback configuration.
+    bool run_once = 5;                    // If true, agent exits after first callback.
 }
 
 
@@ -84,6 +98,7 @@ message TaskOutput {
  */
 message ClaimTasksRequest {
     Beacon beacon = 1;
+    Config config = 2;
 }
 message ClaimTasksResponse {
     repeated Task tasks = 1;

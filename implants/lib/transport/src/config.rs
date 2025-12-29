@@ -97,6 +97,43 @@ pub fn parse_transport_uri(uri: &str) -> Result<TransportConfig> {
     })
 }
 
+/// Convert ActiveCallback protobuf to TransportConfig
+///
+/// This function extracts configuration from the structured ActiveCallback message
+/// and converts it to the TransportConfig format used by transport implementations.
+///
+/// # Parameters
+/// - `retry_interval`: Directly from ActiveCallback.retry_interval
+/// - `callback_interval`: Directly from ActiveCallback.callback_interval
+/// - `callback_uri`: Base URI from ActiveCallback.callback_uri
+/// - `transport_config`: Parsed JSON from ActiveCallback.transport_config
+pub fn active_callback_to_transport_config(
+    active_callback: &pb::config::ActiveCallback,
+) -> Result<TransportConfig> {
+    // Parse base URI to determine transport type
+    let parsed = url::Url::parse(&active_callback.callback_uri)?;
+
+    // Determine transport type from scheme
+    let transport_type = match parsed.scheme() {
+        "http" | "https" | "grpc" | "grpcs" => "grpc",
+        "http1" | "https1" => "http1",
+        "dns" => "dns",
+        _ => return Err(anyhow!("Unknown transport scheme: {}", parsed.scheme())),
+    };
+
+    // Parse transport_config JSON to HashMap
+    let transport_specific: HashMap<String, String> =
+        serde_json::from_str(&active_callback.transport_config).unwrap_or_else(|_| HashMap::new());
+
+    Ok(TransportConfig {
+        base_uri: active_callback.callback_uri.clone(),
+        transport_type: transport_type.to_string(),
+        retry_interval: active_callback.retry_interval,
+        callback_interval: active_callback.callback_interval,
+        transport_specific,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

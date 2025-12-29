@@ -19,3 +19,4 @@ whoami = { workspace = true }
 host_unique = { workspace = true }
 netdev = { workspace = true }
 log = { workspace = true }
+serde_json = { workspace = true }

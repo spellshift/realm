@@ -18,9 +18,6 @@ pub struct Beacon {
     pub host: ::core::option::Option<Host>,
     #[prost(message, optional, tag = "4")]
     pub agent: ::core::option::Option<Agent>,
-    /// Duration until next callback, in seconds.
-    #[prost(uint64, tag = "5")]
-    pub interval: u64,
     #[prost(enumeration = "beacon::Transport", tag = "6")]
     pub transport: i32,
 }
@@ -130,6 +127,37 @@ pub mod host {
         }
     }
 }
+/// ActiveCallback contains configuration for agent callback behavior.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ActiveCallback {
+    /// Duration between retry attempts on failure, in seconds.
+    #[prost(uint64, tag = "1")]
+    pub retry_interval: u64,
+    /// Duration between successful callbacks, in seconds.
+    #[prost(uint64, tag = "2")]
+    pub callback_interval: u64,
+    /// Base callback URI (scheme + host + port + path, no query params).
+    #[prost(string, tag = "3")]
+    pub callback_uri: ::prost::alloc::string::String,
+    /// JSON string containing transport-specific parameters.
+    #[prost(string, tag = "4")]
+    pub transport_config: ::prost::alloc::string::String,
+}
+/// Config holds values necessary to configure an Agent.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Config {
+    /// Beacon identification and metadata.
+    #[prost(message, optional, tag = "1")]
+    pub info: ::core::option::Option<Beacon>,
+    /// Callback configuration.
+    #[prost(message, optional, tag = "2")]
+    pub active_callback: ::core::option::Option<ActiveCallback>,
+    /// If true, agent exits after first callback.
+    #[prost(bool, tag = "5")]
+    pub run_once: bool,
+}
 /// Task instructions for the beacon to execute.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -172,6 +200,8 @@ pub struct TaskOutput {
 pub struct ClaimTasksRequest {
     #[prost(message, optional, tag = "1")]
     pub beacon: ::core::option::Option<Beacon>,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<Config>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

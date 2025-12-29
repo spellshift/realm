@@ -492,7 +492,7 @@ impl DNS {
         let mut nacks = Vec::new();
 
         if let Ok(status_packet) = DnsPacket::decode(response_data) {
-            if status_packet.r#type == PacketType::Status.into() {
+            if status_packet.r#type == Into::<i32>::into(PacketType::Status) {
                 // Process ACKs - collect acknowledged sequences
                 for ack_range in &status_packet.acks {
                     for ack_seq in ack_range.start_seq..=ack_range.end_seq {

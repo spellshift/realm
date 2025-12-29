@@ -32,6 +32,7 @@ hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "web
 base32 = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 url = { workspace = true }
+serde_json = { workspace = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }

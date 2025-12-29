@@ -61,6 +61,12 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
 	}
 
+	// Extract callback interval from config (with default fallback)
+	callbackInterval := uint64(60) // default fallback
+	if req.Config != nil && req.Config.ActiveCallback != nil {
+		callbackInterval = req.Config.ActiveCallback.CallbackInterval
+	}
+
 	// Upsert the host
 	hostID, err := srv.graph.Host.Create().
 		SetIdentifier(req.Beacon.Host.Identifier).
@@ -69,7 +75,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetExternalIP(clientIP).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
+		SetNextSeenAt(now.Add(time.Duration(callbackInterval) * time.Second)).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
@@ -162,8 +168,8 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetNillableName(beaconNameAddr).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
-		SetInterval(req.Beacon.Interval).
+		SetNextSeenAt(now.Add(time.Duration(callbackInterval) * time.Second)).
+		SetInterval(callbackInterval).
 		SetTransport(req.Beacon.Transport).
 		OnConflict().
 		UpdateNewValues().

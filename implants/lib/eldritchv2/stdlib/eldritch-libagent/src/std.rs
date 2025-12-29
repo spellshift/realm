@@ -105,7 +105,10 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
-        let req = c2::ClaimTasksRequest { beacon: None };
+        let req = c2::ClaimTasksRequest {
+            beacon: None,
+            config: None,
+        };
         let resp = self.agent.claim_tasks(req)?;
         Ok(resp.tasks.into_iter().map(TaskWrapper).collect())
     }

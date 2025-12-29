@@ -1,4 +1,3 @@
-use crate::constants::CALLBACK_INTERVAL;
 use crate::system::{get_host_platform, get_primary_ip};
 use uuid::Uuid;
 
@@ -38,15 +37,6 @@ pub fn build_beacon_info(imix_version: &str) -> pb::c2::Beacon {
     pb::c2::Beacon {
         identifier: beacon_id,
         principal: whoami::username(),
-        interval: match CALLBACK_INTERVAL.parse::<u64>() {
-            Ok(i) => i,
-            Err(_err) => {
-                #[cfg(debug_assertions)]
-                log::error!("failed to parse callback interval constant, defaulting to 5 seconds: {_err}");
-
-                5_u64
-            }
-        },
         transport: transport as i32,
         host: Some(host),
         agent: Some(agent),
