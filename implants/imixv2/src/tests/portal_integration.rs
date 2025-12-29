@@ -156,6 +156,7 @@ async fn test_portal_integration_tcp_traffic() -> Result<()> {
                 dst_addr: "127.0.0.1".to_string(),
                 dst_port,
                 src_id: "12345".to_string(),
+                seq_id: 0,
             })),
         }),
     };
@@ -303,6 +304,7 @@ async fn test_portal_integration_udp_traffic() -> Result<()> {
                 dst_addr: "127.0.0.1".to_string(),
                 dst_port,
                 src_id: "54321".to_string(),
+                seq_id: 0,
             })),
         }),
     };

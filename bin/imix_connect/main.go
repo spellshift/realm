@@ -86,8 +86,9 @@ func (r *StreamReassembler) Process(seqID uint64, data []byte) ([][]byte, error)
 }
 
 type UDPSession struct {
-	Conn       *net.UDPConn
-	ClientAddr *net.UDPAddr
+	Conn        *net.UDPConn
+	ClientAddr  *net.UDPAddr
+	Reassembler *StreamReassembler
 }
 
 func main() {
@@ -236,30 +237,40 @@ func (s *ProxyServer) handleInboundStream() error {
 			if val, ok := s.udpListeners.Load(connID); ok {
 				session := val.(*UDPSession)
 
-				dstAddr := udpMsg.GetDstAddr()
-				dstPort := udpMsg.GetDstPort()
-
-				header := make([]byte, 0, 10+len(udpMsg.GetData()))
-				header = append(header, 0x00, 0x00, 0x00)
-
-				ip := net.ParseIP(dstAddr)
-				if ip4 := ip.To4(); ip4 != nil {
-					header = append(header, 0x01)
-					header = append(header, ip4...)
-				} else if ip6 := ip.To16(); ip6 != nil {
-					header = append(header, 0x04)
-					header = append(header, ip6...)
-				} else {
-					header = append(header, 0x01, 0, 0, 0, 0)
+				chunks, err := session.Reassembler.Process(udpMsg.GetSeqId(), udpMsg.GetData())
+				if err != nil {
+					slog.Error("UDP reassembly failed (stall)", "conn_id", connID, "error", err)
+					session.Conn.Close()
+					s.udpListeners.Delete(connID)
+					continue
 				}
 
-				header = append(header, byte(dstPort>>8), byte(dstPort))
-				packet := append(header, udpMsg.GetData()...)
+				for _, chunk := range chunks {
+					dstAddr := udpMsg.GetDstAddr()
+					dstPort := udpMsg.GetDstPort()
 
-				if session.ClientAddr != nil {
-					_, err := session.Conn.WriteToUDP(packet, session.ClientAddr)
-					if err != nil {
-						slog.Error("write to UDP client failed", "conn_id", connID, "error", err)
+					header := make([]byte, 0, 10+len(chunk))
+					header = append(header, 0x00, 0x00, 0x00)
+
+					ip := net.ParseIP(dstAddr)
+					if ip4 := ip.To4(); ip4 != nil {
+						header = append(header, 0x01)
+						header = append(header, ip4...)
+					} else if ip6 := ip.To16(); ip6 != nil {
+						header = append(header, 0x04)
+						header = append(header, ip6...)
+					} else {
+						header = append(header, 0x01, 0, 0, 0, 0)
+					}
+
+					header = append(header, byte(dstPort>>8), byte(dstPort))
+					packet := append(header, chunk...)
+
+					if session.ClientAddr != nil {
+						_, err := session.Conn.WriteToUDP(packet, session.ClientAddr)
+						if err != nil {
+							slog.Error("write to UDP client failed", "conn_id", connID, "error", err)
+						}
 					}
 				}
 			}
@@ -426,7 +437,10 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 			return
 		}
 
-		session := &UDPSession{Conn: udpConn}
+		session := &UDPSession{
+			Conn:        udpConn,
+			Reassembler: NewStreamReassembler(100),
+		}
 		s.udpListeners.Store(id, session)
 
 		lAddr := udpConn.LocalAddr().(*net.UDPAddr)
@@ -451,9 +465,7 @@ func (s *ProxyServer) handleSocksConnection(conn net.Conn) {
 					continue
 				}
 
-				if n < 10 {
-					continue
-				}
+				if n < 10 { continue }
 
 				pos := 10
 				data := buf[pos:n]

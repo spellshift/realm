@@ -1,6 +1,7 @@
 use anyhow::Result;
 use pb::c2::{CreatePortalRequest, CreatePortalResponse};
 use pb::portal::payload::Payload as PortalPayloadEnum;
+use pb::portal::Payload as PortalPayloadMsg;
 use pb::portal::{BytesMessageKind, TcpMessage, UdpMessage};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -174,7 +175,7 @@ where
                     if bytes_msg.kind == BytesMessageKind::Ping as i32 {
                         let req = CreatePortalRequest {
                             task_id,
-                            payload: Some(pb::portal::Payload {
+                            payload: Some(PortalPayloadMsg {
                                 payload: Some(PortalPayloadEnum::Bytes(bytes_msg)),
                             }),
                         };
@@ -224,7 +225,7 @@ async fn handle_tcp_connection(
                                 let data = buf[0..n].to_vec();
                                 let req = CreatePortalRequest {
                                     task_id,
-                                    payload: Some(pb::portal::Payload {
+                                    payload: Some(PortalPayloadMsg {
                                         payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
                                             data,
                                             dst_addr: dst_addr.clone(),
@@ -315,6 +316,10 @@ async fn handle_udp_connection(
     let mut out_seq_id = 0u64;
     let mut join_set = JoinSet::new();
 
+    let mut reorder_buf: HashMap<u64, Vec<u8>> = HashMap::new();
+    let mut next_expected_seq = 0u64;
+    let buffer_limit = 100;
+
     loop {
         tokio::select! {
             res = socket.recv(&mut buf) => {
@@ -322,7 +327,7 @@ async fn handle_udp_connection(
                     Ok(n) => {
                          let req = CreatePortalRequest {
                             task_id,
-                            payload: Some(pb::portal::Payload {
+                            payload: Some(PortalPayloadMsg {
                                 payload: Some(PortalPayloadEnum::Udp(UdpMessage {
                                     data: buf[0..n].to_vec(),
                                     dst_addr: dst_addr.clone(),
@@ -348,9 +353,27 @@ async fn handle_udp_connection(
             }
             res = rx.recv() => {
                 match res {
-                    Some((_seq, data)) => {
-                        if socket.send(&data).await.is_err() {
-                            break;
+                    Some((seq_id, data)) => {
+                        // Reordering and Stall Detection for UDP
+                         if seq_id > next_expected_seq {
+                            if reorder_buf.len() >= buffer_limit {
+                                #[cfg(debug_assertions)]
+                                log::warn!("Stall detected, closing UDP connection {}", src_id);
+                                break;
+                            }
+                            reorder_buf.insert(seq_id, data);
+                        } else if seq_id == next_expected_seq {
+                            if socket.send(&data).await.is_err() {
+                                break;
+                            }
+                            next_expected_seq += 1;
+
+                            while let Some(next_data) = reorder_buf.remove(&next_expected_seq) {
+                                if socket.send(&next_data).await.is_err() {
+                                    break;
+                                }
+                                next_expected_seq += 1;
+                            }
                         }
                     }
                     None => break,
@@ -366,6 +389,7 @@ mod tests {
     use super::*;
     use pb::portal::TcpMessage;
     use pb::portal::payload::Payload as PortalPayloadEnum;
+    use pb::portal::Payload as PortalPayloadMsg;
     use std::time::Duration;
     use tokio::sync::mpsc;
 
@@ -394,7 +418,7 @@ mod tests {
 
         server_tx
             .send(CreatePortalResponse {
-                payload: Some(pb::portal::Payload {
+                payload: Some(PortalPayloadMsg {
                     payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
                         data: b"ping".to_vec(),
                         dst_addr: "127.0.0.1".to_string(),
