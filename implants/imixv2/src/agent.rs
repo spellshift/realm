@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
+use config::{Config, ConfigBuilder};
 use eldritch_agent::Agent;
 use pb::c2::{self, ClaimTasksRequest};
-use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;

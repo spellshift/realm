@@ -1,8 +1,8 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
+use config::Config;
 use eldritch_libagent::agent::Agent;
 use pb::c2;
-use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
 

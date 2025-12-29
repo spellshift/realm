@@ -1,6 +1,7 @@
 use crate::task::TaskHandle;
 use anyhow::Result;
-use pb::{c2::ClaimTasksRequest, config::Config};
+use config::{Config, ConfigBuilder};
+use pb::c2::ClaimTasksRequest;
 use std::time::{Duration, Instant};
 use transport::Transport;
 

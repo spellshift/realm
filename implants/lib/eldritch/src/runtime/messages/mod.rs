@@ -12,8 +12,8 @@ mod reverse_shell_pty;
 mod set_callback_interval;
 mod set_callback_uri;
 
+pub use config::Config;
 pub use fetch_asset::FetchAssetMessage;
-pub use pb::config::Config;
 pub(super) use reduce::reduce;
 pub use report_credential::ReportCredentialMessage;
 pub use report_error::ReportErrorMessage;

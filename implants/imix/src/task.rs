@@ -1,12 +1,11 @@
 use anyhow::Result;
+use config::Config;
 use eldritch::runtime::{
     messages::{AsyncDispatcher, AsyncMessage, ReportErrorMessage, SyncDispatcher},
     Message,
 };
 use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
 use transport::Transport;
-
-use crate::run::Config;
 
 /*
  * Task handle is responsible for tracking a running task and reporting it's output.

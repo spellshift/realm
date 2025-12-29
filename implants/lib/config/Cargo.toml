@@ -1,0 +1,21 @@
+[package]
+name = "config"
+version = "0.0.1"
+edition = "2021"
+
+[features]
+default = []
+grpc = ["pb/grpc"]
+http1 = ["pb/http1"]
+dns = ["pb/dns"]
+
+[dependencies]
+# Required for Config type definition (protobuf)
+pb = { workspace = true }
+
+# System information
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
+whoami = { workspace = true }
+host_unique = { workspace = true }
+netdev = { workspace = true }
+log = { workspace = true }

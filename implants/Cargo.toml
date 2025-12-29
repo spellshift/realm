@@ -6,6 +6,7 @@ members = [
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
+    "lib/config",
     "lib/host_unique",
     "lib/netstat",
     "lib/eldritchv2/eldritch-core",
@@ -35,6 +36,7 @@ transport = { path = "./lib/transport" }
 eldritch = { path = "./lib/eldritch" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
+config = { path = "./lib/config" }
 netstat = { path = "./lib/netstat" }
 
 # Eldritch V2

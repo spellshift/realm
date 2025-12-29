@@ -1,7 +1,7 @@
 use super::AsyncDispatcher;
 use anyhow::Result;
+pub use config::Config;
 use pb::c2::{FetchAssetRequest, FetchAssetResponse};
-pub use pb::config::Config;
 use std::sync::mpsc::Sender;
 use transport::Transport;
 

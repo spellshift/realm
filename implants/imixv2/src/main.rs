@@ -13,7 +13,7 @@ extern crate windows_service;
 #[cfg(all(feature = "win_service", windows))]
 mod win_service;
 
-pub use pb::config::Config;
+pub use config::{Config, ConfigBuilder};
 pub use transport::{ActiveTransport, Transport};
 
 mod agent;

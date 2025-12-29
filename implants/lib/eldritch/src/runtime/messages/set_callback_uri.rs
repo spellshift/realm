@@ -1,6 +1,6 @@
 use super::{SyncDispatcher, Transport};
 use anyhow::Result;
-use pb::config::Config;
+use config::Config;
 
 /*
  * SetCallbackUriMessage sets the callback URI in the dispatched config.

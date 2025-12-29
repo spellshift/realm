@@ -10,6 +10,7 @@ print_stdout = []
 
 [dependencies]
 pb = { workspace = true }
+config = { workspace = true }
 transport = { workspace = true }
 
 generic-array = "=0.14.7"

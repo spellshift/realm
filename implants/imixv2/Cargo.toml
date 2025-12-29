@@ -8,9 +8,9 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["install", "grpc", "http1", "dns"]
-grpc = ["transport/grpc"]
-http1 = ["transport/http1"]
-dns = ["transport/dns"]
+grpc = ["transport/grpc", "config/grpc"]
+http1 = ["transport/http1", "config/http1"]
+dns = ["transport/dns", "config/dns"]
 win_service = []
 install = []
 
@@ -35,6 +35,7 @@ eldritch-libagent = { workspace = true, features = ["stdlib"] }
 eldritch-libassets = { workspace = true, features = ["stdlib"] }
 transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
+config = { workspace = true }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
 

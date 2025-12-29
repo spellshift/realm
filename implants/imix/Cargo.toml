@@ -9,14 +9,15 @@ crate-type = ["cdylib"]
 [features]
 # Check if compiled by imix
 win_service = []
-default = ["transport/grpc"]
-http1 = ["transport/http1"]
-dns = ["transport/dns"]
+default = ["transport/grpc", "config/grpc"]
+http1 = ["transport/http1", "config/http1"]
+dns = ["transport/dns", "config/dns"]
 
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }
 
 pb = { workspace = true, features = ["imix"]}
+config = { workspace = true }
 transport = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }

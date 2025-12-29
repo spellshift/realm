@@ -1,10 +1,10 @@
 use clap::Command;
+use config::{Config, ConfigBuilder};
 use std::time::Duration;
 
 pub use crate::agent::Agent;
 pub use crate::install::install;
 use crate::version::VERSION;
-pub use pb::config::Config;
 
 use transport::{ActiveTransport, Transport};
 
@@ -19,7 +19,7 @@ pub async fn handle_main() {
     }
 
     loop {
-        let cfg = Config::default_with_imix_verison(VERSION);
+        let cfg = Config::default_with_imix_version(VERSION);
 
         // Parse retry_interval from callback URI
         let retry_interval =
