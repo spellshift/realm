@@ -222,6 +222,7 @@ async fn handle_tcp_connection(
                                 let req = CreatePortalRequest {
                                     task_id,
                                     payload: Some(pb::portal::Payload {
+                            seq_id: 0,
                                         payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
                                             data: buf[0..n].to_vec(),
                                             dst_addr: dst_addr.clone(),
@@ -294,6 +295,7 @@ async fn handle_udp_connection(
                          let req = CreatePortalRequest {
                             task_id,
                             payload: Some(pb::portal::Payload {
+                            seq_id: 0,
                                 payload: Some(PortalPayloadEnum::Udp(UdpMessage {
                                     data: buf[0..n].to_vec(),
                                     dst_addr: dst_addr.clone(),
@@ -361,6 +363,7 @@ mod tests {
         server_tx
             .send(CreatePortalResponse {
                 payload: Some(pb::portal::Payload {
+                    seq_id: 0,
                     payload: Some(PortalPayloadEnum::Tcp(TcpMessage {
                         data: b"ping".to_vec(),
                         dst_addr: "127.0.0.1".to_string(),
