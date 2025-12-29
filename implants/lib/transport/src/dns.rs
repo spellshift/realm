@@ -1,4 +1,4 @@
-use crate::Transport;
+use crate::{Transport, TransportConfig};
 use anyhow::{Context, Result};
 use pb::c2::*;
 use pb::dns::*;
@@ -865,39 +865,46 @@ impl Transport for DNS {
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(config: TransportConfig) -> Result<Self> {
         // Parse DNS URL formats:
         // dns://server:port?domain=dnsc2.realm.pub&type=txt (single server, TXT records)
         // dns://*?domain=dnsc2.realm.pub&type=a (use system DNS + fallbacks, A records)
         // dns://8.8.8.8:53,1.1.1.1:53?domain=dnsc2.realm.pub&type=aaaa (multiple servers, AAAA records)
-        let url = if callback.starts_with("dns://") {
-            callback
+
+        let url = if config.uri.starts_with("dns://") {
+            config.uri.clone()
         } else {
-            format!("dns://{}", callback)
+            format!("dns://{}", config.uri)
         };
 
         let parsed = url::Url::parse(&url)?;
-        let base_domain = parsed
-            .query_pairs()
-            .find(|(k, _)| k == "domain")
-            .map(|(_, v)| v.to_string())
-            .ok_or_else(|| anyhow::anyhow!("domain parameter is required"))?
+
+        // DNS-specific params now in config.transport_specific
+        let base_domain = config
+            .transport_specific
+            .get("domain")
+            .ok_or_else(|| anyhow::anyhow!("domain parameter required for DNS transport"))?
             .to_string();
 
         if base_domain.is_empty() {
             return Err(anyhow::anyhow!("domain parameter cannot be empty"));
         }
 
-        // Parse record type from URL (default: TXT)
-        let record_type = parsed
-            .query_pairs()
-            .find(|(k, _)| k == "type")
-            .map(|(_, v)| match v.to_lowercase().as_str() {
+        // Parse record type from transport_specific (default: TXT)
+        let record_type = config
+            .transport_specific
+            .get("type")
+            .map(|s| match s.to_lowercase().as_str() {
                 "a" => DnsRecordType::A,
                 "aaaa" => DnsRecordType::AAAA,
                 _ => DnsRecordType::TXT,
             })
             .unwrap_or(DnsRecordType::TXT);
+
+        // proxy_uri not applicable to DNS (log if provided)
+        if config.transport_specific.contains_key("proxy_uri") {
+            log::debug!("proxy_uri not applicable to DNS transport (ignored)");
+        }
 
         let mut dns_servers = Vec::new();
 
@@ -1170,8 +1177,9 @@ mod tests {
 
     #[test]
     fn test_new_single_server() {
-        let dns = DNS::new("dns://8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None)
-            .expect("should parse");
+        let uri = "dns://8.8.8.8:53?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
         assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
@@ -1181,11 +1189,10 @@ mod tests {
     #[test]
     fn test_new_multiple_servers() {
         // Multiple servers are specified in the host portion, comma-separated
-        let dns = DNS::new(
-            "dns://8.8.8.8,1.1.1.1:53?domain=dnsc2.realm.pub".to_string(),
-            None,
-        )
-        .expect("should parse");
+        let uri =
+            "dns://8.8.8.8,1.1.1.1:53?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.dns_servers.len(), 2);
         assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
@@ -1194,35 +1201,35 @@ mod tests {
 
     #[test]
     fn test_new_record_type_a() {
-        let dns = DNS::new(
-            "dns://8.8.8.8?domain=dnsc2.realm.pub&type=a".to_string(),
-            None,
-        )
-        .expect("should parse");
+        let uri =
+            "dns://8.8.8.8?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub&type=a";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::A);
     }
 
     #[test]
     fn test_new_record_type_aaaa() {
-        let dns = DNS::new(
-            "dns://8.8.8.8?domain=dnsc2.realm.pub&type=aaaa".to_string(),
-            None,
-        )
-        .expect("should parse");
+        let uri =
+            "dns://8.8.8.8?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub&type=aaaa";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::AAAA);
     }
 
     #[test]
     fn test_new_record_type_txt_default() {
-        let dns = DNS::new("dns://8.8.8.8?domain=dnsc2.realm.pub".to_string(), None)
-            .expect("should parse");
+        let uri = "dns://8.8.8.8?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
     fn test_new_wildcard_uses_fallbacks() {
-        let dns =
-            DNS::new("dns://*?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let uri = "dns://*?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let dns = DNS::new(config).expect("should parse");
 
         // Should have fallback servers
         assert!(!dns.dns_servers.is_empty());
@@ -1236,19 +1243,26 @@ mod tests {
 
     #[test]
     fn test_new_missing_domain() {
-        let result = DNS::new("dns://8.8.8.8:53".to_string(), None);
+        let uri = "dns://8.8.8.8:53?retry_interval=5&callback_interval=5";
+        let (_base_uri, config) = crate::parse_transport_uri(uri).expect("should parse URI");
+        let result = DNS::new(config);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("domain parameter is required"));
+            .contains("domain parameter required"));
     }
 
     #[test]
     fn test_new_without_scheme() {
-        let dns =
-            DNS::new("8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
-        assert_eq!(dns.base_domain, "dnsc2.realm.pub");
+        // URIs without scheme should fail to parse
+        let uri = "8.8.8.8:53?retry_interval=5&callback_interval=5&domain=dnsc2.realm.pub";
+        let result = crate::parse_transport_uri(uri);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("relative URL without a base"));
     }
 
     // ============================================================

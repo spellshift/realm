@@ -1,4 +1,4 @@
-use crate::Transport;
+use crate::{Transport, TransportConfig};
 use anyhow::{Context, Result};
 use bytes::BytesMut;
 use hyper::body::HttpBody;
@@ -309,7 +309,21 @@ impl Transport for HTTP {
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(config: TransportConfig) -> Result<Self> {
+        // Parse the URI to get the base URI (stripping query parameters)
+        let (base_uri, _) = crate::parse_transport_uri(&config.uri)?;
+
+        // Rewrite scheme if needed (http1:// -> http://, https1:// -> https://)
+        let callback = base_uri
+            .replacen("https1://", "https://", 1)
+            .replacen("http1://", "http://", 1);
+
+        // HTTP1 transport currently doesn't support proxy
+        // Could be added later using hyper-proxy (same as GRPC)
+        if config.transport_specific.contains_key("proxy_uri") {
+            log::warn!("HTTP1 transport does not support proxy_uri (ignored)");
+        }
+
         // Create HTTP connector
         let mut connector = hyper::client::HttpConnector::new();
         connector.enforce_http(false); // Allow HTTPS

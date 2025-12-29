@@ -1,9 +1,8 @@
 //! DNS resolution module for gRPC transport
 //!
 //! This module provides DNS-over-HTTPS (DoH) support for gRPC connections
-//! when the `grpc-doh` feature is enabled.
+//! at runtime via URI query parameters.
 
-#[cfg(feature = "grpc-doh")]
 pub mod doh {
     use hickory_resolver::config::{ResolverConfig, ResolverOpts};
     use hickory_resolver::TokioAsyncResolver;
@@ -16,19 +15,30 @@ pub mod doh {
     use std::task::{Context, Poll};
 
     #[allow(dead_code)]
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone)]
     pub enum DohProvider {
         Cloudflare,
         Google,
         Quad9,
+        Custom(String),
     }
 
     impl DohProvider {
-        fn resolver_config(&self) -> ResolverConfig {
+        fn resolver_config(&self) -> Result<ResolverConfig, anyhow::Error> {
             match self {
-                DohProvider::Cloudflare => ResolverConfig::cloudflare_https(),
-                DohProvider::Google => ResolverConfig::google_https(),
-                DohProvider::Quad9 => ResolverConfig::quad9_https(),
+                DohProvider::Cloudflare => Ok(ResolverConfig::cloudflare_https()),
+                DohProvider::Google => Ok(ResolverConfig::google_https()),
+                DohProvider::Quad9 => Ok(ResolverConfig::quad9_https()),
+                DohProvider::Custom(url) => {
+                    // For custom DoH endpoints, we would need to parse the URL and construct a config
+                    // For now, fall back to Cloudflare as a sensible default
+                    // TODO: Implement proper custom DoH URL parsing
+                    log::warn!(
+                        "Custom DoH endpoint support not yet implemented: {}. Using Cloudflare.",
+                        url
+                    );
+                    Ok(ResolverConfig::cloudflare_https())
+                }
             }
         }
     }
@@ -43,7 +53,7 @@ pub mod doh {
     impl HickoryResolverService {
         /// Create a new resolver service with the specified DoH provider
         pub fn new(provider: DohProvider) -> Result<Self, anyhow::Error> {
-            let config = provider.resolver_config();
+            let config = provider.resolver_config()?;
             let opts = ResolverOpts::default();
 
             let resolver = TokioAsyncResolver::tokio(config, opts);
@@ -101,30 +111,42 @@ pub mod doh {
         provider: DohProvider,
     ) -> Result<HttpConnector<HickoryResolverService>, anyhow::Error> {
         let resolver = HickoryResolverService::new(provider)?;
-        Ok(HttpConnector::new_with_resolver(resolver))
+        let mut http = HttpConnector::new_with_resolver(resolver);
+        http.enforce_http(false);
+        http.set_nodelay(true);
+        Ok(http)
+    }
+
+    /// Create an HTTP connector with system DNS (no DoH)
+    pub fn create_system_dns_connector(
+    ) -> Result<HttpConnector<HickoryResolverService>, anyhow::Error> {
+        use hickory_resolver::system_conf::read_system_conf;
+        let (config, opts) = read_system_conf()?;
+        let resolver = TokioAsyncResolver::tokio(config, opts);
+        let resolver_service = HickoryResolverService { resolver };
+        let mut http = HttpConnector::new_with_resolver(resolver_service);
+        http.enforce_http(false);
+        http.set_nodelay(true);
+        Ok(http)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "grpc-doh")]
     use super::doh::*;
 
-    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_resolver_creation() {
         let result = HickoryResolverService::new(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH resolver");
     }
 
-    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_connector_creation() {
         let result = create_doh_connector(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH connector");
     }
 
-    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_dns_resolution() {
         use hyper::client::connect::dns::Name;

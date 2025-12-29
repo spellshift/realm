@@ -2,10 +2,13 @@ use anyhow::{anyhow, Result};
 use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
 
+pub mod config;
+pub use config::{parse_transport_uri, TransportConfig};
+
 #[cfg(feature = "grpc")]
 mod grpc;
 
-#[cfg(feature = "grpc-doh")]
+#[cfg(feature = "grpc")]
 mod dns_resolver;
 
 #[cfg(feature = "http1")]
@@ -40,12 +43,16 @@ impl Transport for ActiveTransport {
         Self::Empty
     }
 
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
-        match uri {
+    fn new(config: TransportConfig) -> Result<Self> {
+        // Parse URI to extract base_uri and update config if needed
+        let (base_uri, _parsed_config) = parse_transport_uri(&config.uri)?;
+
+        // Dispatch based on scheme
+        match base_uri.as_str() {
             // 1. gRPC: Passthrough
             s if s.starts_with("http://") || s.starts_with("https://") => {
                 #[cfg(feature = "grpc")]
-                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, proxy_uri)?));
+                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(config)?));
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
             }
@@ -54,10 +61,7 @@ impl Transport for ActiveTransport {
             s if s.starts_with("grpc://") || s.starts_with("grpcs://") => {
                 #[cfg(feature = "grpc")]
                 {
-                    let new = s
-                        .replacen("grpcs://", "https://", 1)
-                        .replacen("grpc://", "http://", 1);
-                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, proxy_uri)?))
+                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(config)?))
                 }
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
@@ -67,10 +71,7 @@ impl Transport for ActiveTransport {
             s if s.starts_with("http1://") || s.starts_with("https1://") => {
                 #[cfg(feature = "http1")]
                 {
-                    let new = s
-                        .replacen("https1://", "https://", 1)
-                        .replacen("http1://", "http://", 1);
-                    Ok(ActiveTransport::Http(http::HTTP::new(new, proxy_uri)?))
+                    Ok(ActiveTransport::Http(http::HTTP::new(config)?))
                 }
                 #[cfg(not(feature = "http1"))]
                 return Err(anyhow!("http1 transport not enabled"));
@@ -80,13 +81,13 @@ impl Transport for ActiveTransport {
             s if s.starts_with("dns://") => {
                 #[cfg(feature = "dns")]
                 {
-                    Ok(ActiveTransport::Dns(dns::DNS::new(s, proxy_uri)?))
+                    Ok(ActiveTransport::Dns(dns::DNS::new(config)?))
                 }
                 #[cfg(not(feature = "dns"))]
                 return Err(anyhow!("DNS transport not enabled"));
             }
 
-            _ => Err(anyhow!("Could not determine transport from URI: {}", uri)),
+            _ => Err(anyhow!("Unknown transport type in URI: {}", base_uri)),
         }
     }
 
@@ -273,17 +274,19 @@ mod tests {
     #[cfg(feature = "grpc")]
     async fn test_routes_to_grpc_transport() {
         // All these prefixes should result in the Grpc variant
+        // URIs now require query parameters (retry_interval and callback_interval)
         let inputs = vec![
             // Passthrough cases
-            "http://127.0.0.1:50051",
-            "https://127.0.0.1:50051",
+            "http://127.0.0.1:50051?retry_interval=5&callback_interval=5",
+            "https://127.0.0.1:50051?retry_interval=5&callback_interval=5",
             // Rewrite cases
-            "grpc://127.0.0.1:50051",
-            "grpcs://127.0.0.1:50051",
+            "grpc://127.0.0.1:50051?retry_interval=5&callback_interval=5",
+            "grpcs://127.0.0.1:50051?retry_interval=5&callback_interval=5",
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let result = ActiveTransport::new(config);
 
             // 1. Assert strictly on the Variant type
             assert!(
@@ -295,13 +298,17 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(feature = "http1"))]
+    #[cfg(feature = "http1")]
     async fn test_routes_to_http1_transport() {
         // All these prefixes should result in the Http1 variant
-        let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
+        let inputs = vec![
+            "http1://127.0.0.1:8080?retry_interval=5&callback_interval=5",
+            "https1://127.0.0.1:8080?retry_interval=5&callback_interval=5",
+        ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let result = ActiveTransport::new(config);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Http(_))),
@@ -316,13 +323,14 @@ mod tests {
     async fn test_routes_to_dns_transport() {
         // DNS URIs should result in the Dns variant
         let inputs = vec![
-            "dns://8.8.8.8:53?domain=example.com",
-            "dns://*?domain=example.com&type=txt",
-            "dns://1.1.1.1?domain=test.com&type=a",
+            "dns://8.8.8.8:53?retry_interval=5&callback_interval=5&domain=example.com",
+            "dns://*?retry_interval=5&callback_interval=5&domain=example.com&type=txt",
+            "dns://1.1.1.1?retry_interval=5&callback_interval=5&domain=test.com&type=a",
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let result = ActiveTransport::new(config);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Dns(_))),
@@ -336,9 +344,14 @@ mod tests {
     #[cfg(not(feature = "grpc"))]
     async fn test_grpc_disabled_error() {
         // If the feature is off, these should error out
-        let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
+        let inputs = vec![
+            "grpc://foo?retry_interval=5&callback_interval=5",
+            "grpcs://foo?retry_interval=5&callback_interval=5",
+            "http://foo?retry_interval=5&callback_interval=5",
+        ];
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let result = ActiveTransport::new(config);
             assert!(
                 result.is_err(),
                 "Expected error for '{}' when gRPC feature is disabled",
@@ -349,15 +362,25 @@ mod tests {
 
     #[tokio::test]
     async fn test_unknown_transport_errors() {
-        let inputs = vec!["ftp://example.com", "ws://example.com", "random-string", ""];
+        let inputs = vec![
+            "ftp://example.com?retry_interval=5&callback_interval=5",
+            "ws://example.com?retry_interval=5&callback_interval=5",
+            "random-string",
+            "",
+        ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
-            assert!(
-                result.is_err(),
-                "Expected error for unknown URI scheme: '{}'",
-                uri
-            );
+            // For invalid URIs, parse_transport_uri itself should fail
+            let parse_result = parse_transport_uri(uri);
+            if let Ok((_base_uri, config)) = parse_result {
+                let result = ActiveTransport::new(config);
+                assert!(
+                    result.is_err(),
+                    "Expected error for unknown URI scheme: '{}'",
+                    uri
+                );
+            }
+            // If parse fails, that's also acceptable for invalid URIs
         }
     }
 }

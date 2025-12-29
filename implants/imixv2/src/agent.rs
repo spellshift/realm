@@ -99,18 +99,16 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
-    // Helper to get config URIs for creating new transport
-    pub async fn get_transport_config(&self) -> (String, Option<String>) {
+    // Helper to get active callback URI (includes all config in query params)
+    pub async fn get_callback_uri(&self) -> String {
         let uris = self.callback_uris.read().await;
         let idx = *self.active_uri_idx.read().await;
-        let callback_uri = if idx < uris.len() {
+        if idx < uris.len() {
             uris[idx].clone()
         } else {
             // Fallback, should not happen unless empty
             uris.first().cloned().unwrap_or_default()
-        };
-        let cfg = self.config.read().await;
-        (callback_uri, cfg.proxy_uri.clone())
+        }
     }
 
     pub async fn rotate_callback_uri(&self) {

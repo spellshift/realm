@@ -2,15 +2,18 @@ use anyhow::Result;
 use pb::c2::{beacon, *};
 use std::sync::mpsc::{Receiver, Sender};
 
+use crate::TransportConfig;
+
 #[trait_variant::make(Transport: Send)]
 pub trait UnsafeTransport: Clone + Send {
     // Init will initialize a new instance of the transport with no active connections.
     #[allow(dead_code)]
     fn init() -> Self;
 
-    // New will create a new instance of the transport using the provided URI.
+    // New will create a new instance of the transport using the provided configuration.
+    // The URI is included in the config.
     #[allow(dead_code)]
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+    fn new(config: TransportConfig) -> Result<Self>;
 
     ///
     /// Contact the server for new tasks to execute.

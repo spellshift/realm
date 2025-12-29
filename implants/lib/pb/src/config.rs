@@ -1,7 +1,4 @@
-use tonic::transport;
 use uuid::Uuid;
-
-use crate::c2::beacon::Transport;
 
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -10,11 +7,9 @@ pub struct Config {
     #[prost(message, optional, tag = "1")]
     pub info: ::core::option::Option<crate::c2::Beacon>,
     #[prost(string, tag = "2")]
-    pub callback_uri: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "3")]
-    pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(uint64, tag = "4")]
-    pub retry_interval: u64,
+    pub callback_uri: ::prost::alloc::string::String, // Now includes query params
+    // REMOVED: proxy_uri (tag 3) - now in callback_uri query params
+    // REMOVED: retry_interval (tag 4) - now in callback_uri query params
     #[prost(bool, tag = "5")]
     pub run_once: bool,
 }
@@ -106,12 +101,17 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
+        // Transport variable is used in Beacon struct below, but appears unused in some feature configurations
+        #[allow(unused_variables)]
         #[cfg(feature = "dns")]
         let transport = crate::c2::beacon::Transport::Dns;
+        #[allow(unused_variables)]
         #[cfg(feature = "http1")]
         let transport = crate::c2::beacon::Transport::Http1;
+        #[allow(unused_variables)]
         #[cfg(feature = "grpc")]
         let transport = crate::c2::beacon::Transport::Grpc;
+        #[allow(unused_variables)]
         #[cfg(not(any(feature = "dns", feature = "http1", feature = "grpc")))]
         let transport = crate::c2::beacon::Transport::Unspecified;
 
@@ -132,21 +132,26 @@ impl Config {
             agent: Some(agent),
         };
 
+        // Build callback URI with query parameters
+        let mut callback_uri = format!(
+            "{}?retry_interval={}&callback_interval={}",
+            CALLBACK_URI, RETRY_INTERVAL, CALLBACK_INTERVAL
+        );
+
+        // Add proxy if available from environment (only for GRPC transport)
+        if let Some(proxy) = get_system_proxy() {
+            if CALLBACK_URI.starts_with("grpc://")
+                || CALLBACK_URI.starts_with("grpcs://")
+                || CALLBACK_URI.starts_with("http://")
+                || CALLBACK_URI.starts_with("https://")
+            {
+                callback_uri.push_str(&format!("&proxy_uri={}", proxy));
+            }
+        }
+
         Config {
             info: Some(info),
-            callback_uri: String::from(CALLBACK_URI),
-            proxy_uri: get_system_proxy(),
-            retry_interval: match RETRY_INTERVAL.parse::<u64>() {
-                Ok(i) => i,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!(
-                        "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
-                    );
-
-                    5
-                }
-            },
+            callback_uri,
             run_once: RUN_ONCE,
         }
     }

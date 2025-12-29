@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use hyper::Uri;
 use pb::c2::*;
 use std::str::FromStr;
@@ -6,15 +6,24 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
 
-#[cfg(feature = "grpc-doh")]
-use hyper::client::HttpConnector;
-
-#[cfg(feature = "grpc-doh")]
-use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
-
-use crate::Transport;
+use crate::dns_resolver::doh::DohProvider;
+use crate::{Transport, TransportConfig};
 
 use std::time::Duration;
+
+/// Parse DoH provider from URI parameter value
+fn parse_doh_provider(param: &str) -> Result<DohProvider> {
+    match param.to_lowercase().as_str() {
+        "cloudflare" => Ok(DohProvider::Cloudflare),
+        "google" => Ok(DohProvider::Google),
+        "quad9" => Ok(DohProvider::Quad9),
+        url if url.starts_with("https://") => Ok(DohProvider::Custom(url.to_string())),
+        _ => Err(anyhow!(
+            "Invalid DoH provider: {}. Use: cloudflare, google, quad9, or https://...",
+            param
+        )),
+    }
+}
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
@@ -35,19 +44,35 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
-    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(config: TransportConfig) -> Result<Self> {
+        // Parse the URI to get the base URI (stripping query parameters)
+        let (base_uri, _) = crate::parse_transport_uri(&config.uri)?;
+
+        // Rewrite scheme if needed (grpc:// -> http://, grpcs:// -> https://)
+        let callback = base_uri
+            .replacen("grpcs://", "https://", 1)
+            .replacen("grpc://", "http://", 1);
+
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        // Create HTTP connector with DNS-over-HTTPS support if enabled
-        #[cfg(feature = "grpc-doh")]
-        let mut http: HttpConnector<HickoryResolverService> =
-            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
+        // Parse DoH provider from transport_specific config
+        let doh_provider = config
+            .transport_specific
+            .get("doh")
+            .map(|s| parse_doh_provider(s))
+            .transpose()?;
 
-        #[cfg(not(feature = "grpc-doh"))]
-        let mut http = hyper::client::HttpConnector::new();
+        // Create HTTP connector with optional DoH support
+        let http = if let Some(provider) = doh_provider {
+            // DoH is now always available at runtime
+            crate::dns_resolver::doh::create_doh_connector(provider)?
+        } else {
+            // Standard system DNS resolution
+            crate::dns_resolver::doh::create_system_dns_connector()?
+        };
 
-        http.enforce_http(false);
-        http.set_nodelay(true);
+        // Parse proxy_uri from transport_specific (GRPC-specific parameter)
+        let proxy_uri = config.transport_specific.get("proxy_uri").cloned();
 
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {

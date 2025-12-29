@@ -2,6 +2,7 @@ use anyhow::Result;
 use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
 
+use crate::TransportConfig;
 use mockall::{mock, predicate::*};
 
 mock! {
@@ -12,7 +13,7 @@ mock! {
     impl super::Transport for Transport {
         fn init() -> Self;
 
-        fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+        fn new(config: TransportConfig) -> Result<Self>;
 
         async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 
