@@ -36,7 +36,9 @@ pub struct BytesMessage {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Payload {
-    #[prost(oneof = "payload::Payload", tags = "1, 2, 3")]
+    #[prost(uint64, tag = "1")]
+    pub seq_id: u64,
+    #[prost(oneof = "payload::Payload", tags = "2, 3, 4")]
     pub payload: ::core::option::Option<payload::Payload>,
 }
 /// Nested message and enum types in `Payload`.
@@ -44,11 +46,11 @@ pub mod payload {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Payload {
-        #[prost(message, tag = "1")]
-        Udp(super::UdpMessage),
         #[prost(message, tag = "2")]
-        Tcp(super::TcpMessage),
+        Udp(super::UdpMessage),
         #[prost(message, tag = "3")]
+        Tcp(super::TcpMessage),
+        #[prost(message, tag = "4")]
         Bytes(super::BytesMessage),
     }
 }

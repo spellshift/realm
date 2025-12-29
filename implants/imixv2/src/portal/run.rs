@@ -212,8 +212,7 @@ async fn handle_tcp_connection(
             }
 
             let (mut reader, mut writer) = stream.into_split();
-            let mut buf = [0u8; 4096];
-
+            let mut buf = [0u8; 64 * 1024]; // 64KB buffer
             loop {
                 tokio::select! {
                     res = reader.read(&mut buf) => {

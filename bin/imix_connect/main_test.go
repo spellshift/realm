@@ -116,8 +116,10 @@ func TestImixConnect(t *testing.T) {
 	// Run imix_connect in background
 	go func() {
 		// New instance for each test
-		proxy := &ProxyServer{}
-		err := proxy.run(ctx, serverAddr, portalID, socksAddr)
+		proxy := &ProxyServer{
+			portalID: portalID,
+		}
+		err := proxy.run(ctx, serverAddr, socksAddr)
 		if err != nil && err != context.Canceled {
 			fmt.Printf("imix_connect exited: %v\n", err)
 		}
