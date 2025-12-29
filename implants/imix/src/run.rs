@@ -20,7 +20,16 @@ pub async fn handle_main() {
 
     loop {
         let cfg = Config::default_with_imix_verison(VERSION);
-        let retry_interval = cfg.retry_interval;
+
+        // Parse retry_interval from callback URI
+        let retry_interval = if let Ok((_base_uri, parsed_config)) =
+            transport::parse_transport_uri(&cfg.callback_uri)
+        {
+            parsed_config.retry_interval
+        } else {
+            5 // Default fallback
+        };
+
         #[cfg(debug_assertions)]
         log::info!("agent config initialized {:#?}", cfg.clone());
 

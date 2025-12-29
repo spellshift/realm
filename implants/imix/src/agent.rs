@@ -88,7 +88,9 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
+        // Parse URI to create config
+        let (_base_uri, config) = transport::parse_transport_uri(&self.cfg.callback_uri)?;
+        self.t = T::new(config)?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
         self.t = T::init(); // re-init to make sure no active connections during sleep

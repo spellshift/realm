@@ -132,8 +132,10 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
 
         // 2. Create new transport from config
-        let (callback_uri, proxy_uri) = self.get_transport_config().await;
-        let t = T::new(callback_uri, proxy_uri).context("Failed to create on-demand transport")?;
+        let callback_uri = self.get_callback_uri().await;
+        let (_base_uri, config) = transport::parse_transport_uri(&callback_uri)
+            .context("Failed to parse transport URI")?;
+        let t = T::new(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -286,11 +288,15 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .map_err(|e: String| e)?;
 
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
-        map.insert("callback_uri".to_string(), active_uri);
-        if let Some(proxy) = &cfg.proxy_uri {
-            map.insert("proxy_uri".to_string(), proxy.clone());
+        map.insert("callback_uri".to_string(), active_uri.clone());
+
+        // Parse URI to extract retry_interval and proxy_uri
+        if let Ok((_base_uri, config)) = transport::parse_transport_uri(&active_uri) {
+            map.insert("retry_interval".to_string(), config.retry_interval.to_string());
+            if let Some(proxy) = config.transport_specific.get("proxy_uri") {
+                map.insert("proxy_uri".to_string(), proxy.clone());
+            }
         }
-        map.insert("retry_interval".to_string(), cfg.retry_interval.to_string());
         map.insert("run_once".to_string(), cfg.run_once.to_string());
 
         if let Some(info) = &cfg.info {
