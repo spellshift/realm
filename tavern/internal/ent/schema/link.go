@@ -1,9 +1,9 @@
 package schema
 
 import (
+	"math/rand"
 	"time"
 
-	"github.com/google/uuid"
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
@@ -17,15 +17,23 @@ type Link struct {
 	ent.Schema
 }
 
+func randomShortPath() string {
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+	const length = 6
+	result := make([]byte, length)
+	for i := range result {
+		result[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(result)
+}
+
 // Fields of the Link.
 func (Link) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("path").
 			NotEmpty().
 			Unique().
-			DefaultFunc(func() string {
-				return uuid.New().String()
-			}).
+			DefaultFunc(randomShortPath).
 			Annotations(
 				entgql.OrderField("PATH"),
 			).
