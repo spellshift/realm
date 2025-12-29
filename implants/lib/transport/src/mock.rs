@@ -12,7 +12,7 @@ mock! {
     impl super::Transport for Transport {
         fn init() -> Self;
 
-        fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+        fn new(uri: String, proxy_uri: Option<String>, server_pubkey: [u8; 32]) -> Result<Self>;
 
         async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 

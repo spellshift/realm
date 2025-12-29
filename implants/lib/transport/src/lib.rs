@@ -282,8 +282,10 @@ mod tests {
             "grpcs://127.0.0.1:50051",
         ];
 
+        let test_pubkey = [0u8; 32];
+
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), None, test_pubkey);
 
             // 1. Assert strictly on the Variant type
             assert!(
@@ -295,13 +297,15 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(feature = "http1"))]
+    #[cfg(feature = "http1")]
     async fn test_routes_to_http1_transport() {
         // All these prefixes should result in the Http1 variant
         let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
 
+        let test_pubkey = [0u8; 32];
+
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), None, test_pubkey);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Http(_))),
@@ -321,8 +325,10 @@ mod tests {
             "dns://1.1.1.1?domain=test.com&type=a",
         ];
 
+        let test_pubkey = [0u8; 32];
+
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), None, test_pubkey);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Dns(_))),
@@ -337,8 +343,9 @@ mod tests {
     async fn test_grpc_disabled_error() {
         // If the feature is off, these should error out
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
+        let test_pubkey = [0u8; 32];
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), None, test_pubkey);
             assert!(
                 result.is_err(),
                 "Expected error for '{}' when gRPC feature is disabled",
@@ -351,8 +358,10 @@ mod tests {
     async fn test_unknown_transport_errors() {
         let inputs = vec!["ftp://example.com", "ws://example.com", "random-string", ""];
 
+        let test_pubkey = [0u8; 32];
+
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), None, test_pubkey);
             assert!(
                 result.is_err(),
                 "Expected error for unknown URI scheme: '{}'",
