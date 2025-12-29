@@ -100,7 +100,7 @@ func (mux *Mux) Start(ctx context.Context) error {
 		msg *pubsub.Message
 		err error
 	}
-	msgChan := make(chan pollResult)
+	msgChan := make(chan pollResult, 100)
 
 	// Start poller goroutine
 	go func() {

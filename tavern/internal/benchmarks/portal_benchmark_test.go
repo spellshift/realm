@@ -2,6 +2,7 @@ package benchmarks
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -161,33 +162,49 @@ func BenchmarkPortalThroughput(b *testing.B) {
 	b.SetBytes(int64(payloadSize))
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		// Send
-		if err := createStream.Send(req); err != nil {
-			b.Fatalf("Send failed: %v", err)
-		}
-
-		// Recv
-		// We must loop until we get data, ignoring pings
-		gotData := false
-		for !gotData {
-			resp, err := invokeStream.Recv()
-			if err != nil {
-				b.Fatalf("Recv failed: %v", err)
+	// Run Send and Recv concurrently to pipeline messages
+	errChan := make(chan error, 2)
+	go func() {
+		for i := 0; i < b.N; i++ {
+			if err := createStream.Send(req); err != nil {
+				errChan <- err
+				return
 			}
+		}
+	}()
 
-			// Check if payload is data
-			if resp.Payload != nil {
-				if bm := resp.Payload.GetBytes(); bm != nil {
-					if bm.Kind == portalpb.BytesMessageKind_BYTES_MESSAGE_KIND_DATA {
-						gotData = true
-						if len(bm.Data) != payloadSize {
-							b.Fatalf("Size mismatch: got %d, want %d", len(bm.Data), payloadSize)
+	go func() {
+		for i := 0; i < b.N; i++ {
+			// Recv
+			// We must loop until we get data, ignoring pings
+			gotData := false
+			for !gotData {
+				resp, err := invokeStream.Recv()
+				if err != nil {
+					errChan <- err
+					return
+				}
+
+				// Check if payload is data
+				if resp.Payload != nil {
+					if bm := resp.Payload.GetBytes(); bm != nil {
+						if bm.Kind == portalpb.BytesMessageKind_BYTES_MESSAGE_KIND_DATA {
+							gotData = true
+							if len(bm.Data) != payloadSize {
+								errChan <- fmt.Errorf("Size mismatch: got %d, want %d", len(bm.Data), payloadSize)
+								return
+							}
 						}
 					}
 				}
 			}
 		}
+		errChan <- nil
+	}()
+
+	// Wait for receiver to finish
+	if err := <-errChan; err != nil {
+		b.Fatalf("Benchmark failed: %v", err)
 	}
 
 	b.StopTimer()
