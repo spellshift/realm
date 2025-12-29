@@ -3,6 +3,7 @@ use config::{Config, ConfigBuilder};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
+use transport::config::active_callback_to_transport_config;
 
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
@@ -87,15 +88,23 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     // Refresh IP
     agent.refresh_ip().await;
 
-    // Get callback URI (includes all config in query params)
-    let callback_uri = agent.get_callback_uri().await;
+    // Get active callback config
+    let active_callback = match agent.get_active_callback().await {
+        Some(ac) => ac,
+        None => {
+            #[cfg(debug_assertions)]
+            log::error!("No active_callback configured");
+            agent.rotate_callback_uri().await;
+            return;
+        }
+    };
 
-    // Parse URI to create config
-    let config = match transport::parse_transport_uri(&callback_uri) {
+    // Convert to transport config
+    let config = match active_callback_to_transport_config(&active_callback) {
         Ok(config) => config,
         Err(_e) => {
             #[cfg(debug_assertions)]
-            log::error!("Failed to parse transport URI: {_e:#}");
+            log::error!("Failed to parse active_callback: {_e:#}");
             agent.rotate_callback_uri().await;
             return;
         }

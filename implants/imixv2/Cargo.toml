@@ -38,6 +38,7 @@ pb = { workspace = true, features = ["imix"] }
 config = { workspace = true }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
+serde_json = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
