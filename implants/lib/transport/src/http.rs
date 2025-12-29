@@ -245,7 +245,10 @@ impl HTTP {
     }
 
     /// Create a streaming HTTP body that encodes requests as gRPC frames (client-streaming pattern)
-    fn create_streaming_body<Req, Resp>(receiver: Receiver<Req>, server_pubkey: [u8; 32]) -> hyper::Body
+    fn create_streaming_body<Req, Resp>(
+        receiver: Receiver<Req>,
+        server_pubkey: [u8; 32],
+    ) -> hyper::Body
     where
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
@@ -255,7 +258,8 @@ impl HTTP {
         tokio::spawn(async move {
             for req_chunk in receiver {
                 // Marshal and encrypt each chunk
-                let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk, server_pubkey) {
+                let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk, server_pubkey)
+                {
                     Ok(bytes) => bytes,
                     Err(_err) => {
                         #[cfg(debug_assertions)]
@@ -340,7 +344,10 @@ impl Transport for HTTP {
         let filename = request.name.clone();
 
         // Marshal and encrypt the request
-        let request_bytes = marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request, self.server_pubkey)?;
+        let request_bytes = marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(
+            request,
+            self.server_pubkey,
+        )?;
 
         // Build and send the request
         let uri = self.build_uri(FETCH_ASSET_PATH)?;
@@ -382,7 +389,10 @@ impl Transport for HTTP {
         request: Receiver<ReportFileRequest>,
     ) -> Result<ReportFileResponse> {
         // Create streaming body
-        let body = Self::create_streaming_body::<ReportFileRequest, ReportFileResponse>(request, self.server_pubkey);
+        let body = Self::create_streaming_body::<ReportFileRequest, ReportFileResponse>(
+            request,
+            self.server_pubkey,
+        );
 
         // Build and send the request
         let uri = self.build_uri(REPORT_FILE_PATH)?;

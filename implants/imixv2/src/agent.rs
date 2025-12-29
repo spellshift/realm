@@ -148,7 +148,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         // 2. Create new transport from config
         let (callback_uri, proxy_uri) = self.get_transport_config().await;
         let server_pubkey = self.get_server_pubkey().await;
-        let t = T::new(callback_uri, proxy_uri, server_pubkey).context("Failed to create on-demand transport")?;
+        let t = T::new(callback_uri, proxy_uri, server_pubkey)
+            .context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");

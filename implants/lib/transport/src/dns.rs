@@ -954,7 +954,10 @@ impl Transport for DNS {
         // Send fetch request and get raw response bytes
         let response_bytes = self
             .dns_exchange_raw(
-                Self::marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request, self.server_pubkey)?,
+                Self::marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(
+                    request,
+                    self.server_pubkey,
+                )?,
                 "/c2.C2/FetchAsset",
             )
             .await?;
@@ -1024,8 +1027,10 @@ impl Transport for DNS {
             let mut all_chunks = Vec::new();
 
             for chunk in request {
-                let chunk_bytes =
-                    Self::marshal_with_codec::<ReportFileRequest, ReportFileResponse>(chunk, server_pubkey)?;
+                let chunk_bytes = Self::marshal_with_codec::<ReportFileRequest, ReportFileResponse>(
+                    chunk,
+                    server_pubkey,
+                )?;
                 // Prefix each chunk with its length (4 bytes, big-endian)
                 all_chunks.extend_from_slice(&(chunk_bytes.len() as u32).to_be_bytes());
                 all_chunks.extend_from_slice(&chunk_bytes);
