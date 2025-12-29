@@ -292,7 +292,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
         // Parse URI to extract retry_interval and proxy_uri
         if let Ok((_base_uri, config)) = transport::parse_transport_uri(&active_uri) {
-            map.insert("retry_interval".to_string(), config.retry_interval.to_string());
+            map.insert(
+                "retry_interval".to_string(),
+                config.retry_interval.to_string(),
+            );
             if let Some(proxy) = config.transport_specific.get("proxy_uri") {
                 map.insert("proxy_uri".to_string(), proxy.clone());
             }
