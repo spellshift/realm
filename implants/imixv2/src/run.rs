@@ -92,7 +92,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
 
     // Parse URI to create config
     let config = match transport::parse_transport_uri(&callback_uri) {
-        Ok((_base_uri, config)) => config,
+        Ok(config) => config,
         Err(_e) => {
             #[cfg(debug_assertions)]
             log::error!("Failed to parse transport URI: {_e:#}");
