@@ -4734,9 +4734,9 @@ func (ec *executionContext) _Beacon_transport(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(c2pb.Beacon_Transport)
+	res := resTmp.(c2pb.ActiveTransport_Type)
 	fc.Result = res
-	return ec.marshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx, field.Selections, res)
+	return ec.marshalNBeaconActiveTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Beacon_transport(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4746,7 +4746,7 @@ func (ec *executionContext) fieldContext_Beacon_transport(_ context.Context, fie
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type BeaconTransport does not have child fields")
+			return nil, errors.New("field of type BeaconActiveTransport_Type does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16446,28 +16446,28 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			it.IntervalNotNil = data
 		case "transport":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transport"))
-			data, err := ec.unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx, v)
+			data, err := ec.unmarshalOBeaconActiveTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Transport = data
 		case "transportNEQ":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportNEQ"))
-			data, err := ec.unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx, v)
+			data, err := ec.unmarshalOBeaconActiveTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.TransportNEQ = data
 		case "transportIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportIn"))
-			data, err := ec.unmarshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transportᚄ(ctx, v)
+			data, err := ec.unmarshalOBeaconActiveTransport_Type2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Typeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.TransportIn = data
 		case "transportNotIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportNotIn"))
-			data, err := ec.unmarshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transportᚄ(ctx, v)
+			data, err := ec.unmarshalOBeaconActiveTransport_Type2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Typeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -28565,6 +28565,16 @@ func (ec *executionContext) marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋ
 	return ec._Beacon(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBeaconActiveTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx context.Context, v any) (c2pb.ActiveTransport_Type, error) {
+	var res c2pb.ActiveTransport_Type
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBeaconActiveTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx context.Context, sel ast.SelectionSet, v c2pb.ActiveTransport_Type) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNBeaconConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx context.Context, sel ast.SelectionSet, v ent.BeaconConnection) graphql.Marshaler {
 	return ec._BeaconConnection(ctx, sel, &v)
 }
@@ -28597,16 +28607,6 @@ func (ec *executionContext) marshalNBeaconOrderField2ᚖrealmᚗpubᚋtavernᚋi
 		}
 		return graphql.Null
 	}
-	return v
-}
-
-func (ec *executionContext) unmarshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx context.Context, v any) (c2pb.Beacon_Transport, error) {
-	var res c2pb.Beacon_Transport
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx context.Context, sel ast.SelectionSet, v c2pb.Beacon_Transport) graphql.Marshaler {
 	return v
 }
 
@@ -29366,6 +29366,89 @@ func (ec *executionContext) marshalOBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋ
 	return ec._Beacon(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOBeaconActiveTransport_Type2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Typeᚄ(ctx context.Context, v any) ([]c2pb.ActiveTransport_Type, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]c2pb.ActiveTransport_Type, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBeaconActiveTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOBeaconActiveTransport_Type2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Typeᚄ(ctx context.Context, sel ast.SelectionSet, v []c2pb.ActiveTransport_Type) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBeaconActiveTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOBeaconActiveTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx context.Context, v any) (*c2pb.ActiveTransport_Type, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(c2pb.ActiveTransport_Type)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBeaconActiveTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐActiveTransport_Type(ctx context.Context, sel ast.SelectionSet, v *c2pb.ActiveTransport_Type) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalOBeaconEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.BeaconEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -29432,89 +29515,6 @@ func (ec *executionContext) unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋi
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transportᚄ(ctx context.Context, v any) ([]c2pb.Beacon_Transport, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]c2pb.Beacon_Transport, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOBeaconTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transportᚄ(ctx context.Context, sel ast.SelectionSet, v []c2pb.Beacon_Transport) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBeaconTransport2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx context.Context, v any) (*c2pb.Beacon_Transport, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(c2pb.Beacon_Transport)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOBeaconTransport2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐBeacon_Transport(ctx context.Context, sel ast.SelectionSet, v *c2pb.Beacon_Transport) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx context.Context, v any) ([]*ent.BeaconWhereInput, error) {

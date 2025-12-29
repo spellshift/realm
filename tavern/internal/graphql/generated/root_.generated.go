@@ -2436,9 +2436,9 @@ type Beacon implements Node {
   """
   interval: Uint64
   """
-  Beacons current transport.
+  Beacon's current transport.
   """
-  transport: BeaconTransport!
+  transport: BeaconActiveTransport_Type!
   """
   Host this beacon is running on.
   """
@@ -2507,6 +2507,15 @@ type Beacon implements Node {
   ): ShellConnection!
 }
 """
+BeaconActiveTransport_Type is enum for the field transport
+"""
+enum BeaconActiveTransport_Type @goModel(model: "realm.pub/tavern/internal/c2/c2pb.ActiveTransport_Type") {
+  TRANSPORT_DNS
+  TRANSPORT_GRPC
+  TRANSPORT_HTTP1
+  TRANSPORT_UNSPECIFIED
+}
+"""
 A connection to a list of items.
 """
 type BeaconConnection {
@@ -2558,14 +2567,6 @@ enum BeaconOrderField {
   LAST_SEEN_AT
   NEXT_SEEN_AT
   INTERVAL
-}
-"""
-BeaconTransport is enum for the field transport
-"""
-enum BeaconTransport @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Beacon_Transport") {
-  TRANSPORT_GRPC
-  TRANSPORT_HTTP1
-  TRANSPORT_UNSPECIFIED
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -2718,10 +2719,10 @@ input BeaconWhereInput {
   """
   transport field predicates
   """
-  transport: BeaconTransport
-  transportNEQ: BeaconTransport
-  transportIn: [BeaconTransport!]
-  transportNotIn: [BeaconTransport!]
+  transport: BeaconActiveTransport_Type
+  transportNEQ: BeaconActiveTransport_Type
+  transportIn: [BeaconActiveTransport_Type!]
+  transportNotIn: [BeaconActiveTransport_Type!]
   """
   host edge predicates
   """

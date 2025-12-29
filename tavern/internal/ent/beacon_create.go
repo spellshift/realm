@@ -153,8 +153,8 @@ func (bc *BeaconCreate) SetNillableInterval(u *uint64) *BeaconCreate {
 }
 
 // SetTransport sets the "transport" field.
-func (bc *BeaconCreate) SetTransport(ct c2pb.Beacon_Transport) *BeaconCreate {
-	bc.mutation.SetTransport(ct)
+func (bc *BeaconCreate) SetTransport(ctt c2pb.ActiveTransport_Type) *BeaconCreate {
+	bc.mutation.SetTransport(ctt)
 	return bc
 }
 
@@ -586,7 +586,7 @@ func (u *BeaconUpsert) ClearInterval() *BeaconUpsert {
 }
 
 // SetTransport sets the "transport" field.
-func (u *BeaconUpsert) SetTransport(v c2pb.Beacon_Transport) *BeaconUpsert {
+func (u *BeaconUpsert) SetTransport(v c2pb.ActiveTransport_Type) *BeaconUpsert {
 	u.Set(beacon.FieldTransport, v)
 	return u
 }
@@ -786,7 +786,7 @@ func (u *BeaconUpsertOne) ClearInterval() *BeaconUpsertOne {
 }
 
 // SetTransport sets the "transport" field.
-func (u *BeaconUpsertOne) SetTransport(v c2pb.Beacon_Transport) *BeaconUpsertOne {
+func (u *BeaconUpsertOne) SetTransport(v c2pb.ActiveTransport_Type) *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.SetTransport(v)
 	})
@@ -1154,7 +1154,7 @@ func (u *BeaconUpsertBulk) ClearInterval() *BeaconUpsertBulk {
 }
 
 // SetTransport sets the "transport" field.
-func (u *BeaconUpsertBulk) SetTransport(v c2pb.Beacon_Transport) *BeaconUpsertBulk {
+func (u *BeaconUpsertBulk) SetTransport(v c2pb.ActiveTransport_Type) *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.SetTransport(v)
 	})

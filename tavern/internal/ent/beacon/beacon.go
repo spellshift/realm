@@ -126,9 +126,9 @@ var (
 )
 
 // TransportValidator is a validator for the "transport" field enum values. It is called by the builders before save.
-func TransportValidator(t c2pb.Beacon_Transport) error {
+func TransportValidator(t c2pb.ActiveTransport_Type) error {
 	switch t.String() {
-	case "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_DNS", "TRANSPORT_UNSPECIFIED":
+	case "TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED":
 		return nil
 	default:
 		return fmt.Errorf("beacon: invalid enum value for transport field: %q", t)
@@ -250,8 +250,8 @@ func newShellsStep() *sqlgraph.Step {
 }
 
 var (
-	// c2pb.Beacon_Transport must implement graphql.Marshaler.
-	_ graphql.Marshaler = (*c2pb.Beacon_Transport)(nil)
-	// c2pb.Beacon_Transport must implement graphql.Unmarshaler.
-	_ graphql.Unmarshaler = (*c2pb.Beacon_Transport)(nil)
+	// c2pb.ActiveTransport_Type must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*c2pb.ActiveTransport_Type)(nil)
+	// c2pb.ActiveTransport_Type must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*c2pb.ActiveTransport_Type)(nil)
 )
