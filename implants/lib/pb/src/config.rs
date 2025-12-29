@@ -116,11 +116,12 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
+        // Determine transport type based on enabled features (priority: dns > http1 > grpc)
         #[cfg(feature = "dns")]
         let transport = crate::c2::beacon::Transport::Dns;
-        #[cfg(feature = "http1")]
+        #[cfg(all(feature = "http1", not(feature = "dns")))]
         let transport = crate::c2::beacon::Transport::Http1;
-        #[cfg(feature = "grpc")]
+        #[cfg(all(feature = "grpc", not(any(feature = "dns", feature = "http1"))))]
         let transport = crate::c2::beacon::Transport::Grpc;
         #[cfg(not(any(feature = "dns", feature = "http1", feature = "grpc")))]
         let transport = crate::c2::beacon::Transport::Unspecified;

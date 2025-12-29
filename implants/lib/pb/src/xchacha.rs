@@ -221,6 +221,7 @@ where
 //
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ChachaDecrypt<T, U>(PhantomData<(T, U)>, ChaChaSvc);
 
 impl<T, U> Decoder for ChachaDecrypt<T, U>

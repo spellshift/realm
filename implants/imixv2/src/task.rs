@@ -32,6 +32,7 @@ impl Printer for StreamPrinter {
     }
 }
 
+#[allow(dead_code)]
 struct SubtaskHandle {
     name: String,
     _handle: tokio::task::JoinHandle<()>,
@@ -105,6 +106,7 @@ impl TaskRegistry {
         true
     }
 
+    #[allow(dead_code)]
     pub fn register_subtask(
         &self,
         task_id: i64,

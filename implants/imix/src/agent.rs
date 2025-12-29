@@ -88,7 +88,16 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
+        // Convert Vec<u8> to [u8; 32] for server_pubkey
+        let mut server_pubkey = [0u8; 32];
+        let len = std::cmp::min(self.cfg.server_pubkey.len(), 32);
+        server_pubkey[..len].copy_from_slice(&self.cfg.server_pubkey[..len]);
+
+        self.t = T::new(
+            self.cfg.callback_uri.clone(),
+            self.cfg.proxy_uri.clone(),
+            server_pubkey,
+        )?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
         self.t = T::init(); // re-init to make sure no active connections during sleep
