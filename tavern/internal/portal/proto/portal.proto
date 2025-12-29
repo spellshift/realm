@@ -37,6 +37,8 @@ message Payload {
         TCPMessage tcp = 2;
         BytesMessage bytes = 3;
     }
+
+    uint64 seq_id = 4;
 }
 
 message InvokePortalRequest {
