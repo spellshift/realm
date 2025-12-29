@@ -21,7 +21,10 @@ pub async fn run_create_portal<T: Transport + 'static>(
     if outbound_tx
         .send(CreatePortalRequest {
             task_id,
-            payload: None,
+            payload: Some(pb::portal::Payload {
+                seq_id: 0,
+                payload: None,
+            }),
         })
         .await
         .is_err()
