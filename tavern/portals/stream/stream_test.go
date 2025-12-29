@@ -68,7 +68,7 @@ func TestOrderedReader_Ordered(t *testing.T) {
 		return m, nil
 	}
 
-	r := NewOrderedReader(receiver, 10, time.Second)
+	r := NewOrderedReader(receiver, WithMaxBufferedMessages(10), WithStaleBufferTimeout(time.Second))
 
 	for i := 0; i < 3; i++ {
 		m, err := r.Read()
@@ -97,7 +97,7 @@ func TestOrderedReader_OutOfOrder(t *testing.T) {
 		return m, nil
 	}
 
-	r := NewOrderedReader(receiver, 10, time.Second)
+	r := NewOrderedReader(receiver, WithMaxBufferedMessages(10), WithStaleBufferTimeout(time.Second))
 
 	// First Read should get 0 (which arrives 2nd)
 	m0, err := r.Read()
@@ -123,7 +123,7 @@ func TestOrderedReader_StaleTimeout(t *testing.T) {
 	}
 
 	// Timeout very short
-	r := NewOrderedReader(receiver, 10, 50*time.Millisecond)
+	r := NewOrderedReader(receiver, WithMaxBufferedMessages(10), WithStaleBufferTimeout(50*time.Millisecond))
 
 	// First read will receive 1, buffer it, then loop.
 	// Receiver sleeps 10ms.
@@ -154,7 +154,7 @@ func TestOrderedReader_BufferLimit(t *testing.T) {
 		return m, nil
 	}
 
-	r := NewOrderedReader(receiver, 2, time.Second)
+	r := NewOrderedReader(receiver, WithMaxBufferedMessages(2), WithStaleBufferTimeout(time.Second))
 
 	_, err := r.Read()
 	assert.Error(t, err)
@@ -178,7 +178,7 @@ func TestOrderedReader_DuplicateHandling(t *testing.T) {
 		return m, nil
 	}
 
-	r := NewOrderedReader(receiver, 10, time.Second)
+	r := NewOrderedReader(receiver, WithMaxBufferedMessages(10), WithStaleBufferTimeout(time.Second))
 
 	m0, err := r.Read()
 	require.NoError(t, err)
