@@ -2,6 +2,7 @@ package mux
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -22,6 +23,7 @@ type Subscriber struct {
 type Mux struct {
 	mu           sync.RWMutex
 	sub          *pubsub.Subscription
+	topic        *pubsub.Topic
 	subscribers  map[string][]Subscriber
 
 	// history is a global circular buffer of recent messages.
@@ -47,6 +49,13 @@ func WithHistorySize(size int) Option {
 func WithBufferSize(size int) Option {
 	return func(m *Mux) {
 		m.bufferSize = size
+	}
+}
+
+// WithTopic sets the PubSub topic for optimistic writes.
+func WithTopic(topic *pubsub.Topic) Option {
+	return func(m *Mux) {
+		m.topic = topic
 	}
 }
 
@@ -117,6 +126,28 @@ func (m *Mux) Subscribe(streamID string, enableHistory bool) (<-chan *portalpb.M
 	return ch, cancel
 }
 
+// Publish optimistically dispatches the mote to subscribers and then publishes it to the PubSub topic.
+func (m *Mux) Publish(ctx context.Context, mote *portalpb.Mote) error {
+	if m.topic == nil {
+		return fmt.Errorf("pubsub topic not configured")
+	}
+
+	// 1. Optimistic dispatch (local)
+	m.dispatch(mote)
+
+	// 2. Publish to PubSub (remote)
+	body, err := proto.Marshal(mote)
+	if err != nil {
+		return fmt.Errorf("marshal failed: %w", err)
+	}
+
+	return m.topic.Send(ctx, &pubsub.Message{
+		Body: body,
+		// In a real system we might add metadata like origin ID to help deduplication,
+		// but standard proto doesn't have it.
+	})
+}
+
 // DroppedCount returns the total number of dropped messages.
 func (m *Mux) DroppedCount() uint64 {
 	return m.droppedCount.Load()
@@ -130,23 +161,27 @@ func (m *Mux) Run(ctx context.Context) error {
 			return err
 		}
 
-		m.process(msg)
+		m.processMessage(msg)
 		msg.Ack()
 	}
 }
 
-// process unmarshals the message, updates history, and dispatches to subscribers.
-func (m *Mux) process(msg *pubsub.Message) {
+// processMessage unmarshals the PubSub message and calls dispatch.
+func (m *Mux) processMessage(msg *pubsub.Message) {
 	var mote portalpb.Mote
 	if err := proto.Unmarshal(msg.Body, &mote); err != nil {
 		// In a real system we might log this error.
 		return
 	}
+	m.dispatch(&mote)
+}
 
+// dispatch updates history and sends the mote to subscribers.
+func (m *Mux) dispatch(mote *portalpb.Mote) {
 	// 1. Update history (Write Lock)
 	if m.historySize > 0 {
 		m.mu.Lock()
-		m.history[m.historyIndex] = &mote
+		m.history[m.historyIndex] = mote
 		m.historyIndex = (m.historyIndex + 1) % m.historySize
 		m.mu.Unlock()
 	}
@@ -158,7 +193,7 @@ func (m *Mux) process(msg *pubsub.Message) {
 	subs := m.subscribers[mote.StreamId]
 	for _, s := range subs {
 		select {
-		case s.ch <- &mote:
+		case s.ch <- mote:
 		default:
 			// Backpressure: drop message
 			newCount := m.droppedCount.Add(1)
