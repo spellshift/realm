@@ -113,6 +113,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         (callback_uri, cfg.proxy_uri.clone())
     }
 
+    // Helper to get the server public key from config
+    pub async fn get_server_pubkey(&self) -> [u8; 32] {
+        let cfg = self.config.read().await;
+        let mut pubkey = [0u8; 32];
+
+        // Copy the server_pubkey from config (Vec<u8>) into a fixed-size array
+        let len = std::cmp::min(cfg.server_pubkey.len(), 32);
+        pubkey[..len].copy_from_slice(&cfg.server_pubkey[..len]);
+
+        pubkey
+    }
+
     pub async fn rotate_callback_uri(&self) {
         let uris = self.callback_uris.read().await;
         let mut idx = self.active_uri_idx.write().await;
@@ -135,7 +147,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
         // 2. Create new transport from config
         let (callback_uri, proxy_uri) = self.get_transport_config().await;
-        let t = T::new(callback_uri, proxy_uri).context("Failed to create on-demand transport")?;
+        let server_pubkey = self.get_server_pubkey().await;
+        let t = T::new(callback_uri, proxy_uri, server_pubkey).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");

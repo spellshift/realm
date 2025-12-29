@@ -8,9 +8,9 @@ pub trait UnsafeTransport: Clone + Send {
     #[allow(dead_code)]
     fn init() -> Self;
 
-    // New will create a new instance of the transport using the provided URI.
+    // New will create a new instance of the transport using the provided URI and server public key.
     #[allow(dead_code)]
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+    fn new(uri: String, proxy_uri: Option<String>, server_pubkey: [u8; 32]) -> Result<Self>;
 
     ///
     /// Contact the server for new tasks to execute.

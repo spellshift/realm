@@ -1,8 +1,6 @@
 use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
 use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
-#[cfg(feature = "imix")]
-use const_decoder::Decoder as const_decode;
 use lru::LruCache;
 use prost::Message;
 use rand::rngs::OsRng;
@@ -19,14 +17,10 @@ use tonic::{
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-/* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY environment variable during compilation.
- * To find the servers pubkey check the startup messages on the server look for `[INFO] Public key: <SERVER_PUBKEY>`
+/* Default server pubkey used for testing when IMIX_SERVER_PUBKEY is not provided.
+ * To find the server's pubkey check the startup messages on the server look for `[INFO] Public key: <SERVER_PUBKEY>`
  */
-#[cfg(feature = "imix")]
-static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_PUBKEY").as_bytes());
-
-#[cfg(not(feature = "imix"))]
-static SERVER_PUBKEY: [u8; 32] = [
+const DEFAULT_SERVER_PUBKEY: [u8; 32] = [
     165, 30, 122, 188, 50, 89, 111, 214, 247, 4, 189, 217, 188, 37, 200, 190, 2, 180, 175, 107,
     194, 147, 177, 98, 103, 84, 99, 120, 72, 73, 87, 37,
 ];
@@ -58,9 +52,9 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
     Ok(res)
 }
 
-fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
+fn encrypt_impl(pt_vec: Vec<u8>, server_pubkey: [u8; 32]) -> Result<Vec<u8>> {
     // Store server pubkey
-    let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
+    let server_public: PublicKey = PublicKey::from(server_pubkey);
 
     // Generate ephemeral keys
     let rng = rand_chacha::ChaCha20Rng::from_entropy();
@@ -137,8 +131,24 @@ fn decrypt_impl(ct_vec: Vec<u8>) -> Result<Vec<u8>> {
 
 // ------------
 
-#[derive(Debug, Clone, Default)]
-pub struct ChaChaSvc {}
+#[derive(Debug, Clone)]
+pub struct ChaChaSvc {
+    server_pubkey: [u8; 32],
+}
+
+impl Default for ChaChaSvc {
+    fn default() -> Self {
+        Self {
+            server_pubkey: DEFAULT_SERVER_PUBKEY,
+        }
+    }
+}
+
+impl ChaChaSvc {
+    pub fn new(server_pubkey: [u8; 32]) -> Self {
+        Self { server_pubkey }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
@@ -146,8 +156,16 @@ pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
 impl<T, U> Default for ChachaCodec<T, U> {
     fn default() -> Self {
         #[cfg(debug_assertions)]
-        log::debug!("Loaded custom codec with xchacha encryption");
+        log::debug!("Loaded custom codec with xchacha encryption (using default pubkey)");
         Self(PhantomData, ChaChaSvc::default())
+    }
+}
+
+impl<T, U> ChachaCodec<T, U> {
+    pub fn new(server_pubkey: [u8; 32]) -> Self {
+        #[cfg(debug_assertions)]
+        log::debug!("Loaded custom codec with xchacha encryption (using provided pubkey)");
+        Self(PhantomData, ChaChaSvc::new(server_pubkey))
     }
 }
 
@@ -162,11 +180,11 @@ where
     type Decoder = ChachaDecrypt<T, U>;
 
     fn encoder(&mut self) -> Self::Encoder {
-        ChachaEncrypt(PhantomData, ChaChaSvc::default())
+        ChachaEncrypt(PhantomData, self.1.clone())
     }
 
     fn decoder(&mut self) -> Self::Decoder {
-        ChachaDecrypt(PhantomData, ChaChaSvc::default())
+        ChachaDecrypt(PhantomData, self.1.clone())
     }
 }
 
@@ -190,7 +208,7 @@ where
             log::debug!("DANGER can't add to the buffer.");
         }
 
-        let _ = match encrypt_impl(item.encode_to_vec()) {
+        let _ = match encrypt_impl(item.encode_to_vec(), self.1.server_pubkey) {
             Ok(pub_nonce_ct) => buf.writer().write_all(&pub_nonce_ct),
             Err(err) => return Err(Status::new(tonic::Code::Internal, err.to_string())),
         };
@@ -261,12 +279,12 @@ fn from_decode_error(error: prost::DecodeError) -> Status {
     Status::new(tonic::Code::Internal, error.to_string())
 }
 
-pub fn encode_with_chacha<T, U>(msg: T) -> Result<Vec<u8>>
+pub fn encode_with_chacha<T, U>(msg: T, server_pubkey: [u8; 32]) -> Result<Vec<u8>>
 where
     T: Message + Send + 'static,
     U: Message + Default + Send + 'static,
 {
-    encrypt_impl(msg.encode_to_vec())
+    encrypt_impl(msg.encode_to_vec(), server_pubkey)
 }
 
 pub fn decode_with_chacha<T, U>(data: &[u8]) -> Result<U>

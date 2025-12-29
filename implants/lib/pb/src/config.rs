@@ -1,7 +1,4 @@
-use tonic::transport;
 use uuid::Uuid;
-
-use crate::c2::beacon::Transport;
 
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -17,6 +14,8 @@ pub struct Config {
     pub retry_interval: u64,
     #[prost(bool, tag = "5")]
     pub run_once: bool,
+    #[prost(bytes, tag = "6")]
+    pub server_pubkey: ::prost::alloc::vec::Vec<u8>,
 }
 
 macro_rules! callback_uri {
@@ -84,6 +83,17 @@ macro_rules! run_once {
  */
 pub const RUN_ONCE: bool = run_once!();
 
+/* Default server public key used for testing.
+ * To find the server's pubkey check the startup messages on the server look for `[INFO] Public key: <SERVER_PUBKEY>`
+ * This default key can be overridden by setting the server_pubkey field in the Config struct.
+ */
+pub fn default_server_pubkey() -> Vec<u8> {
+    vec![
+        165, 30, 122, 188, 50, 89, 111, 214, 247, 4, 189, 217, 188, 37, 200, 190, 2, 180, 175, 107,
+        194, 147, 177, 98, 103, 84, 99, 120, 72, 73, 87, 37,
+    ]
+}
+
 /*
  * Config methods.
  */
@@ -148,6 +158,7 @@ impl Config {
                 }
             },
             run_once: RUN_ONCE,
+            server_pubkey: default_server_pubkey(),
         }
     }
     pub fn refresh_primary_ip(&mut self) {

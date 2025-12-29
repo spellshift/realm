@@ -40,12 +40,12 @@ impl Transport for ActiveTransport {
         Self::Empty
     }
 
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(uri: String, proxy_uri: Option<String>, server_pubkey: [u8; 32]) -> Result<Self> {
         match uri {
             // 1. gRPC: Passthrough
             s if s.starts_with("http://") || s.starts_with("https://") => {
                 #[cfg(feature = "grpc")]
-                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, proxy_uri)?));
+                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, proxy_uri, server_pubkey)?));
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
             }
@@ -57,7 +57,7 @@ impl Transport for ActiveTransport {
                     let new = s
                         .replacen("grpcs://", "https://", 1)
                         .replacen("grpc://", "http://", 1);
-                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, proxy_uri)?))
+                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, proxy_uri, server_pubkey)?))
                 }
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
@@ -70,7 +70,7 @@ impl Transport for ActiveTransport {
                     let new = s
                         .replacen("https1://", "https://", 1)
                         .replacen("http1://", "http://", 1);
-                    Ok(ActiveTransport::Http(http::HTTP::new(new, proxy_uri)?))
+                    Ok(ActiveTransport::Http(http::HTTP::new(new, proxy_uri, server_pubkey)?))
                 }
                 #[cfg(not(feature = "http1"))]
                 return Err(anyhow!("http1 transport not enabled"));
@@ -80,7 +80,7 @@ impl Transport for ActiveTransport {
             s if s.starts_with("dns://") => {
                 #[cfg(feature = "dns")]
                 {
-                    Ok(ActiveTransport::Dns(dns::DNS::new(s, proxy_uri)?))
+                    Ok(ActiveTransport::Dns(dns::DNS::new(s, proxy_uri, server_pubkey)?))
                 }
                 #[cfg(not(feature = "dns"))]
                 return Err(anyhow!("DNS transport not enabled"));
