@@ -65,6 +65,29 @@ macro_rules! retry_interval {
  */
 pub const RETRY_INTERVAL: &str = retry_interval!();
 
+// Compile-time check: CALLBACK_URI must not contain query parameters if RETRY_INTERVAL or CALLBACK_INTERVAL are set
+const _: () = {
+    const fn contains_query_param(s: &str) -> bool {
+        // Can't use normal string ops in const fn.
+        let bytes = s.as_bytes();
+        let mut i = 0;
+        while i < bytes.len() {
+            if bytes[i] == b'?' {
+                return true;
+            }
+            i += 1;
+        }
+        false
+    }
+
+    if contains_query_param(CALLBACK_URI)
+        && (option_env!("IMIX_RETRY_INTERVAL").is_some()
+            || option_env!("IMIX_CALLBACK_INTERVAL").is_some())
+    {
+        panic!("CALLBACK_URI cannot contain query parameters when IMIX_RETRY_INTERVAL or IMIX_CALLBACK_INTERVAL environment variables are set");
+    }
+};
+
 macro_rules! run_once {
     () => {
         match option_env!("IMIX_RUN_ONCE") {
@@ -133,10 +156,13 @@ impl Config {
         };
 
         // Build callback URI with query parameters
-        let mut callback_uri = format!(
-            "{}?retry_interval={}&callback_interval={}",
-            CALLBACK_URI, RETRY_INTERVAL, CALLBACK_INTERVAL
-        );
+        let mut callback_uri = match CALLBACK_URI.contains("?") {
+            true => CALLBACK_URI.to_string(),
+            false => format!(
+                "{}?retry_interval={}&callback_interval={}",
+                CALLBACK_URI, RETRY_INTERVAL, CALLBACK_INTERVAL
+            ),
+        };
 
         // Add proxy if available from environment (only for GRPC transport)
         if let Some(proxy) = get_system_proxy() {

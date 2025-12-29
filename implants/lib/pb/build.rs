@@ -1,7 +1,31 @@
+use anyhow::Result;
 use std::env;
 use std::path::PathBuf;
 use which::which;
 
+fn parse_transport_uri(uri: &str) -> Result<String> {
+    let parsed = url::Url::parse(uri)?;
+
+    // Extract base URI (scheme + host + port + path, no query)
+    let base_uri = if let Some(port) = parsed.port() {
+        format!(
+            "{}://{}:{}{}",
+            parsed.scheme(),
+            parsed.host_str().unwrap_or(""),
+            port,
+            parsed.path()
+        )
+    } else {
+        format!(
+            "{}://{}{}",
+            parsed.scheme(),
+            parsed.host_str().unwrap_or(""),
+            parsed.path()
+        )
+    };
+
+    Ok(base_uri)
+}
 fn get_pub_key() {
     // Check if IMIX_SERVER_PUBKEY is already set
     if std::env::var("IMIX_SERVER_PUBKEY").is_ok() {
@@ -10,8 +34,19 @@ fn get_pub_key() {
     }
 
     // Get the callback URI from environment variable, default to http://127.0.0.1:8000
-    let callback_uri =
+    let full_callback_uri =
         std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
+
+    let callback_uri = match parse_transport_uri(&full_callback_uri) {
+        Ok(uri) => uri,
+        Err(e) => {
+            println!(
+                "cargo:warning=Failed to parse IMIX_CALLBACK_URI '{}': {}",
+                full_callback_uri, e
+            );
+            return;
+        }
+    };
 
     // Construct the status endpoint URL
     let status_url = format!("{}/status", callback_uri);

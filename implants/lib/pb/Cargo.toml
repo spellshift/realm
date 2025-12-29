@@ -38,3 +38,5 @@ which = { workspace = true }
 home = "=0.5.11"
 reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
 serde_json = { workspace = true }
+url = { workspace = true }
+anyhow = { workspace = true }
