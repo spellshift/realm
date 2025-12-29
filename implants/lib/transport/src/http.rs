@@ -626,6 +626,7 @@ mod tests {
             let http = HTTP {
                 client: hyper::Client::new(),
                 base_url: "http://localhost:8080".to_string(),
+                server_pubkey: [0u8; 32],
             };
 
             let uri = http.build_uri("/test/path").unwrap();
@@ -637,6 +638,7 @@ mod tests {
             let http = HTTP {
                 client: hyper::Client::new(),
                 base_url: "http://localhost:8080/".to_string(),
+                server_pubkey: [0u8; 32],
             };
 
             let uri = http.build_uri("/test/path").unwrap();
@@ -648,6 +650,7 @@ mod tests {
             let http = HTTP {
                 client: hyper::Client::new(),
                 base_url: "http://localhost:8080".to_string(),
+                server_pubkey: [0u8; 32],
             };
 
             let uri = http.build_uri("test/path").unwrap();
@@ -659,6 +662,7 @@ mod tests {
             let http = HTTP {
                 client: hyper::Client::new(),
                 base_url: "not a valid url".to_string(),
+                server_pubkey: [0u8; 32],
             };
 
             let result = http.build_uri("/test");
@@ -670,6 +674,7 @@ mod tests {
             let http = HTTP {
                 client: hyper::Client::new(),
                 base_url: "http://localhost".to_string(),
+                server_pubkey: [0u8; 32],
             };
 
             let uri = http.build_uri("/test").unwrap();
@@ -690,6 +695,7 @@ mod tests {
             let http = HTTP {
                 client: hyper::Client::new(),
                 base_url: "http://example.com".to_string(),
+                server_pubkey: [0u8; 32],
             };
 
             let uri = http.build_uri("/api/test").unwrap();

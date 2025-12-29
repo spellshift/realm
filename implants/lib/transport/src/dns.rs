@@ -1181,8 +1181,12 @@ mod tests {
 
     #[test]
     fn test_new_single_server() {
-        let dns = DNS::new("dns://8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None)
-            .expect("should parse");
+        let dns = DNS::new(
+            "dns://8.8.8.8:53?domain=dnsc2.realm.pub".to_string(),
+            None,
+            [0u8; 32],
+        )
+        .expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
         assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
@@ -1195,6 +1199,7 @@ mod tests {
         let dns = DNS::new(
             "dns://8.8.8.8,1.1.1.1:53?domain=dnsc2.realm.pub".to_string(),
             None,
+            [0u8; 32],
         )
         .expect("should parse");
 
@@ -1208,6 +1213,7 @@ mod tests {
         let dns = DNS::new(
             "dns://8.8.8.8?domain=dnsc2.realm.pub&type=a".to_string(),
             None,
+            [0u8; 32],
         )
         .expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::A);
@@ -1218,6 +1224,7 @@ mod tests {
         let dns = DNS::new(
             "dns://8.8.8.8?domain=dnsc2.realm.pub&type=aaaa".to_string(),
             None,
+            [0u8; 32],
         )
         .expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::AAAA);
@@ -1225,15 +1232,23 @@ mod tests {
 
     #[test]
     fn test_new_record_type_txt_default() {
-        let dns = DNS::new("dns://8.8.8.8?domain=dnsc2.realm.pub".to_string(), None)
-            .expect("should parse");
+        let dns = DNS::new(
+            "dns://8.8.8.8?domain=dnsc2.realm.pub".to_string(),
+            None,
+            [0u8; 32],
+        )
+        .expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
     fn test_new_wildcard_uses_fallbacks() {
-        let dns =
-            DNS::new("dns://*?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let dns = DNS::new(
+            "dns://*?domain=dnsc2.realm.pub".to_string(),
+            None,
+            [0u8; 32],
+        )
+        .expect("should parse");
 
         // Should have fallback servers
         assert!(!dns.dns_servers.is_empty());
@@ -1247,7 +1262,7 @@ mod tests {
 
     #[test]
     fn test_new_missing_domain() {
-        let result = DNS::new("dns://8.8.8.8:53".to_string(), None);
+        let result = DNS::new("dns://8.8.8.8:53".to_string(), None, [0u8; 32]);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -1257,8 +1272,12 @@ mod tests {
 
     #[test]
     fn test_new_without_scheme() {
-        let dns =
-            DNS::new("8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let dns = DNS::new(
+            "8.8.8.8:53?domain=dnsc2.realm.pub".to_string(),
+            None,
+            [0u8; 32],
+        )
+        .expect("should parse");
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
     }
 
@@ -1273,6 +1292,7 @@ mod tests {
             dns_servers: vec!["8.8.8.8:53".to_string()],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let packet = DnsPacket {
@@ -1311,6 +1331,7 @@ mod tests {
             dns_servers: vec!["8.8.8.8:53".to_string()],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         // Create a packet with enough data to require label splitting
@@ -1347,6 +1368,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let (query, txid) = dns
@@ -1380,6 +1402,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let short_response = vec![0u8; 10]; // Less than 12 bytes
@@ -1394,6 +1417,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         // Response with different transaction ID
@@ -1417,6 +1441,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let dns_long = DNS {
@@ -1424,6 +1449,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let chunk_short = dns_short.calculate_max_chunk_size(10);
@@ -1444,6 +1470,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let (chunk_size, total_chunks, crc) = dns.validate_and_prepare_chunks(&[]).unwrap();
@@ -1461,6 +1488,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let data = vec![0xAA; 50];
@@ -1478,6 +1506,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         let huge_data = vec![0xFF; MAX_DATA_SIZE + 1];
@@ -1506,6 +1535,7 @@ mod tests {
             dns_servers: vec!["8.8.8.8:53".to_string()],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         assert!(dns.is_active());
@@ -1518,6 +1548,7 @@ mod tests {
             dns_servers: vec!["8.8.8.8:53".to_string()],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         assert!(!dns.is_active());
@@ -1530,6 +1561,7 @@ mod tests {
             dns_servers: vec![],
             current_server_index: 0,
             record_type: DnsRecordType::TXT,
+            server_pubkey: [0u8; 32],
         };
 
         assert!(!dns.is_active());
