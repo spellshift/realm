@@ -7,6 +7,7 @@ option go_package = "realm.pub/tavern/internal/c2/c2pb";
 
 import "google/protobuf/timestamp.proto";
 import "eldritch.proto";
+import "portal.proto";
 
 /*
  * Messages
@@ -137,6 +138,14 @@ message ReverseShellResponse{
     bytes data = 2;
 }
 
+message CreatePortalRequest {
+    int64 task_id = 1;
+    portal.Mote mote = 2;
+}
+message CreatePortalResponse {
+    portal.Mote mote = 2;
+}
+
 /*
  * Service
  */
@@ -189,4 +198,9 @@ service C2 {
      * Open a reverse shell bi-directional stream.
      */
     rpc ReverseShell(stream ReverseShellRequest) returns (stream ReverseShellResponse) {}
+
+    /*
+     * Open a portal bi-directional stream.
+     */
+    rpc CreatePortal(stream CreatePortalRequest) returns (stream CreatePortalResponse) {}
 }

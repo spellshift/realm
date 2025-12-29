@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
@@ -187,6 +188,21 @@ func init() {
 	hostprocessDescPrincipal := hostprocessFields[3].Descriptor()
 	// hostprocess.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	hostprocess.PrincipalValidator = hostprocessDescPrincipal.Validators[0].(func(string) error)
+	portalMixin := schema.Portal{}.Mixin()
+	portalMixinFields0 := portalMixin[0].Fields()
+	_ = portalMixinFields0
+	portalFields := schema.Portal{}.Fields()
+	_ = portalFields
+	// portalDescCreatedAt is the schema descriptor for created_at field.
+	portalDescCreatedAt := portalMixinFields0[0].Descriptor()
+	// portal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	portal.DefaultCreatedAt = portalDescCreatedAt.Default.(func() time.Time)
+	// portalDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	portalDescLastModifiedAt := portalMixinFields0[1].Descriptor()
+	// portal.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	portal.DefaultLastModifiedAt = portalDescLastModifiedAt.Default.(func() time.Time)
+	// portal.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	portal.UpdateDefaultLastModifiedAt = portalDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0
