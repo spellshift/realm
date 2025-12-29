@@ -90,8 +90,16 @@ impl<T: Transport + 'static> Agent<T> {
     pub async fn callback(&mut self) -> Result<()> {
         // Convert Vec<u8> to [u8; 32] for server_pubkey
         let mut server_pubkey = [0u8; 32];
-        let len = std::cmp::min(self.cfg.server_pubkey.len(), 32);
-        server_pubkey[..len].copy_from_slice(&self.cfg.server_pubkey[..len]);
+
+        // If server_pubkey is empty, use the default
+        let server_pubkey_vec = if self.cfg.server_pubkey.is_empty() {
+            pb::config::default_server_pubkey()
+        } else {
+            self.cfg.server_pubkey.clone()
+        };
+
+        let len = std::cmp::min(server_pubkey_vec.len(), 32);
+        server_pubkey[..len].copy_from_slice(&server_pubkey_vec[..len]);
 
         self.t = T::new(
             self.cfg.callback_uri.clone(),

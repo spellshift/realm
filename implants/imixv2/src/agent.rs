@@ -118,9 +118,16 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         let cfg = self.config.read().await;
         let mut pubkey = [0u8; 32];
 
+        // If server_pubkey is empty, use the default
+        let server_pubkey_vec = if cfg.server_pubkey.is_empty() {
+            pb::config::default_server_pubkey()
+        } else {
+            cfg.server_pubkey.clone()
+        };
+
         // Copy the server_pubkey from config (Vec<u8>) into a fixed-size array
-        let len = std::cmp::min(cfg.server_pubkey.len(), 32);
-        pubkey[..len].copy_from_slice(&cfg.server_pubkey[..len]);
+        let len = std::cmp::min(server_pubkey_vec.len(), 32);
+        pubkey[..len].copy_from_slice(&server_pubkey_vec[..len]);
 
         pubkey
     }
