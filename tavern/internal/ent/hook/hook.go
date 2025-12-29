@@ -81,16 +81,16 @@ func (f HostProcessFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HostProcessMutation", m)
 }
 
-// The LinkFunc type is an adapter to allow the use of ordinary
-// function as Link mutator.
-type LinkFunc func(context.Context, *ent.LinkMutation) (ent.Value, error)
+// The PortalFunc type is an adapter to allow the use of ordinary
+// function as Portal mutator.
+type PortalFunc func(context.Context, *ent.PortalMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f LinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.LinkMutation); ok {
+func (f PortalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PortalMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LinkMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PortalMutation", m)
 }
 
 // The QuestFunc type is an adapter to allow the use of ordinary

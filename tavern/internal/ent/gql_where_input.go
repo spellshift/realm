@@ -15,7 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
-	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -3294,12 +3294,12 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 	}
 }
 
-// LinkWhereInput represents a where input for filtering Link queries.
-type LinkWhereInput struct {
-	Predicates []predicate.Link  `json:"-"`
-	Not        *LinkWhereInput   `json:"not,omitempty"`
-	Or         []*LinkWhereInput `json:"or,omitempty"`
-	And        []*LinkWhereInput `json:"and,omitempty"`
+// PortalWhereInput represents a where input for filtering Portal queries.
+type PortalWhereInput struct {
+	Predicates []predicate.Portal  `json:"-"`
+	Not        *PortalWhereInput   `json:"not,omitempty"`
+	Or         []*PortalWhereInput `json:"or,omitempty"`
+	And        []*PortalWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
 	ID      *int  `json:"id,omitempty"`
@@ -3331,59 +3331,48 @@ type LinkWhereInput struct {
 	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
 	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
 
-	// "path" field predicates.
-	Path             *string  `json:"path,omitempty"`
-	PathNEQ          *string  `json:"pathNEQ,omitempty"`
-	PathIn           []string `json:"pathIn,omitempty"`
-	PathNotIn        []string `json:"pathNotIn,omitempty"`
-	PathGT           *string  `json:"pathGT,omitempty"`
-	PathGTE          *string  `json:"pathGTE,omitempty"`
-	PathLT           *string  `json:"pathLT,omitempty"`
-	PathLTE          *string  `json:"pathLTE,omitempty"`
-	PathContains     *string  `json:"pathContains,omitempty"`
-	PathHasPrefix    *string  `json:"pathHasPrefix,omitempty"`
-	PathHasSuffix    *string  `json:"pathHasSuffix,omitempty"`
-	PathEqualFold    *string  `json:"pathEqualFold,omitempty"`
-	PathContainsFold *string  `json:"pathContainsFold,omitempty"`
+	// "closed_at" field predicates.
+	ClosedAt       *time.Time  `json:"closedAt,omitempty"`
+	ClosedAtNEQ    *time.Time  `json:"closedAtNEQ,omitempty"`
+	ClosedAtIn     []time.Time `json:"closedAtIn,omitempty"`
+	ClosedAtNotIn  []time.Time `json:"closedAtNotIn,omitempty"`
+	ClosedAtGT     *time.Time  `json:"closedAtGT,omitempty"`
+	ClosedAtGTE    *time.Time  `json:"closedAtGTE,omitempty"`
+	ClosedAtLT     *time.Time  `json:"closedAtLT,omitempty"`
+	ClosedAtLTE    *time.Time  `json:"closedAtLTE,omitempty"`
+	ClosedAtIsNil  bool        `json:"closedAtIsNil,omitempty"`
+	ClosedAtNotNil bool        `json:"closedAtNotNil,omitempty"`
 
-	// "expires_at" field predicates.
-	ExpiresAt      *time.Time  `json:"expiresAt,omitempty"`
-	ExpiresAtNEQ   *time.Time  `json:"expiresAtNEQ,omitempty"`
-	ExpiresAtIn    []time.Time `json:"expiresAtIn,omitempty"`
-	ExpiresAtNotIn []time.Time `json:"expiresAtNotIn,omitempty"`
-	ExpiresAtGT    *time.Time  `json:"expiresAtGT,omitempty"`
-	ExpiresAtGTE   *time.Time  `json:"expiresAtGTE,omitempty"`
-	ExpiresAtLT    *time.Time  `json:"expiresAtLT,omitempty"`
-	ExpiresAtLTE   *time.Time  `json:"expiresAtLTE,omitempty"`
+	// "task" edge predicates.
+	HasTask     *bool             `json:"hasTask,omitempty"`
+	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
 
-	// "downloads_remaining" field predicates.
-	DownloadsRemaining      *int  `json:"downloadsRemaining,omitempty"`
-	DownloadsRemainingNEQ   *int  `json:"downloadsRemainingNEQ,omitempty"`
-	DownloadsRemainingIn    []int `json:"downloadsRemainingIn,omitempty"`
-	DownloadsRemainingNotIn []int `json:"downloadsRemainingNotIn,omitempty"`
-	DownloadsRemainingGT    *int  `json:"downloadsRemainingGT,omitempty"`
-	DownloadsRemainingGTE   *int  `json:"downloadsRemainingGTE,omitempty"`
-	DownloadsRemainingLT    *int  `json:"downloadsRemainingLT,omitempty"`
-	DownloadsRemainingLTE   *int  `json:"downloadsRemainingLTE,omitempty"`
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
 
-	// "file" edge predicates.
-	HasFile     *bool             `json:"hasFile,omitempty"`
-	HasFileWith []*FileWhereInput `json:"hasFileWith,omitempty"`
+	// "owner" edge predicates.
+	HasOwner     *bool             `json:"hasOwner,omitempty"`
+	HasOwnerWith []*UserWhereInput `json:"hasOwnerWith,omitempty"`
+
+	// "active_users" edge predicates.
+	HasActiveUsers     *bool             `json:"hasActiveUsers,omitempty"`
+	HasActiveUsersWith []*UserWhereInput `json:"hasActiveUsersWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
-func (i *LinkWhereInput) AddPredicates(predicates ...predicate.Link) {
+func (i *PortalWhereInput) AddPredicates(predicates ...predicate.Portal) {
 	i.Predicates = append(i.Predicates, predicates...)
 }
 
-// Filter applies the LinkWhereInput filter on the LinkQuery builder.
-func (i *LinkWhereInput) Filter(q *LinkQuery) (*LinkQuery, error) {
+// Filter applies the PortalWhereInput filter on the PortalQuery builder.
+func (i *PortalWhereInput) Filter(q *PortalQuery) (*PortalQuery, error) {
 	if i == nil {
 		return q, nil
 	}
 	p, err := i.P()
 	if err != nil {
-		if err == ErrEmptyLinkWhereInput {
+		if err == ErrEmptyPortalWhereInput {
 			return q, nil
 		}
 		return nil, err
@@ -3391,19 +3380,19 @@ func (i *LinkWhereInput) Filter(q *LinkQuery) (*LinkQuery, error) {
 	return q.Where(p), nil
 }
 
-// ErrEmptyLinkWhereInput is returned in case the LinkWhereInput is empty.
-var ErrEmptyLinkWhereInput = errors.New("ent: empty predicate LinkWhereInput")
+// ErrEmptyPortalWhereInput is returned in case the PortalWhereInput is empty.
+var ErrEmptyPortalWhereInput = errors.New("ent: empty predicate PortalWhereInput")
 
-// P returns a predicate for filtering links.
+// P returns a predicate for filtering portals.
 // An error is returned if the input is empty or invalid.
-func (i *LinkWhereInput) P() (predicate.Link, error) {
-	var predicates []predicate.Link
+func (i *PortalWhereInput) P() (predicate.Portal, error) {
+	var predicates []predicate.Portal
 	if i.Not != nil {
 		p, err := i.Not.P()
 		if err != nil {
 			return nil, fmt.Errorf("%w: field 'not'", err)
 		}
-		predicates = append(predicates, link.Not(p))
+		predicates = append(predicates, portal.Not(p))
 	}
 	switch n := len(i.Or); {
 	case n == 1:
@@ -3413,7 +3402,7 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 		}
 		predicates = append(predicates, p)
 	case n > 1:
-		or := make([]predicate.Link, 0, n)
+		or := make([]predicate.Portal, 0, n)
 		for _, w := range i.Or {
 			p, err := w.P()
 			if err != nil {
@@ -3421,7 +3410,7 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 			}
 			or = append(or, p)
 		}
-		predicates = append(predicates, link.Or(or...))
+		predicates = append(predicates, portal.Or(or...))
 	}
 	switch n := len(i.And); {
 	case n == 1:
@@ -3431,7 +3420,7 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 		}
 		predicates = append(predicates, p)
 	case n > 1:
-		and := make([]predicate.Link, 0, n)
+		and := make([]predicate.Portal, 0, n)
 		for _, w := range i.And {
 			p, err := w.P()
 			if err != nil {
@@ -3439,194 +3428,191 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 			}
 			and = append(and, p)
 		}
-		predicates = append(predicates, link.And(and...))
+		predicates = append(predicates, portal.And(and...))
 	}
 	predicates = append(predicates, i.Predicates...)
 	if i.ID != nil {
-		predicates = append(predicates, link.IDEQ(*i.ID))
+		predicates = append(predicates, portal.IDEQ(*i.ID))
 	}
 	if i.IDNEQ != nil {
-		predicates = append(predicates, link.IDNEQ(*i.IDNEQ))
+		predicates = append(predicates, portal.IDNEQ(*i.IDNEQ))
 	}
 	if len(i.IDIn) > 0 {
-		predicates = append(predicates, link.IDIn(i.IDIn...))
+		predicates = append(predicates, portal.IDIn(i.IDIn...))
 	}
 	if len(i.IDNotIn) > 0 {
-		predicates = append(predicates, link.IDNotIn(i.IDNotIn...))
+		predicates = append(predicates, portal.IDNotIn(i.IDNotIn...))
 	}
 	if i.IDGT != nil {
-		predicates = append(predicates, link.IDGT(*i.IDGT))
+		predicates = append(predicates, portal.IDGT(*i.IDGT))
 	}
 	if i.IDGTE != nil {
-		predicates = append(predicates, link.IDGTE(*i.IDGTE))
+		predicates = append(predicates, portal.IDGTE(*i.IDGTE))
 	}
 	if i.IDLT != nil {
-		predicates = append(predicates, link.IDLT(*i.IDLT))
+		predicates = append(predicates, portal.IDLT(*i.IDLT))
 	}
 	if i.IDLTE != nil {
-		predicates = append(predicates, link.IDLTE(*i.IDLTE))
+		predicates = append(predicates, portal.IDLTE(*i.IDLTE))
 	}
 	if i.CreatedAt != nil {
-		predicates = append(predicates, link.CreatedAtEQ(*i.CreatedAt))
+		predicates = append(predicates, portal.CreatedAtEQ(*i.CreatedAt))
 	}
 	if i.CreatedAtNEQ != nil {
-		predicates = append(predicates, link.CreatedAtNEQ(*i.CreatedAtNEQ))
+		predicates = append(predicates, portal.CreatedAtNEQ(*i.CreatedAtNEQ))
 	}
 	if len(i.CreatedAtIn) > 0 {
-		predicates = append(predicates, link.CreatedAtIn(i.CreatedAtIn...))
+		predicates = append(predicates, portal.CreatedAtIn(i.CreatedAtIn...))
 	}
 	if len(i.CreatedAtNotIn) > 0 {
-		predicates = append(predicates, link.CreatedAtNotIn(i.CreatedAtNotIn...))
+		predicates = append(predicates, portal.CreatedAtNotIn(i.CreatedAtNotIn...))
 	}
 	if i.CreatedAtGT != nil {
-		predicates = append(predicates, link.CreatedAtGT(*i.CreatedAtGT))
+		predicates = append(predicates, portal.CreatedAtGT(*i.CreatedAtGT))
 	}
 	if i.CreatedAtGTE != nil {
-		predicates = append(predicates, link.CreatedAtGTE(*i.CreatedAtGTE))
+		predicates = append(predicates, portal.CreatedAtGTE(*i.CreatedAtGTE))
 	}
 	if i.CreatedAtLT != nil {
-		predicates = append(predicates, link.CreatedAtLT(*i.CreatedAtLT))
+		predicates = append(predicates, portal.CreatedAtLT(*i.CreatedAtLT))
 	}
 	if i.CreatedAtLTE != nil {
-		predicates = append(predicates, link.CreatedAtLTE(*i.CreatedAtLTE))
+		predicates = append(predicates, portal.CreatedAtLTE(*i.CreatedAtLTE))
 	}
 	if i.LastModifiedAt != nil {
-		predicates = append(predicates, link.LastModifiedAtEQ(*i.LastModifiedAt))
+		predicates = append(predicates, portal.LastModifiedAtEQ(*i.LastModifiedAt))
 	}
 	if i.LastModifiedAtNEQ != nil {
-		predicates = append(predicates, link.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+		predicates = append(predicates, portal.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
 	}
 	if len(i.LastModifiedAtIn) > 0 {
-		predicates = append(predicates, link.LastModifiedAtIn(i.LastModifiedAtIn...))
+		predicates = append(predicates, portal.LastModifiedAtIn(i.LastModifiedAtIn...))
 	}
 	if len(i.LastModifiedAtNotIn) > 0 {
-		predicates = append(predicates, link.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+		predicates = append(predicates, portal.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
 	}
 	if i.LastModifiedAtGT != nil {
-		predicates = append(predicates, link.LastModifiedAtGT(*i.LastModifiedAtGT))
+		predicates = append(predicates, portal.LastModifiedAtGT(*i.LastModifiedAtGT))
 	}
 	if i.LastModifiedAtGTE != nil {
-		predicates = append(predicates, link.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+		predicates = append(predicates, portal.LastModifiedAtGTE(*i.LastModifiedAtGTE))
 	}
 	if i.LastModifiedAtLT != nil {
-		predicates = append(predicates, link.LastModifiedAtLT(*i.LastModifiedAtLT))
+		predicates = append(predicates, portal.LastModifiedAtLT(*i.LastModifiedAtLT))
 	}
 	if i.LastModifiedAtLTE != nil {
-		predicates = append(predicates, link.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+		predicates = append(predicates, portal.LastModifiedAtLTE(*i.LastModifiedAtLTE))
 	}
-	if i.Path != nil {
-		predicates = append(predicates, link.PathEQ(*i.Path))
+	if i.ClosedAt != nil {
+		predicates = append(predicates, portal.ClosedAtEQ(*i.ClosedAt))
 	}
-	if i.PathNEQ != nil {
-		predicates = append(predicates, link.PathNEQ(*i.PathNEQ))
+	if i.ClosedAtNEQ != nil {
+		predicates = append(predicates, portal.ClosedAtNEQ(*i.ClosedAtNEQ))
 	}
-	if len(i.PathIn) > 0 {
-		predicates = append(predicates, link.PathIn(i.PathIn...))
+	if len(i.ClosedAtIn) > 0 {
+		predicates = append(predicates, portal.ClosedAtIn(i.ClosedAtIn...))
 	}
-	if len(i.PathNotIn) > 0 {
-		predicates = append(predicates, link.PathNotIn(i.PathNotIn...))
+	if len(i.ClosedAtNotIn) > 0 {
+		predicates = append(predicates, portal.ClosedAtNotIn(i.ClosedAtNotIn...))
 	}
-	if i.PathGT != nil {
-		predicates = append(predicates, link.PathGT(*i.PathGT))
+	if i.ClosedAtGT != nil {
+		predicates = append(predicates, portal.ClosedAtGT(*i.ClosedAtGT))
 	}
-	if i.PathGTE != nil {
-		predicates = append(predicates, link.PathGTE(*i.PathGTE))
+	if i.ClosedAtGTE != nil {
+		predicates = append(predicates, portal.ClosedAtGTE(*i.ClosedAtGTE))
 	}
-	if i.PathLT != nil {
-		predicates = append(predicates, link.PathLT(*i.PathLT))
+	if i.ClosedAtLT != nil {
+		predicates = append(predicates, portal.ClosedAtLT(*i.ClosedAtLT))
 	}
-	if i.PathLTE != nil {
-		predicates = append(predicates, link.PathLTE(*i.PathLTE))
+	if i.ClosedAtLTE != nil {
+		predicates = append(predicates, portal.ClosedAtLTE(*i.ClosedAtLTE))
 	}
-	if i.PathContains != nil {
-		predicates = append(predicates, link.PathContains(*i.PathContains))
+	if i.ClosedAtIsNil {
+		predicates = append(predicates, portal.ClosedAtIsNil())
 	}
-	if i.PathHasPrefix != nil {
-		predicates = append(predicates, link.PathHasPrefix(*i.PathHasPrefix))
-	}
-	if i.PathHasSuffix != nil {
-		predicates = append(predicates, link.PathHasSuffix(*i.PathHasSuffix))
-	}
-	if i.PathEqualFold != nil {
-		predicates = append(predicates, link.PathEqualFold(*i.PathEqualFold))
-	}
-	if i.PathContainsFold != nil {
-		predicates = append(predicates, link.PathContainsFold(*i.PathContainsFold))
-	}
-	if i.ExpiresAt != nil {
-		predicates = append(predicates, link.ExpiresAtEQ(*i.ExpiresAt))
-	}
-	if i.ExpiresAtNEQ != nil {
-		predicates = append(predicates, link.ExpiresAtNEQ(*i.ExpiresAtNEQ))
-	}
-	if len(i.ExpiresAtIn) > 0 {
-		predicates = append(predicates, link.ExpiresAtIn(i.ExpiresAtIn...))
-	}
-	if len(i.ExpiresAtNotIn) > 0 {
-		predicates = append(predicates, link.ExpiresAtNotIn(i.ExpiresAtNotIn...))
-	}
-	if i.ExpiresAtGT != nil {
-		predicates = append(predicates, link.ExpiresAtGT(*i.ExpiresAtGT))
-	}
-	if i.ExpiresAtGTE != nil {
-		predicates = append(predicates, link.ExpiresAtGTE(*i.ExpiresAtGTE))
-	}
-	if i.ExpiresAtLT != nil {
-		predicates = append(predicates, link.ExpiresAtLT(*i.ExpiresAtLT))
-	}
-	if i.ExpiresAtLTE != nil {
-		predicates = append(predicates, link.ExpiresAtLTE(*i.ExpiresAtLTE))
-	}
-	if i.DownloadsRemaining != nil {
-		predicates = append(predicates, link.DownloadsRemainingEQ(*i.DownloadsRemaining))
-	}
-	if i.DownloadsRemainingNEQ != nil {
-		predicates = append(predicates, link.DownloadsRemainingNEQ(*i.DownloadsRemainingNEQ))
-	}
-	if len(i.DownloadsRemainingIn) > 0 {
-		predicates = append(predicates, link.DownloadsRemainingIn(i.DownloadsRemainingIn...))
-	}
-	if len(i.DownloadsRemainingNotIn) > 0 {
-		predicates = append(predicates, link.DownloadsRemainingNotIn(i.DownloadsRemainingNotIn...))
-	}
-	if i.DownloadsRemainingGT != nil {
-		predicates = append(predicates, link.DownloadsRemainingGT(*i.DownloadsRemainingGT))
-	}
-	if i.DownloadsRemainingGTE != nil {
-		predicates = append(predicates, link.DownloadsRemainingGTE(*i.DownloadsRemainingGTE))
-	}
-	if i.DownloadsRemainingLT != nil {
-		predicates = append(predicates, link.DownloadsRemainingLT(*i.DownloadsRemainingLT))
-	}
-	if i.DownloadsRemainingLTE != nil {
-		predicates = append(predicates, link.DownloadsRemainingLTE(*i.DownloadsRemainingLTE))
+	if i.ClosedAtNotNil {
+		predicates = append(predicates, portal.ClosedAtNotNil())
 	}
 
-	if i.HasFile != nil {
-		p := link.HasFile()
-		if !*i.HasFile {
-			p = link.Not(p)
+	if i.HasTask != nil {
+		p := portal.HasTask()
+		if !*i.HasTask {
+			p = portal.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasFileWith) > 0 {
-		with := make([]predicate.File, 0, len(i.HasFileWith))
-		for _, w := range i.HasFileWith {
+	if len(i.HasTaskWith) > 0 {
+		with := make([]predicate.Task, 0, len(i.HasTaskWith))
+		for _, w := range i.HasTaskWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasFileWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasTaskWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, link.HasFileWith(with...))
+		predicates = append(predicates, portal.HasTaskWith(with...))
+	}
+	if i.HasBeacon != nil {
+		p := portal.HasBeacon()
+		if !*i.HasBeacon {
+			p = portal.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, portal.HasBeaconWith(with...))
+	}
+	if i.HasOwner != nil {
+		p := portal.HasOwner()
+		if !*i.HasOwner {
+			p = portal.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOwnerWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasOwnerWith))
+		for _, w := range i.HasOwnerWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOwnerWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, portal.HasOwnerWith(with...))
+	}
+	if i.HasActiveUsers != nil {
+		p := portal.HasActiveUsers()
+		if !*i.HasActiveUsers {
+			p = portal.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasActiveUsersWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasActiveUsersWith))
+		for _, w := range i.HasActiveUsersWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasActiveUsersWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, portal.HasActiveUsersWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
-		return nil, ErrEmptyLinkWhereInput
+		return nil, ErrEmptyPortalWhereInput
 	case 1:
 		return predicates[0], nil
 	default:
-		return link.And(predicates...), nil
+		return portal.And(predicates...), nil
 	}
 }
 

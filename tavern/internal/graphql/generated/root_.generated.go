@@ -245,6 +245,28 @@ type ComplexityRoot struct {
 		StartCursor     func(childComplexity int) int
 	}
 
+	Portal struct {
+		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		Beacon         func(childComplexity int) int
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		Task           func(childComplexity int) int
+	}
+
+	PortalConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	PortalEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Query struct {
 		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		Files        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
@@ -252,6 +274,7 @@ type ComplexityRoot struct {
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
 		Nodes        func(childComplexity int, ids []int) int
+		Portals      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
@@ -1489,6 +1512,102 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Portal.activeUsers":
+		if e.complexity.Portal.ActiveUsers == nil {
+			break
+		}
+
+		args, err := ec.field_Portal_activeUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Portal.ActiveUsers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
+
+	case "Portal.beacon":
+		if e.complexity.Portal.Beacon == nil {
+			break
+		}
+
+		return e.complexity.Portal.Beacon(childComplexity), true
+
+	case "Portal.closedAt":
+		if e.complexity.Portal.ClosedAt == nil {
+			break
+		}
+
+		return e.complexity.Portal.ClosedAt(childComplexity), true
+
+	case "Portal.createdAt":
+		if e.complexity.Portal.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Portal.CreatedAt(childComplexity), true
+
+	case "Portal.id":
+		if e.complexity.Portal.ID == nil {
+			break
+		}
+
+		return e.complexity.Portal.ID(childComplexity), true
+
+	case "Portal.lastModifiedAt":
+		if e.complexity.Portal.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Portal.LastModifiedAt(childComplexity), true
+
+	case "Portal.owner":
+		if e.complexity.Portal.Owner == nil {
+			break
+		}
+
+		return e.complexity.Portal.Owner(childComplexity), true
+
+	case "Portal.task":
+		if e.complexity.Portal.Task == nil {
+			break
+		}
+
+		return e.complexity.Portal.Task(childComplexity), true
+
+	case "PortalConnection.edges":
+		if e.complexity.PortalConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.PortalConnection.Edges(childComplexity), true
+
+	case "PortalConnection.pageInfo":
+		if e.complexity.PortalConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.PortalConnection.PageInfo(childComplexity), true
+
+	case "PortalConnection.totalCount":
+		if e.complexity.PortalConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.PortalConnection.TotalCount(childComplexity), true
+
+	case "PortalEdge.cursor":
+		if e.complexity.PortalEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.PortalEdge.Cursor(childComplexity), true
+
+	case "PortalEdge.node":
+		if e.complexity.PortalEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.PortalEdge.Node(childComplexity), true
+
 	case "Query.beacons":
 		if e.complexity.Query.Beacons == nil {
 			break
@@ -1555,6 +1674,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
+
+	case "Query.portals":
+		if e.complexity.Query.Portals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_portals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Portals(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.PortalOrder), args["where"].(*ent.PortalWhereInput)), true
 
 	case "Query.quests":
 		if e.complexity.Query.Quests == nil {
@@ -2430,8 +2561,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
 		ec.unmarshalInputImportRepositoryInput,
-		ec.unmarshalInputLinkOrder,
-		ec.unmarshalInputLinkWhereInput,
+		ec.unmarshalInputPortalOrder,
+		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputRepositoryOrder,
@@ -2728,6 +2859,15 @@ enum BeaconOrderField {
   LAST_SEEN_AT
   NEXT_SEEN_AT
   INTERVAL
+}
+"""
+BeaconTransport is enum for the field transport
+"""
+enum BeaconTransport @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Beacon_Transport") {
+  TRANSPORT_DNS
+  TRANSPORT_GRPC
+  TRANSPORT_HTTP1
+  TRANSPORT_UNSPECIFIED
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -4625,6 +4765,190 @@ type PageInfo {
   When paginating forwards, the cursor to continue.
   """
   endCursor: Cursor
+}
+type Portal implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Timestamp of when this portal was closed
+  """
+  closedAt: Time
+  """
+  Task that created the portal
+  """
+  task: Task!
+  """
+  Beacon that created the portal
+  """
+  beacon: Beacon!
+  """
+  User that created the portal
+  """
+  owner: User!
+  activeUsers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
+}
+"""
+A connection to a list of items.
+"""
+type PortalConnection {
+  """
+  A list of edges.
+  """
+  edges: [PortalEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type PortalEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Portal
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Portal connections
+"""
+input PortalOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Portals.
+  """
+  field: PortalOrderField!
+}
+"""
+Properties by which Portal connections can be ordered.
+"""
+enum PortalOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLOSED_AT
+}
+"""
+PortalWhereInput is used for filtering Portal objects.
+Input was generated by ent.
+"""
+input PortalWhereInput {
+  not: PortalWhereInput
+  and: [PortalWhereInput!]
+  or: [PortalWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  closed_at field predicates
+  """
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
+  """
+  task edge predicates
+  """
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """
+  owner edge predicates
+  """
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+  """
+  active_users edge predicates
+  """
+  hasActiveUsers: Boolean
+  hasActiveUsersWith: [UserWhereInput!]
 }
 type Query {
   """
@@ -6646,6 +6970,26 @@ scalar Uint64
     """Filtering options for Users returned from the connection."""
     where: UserWhereInput
   ): UserConnection! @requireRole(role: USER)
+
+  portals(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Portals returned from the connection."""
+    orderBy: [PortalOrder!]
+
+    """Filtering options for Portals returned from the connection."""
+    where: PortalWhereInput): PortalConnection! @requireRole(role: USER)
+
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

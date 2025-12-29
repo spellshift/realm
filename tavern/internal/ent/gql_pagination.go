@@ -21,7 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
-	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
@@ -2445,20 +2445,20 @@ func (hp *HostProcess) ToEdge(order *HostProcessOrder) *HostProcessEdge {
 	}
 }
 
-// LinkEdge is the edge representation of Link.
-type LinkEdge struct {
-	Node   *Link  `json:"node"`
-	Cursor Cursor `json:"cursor"`
+// PortalEdge is the edge representation of Portal.
+type PortalEdge struct {
+	Node   *Portal `json:"node"`
+	Cursor Cursor  `json:"cursor"`
 }
 
-// LinkConnection is the connection containing edges to Link.
-type LinkConnection struct {
-	Edges      []*LinkEdge `json:"edges"`
-	PageInfo   PageInfo    `json:"pageInfo"`
-	TotalCount int         `json:"totalCount"`
+// PortalConnection is the connection containing edges to Portal.
+type PortalConnection struct {
+	Edges      []*PortalEdge `json:"edges"`
+	PageInfo   PageInfo      `json:"pageInfo"`
+	TotalCount int           `json:"totalCount"`
 }
 
-func (c *LinkConnection) build(nodes []*Link, pager *linkPager, after *Cursor, first *int, before *Cursor, last *int) {
+func (c *PortalConnection) build(nodes []*Portal, pager *portalPager, after *Cursor, first *int, before *Cursor, last *int) {
 	c.PageInfo.HasNextPage = before != nil
 	c.PageInfo.HasPreviousPage = after != nil
 	if first != nil && *first+1 == len(nodes) {
@@ -2468,21 +2468,21 @@ func (c *LinkConnection) build(nodes []*Link, pager *linkPager, after *Cursor, f
 		c.PageInfo.HasPreviousPage = true
 		nodes = nodes[:len(nodes)-1]
 	}
-	var nodeAt func(int) *Link
+	var nodeAt func(int) *Portal
 	if last != nil {
 		n := len(nodes) - 1
-		nodeAt = func(i int) *Link {
+		nodeAt = func(i int) *Portal {
 			return nodes[n-i]
 		}
 	} else {
-		nodeAt = func(i int) *Link {
+		nodeAt = func(i int) *Portal {
 			return nodes[i]
 		}
 	}
-	c.Edges = make([]*LinkEdge, len(nodes))
+	c.Edges = make([]*PortalEdge, len(nodes))
 	for i := range nodes {
 		node := nodeAt(i)
-		c.Edges[i] = &LinkEdge{
+		c.Edges[i] = &PortalEdge{
 			Node:   node,
 			Cursor: pager.toCursor(node),
 		}
@@ -2496,12 +2496,12 @@ func (c *LinkConnection) build(nodes []*Link, pager *linkPager, after *Cursor, f
 	}
 }
 
-// LinkPaginateOption enables pagination customization.
-type LinkPaginateOption func(*linkPager) error
+// PortalPaginateOption enables pagination customization.
+type PortalPaginateOption func(*portalPager) error
 
-// WithLinkOrder configures pagination ordering.
-func WithLinkOrder(order []*LinkOrder) LinkPaginateOption {
-	return func(pager *linkPager) error {
+// WithPortalOrder configures pagination ordering.
+func WithPortalOrder(order []*PortalOrder) PortalPaginateOption {
+	return func(pager *portalPager) error {
 		for _, o := range order {
 			if err := o.Direction.Validate(); err != nil {
 				return err
@@ -2512,25 +2512,25 @@ func WithLinkOrder(order []*LinkOrder) LinkPaginateOption {
 	}
 }
 
-// WithLinkFilter configures pagination filter.
-func WithLinkFilter(filter func(*LinkQuery) (*LinkQuery, error)) LinkPaginateOption {
-	return func(pager *linkPager) error {
+// WithPortalFilter configures pagination filter.
+func WithPortalFilter(filter func(*PortalQuery) (*PortalQuery, error)) PortalPaginateOption {
+	return func(pager *portalPager) error {
 		if filter == nil {
-			return errors.New("LinkQuery filter cannot be nil")
+			return errors.New("PortalQuery filter cannot be nil")
 		}
 		pager.filter = filter
 		return nil
 	}
 }
 
-type linkPager struct {
+type portalPager struct {
 	reverse bool
-	order   []*LinkOrder
-	filter  func(*LinkQuery) (*LinkQuery, error)
+	order   []*PortalOrder
+	filter  func(*PortalQuery) (*PortalQuery, error)
 }
 
-func newLinkPager(opts []LinkPaginateOption, reverse bool) (*linkPager, error) {
-	pager := &linkPager{reverse: reverse}
+func newPortalPager(opts []PortalPaginateOption, reverse bool) (*portalPager, error) {
+	pager := &portalPager{reverse: reverse}
 	for _, opt := range opts {
 		if err := opt(pager); err != nil {
 			return nil, err
@@ -2544,22 +2544,22 @@ func newLinkPager(opts []LinkPaginateOption, reverse bool) (*linkPager, error) {
 	return pager, nil
 }
 
-func (p *linkPager) applyFilter(query *LinkQuery) (*LinkQuery, error) {
+func (p *portalPager) applyFilter(query *PortalQuery) (*PortalQuery, error) {
 	if p.filter != nil {
 		return p.filter(query)
 	}
 	return query, nil
 }
 
-func (p *linkPager) toCursor(l *Link) Cursor {
+func (p *portalPager) toCursor(po *Portal) Cursor {
 	cs_ := make([]any, 0, len(p.order))
 	for _, o_ := range p.order {
-		cs_ = append(cs_, o_.Field.toCursor(l).Value)
+		cs_ = append(cs_, o_.Field.toCursor(po).Value)
 	}
-	return Cursor{ID: l.ID, Value: cs_}
+	return Cursor{ID: po.ID, Value: cs_}
 }
 
-func (p *linkPager) applyCursors(query *LinkQuery, after, before *Cursor) (*LinkQuery, error) {
+func (p *portalPager) applyCursors(query *PortalQuery, after, before *Cursor) (*PortalQuery, error) {
 	idDirection := entgql.OrderDirectionAsc
 	if p.reverse {
 		idDirection = entgql.OrderDirectionDesc
@@ -2574,7 +2574,7 @@ func (p *linkPager) applyCursors(query *LinkQuery, after, before *Cursor) (*Link
 		directions = append(directions, direction)
 	}
 	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
-		FieldID:     DefaultLinkOrder.Field.column,
+		FieldID:     DefaultPortalOrder.Field.column,
 		DirectionID: idDirection,
 		Fields:      fields,
 		Directions:  directions,
@@ -2588,7 +2588,7 @@ func (p *linkPager) applyCursors(query *LinkQuery, after, before *Cursor) (*Link
 	return query, nil
 }
 
-func (p *linkPager) applyOrder(query *LinkQuery) *LinkQuery {
+func (p *portalPager) applyOrder(query *PortalQuery) *PortalQuery {
 	var defaultOrdered bool
 	for _, o := range p.order {
 		direction := o.Direction
@@ -2596,7 +2596,7 @@ func (p *linkPager) applyOrder(query *LinkQuery) *LinkQuery {
 			direction = direction.Reverse()
 		}
 		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
-		if o.Field.column == DefaultLinkOrder.Field.column {
+		if o.Field.column == DefaultPortalOrder.Field.column {
 			defaultOrdered = true
 		}
 		if len(query.ctx.Fields) > 0 {
@@ -2608,12 +2608,12 @@ func (p *linkPager) applyOrder(query *LinkQuery) *LinkQuery {
 		if p.reverse {
 			direction = direction.Reverse()
 		}
-		query = query.Order(DefaultLinkOrder.Field.toTerm(direction.OrderTermOption()))
+		query = query.Order(DefaultPortalOrder.Field.toTerm(direction.OrderTermOption()))
 	}
 	return query
 }
 
-func (p *linkPager) orderExpr(query *LinkQuery) sql.Querier {
+func (p *portalPager) orderExpr(query *PortalQuery) sql.Querier {
 	if len(query.ctx.Fields) > 0 {
 		for _, o := range p.order {
 			query.ctx.AppendFieldOnce(o.Field.column)
@@ -2632,31 +2632,31 @@ func (p *linkPager) orderExpr(query *LinkQuery) sql.Querier {
 		if p.reverse {
 			direction = direction.Reverse()
 		}
-		b.Ident(DefaultLinkOrder.Field.column).Pad().WriteString(string(direction))
+		b.Ident(DefaultPortalOrder.Field.column).Pad().WriteString(string(direction))
 	})
 }
 
-// Paginate executes the query and returns a relay based cursor connection to Link.
-func (l *LinkQuery) Paginate(
+// Paginate executes the query and returns a relay based cursor connection to Portal.
+func (po *PortalQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
-	before *Cursor, last *int, opts ...LinkPaginateOption,
-) (*LinkConnection, error) {
+	before *Cursor, last *int, opts ...PortalPaginateOption,
+) (*PortalConnection, error) {
 	if err := validateFirstLast(first, last); err != nil {
 		return nil, err
 	}
-	pager, err := newLinkPager(opts, last != nil)
+	pager, err := newPortalPager(opts, last != nil)
 	if err != nil {
 		return nil, err
 	}
-	if l, err = pager.applyFilter(l); err != nil {
+	if po, err = pager.applyFilter(po); err != nil {
 		return nil, err
 	}
-	conn := &LinkConnection{Edges: []*LinkEdge{}}
+	conn := &PortalConnection{Edges: []*PortalEdge{}}
 	ignoredEdges := !hasCollectedField(ctx, edgesField)
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := l.Clone()
+			c := po.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -2668,20 +2668,20 @@ func (l *LinkQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if l, err = pager.applyCursors(l, after, before); err != nil {
+	if po, err = pager.applyCursors(po, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		l.Limit(limit)
+		po.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := l.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := po.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	l = pager.applyOrder(l)
-	nodes, err := l.All(ctx)
+	po = pager.applyOrder(po)
+	nodes, err := po.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -2690,162 +2690,126 @@ func (l *LinkQuery) Paginate(
 }
 
 var (
-	// LinkOrderFieldCreatedAt orders Link by created_at.
-	LinkOrderFieldCreatedAt = &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.CreatedAt, nil
+	// PortalOrderFieldCreatedAt orders Portal by created_at.
+	PortalOrderFieldCreatedAt = &PortalOrderField{
+		Value: func(po *Portal) (ent.Value, error) {
+			return po.CreatedAt, nil
 		},
-		column: link.FieldCreatedAt,
-		toTerm: link.ByCreatedAt,
-		toCursor: func(l *Link) Cursor {
+		column: portal.FieldCreatedAt,
+		toTerm: portal.ByCreatedAt,
+		toCursor: func(po *Portal) Cursor {
 			return Cursor{
-				ID:    l.ID,
-				Value: l.CreatedAt,
+				ID:    po.ID,
+				Value: po.CreatedAt,
 			}
 		},
 	}
-	// LinkOrderFieldLastModifiedAt orders Link by last_modified_at.
-	LinkOrderFieldLastModifiedAt = &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.LastModifiedAt, nil
+	// PortalOrderFieldLastModifiedAt orders Portal by last_modified_at.
+	PortalOrderFieldLastModifiedAt = &PortalOrderField{
+		Value: func(po *Portal) (ent.Value, error) {
+			return po.LastModifiedAt, nil
 		},
-		column: link.FieldLastModifiedAt,
-		toTerm: link.ByLastModifiedAt,
-		toCursor: func(l *Link) Cursor {
+		column: portal.FieldLastModifiedAt,
+		toTerm: portal.ByLastModifiedAt,
+		toCursor: func(po *Portal) Cursor {
 			return Cursor{
-				ID:    l.ID,
-				Value: l.LastModifiedAt,
+				ID:    po.ID,
+				Value: po.LastModifiedAt,
 			}
 		},
 	}
-	// LinkOrderFieldPath orders Link by path.
-	LinkOrderFieldPath = &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.Path, nil
+	// PortalOrderFieldClosedAt orders Portal by closed_at.
+	PortalOrderFieldClosedAt = &PortalOrderField{
+		Value: func(po *Portal) (ent.Value, error) {
+			return po.ClosedAt, nil
 		},
-		column: link.FieldPath,
-		toTerm: link.ByPath,
-		toCursor: func(l *Link) Cursor {
+		column: portal.FieldClosedAt,
+		toTerm: portal.ByClosedAt,
+		toCursor: func(po *Portal) Cursor {
 			return Cursor{
-				ID:    l.ID,
-				Value: l.Path,
-			}
-		},
-	}
-	// LinkOrderFieldExpiresAt orders Link by expires_at.
-	LinkOrderFieldExpiresAt = &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.ExpiresAt, nil
-		},
-		column: link.FieldExpiresAt,
-		toTerm: link.ByExpiresAt,
-		toCursor: func(l *Link) Cursor {
-			return Cursor{
-				ID:    l.ID,
-				Value: l.ExpiresAt,
-			}
-		},
-	}
-	// LinkOrderFieldDownloadsRemaining orders Link by downloads_remaining.
-	LinkOrderFieldDownloadsRemaining = &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.DownloadsRemaining, nil
-		},
-		column: link.FieldDownloadsRemaining,
-		toTerm: link.ByDownloadsRemaining,
-		toCursor: func(l *Link) Cursor {
-			return Cursor{
-				ID:    l.ID,
-				Value: l.DownloadsRemaining,
+				ID:    po.ID,
+				Value: po.ClosedAt,
 			}
 		},
 	}
 )
 
 // String implement fmt.Stringer interface.
-func (f LinkOrderField) String() string {
+func (f PortalOrderField) String() string {
 	var str string
 	switch f.column {
-	case LinkOrderFieldCreatedAt.column:
+	case PortalOrderFieldCreatedAt.column:
 		str = "CREATED_AT"
-	case LinkOrderFieldLastModifiedAt.column:
+	case PortalOrderFieldLastModifiedAt.column:
 		str = "LAST_MODIFIED_AT"
-	case LinkOrderFieldPath.column:
-		str = "PATH"
-	case LinkOrderFieldExpiresAt.column:
-		str = "EXPIRES_AT"
-	case LinkOrderFieldDownloadsRemaining.column:
-		str = "DOWNLOADS_REMAINING"
+	case PortalOrderFieldClosedAt.column:
+		str = "CLOSED_AT"
 	}
 	return str
 }
 
 // MarshalGQL implements graphql.Marshaler interface.
-func (f LinkOrderField) MarshalGQL(w io.Writer) {
+func (f PortalOrderField) MarshalGQL(w io.Writer) {
 	io.WriteString(w, strconv.Quote(f.String()))
 }
 
 // UnmarshalGQL implements graphql.Unmarshaler interface.
-func (f *LinkOrderField) UnmarshalGQL(v interface{}) error {
+func (f *PortalOrderField) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("LinkOrderField %T must be a string", v)
+		return fmt.Errorf("PortalOrderField %T must be a string", v)
 	}
 	switch str {
 	case "CREATED_AT":
-		*f = *LinkOrderFieldCreatedAt
+		*f = *PortalOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
-		*f = *LinkOrderFieldLastModifiedAt
-	case "PATH":
-		*f = *LinkOrderFieldPath
-	case "EXPIRES_AT":
-		*f = *LinkOrderFieldExpiresAt
-	case "DOWNLOADS_REMAINING":
-		*f = *LinkOrderFieldDownloadsRemaining
+		*f = *PortalOrderFieldLastModifiedAt
+	case "CLOSED_AT":
+		*f = *PortalOrderFieldClosedAt
 	default:
-		return fmt.Errorf("%s is not a valid LinkOrderField", str)
+		return fmt.Errorf("%s is not a valid PortalOrderField", str)
 	}
 	return nil
 }
 
-// LinkOrderField defines the ordering field of Link.
-type LinkOrderField struct {
-	// Value extracts the ordering value from the given Link.
-	Value    func(*Link) (ent.Value, error)
+// PortalOrderField defines the ordering field of Portal.
+type PortalOrderField struct {
+	// Value extracts the ordering value from the given Portal.
+	Value    func(*Portal) (ent.Value, error)
 	column   string // field or computed.
-	toTerm   func(...sql.OrderTermOption) link.OrderOption
-	toCursor func(*Link) Cursor
+	toTerm   func(...sql.OrderTermOption) portal.OrderOption
+	toCursor func(*Portal) Cursor
 }
 
-// LinkOrder defines the ordering of Link.
-type LinkOrder struct {
-	Direction OrderDirection  `json:"direction"`
-	Field     *LinkOrderField `json:"field"`
+// PortalOrder defines the ordering of Portal.
+type PortalOrder struct {
+	Direction OrderDirection    `json:"direction"`
+	Field     *PortalOrderField `json:"field"`
 }
 
-// DefaultLinkOrder is the default ordering of Link.
-var DefaultLinkOrder = &LinkOrder{
+// DefaultPortalOrder is the default ordering of Portal.
+var DefaultPortalOrder = &PortalOrder{
 	Direction: entgql.OrderDirectionAsc,
-	Field: &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.ID, nil
+	Field: &PortalOrderField{
+		Value: func(po *Portal) (ent.Value, error) {
+			return po.ID, nil
 		},
-		column: link.FieldID,
-		toTerm: link.ByID,
-		toCursor: func(l *Link) Cursor {
-			return Cursor{ID: l.ID}
+		column: portal.FieldID,
+		toTerm: portal.ByID,
+		toCursor: func(po *Portal) Cursor {
+			return Cursor{ID: po.ID}
 		},
 	},
 }
 
-// ToEdge converts Link into LinkEdge.
-func (l *Link) ToEdge(order *LinkOrder) *LinkEdge {
+// ToEdge converts Portal into PortalEdge.
+func (po *Portal) ToEdge(order *PortalOrder) *PortalEdge {
 	if order == nil {
-		order = DefaultLinkOrder
+		order = DefaultPortalOrder
 	}
-	return &LinkEdge{
-		Node:   l,
-		Cursor: order.Field.toCursor(l),
+	return &PortalEdge{
+		Node:   po,
+		Cursor: order.Field.toCursor(po),
 	}
 }
 

@@ -27,6 +27,7 @@ type UserQuery struct {
 	predicates            []predicate.User
 	withTomes             *TomeQuery
 	withActiveShells      *ShellQuery
+	withFKs               bool
 	modifiers             []func(*sql.Selector)
 	loadTotal             []func(context.Context, []*User) error
 	withNamedTomes        map[string]*TomeQuery
@@ -410,12 +411,16 @@ func (uq *UserQuery) prepareQuery(ctx context.Context) error {
 func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, error) {
 	var (
 		nodes       = []*User{}
+		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
 		loadedTypes = [2]bool{
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
 		}
 	)
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, user.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*User).scanValues(nil, columns)
 	}
