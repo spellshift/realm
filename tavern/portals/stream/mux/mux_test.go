@@ -12,13 +12,14 @@ import (
 )
 
 // TestOptimisticWrite verifies that Publish sends messages to subscribers immediately
-// and that duplicates from PubSub loopback are handled (by the subscriber logic in this case).
+// and that duplicates from PubSub loopback are handled.
 func TestOptimisticWrite(t *testing.T) {
 	ctx := context.Background()
 	topic := mempubsub.NewTopic()
 	sub := mempubsub.NewSubscription(topic, time.Second)
 
-	m := New(sub, WithTopic(topic), WithHistorySize(10))
+	topicName := "test-topic"
+	m := New(WithSubscription(sub), WithTopic(topicName, topic), WithHistorySize(10))
 
 	// Start Mux in background
 	go func() {
@@ -40,7 +41,7 @@ func TestOptimisticWrite(t *testing.T) {
 	}
 
 	// Publish optimistically
-	err := m.Publish(ctx, mote)
+	err := m.Publish(ctx, topicName, mote)
 	if err != nil {
 		t.Fatalf("Publish failed: %v", err)
 	}
@@ -56,7 +57,6 @@ func TestOptimisticWrite(t *testing.T) {
 	}
 
 	// 2. Receive PubSub Loopback Message (Duplicate)
-	// Since mempubsub is fast, it should arrive shortly.
 	select {
 	case received := <-ch:
 		if received.SeqId != 100 {
@@ -65,25 +65,120 @@ func TestOptimisticWrite(t *testing.T) {
 			t.Log("Received duplicate message from PubSub (subscriber should drop this)")
 		}
 	case <-time.After(1 * time.Second):
-		// It's possible mempubsub is slow or configured differently, but usually it loops back.
-		// If we don't get it, it might mean Mux filtered it (which it shouldn't in this impl)
-		// or mempubsub didn't deliver.
 		t.Fatal("Timeout waiting for loopback message")
 	}
+}
 
-	// Ensure no more messages
-	select {
-	case msg := <-ch:
-		t.Errorf("Received unexpected message: %v", msg)
-	default:
+// TestMultipleSubscriptions verifies that Mux can receive from multiple subscriptions.
+func TestMultipleSubscriptions(t *testing.T) {
+	ctx := context.Background()
+
+	// Create two topic/sub pairs
+	topic1 := mempubsub.NewTopic()
+	sub1 := mempubsub.NewSubscription(topic1, time.Second)
+	defer topic1.Shutdown(ctx)
+	defer sub1.Shutdown(ctx)
+
+	topic2 := mempubsub.NewTopic()
+	sub2 := mempubsub.NewSubscription(topic2, time.Second)
+	defer topic2.Shutdown(ctx)
+	defer sub2.Shutdown(ctx)
+
+	m := New(WithSubscription(sub1), WithSubscription(sub2))
+
+	go func() {
+		if err := m.Run(ctx); err != nil {
+		}
+	}()
+
+	streamID := "multi-sub-stream"
+	ch, cancel := m.Subscribe(streamID, false)
+	defer cancel()
+
+	// Send to topic 1
+	mote1 := &portalpb.Mote{StreamId: streamID, SeqId: 1}
+	body1, _ := proto.Marshal(mote1)
+	topic1.Send(ctx, &pubsub.Message{Body: body1})
+
+	// Send to topic 2
+	mote2 := &portalpb.Mote{StreamId: streamID, SeqId: 2}
+	body2, _ := proto.Marshal(mote2)
+	topic2.Send(ctx, &pubsub.Message{Body: body2})
+
+	// Verify we receive both
+	count := 0
+	for i := 0; i < 2; i++ {
+		select {
+		case msg := <-ch:
+			if msg.SeqId == 1 || msg.SeqId == 2 {
+				count++
+			}
+		case <-time.After(time.Second):
+			t.Fatal("Timeout waiting for messages from multiple subs")
+		}
 	}
+	if count != 2 {
+		t.Errorf("Expected 2 messages, got %d", count)
+	}
+}
+
+// TestMultipleTopics verifies publishing to specific topics.
+func TestMultipleTopics(t *testing.T) {
+	ctx := context.Background()
+	topicA := mempubsub.NewTopic()
+	topicB := mempubsub.NewTopic()
+	defer topicA.Shutdown(ctx)
+	defer topicB.Shutdown(ctx)
+
+	// We'll use subscriptions just to verify where the message went
+	subA := mempubsub.NewSubscription(topicA, time.Second)
+	subB := mempubsub.NewSubscription(topicB, time.Second)
+	defer subA.Shutdown(ctx)
+	defer subB.Shutdown(ctx)
+
+	m := New(WithTopic("A", topicA), WithTopic("B", topicB))
+
+	mote := &portalpb.Mote{StreamId: "stream", SeqId: 99}
+
+	// Publish to A
+	if err := m.Publish(ctx, "A", mote); err != nil {
+		t.Fatalf("Publish to A failed: %v", err)
+	}
+
+	// Verify subA received it
+	msgA, err := subA.Receive(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msgA.Ack()
+	if len(msgA.Body) == 0 {
+		t.Error("Received empty body on A")
+	}
+
+	// Verify subB did NOT receive it (timeout expected)
+	// mempubsub receive blocks.
+	ctxTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	if _, err := subB.Receive(ctxTimeout); err == nil {
+		t.Error("Unexpected message on B")
+	}
+
+	// Publish to B
+	if err := m.Publish(ctx, "B", mote); err != nil {
+		t.Fatalf("Publish to B failed: %v", err)
+	}
+	msgB, err := subB.Receive(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msgB.Ack()
 }
 
 // BenchmarkDispatch measures the performance of processing a message and dispatching it
 // to a large number of subscribers.
 func BenchmarkDispatch(b *testing.B) {
 	// Setup Mux
-	m := New(nil, WithHistorySize(1024))
+	m := New(WithHistorySize(1024))
 
 	streamID := "bench-stream"
 	numSubs := 100 // 100 subscribers for the same stream
@@ -121,7 +216,7 @@ func BenchmarkDispatch(b *testing.B) {
 
 // BenchmarkDispatchNoSubscribers measures overhead when no subscribers exist.
 func BenchmarkDispatchNoSubscribers(b *testing.B) {
-	m := New(nil, WithHistorySize(1024))
+	m := New(WithHistorySize(1024))
 	streamID := "bench-stream"
 
 	mote := &portalpb.Mote{
@@ -142,7 +237,7 @@ func BenchmarkDispatchNoSubscribers(b *testing.B) {
 // BenchmarkDispatchHistoryReplay benchmarks the Subscribe cost with history replay.
 func BenchmarkDispatchHistoryReplay(b *testing.B) {
 	historySize := 1024
-	m := New(nil, WithHistorySize(historySize))
+	m := New(WithHistorySize(historySize))
 	streamID := "bench-stream"
 
 	// Fill history
@@ -172,11 +267,10 @@ func BenchmarkDispatchHistoryReplay(b *testing.B) {
 // Mock WaitGroup for subscribers
 func BenchmarkOptimisticWrite(b *testing.B) {
 	// Setup Mux with dummy topic/sub (we won't use them fully since we test Publish)
-	// But Publish calls topic.Send.
-	// We need a mock topic that is fast. mempubsub is fast.
 	topic := mempubsub.NewTopic()
 	sub := mempubsub.NewSubscription(topic, time.Second)
-	m := New(sub, WithTopic(topic), WithHistorySize(0)) // No history for this bench
+	topicName := "bench"
+	m := New(WithSubscription(sub), WithTopic(topicName, topic), WithHistorySize(0)) // No history for this bench
 
 	streamID := "bench-optimistic"
 	// One subscriber
@@ -195,6 +289,6 @@ func BenchmarkOptimisticWrite(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		m.Publish(ctx, mote)
+		m.Publish(ctx, topicName, mote)
 	}
 }

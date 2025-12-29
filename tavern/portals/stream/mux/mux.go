@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"gocloud.dev/pubsub"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -22,8 +23,8 @@ type Subscriber struct {
 // Mux dispatches PubSub messages to dynamic stream subscribers.
 type Mux struct {
 	mu           sync.RWMutex
-	sub          *pubsub.Subscription
-	topic        *pubsub.Topic
+	subs         []*pubsub.Subscription
+	topics       map[string]*pubsub.Topic
 	subscribers  map[string][]Subscriber
 
 	// history is a global circular buffer of recent messages.
@@ -52,17 +53,24 @@ func WithBufferSize(size int) Option {
 	}
 }
 
-// WithTopic sets the PubSub topic for optimistic writes.
-func WithTopic(topic *pubsub.Topic) Option {
+// WithTopic adds a PubSub topic for optimistic writes with a given name.
+func WithTopic(name string, topic *pubsub.Topic) Option {
 	return func(m *Mux) {
-		m.topic = topic
+		m.topics[name] = topic
+	}
+}
+
+// WithSubscription adds a PubSub subscription to listen on.
+func WithSubscription(sub *pubsub.Subscription) Option {
+	return func(m *Mux) {
+		m.subs = append(m.subs, sub)
 	}
 }
 
 // New creates a new Mux.
-func New(sub *pubsub.Subscription, opts ...Option) *Mux {
+func New(opts ...Option) *Mux {
 	m := &Mux{
-		sub:         sub,
+		topics:      make(map[string]*pubsub.Topic),
 		subscribers: make(map[string][]Subscriber),
 		bufferSize:  defaultBufferSize,
 	}
@@ -113,6 +121,8 @@ func (m *Mux) Subscribe(streamID string, enableHistory bool) (<-chan *portalpb.M
 				// Remove by swapping with last
 				last := len(subs) - 1
 				subs[i] = subs[last]
+				// Avoid memory leak by zeroing the moved element
+				subs[last] = Subscriber{}
 				m.subscribers[streamID] = subs[:last]
 				close(ch)
 				if len(m.subscribers[streamID]) == 0 {
@@ -126,10 +136,11 @@ func (m *Mux) Subscribe(streamID string, enableHistory bool) (<-chan *portalpb.M
 	return ch, cancel
 }
 
-// Publish optimistically dispatches the mote to subscribers and then publishes it to the PubSub topic.
-func (m *Mux) Publish(ctx context.Context, mote *portalpb.Mote) error {
-	if m.topic == nil {
-		return fmt.Errorf("pubsub topic not configured")
+// Publish optimistically dispatches the mote to subscribers and then publishes it to the named PubSub topic.
+func (m *Mux) Publish(ctx context.Context, topicName string, mote *portalpb.Mote) error {
+	topic, ok := m.topics[topicName]
+	if !ok {
+		return fmt.Errorf("pubsub topic %q not found", topicName)
 	}
 
 	// 1. Optimistic dispatch (local)
@@ -141,10 +152,8 @@ func (m *Mux) Publish(ctx context.Context, mote *portalpb.Mote) error {
 		return fmt.Errorf("marshal failed: %w", err)
 	}
 
-	return m.topic.Send(ctx, &pubsub.Message{
+	return topic.Send(ctx, &pubsub.Message{
 		Body: body,
-		// In a real system we might add metadata like origin ID to help deduplication,
-		// but standard proto doesn't have it.
 	})
 }
 
@@ -153,24 +162,33 @@ func (m *Mux) DroppedCount() uint64 {
 	return m.droppedCount.Load()
 }
 
-// Run starts the dispatch loop. It blocks until context is done or error occurs.
+// Run starts the dispatch loop(s). It blocks until context is done or error occurs.
 func (m *Mux) Run(ctx context.Context) error {
-	for {
-		msg, err := m.sub.Receive(ctx)
-		if err != nil {
-			return err
-		}
+	g, ctx := errgroup.WithContext(ctx)
 
-		m.processMessage(msg)
-		msg.Ack()
+	for _, sub := range m.subs {
+		sub := sub // capture loop var
+		g.Go(func() error {
+			for {
+				msg, err := sub.Receive(ctx)
+				if err != nil {
+					return err
+				}
+
+				m.processMessage(msg)
+				msg.Ack()
+			}
+		})
 	}
+
+	return g.Wait()
 }
 
 // processMessage unmarshals the PubSub message and calls dispatch.
 func (m *Mux) processMessage(msg *pubsub.Message) {
 	var mote portalpb.Mote
 	if err := proto.Unmarshal(msg.Body, &mote); err != nil {
-		// In a real system we might log this error.
+		log.Printf("Mux: unmarshal failed: %v", err)
 		return
 	}
 	m.dispatch(&mote)
