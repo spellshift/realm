@@ -45,7 +45,8 @@ impl Transport for GRPC {
 
     fn new(config: TransportConfig) -> Result<Self> {
         // Rewrite scheme if needed (grpc:// -> http://, grpcs:// -> https://)
-        let callback = config.base_uri
+        let callback = config
+            .base_uri
             .replacen("grpcs://", "https://", 1)
             .replacen("grpc://", "http://", 1);
 

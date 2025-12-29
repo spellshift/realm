@@ -71,10 +71,7 @@ impl Transport for ActiveTransport {
                 return Err(anyhow!("DNS transport not enabled"));
             }
 
-            _ => Err(anyhow!(
-                "Unknown transport type: {}",
-                config.transport_type
-            )),
+            _ => Err(anyhow!("Unknown transport type: {}", config.transport_type)),
         }
     }
 

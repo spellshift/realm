@@ -311,7 +311,8 @@ impl Transport for HTTP {
 
     fn new(config: TransportConfig) -> Result<Self> {
         // Rewrite scheme if needed (http1:// -> http://, https1:// -> https://)
-        let callback = config.base_uri
+        let callback = config
+            .base_uri
             .replacen("https1://", "https://", 1)
             .replacen("http1://", "http://", 1);
 
