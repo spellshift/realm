@@ -22,20 +22,35 @@ type OrderedReader struct {
 	receiver        ReceiverFunc
 }
 
+// WithMaxBufferedMessages sets the maximum number of out-of-order messages to buffer.
+func WithMaxBufferedMessages(max int) func(*OrderedReader) {
+	return func(r *OrderedReader) {
+		r.maxBuffer = max
+	}
+}
+
+// WithStaleBufferTimeout sets the duration to wait for the next expected sequence ID before erroring if other messages are arriving.
+func WithStaleBufferTimeout(d time.Duration) func(*OrderedReader) {
+	return func(r *OrderedReader) {
+		r.staleTimeout = d
+	}
+}
+
 // NewOrderedReader creates a new OrderedReader.
 // maxBuffer limits the number of out-of-order messages to buffer.
 // staleTimeout is the duration to wait for the next expected sequence ID before erroring if other messages are arriving.
-func NewOrderedReader(receiver ReceiverFunc, maxBuffer int, staleTimeout time.Duration) *OrderedReader {
-	if maxBuffer <= 0 {
-		maxBuffer = 100 // Default sensible limit
-	}
-	return &OrderedReader{
+func NewOrderedReader(receiver ReceiverFunc, options ...func(*OrderedReader)) *OrderedReader {
+	reader := &OrderedReader{
 		nextSeqID:    0,
 		buffer:       make(map[uint64]*portalpb.Mote),
-		maxBuffer:    maxBuffer,
-		staleTimeout: staleTimeout,
+		maxBuffer:    1024,
+		staleTimeout: 5 * time.Second,
 		receiver:     receiver,
 	}
+	for _, opt := range options {
+		opt(reader)
+	}
+	return reader
 }
 
 // Read returns the next ordered Mote.
