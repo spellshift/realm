@@ -10,6 +10,16 @@ permalink: dev-guide/imix
 
 Imix in the main bot for Realm.
 
+## Agent protobuf
+
+In order to communicate agent state and configuration during the claimTask request the agent sends a protobuf containing various configuration options. If any are updated agent side they're now syncronsized with the server ensuring operators can track the state of their agents.
+
+In order to keep these configuration options in sync realm uses protobuf and code generation to ensure agent and server agree.
+
+If you need to update these fields start with the `tavern/internal/c2/proto/c2.proto` file.
+
+Once you've finished making your changes apply these changes across the project.
+
 ## Host Selector
 
 The host selector defined in `implants/lib/host_selector` allow imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.

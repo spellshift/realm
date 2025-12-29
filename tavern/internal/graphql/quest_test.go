@@ -47,11 +47,11 @@ func TestCreateQuest(t *testing.T) {
 	testBeacons := []*ent.Beacon{
 		graph.Beacon.Create().
 			SetHost(testHost).
-			SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+			SetTransport(c2pb.ActiveTransport_TRANSPORT_UNSPECIFIED).
 			SaveX(ctx),
 		graph.Beacon.Create().
 			SetHost(testHost).
-			SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+			SetTransport(c2pb.ActiveTransport_TRANSPORT_UNSPECIFIED).
 			SaveX(ctx),
 	}
 	testTome := graph.Tome.Create().
