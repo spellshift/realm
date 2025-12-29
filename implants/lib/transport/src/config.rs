@@ -4,8 +4,10 @@ use std::collections::HashMap;
 /// Transport configuration parsed from URI query parameters
 #[derive(Debug, Clone)]
 pub struct TransportConfig {
-    /// Full URI including query parameters (required)
-    pub uri: String,
+    /// Base URI without query parameters (required)
+    pub base_uri: String,
+    /// Transport type: "grpc", "http1", or "dns"
+    pub transport_type: String,
     /// Retry interval in seconds (universal parameter with default fallback)
     pub retry_interval: u64,
     /// Callback interval in seconds (universal parameter with default fallback)
@@ -14,7 +16,7 @@ pub struct TransportConfig {
     pub transport_specific: HashMap<String, String>,
 }
 
-/// Parse a transport URI into base URI and configuration
+/// Parse a transport URI into configuration
 ///
 /// # Example URIs
 /// - `grpc://c2.example.com:443?retry_interval=5&callback_interval=10&proxy_uri=http://proxy:8080&doh=cloudflare`
@@ -25,7 +27,7 @@ pub struct TransportConfig {
 /// - `retry_interval`: Universal parameter (defaults to 5)
 /// - `callback_interval`: Universal parameter (defaults to 5)
 /// - All other parameters go into `transport_specific` for transport-specific handling
-pub fn parse_transport_uri(uri: &str) -> Result<(String, TransportConfig)> {
+pub fn parse_transport_uri(uri: &str) -> Result<TransportConfig> {
     let parsed = url::Url::parse(uri)?;
 
     // Extract base URI (scheme + host + port + path, no query)
@@ -44,6 +46,14 @@ pub fn parse_transport_uri(uri: &str) -> Result<(String, TransportConfig)> {
             parsed.host_str().unwrap_or(""),
             parsed.path()
         )
+    };
+
+    // Determine transport type from scheme
+    let transport_type = match parsed.scheme() {
+        "http" | "https" | "grpc" | "grpcs" => "grpc",
+        "http1" | "https1" => "http1",
+        "dns" => "dns",
+        _ => return Err(anyhow!("Unknown transport scheme: {}", parsed.scheme())),
     };
 
     // Parse query parameters
@@ -78,15 +88,13 @@ pub fn parse_transport_uri(uri: &str) -> Result<(String, TransportConfig)> {
     let retry_interval = retry_interval.unwrap_or(5);
     let callback_interval = callback_interval.unwrap_or(5);
 
-    Ok((
+    Ok(TransportConfig {
         base_uri,
-        TransportConfig {
-            uri: uri.to_string(),
-            retry_interval,
-            callback_interval,
-            transport_specific,
-        },
-    ))
+        transport_type: transport_type.to_string(),
+        retry_interval,
+        callback_interval,
+        transport_specific,
+    })
 }
 
 #[cfg(test)]
@@ -96,9 +104,9 @@ mod tests {
     #[test]
     fn test_parse_complete_grpc_uri() {
         let uri = "grpc://example.com:443?retry_interval=10&callback_interval=20&proxy_uri=http://proxy:8080&doh=cloudflare";
-        let (base, config) = parse_transport_uri(uri).unwrap();
-        assert_eq!(base, "grpc://example.com:443");
-        assert_eq!(config.uri, uri);
+        let config = parse_transport_uri(uri).unwrap();
+        assert_eq!(config.base_uri, "grpc://example.com:443");
+        assert_eq!(config.transport_type, "grpc");
         assert_eq!(config.retry_interval, 10);
         assert_eq!(config.callback_interval, 20);
         assert_eq!(
@@ -114,9 +122,9 @@ mod tests {
     #[test]
     fn test_parse_with_defaults() {
         let uri = "http1://example.com";
-        let (base, config) = parse_transport_uri(uri).unwrap();
-        assert_eq!(base, "http1://example.com");
-        assert_eq!(config.uri, uri);
+        let config = parse_transport_uri(uri).unwrap();
+        assert_eq!(config.base_uri, "http1://example.com");
+        assert_eq!(config.transport_type, "http1");
         assert_eq!(config.retry_interval, 5);
         assert_eq!(config.callback_interval, 5);
         assert!(config.transport_specific.is_empty());
@@ -125,9 +133,9 @@ mod tests {
     #[test]
     fn test_parse_dns_uri() {
         let uri = "dns://8.8.8.8?retry_interval=5&callback_interval=10&domain=dnsc2.realm&type=txt";
-        let (base, config) = parse_transport_uri(uri).unwrap();
-        assert_eq!(base, "dns://8.8.8.8");
-        assert_eq!(config.uri, uri);
+        let config = parse_transport_uri(uri).unwrap();
+        assert_eq!(config.base_uri, "dns://8.8.8.8");
+        assert_eq!(config.transport_type, "dns");
         assert_eq!(config.retry_interval, 5);
         assert_eq!(config.callback_interval, 10);
         assert_eq!(

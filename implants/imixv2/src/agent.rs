@@ -133,7 +133,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
         // 2. Create new transport from config
         let callback_uri = self.get_callback_uri().await;
-        let (_base_uri, config) = transport::parse_transport_uri(&callback_uri)
+        let config = transport::parse_transport_uri(&callback_uri)
             .context("Failed to parse transport URI")?;
         let t = T::new(config).context("Failed to create on-demand transport")?;
 
@@ -291,7 +291,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         map.insert("callback_uri".to_string(), active_uri.clone());
 
         // Parse URI to extract retry_interval and proxy_uri
-        if let Ok((_base_uri, config)) = transport::parse_transport_uri(&active_uri) {
+        if let Ok(config) = transport::parse_transport_uri(&active_uri) {
             map.insert(
                 "retry_interval".to_string(),
                 config.retry_interval.to_string(),

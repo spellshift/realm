@@ -89,7 +89,7 @@ impl<T: Transport + 'static> Agent<T> {
      */
     pub async fn callback(&mut self) -> Result<()> {
         // Parse URI to create config
-        let (_base_uri, config) = transport::parse_transport_uri(&self.cfg.callback_uri)?;
+        let config = transport::parse_transport_uri(&self.cfg.callback_uri)?;
         self.t = T::new(config)?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;

@@ -17,9 +17,8 @@ fn parse_doh_provider(param: &str) -> Result<DohProvider> {
         "cloudflare" => Ok(DohProvider::Cloudflare),
         "google" => Ok(DohProvider::Google),
         "quad9" => Ok(DohProvider::Quad9),
-        url if url.starts_with("https://") => Ok(DohProvider::Custom(url.to_string())),
         _ => Err(anyhow!(
-            "Invalid DoH provider: {}. Use: cloudflare, google, quad9, or https://...",
+            "Invalid DoH provider: {}. Use: cloudflare, google, or quad9",
             param
         )),
     }
@@ -45,17 +44,16 @@ impl Transport for GRPC {
     }
 
     fn new(config: TransportConfig) -> Result<Self> {
-        // Parse the URI to get the base URI (stripping query parameters)
-        let (base_uri, _) = crate::parse_transport_uri(&config.uri)?;
-
         // Rewrite scheme if needed (grpc:// -> http://, grpcs:// -> https://)
-        let callback = base_uri
+        let callback = config.base_uri
             .replacen("grpcs://", "https://", 1)
             .replacen("grpc://", "http://", 1);
 
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
         // Parse DoH provider from transport_specific config
+        // transpose() converts Option<Result<T, E>> to Result<Option<T>, E>
+        // This allows us to handle the error case from parse_doh_provider without unwrapping
         let doh_provider = config
             .transport_specific
             .get("doh")

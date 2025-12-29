@@ -14,13 +14,11 @@ pub mod doh {
     use std::pin::Pin;
     use std::task::{Context, Poll};
 
-    #[allow(dead_code)]
     #[derive(Debug, Clone)]
     pub enum DohProvider {
         Cloudflare,
         Google,
         Quad9,
-        Custom(String),
     }
 
     impl DohProvider {
@@ -29,16 +27,6 @@ pub mod doh {
                 DohProvider::Cloudflare => Ok(ResolverConfig::cloudflare_https()),
                 DohProvider::Google => Ok(ResolverConfig::google_https()),
                 DohProvider::Quad9 => Ok(ResolverConfig::quad9_https()),
-                DohProvider::Custom(url) => {
-                    // For custom DoH endpoints, we would need to parse the URL and construct a config
-                    // For now, fall back to Cloudflare as a sensible default
-                    // TODO: Implement proper custom DoH URL parsing
-                    log::warn!(
-                        "Custom DoH endpoint support not yet implemented: {}. Using Cloudflare.",
-                        url
-                    );
-                    Ok(ResolverConfig::cloudflare_https())
-                }
             }
         }
     }

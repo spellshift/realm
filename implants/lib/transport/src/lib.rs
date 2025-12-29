@@ -44,31 +44,16 @@ impl Transport for ActiveTransport {
     }
 
     fn new(config: TransportConfig) -> Result<Self> {
-        // Parse URI to extract base_uri and update config if needed
-        let (base_uri, _parsed_config) = parse_transport_uri(&config.uri)?;
-
-        // Dispatch based on scheme
-        match base_uri.as_str() {
-            // 1. gRPC: Passthrough
-            s if s.starts_with("http://") || s.starts_with("https://") => {
+        // Dispatch based on transport_type from config
+        match config.transport_type.as_str() {
+            "grpc" => {
                 #[cfg(feature = "grpc")]
                 return Ok(ActiveTransport::Grpc(grpc::GRPC::new(config)?));
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
             }
 
-            // 2. gRPC: Rewrite (Order: longest match 'grpcs' first)
-            s if s.starts_with("grpc://") || s.starts_with("grpcs://") => {
-                #[cfg(feature = "grpc")]
-                {
-                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(config)?))
-                }
-                #[cfg(not(feature = "grpc"))]
-                return Err(anyhow!("gRPC transport not enabled"));
-            }
-
-            // 3. HTTP1: Rewrite
-            s if s.starts_with("http1://") || s.starts_with("https1://") => {
+            "http1" => {
                 #[cfg(feature = "http1")]
                 {
                     Ok(ActiveTransport::Http(http::HTTP::new(config)?))
@@ -77,8 +62,7 @@ impl Transport for ActiveTransport {
                 return Err(anyhow!("http1 transport not enabled"));
             }
 
-            // 4. DNS
-            s if s.starts_with("dns://") => {
+            "dns" => {
                 #[cfg(feature = "dns")]
                 {
                     Ok(ActiveTransport::Dns(dns::DNS::new(config)?))
@@ -87,7 +71,10 @@ impl Transport for ActiveTransport {
                 return Err(anyhow!("DNS transport not enabled"));
             }
 
-            _ => Err(anyhow!("Unknown transport type in URI: {}", base_uri)),
+            _ => Err(anyhow!(
+                "Unknown transport type: {}",
+                config.transport_type
+            )),
         }
     }
 
@@ -285,7 +272,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let config = parse_transport_uri(uri).expect("Failed to parse URI");
             let result = ActiveTransport::new(config);
 
             // 1. Assert strictly on the Variant type
@@ -307,7 +294,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let config = parse_transport_uri(uri).expect("Failed to parse URI");
             let result = ActiveTransport::new(config);
 
             assert!(
@@ -329,7 +316,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let config = parse_transport_uri(uri).expect("Failed to parse URI");
             let result = ActiveTransport::new(config);
 
             assert!(
@@ -350,7 +337,7 @@ mod tests {
             "http://foo?retry_interval=5&callback_interval=5",
         ];
         for uri in inputs {
-            let (_base_uri, config) = parse_transport_uri(uri).expect("Failed to parse URI");
+            let config = parse_transport_uri(uri).expect("Failed to parse URI");
             let result = ActiveTransport::new(config);
             assert!(
                 result.is_err(),
@@ -372,7 +359,7 @@ mod tests {
         for uri in inputs {
             // For invalid URIs, parse_transport_uri itself should fail
             let parse_result = parse_transport_uri(uri);
-            if let Ok((_base_uri, config)) = parse_result {
+            if let Ok(config) = parse_result {
                 let result = ActiveTransport::new(config);
                 assert!(
                     result.is_err(),
