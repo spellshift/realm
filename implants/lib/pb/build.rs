@@ -118,6 +118,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Ok(_) => println!("generated portal protos"),
     };
+    match tonic_build::configure()
+        .out_dir("./src/generated/")
+        .codec_path("crate::xchacha::ChachaCodec")
+        .build_client(false)
+        .build_server(false)
+        .compile(&["trace.proto"], &["../../../tavern/portals/proto/"])
+    {
+        Err(err) => {
+            println!("WARNING: Failed to compile portal protos: {}", err);
+            panic!("{}", err);
+        }
+        Ok(_) => println!("generated portal trace protos"),
+    };
 
     // Build C2 Protos
     match tonic_build::configure()

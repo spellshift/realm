@@ -10,5 +10,8 @@ pub mod dns {
 pub mod portal {
     include!("generated/portal.rs");
 }
+pub mod trace {
+    include!("generated/trace.rs");
+}
 pub mod config;
 pub mod xchacha;
