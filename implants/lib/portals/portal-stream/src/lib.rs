@@ -1,17 +1,17 @@
-pub mod reader;
 pub mod sequencer;
+pub mod reader;
 pub mod writer;
 
-pub use reader::{OrderedReader, ReaderError};
+pub use reader::OrderedReader;
 pub use sequencer::PayloadSequencer;
 pub use writer::OrderedWriter;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pb::portal::{mote::Payload, BytesPayloadKind, Mote};
-    use std::thread;
+    use pb::portal::{Mote, BytesPayloadKind, mote::Payload};
     use std::time::Duration;
+    use std::thread;
 
     fn make_mote(seq_id: u64) -> Mote {
         Mote {
@@ -94,7 +94,8 @@ mod tests {
 
     #[test]
     fn test_reader_timeout() {
-        let mut reader = OrderedReader::new().with_stale_buffer_timeout(Duration::from_millis(100));
+        let mut reader = OrderedReader::new()
+            .with_stale_buffer_timeout(Duration::from_millis(100));
 
         // 1 (gap)
         reader.process(make_mote(1)).unwrap();
@@ -104,15 +105,13 @@ mod tests {
         // Processing another packet (even if gap or duplicate) should trigger timeout check
         let err = reader.process(make_mote(2));
         assert!(err.is_err());
-        match err.unwrap_err() {
-            ReaderError::Timeout(seq) => assert_eq!(seq, 0),
-            _ => panic!("expected timeout error"),
-        }
+        assert_eq!(err.unwrap_err().to_string(), "stale stream: timeout waiting for seqID 0");
     }
 
     #[test]
     fn test_reader_check_timeout() {
-        let mut reader = OrderedReader::new().with_stale_buffer_timeout(Duration::from_millis(100));
+        let mut reader = OrderedReader::new()
+            .with_stale_buffer_timeout(Duration::from_millis(100));
 
         // 1 (gap)
         reader.process(make_mote(1)).unwrap();
@@ -125,17 +124,15 @@ mod tests {
 
     #[test]
     fn test_reader_buffer_limit() {
-        let mut reader = OrderedReader::new().with_max_buffered_messages(2);
+        let mut reader = OrderedReader::new()
+            .with_max_buffered_messages(2);
 
         reader.process(make_mote(2)).unwrap();
         reader.process(make_mote(3)).unwrap();
 
         let err = reader.process(make_mote(4));
         assert!(err.is_err());
-        match err.unwrap_err() {
-            ReaderError::BufferLimitExceeded => {}
-            _ => panic!("expected buffer limit error"),
-        }
+        assert_eq!(err.unwrap_err().to_string(), "stale stream: buffer limit exceeded");
     }
 
     #[test]

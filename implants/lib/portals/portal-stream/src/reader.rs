@@ -1,17 +1,7 @@
+use anyhow::{anyhow, Result};
 use pb::portal::Mote;
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum ReaderError {
-    #[error("stale stream: timeout waiting for seqID {0}")]
-    Timeout(u64),
-    #[error("stale stream: buffer limit exceeded")]
-    BufferLimitExceeded,
-    #[error("receiver error: {0}")]
-    ReceiverError(String),
-}
 
 /// OrderedReader receives Motes and ensures they are read in order.
 pub struct OrderedReader {
@@ -51,7 +41,7 @@ impl OrderedReader {
     /// - Ok(Some(vec![...])): A list of ordered motes ready to be consumed.
     /// - Ok(None): The mote was buffered (gap detected) or dropped (duplicate).
     /// - Err(e): Buffer limit exceeded or stale timeout detected *during* processing.
-    pub fn process(&mut self, mote: Mote) -> Result<Option<Vec<Mote>>, ReaderError> {
+    pub fn process(&mut self, mote: Mote) -> Result<Option<Vec<Mote>>> {
         // Check for duplicate/old packet
         if mote.seq_id < self.next_seq_id {
             return Ok(None);
@@ -91,7 +81,7 @@ impl OrderedReader {
         }
 
         if self.buffer.len() > self.max_buffer {
-            return Err(ReaderError::BufferLimitExceeded);
+            return Err(anyhow!("stale stream: buffer limit exceeded"));
         }
 
         // We check timeout here as well, similar to Go implementation
@@ -101,11 +91,11 @@ impl OrderedReader {
     }
 
     /// Checks if the reader has stalled waiting for a packet.
-    pub fn check_timeout(&self) -> Result<(), ReaderError> {
+    pub fn check_timeout(&self) -> Result<()> {
         if !self.buffer.is_empty() {
             if let Some(start) = self.first_buffered_at {
                 if start.elapsed() > self.stale_timeout {
-                    return Err(ReaderError::Timeout(self.next_seq_id));
+                    return Err(anyhow!("stale stream: timeout waiting for seqID {}", self.next_seq_id));
                 }
             }
         }
