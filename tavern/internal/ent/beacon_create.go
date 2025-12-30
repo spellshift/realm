@@ -26,7 +26,6 @@ type BeaconCreate struct {
 	conflict []sql.ConflictOption
 }
 
-
 // SetCreatedAt sets the "created_at" field.
 func (bc *BeaconCreate) SetCreatedAt(t time.Time) *BeaconCreate {
 	bc.mutation.SetCreatedAt(t)
