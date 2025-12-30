@@ -53,9 +53,9 @@ func TestMux_InMemory(t *testing.T) {
 	}
 
 	// Verify History
-	m.histMu.RLock()
-	hist, ok := m.hist[topicID]
-	m.histMu.RUnlock()
+	m.history.RLock()
+	hist, ok := m.history.buffers[topicID]
+	m.history.RUnlock()
 	require.True(t, ok)
 	assert.Equal(t, 1, len(hist.Get()))
 
@@ -99,7 +99,6 @@ func TestMux_CreatePortal(t *testing.T) {
 	portals := client.Portal.Query().AllX(ctx)
 	require.Len(t, portals, 1)
 	p := portals[0]
-	// Check ClosedAt is zero (not closed)
 	if !p.ClosedAt.IsZero() {
 		assert.True(t, p.ClosedAt.IsZero(), "ClosedAt should be zero/nil")
 	}
@@ -175,19 +174,19 @@ func TestMux_OpenPortal(t *testing.T) {
 	teardown2, err := m.OpenPortal(ctx, portalID)
 	require.NoError(t, err)
 
-	m.activeSubs.Lock()
+	m.subMgr.Lock()
 	subName := m.SubName(topicOut)
-	assert.Equal(t, 2, m.subRefs[subName])
-	m.activeSubs.Unlock()
+	assert.Equal(t, 2, m.subMgr.refs[subName])
+	m.subMgr.Unlock()
 
 	teardown()
-	m.activeSubs.Lock()
-	assert.Equal(t, 1, m.subRefs[subName])
-	m.activeSubs.Unlock()
+	m.subMgr.Lock()
+	assert.Equal(t, 1, m.subMgr.refs[subName])
+	m.subMgr.Unlock()
 
 	teardown2()
-	m.activeSubs.Lock()
-	_, ok := m.active[subName]
+	m.subMgr.Lock()
+	_, ok := m.subMgr.active[subName]
 	assert.False(t, ok)
-	m.activeSubs.Unlock()
+	m.subMgr.Unlock()
 }

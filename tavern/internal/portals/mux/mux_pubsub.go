@@ -52,37 +52,60 @@ func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) 
 	return nil
 }
 
-// Subscribe creates a local subscription to the topic.
-func (m *Mux) Subscribe(topicID string) (<-chan *portalpb.Mote, func()) {
-	ch := make(chan *portalpb.Mote, 100) // Buffer size 100
+// SubOption defines an option for subscription.
+type SubOption func(*subOptions)
 
-	m.subscribers.Lock()
-	m.subs[topicID] = append(m.subs[topicID], ch)
-	m.subscribers.Unlock()
+type subOptions struct {
+	replayHistory bool
+}
+
+// WithHistoryReplay enables or disables history replay for a subscription.
+func WithHistoryReplay(replay bool) SubOption {
+	return func(o *subOptions) {
+		o.replayHistory = replay
+	}
+}
+
+// Subscribe creates a local subscription to the topic.
+func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mote, func()) {
+	options := subOptions{
+		replayHistory: true, // Default to true
+	}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	ch := make(chan *portalpb.Mote, m.subs.bufferSize)
+
+	m.subs.Lock()
+	m.subs.subs[topicID] = append(m.subs.subs[topicID], ch)
+	m.subs.Unlock()
 
 	// Replay history
-	m.histMu.RLock()
-	if buf, ok := m.hist[topicID]; ok {
-		msgs := buf.Get()
-		for _, msg := range msgs {
-			select {
-			case ch <- msg:
-			default:
-				slog.Warn("Subscriber channel full during history replay", "topic", topicID)
+	if options.replayHistory {
+		m.history.RLock()
+		if buf, ok := m.history.buffers[topicID]; ok {
+			msgs := buf.Get()
+			for _, msg := range msgs {
+				select {
+				case ch <- msg:
+				default:
+					slog.Warn("Subscriber channel full during history replay", "topic", topicID)
+				}
 			}
 		}
+		m.history.RUnlock()
 	}
-	m.histMu.RUnlock()
 
 	cancel := func() {
-		m.subscribers.Lock()
-		defer m.subscribers.Unlock()
+		m.subs.Lock()
+		defer m.subs.Unlock()
 
-		subs := m.subs[topicID]
+		subs := m.subs.subs[topicID]
 		for i, c := range subs {
 			if c == ch {
 				// Remove from slice
-				m.subs[topicID] = append(subs[:i], subs[i+1:]...)
+				m.subs.subs[topicID] = append(subs[:i], subs[i+1:]...)
 				close(ch)
 				break
 			}
@@ -94,29 +117,30 @@ func (m *Mux) Subscribe(topicID string) (<-chan *portalpb.Mote, func()) {
 
 // dispatch sends the message to all local subscribers.
 func (m *Mux) dispatch(topicID string, mote *portalpb.Mote) {
-	m.subscribers.RLock()
-	defer m.subscribers.RUnlock()
+	m.subs.RLock()
+	defer m.subs.RUnlock()
 
-	subs := m.subs[topicID]
+	subs := m.subs.subs[topicID]
 	for _, ch := range subs {
 		select {
 		case ch <- mote:
 		default:
 			// Drop message if subscriber is slow
 			slog.Warn("Dropping message for slow subscriber", "topic", topicID)
+			msgsDropped.WithLabelValues(topicID).Inc()
 		}
 	}
 }
 
 // addToHistory adds a message to the history buffer for the topic.
 func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
-	m.histMu.Lock()
-	defer m.histMu.Unlock()
+	m.history.Lock()
+	defer m.history.Unlock()
 
-	buf, ok := m.hist[topicID]
+	buf, ok := m.history.buffers[topicID]
 	if !ok {
-		buf = NewHistoryBuffer(m.historySize)
-		m.hist[topicID] = buf
+		buf = NewHistoryBuffer(m.history.size)
+		m.history.buffers[topicID] = buf
 	}
 	buf.Add(mote)
 }

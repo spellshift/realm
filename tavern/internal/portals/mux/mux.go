@@ -12,6 +12,8 @@ import (
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -30,11 +32,47 @@ var (
 		},
 		[]string{"topic"},
 	)
+	msgsDropped = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "mux_messages_dropped_total",
+			Help: "Total number of messages dropped due to full buffer",
+		},
+		[]string{"topic"},
+	)
 )
 
 func init() {
 	prometheus.MustRegister(msgsPublished)
 	prometheus.MustRegister(msgsReceived)
+	prometheus.MustRegister(msgsDropped)
+}
+
+// SubscriptionManager manages active PubSub subscriptions.
+type SubscriptionManager struct {
+	sync.RWMutex
+	active      map[string]*pubsub.Subscription
+	refs        map[string]int
+	cancelFuncs map[string]context.CancelFunc
+}
+
+// SubscriberRegistry manages local channel subscribers.
+type SubscriberRegistry struct {
+	sync.RWMutex
+	subs        map[string][]chan *portalpb.Mote
+	bufferSize  int
+}
+
+// TopicManager manages cached PubSub topics.
+type TopicManager struct {
+	sync.RWMutex
+	topics map[string]*pubsub.Topic
+}
+
+// HistoryManager manages message history buffers.
+type HistoryManager struct {
+	sync.RWMutex
+	buffers map[string]*HistoryBuffer
+	size    int
 }
 
 // Mux is the central router between the global PubSub mesh and local gRPC streams.
@@ -43,23 +81,11 @@ type Mux struct {
 	useInMem    bool
 	gcpClient   *gcppubsub.Client
 	projectID   string
-	historySize int
 
-	subscribers sync.RWMutex
-	subs        map[string][]chan *portalpb.Mote
-
-	activeSubs sync.RWMutex
-	active     map[string]*pubsub.Subscription
-	subRefs    map[string]int
-	// Store cancel functions for receive loops to manage lifecycle correctly
-	cancelFuncs map[string]context.CancelFunc
-
-	histMu sync.RWMutex
-	hist   map[string]*HistoryBuffer
-
-	// Cache for open topics
-	topicsMu sync.RWMutex
-	topics   map[string]*pubsub.Topic
+	subs    *SubscriberRegistry
+	subMgr  *SubscriptionManager
+	history *HistoryManager
+	topics  *TopicManager
 }
 
 // Option defines a functional option for Mux configuration.
@@ -68,7 +94,14 @@ type Option func(*Mux)
 // WithHistorySize sets the size of the history buffer for each topic.
 func WithHistorySize(size int) Option {
 	return func(m *Mux) {
-		m.historySize = size
+		m.history.size = size
+	}
+}
+
+// WithSubscriberBufferSize sets the buffer size for subscriber channels.
+func WithSubscriberBufferSize(size int) Option {
+	return func(m *Mux) {
+		m.subs.bufferSize = size
 	}
 }
 
@@ -93,14 +126,23 @@ func WithGCPDriver(projectID string, client *gcppubsub.Client) Option {
 // New creates a new Mux with the given options.
 func New(opts ...Option) *Mux {
 	m := &Mux{
-		serverID:    uuid.New().String(),
-		subs:        make(map[string][]chan *portalpb.Mote),
-		active:      make(map[string]*pubsub.Subscription),
-		subRefs:     make(map[string]int),
-		cancelFuncs: make(map[string]context.CancelFunc),
-		hist:        make(map[string]*HistoryBuffer),
-		topics:      make(map[string]*pubsub.Topic),
-		historySize: 100, // Default
+		serverID:  uuid.New().String(),
+		subs: &SubscriberRegistry{
+			subs:       make(map[string][]chan *portalpb.Mote),
+			bufferSize: 100, // Default
+		},
+		subMgr: &SubscriptionManager{
+			active:      make(map[string]*pubsub.Subscription),
+			refs:        make(map[string]int),
+			cancelFuncs: make(map[string]context.CancelFunc),
+		},
+		history: &HistoryManager{
+			buffers: make(map[string]*HistoryBuffer),
+			size:    100, // Default
+		},
+		topics: &TopicManager{
+			topics: make(map[string]*pubsub.Topic),
+		},
 	}
 
 	for _, opt := range opts {
@@ -145,17 +187,17 @@ func (m *Mux) SubURL(topicID, subID string) string {
 
 // getTopic returns a cached topic handle or opens a new one.
 func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, error) {
-	m.topicsMu.RLock()
-	t, ok := m.topics[topicID]
-	m.topicsMu.RUnlock()
+	m.topics.RLock()
+	t, ok := m.topics.topics[topicID]
+	m.topics.RUnlock()
 	if ok {
 		return t, nil
 	}
 
-	m.topicsMu.Lock()
-	defer m.topicsMu.Unlock()
+	m.topics.Lock()
+	defer m.topics.Unlock()
 	// Double check
-	if t, ok := m.topics[topicID]; ok {
+	if t, ok := m.topics.topics[topicID]; ok {
 		return t, nil
 	}
 
@@ -163,7 +205,7 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 	if err != nil {
 		return nil, err
 	}
-	m.topics[topicID] = t
+	m.topics.topics[topicID] = t
 	return t, nil
 }
 
@@ -186,6 +228,10 @@ func (m *Mux) ensureTopic(ctx context.Context, topicID string) error {
 	if !exists {
 		_, err = m.gcpClient.CreateTopic(ctx, topicID)
 		if err != nil {
+			// Check for AlreadyExists error to handle race conditions
+			if status.Code(err) == codes.AlreadyExists {
+				return nil
+			}
 			return fmt.Errorf("failed to create topic: %w", err)
 		}
 	}
@@ -217,6 +263,10 @@ func (m *Mux) ensureSub(ctx context.Context, topicID, subID string) error {
 		}
 		_, err = m.gcpClient.CreateSubscription(ctx, subID, cfg)
 		if err != nil {
+			// Check for AlreadyExists error to handle race conditions
+			if status.Code(err) == codes.AlreadyExists {
+				return nil
+			}
 			return fmt.Errorf("failed to create subscription: %w", err)
 		}
 	}
