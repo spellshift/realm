@@ -1070,8 +1070,8 @@ impl Transport for DNS {
         ))
     }
 
-    fn get_type(&mut self) -> beacon::Transport {
-        beacon::Transport::Dns
+    fn get_type(&mut self) -> pb::c2::active_transport::Type {
+        return pb::c2::active_transport::Type::TransportDns;
     }
 
     fn is_active(&self) -> bool {
@@ -1540,7 +1540,7 @@ mod tests {
     #[test]
     fn test_get_type() {
         let mut dns = DNS::init();
-        assert_eq!(dns.get_type(), beacon::Transport::Dns);
+        assert_eq!(dns.get_type(), active_transport::Type::TransportDns);
     }
 
     // ============================================================

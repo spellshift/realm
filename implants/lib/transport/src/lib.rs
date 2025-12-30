@@ -208,7 +208,7 @@ impl Transport for ActiveTransport {
         }
     }
 
-    fn get_type(&mut self) -> beacon::Transport {
+    fn get_type(&mut self) -> active_transport::Type {
         match self {
             #[cfg(feature = "grpc")]
             Self::Grpc(t) => t.get_type(),
@@ -218,7 +218,7 @@ impl Transport for ActiveTransport {
             Self::Dns(t) => t.get_type(),
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.get_type(),
-            Self::Empty => beacon::Transport::Unspecified,
+            Self::Empty => active_transport::Type::TransportUnspecified,
         }
     }
 

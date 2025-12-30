@@ -25,7 +25,11 @@ async fn test_imix_agent_get_callback_interval_error() {
 async fn test_imix_agent_get_callback_interval_success() {
     let mut config = Config::default();
     config.info = Some(pb::c2::Beacon {
-        interval: 10,
+        active_transport: Some(pb::c2::ActiveTransport {
+            uri: "http://example.com/callback".to_string(),
+            interval: 10,
+            ..Default::default()
+        }),
         ..Default::default()
     });
 

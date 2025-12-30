@@ -1,7 +1,7 @@
 use tonic::transport;
 use uuid::Uuid;
 
-use crate::c2::beacon::Transport;
+use crate::c2::ActiveTransport;
 
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -9,13 +9,13 @@ use crate::c2::beacon::Transport;
 pub struct Config {
     #[prost(message, optional, tag = "1")]
     pub info: ::core::option::Option<crate::c2::Beacon>,
-    #[prost(string, tag = "2")]
-    pub callback_uri: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "3")]
-    pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(uint64, tag = "4")]
-    pub retry_interval: u64,
-    #[prost(bool, tag = "5")]
+    // #[prost(string, tag = "2")]
+    // pub callback_uri: ::prost::alloc::string::String,
+    // #[prost(string, optional, tag = "3")]
+    // pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
+    // #[prost(uint64, tag = "4")]
+    // pub retry_interval: u64,
+    #[prost(bool, tag = "2")]
     pub run_once: bool,
 }
 
@@ -106,18 +106,17 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
-        #[cfg(feature = "dns")]
-        let transport = crate::c2::beacon::Transport::Dns;
-        #[cfg(feature = "http1")]
-        let transport = crate::c2::beacon::Transport::Http1;
-        #[cfg(feature = "grpc")]
-        let transport = crate::c2::beacon::Transport::Grpc;
-        #[cfg(not(any(feature = "dns", feature = "http1", feature = "grpc")))]
-        let transport = crate::c2::beacon::Transport::Unspecified;
+        let transport_type = match CALLBACK_URI.split(":").nth(0).unwrap_or("unspecified") {
+            "dns" => crate::c2::active_transport::Type::TransportDns,
+            "http1" => crate::c2::active_transport::Type::TransportHttp1,
+            "https1" => crate::c2::active_transport::Type::TransportHttp1,
+            "https" => crate::c2::active_transport::Type::TransportGrpc,
+            "http" => crate::c2::active_transport::Type::TransportGrpc,
+            _ => crate::c2::active_transport::Type::TransportUnspecified,
+        };
 
-        let info = crate::c2::Beacon {
-            identifier: beacon_id,
-            principal: whoami::username(),
+        let active_transport = ActiveTransport {
+            uri: String::from(CALLBACK_URI),
             interval: match CALLBACK_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
                 Err(_err) => {
@@ -127,26 +126,19 @@ impl Config {
                     5_u64
                 }
             },
-            transport: transport as i32,
+            r#type: transport_type as i32,
+        };
+
+        let info = crate::c2::Beacon {
+            identifier: beacon_id,
+            principal: whoami::username(),
+            active_transport: Some(active_transport),
             host: Some(host),
             agent: Some(agent),
         };
 
         Config {
             info: Some(info),
-            callback_uri: String::from(CALLBACK_URI),
-            proxy_uri: get_system_proxy(),
-            retry_interval: match RETRY_INTERVAL.parse::<u64>() {
-                Ok(i) => i,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!(
-                        "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
-                    );
-
-                    5
-                }
-            },
             run_once: RUN_ONCE,
         }
     }

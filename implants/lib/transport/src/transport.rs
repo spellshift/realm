@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pb::c2::{beacon, *};
+use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
 
 #[trait_variant::make(Transport: Send)]
@@ -80,7 +80,7 @@ pub trait UnsafeTransport: Clone + Send {
     ) -> Result<()>;
 
     #[allow(dead_code)]
-    fn get_type(&mut self) -> beacon::Transport;
+    fn get_type(&mut self) -> active_transport::Type;
     /// Returns true if the transport is fully initialized and active
     #[allow(dead_code)]
     fn is_active(&self) -> bool;

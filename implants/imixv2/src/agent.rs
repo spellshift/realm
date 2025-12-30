@@ -29,7 +29,15 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
-        let uri = config.callback_uri.clone();
+        //TODO: simplyify this section transport, callback_uris, active_uri_idx, and config seem to duplicate information.
+        let uri = config
+            .clone()
+            .info
+            .unwrap()
+            .active_transport
+            .unwrap()
+            .uri
+            .clone();
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
@@ -52,7 +60,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .info
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
-        Ok(info.interval)
+        let interval = info
+            .active_transport
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no active transport set"))?
+            .interval;
+
+        Ok(interval)
     }
 
     // Triggers config.refresh_primary_ip() in a write lock
@@ -109,8 +123,9 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             // Fallback, should not happen unless empty
             uris.first().cloned().unwrap_or_default()
         };
-        let cfg = self.config.read().await;
-        (callback_uri, cfg.proxy_uri.clone())
+        // let cfg = self.config.read().await;
+        //TODO: Re-add proxy URI via an "extra" field in config.
+        (callback_uri, None)
     }
 
     pub async fn rotate_callback_uri(&self) {
@@ -288,17 +303,38 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .map_err(|e: String| e)?;
 
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
+        let config = cfg.clone();
+
+        let info = config
+            .info
+            .as_ref()
+            .context("failed to get config info")
+            .map_err(|e| e.to_string())?;
+
+        let active_transport = info
+            .clone()
+            .active_transport
+            .context("failed to get active transport")
+            .map_err(|e| e.to_string())?;
+
         map.insert("callback_uri".to_string(), active_uri);
-        if let Some(proxy) = &cfg.proxy_uri {
-            map.insert("proxy_uri".to_string(), proxy.clone());
-        }
-        map.insert("retry_interval".to_string(), cfg.retry_interval.to_string());
+        // TODO: Re-add proxy URI via an "extra" field in config.
+        // if let Some(proxy) = &cfg.proxy_uri {
+        //     map.insert("proxy_uri".to_string(), proxy.clone());
+        // }
+        map.insert(
+            "retry_interval".to_string(),
+            active_transport.interval.to_string(),
+        );
         map.insert("run_once".to_string(), cfg.run_once.to_string());
 
         if let Some(info) = &cfg.info {
             map.insert("beacon_id".to_string(), info.identifier.clone());
             map.insert("principal".to_string(), info.principal.clone());
-            map.insert("interval".to_string(), info.interval.to_string());
+            map.insert(
+                "interval".to_string(),
+                active_transport.interval.to_string(),
+            );
             if let Some(host) = &info.host {
                 map.insert("hostname".to_string(), host.name.clone());
                 map.insert("platform".to_string(), host.platform.to_string());
@@ -355,8 +391,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = &mut cfg.info {
-                info.interval = interval;
+            if let Some(info) = &mut cfg.info
+                && let Some(active_transport) = &mut info.active_transport
+            {
+                active_transport.interval = interval;
             }
             Ok(())
         })

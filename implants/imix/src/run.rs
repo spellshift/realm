@@ -20,7 +20,16 @@ pub async fn handle_main() {
 
     loop {
         let cfg = Config::default_with_imix_verison(VERSION);
-        let retry_interval = cfg.retry_interval;
+        let retry_interval = if let Some(beacon) = cfg.info.as_ref() {
+            if let Some(transport) = &beacon.active_transport {
+                transport.interval
+            } else {
+                5
+            }
+        } else {
+            5
+        };
+
         #[cfg(debug_assertions)]
         log::info!("agent config initialized {:#?}", cfg.clone());
 
