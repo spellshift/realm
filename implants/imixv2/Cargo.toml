@@ -27,6 +27,7 @@ portal-stream = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
+prost = { workspace = true }
 crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/binary"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -20,28 +19,6 @@ import (
 )
 
 const maxStreamBufferedMessages = 1024
-
-func main() {
-	portalID := flag.Int64("portal_id", 0, "Portal ID")
-	listenAddr := flag.String("listen_addr", "127.0.0.1:1080", "SOCKS5 Listen Address")
-	upstreamAddr := flag.String("upstream_addr", "127.0.0.1:8000", "Upstream gRPC Address")
-	flag.Parse()
-
-	if *portalID == 0 {
-		log.Fatal("portal_id is required")
-	}
-
-	p := &Proxy{
-		portalID:     *portalID,
-		listenAddr:   *listenAddr,
-		upstreamAddr: *upstreamAddr,
-		streams:      make(map[string]chan *portalpb.Mote),
-	}
-
-	if err := p.Run(); err != nil {
-		log.Fatalf("Proxy failed: %v", err)
-	}
-}
 
 type Proxy struct {
 	portalID     int64
