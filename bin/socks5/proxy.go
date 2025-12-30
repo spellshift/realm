@@ -19,10 +19,12 @@ import (
 	"realm.pub/tavern/portals/stream"
 )
 
+const maxStreamBufferedMessages = 1024
+
 func main() {
 	portalID := flag.Int64("portal_id", 0, "Portal ID")
 	listenAddr := flag.String("listen_addr", "127.0.0.1:1080", "SOCKS5 Listen Address")
-	upstreamAddr := flag.String("upstream_addr", "127.0.0.1:8080", "Upstream gRPC Address")
+	upstreamAddr := flag.String("upstream_addr", "127.0.0.1:8000", "Upstream gRPC Address")
 	flag.Parse()
 
 	if *portalID == 0 {
@@ -51,6 +53,9 @@ type Proxy struct {
 
 	streamsMu sync.RWMutex
 	streams   map[string]chan *portalpb.Mote
+
+	listener net.Listener
+	wg       sync.WaitGroup
 }
 
 func (p *Proxy) Run() error {
@@ -76,6 +81,7 @@ func (p *Proxy) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", p.listenAddr, err)
 	}
+	p.listener = l
 	log.Printf("SOCKS5 Proxy listening on %s, upstream %s, portal %d", p.listenAddr, p.upstreamAddr, p.portalID)
 
 	for {
@@ -84,6 +90,7 @@ func (p *Proxy) Run() error {
 			log.Printf("Accept error: %v", err)
 			continue
 		}
+		p.wg.Add(1)
 		go p.handleConnection(c)
 	}
 }
@@ -109,7 +116,7 @@ func (p *Proxy) dispatchLoop() {
 			select {
 			case ch <- mote:
 			default:
-				// Buffer full, dropping to prevent blocking
+				log.Printf("Stream %s buffer full, dropping mote", mote.StreamId)
 			}
 		}
 	}
@@ -126,6 +133,7 @@ func (p *Proxy) sendMote(mote *portalpb.Mote) error {
 }
 
 func (p *Proxy) handleConnection(conn net.Conn) {
+	defer p.wg.Done()
 	defer conn.Close()
 
 	// SOCKS5 Handshake
@@ -141,7 +149,7 @@ func (p *Proxy) handleConnection(conn net.Conn) {
 
 	// Prepare Stream
 	streamID := uuid.New().String()
-	streamCh := make(chan *portalpb.Mote, 1024)
+	streamCh := make(chan *portalpb.Mote, maxStreamBufferedMessages)
 
 	p.streamsMu.Lock()
 	p.streams[streamID] = streamCh
@@ -176,7 +184,7 @@ func (p *Proxy) handleConnection(conn net.Conn) {
 	case 3: // UDP ASSOCIATE
 		p.handleUDP(ctx, cancel, conn, writer, reader)
 	default:
-		conn.Write([]byte{0x05, 0x07, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+		replyCommandNotSupported(conn)
 	}
 }
 
@@ -192,7 +200,7 @@ func (p *Proxy) handshake(conn net.Conn) error {
 	if _, err := io.ReadFull(conn, buf[:nMethods]); err != nil {
 		return err
 	}
-	_, err := conn.Write([]byte{0x05, 0x00})
+	_, err := replyHandshakeSuccess(conn)
 	return err
 }
 
@@ -229,7 +237,7 @@ func (p *Proxy) readRequest(conn net.Conn) (cmd byte, atyp byte, addr string, po
 		}
 		addr = net.IP(ip).String()
 	default:
-		conn.Write([]byte{0x05, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+		replyAddrTypeNotSupported(conn)
 		return 0, 0, "", 0, fmt.Errorf("unsupported atyp")
 	}
 
@@ -242,7 +250,7 @@ func (p *Proxy) readRequest(conn net.Conn) (cmd byte, atyp byte, addr string, po
 }
 
 func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader, dstAddr string, dstPort int) {
-	conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+	replySuccess(conn)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -296,7 +304,7 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader) {
 	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 0})
 	if err != nil {
-		conn.Write([]byte{0x05, 0x01, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+		replyGeneralFailure(conn)
 		return
 	}
 	defer udpConn.Close()
@@ -421,4 +429,26 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 	}()
 
 	wg.Wait()
+}
+
+// Helpers for SOCKS5 Replies
+
+func replyHandshakeSuccess(conn net.Conn) (int, error) {
+	return conn.Write([]byte{0x05, 0x00})
+}
+
+func replySuccess(conn net.Conn) (int, error) {
+	return conn.Write([]byte{0x05, 0x00, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+}
+
+func replyCommandNotSupported(conn net.Conn) (int, error) {
+	return conn.Write([]byte{0x05, 0x07, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+}
+
+func replyAddrTypeNotSupported(conn net.Conn) (int, error) {
+	return conn.Write([]byte{0x05, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+}
+
+func replyGeneralFailure(conn net.Conn) (int, error) {
+	return conn.Write([]byte{0x05, 0x01, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
 }
