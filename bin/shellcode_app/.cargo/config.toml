@@ -1,0 +1,11 @@
+[build]
+target = "x86_64-unknown-linux-gnu"
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "link-arg=-nostartfiles",
+    "-C", "link-arg=-static",
+    "-C", "link-arg=-Wl,--build-id=none",
+    "-C", "relocation-model=pic",
+    "-C", "code-model=small",
+]

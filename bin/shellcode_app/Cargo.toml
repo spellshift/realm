@@ -1,0 +1,19 @@
+[package]
+name = "shellcode_app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[profile.release]
+opt-level = "z"        # Optimize for size
+lto = true             # Enable Link Time Optimization
+codegen-units = 1      # Better optimization
+panic = "abort"        # Smaller panic handler
+strip = true           # Strip symbols
+
+[profile.dev]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
