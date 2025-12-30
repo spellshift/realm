@@ -11,26 +11,8 @@ import (
 )
 
 // CreatePortal sets up a new portal for a task.
-func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int, taskID int) (func(), error) {
-	topicIn := m.TopicIn(portalID)
-	topicOut := m.TopicOut(portalID)
-	subName := m.SubName(topicIn)
-
-	// 1. Provisioning
-	// Ensure topics exist
-	if err := m.ensureTopic(ctx, topicIn); err != nil {
-		return nil, fmt.Errorf("failed to ensure topic in: %w", err)
-	}
-	if err := m.ensureTopic(ctx, topicOut); err != nil {
-		return nil, fmt.Errorf("failed to ensure topic out: %w", err)
-	}
-
-	// Ensure subscription exists
-	if err := m.ensureSub(ctx, topicIn, subName); err != nil {
-		return nil, fmt.Errorf("failed to ensure subscription: %w", err)
-	}
-
-	// 2. DB: Create ent.Portal record (State: Open)
+func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) (int, func(), error) {
+	// 1. DB: Create ent.Portal record (State: Open)
 	// We need to fetch Task dependencies (Beacon, Owner/Creator) to satisfy Portal constraints.
 	t, err := client.Task.Query().
 		Where(task.ID(taskID)).
@@ -40,7 +22,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int
 		}).
 		Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query task %d: %w", taskID, err)
+		return 0, nil, fmt.Errorf("failed to query task %d: %w", taskID, err)
 	}
 
 	creator := t.Edges.Quest.Edges.Creator
@@ -59,7 +41,26 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int
 
 	p, err := pCreate.Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create portal record: %w", err)
+		return 0, nil, fmt.Errorf("failed to create portal record: %w", err)
+	}
+
+	portalID := p.ID
+	topicIn := m.TopicIn(portalID)
+	topicOut := m.TopicOut(portalID)
+	subName := m.SubName(topicIn)
+
+	// 2. Provisioning
+	// Ensure topics exist
+	if err := m.ensureTopic(ctx, topicIn); err != nil {
+		return portalID, nil, fmt.Errorf("failed to ensure topic in: %w", err)
+	}
+	if err := m.ensureTopic(ctx, topicOut); err != nil {
+		return portalID, nil, fmt.Errorf("failed to ensure topic out: %w", err)
+	}
+
+	// Ensure subscription exists
+	if err := m.ensureSub(ctx, topicIn, subName); err != nil {
+		return portalID, nil, fmt.Errorf("failed to ensure subscription: %w", err)
 	}
 
 	// 3. Connect
@@ -67,7 +68,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int
 	subURL := m.SubURL(topicIn, subName)
 	sub, err := pubsub.OpenSubscription(ctx, subURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
 	}
 
 	// Store in subMgr
@@ -80,7 +81,6 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int
 			cancel()
 		}
 		// We are overwriting, so we must assume the old one is invalid or we are restarting.
-		// NOTE: This assumes unique portals.
 		existingSub.Shutdown(context.Background())
 	}
 
@@ -119,5 +119,5 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int
 			Save(context.Background())
 	}
 
-	return teardown, nil
+	return portalID, teardown, nil
 }

@@ -90,9 +90,10 @@ func TestMux_CreatePortal(t *testing.T) {
 	quest := client.Quest.Create().SetName("testquest").SetParameters("").SetCreator(u).SetTome(tomeEnt).SaveX(ctx)
 	task := client.Task.Create().SetQuest(quest).SetBeacon(b).SaveX(ctx)
 
-	portalID := 123
-	teardown, err := m.CreatePortal(ctx, client, portalID, task.ID)
+	// Updated call
+	portalID, teardown, err := m.CreatePortal(ctx, client, task.ID)
 	require.NoError(t, err)
+	assert.NotZero(t, portalID)
 	defer teardown()
 
 	// Check DB
