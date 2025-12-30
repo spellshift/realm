@@ -30,14 +30,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
         //TODO: simplyify this section transport, callback_uris, active_uri_idx, and config seem to duplicate information.
-        let uri = config
-            .clone()
+        let c = config.clone();
+        let active_transport = c
             .info
-            .unwrap()
-            .active_transport
-            .unwrap()
-            .uri
-            .clone();
+            .as_ref()
+            .and_then(|info| info.active_transport.as_ref());
+        let uri = active_transport.map(|t| t.uri.clone()).unwrap_or_default();
+
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
