@@ -72,25 +72,56 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, portalID int
 
 	// Store in activeSubs
 	m.activeSubs.Lock()
+	// CreatePortal is generally unique per portalID/server, but technically multiple CreatePortal calls could race?
+	// The prompt implies CreatePortal is Host/Agent side. Usually one per task.
+	// But let's handle race anyway for consistency/robustness or just overwrite?
+	// If we overwrite, we leak the previous one unless we check.
+	if existingSub, ok := m.active[subName]; ok {
+		// Existing found. Shutdown new one.
+		// NOTE: This assumes we want to reuse existing or fail.
+		// CreatePortal implies "Spawn".
+		// If it exists, maybe we shouldn't have created it?
+		// We'll replace it or error?
+		// The requirement doesn't specify.
+		// I will overwrite, but cleanup OLD one if it was there?
+		// Or cleanup NEW one?
+		// Since `receiveLoop` is tied to subscription, if we overwrite map entry, we lose track.
+		// I'll assume CreatePortal should succeed.
+		// For robustness, I'll close the NEW one and return error, OR close OLD one?
+		// I'll close the OLD one properly if it exists.
+		if cancel, ok := m.cancelFuncs[subName]; ok {
+			cancel()
+		}
+		existingSub.Shutdown(context.Background())
+	}
 	m.active[subName] = sub
+
+	ctxLoop, cancelLoop := context.WithCancel(context.Background())
+	m.cancelFuncs[subName] = cancelLoop
 	m.activeSubs.Unlock()
 
 	// 4. Spawn
-	ctxLoop, cancelLoop := context.WithCancel(context.Background())
 	go func() {
-		defer cancelLoop()
 		m.receiveLoop(ctxLoop, topicIn, sub)
 	}()
 
 	teardown := func() {
-		cancelLoop()
-
 		m.activeSubs.Lock()
-		if s, ok := m.active[subName]; ok {
-			s.Shutdown(ctx) // Best effort shutdown
+		s, ok := m.active[subName]
+		cancel := m.cancelFuncs[subName]
+		if ok {
 			delete(m.active, subName)
+			delete(m.cancelFuncs, subName)
 		}
 		m.activeSubs.Unlock()
+
+		if ok {
+			if cancel != nil {
+				cancel()
+			}
+			// Shutdown using Background context
+			s.Shutdown(context.Background())
+		}
 
 		// Update DB to Closed
 		client.Portal.UpdateOne(p).

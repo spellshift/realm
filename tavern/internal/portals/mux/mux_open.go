@@ -19,13 +19,28 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 		m.activeSubs.Unlock()
 		return func() {
 			m.activeSubs.Lock()
-			defer m.activeSubs.Unlock()
 			m.subRefs[subName]--
+			shouldShutdown := false
+			var s *pubsub.Subscription
+			var cancel context.CancelFunc
 			if m.subRefs[subName] <= 0 {
-				if s, ok := m.active[subName]; ok {
-					s.Shutdown(context.Background())
+				if sub, ok := m.active[subName]; ok {
+					s = sub
+					cancel = m.cancelFuncs[subName]
 					delete(m.active, subName)
 					delete(m.subRefs, subName)
+					delete(m.cancelFuncs, subName)
+					shouldShutdown = true
+				}
+			}
+			m.activeSubs.Unlock()
+
+			if shouldShutdown {
+				if cancel != nil {
+					cancel()
+				}
+				if s != nil {
+					s.Shutdown(context.Background())
 				}
 			}
 		}, nil
@@ -47,28 +62,89 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	}
 
 	m.activeSubs.Lock()
+	// RACE CONDITION CHECK:
+	// Re-check cache in case another goroutine created it while we were provisioning/connecting
+	if existingSub, ok := m.active[subName]; ok {
+		// Another routine won the race. Use theirs.
+		m.subRefs[subName]++
+		m.activeSubs.Unlock()
+
+		// Close our unused subscription immediately
+		sub.Shutdown(context.Background())
+
+		// Return teardown for the EXISTING subscription
+		return func() {
+			m.activeSubs.Lock()
+			m.subRefs[subName]--
+			shouldShutdown := false
+			var s *pubsub.Subscription
+			var cancel context.CancelFunc
+			if m.subRefs[subName] <= 0 {
+				if sub, ok := m.active[subName]; ok {
+					s = sub
+					cancel = m.cancelFuncs[subName]
+					delete(m.active, subName)
+					delete(m.subRefs, subName)
+					delete(m.cancelFuncs, subName)
+					shouldShutdown = true
+				}
+			}
+			m.activeSubs.Unlock()
+
+			if shouldShutdown {
+				if cancel != nil {
+					cancel()
+				}
+				if existingSub != nil {
+					// We use existingSub here because we are in the closure of the raced call,
+					// but wait, `s` extracted from map IS `existingSub` (or whatever is current).
+					// Using `s` is safer.
+					s.Shutdown(context.Background())
+				}
+			}
+		}, nil
+	}
+
+	// We won the race (or are the first).
 	m.active[subName] = sub
 	m.subRefs[subName] = 1
+
+	// Prepare Loop Context
+	ctxLoop, cancelLoop := context.WithCancel(context.Background())
+	m.cancelFuncs[subName] = cancelLoop
+
 	m.activeSubs.Unlock()
 
 	// Spawn
-	ctxLoop, cancelLoop := context.WithCancel(context.Background())
 	go func() {
-		defer cancelLoop()
+		// No defer cancelLoop() here, controlled by teardown/map
 		m.receiveLoop(ctxLoop, topicOut, sub)
 	}()
 
 	teardown := func() {
-		cancelLoop()
-
 		m.activeSubs.Lock()
-		defer m.activeSubs.Unlock()
 		m.subRefs[subName]--
+		shouldShutdown := false
+		var s *pubsub.Subscription
+		var cancel context.CancelFunc
 		if m.subRefs[subName] <= 0 {
-			if s, ok := m.active[subName]; ok {
-				s.Shutdown(context.Background())
+			if sub, ok := m.active[subName]; ok {
+				s = sub
+				cancel = m.cancelFuncs[subName]
 				delete(m.active, subName)
 				delete(m.subRefs, subName)
+				delete(m.cancelFuncs, subName)
+				shouldShutdown = true
+			}
+		}
+		m.activeSubs.Unlock()
+
+		if shouldShutdown {
+			if cancel != nil {
+				cancel()
+			}
+			if s != nil {
+				s.Shutdown(context.Background())
 			}
 		}
 	}

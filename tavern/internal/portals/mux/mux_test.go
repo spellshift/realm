@@ -45,6 +45,7 @@ func TestMux_InMemory(t *testing.T) {
 	// Verify Receive
 	select {
 	case received := <-ch:
+		// proto messages might not compare equal due to internal fields, so we check content
 		require.NotNil(t, received.GetBytes())
 		assert.Equal(t, mote.GetBytes().Data, received.GetBytes().Data)
 	case <-time.After(time.Second):
@@ -52,9 +53,9 @@ func TestMux_InMemory(t *testing.T) {
 	}
 
 	// Verify History
-	m.history.RLock()
+	m.histMu.RLock()
 	hist, ok := m.hist[topicID]
-	m.history.RUnlock()
+	m.histMu.RUnlock()
 	require.True(t, ok)
 	assert.Equal(t, 1, len(hist.Get()))
 

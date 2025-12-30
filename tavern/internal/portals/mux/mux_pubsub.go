@@ -61,7 +61,7 @@ func (m *Mux) Subscribe(topicID string) (<-chan *portalpb.Mote, func()) {
 	m.subscribers.Unlock()
 
 	// Replay history
-	m.history.RLock()
+	m.histMu.RLock()
 	if buf, ok := m.hist[topicID]; ok {
 		msgs := buf.Get()
 		for _, msg := range msgs {
@@ -72,7 +72,7 @@ func (m *Mux) Subscribe(topicID string) (<-chan *portalpb.Mote, func()) {
 			}
 		}
 	}
-	m.history.RUnlock()
+	m.histMu.RUnlock()
 
 	cancel := func() {
 		m.subscribers.Lock()
@@ -110,8 +110,8 @@ func (m *Mux) dispatch(topicID string, mote *portalpb.Mote) {
 
 // addToHistory adds a message to the history buffer for the topic.
 func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
-	m.history.Lock()
-	defer m.history.Unlock()
+	m.histMu.Lock()
+	defer m.histMu.Unlock()
 
 	buf, ok := m.hist[topicID]
 	if !ok {
