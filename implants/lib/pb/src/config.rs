@@ -3,6 +3,8 @@ use uuid::Uuid;
 
 use crate::c2::ActiveTransport;
 
+//TODO: Migrate most of this into a config crate or as a part of the agent.
+
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
