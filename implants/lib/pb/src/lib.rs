@@ -7,5 +7,8 @@ pub mod c2 {
 pub mod dns {
     include!("generated/dns.rs");
 }
+pub mod portal {
+    include!("generated/portal.rs");
+}
 pub mod config;
 pub mod xchacha;
