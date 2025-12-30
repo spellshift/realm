@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
+	"realm.pub/tavern/portals/tracepb"
 )
 
 func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
@@ -84,6 +85,16 @@ func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_
 			continue
 		}
 
+		// TRACE: Server User Recv
+		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_RECV); err != nil {
+			slog.ErrorContext(ctx, "failed to add trace event (Server User Recv)", "error", err)
+		}
+
+		// TRACE: Server User Pub
+		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_PUB); err != nil {
+			slog.ErrorContext(ctx, "failed to add trace event (Server User Pub)", "error", err)
+		}
+
 		// Publish to portal input topic
 		if err := mux.Publish(ctx, portalInTopic, mote); err != nil {
 			slog.ErrorContext(ctx, "failed to publish mote to portal input topic",
@@ -100,6 +111,16 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 		case <-ctx.Done():
 			return
 		case mote := <-recv:
+			// TRACE: Server User Sub
+			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB); err != nil {
+				slog.ErrorContext(ctx, "failed to add trace event (Server User Sub)", "error", err)
+			}
+
+			// TRACE: Server User Send
+			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SEND); err != nil {
+				slog.ErrorContext(ctx, "failed to add trace event (Server User Send)", "error", err)
+			}
+
 			if err := gstream.Send(&portalpb.OpenPortalResponse{
 				Mote: mote,
 			}); err != nil {
