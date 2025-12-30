@@ -40,9 +40,17 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Channel for handler tasks to send outgoing motes back to main loop
     let (out_tx, mut out_rx) = mpsc::channel::<Mote>(100);
 
-    // Initial request to start the stream? No, creating the stream via transport does that.
-    // Usually we wait for server to send us something, or we send something.
-    // For a portal, typically the server initiates connections or sends data.
+    // Send initial registration message
+    if req_tx
+        .send(CreatePortalRequest {
+            task_id,
+            mote: None,
+        })
+        .await
+        .is_err()
+    {
+        return Err(anyhow::anyhow!("Failed to send initial portal registration"));
+    }
 
     loop {
         tokio::select! {
