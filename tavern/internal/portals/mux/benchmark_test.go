@@ -36,7 +36,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	require.NoError(b, err)
 	defer teardownCreate()
 
-	hostCh, cancelHostSub := m.Subscribe(m.TopicIn(portalID), WithHistoryReplay(false))
+	hostCh, cancelHostSub := m.Subscribe(m.TopicIn(portalID))
 	defer cancelHostSub()
 
 	// Client Side
@@ -44,7 +44,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	require.NoError(b, err)
 	defer teardownOpen()
 
-	clientCh, cancelClientSub := m.Subscribe(m.TopicOut(portalID), WithHistoryReplay(false))
+	clientCh, cancelClientSub := m.Subscribe(m.TopicOut(portalID))
 	defer cancelClientSub()
 
 	// Payload (64KB)
@@ -65,6 +65,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	b.SetBytes(int64(payloadSize * 2)) // Bidirectional throughput
 	b.ResetTimer()
 
+	// TODO: This fails if it runs long enough, we need to fix that. Seems like an OOM.
 	for i := 0; i < b.N; i++ {
 		// 1. Client sends to Host (TopicIn)
 		if err := m.Publish(ctx, m.TopicIn(portalID), mote); err != nil {

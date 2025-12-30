@@ -59,17 +59,17 @@ type subOptions struct {
 	replayHistory bool
 }
 
-// WithHistoryReplay enables or disables history replay for a subscription.
-func WithHistoryReplay(replay bool) SubOption {
+// WithHistoryReplay enables history replay for a subscription.
+func WithHistoryReplay() SubOption {
 	return func(o *subOptions) {
-		o.replayHistory = replay
+		o.replayHistory = true
 	}
 }
 
 // Subscribe creates a local subscription to the topic.
 func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mote, func()) {
 	options := subOptions{
-		replayHistory: true, // Default to true
+		replayHistory: false,
 	}
 	for _, opt := range opts {
 		opt(&options)
