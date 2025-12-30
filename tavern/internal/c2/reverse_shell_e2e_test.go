@@ -21,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/portals/mux"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -59,11 +60,12 @@ func TestReverseShell_E2E(t *testing.T) {
 
 	wsMux := stream.NewMux(pubInput, subOutput)
 	grpcMux := stream.NewMux(pubOutput, subInput)
+	portalMux := mux.New(mux.WithInMemoryDriver())
 
 	go wsMux.Start(ctx)
 	go grpcMux.Start(ctx)
 
-	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux))
+	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			t.Logf("Server exited with error: %v", err)

@@ -26,7 +26,7 @@ func TestMux_InMemory(t *testing.T) {
 	require.NoError(t, err)
 
 	// Subscribe first
-	ch, cancel := m.Subscribe(topicID)
+	ch, cancel := m.Subscribe(topicID, WithHistoryReplay())
 	defer cancel()
 
 	// Publish
@@ -60,7 +60,7 @@ func TestMux_InMemory(t *testing.T) {
 	assert.Equal(t, 1, len(hist.Get()))
 
 	// New subscriber should get history
-	ch2, cancel2 := m.Subscribe(topicID)
+	ch2, cancel2 := m.Subscribe(topicID, WithHistoryReplay())
 	defer cancel2()
 
 	select {
@@ -117,7 +117,7 @@ func TestMux_CreatePortal(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check if dispatched locally (simulate Agent listening)
-	ch, subCancel := m.Subscribe(topicIn)
+	ch, subCancel := m.Subscribe(topicIn, WithHistoryReplay())
 	defer subCancel()
 
 	// Wait for message (might be racey if dispatched before subscribe, but history should handle it)
@@ -160,7 +160,7 @@ func TestMux_OpenPortal(t *testing.T) {
 	require.NoError(t, err)
 
 	// Subscribe to verify
-	ch, subCancel := m.Subscribe(topicOut)
+	ch, subCancel := m.Subscribe(topicOut, WithHistoryReplay())
 	defer subCancel()
 
 	select {

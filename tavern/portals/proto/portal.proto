@@ -9,6 +9,7 @@ enum BytesPayloadKind {
     BYTES_PAYLOAD_KIND_UNSPECIFIED = 0;
     BYTES_PAYLOAD_KIND_DATA = 1;
     BYTES_PAYLOAD_KIND_PING = 2;
+    BYTES_PAYLOAD_KIND_KEEPALIVE = 3;
 }
 message BytesPayload {
     bytes data = 1;

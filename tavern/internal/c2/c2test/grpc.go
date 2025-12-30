@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/portals/mux"
 )
 
 func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
@@ -46,11 +47,12 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	grpcInSub, err := pubsub.OpenSubscription(ctx, subInput)
 	require.NoError(t, err)
 	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
+	portalMux := mux.New(mux.WithInMemoryDriver())
 
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

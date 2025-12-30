@@ -34,9 +34,12 @@ import (
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/portals"
+	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
+	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/tomes"
 
 	_ "realm.pub/tavern/internal/redirectors/dns"
@@ -238,6 +241,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		}
 	}()
 
+	// Configure Portal Mux
+	// TODO: Make this configurable / work with GCP
+	portalMux := mux.New()
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -269,9 +276,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
+		},
+		"/portal.Portal/": tavernhttp.Endpoint{
+			Handler: newPortalGRPCHandler(client, portalMux),
 		},
 		"/cdn/": tavernhttp.Endpoint{
 			Handler:              cdn.NewDownloadHandler(client, "/cdn/"),
@@ -492,14 +502,36 @@ func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
 	return publicKey, privateKey, nil
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
+func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
+	portalSrv := portals.New(graph, portalMux)
+	grpcSrv := grpc.NewServer(
+		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
+		grpc.StreamInterceptor(grpcWithStreamMetrics),
+	)
+	portalpb.RegisterPortalServer(grpcSrv, portalSrv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
+		}
+
+		grpcSrv.ServeHTTP(w, r)
+	})
+}
+
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
 	pub, priv, err := getKeyPair()
 	if err != nil {
 		panic(err)
 	}
 	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
-	c2srv := c2.New(client, grpcShellMux)
+	c2srv := c2.New(client, grpcShellMux, portalMux)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
