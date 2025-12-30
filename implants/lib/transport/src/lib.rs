@@ -208,7 +208,25 @@ impl Transport for ActiveTransport {
         }
     }
 
-    fn get_type(&mut self) -> active_transport::Type {
+    async fn create_portal(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        match self {
+            #[cfg(feature = "grpc")]
+            Self::Grpc(t) => t.create_portal(rx, tx).await,
+            #[cfg(feature = "http1")]
+            Self::Http(t) => t.create_portal(rx, tx).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.create_portal(rx, tx).await,
+            #[cfg(feature = "mock")]
+            Self::Mock(t) => t.create_portal(rx, tx).await,
+            Self::Empty => Err(anyhow!("Transport not initialized")),
+        }
+    }
+
+    fn get_type(&mut self) -> beacon::Transport {
         match self {
             #[cfg(feature = "grpc")]
             Self::Grpc(t) => t.get_type(),

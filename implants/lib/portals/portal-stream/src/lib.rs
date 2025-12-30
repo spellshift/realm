@@ -6,6 +6,17 @@ pub use reader::OrderedReader;
 pub use sequencer::PayloadSequencer;
 pub use writer::OrderedWriter;
 
+#[cfg(feature = "tokio")]
+use pb::portal::Mote;
+
+#[cfg(feature = "tokio")]
+impl OrderedWriter<tokio::sync::mpsc::Sender<Mote>> {
+    /// Helper to create a new OrderedWriter from a tokio Sender.
+    pub fn new_tokio(stream_id: impl Into<String>, sender: tokio::sync::mpsc::Sender<Mote>) -> Self {
+        Self::new(stream_id, sender)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

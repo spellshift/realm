@@ -19,6 +19,7 @@ pub use transport::{ActiveTransport, Transport};
 mod agent;
 mod assets;
 mod install;
+mod portal;
 mod run;
 mod shell;
 mod task;

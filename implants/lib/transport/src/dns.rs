@@ -1071,8 +1071,18 @@ impl Transport for DNS {
         ))
     }
 
-    fn get_type(&mut self) -> pb::c2::active_transport::Type {
-        return pb::c2::active_transport::Type::TransportDns;
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "create_portal not supported over DNS transport"
+        ))
+    }
+
+    fn get_type(&mut self) -> beacon::Transport {
+        beacon::Transport::Dns
     }
 
     fn is_active(&self) -> bool {
