@@ -22,6 +22,7 @@ impl SyncDispatcher for SetCallbackIntervalMessage {
                 "SetCallbackIntervalMessage: beacon is missing from config"
             )),
         }?;
+        // TODO: we can probably just modify the interval not rebuild the entire beacon see set_callback_uri.rs
         c.info = Some(Beacon {
             identifier: b.identifier,
             principal: b.principal,
@@ -34,6 +35,10 @@ impl SyncDispatcher for SetCallbackIntervalMessage {
                     .map_or(String::new(), |at| at.uri.clone()),
                 interval: self.new_interval,
                 r#type: transport.get_type() as i32,
+                extra: b
+                    .active_transport
+                    .as_ref()
+                    .map_or(String::new(), |at| at.extra.clone()),
             }),
         });
         Ok(c)

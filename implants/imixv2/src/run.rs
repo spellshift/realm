@@ -15,7 +15,7 @@ pub async fn run_agent() -> Result<()> {
     init_logger();
 
     // Load config / defaults
-    let config = Config::default_with_imix_verison(VERSION);
+    let config = Config::default_with_imix_version(VERSION);
     #[cfg(debug_assertions)]
     log::info!("Loaded config: {config:#?}");
 

@@ -90,7 +90,7 @@ pub const RUN_ONCE: bool = run_once!();
  * Config methods.
  */
 impl Config {
-    pub fn default_with_imix_verison(imix_version: &str) -> Self {
+    pub fn default_with_imix_version(imix_version: &str) -> Self {
         let agent = crate::c2::Agent {
             identifier: format!("imix-v{}", imix_version),
         };
@@ -129,6 +129,7 @@ impl Config {
                 }
             },
             r#type: transport_type as i32,
+            extra: String::from(""),
         };
 
         let info = crate::c2::Beacon {

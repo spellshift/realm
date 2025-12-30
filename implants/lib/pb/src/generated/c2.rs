@@ -15,6 +15,8 @@ pub struct ActiveTransport {
     pub interval: u64,
     #[prost(enumeration = "active_transport::Type", tag = "3")]
     pub r#type: i32,
+    #[prost(string, tag = "4")]
+    pub extra: ::prost::alloc::string::String,
 }
 /// Nested message and enum types in `ActiveTransport`.
 pub mod active_transport {

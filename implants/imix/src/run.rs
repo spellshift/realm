@@ -19,7 +19,7 @@ pub async fn handle_main() {
     }
 
     loop {
-        let cfg = Config::default_with_imix_verison(VERSION);
+        let cfg = Config::default_with_imix_version(VERSION);
         let retry_interval = if let Some(beacon) = cfg.info.as_ref() {
             if let Some(transport) = &beacon.active_transport {
                 transport.interval

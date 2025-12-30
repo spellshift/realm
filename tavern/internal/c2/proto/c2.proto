@@ -29,6 +29,7 @@ message ActiveTransport {
     }
 
     Type type = 3;
+    string extra = 4;
 }
 
 // Beacon information that is unique to the current running beacon.
