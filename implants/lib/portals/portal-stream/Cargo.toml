@@ -1,7 +1,8 @@
 [package]
 name = "portal-stream"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
-pb = { workspace = true }
+pb = { path = "../../pb" }
+thiserror = "1.0"
