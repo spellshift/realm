@@ -27,6 +27,7 @@ members = [
     "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/stdlib/migration",
     "lib/eldritchv2/eldritchv2",
+    "lib/portals/portal-stream",
 ]
 resolver = "2"
 
