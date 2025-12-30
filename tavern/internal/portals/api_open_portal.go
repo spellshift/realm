@@ -34,8 +34,8 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 	defer cleanup()
 
 	portalOutTopic := srv.mux.TopicOut(portalID)
-	portalOutSub := srv.mux.SubName(portalOutTopic)
-	recv, cleanup := srv.mux.Subscribe(portalOutSub)
+	// portalOutSub := srv.mux.SubName(portalOutTopic)
+	recv, cleanup := srv.mux.Subscribe(portalOutTopic)
 	defer cleanup()
 
 	// Start goroutine to subscribe to portal output and send to gRPC stream

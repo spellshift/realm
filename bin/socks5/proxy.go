@@ -59,7 +59,7 @@ type Proxy struct {
 }
 
 func (p *Proxy) Run() error {
-	conn, err := grpc.NewClient(p.upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(p.upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithWriteBufferSize(512*1024), grpc.WithReadBufferSize(512*1024))
 	if err != nil {
 		return fmt.Errorf("failed to connect to upstream: %w", err)
 	}
@@ -344,7 +344,9 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 			}
 			clientAddr.Store(addr)
 
-			if n < 3 { continue }
+			if n < 3 {
+				continue
+			}
 			pos := 3
 			atyp := buf[pos]
 			pos++
@@ -353,18 +355,26 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 
 			switch atyp {
 			case 1:
-				if n < pos+4+2 { continue }
+				if n < pos+4+2 {
+					continue
+				}
 				tAddr = net.IP(buf[pos : pos+4]).String()
 				pos += 4
 			case 3:
-				if n < pos+1 { continue }
+				if n < pos+1 {
+					continue
+				}
 				dlen := int(buf[pos])
 				pos++
-				if n < pos+dlen+2 { continue }
+				if n < pos+dlen+2 {
+					continue
+				}
 				tAddr = string(buf[pos : pos+dlen])
 				pos += dlen
 			case 4:
-				if n < pos+16+2 { continue }
+				if n < pos+16+2 {
+					continue
+				}
 				tAddr = net.IP(buf[pos : pos+16]).String()
 				pos += 16
 			default:

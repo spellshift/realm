@@ -35,8 +35,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	defer cleanup()
 
 	portalInTopic := srv.portalMux.TopicIn(portalID)
-	portalInSub := srv.portalMux.SubName(portalInTopic)
-	recv, cleanup := srv.portalMux.Subscribe(portalInSub)
+	// portalInSub := srv.portalMux.SubName(portalInTopic)
+	recv, cleanup := srv.portalMux.Subscribe(portalInTopic)
 	defer cleanup()
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
