@@ -49,7 +49,52 @@ func runTrace(upstreamAddr string, portalID int64, size int) {
 		log.Fatalf("Failed to open portal: %v", err)
 	}
 
-	// 1. Create TraceData
+	if err := sendTraceMote(stream, portalID, size); err != nil {
+		log.Fatalf("Failed to send trace mote: %v", err)
+	}
+	fmt.Println("Trace sent, waiting for echo...")
+
+	go func() {
+		t := time.NewTicker(30 * time.Second)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				fmt.Printf("No reply yet, sending another trace...")
+				if err := sendTraceMote(stream, portalID, size); err != nil {
+					log.Fatalf("Failed to resend trace mote: %v", err)
+				}
+				continue
+			}
+		}
+	}()
+
+	for {
+		resp, err := stream.Recv()
+		if err != nil {
+			log.Fatalf("Recv error: %v", err)
+		}
+		if resp.Mote == nil {
+			continue
+		}
+
+		// Check if it's our trace mote
+		if bm := resp.Mote.GetBytes(); bm != nil && bm.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_TRACE {
+			// 6. Add USER_RECV event (Proxy Read)
+			// Note: We modify the mote locally before parsing for the report
+			moteWithRecv, err := addTraceEvent(resp.Mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_USER_RECV)
+			if err != nil {
+				log.Fatalf("Failed to add USER_RECV event: %v", err)
+			}
+
+			printReport(moteWithRecv)
+			return
+		}
+	}
+}
+
+func sendTraceMote(stream portalpb.Portal_OpenPortalClient, portalID int64, size int) error {
 	traceData := &tracepb.TraceData{
 		StartMicros: time.Now().UTC().UnixMicro(),
 		Padding:     make([]byte, size),
@@ -86,31 +131,7 @@ func runTrace(upstreamAddr string, portalID int64, size int) {
 		log.Fatalf("Failed to send trace mote: %v", err)
 	}
 
-	fmt.Println("Trace sent, waiting for echo...")
-
-	// 5. Wait for Echo
-	for {
-		resp, err := stream.Recv()
-		if err != nil {
-			log.Fatalf("Recv error: %v", err)
-		}
-		if resp.Mote == nil {
-			continue
-		}
-
-		// Check if it's our trace mote
-		if bm := resp.Mote.GetBytes(); bm != nil && bm.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_TRACE {
-			// 6. Add USER_RECV event (Proxy Read)
-			// Note: We modify the mote locally before parsing for the report
-			moteWithRecv, err := addTraceEvent(resp.Mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_USER_RECV)
-			if err != nil {
-				log.Fatalf("Failed to add USER_RECV event: %v", err)
-			}
-
-			printReport(moteWithRecv)
-			return
-		}
-	}
+	return nil
 }
 
 func addTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) (*portalpb.Mote, error) {
