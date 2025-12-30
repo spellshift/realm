@@ -20,7 +20,10 @@ tokio = { workspace = true, features = [
     "macros",
     "sync",
     "time",
+    "net",
+    "io-util",
 ] }
+portal-stream = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
