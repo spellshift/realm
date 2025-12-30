@@ -3,7 +3,20 @@ name = "shellcode_app"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "shellcode_app"
+path = "src/main.rs"
+test = false  # Disable unit tests for the binary
+
+[features]
+default = []
+shellcode = []  # Feature flag for shellcode build mode
+
 [dependencies]
+
+[dev-dependencies]
+libc = "0.2"
+tempfile = "3.0"
 
 [profile.release]
 opt-level = "z"        # Optimize for size

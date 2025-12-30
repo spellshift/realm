@@ -1,6 +1,7 @@
-#![no_std]
-#![no_main]
+#![cfg_attr(feature = "shellcode", no_std)]
+#![cfg_attr(feature = "shellcode", no_main)]
 
+#[cfg(feature = "shellcode")]
 use core::panic::PanicInfo;
 use core::arch::asm;
 
@@ -20,6 +21,7 @@ const S_IWUSR: u32 = 0o200;
 const S_IRGRP: u32 = 0o40;
 const S_IROTH: u32 = 0o4;
 
+#[cfg(feature = "shellcode")]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     unsafe {
@@ -59,6 +61,7 @@ unsafe fn syscall3(n: u64, arg1: u64, arg2: u64, arg3: u64) -> i64 {
 
 // String comparison function
 #[inline(always)]
+#[cfg(feature = "shellcode")]
 unsafe fn str_starts_with(haystack: *const u8, needle: &[u8]) -> bool {
     for i in 0..needle.len() {
         if *haystack.add(i) != needle[i] {
@@ -72,7 +75,8 @@ unsafe fn str_starts_with(haystack: *const u8, needle: &[u8]) -> bool {
 // Environment variable to look for
 const ENV_VAR_NAME: &[u8] = b"SHELLCODE_FILE_PATH=";
 
-// Entry point - expects environment pointer in rdi
+// Entry point for shellcode mode - expects environment pointer on stack
+#[cfg(feature = "shellcode")]
 #[no_mangle]
 #[link_section = ".text"]
 pub unsafe extern "C" fn _start() -> ! {
@@ -135,4 +139,30 @@ pub unsafe extern "C" fn _start() -> ! {
     // Exit with error code if we couldn't create the file
     syscall1(SYS_EXIT, 1);
     loop {}
+}
+
+// When not building as shellcode, provide a standard main function for testing
+#[cfg(not(feature = "shellcode"))]
+fn main() {
+    use std::env;
+    use std::ffi::CString;
+
+    // Get the environment variable
+    if let Ok(path) = env::var("SHELLCODE_FILE_PATH") {
+        let path_cstr = CString::new(path.as_bytes()).expect("Invalid path");
+
+        unsafe {
+            let flags = (O_CREAT | O_WRONLY | O_TRUNC) as u64;
+            let mode = (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) as u64;
+
+            let fd = syscall3(SYS_OPEN, path_cstr.as_ptr() as u64, flags, mode);
+
+            if fd >= 0 {
+                syscall1(SYS_CLOSE, fd as u64);
+                std::process::exit(0);
+            }
+        }
+    }
+
+    std::process::exit(1);
 }

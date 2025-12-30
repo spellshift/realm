@@ -3,7 +3,10 @@
 set -e
 
 echo "Building shellcode application..."
-cargo build --release
+
+# Build with special flags for position-independent shellcode
+RUSTFLAGS="-C link-arg=-nostartfiles -C link-arg=-static -C link-arg=-Wl,--build-id=none -C relocation-model=pic -C code-model=small" \
+    cargo build --release --bin shellcode_app --features shellcode
 
 echo ""
 echo "Build complete!"
