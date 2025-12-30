@@ -243,7 +243,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Configure Portal Mux
 	// TODO: Make this configurable / work with GCP
-	portalMux := mux.New()
+	portalMux := mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1024))
 
 	// Route Map
 	routes := tavernhttp.RouteMap{
@@ -507,6 +507,10 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
+		grpc.InitialConnWindowSize(512*1024),
+		grpc.InitialWindowSize(512*1024),
+		grpc.ReadBufferSize(512*1024),
+		grpc.WriteBufferSize(512*1024),
 	)
 	portalpb.RegisterPortalServer(grpcSrv, portalSrv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -539,6 +543,10 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 		grpc.ForceServerCodecV2(xchacha),
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
+		grpc.InitialConnWindowSize(512*1024),
+		grpc.InitialWindowSize(512*1024),
+		grpc.ReadBufferSize(512*1024),
+		grpc.WriteBufferSize(512*1024),
 	)
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,5 @@
+name: SOCKS5 Relay
+description: Open a relay on the agent which will forward traffic. Meant to be used with the (TODO NAME) SOCKS5 proxy which will tunnel your traffic over gRPC to the agent. In realm, we call this a Portal 🌀.
+author: kcarretto
+support_model: FIRST_PARTY
+tactic: EXECUTION

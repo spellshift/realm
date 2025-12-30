@@ -1,5 +1,5 @@
-use anyhow::{Result, Context};
-use pb::portal::{mote::Payload, Mote};
+use anyhow::{Context, Result};
+use pb::portal::{Mote, mote::Payload};
 use portal_stream::PayloadSequencer;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -23,12 +23,14 @@ pub async fn handle_tcp(
     #[cfg(debug_assertions)]
     log::debug!("Connecting TCP to {}", addr);
 
-    let stream = TcpStream::connect(&addr).await.context("Failed to connect TCP")?;
+    let stream = TcpStream::connect(&addr)
+        .await
+        .context("Failed to connect TCP")?;
     let (mut read_half, mut write_half) = tokio::io::split(stream);
 
     // If initial data exists, write it
     if !initial_data.is_empty() {
-         write_half.write_all(&initial_data).await?;
+        write_half.write_all(&initial_data).await?;
     }
 
     // Spawn reader task (Socket -> C2)
@@ -37,7 +39,7 @@ pub async fn handle_tcp(
     let dst_addr_clone = dst_addr.clone();
 
     let read_task = tokio::spawn(async move {
-        let mut buf = [0u8; 4096];
+        let mut buf = [0u8; 512 * 1024];
         loop {
             match read_half.read(&mut buf).await {
                 Ok(0) => break, // EOF
