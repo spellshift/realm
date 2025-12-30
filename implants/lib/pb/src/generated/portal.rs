@@ -75,6 +75,7 @@ pub enum BytesPayloadKind {
     Data = 1,
     Ping = 2,
     Keepalive = 3,
+    Trace = 4,
 }
 impl BytesPayloadKind {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -87,6 +88,7 @@ impl BytesPayloadKind {
             BytesPayloadKind::Data => "BYTES_PAYLOAD_KIND_DATA",
             BytesPayloadKind::Ping => "BYTES_PAYLOAD_KIND_PING",
             BytesPayloadKind::Keepalive => "BYTES_PAYLOAD_KIND_KEEPALIVE",
+            BytesPayloadKind::Trace => "BYTES_PAYLOAD_KIND_TRACE",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -96,6 +98,7 @@ impl BytesPayloadKind {
             "BYTES_PAYLOAD_KIND_DATA" => Some(Self::Data),
             "BYTES_PAYLOAD_KIND_PING" => Some(Self::Ping),
             "BYTES_PAYLOAD_KIND_KEEPALIVE" => Some(Self::Keepalive),
+            "BYTES_PAYLOAD_KIND_TRACE" => Some(Self::Trace),
             _ => None,
         }
     }
