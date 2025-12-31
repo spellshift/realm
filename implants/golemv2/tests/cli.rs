@@ -31,7 +31,7 @@ fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
     ));
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains(r#"Parser Error"#.to_string()));
+        .stderr(predicate::str::contains(r#"SyntaxError"#.to_string()));
 
     Ok(())
 }
