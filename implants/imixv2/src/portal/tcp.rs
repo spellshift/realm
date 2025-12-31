@@ -26,7 +26,7 @@ pub async fn handle_tcp(
     let stream = TcpStream::connect(&addr)
         .await
         .context("Failed to connect TCP")?;
-    let (mut read_half, mut write_half) = tokio::io::split(stream);
+    let (mut read_half, mut write_half) = stream.into_split();
 
     // If initial data exists, write it
     if !initial_data.is_empty() {
