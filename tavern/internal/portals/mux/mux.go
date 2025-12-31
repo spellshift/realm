@@ -58,8 +58,8 @@ type SubscriptionManager struct {
 // SubscriberRegistry manages local channel subscribers.
 type SubscriberRegistry struct {
 	sync.RWMutex
-	subs        map[string][]chan *portalpb.Mote
-	bufferSize  int
+	subs       map[string][]chan *portalpb.Mote
+	bufferSize int
 }
 
 // TopicManager manages cached PubSub topics.
@@ -77,10 +77,10 @@ type HistoryManager struct {
 
 // Mux is the central router between the global PubSub mesh and local gRPC streams.
 type Mux struct {
-	serverID    string
-	useInMem    bool
-	gcpClient   *gcppubsub.Client
-	projectID   string
+	serverID  string
+	useInMem  bool
+	gcpClient *gcppubsub.Client
+	projectID string
 
 	subs    *SubscriberRegistry
 	subMgr  *SubscriptionManager
@@ -126,10 +126,10 @@ func WithGCPDriver(projectID string, client *gcppubsub.Client) Option {
 // New creates a new Mux with the given options.
 func New(opts ...Option) *Mux {
 	m := &Mux{
-		serverID:  uuid.New().String(),
+		serverID: uuid.New().String(),
 		subs: &SubscriberRegistry{
 			subs:       make(map[string][]chan *portalpb.Mote),
-			bufferSize: 100, // Default
+			bufferSize: 1024, // Default
 		},
 		subMgr: &SubscriptionManager{
 			active:      make(map[string]*pubsub.Subscription),
@@ -138,7 +138,7 @@ func New(opts ...Option) *Mux {
 		},
 		history: &HistoryManager{
 			buffers: make(map[string]*HistoryBuffer),
-			size:    100, // Default
+			size:    1024, // Default
 		},
 		topics: &TopicManager{
 			topics: make(map[string]*pubsub.Topic),

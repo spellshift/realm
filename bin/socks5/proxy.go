@@ -18,7 +18,10 @@ import (
 	"realm.pub/tavern/portals/stream"
 )
 
-const maxStreamBufferedMessages = 1024
+const (
+	maxStreamBufferedMessages = 1024
+	maxReadBuffSize           = 512 * 1024 // 512 KB
+)
 
 type Proxy struct {
 	portalID     int64
@@ -153,7 +156,7 @@ func (p *Proxy) handleConnection(conn net.Conn) {
 		case <-ctx.Done():
 			return nil, io.EOF
 		}
-	})
+	}, stream.WithMaxBufferedMessages(maxStreamBufferedMessages))
 
 	switch cmd {
 	case 1: // CONNECT
@@ -236,7 +239,7 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 	go func() {
 		defer wg.Done()
 		defer cancel() // Cancel context when client disconnects
-		buf := make([]byte, 32*1024)
+		buf := make([]byte, maxReadBuffSize)
 		for {
 			n, err := conn.Read(buf)
 			if n > 0 {
