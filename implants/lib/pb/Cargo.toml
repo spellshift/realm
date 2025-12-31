@@ -28,6 +28,7 @@ bytes = { workspace = true }
 rand = { workspace = true }
 x25519-dalek = { workspace = true }
 lru = { workspace = true }
+tracing = "0.1"
 
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }

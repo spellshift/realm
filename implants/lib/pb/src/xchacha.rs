@@ -19,6 +19,7 @@ use tonic::{
     codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder},
     Status,
 };
+use tracing::instrument;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
 /* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY environment variable during compilation.
@@ -107,12 +108,14 @@ fn encrypt_into_vec(pt: &[u8], out: &mut Vec<u8>) -> Result<()> {
 
 // Optimized helper for encoding and encrypting directly into a buffer
 // Uses padding for alignment.
+#[instrument(level = "trace", skip(msg, buf), fields(encoded_len))]
 fn encode_encrypt_into_buf<T>(msg: &T, buf: &mut EncodeBuf<'_>) -> Result<()>
 where
     T: Message,
 {
     // Calculate total size to reserve
     let encoded_len = msg.encoded_len();
+    tracing::Span::current().record("encoded_len", encoded_len);
     let total_len = PUBKEY_LEN + NONCE_LEN + encoded_len + TAG_LEN;
 
     // Allocate with padding for alignment
@@ -159,6 +162,7 @@ where
 // Helper to decrypt in place within a mutable buffer.
 // Returns the length of the plaintext.
 // The plaintext will start at PUBKEY_LEN + NONCE_LEN in the buffer.
+#[instrument(level = "trace", skip(buf), fields(buf_len = buf.len()))]
 fn decrypt_in_place_buf(buf: &mut [u8]) -> Result<usize> {
     if buf.is_empty() {
         return Ok(0);
@@ -414,4 +418,13 @@ mod tests {
         }
         assert_eq!(key_history.len(), KEY_CACHE_SIZE);
     }
+}
+
+pub fn benchmark_kdf() {
+    let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
+    let rng = rand_chacha::ChaCha20Rng::from_entropy();
+    let client_secret = EphemeralSecret::random_from_rng(rng);
+    let client_public = PublicKey::from(&client_secret);
+    let shared_secret = client_secret.diffie_hellman(&server_public);
+    add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
 }
