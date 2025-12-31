@@ -592,3 +592,606 @@ pub mod c2_client {
         }
     }
 }
+/// Generated server implementations.
+pub mod c2_server {
+    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    use tonic::codegen::*;
+    /// Generated trait containing gRPC methods that should be implemented for use with C2Server.
+    #[async_trait]
+    pub trait C2: Send + Sync + 'static {
+        ///
+        /// Contact the server for new tasks to execute.
+        async fn claim_tasks(
+            &self,
+            request: tonic::Request<super::ClaimTasksRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ClaimTasksResponse>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the FetchAsset method.
+        type FetchAssetStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::FetchAssetResponse, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        ///
+        /// Fetch an asset from the server, returning one or more chunks of data.
+        /// The maximum size of these chunks is determined by the server.
+        /// The server should reply with two headers:
+        ///   - "sha3-256-checksum": A SHA3-256 digest of the entire file contents.
+        ///   - "file-size": The number of bytes contained by the file.
+        ///
+        /// If no associated file can be found, a NotFound status error is returned.
+        async fn fetch_asset(
+            &self,
+            request: tonic::Request<super::FetchAssetRequest>,
+        ) -> std::result::Result<tonic::Response<Self::FetchAssetStream>, tonic::Status>;
+        ///
+        /// Report a credential from the host to the server.
+        async fn report_credential(
+            &self,
+            request: tonic::Request<super::ReportCredentialRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportCredentialResponse>,
+            tonic::Status,
+        >;
+        ///
+        /// Report a file from the host to the server.
+        /// Providing content of the file is optional. If content is provided:
+        ///   - Hash will automatically be calculated and the provided hash will be ignored.
+        ///   - Size will automatically be calculated and the provided size will be ignored.
+        ///
+        /// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
+        /// Any existing files at the provided path for the host are replaced.
+        async fn report_file(
+            &self,
+            request: tonic::Request<tonic::Streaming<super::ReportFileRequest>>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportFileResponse>,
+            tonic::Status,
+        >;
+        ///
+        /// Report the active list of running processes. This list will replace any previously reported
+        /// lists for the same host.
+        async fn report_process_list(
+            &self,
+            request: tonic::Request<super::ReportProcessListRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportProcessListResponse>,
+            tonic::Status,
+        >;
+        ///
+        /// Report execution output for a task.
+        async fn report_task_output(
+            &self,
+            request: tonic::Request<super::ReportTaskOutputRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportTaskOutputResponse>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the ReverseShell method.
+        type ReverseShellStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::ReverseShellResponse, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        ///
+        /// Open a reverse shell bi-directional stream.
+        async fn reverse_shell(
+            &self,
+            request: tonic::Request<tonic::Streaming<super::ReverseShellRequest>>,
+        ) -> std::result::Result<
+            tonic::Response<Self::ReverseShellStream>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the CreatePortal method.
+        type CreatePortalStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::CreatePortalResponse, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        ///
+        /// Open a portal bi-directional stream.
+        async fn create_portal(
+            &self,
+            request: tonic::Request<tonic::Streaming<super::CreatePortalRequest>>,
+        ) -> std::result::Result<
+            tonic::Response<Self::CreatePortalStream>,
+            tonic::Status,
+        >;
+    }
+    #[derive(Debug)]
+    pub struct C2Server<T: C2> {
+        inner: _Inner<T>,
+        accept_compression_encodings: EnabledCompressionEncodings,
+        send_compression_encodings: EnabledCompressionEncodings,
+        max_decoding_message_size: Option<usize>,
+        max_encoding_message_size: Option<usize>,
+    }
+    struct _Inner<T>(Arc<T>);
+    impl<T: C2> C2Server<T> {
+        pub fn new(inner: T) -> Self {
+            Self::from_arc(Arc::new(inner))
+        }
+        pub fn from_arc(inner: Arc<T>) -> Self {
+            let inner = _Inner(inner);
+            Self {
+                inner,
+                accept_compression_encodings: Default::default(),
+                send_compression_encodings: Default::default(),
+                max_decoding_message_size: None,
+                max_encoding_message_size: None,
+            }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
+        where
+            F: tonic::service::Interceptor,
+        {
+            InterceptedService::new(Self::new(inner), interceptor)
+        }
+        /// Enable decompressing requests with the given encoding.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.accept_compression_encodings.enable(encoding);
+            self
+        }
+        /// Compress responses with the given encoding, if the client supports it.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.send_compression_encodings.enable(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.max_decoding_message_size = Some(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.max_encoding_message_size = Some(limit);
+            self
+        }
+    }
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for C2Server<T>
+    where
+        T: C2,
+        B: Body + Send + 'static,
+        B::Error: Into<StdError> + Send + 'static,
+    {
+        type Response = http::Response<tonic::body::BoxBody>;
+        type Error = std::convert::Infallible;
+        type Future = BoxFuture<Self::Response, Self::Error>;
+        fn poll_ready(
+            &mut self,
+            _cx: &mut Context<'_>,
+        ) -> Poll<std::result::Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+        fn call(&mut self, req: http::Request<B>) -> Self::Future {
+            let inner = self.inner.clone();
+            match req.uri().path() {
+                "/c2.C2/ClaimTasks" => {
+                    #[allow(non_camel_case_types)]
+                    struct ClaimTasksSvc<T: C2>(pub Arc<T>);
+                    impl<T: C2> tonic::server::UnaryService<super::ClaimTasksRequest>
+                    for ClaimTasksSvc<T> {
+                        type Response = super::ClaimTasksResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ClaimTasksRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::claim_tasks(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ClaimTasksSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/FetchAsset" => {
+                    #[allow(non_camel_case_types)]
+                    struct FetchAssetSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::ServerStreamingService<super::FetchAssetRequest>
+                    for FetchAssetSvc<T> {
+                        type Response = super::FetchAssetResponse;
+                        type ResponseStream = T::FetchAssetStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FetchAssetRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::fetch_asset(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = FetchAssetSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/ReportCredential" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReportCredentialSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::UnaryService<super::ReportCredentialRequest>
+                    for ReportCredentialSvc<T> {
+                        type Response = super::ReportCredentialResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ReportCredentialRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::report_credential(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReportCredentialSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/ReportFile" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReportFileSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::ClientStreamingService<super::ReportFileRequest>
+                    for ReportFileSvc<T> {
+                        type Response = super::ReportFileResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                tonic::Streaming<super::ReportFileRequest>,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::report_file(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReportFileSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.client_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/ReportProcessList" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReportProcessListSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::UnaryService<super::ReportProcessListRequest>
+                    for ReportProcessListSvc<T> {
+                        type Response = super::ReportProcessListResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ReportProcessListRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::report_process_list(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReportProcessListSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/ReportTaskOutput" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReportTaskOutputSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::UnaryService<super::ReportTaskOutputRequest>
+                    for ReportTaskOutputSvc<T> {
+                        type Response = super::ReportTaskOutputResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ReportTaskOutputRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::report_task_output(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReportTaskOutputSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/ReverseShell" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReverseShellSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::StreamingService<super::ReverseShellRequest>
+                    for ReverseShellSvc<T> {
+                        type Response = super::ReverseShellResponse;
+                        type ResponseStream = T::ReverseShellStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                tonic::Streaming<super::ReverseShellRequest>,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::reverse_shell(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReverseShellSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/c2.C2/CreatePortal" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreatePortalSvc<T: C2>(pub Arc<T>);
+                    impl<
+                        T: C2,
+                    > tonic::server::StreamingService<super::CreatePortalRequest>
+                    for CreatePortalSvc<T> {
+                        type Response = super::CreatePortalResponse;
+                        type ResponseStream = T::CreatePortalStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                tonic::Streaming<super::CreatePortalRequest>,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as C2>::create_portal(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = CreatePortalSvc(inner);
+                        let codec = crate::xchacha::ChachaCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                _ => {
+                    Box::pin(async move {
+                        Ok(
+                            http::Response::builder()
+                                .status(200)
+                                .header("grpc-status", "12")
+                                .header("content-type", "application/grpc")
+                                .body(empty_body())
+                                .unwrap(),
+                        )
+                    })
+                }
+            }
+        }
+    }
+    impl<T: C2> Clone for C2Server<T> {
+        fn clone(&self) -> Self {
+            let inner = self.inner.clone();
+            Self {
+                inner,
+                accept_compression_encodings: self.accept_compression_encodings,
+                send_compression_encodings: self.send_compression_encodings,
+                max_decoding_message_size: self.max_decoding_message_size,
+                max_encoding_message_size: self.max_encoding_message_size,
+            }
+        }
+    }
+    impl<T: C2> Clone for _Inner<T> {
+        fn clone(&self) -> Self {
+            Self(Arc::clone(&self.0))
+        }
+    }
+    impl<T: std::fmt::Debug> std::fmt::Debug for _Inner<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{:?}", self.0)
+        }
+    }
+    impl<T: C2> tonic::server::NamedService for C2Server<T> {
+        const NAME: &'static str = "c2.C2";
+    }
+}

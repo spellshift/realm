@@ -9,6 +9,7 @@ imix = []
 grpc = []
 http1 = []
 dns = []
+server = []
 
 
 [dependencies]

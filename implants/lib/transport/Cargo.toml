@@ -35,3 +35,17 @@ url = { workspace = true, optional = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+rand = "0.8"
+tokio-stream = { workspace = true, features = ["net"] }
+
+[dev-dependencies.pb]
+workspace = true
+features = ["server", "grpc"]
+
+[[bench]]
+name = "grpc_bench"
+harness = false
+required-features = ["grpc"] # This bench requires grpc
