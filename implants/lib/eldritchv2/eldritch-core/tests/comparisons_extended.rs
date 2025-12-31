@@ -43,8 +43,20 @@ fn test_mixed_comparisons_extended() {
 #[test]
 fn test_comparison_type_errors() {
     // Mismatched types
-    assert::fail("1 < \"a\"", "'<' not supported between instances of 'int' and 'string'");
-    assert::fail("\"a\" > 1", "'>' not supported between instances of 'string' and 'int'");
-    assert::fail("[1] <= 1", "'<=' not supported between instances of 'list' and 'int'");
-    assert::fail("1 >= [1]", "'>=' not supported between instances of 'int' and 'list'");
+    assert::fail(
+        "1 < \"a\"",
+        "'<' not supported between instances of 'int' and 'string'",
+    );
+    assert::fail(
+        "\"a\" > 1",
+        "'>' not supported between instances of 'string' and 'int'",
+    );
+    assert::fail(
+        "[1] <= 1",
+        "'<=' not supported between instances of 'list' and 'int'",
+    );
+    assert::fail(
+        "1 >= [1]",
+        "'>=' not supported between instances of 'int' and 'list'",
+    );
 }

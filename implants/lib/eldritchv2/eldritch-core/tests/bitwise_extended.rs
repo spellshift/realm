@@ -43,12 +43,24 @@ fn test_set_bitwise_errors() {
 #[test]
 fn test_dict_bitwise_errors() {
     // Only | is supported for dicts
-    assert::fail("{\"a\": 1} & {\"b\": 2}", "unsupported operand type(s) for &: 'dict' and 'dict'");
-    assert::fail("{\"a\": 1} ^ {\"b\": 2}", "unsupported operand type(s) for ^: 'dict' and 'dict'");
+    assert::fail(
+        "{\"a\": 1} & {\"b\": 2}",
+        "unsupported operand type(s) for &: 'dict' and 'dict'",
+    );
+    assert::fail(
+        "{\"a\": 1} ^ {\"b\": 2}",
+        "unsupported operand type(s) for ^: 'dict' and 'dict'",
+    );
 }
 
 #[test]
 fn test_bitwise_type_errors() {
-    assert::fail("1 & \"a\"", "unsupported operand type(s) for &: 'int' and 'string'");
-    assert::fail("\"a\" | 1", "unsupported operand type(s) for |: 'string' and 'int'");
+    assert::fail(
+        "1 & \"a\"",
+        "unsupported operand type(s) for &: 'int' and 'string'",
+    );
+    assert::fail(
+        "\"a\" | 1",
+        "unsupported operand type(s) for |: 'string' and 'int'",
+    );
 }

@@ -31,10 +31,28 @@ fn test_mixed_arithmetic_ops_extended() {
 #[test]
 fn test_arithmetic_type_errors() {
     // Unsupported operands
-    assert::fail("1 + \"a\"", "unsupported operand type(s) for +: 'int' and 'string'");
-    assert::fail("\"a\" - 1", "unsupported operand type(s) for -: 'string' and 'int'");
-    assert::fail("[1] / 2", "unsupported operand type(s) for /: 'list' and 'int'");
-    assert::fail("1 // [2]", "unsupported operand type(s) for //: 'int' and 'list'");
-    assert::fail("1 % [2]", "unsupported operand type(s) for %: 'int' and 'list'");
-    assert::fail("1.0 + \"a\"", "unsupported operand type(s) for +: 'float' and 'string'");
+    assert::fail(
+        "1 + \"a\"",
+        "unsupported operand type(s) for +: 'int' and 'string'",
+    );
+    assert::fail(
+        "\"a\" - 1",
+        "unsupported operand type(s) for -: 'string' and 'int'",
+    );
+    assert::fail(
+        "[1] / 2",
+        "unsupported operand type(s) for /: 'list' and 'int'",
+    );
+    assert::fail(
+        "1 // [2]",
+        "unsupported operand type(s) for //: 'int' and 'list'",
+    );
+    assert::fail(
+        "1 % [2]",
+        "unsupported operand type(s) for %: 'int' and 'list'",
+    );
+    assert::fail(
+        "1.0 + \"a\"",
+        "unsupported operand type(s) for +: 'float' and 'string'",
+    );
 }
