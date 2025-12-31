@@ -1,5 +1,4 @@
 use eldritch_core::{Interpreter, Value};
-mod assert;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -53,17 +52,20 @@ fn test_arithmetic_ops_edge_cases() {
     let res = interp.interpret(code);
     assert!(res.is_err());
 
-     let code = "1 * 'a'"; // Actually this might work if String * Int is supported?
-     // 1 * 'a' -> 'a' (Repetition)
-     // Let's check string repetition logic in arithmetic.rs
-     // Repetition handles String * Int and Int * String.
-     let res = interp.interpret(code);
-     assert_eq!(res.unwrap(), Value::String(alloc::string::String::from("a")));
+    let code = "1 * 'a'"; // Actually this might work if String * Int is supported?
+    // 1 * 'a' -> 'a' (Repetition)
+    // Let's check string repetition logic in arithmetic.rs
+    // Repetition handles String * Int and Int * String.
+    let res = interp.interpret(code);
+    assert_eq!(
+        res.unwrap(),
+        Value::String(alloc::string::String::from("a"))
+    );
 
-     // What about float repetition?
-     let code = "1.5 * 'a'";
-     let res = interp.interpret(code);
-     assert!(res.is_err()); // Float repetition not supported
+    // What about float repetition?
+    let code = "1.5 * 'a'";
+    let res = interp.interpret(code);
+    assert!(res.is_err()); // Float repetition not supported
 }
 
 #[test]
