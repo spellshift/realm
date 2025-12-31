@@ -34,56 +34,45 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		return nil, status.Errorf(codes.Internal, "failed to load host")
 	}
 
-	// 	Prepare Transaction
-	tx, err := srv.graph.Tx(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to initialize transaction: %v", err)
-	}
-	txGraph := tx.Client()
+	// Run Transaction
+	if err := transaction.Run(ctx, srv.graph, func(tx *ent.Tx) error {
+		txGraph := tx.Client()
 
-	// Rollback transaction if we panic
-	defer func() {
-		if v := recover(); v != nil {
-			tx.Rollback()
-			panic(v)
+		// Create Processes
+		builders := make([]*ent.HostProcessCreate, 0, len(req.List.List))
+		for _, proc := range req.List.List {
+			builders = append(builders,
+				txGraph.HostProcess.Create().
+					SetHostID(host.ID).
+					SetTaskID(task.ID).
+					SetPid(proc.Pid).
+					SetPpid(proc.Ppid).
+					SetName(proc.Name).
+					SetPrincipal(proc.Principal).
+					SetPath(proc.Path).
+					SetCmd(proc.Cmd).
+					SetEnv(proc.Env).
+					SetCwd(proc.Cwd).
+					SetStatus(proc.Status),
+			)
 		}
-	}()
+		processList, err := txGraph.HostProcess.CreateBulk(builders...).Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to create process list: %w", err)
+		}
 
-	// Create Processes
-	builders := make([]*ent.HostProcessCreate, 0, len(req.List.List))
-	for _, proc := range req.List.List {
-		builders = append(builders,
-			txGraph.HostProcess.Create().
-				SetHostID(host.ID).
-				SetTaskID(task.ID).
-				SetPid(proc.Pid).
-				SetPpid(proc.Ppid).
-				SetName(proc.Name).
-				SetPrincipal(proc.Principal).
-				SetPath(proc.Path).
-				SetCmd(proc.Cmd).
-				SetEnv(proc.Env).
-				SetCwd(proc.Cwd).
-				SetStatus(proc.Status),
-		)
-	}
-	processList, err := txGraph.HostProcess.CreateBulk(builders...).Save(ctx)
-	if err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to create process list: %w", err))
-	}
+		// Set new process list for host
+		_, err = txGraph.Host.UpdateOne(host).
+			ClearProcesses().
+			AddProcesses(processList...).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to set new host process list: %w", err)
+		}
 
-	// Set new process list for host
-	_, err = txGraph.Host.UpdateOne(host).
-		ClearProcesses().
-		AddProcesses(processList...).
-		Save(ctx)
-	if err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to set new host process list: %w", err))
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return &c2pb.ReportProcessListResponse{}, nil

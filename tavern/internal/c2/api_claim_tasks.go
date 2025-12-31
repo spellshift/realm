@@ -4,172 +4,35 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/c2/services/registration"
+	"realm.pub/tavern/internal/c2/services/transaction"
+	"realm.pub/tavern/internal/c2/validation"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/namegen"
 )
-
-var (
-	metricHostCallbacksTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "tavern_host_callbacks_total",
-			Help: "The total number of ClaimTasks gRPC calls, provided with host labeling",
-		},
-		[]string{"host_identifier", "host_groups", "host_services"},
-	)
-)
-
-func init() {
-	prometheus.MustRegister(metricHostCallbacksTotal)
-}
 
 func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) (*c2pb.ClaimTasksResponse, error) {
 	now := time.Now()
 	clientIP := GetClientIP(ctx)
 
 	// Validate input
-	if req.Beacon == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide beacon info")
-	}
-	if req.Beacon.Principal == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide beacon principal")
-	}
-	if req.Beacon.Host == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide beacon host info")
-	}
-	if req.Beacon.Host.Identifier == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide host identifier")
-	}
-	if req.Beacon.Host.Name == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide host name")
-	}
-	if req.Beacon.Agent == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide beacon agent info")
-	}
-	if req.Beacon.Agent.Identifier == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
+	if err := validation.ValidateBeaconRequest(req); err != nil {
+		return nil, err
 	}
 
-	// Upsert the host
-	hostID, err := srv.graph.Host.Create().
-		SetIdentifier(req.Beacon.Host.Identifier).
-		SetName(req.Beacon.Host.Name).
-		SetPlatform(req.Beacon.Host.Platform).
-		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
-		SetExternalIP(clientIP).
-		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
-		OnConflict().
-		UpdateNewValues().
-		ID(ctx)
+	// Upsert Host and Beacon (Registration)
+	regSvc := registration.New(srv.graph)
+	beaconID, _, err := regSvc.UpsertBeacon(ctx, req, clientIP)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
-	}
-
-	// Metrics
-	defer func() {
-		var hostGroupTags []string
-		var hostServiceTags []string
-		var tagNames []struct {
-			Name string
-			Kind string
-		}
-		err := srv.graph.Host.Query().
-			Where(host.ID(hostID)).
-			QueryTags().
-			Order(tag.ByKind()).
-			Select(tag.FieldName, tag.FieldKind).
-			Scan(ctx, &tagNames)
-		if err != nil {
-			slog.ErrorContext(ctx, "metrics failed to query host tags", "err", err, "host_id", hostID)
-		}
-		for _, t := range tagNames {
-			if t.Kind == string(tag.KindGroup) {
-				hostGroupTags = append(hostGroupTags, t.Name)
-			}
-			if t.Kind == string(tag.KindService) {
-				hostServiceTags = append(hostServiceTags, t.Name)
-			}
-		}
-		metricHostCallbacksTotal.
-			WithLabelValues(
-				req.Beacon.Host.Identifier,
-				strings.Join(hostGroupTags, ","),
-				strings.Join(hostServiceTags, ","),
-			).
-			Inc()
-	}()
-
-	// Generate name for new beacons
-	beaconExists, err := srv.graph.Beacon.Query().
-		Where(beacon.IdentifierEQ(req.Beacon.Identifier)).
-		Exist(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
-	}
-	var beaconNameAddr *string = nil
-	if !beaconExists {
-		candidateNames := []string{
-			namegen.NewSimple(),
-			namegen.New(),
-			namegen.NewComplex(),
-		}
-
-		collisions, err := srv.graph.Beacon.Query().
-			Where(beacon.NameIn(candidateNames...)).
-			All(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
-		}
-		if len(collisions) == 3 {
-			candidateNames := []string{
-				namegen.NewSimple(),
-				namegen.New(),
-				namegen.NewComplex(),
-			}
-
-			collisions, err = srv.graph.Beacon.Query().
-				Where(beacon.NameIn(candidateNames...)).
-				All(ctx)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
-			}
-		}
-		for _, canidate := range candidateNames {
-			if !namegen.IsCollision(collisions, canidate) {
-				beaconNameAddr = &canidate
-				break
-			}
-		}
-	}
-
-	// Upsert the beacon
-	beaconID, err := srv.graph.Beacon.Create().
-		SetPrincipal(req.Beacon.Principal).
-		SetIdentifier(req.Beacon.Identifier).
-		SetAgentIdentifier(req.Beacon.Agent.Identifier).
-		SetNillableName(beaconNameAddr).
-		SetHostID(hostID).
-		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
-		SetInterval(req.Beacon.Interval).
-		SetTransport(req.Beacon.Transport).
-		OnConflict().
-		UpdateNewValues().
-		ID(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
+		// Note: The service might return a wrapped error, we might want to check for specific errors or return internal.
+		return nil, status.Errorf(codes.Internal, "registration failed: %v", err)
 	}
 
 	// Load Tasks
@@ -183,37 +46,24 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.Internal, "failed to query tasks: %v", err)
 	}
 
-	// Prepare Transaction for Claiming Tasks
-	tx, err := srv.graph.Tx(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to initialize transaction: %v", err)
-	}
-	client := tx.Client()
+	var taskIDs []int
 
-	// Rollback transaction if we panic
-	defer func() {
-		if v := recover(); v != nil {
-			tx.Rollback()
-			panic(v)
+	// Perform Task Claiming in Transaction
+	if err := transaction.Run(ctx, srv.graph, func(tx *ent.Tx) error {
+		client := tx.Client()
+		taskIDs = make([]int, 0, len(tasks))
+		for _, t := range tasks {
+			_, err := client.Task.UpdateOne(t).
+				SetClaimedAt(now).
+				Save(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to update task %d: %w", t.ID, err)
+			}
+			taskIDs = append(taskIDs, t.ID)
 		}
-	}()
-
-	// Update all ClaimedAt timestamps to claim tasks
-	// ** Note: If one fails to update, we roll back the transaction and return the error
-	taskIDs := make([]int, 0, len(tasks))
-	for _, t := range tasks {
-		_, err := client.Task.UpdateOne(t).
-			SetClaimedAt(now).
-			Save(ctx)
-		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to update task %d: %w", t.ID, err))
-		}
-		taskIDs = append(taskIDs, t.ID)
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	// Load the tasks with our non transactional client (cannot use transaction after commit)
@@ -222,25 +72,25 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	for _, taskID := range taskIDs {
 		claimedTask, err := srv.graph.Task.Get(ctx, taskID)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load claimed task (but it was still claimed) %d: %w", taskID, err))
+			return nil, status.Errorf(codes.Internal, "failed to load claimed task (but it was still claimed) %d: %v", taskID, err)
 		}
 		claimedQuest, err := claimedTask.QueryQuest().Only(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load tome information for claimed task (id=%d): %w", taskID, err))
+			return nil, status.Errorf(codes.Internal, "failed to load tome information for claimed task (id=%d): %v", taskID, err)
 		}
 		claimedTome, err := claimedQuest.QueryTome().Only(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load tome information for claimed task (id=%d): %w", taskID, err))
+			return nil, status.Errorf(codes.Internal, "failed to load tome information for claimed task (id=%d): %v", taskID, err)
 		}
 		var params map[string]string
 		if claimedQuest.Parameters != "" {
 			if err := json.Unmarshal([]byte(claimedQuest.Parameters), &params); err != nil {
-				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
+				return nil, status.Errorf(codes.Internal, "failed to parse task parameters (id=%d,questID=%d): %v", taskID, claimedQuest.ID, err)
 			}
 		}
 		claimedFiles, err := claimedTome.QueryFiles().All(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load tome files (id=%d,tomeID=%d)", taskID, claimedTome.ID))
+			return nil, status.Errorf(codes.Internal, "failed to load tome files (id=%d,tomeID=%d)", taskID, claimedTome.ID)
 		}
 		claimedFileNames := make([]string, 0, len(claimedFiles))
 		for _, f := range claimedFiles {
