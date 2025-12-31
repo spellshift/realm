@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -108,10 +109,25 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 }
 
 func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, recv <-chan *portalpb.Mote) {
+	ticker := time.NewTicker(keepAlivePingInterval)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case <-ticker.C:
+			if err := gstream.Send(&c2pb.CreatePortalResponse{
+				Mote: &portalpb.Mote{
+					Payload: &portalpb.Mote_Bytes{
+						Bytes: &portalpb.BytesPayload{
+							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE,
+						},
+					},
+				},
+			}); err != nil {
+				slog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
+			}
 		case mote := <-recv:
 			// TRACE: Server Agent Sub
 			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
