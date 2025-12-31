@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/binary"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -19,29 +18,10 @@ import (
 	"realm.pub/tavern/portals/stream"
 )
 
-const maxStreamBufferedMessages = 1024
-
-func main() {
-	portalID := flag.Int64("portal_id", 0, "Portal ID")
-	listenAddr := flag.String("listen_addr", "127.0.0.1:1080", "SOCKS5 Listen Address")
-	upstreamAddr := flag.String("upstream_addr", "127.0.0.1:8000", "Upstream gRPC Address")
-	flag.Parse()
-
-	if *portalID == 0 {
-		log.Fatal("portal_id is required")
-	}
-
-	p := &Proxy{
-		portalID:     *portalID,
-		listenAddr:   *listenAddr,
-		upstreamAddr: *upstreamAddr,
-		streams:      make(map[string]chan *portalpb.Mote),
-	}
-
-	if err := p.Run(); err != nil {
-		log.Fatalf("Proxy failed: %v", err)
-	}
-}
+const (
+	maxStreamBufferedMessages = 1024
+	maxReadBuffSize           = 512 * 1024 // 512 KB
+)
 
 type Proxy struct {
 	portalID     int64
@@ -59,7 +39,7 @@ type Proxy struct {
 }
 
 func (p *Proxy) Run() error {
-	conn, err := grpc.NewClient(p.upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(p.upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithWriteBufferSize(512*1024), grpc.WithReadBufferSize(512*1024))
 	if err != nil {
 		return fmt.Errorf("failed to connect to upstream: %w", err)
 	}
@@ -176,7 +156,7 @@ func (p *Proxy) handleConnection(conn net.Conn) {
 		case <-ctx.Done():
 			return nil, io.EOF
 		}
-	})
+	}, stream.WithMaxBufferedMessages(maxStreamBufferedMessages))
 
 	switch cmd {
 	case 1: // CONNECT
@@ -259,7 +239,7 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 	go func() {
 		defer wg.Done()
 		defer cancel() // Cancel context when client disconnects
-		buf := make([]byte, 32*1024)
+		buf := make([]byte, maxReadBuffSize)
 		for {
 			n, err := conn.Read(buf)
 			if n > 0 {
@@ -344,7 +324,9 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 			}
 			clientAddr.Store(addr)
 
-			if n < 3 { continue }
+			if n < 3 {
+				continue
+			}
 			pos := 3
 			atyp := buf[pos]
 			pos++
@@ -353,18 +335,26 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 
 			switch atyp {
 			case 1:
-				if n < pos+4+2 { continue }
+				if n < pos+4+2 {
+					continue
+				}
 				tAddr = net.IP(buf[pos : pos+4]).String()
 				pos += 4
 			case 3:
-				if n < pos+1 { continue }
+				if n < pos+1 {
+					continue
+				}
 				dlen := int(buf[pos])
 				pos++
-				if n < pos+dlen+2 { continue }
+				if n < pos+dlen+2 {
+					continue
+				}
 				tAddr = string(buf[pos : pos+dlen])
 				pos += dlen
 			case 4:
-				if n < pos+16+2 { continue }
+				if n < pos+16+2 {
+					continue
+				}
 				tAddr = net.IP(buf[pos : pos+16]).String()
 				pos += 16
 			default:

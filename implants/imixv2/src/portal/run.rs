@@ -1,8 +1,11 @@
 use anyhow::Result;
 use pb::c2::{CreatePortalRequest, CreatePortalResponse};
-use pb::portal::{mote::Payload, Mote};
+use pb::portal::{BytesPayloadKind, mote::Payload, Mote};
+use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
+use prost::Message;
 use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
 
@@ -102,11 +105,26 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
 }
 
 async fn handle_incoming_mote(
-    mote: Mote,
+    mut mote: Mote,
     streams: &mut HashMap<String, StreamContext>,
     out_tx: &mpsc::Sender<Mote>,
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
 ) -> Result<()> {
+    // Handle Trace Mote
+    if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload {
+        if bytes_payload.kind == BytesPayloadKind::Trace as i32 {
+            // 1. Add Agent Recv Event
+            add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentRecv)?;
+
+            // 2. Add Agent Send Event
+            add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentSend)?;
+
+            // 3. Echo back immediately
+            out_tx.send(mote).await.map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
+            return Ok(());
+        }
+    }
+
     let stream_id = mote.stream_id.clone();
 
     // Get or create context
@@ -162,6 +180,21 @@ async fn handle_incoming_mote(
         }
     }
 
+    Ok(())
+}
+
+fn add_trace_event(data: &mut Vec<u8>, kind: TraceEventKind) -> Result<()> {
+    let mut trace_data = TraceData::decode(&data[..])?;
+    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_micros() as i64;
+
+    trace_data.events.push(TraceEvent {
+        kind: kind as i32,
+        timestamp_micros: timestamp,
+    });
+
+    let mut buf = Vec::new();
+    trace_data.encode(&mut buf)?;
+    *data = buf;
     Ok(())
 }
 

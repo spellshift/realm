@@ -9,8 +9,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
+	"realm.pub/tavern/portals/tracepb"
 )
 
 func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
@@ -36,8 +38,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	defer cleanup()
 
 	portalInTopic := srv.portalMux.TopicIn(portalID)
-	portalInSub := srv.portalMux.SubName(portalInTopic)
-	recv, cleanup := srv.portalMux.Subscribe(portalInSub)
+	// portalInSub := srv.portalMux.SubName(portalInTopic)
+	recv, cleanup := srv.portalMux.Subscribe(portalInTopic)
 	defer cleanup()
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
@@ -86,6 +88,16 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 			continue
 		}
 
+		// TRACE: Server Agent Recv
+		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
+			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
+		}
+
+		// TRACE: Server Agent Pub
+		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_PUB); err != nil {
+			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Pub)", "error", err)
+		}
+
 		// Publish to portal output topic
 		if err := mux.Publish(ctx, portalOutTopic, mote); err != nil {
 			slog.ErrorContext(ctx, "failed to publish mote to portal output topic",
@@ -117,6 +129,16 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 				slog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
 			}
 		case mote := <-recv:
+			// TRACE: Server Agent Sub
+			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
+				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
+			}
+
+			// TRACE: Server Agent Send
+			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SEND); err != nil {
+				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
+			}
+
 			if err := gstream.Send(&c2pb.CreatePortalResponse{
 				Mote: mote,
 			}); err != nil {
