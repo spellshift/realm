@@ -614,6 +614,7 @@ pub enum ExprKind {
         then_branch: Box<Expr>,
         else_branch: Box<Expr>,
     },
+    Error(String),
 }
 
 #[derive(Debug, Clone)]
@@ -634,4 +635,5 @@ pub enum StmtKind {
     Break,
     Continue,
     Pass,
+    Error(String),
 }

@@ -102,6 +102,9 @@ pub enum TokenKind {
     Indent,
     Dedent,
     Eof,
+
+    // Error
+    Error(String),
 }
 
 impl fmt::Display for TokenKind {
@@ -178,6 +181,7 @@ impl fmt::Display for TokenKind {
             TokenKind::Indent => write!(f, "indent"),
             TokenKind::Dedent => write!(f, "dedent"),
             TokenKind::Eof => write!(f, "EOF"),
+            TokenKind::Error(e) => write!(f, "Error: {}", e),
         }
     }
 }
