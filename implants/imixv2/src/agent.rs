@@ -236,11 +236,16 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.report_credential(req).await })
     }
 
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(
+        &self,
+        reqs: Vec<c2::ReportFileRequest>,
+    ) -> Result<c2::ReportFileResponse, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
+            for req in reqs {
+                tx.send(req)?;
+            }
             drop(tx);
             t.report_file(rx).await
         })

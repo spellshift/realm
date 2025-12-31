@@ -74,11 +74,52 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn report_file(&self, file: FileWrapper) -> Result<(), String> {
-        let req = c2::ReportFileRequest {
-            task_id: self.task_id,
-            chunk: Some(file.0),
-        };
-        self.agent.report_file(req).map(|_| ())
+        // We need to check if the file chunk is too large and split it if necessary.
+        // The FileWrapper contains a single `eldritch::File` which has `chunk: bytes`.
+        // If it's already in memory, we just split it.
+        let mut file_obj = file.0;
+        let content = std::mem::take(&mut file_obj.chunk);
+        let metadata_base = file_obj.metadata.take();
+
+        // 2MB chunk size
+        let chunk_size = 2 * 1024 * 1024;
+        let chunks: Vec<Vec<u8>> = content
+            .chunks(chunk_size)
+            .map(|chunk| chunk.to_vec())
+            .collect();
+
+        let mut reqs = Vec::new();
+        for (i, chunk) in chunks.into_iter().enumerate() {
+            // Include metadata only in the first chunk, if present
+            let metadata = if i == 0 {
+                metadata_base.clone()
+            } else {
+                None
+            };
+
+            let file_msg = pb::eldritch::File {
+                metadata,
+                chunk,
+            };
+
+            reqs.push(c2::ReportFileRequest {
+                task_id: self.task_id,
+                chunk: Some(file_msg),
+            });
+        }
+
+        if reqs.is_empty() {
+             let file_msg = pb::eldritch::File {
+                metadata: metadata_base,
+                chunk: Vec::new(),
+            };
+            reqs.push(c2::ReportFileRequest {
+                task_id: self.task_id,
+                chunk: Some(file_msg),
+            });
+        }
+
+        self.agent.report_file(reqs).map(|_| ())
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {

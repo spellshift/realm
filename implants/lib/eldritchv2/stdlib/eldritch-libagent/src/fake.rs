@@ -97,7 +97,10 @@ impl Agent for AgentFake {
     ) -> Result<c2::ReportCredentialResponse, String> {
         Ok(c2::ReportCredentialResponse::default())
     }
-    fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(
+        &self,
+        _req: Vec<c2::ReportFileRequest>,
+    ) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse::default())
     }
     fn report_process_list(
