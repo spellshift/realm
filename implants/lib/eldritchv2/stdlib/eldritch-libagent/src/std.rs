@@ -119,7 +119,7 @@ impl AgentLibrary for StdAgentLibrary {
             });
         }
 
-        self.agent.report_file(reqs).map(|_| ())
+        self.agent.report_file(alloc::boxed::Box::new(reqs.into_iter())).map(|_| ())
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {

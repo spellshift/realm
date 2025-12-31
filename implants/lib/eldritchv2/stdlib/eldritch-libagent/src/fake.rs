@@ -99,7 +99,7 @@ impl Agent for AgentFake {
     }
     fn report_file(
         &self,
-        _req: Vec<c2::ReportFileRequest>,
+        _req: alloc::boxed::Box<dyn Iterator<Item = c2::ReportFileRequest> + Send>,
     ) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse::default())
     }

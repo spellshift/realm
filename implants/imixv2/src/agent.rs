@@ -238,15 +238,22 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn report_file(
         &self,
-        reqs: Vec<c2::ReportFileRequest>,
+        reqs: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send>,
     ) -> Result<c2::ReportFileResponse, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
-            for req in reqs {
-                tx.send(req)?;
-            }
-            drop(tx);
+
+            // Spawn a thread to feed the channel so we don't block the async runtime
+            // while iterating (which might involve blocking file I/O from the source)
+            std::thread::spawn(move || {
+                for req in reqs {
+                    if tx.send(req).is_err() {
+                        break;
+                    }
+                }
+            });
+
             t.report_file(rx).await
         })
     }
