@@ -1,5 +1,5 @@
 use super::AssetsLibrary;
-use crate::RustEmbed;
+use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -8,67 +8,168 @@ use core::marker::PhantomData;
 use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
+use rust_embed;
+use std::collections::HashSet;
 use std::io::Write;
 
+// Trait for arbitrary backends to get and list assets.
+pub trait AssetBackend: Send + Sync + 'static {
+    fn get(&self, file_path: &str) -> Result<Vec<u8>>;
+    fn assets(&self) -> Vec<Cow<'static, str>>;
+}
+
+// An AssetBackend that returns nothing
 pub struct EmptyAssets;
 
-impl crate::RustEmbed for EmptyAssets {
-    fn get(_: &str) -> Option<rust_embed::EmbeddedFile> {
-        None
+impl AssetBackend for EmptyAssets {
+    fn get(&self, _: &str) -> Result<Vec<u8>> {
+        Ok(Vec::new())
     }
-    fn iter() -> impl Iterator<Item = alloc::borrow::Cow<'static, str>> {
-        alloc::vec::Vec::<alloc::string::String>::new()
-            .into_iter()
-            .map(alloc::borrow::Cow::from)
+    fn assets(&self) -> Vec<Cow<'static, str>> {
+        Vec::new()
     }
 }
 
-#[eldritch_library_impl(AssetsLibrary)]
-pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync + 'static> {
+// An AssetBackend that gets assets from a rust_embed::Embed
+pub struct EmbeddedAssets<T: rust_embed::Embed> {
+    _phantom: PhantomData<T>,
+}
+
+impl<T: rust_embed::Embed> EmbeddedAssets<T> {
+    pub fn new() -> Self {
+        // No arguments needed
+        Self {
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: rust_embed::Embed + Send + Sync + 'static> AssetBackend for EmbeddedAssets<T> {
+    fn get(&self, name: &str) -> Result<Vec<u8>> {
+        // T::get is a static method from the rust_embed::Embed trait
+        T::get(name)
+            .map(|file| file.data.to_vec())
+            .ok_or_else(|| anyhow::anyhow!("asset not found: {}", name))
+    }
+
+    fn assets(&self) -> Vec<Cow<'static, str>> {
+        // T::iter() returns an iterator of Cow<'static, str>
+        T::iter().collect()
+    }
+}
+
+// An AssetBackend that gets assets from an agent
+pub struct AgentAssets {
     pub agent: Arc<dyn Agent>,
     pub remote_assets: Vec<String>,
-    _phantom: PhantomData<A>,
 }
 
-impl<A: RustEmbed + Send + Sync + 'static> core::fmt::Debug for StdAssetsLibrary<A> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let assets: Vec<_> = A::iter().collect();
-        f.debug_struct("StdAssetsLibrary")
-            .field("remote_assets", &self.remote_assets)
-            .field("embedded_assets", &assets)
-            .finish()
-    }
-}
-
-impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
+impl AgentAssets {
     pub fn new(agent: Arc<dyn Agent>, remote_assets: Vec<String>) -> Self {
         Self {
             agent,
             remote_assets,
-            _phantom: PhantomData,
         }
     }
+}
 
-    fn read_binary_embedded(&self, src: &str) -> Result<Vec<u8>> {
-        if let Some(file) = A::get(src) {
-            Ok(file.data.to_vec())
-        } else {
-            Err(anyhow::anyhow!("Embedded file {src} not found."))
-        }
-    }
-
-    fn _read_binary(&self, name: &str) -> Result<Vec<u8>> {
+impl AssetBackend for AgentAssets {
+    fn get(&self, name: &str) -> Result<Vec<u8>> {
         if self.remote_assets.iter().any(|s| s == name) {
             let req = FetchAssetRequest {
                 name: name.to_string(),
             };
             return self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
         }
-        self.read_binary_embedded(name)
+        return Err(anyhow::anyhow!("asset not found: {}", name));
+    }
+
+    fn assets(&self) -> Vec<Cow<'static, str>> {
+        self.remote_assets
+            .iter()
+            .map(|s| Cow::Owned(s.clone()))
+            .collect()
     }
 }
 
-impl<A: RustEmbed + Send + Sync + 'static> AssetsLibrary for StdAssetsLibrary<A> {
+#[eldritch_library_impl(AssetsLibrary)]
+pub struct StdAssetsLibrary {
+    // Stores a vector of boxed trait objects for runtime polymorphism.
+    backends: Vec<Arc<dyn AssetBackend>>,
+    // Stores all asset names collected so far.
+    asset_names: HashSet<String>,
+}
+
+impl core::fmt::Debug for StdAssetsLibrary {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("StdAssetsLibrary").finish()
+    }
+}
+
+impl StdAssetsLibrary {
+    /// Initializes an empty library.
+    pub fn new() -> Self {
+        StdAssetsLibrary {
+            backends: Vec::new(),
+            asset_names: HashSet::new(),
+        }
+    }
+
+    /// Adds an AssetBackend to the library.
+    /// The order of addition determines the search precedence.
+    /// Asset name shadowing is forbidden
+    pub fn add(&mut self, backend: Arc<dyn AssetBackend>) -> anyhow::Result<()> {
+        // Make a hashset of the new asset names
+        let new_assets: HashSet<String> =
+            backend.assets().into_iter().map(Cow::into_owned).collect();
+        // See if any name overlap with existin assets
+        let colliding_names: Vec<&str> = self
+            .asset_names
+            .intersection(&new_assets)
+            .map(String::as_str)
+            .collect();
+
+        if colliding_names.len() > 0 {
+            let error_message = format!(
+                "asset collision detected. The following asset names already exist in the library: {}",
+                colliding_names.join(", ")
+            );
+            return Err(anyhow::Error::msg(error_message));
+        };
+        // Box the concrete type and store it as a trait object.
+        self.asset_names.extend(new_assets);
+        self.backends.push(backend);
+        Ok(())
+    }
+
+    /// Adds an AssetBackend to the library.
+    /// The order of addition determines the search precedence.
+    /// Asset name shadowing is allowed
+    pub fn add_shadow(&mut self, backend: Arc<dyn AssetBackend>) {
+        let assets = backend.assets();
+        // This converts the Cow to an owned String only if it isn't already owned.
+        self.asset_names
+            .extend(assets.iter().map(|c| c.to_string()));
+        self.backends.push(backend);
+    }
+
+    fn _read_binary(&self, name: &str) -> Result<Vec<u8>> {
+        // We have a hashmap of all the names, might as well use it
+        if !self.asset_names.contains(name) {
+            return Err(anyhow::anyhow!("asset not found: {}", name));
+        };
+        // Iterate through the boxed trait objects (maintaining precedence order)
+        for backend in &self.backends {
+            if let Ok(file) = backend.get(&name) {
+                // Return immediately upon the first match
+                return Ok(file);
+            }
+        }
+        Err(anyhow::anyhow!("asset not found: {}", name))
+    }
+}
+
+impl AssetsLibrary for StdAssetsLibrary {
     fn read_binary(&self, name: String) -> Result<Vec<u8>, String> {
         self._read_binary(&name).map_err(|e| e.to_string())
     }
@@ -86,14 +187,7 @@ impl<A: RustEmbed + Send + Sync + 'static> AssetsLibrary for StdAssetsLibrary<A>
     }
 
     fn list(&self) -> Result<Vec<String>, String> {
-        let mut files: Vec<String> = A::iter().map(|s| s.to_string()).collect();
-        // Append remote assets to the list if they are not already there
-        for remote in &self.remote_assets {
-            if !files.contains(remote) {
-                files.push(remote.clone());
-            }
-        }
-        Ok(files)
+        Ok(self.asset_names.iter().cloned().collect())
     }
 }
 
@@ -102,27 +196,15 @@ mod tests {
     use super::*;
     use alloc::collections::BTreeMap;
     use alloc::string::ToString;
+    use eldritch_agent::Agent;
     use pb::c2;
-    use std::borrow::Cow;
     use std::collections::BTreeSet;
     use std::sync::Mutex;
 
-    use crate::RustEmbed as LocalRustEmbed;
-    use rust_embed::RustEmbed as CrateRustEmbed;
-
     #[cfg(debug_assertions)]
-    #[derive(CrateRustEmbed)]
+    #[derive(rust_embed::Embed)]
     #[folder = "../../../../../bin/embedded_files_test"]
     pub struct TestAsset;
-
-    impl LocalRustEmbed for TestAsset {
-        fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile> {
-            <TestAsset as CrateRustEmbed>::get(file_path)
-        }
-        fn iter() -> impl Iterator<Item = Cow<'static, str>> {
-            <TestAsset as CrateRustEmbed>::iter()
-        }
-    }
 
     struct MockAgent {
         assets: Mutex<BTreeMap<String, Vec<u8>>>,
@@ -246,9 +328,9 @@ mod tests {
     }
 
     #[test]
-    fn test_read_binary_embedded_success() {
-        let agent = Arc::new(MockAgent::new());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+    fn test_read_binary_embedded_success() -> anyhow::Result<()> {
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
@@ -257,48 +339,68 @@ mod tests {
             std::str::from_utf8(&content).unwrap().trim(),
             "print(\"This script just prints\")"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_read_binary_embedded_fail() {
-        let agent = Arc::new(MockAgent::new());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+    fn test_read_binary_embedded_fail() -> anyhow::Result<()> {
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_read_binary_remote_success() {
+    fn test_read_binary_remote_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, vec!["remote_file.txt".to_string()]);
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), b"remote content");
+        Ok(())
     }
 
     #[test]
-    fn test_read_binary_remote_fail() {
+    fn test_read_binary_remote_fail() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new().should_fail());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, vec!["remote_file.txt".to_string()]);
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
         let result = lib.read_binary("remote_file.txt".to_string());
         assert!(result.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_read_embedded_success() {
+    fn test_read_embedded_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
         assert_eq!(
             content.unwrap().trim(),
             "print(\"This script just prints\")"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_copy_success() {
+    fn test_copy_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
         let dest_str = dest_path.to_str().unwrap().to_string();
@@ -306,12 +408,15 @@ mod tests {
         assert!(result.is_ok());
         let content = std::fs::read_to_string(dest_path).unwrap();
         assert_eq!(content.trim(), "print(\"This script just prints\")");
+        Ok(())
     }
 
     #[test]
-    fn test_copy_fail_read() {
+    fn test_copy_fail_read() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
         let result = lib.copy(
@@ -319,12 +424,15 @@ mod tests {
             dest_path.to_str().unwrap().to_string(),
         );
         assert!(result.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_copy_fail_write() {
+    fn test_copy_fail_write() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, Vec::new());
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let _dest_str = temp_dir.path().to_str().unwrap().to_string();
         let invalid_dest = temp_dir
@@ -336,16 +444,20 @@ mod tests {
             .to_string();
         let result = lib.copy("print/main.eldritch".to_string(), invalid_dest);
         assert!(result.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_list() {
+    fn test_list() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
         let remote_files = vec!["remote1.txt".to_string(), "remote2.txt".to_string()];
-        let lib = StdAssetsLibrary::<TestAsset>::new(agent, remote_files.clone());
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(agent, remote_files.clone())))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let list = lib.list().unwrap();
         assert!(list.iter().any(|f| f.contains("print/main.eldritch")));
         assert!(list.contains(&"remote1.txt".to_string()));
         assert!(list.contains(&"remote2.txt".to_string()));
+        Ok(())
     }
 }
