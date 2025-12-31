@@ -1,11 +1,13 @@
 use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
-use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
+use chacha20poly1305::{
+    aead::{generic_array::GenericArray, AeadInPlace, OsRng},
+    AeadCore, KeyInit,
+};
 #[cfg(feature = "imix")]
 use const_decoder::Decoder as const_decode;
 use lru::LruCache;
 use prost::Message;
-use rand::rngs::OsRng;
 use rand_chacha::rand_core::SeedableRng;
 use std::{
     io::{Read, Write},
@@ -35,6 +37,9 @@ static SERVER_PUBKEY: [u8; 32] = [
 const KEY_CACHE_SIZE: usize = 1024;
 const PUBKEY_LEN: usize = 32;
 const NONCE_LEN: usize = 24;
+const TAG_LEN: usize = 16;
+// Header is 56 bytes (32+24). To align payload to 16 bytes, we need offset 8 (56+8=64).
+const ALIGN_PAD: usize = 8;
 
 // The client and server may have multiple connections open and they may not resolve in order or sequentially.
 // To handle this ephemeral public keys and shared secrets are stored in a hashmap key_history where they can be looked up
@@ -58,7 +63,11 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
     Ok(res)
 }
 
-fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
+// Internal optimized encryption helper
+// Appends Header + Encrypted(pt) + Tag to `out`.
+// `out` must have enough capacity or it will grow.
+#[allow(dead_code)]
+fn encrypt_into_vec(pt: &[u8], out: &mut Vec<u8>) -> Result<()> {
     // Store server pubkey
     let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
 
@@ -77,62 +86,120 @@ fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
     ));
     let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
 
-    // Encrypt data
-    let ciphertext: Vec<u8> = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
-        Ok(ct) => ct,
-        Err(err) => {
-            #[cfg(debug_assertions)]
-            log::debug!(
-                "encode error unable to read bytes while encrypting: {:?}",
-                err
-            );
-            return Err(anyhow::anyhow!("Encryption failed: {:?}", err));
-        }
-    };
+    // Write Header
+    out.extend_from_slice(client_public.as_bytes());
+    out.extend_from_slice(nonce.as_slice());
 
-    // Build result: pubkey + nonce + ciphertext
-    let mut result = Vec::new();
-    result.extend_from_slice(client_public.as_bytes());
-    result.extend_from_slice(nonce.as_slice());
-    result.extend_from_slice(&ciphertext);
+    // Write Plaintext
+    let pt_start = out.len();
+    out.extend_from_slice(pt);
 
-    Ok(result)
+    // Encrypt in place detached
+    let tag = cipher
+        .encrypt_in_place_detached(&nonce, &[], &mut out[pt_start..])
+        .map_err(|e| anyhow::anyhow!("Encryption failed: {:?}", e))?;
+
+    // Append Tag
+    out.extend_from_slice(tag.as_slice());
+
+    Ok(())
 }
 
-fn decrypt_impl(ct_vec: Vec<u8>) -> Result<Vec<u8>> {
-    if ct_vec.is_empty() {
-        return Ok(vec![]);
+// Optimized helper for encoding and encrypting directly into a buffer
+// Uses padding for alignment.
+fn encode_encrypt_into_buf<T>(msg: &T, buf: &mut EncodeBuf<'_>) -> Result<()>
+where
+    T: Message,
+{
+    // Calculate total size to reserve
+    let encoded_len = msg.encoded_len();
+    let total_len = PUBKEY_LEN + NONCE_LEN + encoded_len + TAG_LEN;
+
+    // Allocate with padding for alignment
+    let mut buffer = Vec::with_capacity(ALIGN_PAD + total_len);
+    buffer.extend_from_slice(&[0u8; ALIGN_PAD]);
+
+    // Store server pubkey
+    let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
+    let rng = rand_chacha::ChaCha20Rng::from_entropy();
+    let client_secret = EphemeralSecret::random_from_rng(rng);
+    let client_public = PublicKey::from(&client_secret);
+    let shared_secret = client_secret.diffie_hellman(&server_public);
+    add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
+
+    let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
+        shared_secret.as_bytes(),
+    ));
+    let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
+
+    // Write Header (at offset ALIGN_PAD)
+    buffer.extend_from_slice(client_public.as_bytes());
+    buffer.extend_from_slice(nonce.as_slice());
+
+    // Write Plaintext (Encode directly into buffer).
+    // Start position will be ALIGN_PAD + 56 = 64 (Aligned!)
+    msg.encode(&mut buffer).map_err(|e| anyhow::anyhow!("Protobuf encode failed: {:?}", e))?;
+
+    // Encrypt in place detached
+    // Plaintext is at [ALIGN_PAD + PUBKEY_LEN + NONCE_LEN .. ]
+    let pt_start = ALIGN_PAD + PUBKEY_LEN + NONCE_LEN;
+    let tag = cipher
+        .encrypt_in_place_detached(&nonce, &[], &mut buffer[pt_start..])
+        .map_err(|e| anyhow::anyhow!("Encryption failed: {:?}", e))?;
+
+    // Append Tag
+    buffer.extend_from_slice(tag.as_slice());
+
+    // Write to EncodeBuf (skipping padding)
+    buf.writer().write_all(&buffer[ALIGN_PAD..]).map_err(|e| anyhow::anyhow!("Write failed: {:?}", e))?;
+
+    Ok(())
+}
+
+// Helper to decrypt in place within a mutable buffer.
+// Returns the length of the plaintext.
+// The plaintext will start at PUBKEY_LEN + NONCE_LEN in the buffer.
+fn decrypt_in_place_buf(buf: &mut [u8]) -> Result<usize> {
+    if buf.is_empty() {
+        return Ok(0);
+    }
+    if buf.len() < PUBKEY_LEN + NONCE_LEN + TAG_LEN {
+        anyhow::bail!("Message too small to contain header and tag");
     }
 
-    if ct_vec.len() < PUBKEY_LEN + NONCE_LEN {
-        anyhow::bail!("Message too small to contain public key and nonce");
-    }
+    // Extract components (header)
+    let client_public = &buf[0..PUBKEY_LEN];
+    let nonce_slice = &buf[PUBKEY_LEN..PUBKEY_LEN + NONCE_LEN];
 
-    // Extract components
-    let client_public = ct_vec
-        .get(0..PUBKEY_LEN)
-        .context("Input buffer doesn't have enough bytes for public key")?;
+    // Copy necessary header data to avoid immutable borrow while mutating
+    let mut nonce = [0u8; NONCE_LEN];
+    nonce.copy_from_slice(nonce_slice);
 
-    let nonce = ct_vec
-        .get(PUBKEY_LEN..PUBKEY_LEN + NONCE_LEN)
-        .context("Input buffer doesn't have enough bytes for nonce")?;
+    let mut pub_key = [0u8; PUBKEY_LEN];
+    pub_key.copy_from_slice(client_public);
 
-    let ciphertext = ct_vec
-        .get(PUBKEY_LEN + NONCE_LEN..)
-        .context("Input buffer doesn't have enough bytes for ciphertext")?;
-
-    // Get private key based on messages public key
-
-    let client_private_bytes = get_key(client_public.try_into()?).map_err(from_anyhow_error)?;
+    let client_private_bytes = get_key(pub_key).map_err(from_anyhow_error)?;
 
     let cipher =
         chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&client_private_bytes));
 
-    let plaintext = cipher
-        .decrypt(GenericArray::from_slice(nonce), ciphertext)
+    // Split buffer to separate Tag
+    let len = buf.len();
+    let tag_start = len - TAG_LEN;
+    let (ct_buf, tag_buf) = buf.split_at_mut(tag_start);
+
+    // ct_buf contains Header + Ciphertext
+    // Ciphertext starts at PUBKEY_LEN + NONCE_LEN
+    let pt_start = PUBKEY_LEN + NONCE_LEN;
+    let ct_slice = &mut ct_buf[pt_start..];
+
+    let nonce_ga = GenericArray::from_slice(&nonce);
+    let tag_ga = GenericArray::from_slice(tag_buf);
+
+    cipher.decrypt_in_place_detached(nonce_ga, &[], ct_slice, tag_ga)
         .map_err(|e| anyhow::anyhow!("Decryption failed: {:?}", e))?;
 
-    Ok(plaintext)
+    Ok(ct_slice.len())
 }
 
 // ------------
@@ -185,17 +252,12 @@ where
 
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
         if !buf.has_remaining_mut() {
-            // This should never happen but if it does the agent will be unable to queue new messages to the buffer until it's drained.
             #[cfg(debug_assertions)]
             log::debug!("DANGER can't add to the buffer.");
         }
 
-        let _ = match encrypt_impl(item.encode_to_vec()) {
-            Ok(pub_nonce_ct) => buf.writer().write_all(&pub_nonce_ct),
-            Err(err) => return Err(Status::new(tonic::Code::Internal, err.to_string())),
-        };
-
-        Ok(())
+        // Use optimized path with alignment
+        encode_encrypt_into_buf(&item, buf).map_err(|e| Status::new(tonic::Code::Internal, e.to_string()))
     }
 }
 
@@ -215,8 +277,18 @@ where
 
     fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
         // public key + xchacha nonce + ciphertext
+
+        // Pre-allocate buffer to avoid reallocations
+        let frame_len = buf.remaining();
+        if frame_len == 0 {
+             return Ok(None);
+        }
+
+        // Use padding for alignment
+        let mut bytes_in = Vec::with_capacity(ALIGN_PAD + frame_len);
+        bytes_in.extend_from_slice(&[0u8; ALIGN_PAD]);
+
         let mut reader = buf.reader();
-        let mut bytes_in = Vec::new();
         let bytes_read = match reader.read_to_end(&mut bytes_in) {
             Ok(n) => n,
             Err(err) => {
@@ -232,18 +304,18 @@ where
         log::debug!("Bytes read from server: {}", bytes_read);
 
         if bytes_read == 0 {
-            let item = Message::decode(bytes_in.get(0..bytes_read).unwrap())
-                .map(Option::Some)
-                .map_err(from_decode_error)?;
-
-            return Ok(item);
+            return Ok(None);
         }
 
-        let plaintext = decrypt_impl(bytes_in.get(0..bytes_read).unwrap().to_vec())
-            .map_err(from_anyhow_error)?;
+        // Decrypt in place (using aligned buffer slice)
+        let pt_len = decrypt_in_place_buf(&mut bytes_in[ALIGN_PAD..])
+            .map_err(|e| Status::new(tonic::Code::Internal, e.to_string()))?;
 
-        // Serialize
-        let item = Message::decode(bytes::Bytes::from(plaintext))
+        // The plaintext is in bytes_in[ALIGN_PAD + PUBKEY_LEN + NONCE_LEN .. ]
+        let start = ALIGN_PAD + PUBKEY_LEN + NONCE_LEN;
+        let end = start + pt_len;
+
+        let item = Message::decode(&bytes_in[start..end])
             .map(Option::Some)
             .map_err(from_decode_error)?;
 
@@ -256,8 +328,6 @@ fn from_anyhow_error(error: anyhow::Error) -> Status {
 }
 
 fn from_decode_error(error: prost::DecodeError) -> Status {
-    // Map Protobuf parse errors to an INTERNAL status code, as per
-    // https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
     Status::new(tonic::Code::Internal, error.to_string())
 }
 
@@ -266,7 +336,46 @@ where
     T: Message + Send + 'static,
     U: Message + Default + Send + 'static,
 {
-    encrypt_impl(msg.encode_to_vec())
+    // Legacy function support
+    // We can use a simpler approach or reuse the aligned logic if we care about perf here.
+    // Since this is used in tests/benchmarks, let's use optimized aligned logic.
+
+    let encoded_len = msg.encoded_len();
+    let total_len = PUBKEY_LEN + NONCE_LEN + encoded_len + TAG_LEN;
+
+    let mut out = Vec::with_capacity(ALIGN_PAD + total_len);
+    out.extend_from_slice(&[0u8; ALIGN_PAD]);
+
+    // Write header
+    // Helper `encrypt_into_vec` doesn't support alignment/msg input easily.
+    // Replicating logic similar to `encode_encrypt_into_buf` but to Vec.
+
+    let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
+    let rng = rand_chacha::ChaCha20Rng::from_entropy();
+    let client_secret = EphemeralSecret::random_from_rng(rng);
+    let client_public = PublicKey::from(&client_secret);
+    let shared_secret = client_secret.diffie_hellman(&server_public);
+    add_key_history(*client_public.as_bytes(), *shared_secret.as_bytes());
+
+    let cipher = chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(
+        shared_secret.as_bytes(),
+    ));
+    let nonce = chacha20poly1305::XChaCha20Poly1305::generate_nonce(&mut OsRng);
+
+    out.extend_from_slice(client_public.as_bytes());
+    out.extend_from_slice(nonce.as_slice());
+
+    msg.encode(&mut out)?;
+
+    let pt_start = ALIGN_PAD + PUBKEY_LEN + NONCE_LEN;
+    let tag = cipher
+        .encrypt_in_place_detached(&nonce, &[], &mut out[pt_start..])
+        .map_err(|e| anyhow::anyhow!("Encryption failed: {:?}", e))?;
+
+    out.extend_from_slice(tag.as_slice());
+
+    // Return buffer without padding
+    Ok(out[ALIGN_PAD..].to_vec())
 }
 
 pub fn decode_with_chacha<T, U>(data: &[u8]) -> Result<U>
@@ -274,13 +383,17 @@ where
     T: Message + Send + 'static,
     U: Message + Default + Send + 'static,
 {
-    // Decode protobuf
-    match decrypt_impl(data.to_vec()) {
-        Ok(plaintext) => {
-            U::decode(bytes::Bytes::from(plaintext)).context("Failed to decode protobuf message")
-        }
-        Err(err) => Err(err),
-    }
+    // Optimize with alignment
+    let mut buf = Vec::with_capacity(ALIGN_PAD + data.len());
+    buf.extend_from_slice(&[0u8; ALIGN_PAD]);
+    buf.extend_from_slice(data);
+
+    let pt_len = decrypt_in_place_buf(&mut buf[ALIGN_PAD..])?;
+
+    let start = ALIGN_PAD + PUBKEY_LEN + NONCE_LEN;
+    let end = start + pt_len;
+
+    U::decode(&buf[start..end]).context("Failed to decode protobuf message")
 }
 
 #[cfg(test)]

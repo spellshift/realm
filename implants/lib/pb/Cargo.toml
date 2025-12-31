@@ -38,3 +38,10 @@ which = { workspace = true }
 home = "=0.5.11"
 reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "xchacha_bench"
+harness = false
