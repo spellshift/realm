@@ -12,7 +12,6 @@ use {
     std::os::windows::ffi::{OsStrExt, OsStringExt},
     std::path::Path,
     std::{slice, str},
-    windows_sys::Win32::System::Memory::LocalFree,
     windows_sys::Win32::UI::Shell::CommandLineToArgvW,
 };
 
@@ -61,7 +60,8 @@ pub fn to_argv(command_line: &str) -> Vec<OsString> {
             argv.push(os_string_from_wide_ptr(*args.offset(i as isize)));
         }
 
-        LocalFree(args as isize);
+        // LocalFree shouldn't be needed this should get dropped
+        // LocalFree(args as *const c_void);
     }
     argv
 }

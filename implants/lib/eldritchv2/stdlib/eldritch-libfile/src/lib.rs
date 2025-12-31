@@ -224,6 +224,13 @@ pub trait FileLibrary {
     fn read_binary(&self, path: String) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
+    /// Returns the current working directory of the process.
+    ///
+    /// **Returns**
+    /// - `Option<str>`: The current working directory path, or None if it cannot be determined.
+    fn pwd(&self) -> Result<Option<String>, String>;
+
+    #[eldritch_method]
     /// Deletes a file or directory recursively.
     ///
     /// **Parameters**

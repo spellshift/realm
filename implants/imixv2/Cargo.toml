@@ -7,9 +7,10 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1"]
+default = ["install", "grpc", "http1", "dns"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
+dns = ["transport/dns"]
 win_service = []
 install = []
 

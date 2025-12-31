@@ -8,6 +8,7 @@ default = []
 imix = []
 grpc = []
 http1 = []
+dns = []
 
 
 [dependencies]

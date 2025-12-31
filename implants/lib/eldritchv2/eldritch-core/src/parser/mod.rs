@@ -9,11 +9,16 @@ pub mod stmt;
 pub struct Parser {
     pub(crate) tokens: Vec<Token>,
     pub(crate) current: usize,
+    pub(crate) errors: Vec<EldritchError>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Parser { tokens, current: 0 }
+        Parser {
+            tokens,
+            current: 0,
+            errors: Vec::new(),
+        }
     }
 
     pub(crate) fn peek(&self) -> &Token {
@@ -70,6 +75,29 @@ impl Parser {
         }
     }
 
+    pub(crate) fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.tokens[self.current - 1].kind == TokenKind::Newline {
+                return;
+            }
+
+            match self.peek().kind {
+                TokenKind::Def
+                | TokenKind::If
+                | TokenKind::For
+                | TokenKind::Return
+                | TokenKind::Pass
+                | TokenKind::Break
+                | TokenKind::Continue => return,
+                _ => {}
+            }
+
+            self.advance();
+        }
+    }
+
     pub(crate) fn match_token(&mut self, kinds: &[TokenKind]) -> bool {
         for k in kinds {
             if core::mem::discriminant(&self.peek().kind) == core::mem::discriminant(k) {
@@ -87,7 +115,7 @@ impl Parser {
         matches!(self.tokens[self.current].kind, TokenKind::Eof)
     }
 
-    pub fn parse(&mut self) -> Result<Vec<Stmt>, EldritchError> {
+    pub fn parse(&mut self) -> (Vec<Stmt>, Vec<EldritchError>) {
         let mut statements = Vec::new();
         while !self.is_at_end() {
             while matches!(self.peek().kind, TokenKind::Newline) {
@@ -96,9 +124,22 @@ impl Parser {
             if self.is_at_end() {
                 break;
             }
-            statements.push(self.declaration()?);
+            match self.declaration() {
+                Ok(stmt) => statements.push(stmt),
+                Err(err) => {
+                    self.errors.push(err.clone());
+                    self.synchronize();
+                    // Create an Error stmt to fill the gap
+                    use super::ast::StmtKind;
+                    let span = err.span;
+                    statements.push(Stmt {
+                        kind: StmtKind::Error(err.message),
+                        span,
+                    });
+                }
+            }
         }
-        Ok(statements)
+        (statements, self.errors.clone())
     }
 
     #[allow(clippy::only_used_in_recursion)]

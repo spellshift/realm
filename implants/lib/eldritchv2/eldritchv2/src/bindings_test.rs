@@ -66,6 +66,7 @@ fn test_file_bindings() {
             "mkdir",
             "move",
             "parent_dir",
+            "pwd",
             "read",
             "read_binary",
             "remove",

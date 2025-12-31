@@ -597,26 +597,21 @@ impl Repl {
         let mut balance = 0;
         let mut is_incomplete_string = false;
 
-        match Lexer::new(full_code.to_string()).scan_tokens() {
-            Ok(tokens) => {
-                for t in tokens {
-                    match t.kind {
-                        TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => balance += 1,
-                        TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                            if balance > 0 {
-                                balance -= 1;
-                            }
-                        }
-                        _ => {}
+        let tokens = Lexer::new(full_code.to_string()).scan_tokens();
+        for t in tokens {
+            match t.kind {
+                TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => balance += 1,
+                TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
+                    if balance > 0 {
+                        balance -= 1;
                     }
                 }
-            }
-            Err(e) => {
-                if e.message.contains("Unterminated string literal")
-                    && !e.message.contains("(newline)")
-                {
-                    is_incomplete_string = true;
+                TokenKind::Error(ref msg) => {
+                    if msg.contains("Unterminated string literal") && !msg.contains("(newline)") {
+                        is_incomplete_string = true;
+                    }
                 }
+                _ => {}
             }
         }
 
@@ -656,58 +651,58 @@ fn expand_macros(code: &str) -> String {
     let mut expanded_code = code.to_string();
 
     loop {
-        match Lexer::new(expanded_code.clone()).scan_tokens() {
-            Ok(_) => {
-                break;
-            }
-            Err(e) => {
-                if let Some(line_num_str) =
-                    e.message.strip_prefix("Unexpected character: ! on line ")
-                {
-                    let line_num: usize = match line_num_str.trim().parse() {
-                        Ok(n) => n,
-                        Err(_) => break,
-                    };
+        let tokens = Lexer::new(expanded_code.clone()).scan_tokens();
+        let first_error = tokens.iter().find_map(|t| match &t.kind {
+            TokenKind::Error(msg) => Some(msg.clone()),
+            _ => None,
+        });
 
-                    if line_num == 0 {
-                        break;
-                    }
+        if let Some(msg) = first_error {
+            if let Some(line_num_str) = msg.strip_prefix("Unexpected character: ! on line ") {
+                let line_num: usize = match line_num_str.trim().parse() {
+                    Ok(n) => n,
+                    Err(_) => break,
+                };
 
-                    let lines: Vec<&str> = expanded_code.lines().collect();
-                    if line_num > lines.len() {
-                        break;
-                    }
+                if line_num == 0 {
+                    break;
+                }
 
-                    let line_idx = line_num - 1;
-                    let line = lines[line_idx];
+                let lines: Vec<&str> = expanded_code.lines().collect();
+                if line_num > lines.len() {
+                    break;
+                }
 
-                    let trimmed_line = line.trim_start();
-                    if let Some(rest) = trimmed_line.strip_prefix('!') {
-                        let indentation = &line[..line.len() - trimmed_line.len()];
+                let line_idx = line_num - 1;
+                let line = lines[line_idx];
 
-                        let cmd = rest;
-                        let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
-                        let macro_var = "_nonomacroclowntown";
-                        let replacement = alloc::format!(
-                            "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
-                        );
+                let trimmed_line = line.trim_start();
+                if let Some(rest) = trimmed_line.strip_prefix('!') {
+                    let indentation = &line[..line.len() - trimmed_line.len()];
 
-                        let mut new_lines: Vec<String> =
-                            lines.iter().map(|s| s.to_string()).collect();
-                        new_lines[line_idx] = replacement;
+                    let cmd = rest;
+                    let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
+                    let macro_var = "_nonomacroclowntown";
+                    let replacement = alloc::format!(
+                        "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
+                    );
 
-                        expanded_code = new_lines.join("\n");
+                    let mut new_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
+                    new_lines[line_idx] = replacement;
 
-                        if code.ends_with('\n') && !expanded_code.ends_with('\n') {
-                            expanded_code.push('\n');
-                        }
-                    } else {
-                        break;
+                    expanded_code = new_lines.join("\n");
+
+                    if code.ends_with('\n') && !expanded_code.ends_with('\n') {
+                        expanded_code.push('\n');
                     }
                 } else {
                     break;
                 }
+            } else {
+                break;
             }
+        } else {
+            break;
         }
     }
 

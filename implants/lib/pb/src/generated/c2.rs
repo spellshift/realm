@@ -42,6 +42,7 @@ pub mod beacon {
         Unspecified = 0,
         Grpc = 1,
         Http1 = 2,
+        Dns = 3,
     }
     impl Transport {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -53,6 +54,7 @@ pub mod beacon {
                 Transport::Unspecified => "TRANSPORT_UNSPECIFIED",
                 Transport::Grpc => "TRANSPORT_GRPC",
                 Transport::Http1 => "TRANSPORT_HTTP1",
+                Transport::Dns => "TRANSPORT_DNS",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -61,6 +63,7 @@ pub mod beacon {
                 "TRANSPORT_UNSPECIFIED" => Some(Self::Unspecified),
                 "TRANSPORT_GRPC" => Some(Self::Grpc),
                 "TRANSPORT_HTTP1" => Some(Self::Http1),
+                "TRANSPORT_DNS" => Some(Self::Dns),
                 _ => None,
             }
         }

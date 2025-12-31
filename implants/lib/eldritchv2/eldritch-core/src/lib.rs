@@ -12,7 +12,7 @@ mod parser;
 mod token;
 
 // Re-export core types
-pub use ast::{Environment, ForeignValue, Value};
+pub use ast::{Environment, ExprKind, ForeignValue, StmtKind, Value};
 pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
 pub use token::{Span, TokenKind};
