@@ -37,7 +37,7 @@ const ImportRepositoryModal: FC<ImportRepositoryModalProps> = ({ isOpen, setOpen
             case 1:
                 return <StepAddDeploymentKey setCurrStep={setCurrStep} newRepository={newRepository} setOpen={setOpen} />
             default:
-                return <div>An error has occured</div>;
+                return <div>An error has occurred</div>;
         }
     }
 
