@@ -63,6 +63,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
             msg = resp_rx.recv() => {
                 match msg {
                     Some(resp) => {
+                         #[allow(clippy::collapsible_if)]
                          if let Some(mote) = resp.mote {
                             if let Err(e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks).await {
                                 #[cfg(debug_assertions)]
@@ -143,12 +144,7 @@ async fn handle_incoming_mote(
 
         streams.insert(stream_id.clone(), StreamContext { reader, tx });
 
-        // Spawn handler task based on payload type?
-        // Actually, we don't know the type until we inspect the payload.
-        // But the OrderedReader just orders packets.
-        // The handler logic needs to receive ordered packets.
-        // So we spawn a generic handler that processes the first packet to decide implementation.
-
+        // Spawn a generic handler that processes the first packet to decide implementation.
         let out_tx_clone = out_tx.clone();
         let stream_id_clone = stream_id.clone();
 

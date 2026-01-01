@@ -62,6 +62,9 @@ impl Agent for MockAgent {
     ) -> Result<pb::c2::ReportTaskOutputResponse, String> {
         Err("".into())
     }
+    fn create_portal(&self, task_id: i64) -> Result<(), String> {
+        Err("".into())
+    }
     fn start_reverse_shell(&self, _: i64, _: Option<String>) -> Result<(), String> {
         Err("".into())
     }
