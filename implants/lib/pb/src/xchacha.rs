@@ -286,6 +286,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::c2::Agent;
 
     #[test]
     fn test_key_history_bounded() {
@@ -300,5 +301,28 @@ mod tests {
             key_history.put(pub_key, shared_secret);
         }
         assert_eq!(key_history.len(), KEY_CACHE_SIZE);
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_roundtrip() {
+        // Create a mock Agent message
+        let original_msg = Agent {
+            identifier: "test-agent-123".to_string(),
+        };
+
+        // Encrypt the message
+        let encrypted = encode_with_chacha::<Agent, Agent>(original_msg.clone())
+            .expect("Encryption should succeed");
+
+        // Verify encrypted data is not empty and larger than original (due to pubkey, nonce, tag)
+        assert!(!encrypted.is_empty());
+        assert!(encrypted.len() > original_msg.encoded_len());
+
+        // Decrypt the message
+        let decrypted: Agent =
+            decode_with_chacha::<Agent, Agent>(&encrypted).expect("Decryption should succeed");
+
+        // Verify the decrypted message matches the original
+        assert_eq!(decrypted.identifier, original_msg.identifier);
     }
 }
