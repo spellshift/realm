@@ -32,9 +32,16 @@ lru = { workspace = true }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
 
+[dev-dependencies]
+criterion = { workspace = true }
+
 [build-dependencies]
 tonic-build = { workspace = true, features = ["prost"] }
 which = { workspace = true }
 home = "=0.5.11"
 reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
 serde_json = { workspace = true }
+
+[[bench]]
+name = "xchacha"
+harness = false
