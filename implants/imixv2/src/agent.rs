@@ -7,9 +7,9 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use transport::Transport;
 
+use crate::portal::run_create_portal;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
-use crate::portal::run_create_portal;
 
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {

@@ -95,7 +95,10 @@ impl OrderedReader {
         if !self.buffer.is_empty() {
             if let Some(start) = self.first_buffered_at {
                 if start.elapsed() > self.stale_timeout {
-                    return Err(anyhow!("stale stream: timeout waiting for seqID {}", self.next_seq_id));
+                    return Err(anyhow!(
+                        "stale stream: timeout waiting for seqID {}",
+                        self.next_seq_id
+                    ));
                 }
             }
         }
