@@ -14,6 +14,9 @@ import (
 	"realm.pub/tavern/internal/auth"
 )
 
+// HeaderAPIAccessToken is re-exported from internal/auth
+const HeaderAPIAccessToken = auth.HeaderAPIAccessToken
+
 // RedactedToken is the value returned by calling String() on a Token.
 const RedactedToken = "--REDACTED--"
 

@@ -20,6 +20,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/namegen"
+	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/tomes"
 )
 
@@ -146,6 +147,20 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
 	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+}
+
+func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
+	var (
+		projectID = EnvGCPProjectID.String()
+	)
+	if projectID == "" {
+		return mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1024))
+	}
+	gcpClient, err := gcppubsub.NewClient(ctx, projectID)
+	if err != nil {
+		panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
+	}
+	return mux.New(mux.WithGCPDriver(projectID, gcpClient), mux.WithSubscriberBufferSize(1024))
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.

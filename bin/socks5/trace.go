@@ -31,10 +31,12 @@ func traceCommand(args []string) {
 		log.Fatal("--portal is required")
 	}
 
-	runTrace(*upstreamAddr, *portalID, *size)
+	ctx := authGRPCContext(context.Background(), *upstreamAddr, authCachePath)
+
+	runTrace(ctx, *upstreamAddr, *portalID, *size)
 }
 
-func runTrace(upstreamAddr string, portalID int64, size int) {
+func runTrace(ctx context.Context, upstreamAddr string, portalID int64, size int) {
 	conn, err := grpc.NewClient(upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to upstream: %v", err)
@@ -42,7 +44,6 @@ func runTrace(upstreamAddr string, portalID int64, size int) {
 	defer conn.Close()
 
 	client := portalpb.NewPortalClient(conn)
-	ctx := context.Background()
 
 	stream, err := client.OpenPortal(ctx)
 	if err != nil {
