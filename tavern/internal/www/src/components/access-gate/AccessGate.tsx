@@ -13,7 +13,7 @@ export const AccessGate = ({ children }: Props) => {
     if (isLoading) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Loading authroization state" type={EmptyStateType.loading} />
+                <EmptyState label="Loading authorization state" type={EmptyStateType.loading} />
             </div>
         );
     }
@@ -21,7 +21,7 @@ export const AccessGate = ({ children }: Props) => {
     if (error) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Error fetching authroization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue." />
+                <EmptyState label="Error fetching authorization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue." />
             </div>
         );
     }
