@@ -242,8 +242,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}()
 
 	// Configure Portal Mux
-	// TODO: Make this configurable / work with GCP
-	portalMux := mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1024))
+	portalMux := cfg.NewPortalMux(ctx)
 
 	// Route Map
 	routes := tavernhttp.RouteMap{
