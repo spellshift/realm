@@ -94,6 +94,7 @@ transport = { workspace = true, features = ["mock"] }
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 criterion = { workspace = true }
+prost = { workspace = true }
 
 # BUILD
 [build-dependencies]

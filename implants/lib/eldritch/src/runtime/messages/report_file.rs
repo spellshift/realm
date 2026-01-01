@@ -10,9 +10,9 @@ use std::{io::Read, sync::mpsc::sync_channel};
 /*
  * ReportFileMessage prepares a file on disk to be sent to the provided transport (when dispatched).
  *
- * It will not attempt to read files with a size greater than 1GB.
- * It will read the file in (1MB) chunks to prevent overwhelming memory usage.
- * If the transport becomes blocked, it will hold at most 2 chunks in memory and
+ * It will not attempt to read files with a size greater than 32GB.
+ * It will read the file in 256KB chunks to prevent overwhelming memory usage.
+ * If the transport becomes blocked, it will hold at most 10 chunks (2.56MB) in memory and
  * block until the transport becomes available.
  * If the transport errors, it will close the file and exit immediately.
  * It will not open the provided file until it has been dispatched.
@@ -35,8 +35,8 @@ impl ReportFileMessage {
 impl AsyncDispatcher for ReportFileMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         // Configure Limits
-        const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
-        const MAX_CHUNKS_QUEUED: usize = 10; // 10 KB Limit (in channel)
+        const CHUNK_SIZE: usize = 256 * 1024; // 256 KB per chunk
+        const MAX_CHUNKS_QUEUED: usize = 10; // 2.56 MB max in channel buffer
         const MAX_FILE_SIZE: usize = 32 * 1024 * 1024 * 1024; // 32GB Limit (total file size)
 
         // Use a sync_channel to limit memory usage in case of network errors.
