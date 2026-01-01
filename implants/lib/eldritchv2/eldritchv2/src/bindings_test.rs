@@ -112,6 +112,7 @@ fn test_pivot_bindings() {
         "pivot",
         &[
             "arp_scan",
+            "create_portal",
             // "bind_proxy", // Not implemented in Fake
             "ncat",
             // "port_forward", // Not implemented in Fake

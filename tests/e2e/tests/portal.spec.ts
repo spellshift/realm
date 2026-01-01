@@ -40,6 +40,8 @@ test('End-to-end portal provisioning test', async ({ page }) => {
   // 5. Wait for execution.
   // We expect "Portal created" to appear in the output.
   console.log('Waiting for "Portal created" message');
+  await page.waitForTimeout(12000);
+  page.reload({timeout: 30000})
   await expect(page.getByText('Portal created')).toBeVisible({ timeout: 30000 });
 
   console.log('Portal created successfully');
