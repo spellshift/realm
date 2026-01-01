@@ -93,9 +93,15 @@ listeners = { workspace = true }
 transport = { workspace = true, features = ["mock"] }
 httptest = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
+criterion = { workspace = true }
 
 # BUILD
 [build-dependencies]
 tonic-build = { workspace = true }
 anyhow = { workspace = true }
 which = { workspace = true }
+
+# BENCHMARKS
+[[bench]]
+name = "report_file"
+harness = false

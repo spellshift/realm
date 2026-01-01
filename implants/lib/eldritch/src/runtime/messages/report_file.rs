@@ -24,6 +24,14 @@ pub struct ReportFileMessage {
     pub(crate) path: String,
 }
 
+impl ReportFileMessage {
+    /// Creates a new ReportFileMessage with the given task ID and file path.
+    /// This is primarily used for testing and benchmarking.
+    pub fn new(id: i64, path: String) -> Self {
+        Self { id, path }
+    }
+}
+
 impl AsyncDispatcher for ReportFileMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         // Configure Limits
