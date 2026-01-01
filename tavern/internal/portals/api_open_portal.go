@@ -27,6 +27,14 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 		return status.Errorf(codes.InvalidArgument, "invalid portal ID: %d", portalID)
 	}
 
+	p, err := srv.graph.Portal.Get(ctx, portalID)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "error loading portal ID: %d %v", portalID, err)
+	}
+	if !p.ClosedAt.IsZero() {
+		return status.Errorf(codes.InvalidArgument, "portal %d is closed", portalID)
+	}
+
 	cleanup, err := srv.mux.OpenPortal(ctx, portalID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to open portal", "portal_id", portalID, "error", err)

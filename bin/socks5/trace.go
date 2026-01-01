@@ -49,6 +49,12 @@ func runTrace(upstreamAddr string, portalID int64, size int) {
 		log.Fatalf("Failed to open portal: %v", err)
 	}
 
+	if err := stream.Send(&portalpb.OpenPortalRequest{
+		PortalId: portalID,
+	}); err != nil {
+		log.Fatalf("Failed to send registration message: %v", err)
+	}
+
 	if err := sendTraceMote(stream, portalID, size); err != nil {
 		log.Fatalf("Failed to send trace mote: %v", err)
 	}
