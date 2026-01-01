@@ -1,9 +1,9 @@
-use anyhow::{Result, Context};
-use pb::portal::{mote::Payload, Mote};
+use anyhow::{Context, Result};
+use pb::portal::{Mote, mote::Payload};
 use portal_stream::PayloadSequencer;
+use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc;
-use std::sync::Arc;
 
 pub async fn handle_udp(
     first_mote: Mote,
@@ -21,14 +21,19 @@ pub async fn handle_udp(
     let target_addr = format!("{}:{}", dst_addr, dst_port);
 
     // Bind to 0.0.0.0:0
-    let socket = UdpSocket::bind("0.0.0.0:0").await.context("Failed to bind UDP")?;
-    socket.connect(&target_addr).await.context("Failed to connect UDP")?;
+    let socket = UdpSocket::bind("0.0.0.0:0")
+        .await
+        .context("Failed to bind UDP")?;
+    socket
+        .connect(&target_addr)
+        .await
+        .context("Failed to connect UDP")?;
 
     let socket = Arc::new(socket);
 
     // If initial data exists, send it
     if !initial_data.is_empty() {
-         socket.send(&initial_data).await?;
+        socket.send(&initial_data).await?;
     }
 
     // Spawn reader task (Socket -> C2)

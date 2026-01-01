@@ -1,5 +1,5 @@
-use anyhow::{Result};
-use pb::portal::{mote::Payload, Mote, BytesPayloadKind};
+use anyhow::Result;
+use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
 use portal_stream::PayloadSequencer;
 use tokio::sync::mpsc;
 
@@ -9,7 +9,6 @@ pub async fn handle_bytes(
     out_tx: mpsc::Sender<Mote>,
     sequencer: PayloadSequencer,
 ) -> Result<()> {
-
     // Process first mote
     process_byte_mote(first_mote, &out_tx, &sequencer).await?;
 
@@ -31,7 +30,10 @@ async fn process_byte_mote(
             Some(BytesPayloadKind::Ping) => {
                 // Echo back with same data
                 let resp = sequencer.new_bytes_mote(b.data, BytesPayloadKind::Ping);
-                out_tx.send(resp).await.map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+                out_tx
+                    .send(resp)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
             }
             Some(BytesPayloadKind::Keepalive) => {
                 // Ignore

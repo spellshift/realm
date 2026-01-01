@@ -1,5 +1,5 @@
-pub mod sequencer;
 pub mod reader;
+pub mod sequencer;
 pub mod writer;
 
 pub use reader::OrderedReader;
@@ -12,7 +12,10 @@ use pb::portal::Mote;
 #[cfg(feature = "tokio")]
 impl OrderedWriter<tokio::sync::mpsc::Sender<Mote>> {
     /// Helper to create a new OrderedWriter from a tokio Sender.
-    pub fn new_tokio(stream_id: impl Into<String>, sender: tokio::sync::mpsc::Sender<Mote>) -> Self {
+    pub fn new_tokio(
+        stream_id: impl Into<String>,
+        sender: tokio::sync::mpsc::Sender<Mote>,
+    ) -> Self {
         Self::new(stream_id, sender)
     }
 }
@@ -20,9 +23,9 @@ impl OrderedWriter<tokio::sync::mpsc::Sender<Mote>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pb::portal::{Mote, BytesPayloadKind, mote::Payload};
-    use std::time::Duration;
+    use pb::portal::{mote::Payload, BytesPayloadKind, Mote};
     use std::thread;
+    use std::time::Duration;
 
     fn make_mote(seq_id: u64) -> Mote {
         Mote {
@@ -105,8 +108,7 @@ mod tests {
 
     #[test]
     fn test_reader_timeout() {
-        let mut reader = OrderedReader::new()
-            .with_stale_buffer_timeout(Duration::from_millis(100));
+        let mut reader = OrderedReader::new().with_stale_buffer_timeout(Duration::from_millis(100));
 
         // 1 (gap)
         reader.process(make_mote(1)).unwrap();
@@ -116,13 +118,15 @@ mod tests {
         // Processing another packet (even if gap or duplicate) should trigger timeout check
         let err = reader.process(make_mote(2));
         assert!(err.is_err());
-        assert_eq!(err.unwrap_err().to_string(), "stale stream: timeout waiting for seqID 0");
+        assert_eq!(
+            err.unwrap_err().to_string(),
+            "stale stream: timeout waiting for seqID 0"
+        );
     }
 
     #[test]
     fn test_reader_check_timeout() {
-        let mut reader = OrderedReader::new()
-            .with_stale_buffer_timeout(Duration::from_millis(100));
+        let mut reader = OrderedReader::new().with_stale_buffer_timeout(Duration::from_millis(100));
 
         // 1 (gap)
         reader.process(make_mote(1)).unwrap();
@@ -135,15 +139,17 @@ mod tests {
 
     #[test]
     fn test_reader_buffer_limit() {
-        let mut reader = OrderedReader::new()
-            .with_max_buffered_messages(2);
+        let mut reader = OrderedReader::new().with_max_buffered_messages(2);
 
         reader.process(make_mote(2)).unwrap();
         reader.process(make_mote(3)).unwrap();
 
         let err = reader.process(make_mote(4));
         assert!(err.is_err());
-        assert_eq!(err.unwrap_err().to_string(), "stale stream: buffer limit exceeded");
+        assert_eq!(
+            err.unwrap_err().to_string(),
+            "stale stream: buffer limit exceeded"
+        );
     }
 
     #[test]
