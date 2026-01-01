@@ -48,7 +48,7 @@ func (p *Proxy) Run() error {
 
 	client := portalpb.NewPortalClient(conn)
 
-	ctx := context.Background()
+	ctx := authGRPCContext(context.Background(), p.upstreamAddr, authCachePath)
 	streamClient, err := client.OpenPortal(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to open portal: %w", err)
