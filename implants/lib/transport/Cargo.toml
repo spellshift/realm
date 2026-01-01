@@ -5,9 +5,10 @@ edition = "2021"
 
 [features]
 default = []
-grpc = []
+grpc = ["pb/grpc"]
 grpc-doh = ["grpc", "dep:hickory-resolver"]
-http1 = []
+http1 = ["pb/http1"]
+dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 mock = ["dep:mockall"]
 
 [dependencies]
@@ -15,6 +16,7 @@ pb = { workspace = true }
 
 anyhow = { workspace = true }
 bytes = { workspace = true }
+futures = { workspace = true }
 log = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }
@@ -27,6 +29,9 @@ hyper = { version = "0.14", features = [
 ] } # Had to user an older version of hyper to support hyper-proxy
 hyper-proxy = {version = "0.9.1", default-features = false, features = ["rustls"]}
 hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "webpki-roots"], optional = true }
+base32 = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }

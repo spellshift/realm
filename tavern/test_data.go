@@ -72,8 +72,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetName(hostName).
 				SetIdentifier(hostID).
 				SetPrimaryIP(hostIP).
-				SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-				SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
 				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
 				AddTags(svcTag, gTag).
 				SaveX(ctx)
@@ -84,6 +82,16 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetKind(epb.Credential_KIND_PASSWORD).
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
+
+			// Cycle through transports: HTTP1, GRPC, DNS
+			getTransport := func(idx int) c2pb.Beacon_Transport {
+				transports := []c2pb.Beacon_Transport{
+					c2pb.Beacon_TRANSPORT_HTTP1,
+					c2pb.Beacon_TRANSPORT_GRPC,
+					c2pb.Beacon_TRANSPORT_DNS,
+				}
+				return transports[idx%3]
+			}
 
 			if i == 4 && groupNum == 5 {
 				// Host with dead beacons Group 5 - Service 5
@@ -96,6 +104,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
 						SaveX(ctx),
 				)
 				testBeacons = append(testBeacons,
@@ -107,6 +116,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
 						SaveX(ctx),
 				)
 				testBeacons = append(testBeacons,
@@ -118,6 +128,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
 						SaveX(ctx),
 				)
 			} else {
@@ -130,6 +141,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(600000).
 						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
 						SaveX(ctx),
 				)
 				if i == 3 {
@@ -142,7 +154,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 							SetHost(testHost).
 							SetInterval(600).
 							SetPrincipal("janet").
-							SaveX(ctx),
+						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
+						SaveX(ctx),
 					)
 				}
 				if groupNum == 1 {
@@ -155,7 +168,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 							SetHost(testHost).
 							SetInterval(600000).
 							SetPrincipal("jane").
-							SaveX(ctx),
+						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
+						SaveX(ctx),
 					)
 				}
 
@@ -168,6 +182,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(1000).
 						SetPrincipal("admin").
+						SetTransport(getTransport(groupNum*100 + i*10 + 3)).
 						SaveX(ctx),
 				)
 
@@ -180,6 +195,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(4).
 						SetPrincipal("Administrator").
+						SetTransport(getTransport(groupNum*100 + i*10 + 4)).
 						SaveX(ctx),
 				)
 			}

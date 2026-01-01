@@ -24,6 +24,15 @@ message Beacon {
     Host host = 3;
     Agent agent = 4;
     uint64 interval = 5; // Duration until next callback, in seconds.
+
+    enum Transport {
+        TRANSPORT_UNSPECIFIED = 0;
+        TRANSPORT_GRPC = 1;
+        TRANSPORT_HTTP1 = 2;
+        TRANSPORT_DNS = 3;
+    }
+
+    Transport transport = 6;
 }
 
  // Host information for the system a beacon is running on.

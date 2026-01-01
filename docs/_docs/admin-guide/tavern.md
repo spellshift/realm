@@ -104,7 +104,74 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 ## Redirectors
 
-By default Tavern only supports GRPC connections directly to the server. To Enable additional protocols or additional IPs / Domain names in your callbacks utilize tavern redirectors which recieve traffic using a specific protocol like HTTP/1.1 and then forward it to an upstream tavern server over GRPC. See: `tavern redirector -help`
+By default Tavern only supports gRPC connections directly to the server. To enable additional protocols or additional IPs/domain names in your callbacks, utilize Tavern redirectors which receive traffic using a specific protocol (like HTTP/1.1 or DNS) and then forward it to an upstream Tavern server over gRPC.
+
+### Available Redirectors
+
+Realm includes three built-in redirector implementations:
+
+- **`grpc`** - Direct gRPC passthrough redirector
+- **`http1`** - HTTP/1.1 to gRPC redirector
+- **`dns`** - DNS to gRPC redirector
+
+### Basic Usage
+
+List available redirectors:
+
+```bash
+tavern redirector list
+```
+
+Start a redirector:
+
+```bash
+tavern redirector --transport <TRANSPORT> --listen <LISTEN_ADDR> <UPSTREAM_GRPC_ADDR>
+```
+
+### HTTP/1.1 Redirector
+
+The HTTP/1.1 redirector accepts HTTP/1.1 traffic from agents and forwards it to an upstream gRPC server.
+
+```bash
+# Start HTTP/1.1 redirector on port 8080
+tavern redirector --transport http1 --listen ":8080" localhost:8000
+```
+
+### DNS Redirector
+
+The DNS redirector tunnels C2 traffic through DNS queries and responses, providing a covert communication channel. It supports TXT, A, and AAAA record types.
+
+```bash
+# Start DNS redirector on UDP port 53 for domain c2.example.com
+tavern redirector --transport dns --listen "0.0.0.0:53?domain=c2.example.com" localhost:8000
+
+# Support multiple domains
+tavern redirector --transport dns --listen "0.0.0.0:53?domain=c2.example.com&domain=backup.example.com" localhost:8000
+```
+
+**DNS Configuration Requirements:**
+
+1. Configure your DNS server to delegate queries for your C2 domain to the redirector IP
+2. Or run the redirector as your authoritative DNS server for the domain
+3. Ensure UDP port 53 is accessible
+
+**Server Behavior:**
+
+- **Benign responses**: Non-C2 queries to A records return `0.0.0.0` instead of NXDOMAIN to avoid breaking recursive DNS lookups (e.g., when using Cloudflare as an intermediary)
+- **Conversation tracking**: The server tracks up to 10,000 concurrent conversations
+- **Timeout management**: Conversations timeout after 15 minutes of inactivity (reduced to 5 minutes when at capacity)
+- **Maximum data size**: 50MB per request
+
+See the [DNS Transport Configuration](/user-guide/imix#dns-transport-configuration) section in the Imix user guide for more details on agent-side configuration.
+
+### gRPC Redirector
+
+The gRPC redirector provides a passthrough for gRPC traffic, useful for deploying multiple Tavern endpoints or load balancing.
+
+```bash
+# Start gRPC redirector on port 9000
+tavern redirector --transport grpc --listen ":9000" localhost:8000
+```
 
 ## Configuration
 

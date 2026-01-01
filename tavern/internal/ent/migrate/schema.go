@@ -21,6 +21,7 @@ var (
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
+		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED"}},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
@@ -31,7 +32,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "beacons_hosts_host",
-				Columns:    []*schema.Column{BeaconsColumns[10]},
+				Columns:    []*schema.Column{BeaconsColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

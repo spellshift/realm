@@ -26,6 +26,9 @@ const (
 	// This should never be sent if there is more than one producer for the stream (e.g. only send from gRPC, not from websockets).
 	MetadataStreamClose = "stream-close"
 
+	// MetadataMsgKind defines the kind of message (data, ping)
+	MetadataMsgKind = "msg_kind"
+
 	// maxStreamMsgBufSize defines the maximum number of messages that can be buffered for a stream before causing the Mux to block.
 	maxStreamMsgBufSize = 1024
 
@@ -115,10 +118,10 @@ func (s *Stream) processOneMessage(ctx context.Context, msg *pubsub.Message) {
 	}
 
 	// Write Message (or buffer it)
-	buf.writeMessage(ctx, msg, s.recvOrdered)
-
-	// Flush possible messages from buffer
-	buf.flushBuffer(ctx, s.recvOrdered)
+	emit := func(m *pubsub.Message) {
+		s.recvOrdered <- m
+	}
+	buf.writeMessage(ctx, msg, emit)
 }
 
 func parseOrderKey(msg *pubsub.Message) string {
@@ -161,16 +164,22 @@ func newOrderKey() string {
 // In this example, websockets could race to add data, but all the data they add will be in order
 // with respect to the websocket.
 type sessionBuffer struct {
-	nextToSend uint64
-	data       map[uint64]*pubsub.Message
+	nextToSend  uint64
+	data        map[uint64]*pubsub.Message
+	initialized bool
 }
 
-func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, dst chan<- *pubsub.Message) {
+func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, emit func(*pubsub.Message)) {
 	index, ok := parseOrderIndex(msg)
 	if !ok {
 		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
-		dst <- msg
+		emit(msg)
 		return
+	}
+
+	if !buf.initialized {
+		buf.nextToSend = index
+		buf.initialized = true
 	}
 
 	if index < buf.nextToSend {
@@ -183,10 +192,10 @@ func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message,
 	}
 
 	buf.data[index] = msg
-	buf.flushBuffer(ctx, dst)
+	buf.flushBuffer(ctx, emit)
 }
 
-func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Message) {
+func (buf *sessionBuffer) flushBuffer(ctx context.Context, emit func(*pubsub.Message)) {
 	for {
 		msg, ok := buf.data[buf.nextToSend]
 		if !ok {
@@ -208,7 +217,7 @@ func (buf *sessionBuffer) flushBuffer(ctx context.Context, dst chan<- *pubsub.Me
 			}
 			break
 		}
-		dst <- msg
+		emit(msg)
 		delete(buf.data, buf.nextToSend)
 		buf.nextToSend++
 	}

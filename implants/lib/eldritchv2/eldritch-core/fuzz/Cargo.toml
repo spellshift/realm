@@ -1,0 +1,31 @@
+[package]
+name = "eldritch-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1.3", features = ["derive"] }
+spin = { version = "0.10.0", features = ["rwlock"] }
+
+[dependencies.eldritch-core]
+path = ".."
+
+[[bin]]
+name = "interpret"
+path = "fuzz_targets/interpret.rs"
+
+[[bin]]
+name = "complete"
+path = "fuzz_targets/complete.rs"
+
+[[bin]]
+name = "operations"
+path = "fuzz_targets/operations.rs"
+
+[workspace]
+members = ["."]
