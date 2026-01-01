@@ -27,8 +27,8 @@ pub struct ReportFileMessage {
 impl AsyncDispatcher for ReportFileMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         // Configure Limits
-        const CHUNK_SIZE: usize = 1024; // 1 KB Limit (/chunk)
-        const MAX_CHUNKS_QUEUED: usize = 10; // 10 KB Limit (in channel)
+        const CHUNK_SIZE: usize = 64 * 1024; // 64 KB Limit (/chunk) - Increased from 1KB for better performance
+        const MAX_CHUNKS_QUEUED: usize = 10; // 640 KB Limit (in channel)
         const MAX_FILE_SIZE: usize = 32 * 1024 * 1024 * 1024; // 32GB Limit (total file size)
 
         // Use a sync_channel to limit memory usage in case of network errors.

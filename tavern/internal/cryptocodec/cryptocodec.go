@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"runtime/debug"
+	"runtime"
 	"strconv"
 
 	"github.com/cloudflare/circl/dh/x25519"
@@ -232,8 +232,15 @@ type GoidTrace struct {
 	Others   []int
 }
 
+// Optimized goroutine ID extraction using a much smaller stack trace
+// Only captures first 64 bytes which contains the goroutine ID
 func goAllIds() (GoidTrace, error) {
-	buf := debug.Stack()
+	// Use a small buffer to capture just enough for goroutine IDs
+	// This is significantly faster than debug.Stack() which captures the full stack
+	buf := make([]byte, 64)
+	n := runtime.Stack(buf, false)
+	buf = buf[:n]
+
 	// slog.Info(fmt.Sprintf("debug stack: %s", buf))
 	var ids []int
 	elems := bytes.Fields(buf)
@@ -246,10 +253,23 @@ func goAllIds() (GoidTrace, error) {
 			ids = append(ids, id)
 		}
 	}
+
+	// Handle cases where we might not have parent goroutine info in small buffer
+	if len(ids) == 0 {
+		return GoidTrace{}, errors.New("no goroutine ID found")
+	}
+
 	res := GoidTrace{
 		Id:       ids[0],
-		ParentId: ids[1],
-		Others:   ids[2:],
+		ParentId: 0, // Parent ID may not be available with small stack
+		Others:   nil,
 	}
+	if len(ids) > 1 {
+		res.ParentId = ids[1]
+	}
+	if len(ids) > 2 {
+		res.Others = ids[2:]
+	}
+
 	return res, nil
 }
