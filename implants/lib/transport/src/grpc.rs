@@ -49,8 +49,6 @@ impl Transport for GRPC {
 
         http.enforce_http(false);
         http.set_nodelay(true);
-        http.set_recv_buffer_size(Some(512 * 1024));
-        http.set_send_buffer_size(Some(512 * 1024));
 
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
@@ -62,12 +60,12 @@ impl Transport for GRPC {
                 proxy_connector.set_tls(None);
 
                 endpoint
-                    // .rate_limit(1, Duration::from_millis(25))
+                    .rate_limit(1, Duration::from_millis(25))
                     .connect_with_connector_lazy(proxy_connector)
             }
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
-                // .rate_limit(1, Duration::from_millis(25))
+                .rate_limit(1, Duration::from_millis(25))
                 .connect_with_connector_lazy(http),
         };
 
