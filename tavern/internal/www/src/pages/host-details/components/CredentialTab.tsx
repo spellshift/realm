@@ -30,7 +30,7 @@ const CredentialTab = () => {
                 {(loading) ? (
                     <EmptyState type={EmptyStateType.loading} label="Loading credentials..." />
                 ) : error ? (
-                    <EmptyState type={EmptyStateType.error} label="Error credentials..." />
+                    <EmptyState type={EmptyStateType.error} label="Error loading credentials..." />
                 ) : (creds.length > 0) ? (
                     <div className="mt-2 flex flex-col gap-1 w-full">
                         {groupByPrincipal ? <CredentialTableGrouped data={creds} /> : <CredentialTable data={creds} />}
