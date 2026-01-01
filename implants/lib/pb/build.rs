@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build Eldritch Proto
     match tonic_build::configure()
         .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
+        // .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
         .compile(
@@ -102,7 +102,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build Portal Protos
     match tonic_build::configure()
         .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
+        // .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
         .compile(
@@ -120,7 +120,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     match tonic_build::configure()
         .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
+        // .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
         .compile(&["trace.proto"], &["../../../tavern/portals/proto/"])
@@ -135,7 +135,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build C2 Protos
     match tonic_build::configure()
         .out_dir("./src/generated")
-        .codec_path("crate::xchacha::ChachaCodec")
+        // .codec_path("crate::xchacha::ChachaCodec")
         .build_server(false)
         .extern_path(".eldritch", "crate::eldritch")
         .compile(

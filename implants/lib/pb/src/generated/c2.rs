@@ -399,7 +399,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ClaimTasks");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ClaimTasks"));
@@ -429,7 +429,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/FetchAsset");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "FetchAsset"));
@@ -453,7 +453,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportCredential");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportCredential"));
@@ -483,7 +483,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportFile");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportFile"));
@@ -508,7 +508,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportProcessList");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
@@ -532,7 +532,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
@@ -558,7 +558,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReverseShell");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReverseShell"));
@@ -584,7 +584,7 @@ pub mod c2_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/c2.C2/CreatePortal");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "CreatePortal"));

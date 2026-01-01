@@ -204,7 +204,7 @@ pub mod portal_client {
                         format!("Service was not ready: {}", e.into()),
                     )
                 })?;
-            let codec = crate::xchacha::ChachaCodec::default();
+            let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/portal.Portal/OpenPortal");
             let mut req = request.into_streaming_request();
             req.extensions_mut().insert(GrpcMethod::new("portal.Portal", "OpenPortal"));
