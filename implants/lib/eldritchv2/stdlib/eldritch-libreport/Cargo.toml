@@ -14,3 +14,23 @@ spin = { version = "0.10.0", features = ["rwlock"] }
 default = ["stdlib"]
 stdlib = ["dep:pb", "dep:eldritch-agent"]
 fake_bindings = []
+
+[dev-dependencies]
+criterion = { workspace = true }
+tempfile = "3.8"
+prost = { workspace = true }
+rand_chacha = "0.3"
+rand_core = "0.6"
+x25519-dalek = "2.0"
+
+[[bench]]
+name = "comparative"
+harness = false
+
+[[bench]]
+name = "component_benchmarks"
+harness = false
+
+[[bench]]
+name = "end_to_end"
+harness = false
