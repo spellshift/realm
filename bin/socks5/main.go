@@ -41,7 +41,7 @@ func proxyCommand() {
 	fs.Parse(os.Args[1:])
 
 	if *portalID == 0 {
-		log.Fatal("portal_id is required")
+		log.Fatal("portal is required")
 	}
 
 	p := &Proxy{
