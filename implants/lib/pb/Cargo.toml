@@ -9,6 +9,7 @@ imix = []
 grpc = []
 http1 = []
 dns = []
+server = []
 
 
 [dependencies]
@@ -28,6 +29,7 @@ bytes = { workspace = true }
 rand = { workspace = true }
 x25519-dalek = { workspace = true }
 lru = { workspace = true }
+tracing = "0.1"
 
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
@@ -38,3 +40,10 @@ which = { workspace = true }
 home = "=0.5.11"
 reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "xchacha_bench"
+harness = false

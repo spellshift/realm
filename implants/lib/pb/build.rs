@@ -79,6 +79,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Conditionally build server code if feature is enabled
+    let build_server = env::var("CARGO_FEATURE_SERVER").is_ok();
+
     // Build Eldritch Proto
     match tonic_build::configure()
         .out_dir("./src/generated/")
@@ -136,7 +139,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match tonic_build::configure()
         .out_dir("./src/generated")
         .codec_path("crate::xchacha::ChachaCodec")
-        .build_server(false)
+        .build_server(build_server)
         .extern_path(".eldritch", "crate::eldritch")
         .compile(
             &["c2.proto"],
