@@ -115,7 +115,8 @@ jobs:
       run: |
         ./socks5_bin -portal $PORTAL_ID -listen_addr 127.0.0.1:1080 -upstream_addr 127.0.0.1:8000 &
         echo "Socks5 Proxy started on port 1080"
-        sleep 2
+        # Wait for port 1080
+        timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 1080
 
     - name: 📄 Prepare Mock Data & Server
       run: |
