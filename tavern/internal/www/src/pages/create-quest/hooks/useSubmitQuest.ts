@@ -33,8 +33,7 @@ export const useSubmitQuest = () => {
     }
 
     const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_QUEST_QUERY,
-        'GetQuests'
+        GET_QUEST_QUERY
       ]});
 
     const submitQuest = (props: CreateQuestProps) => {

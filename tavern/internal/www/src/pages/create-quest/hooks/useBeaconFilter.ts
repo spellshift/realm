@@ -37,7 +37,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
 
             if(searchTypes.beacon.length > 0){
                 // If a beacon filter is applied ignore other filters to just match the beacon
-                if(searchTypes.beacon.indexOf(beacon.id) > -1){
+                if(searchTypes.beacon.indexOf(beacon.name) > -1){
                     match = true;
                 }
                 else{
@@ -55,7 +55,7 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             }
 
             if(searchTypes.host.length > 0){
-                if(beacon?.host?.id && searchTypes.host.indexOf(beacon?.host?.id) > -1){
+                if(beacon?.host?.id && searchTypes.host.indexOf(beacon?.host?.name) > -1){
                     match = true;
                 }
                 else{
