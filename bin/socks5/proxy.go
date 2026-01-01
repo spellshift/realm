@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -43,8 +44,7 @@ func (p *Proxy) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to upstream: %w", err)
 	}
-	// defer conn.Close() // Don't close immediately in Run, but Run blocks so maybe fine?
-	// Ideally Proxy lives as long as main.
+	defer conn.Close()
 
 	client := portalpb.NewPortalClient(conn)
 
@@ -53,33 +53,34 @@ func (p *Proxy) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to open portal: %w", err)
 	}
+
+	// Registration
+	if err := streamClient.Send(&portalpb.OpenPortalRequest{
+		PortalId: p.portalID,
+	}); err != nil {
+		return fmt.Errorf("failed to connect to portal: %d %v", p.portalID, err)
+	}
 	p.stream = streamClient
 
-	go p.dispatchLoop()
+	errCh := make(chan error, 2)
+	go p.dispatchLoop(ctx, errCh)
+	go p.proxyLoop(ctx, errCh)
 
-	l, err := net.Listen("tcp", p.listenAddr)
-	if err != nil {
-		return fmt.Errorf("failed to listen on %s: %w", p.listenAddr, err)
-	}
-	p.listener = l
-	log.Printf("SOCKS5 Proxy listening on %s, upstream %s, portal %d", p.listenAddr, p.upstreamAddr, p.portalID)
-
-	for {
-		c, err := l.Accept()
-		if err != nil {
-			log.Printf("Accept error: %v", err)
-			continue
-		}
-		p.wg.Add(1)
-		go p.handleConnection(c)
-	}
+	fatalErr := <-errCh
+	return fatalErr
 }
 
-func (p *Proxy) dispatchLoop() {
+func (p *Proxy) dispatchLoop(ctx context.Context, errCh chan<- error) {
 	for {
+		select {
+		case <-ctx.Done():
+			errCh <- ctx.Err()
+		default:
+		}
+
 		resp, err := p.stream.Recv()
 		if err != nil {
-			log.Printf("Recv error: %v", err)
+			errCh <- err
 			return
 		}
 
@@ -102,6 +103,31 @@ func (p *Proxy) dispatchLoop() {
 	}
 }
 
+func (p *Proxy) proxyLoop(ctx context.Context, errCh chan<- error) {
+	l, err := net.Listen("tcp", p.listenAddr)
+	if err != nil {
+		errCh <- fmt.Errorf("failed to listen on %s: %w", p.listenAddr, err)
+		return
+	}
+	p.listener = l
+	log.Printf("SOCKS5 Proxy listening on %s, upstream %s, portal %d", p.listenAddr, p.upstreamAddr, p.portalID)
+
+	for {
+		select {
+		case <-ctx.Done():
+			errCh <- ctx.Err()
+		default:
+		}
+
+		c, err := l.Accept()
+		if err != nil {
+			slog.Error("Failed to accept SOCKS5 client connection", "error", err)
+			continue
+		}
+		p.wg.Add(1)
+		go p.handleConnection(c)
+	}
+}
 func (p *Proxy) sendMote(mote *portalpb.Mote) error {
 	p.sendMu.Lock()
 	defer p.sendMu.Unlock()

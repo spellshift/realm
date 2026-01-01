@@ -1,6 +1,6 @@
 use anyhow::Result;
 use pb::c2::{CreatePortalRequest, CreatePortalResponse};
-use pb::portal::{BytesPayloadKind, mote::Payload, Mote};
+use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
 use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
 use prost::Message;
@@ -52,7 +52,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
         .await
         .is_err()
     {
-        return Err(anyhow::anyhow!("Failed to send initial portal registration"));
+        return Err(anyhow::anyhow!(
+            "Failed to send initial portal registration"
+        ));
     }
 
     loop {
@@ -120,7 +122,10 @@ async fn handle_incoming_mote(
             add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentSend)?;
 
             // 3. Echo back immediately
-            out_tx.send(mote).await.map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
+            out_tx
+                .send(mote)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
             return Ok(());
         }
     }
@@ -129,14 +134,14 @@ async fn handle_incoming_mote(
 
     // Get or create context
     if !streams.contains_key(&stream_id) {
+        #[cfg(debug_assertions)]
+        log::info!("incoming mote for new stream! {stream_id} {mote:?}");
+
         // Create new stream context
         let (tx, rx) = mpsc::channel::<Mote>(100);
         let reader = OrderedReader::new();
 
-        streams.insert(
-            stream_id.clone(),
-            StreamContext { reader, tx },
-        );
+        streams.insert(stream_id.clone(), StreamContext { reader, tx });
 
         // Spawn handler task based on payload type?
         // Actually, we don't know the type until we inspect the payload.
@@ -214,15 +219,9 @@ async fn stream_handler(
     // Determine handler based on payload
     if let Some(payload) = &first_mote.payload {
         match payload {
-            Payload::Tcp(_) => {
-                tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await
-            }
-            Payload::Udp(_) => {
-                udp::handle_udp(first_mote, rx, out_tx, sequencer).await
-            }
-            Payload::Bytes(_) => {
-                bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await
-            }
+            Payload::Tcp(_) => tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await,
+            Payload::Udp(_) => udp::handle_udp(first_mote, rx, out_tx, sequencer).await,
+            Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
         }
     } else {
         Ok(())

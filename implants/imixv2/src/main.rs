@@ -13,6 +13,9 @@ extern crate windows_service;
 #[cfg(all(feature = "win_service", windows))]
 mod win_service;
 
+#[cfg(all(debug_assertions, feature = "tokio-console"))]
+use console_subscriber;
+
 pub use pb::config::Config;
 pub use transport::{ActiveTransport, Transport};
 
@@ -29,6 +32,12 @@ mod version;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    #[cfg(all(debug_assertions, feature = "tokio-console"))]
+    {
+        console_subscriber::init();
+        println!("Tokio Console active.");
+    }
+
     run::init_logger();
 
     #[cfg(feature = "install")]
