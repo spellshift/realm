@@ -95,7 +95,7 @@ jobs:
         QUERY='query { portals { edges { node { id } } } }'
         # Send GraphQL query to Tavern
         RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" \
-          -d "{\"query\": \"$QUERY\"}" http://localhost:8000/query)
+          -d "{\"query\": \"$QUERY\"}" http://localhost:8000/graphql)
 
         echo "GraphQL Response: $RESPONSE"
 
