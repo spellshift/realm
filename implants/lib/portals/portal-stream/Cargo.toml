@@ -1,13 +1,13 @@
 [package]
 name = "portal-stream"
-version = "0.3.0"
-edition = "2024"
+version = "0.1.0"
+edition = "2021"
 
 [features]
 default = ["tokio"]
 tokio = ["dep:tokio"]
 
 [dependencies]
-pb = { workspace = true }
+pb = { path = "../../pb" }
 anyhow = { workspace = true }
 tokio = { workspace = true, features = ["sync"], optional = true }

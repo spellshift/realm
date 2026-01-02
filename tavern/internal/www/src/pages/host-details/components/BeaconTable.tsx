@@ -3,14 +3,13 @@ import { formatDistance } from "date-fns";
 import { useNavigate } from 'react-router-dom';
 
 import Table from "../../../components/tavern-base-ui/Table";
-import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
-import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
+import { PrincipalAdminTypes } from "../../../utils/enums";
+import { checkIfBeaconOffline } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { BeaconEdge } from "../../../utils/interfacesQuery";
 
 const BeaconTable = ({ beacons }: { beacons: Array<BeaconEdge> }) => {
-    console.log(beacons);
     const nav = useNavigate();
     const currentDate = new Date();
     const princialColors = Object.values(PrincipalAdminTypes);
@@ -35,23 +34,6 @@ const BeaconTable = ({ beacons }: { beacons: Array<BeaconEdge> }) => {
                 const color = princialColors.indexOf(principal) === -1 ? 'gray' : 'purple';
                 return (
                     <Badge badgeStyle={{ color: color }} key={principal}>{principal}</Badge>
-                );
-            }
-        },
-        {
-            id: "transport",
-            header: "Transport",
-            accessorFn: (row: BeaconEdge) => row?.node?.transport,
-            footer: props => props.column.id,
-            enableSorting: false,
-            maxSize: 80,
-            cell: (cellData: any) => {
-                const transport = cellData.getValue();
-                if (!transport) {
-                    return null;
-                }
-                return (
-                    <Badge>{getEnumKey(SupportedTransports, transport)}</Badge>
                 );
             }
         },

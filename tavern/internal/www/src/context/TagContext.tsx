@@ -3,7 +3,7 @@ import { ApolloError, useQuery } from "@apollo/client";
 import { GET_TAG_FILTERS } from "../utils/queries";
 import { BeaconEdge, BeaconNode, HostEdge, HostNode, TagContextQueryResponse, TagEdge, TagNode } from "../utils/interfacesQuery";
 import { FilterBarOption, TagContextProps } from "../utils/interfacesUI";
-import { SupportedPlatforms, SupportedTransports } from "../utils/enums";
+import { SupportedPlatforms } from "../utils/enums";
 
 type TagContextType = {
     data: TagContextProps;
@@ -21,8 +21,7 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         hosts: [],
         principals: [],
         primaryIPs: [],
-        platforms: [],
-        transports: [],
+        platforms: []
     });
 
     const PARAMS = {
@@ -39,9 +38,7 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         if (!data) {
             return;
         }
-        const supportedPlatformsList = Object.entries(SupportedPlatforms);
-        const supportedTransportList = Object.entries(SupportedTransports);
-
+        const supportedPlatformsList = Object.values(SupportedPlatforms);
         const beacons: Array<FilterBarOption & BeaconNode> = [];
         const principalsSet = new Set<string>();
         const principals: FilterBarOption[] = [];
@@ -111,21 +108,12 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         });
 
         // Build platform options
-        const platforms: FilterBarOption[] = supportedPlatformsList.map(([label, value]) => ({
-            id: value,
-            name: value,
-            value: value,
-            label: label,
+        const platforms: FilterBarOption[] = supportedPlatformsList.map((platform: string) => ({
+            id: platform,
+            name: platform,
+            value: platform,
+            label: platform,
             kind: "platform"
-        }));
-
-        // Build transport options with user-friendly labels
-        const transports: FilterBarOption[] = supportedTransportList.map(([label, value]) => ({
-            id: value,
-            name: value,
-            value: value,
-            label: label,
-            kind: "transport"
         }));
 
         // Set tags state with formatted options
@@ -136,8 +124,7 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             hosts,
             principals,
             primaryIPs,
-            platforms,
-            transports
+            platforms
         };
         setTags(tags);
     }, []);

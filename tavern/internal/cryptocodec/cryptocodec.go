@@ -251,13 +251,23 @@ type GoidTrace struct {
 // goAllIds returns the current goroutine ID and its creator's ID.
 // Optimized to avoid debug.Stack() which is very expensive.
 func goAllIds() (GoidTrace, error) {
-	// 4096 bytes is enough for "goroutine 1 [running]:\n" plus a reasonable stack trace
-	// to ensure the "created by ... in goroutine X" footer is captured.
-	// A small stack trace is usually ~200-300 bytes, but deep stacks can be larger.
-	var buf [4096]byte
-	n := runtime.Stack(buf[:], false)
-	s := string(buf[:n])
+	// Start with a reasonable buffer size. 4KB is usually enough.
+	// But if the stack is deep, we need to grow.
+	// We use the same strategy as debug.Stack() to ensure we get the full trace.
+	// debug.Stack() starts at 1024. We start at 4096.
+	size := 4096
+	for {
+		buf := make([]byte, size)
+		n := runtime.Stack(buf, false)
+		if n < size {
+			return parseStack(buf[:n])
+		}
+		size *= 2
+	}
+}
 
+func parseStack(buf []byte) (GoidTrace, error) {
+	s := string(buf)
 	var res GoidTrace
 
 	// Parse current ID: "goroutine <id> [running]:"
@@ -288,8 +298,6 @@ func goAllIds() (GoidTrace, error) {
 		parentId, err := strconv.Atoi(parentStr)
 		if err == nil {
 			res.ParentId = parentId
-			// We can populate others if needed, but the original logic only really used parentId correctly (ids[1])
-			// because ids[2:] would likely be empty or garbage.
 			res.Others = []int{}
 		}
 	}

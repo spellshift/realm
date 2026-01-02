@@ -25,8 +25,7 @@ export interface BeaconNode {
     principal: string;
     interval: number;
     lastSeenAt: string;
-    host?: HostNode;
-    transport?: string;
+    host?: HostNode
 }
 
 export interface BeaconEdge {

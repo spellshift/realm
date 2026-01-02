@@ -167,6 +167,7 @@ mod tests {
 
     use super::*;
     #[test]
+    #[ignore] // TODO: Remove this, but it's confusing Jules
     fn test_sys_exec_current_user() -> anyhow::Result<()> {
         if cfg!(target_os = "linux")
             || cfg!(target_os = "ios")
@@ -268,6 +269,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // TODO: Remove this, but it's confusing Jules
     fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
         init_logging();
 

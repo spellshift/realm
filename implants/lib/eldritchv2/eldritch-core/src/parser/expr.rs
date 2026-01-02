@@ -471,20 +471,16 @@ impl Parser {
                 let start = expr.span;
                 // FIX: Extract name and span to drop borrow
                 let (name, end_span) = {
-                    if self.check(&TokenKind::Identifier(String::new())) {
-                        let token = self.advance();
-                        let n = if let TokenKind::Identifier(name) = &token.kind {
-                            name.clone()
-                        } else {
-                            unreachable!()
-                        };
-                        (n, token.span)
+                    let token = self.consume(
+                        |t| matches!(t, TokenKind::Identifier(_)),
+                        "Expect property name after '.'.",
+                    )?;
+                    let n = if let TokenKind::Identifier(name) = &token.kind {
+                        name.clone()
                     } else {
-                        // Handle missing identifier (e.g. "sys.") for autocomplete
-                        // Use the dot token span (previous token) as the end span
-                        let dot_span = self.tokens[self.current - 1].span;
-                        (String::new(), dot_span)
-                    }
+                        unreachable!()
+                    };
+                    (n, token.span)
                 };
                 expr = self.make_expr(ExprKind::GetAttr(Box::new(expr), name), start, end_span);
             } else {

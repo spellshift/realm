@@ -23,11 +23,8 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
     const handleSearch = (text: string) => {
         const fd = data.filter((tome) => {
             let tomeName = tome.name.toLowerCase();
-            let tomeDesc = tome?.description?.toLowerCase();
-            let tomeParams = tome?.paramDefs?.toLowerCase();
-
             let searchText = text.toLowerCase();
-            return tomeParams?.includes(searchText) || tomeDesc?.includes(searchText) || tomeName.includes(searchText) || (selected && selected.name === tome?.name);
+            return tomeName.includes(searchText) || (selected && selected.name === tome?.name);
         })
         setFilteredData(fd);
     }
@@ -35,7 +32,7 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
     return (
         <div className="w-full">
             <div className="mx-auto w-full flex flex-col gap-2">
-                <FreeTextSearch placeholder='Search by tome definition' setSearch={handleSearch} />
+                <FreeTextSearch placeholder='Search by tome name' setSearch={handleSearch} />
                 <RadioGroup value={selected || undefined} onChange={setSelected} className="flex flex-col gap-3">
                     <RadioGroup.Label className="sr-only">
                         <Heading size="sm" >{label}</Heading>

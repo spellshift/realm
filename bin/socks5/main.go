@@ -35,8 +35,8 @@ func proxyCommand() {
 	// Let's manually define the proxy flags again using a FlagSet to avoid conflict with `trace` flags if we were to define them globally.
 	fs := flag.NewFlagSet("proxy", flag.ExitOnError)
 	portalID := fs.Int64("portal", 0, "Portal ID")
-	listenAddr := fs.String("listen", "127.0.0.1:1080", "SOCKS5 Listen Address")
-	upstreamAddr := fs.String("upstream", "127.0.0.1:8000", "Upstream gRPC Address")
+	listenAddr := fs.String("listen_addr", "127.0.0.1:1080", "SOCKS5 Listen Address")
+	upstreamAddr := fs.String("upstream_addr", "127.0.0.1:8000", "Upstream gRPC Address")
 
 	// Parse remaining args
 	// If main was called without subcommands, os.Args is [prog, flags...]

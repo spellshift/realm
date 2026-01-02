@@ -63,24 +63,12 @@ const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCu
     const defaultRowLimit = TableRowLimit.HostRowLimit;
     const filterInfo = (filters && filters.filtersEnabled) && constructBeaconFilterQuery(filters.beaconFields);
 
-    const hasBeaconsWithFilter: Record<string, any> = {};
-    if (filterInfo) {
-      if (filterInfo.hasBeaconWith.nameIn) {
-        hasBeaconsWithFilter.nameIn = filterInfo.hasBeaconWith.nameIn;
-      }
-      if (filterInfo.hasBeaconWith.principalIn) {
-        hasBeaconsWithFilter.principalIn = filterInfo.hasBeaconWith.principalIn;
-      }
-      if (filterInfo.hasBeaconWith.transportIn) {
-        hasBeaconsWithFilter.transportIn = filterInfo.hasBeaconWith.transportIn;
-      }
-    }
-
     const query = {
       "where": {
         ...id && {"id": id},
         ...filterInfo && filterInfo.hasBeaconWith.hasHostWith,
-        ...(Object.keys(hasBeaconsWithFilter).length > 0) && {"hasBeaconsWith": hasBeaconsWithFilter},
+        ...(filterInfo && filterInfo.hasBeaconWith.nameIn) && {"hasBeaconsWith": {"nameIn": filterInfo.hasBeaconWith.nameIn}},
+        ...(filterInfo && filterInfo.hasBeaconWith.principalIn) && {"hasBeaconsWith": {"principalIn": filterInfo.hasBeaconWith.principalIn}}
       },
       ...(sort && {orderBy: [sort]})
     } as any;
