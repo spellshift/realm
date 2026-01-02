@@ -1,0 +1,739 @@
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.01s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.54s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.01s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.76s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.82s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.01s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.01s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.52s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.01s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.52s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s
+
+warning: pb@0.0.5: IMIX_SERVER_PUBKEY already set, skipping fetch
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pb` (lib) generated 2 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+warning: unused variable: `proxy_uri`
+  --> lib/transport/src/lib.rs:43:25
+   |
+43 |     fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+   |                         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_proxy_uri`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `transport` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-029650a146a1f4e8)
+
+running 5 tests
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 191 filtered out; finished in 2.00s

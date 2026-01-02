@@ -1,0 +1,725 @@
+warning: pb@0.0.5: Failed to connect to http://127.0.0.1:8000/status: error sending request for url (http://127.0.0.1:8000/status)
+   Compiling pb v0.0.5 (/app/implants/lib/pb)
+   Compiling tiny-keccak v2.0.2
+   Compiling tempfile v3.24.0
+   Compiling crc32fast v1.5.0
+warning: unused import: `tonic::transport`
+ --> lib/pb/src/config.rs:1:5
+  |
+1 | use tonic::transport;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::c2::beacon::Transport`
+ --> lib/pb/src/config.rs:4:5
+  |
+4 | use crate::c2::beacon::Transport;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   Compiling thiserror v1.0.69
+   Compiling lazy_static v1.5.0
+   Compiling sha2 v0.10.9
+   Compiling idna v1.1.0
+   Compiling thiserror-impl v1.0.69
+warning: unused variable: `transport`
+   --> lib/pb/src/config.rs:112:13
+    |
+112 |         let transport = crate::c2::beacon::Transport::Http1;
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transport`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling url v2.5.7
+   Compiling futures-executor v0.3.31
+   Compiling futures v0.3.31
+   Compiling pkg-config v0.3.32
+   Compiling const-random-macro v0.1.16
+   Compiling ahash v0.8.12
+warning: `pb` (lib) generated 3 warnings (run `cargo fix --lib -p pb` to apply 2 suggestions)
+   Compiling sha1 v0.10.6
+   Compiling const-random v0.1.18
+   Compiling num-integer v0.1.46
+   Compiling memoffset v0.7.1
+   Compiling getrandom v0.1.16
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling num-bigint v0.4.6
+   Compiling bstr v1.12.1
+   Compiling proc-macro-error-attr v1.0.4
+   Compiling core2 v0.4.0
+   Compiling strsim v0.11.1
+   Compiling rle-decode-fast v1.0.3
+   Compiling iana-time-zone v0.1.64
+   Compiling ident_case v1.0.1
+   Compiling zstd-safe v7.2.4
+   Compiling darling_core v0.20.11
+   Compiling chrono v0.4.42
+   Compiling libflate_lz77 v2.2.0
+   Compiling crossbeam-channel v0.5.15
+   Compiling proc-macro-error v1.0.4
+   Compiling dary_heap v0.3.8
+   Compiling thiserror v2.0.17
+   Compiling adler32 v1.2.0
+   Compiling data-encoding v2.9.0
+   Compiling unicode-segmentation v1.12.0
+   Compiling darling_macro v0.20.11
+   Compiling nix v0.26.4
+   Compiling rand_core v0.5.1
+   Compiling aes v0.8.4
+   Compiling thiserror-impl v2.0.17
+   Compiling adler2 v2.0.1
+   Compiling simd-adler32 v0.3.8
+   Compiling no-std-net v0.6.0
+   Compiling pnet_base v0.34.0
+   Compiling miniz_oxide v0.8.9
+   Compiling darling v0.20.11
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.9.0
+   Compiling md5 v0.7.0
+   Compiling base64ct v1.8.1
+   Compiling ucd-trie v0.1.7
+   Compiling pest v2.8.4
+   Compiling password-hash v0.4.2
+   Compiling libflate v2.2.1
+   Compiling digest v0.10.7
+   Compiling derive_builder_core v0.20.2
+   Compiling flate2 v1.1.5
+   Compiling rand_chacha v0.2.2
+   Compiling hmac v0.12.1
+   Compiling serde_urlencoded v0.7.1
+   Compiling block-buffer v0.9.0
+   Compiling ring v0.16.20
+   Compiling proc-macro-error-attr2 v2.0.0
+   Compiling signature v1.6.4
+   Compiling proc-macro-error2 v2.0.1
+   Compiling ed25519 v1.5.3
+   Compiling derive_builder_macro v0.20.2
+   Compiling sha2 v0.9.9
+   Compiling pbkdf2 v0.11.0
+   Compiling rand v0.7.3
+   Compiling pest_meta v2.8.4
+   Compiling curve25519-dalek v3.2.0
+   Compiling pnet_macros_support v0.34.0
+   Compiling globset v0.4.18
+   Compiling blowfish v0.9.1
+   Compiling polyval v0.6.2
+   Compiling ctr v0.9.2
+   Compiling pnet_macros v0.34.0
+   Compiling mio v0.8.11
+   Compiling pnet_sys v0.34.0
+   Compiling sysinfo v0.29.11
+   Compiling dirs-sys v0.3.7
+   Compiling spin v0.5.2
+   Compiling bit-vec v0.6.3
+   Compiling untrusted v0.7.1
+   Compiling yasna v0.5.2
+   Compiling pnet_packet v0.34.0
+   Compiling dirs v4.0.0
+   Compiling ghash v0.5.1
+   Compiling bcrypt-pbkdf v0.9.0
+   Compiling ignore v0.4.25
+   Compiling ed25519-dalek v1.0.1
+   Compiling pest_generator v2.8.4
+   Compiling zstd v0.13.3
+   Compiling include-flate-compress v0.3.1
+   Compiling include-flate-codegen v0.3.1
+   Compiling rust-embed-utils v8.9.0
+   Compiling derive_builder v0.20.2
+   Compiling getset v0.1.6
+   Compiling cbc v0.1.2
+   Compiling neli-proc-macros v0.2.2
+   Compiling ipnetwork v0.20.0
+   Compiling russh-cryptovec v0.7.3
+   Compiling inotify-sys v0.1.5
+   Compiling num_cpus v1.17.0
+   Compiling filetime v0.2.26
+   Compiling pnet v0.34.0
+   Compiling seize v0.3.3
+   Compiling inotify v0.9.6
+   Compiling russh-keys v0.37.1
+   Compiling neli v0.7.3
+   Compiling flurry v0.5.2
+   Compiling pnet_datalink v0.34.0
+   Compiling pnet_transport v0.34.0
+   Compiling include-flate v0.3.1
+   Compiling rust-embed-impl v8.9.0
+   Compiling pest_derive v2.8.4
+   Compiling globwalk v0.9.1
+   Compiling aes-gcm v0.10.3
+   Compiling hex-literal v0.3.4
+   Compiling hex v0.4.3
+   Compiling rust-embed v8.9.0
+   Compiling tera v1.20.1
+   Compiling russh v0.37.1
+   Compiling russh-sftp v2.0.8
+   Compiling local-ip-address v0.6.8
+   Compiling notify v6.1.1
+   Compiling tar v0.4.44
+   Compiling sct v0.6.1
+   Compiling async-recursion v1.1.1
+   Compiling hex-literal v0.4.1
+   Compiling glob v0.3.3
+   Compiling webpki v0.21.4
+   Compiling eldritch-agent v0.1.0 (/app/implants/lib/eldritchv2/eldritch-agent)
+   Compiling base64 v0.13.1
+   Compiling predicates-core v1.0.9
+   Compiling h2 v0.4.12
+   Compiling rustls v0.19.1
+   Compiling dirs-sys-next v0.1.2
+   Compiling dirs-next v2.0.0
+   Compiling parking_lot_core v0.9.12
+   Compiling memoffset v0.6.5
+   Compiling regex-syntax v0.6.29
+   Compiling tinyvec_macros v0.1.1
+   Compiling difflib v0.4.0
+   Compiling unicode-width v0.1.14
+   Compiling siphasher v1.0.1
+   Compiling termtree v0.5.1
+   Compiling predicates-tree v1.0.12
+   Compiling hyper v1.8.1
+   Compiling phf_shared v0.11.3
+   Compiling rustls-native-certs v0.5.0
+   Compiling tokio-rustls v0.22.0
+   Compiling predicates v3.1.3
+   Compiling tinyvec v1.10.0
+   Compiling hyper-util v0.1.19
+   Compiling parking_lot v0.12.5
+   Compiling term v0.7.0
+   Compiling ct-logs v0.8.0
+   Compiling enum-as-inner v0.6.1
+   Compiling headers-core v0.2.0
+   Compiling serde_repr v0.1.20
+   Compiling new_debug_unreachable v1.0.6
+   Compiling termcolor v1.4.1
+   Compiling rustix v0.38.44
+   Compiling linked-hash-map v0.5.6
+   Compiling precomputed-hash v0.1.1
+   Compiling string_cache v0.8.9
+   Compiling lru-cache v0.1.2
+   Compiling bit-set v0.5.3
+   Compiling hickory-proto v0.24.4
+   Compiling headers v0.3.9
+   Compiling hyper-rustls v0.22.1
+   Compiling ascii-canvas v3.0.0
+   Compiling ena v0.14.3
+   Compiling lalrpop-util v0.19.12
+   Compiling rustls-pki-types v1.13.2
+   Compiling itertools v0.10.5
+   Compiling is-terminal v0.4.17
+   Compiling mockall_derive v0.12.1
+   Compiling dupe_derive v0.9.1
+   Compiling utf8parse v0.2.2
+   Compiling resolv-conf v0.7.6
+   Compiling unicode-xid v0.2.6
+   Compiling humantime v2.3.0
+   Compiling fragile v2.0.1
+   Compiling diff v0.1.13
+   Compiling downcast v0.11.0
+   Compiling allocative v0.3.4
+   Compiling lalrpop v0.19.12
+   Compiling env_logger v0.10.2
+   Compiling hickory-resolver v0.24.4
+   Compiling mockall v0.12.1
+   Compiling dupe v0.9.1
+   Compiling hyper-proxy v0.9.1
+   Compiling hashbrown v0.14.5
+   Compiling Inflector v0.11.4
+   Compiling schemafy_core v0.5.2
+   Compiling ctor v0.1.26
+   Compiling serial-core v0.4.0
+   Compiling allocative_derive v0.3.3
+   Compiling ioctl-rs v0.1.6
+   Compiling trait-variant v0.1.2
+   Compiling termios v0.2.2
+   Compiling starlark_map v0.12.0
+   Compiling beef v0.5.2
+   Compiling base32 v0.5.1
+   Compiling bumpalo v3.19.1
+   Compiling logos-derive v0.12.1
+   Compiling serial-unix v0.4.0
+   Compiling schemafy_lib v0.5.2
+   Compiling pretty_env_logger v0.5.0
+   Compiling rustls-webpki v0.103.8
+   Compiling textwrap v0.11.0
+   Compiling fxhash v0.2.1
+   Compiling nibble_vec v0.1.0
+   Compiling paste v1.0.15
+   Compiling convert_case v0.4.0
+   Compiling endian-type v0.1.2
+   Compiling radix_trie v0.2.1
+   Compiling derive_more v0.99.17
+   Compiling schemafy v0.5.2
+   Compiling rustls v0.23.35
+   Compiling logos v0.12.1
+   Compiling serial v0.4.0
+   Compiling transport v0.0.5 (/app/implants/lib/transport)
+   Compiling fd-lock v3.0.13
+   Compiling nix v0.25.1
+   Compiling starlark_syntax v0.12.0
+   Compiling lsp-types v0.94.1
+   Compiling annotate-snippets v0.9.2
+   Compiling filedescriptor v0.8.3
+   Compiling derivative v2.2.0
+   Compiling indenter v0.3.4
+   Compiling shell-words v1.1.1
+   Compiling strsim v0.10.0
+   Compiling downcast-rs v1.2.1
+   Compiling starlark v0.12.0
+   Compiling portable-pty v0.8.1
+   Compiling display_container v0.9.0
+   Compiling tokio-rustls v0.26.4
+   Compiling rustyline v11.0.0
+   Compiling debugserver-types v0.5.0
+   Compiling starlark_derive v0.12.0
+   Compiling webpki-roots v1.0.4
+   Compiling tower v0.5.2
+   Compiling erased-serde v0.3.31
+   Compiling static_assertions v1.1.0
+   Compiling maplit v1.0.2
+   Compiling cmp_any v0.8.1
+   Compiling inventory v0.3.21
+   Compiling tower-http v0.6.8
+   Compiling hyper-rustls v0.27.7
+   Compiling eldritch v0.3.1 (/app/implants/lib/eldritch)
+   Compiling hyper-rustls v0.24.2
+   Compiling eldritch-libsys v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libsys)
+   Compiling netstat v0.1.0 (/app/implants/lib/netstat)
+   Compiling encoding_rs v0.8.35
+   Compiling quick-error v1.2.3
+   Compiling eval v0.4.3
+   Compiling reqwest v0.12.28
+   Compiling listeners v0.2.1
+   Compiling reqwest v0.11.27
+   Compiling sha256 v1.6.0
+   Compiling eldritch-libhttp v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libhttp)
+warning: unused import: `alloc::vec::Vec`
+ --> lib/eldritchv2/stdlib/eldritch-libhttp/src/std.rs:5:5
+  |
+5 | use alloc::vec::Vec;
+  |     ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `eldritch-libhttp` (lib) generated 1 warning (run `cargo fix --lib -p eldritch-libhttp` to apply 1 suggestion)
+   Compiling eldritch-libprocess v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libprocess)
+   Compiling eldritch-libassets v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libassets)
+   Compiling eldritch-libreport v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libreport)
+   Compiling eldritch-libagent v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libagent)
+   Compiling eldritch-libpivot v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libpivot)
+   Compiling eldritch-libfile v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libfile)
+   Compiling eldritch-libcrypto v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libcrypto)
+   Compiling eldritch-libtime v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libtime)
+   Compiling eldritch-librandom v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-librandom)
+   Compiling eldritch-libregex v0.3.0 (/app/implants/lib/eldritchv2/stdlib/eldritch-libregex)
+   Compiling eldritchv2 v0.3.0 (/app/implants/lib/eldritchv2/eldritchv2)
+   Compiling atty v0.2.14
+   Compiling os_str_bytes v6.6.1
+   Compiling clap_lex v0.2.4
+   Compiling textwrap v0.16.2
+   Compiling heck v0.3.3
+   Compiling clap v3.2.25
+   Compiling vec_map v0.8.2
+   Compiling ansi_term v0.12.1
+   Compiling strsim v0.8.0
+   Compiling clap v2.34.0
+   Compiling structopt-derive v0.4.18
+   Compiling lsp-server v0.7.9
+   Compiling golem v0.3.1 (/app/implants/golem)
+   Compiling structopt v0.3.26
+   Compiling lsp-types v0.93.2
+   Compiling regex-automata v0.1.10
+   Compiling assert_cmd v2.1.1
+   Compiling signal-hook v0.3.18
+   Compiling bstr v0.2.17
+   Compiling wait-timeout v0.2.1
+   Compiling starlark_lsp v0.12.0
+   Compiling httptest v0.15.5
+   Compiling anstyle-parse v0.2.7
+   Compiling httptest v0.16.3
+   Compiling predicates v2.1.5
+   Compiling eldritch-repl v0.3.0 (/app/implants/lib/eldritchv2/eldritch-repl)
+   Compiling unsafe-libyaml v0.2.11
+   Compiling colorchoice v1.0.4
+   Compiling anstyle-query v1.1.5
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstream v0.6.21
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling signal-hook-mio v0.2.5
+   Compiling env_filter v0.1.4
+   Compiling imix v0.3.1 (/app/implants/imix)
+   Compiling jiff v0.2.17
+   Compiling imixv2 v0.3.0 (/app/implants/imixv2)
+   Compiling crossterm v0.27.0
+   Compiling eldritch-migration v0.3.0 (/app/implants/lib/eldritchv2/stdlib/migration)
+   Compiling tokio-test v0.4.4
+   Compiling eldritch-stdlib-tests v0.3.0 (/app/implants/lib/eldritchv2/stdlib/tests)
+   Compiling env_logger v0.11.8
+warning: field `name` is never read
+  --> imixv2/src/task.rs:36:5
+   |
+35 | struct SubtaskHandle {
+   |        ------------- field in this struct
+36 |     name: String,
+   |     ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `register_subtask` is never used
+   --> imixv2/src/task.rs:108:12
+    |
+ 56 | impl TaskRegistry {
+    | ----------------- method in this implementation
+...
+108 |     pub fn register_subtask(
+    |            ^^^^^^^^^^^^^^^^
+
+warning: `eldritch-libhttp` (lib test) generated 1 warning (1 duplicate)
+warning: `imixv2` (lib test) generated 1 warning (1 duplicate)
+warning: `imixv2` (bin "imixv2" test) generated 2 warnings
+   Compiling host_unique v0.1.0 (/app/implants/lib/host_unique)
+   Compiling eldritch-core v0.3.0 (/app/implants/lib/eldritchv2/eldritch-core)
+   Compiling eldritch-macros v0.3.0 (/app/implants/lib/eldritchv2/eldritch-macros)
+warning: `pb` (lib test) generated 3 warnings (3 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 49s
+     Running unittests src/lib.rs (target/debug/deps/eldritch-ef8f5a1493f894c2)
+
+running 196 tests
+test agent::eval_impl::tests::test_eval_fail ... ok
+test agent::eval_impl::tests::test_eval ... ok
+test agent::set_callback_interval_impl::test::change_interval ... ok
+test agent::set_callback_uri_impl::test::change_interval ... ok
+test assets::copy_impl::tests::test_remote_copy ... ok
+test assets::list_impl::tests::test_asset_list_local ... ok
+test assets::copy_impl::tests::test_embedded_copy ... ok
+ 2026-01-02T08:10:13.339Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:13.339Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+test assets::read_binary_impl::tests::test_assets_read_binary ... ok
+test assets::list_impl::tests::test_asset_list_remote ... ok
+ 2026-01-02T08:10:13.339Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+ 2026-01-02T08:10:13.340Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+ 2026-01-02T08:10:13.361Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test assets::read_impl::tests::test_asset_read_local ... ok
+test crypto::aes_decrypt_file_impl::tests::test_decrypt ... ok
+test crypto::aes_decrypt_file_impl::tests::test_decrypt_bad_password ... ok
+test crypto::aes_decrypt_file_impl::tests::test_decrypt_bad_size ... ok
+test crypto::aes_decrypt_file_impl::tests::test_decrypt_no_file ... ok
+test crypto::aes_encrypt_file_impl::tests::test_encrypt ... ok
+test crypto::aes_encrypt_file_impl::tests::test_encrypt_bad_password ... ok
+test crypto::aes_encrypt_file_impl::tests::test_encrypt_no_file ... ok
+test crypto::decode_b64_impl::tests::test_decode_b64 ... ok
+test crypto::decode_b64_impl::tests::test_decode_b64_default_type ... ok
+test crypto::decode_b64_impl::tests::test_decode_b64_invalid_content ... ok
+test crypto::decode_b64_impl::tests::test_decode_b64_invalid_type ... ok
+test crypto::encode_b64_impl::tests::test_encode_b64 ... ok
+test crypto::encode_b64_impl::tests::test_encode_b64_default_type ... ok
+test crypto::encode_b64_impl::tests::test_encode_b64_invalid_type ... ok
+test crypto::from_json_impl::tests::test_from_json_invalid ... ok
+test crypto::from_json_impl::tests::test_from_json_list ... ok
+test crypto::from_json_impl::tests::test_from_json_object ... ok
+test crypto::hash_file_impl::tests::test_hash ... ok
+test crypto::hash_file_impl::tests::test_hash_invalid ... ok
+test crypto::hash_file_impl::tests::test_hash_no_file ... ok
+test crypto::is_json_impl::tests::test_from_json_invalid ... ok
+test crypto::is_json_impl::tests::test_from_json_list ... ok
+test crypto::is_json_impl::tests::test_from_json_object ... ok
+test crypto::to_json_impl::tests::to_json_list ... ok
+test crypto::to_json_impl::tests::to_json_object ... ok
+test file::append_impl::tests::test_append_existing ... ok
+test file::append_impl::tests::test_append_nonexisting ... ok
+test file::compress_impl::tests::test_compress_basic ... ok
+test file::compress_impl::tests::test_compress_tar_dir ... ok
+test file::copy_impl::tests::test_copy ... ok
+test file::decompress_impl::tests::test_decompress_basic ... ok
+test file::decompress_impl::tests::test_decompress_tar_dir ... ok
+test file::exists_impl::tests::test_exists_dir ... ok
+test file::exists_impl::tests::test_exists_file ... ok
+test file::exists_impl::tests::test_exists_no_dir ... ok
+test file::exists_impl::tests::test_exists_no_file ... ok
+ 2026-01-02T08:10:13.378Z INFO  eldritch::runtime::eval > evaluating tome (task_id=1234)
+ 2026-01-02T08:10:13.381Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=1234)
+test file::find_impl::tests::test_find_dir ... ok
+ 2026-01-02T08:10:13.382Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+ 2026-01-02T08:10:13.383Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test file::find_impl::tests::test_find_file ... ok
+ 2026-01-02T08:10:13.385Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123456)
+ 2026-01-02T08:10:13.385Z ERROR eldritch::runtime::eval > tome evaluation failed (task_id=123456,tome=Tome {
+    eldritch: "print(file.find(input_params['dir_path'], name=\"test.txt\", file_type=\"file\")",
+    parameters: {
+        "dir_path": "/tmp/.tmpFfp7Jf/test.txt",
+    },
+    file_names: [],
+}): failed to parse tome
+
+Caused by:
+    error: Parse error: unexpected new line here, expected one of ")" or ","
+     --> main:1:77
+      |
+    1 | print(file.find(input_params['dir_path'], name="test.txt", file_type="file")
+      |
+      |
+
+test file::find_impl::tests::test_provided_file ... ok
+ 2026-01-02T08:10:13.386Z INFO  eldritch::runtime::eval > evaluating tome (task_id=12345)
+ 2026-01-02T08:10:13.388Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=12345)
+test file::find_impl::tests::test_runtime_error ... ok
+test file::is_dir_impl::tests::test_is_dir_file ... ok
+test file::is_dir_impl::tests::test_is_dir_nonexistent ... ok
+test file::is_dir_impl::tests::test_is_dir_true ... ok
+test file::is_file_impl::tests::test_is_file_basic ... ok
+test file::is_file_impl::tests::test_is_file_dir ... ok
+test file::is_file_impl::tests::test_is_file_negative ... ok
+ 2026-01-02T08:10:13.391Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+ 2026-01-02T08:10:13.439Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test assets::copy_impl::tests::test_remote_copy_full ... ok
+ 2026-01-02T08:10:13.441Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+ 2026-01-02T08:10:13.441Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test assets::read_binary_impl::tests::test_asset_read_binary_remote ... ok
+ 2026-01-02T08:10:13.442Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+ 2026-01-02T08:10:13.459Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test file::list_impl::tests::test_file_list_glob ... ok
+test file::mkdir_impl::tests::test_error_mkdir ... ok
+test file::mkdir_impl::tests::test_mkdir_with_parent ... ok
+test file::mkdir_impl::tests::test_successful_mkdir ... ok
+test file::moveto_impl::tests::test_moveto_dir ... ok
+ 2026-01-02T08:10:13.462Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test file::moveto_impl::tests::test_moveto_dir_overwrites ... ok
+test file::moveto_impl::tests::test_moveto_file ... ok
+test file::moveto_impl::tests::test_moveto_file_overwrites ... ok
+test assets::read_impl::tests::test_asset_read_remote ... ok
+ 2026-01-02T08:10:13.464Z INFO  eldritch::runtime::eval > evaluating tome (task_id=123)
+test file::read_binary_impl::tests::test_read_glob ... ok
+test file::read_binary_impl::tests::test_read_large ... ok
+test file::read_binary_impl::tests::test_read_nonexistent ... ok
+test file::read_binary_impl::tests::test_read_simple ... ok
+test file::read_impl::tests::test_read_glob ... ok
+ 2026-01-02T08:10:13.466Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test file::read_impl::tests::test_read_large ... ok
+test file::parent_dir_impl::test::simple_ssh ... ok
+test file::read_impl::tests::test_read_nonexistent ... ok
+test file::read_impl::tests::test_read_simple ... ok
+ 2026-01-02T08:10:13.467Z INFO  eldritch::runtime::eval > tome evaluation successful (task_id=123)
+test file::remove_impl::tests::remove_dir ... ok
+test file::remove_impl::tests::remove_file ... ok
+test file::list_impl::tests::test_file_list_file ... ok
+test file::replace_all_impl::tests::test_replace_all_regex_binary ... ok
+test file::replace_all_impl::tests::test_replace_all_multiline ... ok
+test file::replace_impl::tests::test_replace_multiline ... ok
+test file::replace_all_impl::tests::test_replace_all_regex_complex ... ok
+test file::replace_all_impl::tests::test_replace_all_regex_simple ... ok
+test file::replace_impl::tests::test_replace_regex_binary ... ok
+test file::temp_file_impl::tests::test_temp_file_r_name ... ok
+test file::temp_file_impl::tests::test_temp_file_w_name ... ok
+test file::replace_impl::tests::test_replace_regex_complex ... ok
+test file::template_impl::tests::test_template_build_context ... ok
+test file::replace_impl::tests::test_replace_regex_simple ... ok
+test file::template_impl::tests::test_template_loops_and_lists ... ok
+test file::template_impl::tests::test_template_basic ... ok
+test file::write_impl::tests::test_write_fail_directory_exists ... ok
+test file::write_impl::tests::test_write_file_exists ... ok
+test file::write_impl::tests::test_write_file_success ... ok
+ 2026-01-02T08:10:13.481Z INFO  eldritch::http::get_impl > eldritch sending HTTP GET request to 'http://[::1]:41209/foo' with headers '{}' and query_params '{}'
+ 2026-01-02T08:10:13.481Z INFO  eldritch::http::get_impl > eldritch sending HTTP GET request to 'http://[::1]:34351/foo' with headers '{}' and query_params '{}'
+test http::download_impl::tests::test_download_file ... ok
+ 2026-01-02T08:10:13.487Z INFO  eldritch::http::get_impl > eldritch sending HTTP GET request to 'http://[::1]:38993/foo' with headers '{
+    "a": "TRUE",
+    "b": "bar",
+}' and query_params '{}'
+test http::get_impl::tests::test_get_no_params_or_headers ... ok
+ 2026-01-02T08:10:13.489Z INFO  eldritch::http::get_impl > eldritch sending HTTP GET request to 'http://[::1]:37911/foo?a=true' with headers '{}' and query_params '{
+    "b": "bar",
+    "c": "3",
+}'
+test http::get_impl::tests::test_get_empty_params_and_headers ... ok
+ 2026-01-02T08:10:13.489Z INFO  eldritch::http::get_impl > eldritch sending HTTP GET request to 'http://[::1]:40097/foo' with headers '{}' and query_params '{
+    "c": "3",
+    "a": "true",
+    "b": "bar",
+}'
+test http::get_impl::tests::test_get_with_headers ... ok
+ 2026-01-02T08:10:13.493Z INFO  eldritch::http::get_impl > eldritch sending HTTP GET request to 'http://[::1]:33187/foo' with headers '{
+    "a": "TRUE",
+    "b": "bar",
+}' and query_params '{
+    "c": "3",
+}'
+test http::get_impl::tests::test_get_with_params ... ok
+ 2026-01-02T08:10:13.495Z INFO  eldritch::http::post_impl > eldritch sending HTTP POST request to 'http://[::1]:45365/foo' with headers '{}' and form '{}'
+test http::get_impl::tests::test_get_with_hybrid_params ... ok
+ 2026-01-02T08:10:13.496Z INFO  eldritch::http::post_impl > eldritch sending HTTP POST request to 'http://[::1]:42749/foo' with headers '{}'
+test http::get_impl::tests::test_get_with_params_and_headers ... ok
+ 2026-01-02T08:10:13.499Z INFO  eldritch::http::post_impl > eldritch sending HTTP POST request to 'http://[::1]:39847/foo' with headers '{
+    "a": "TRUE",
+}' and body 'the quick brown fox jumps over the lazy dog'
+test http::post_impl::tests::test_post_no_body_or_params_or_headers ... ok
+ 2026-01-02T08:10:13.501Z INFO  eldritch::http::post_impl > eldritch sending HTTP POST request to 'http://[::1]:32851/foo' with headers '{
+    "a": "TRUE",
+    "b": "bar",
+}'
+test http::post_impl::tests::test_post_empty_params_and_headers ... ok
+test http::post_impl::tests::test_post_with_body_and_header ... ok
+ 2026-01-02T08:10:13.503Z INFO  eldritch::http::post_impl > eldritch sending HTTP POST request to 'http://[::1]:45157/foo' with headers '{}' and form '{
+    "a": "true",
+    "b": "bar",
+    "c": "3",
+}'
+ 2026-01-02T08:10:13.503Z INFO  eldritch::http::post_impl > eldritch sending HTTP POST request to 'http://[::1]:45285/foo' with headers '{
+    "a": "TRUE",
+    "b": "bar",
+}' and form '{
+    "c": "3",
+}'
+test http::post_impl::tests::test_post_with_headers ... ok
+test pivot::arp_scan_impl::tests::test_invalid_cidr ... ok
+test pivot::arp_scan_impl::tests::test_invalid_ipv4 ... ok
+test http::post_impl::tests::test_post_with_params ... ok
+test pivot::arp_scan_impl::tests::test_no_slash ... ok
+test http::post_impl::tests::test_post_with_params_and_headers ... ok
+ 2026-01-02T08:10:13.507Z ERROR eldritch::pivot::arp_scan_impl > Listener on lo failed: Error creating channel: Operation not permitted (os error 1)
+ 2026-01-02T08:10:13.508Z ERROR eldritch::pivot::arp_scan_impl > Listener on eth0 failed: Error creating channel: Operation not permitted (os error 1)
+ 2026-01-02T08:10:13.508Z ERROR eldritch::pivot::arp_scan_impl > Listener on sit0 failed: Interface does not have a v4 address
+ 2026-01-02T08:10:13.508Z ERROR eldritch::pivot::arp_scan_impl > Listener on docker0 failed: Error creating channel: Operation not permitted (os error 1)
+test pivot::arp_scan_impl::tests::test_positive ... ok
+test pivot::ncat_impl::tests::test_ncat_send_tcp ... ok
+test pivot::ncat_impl::tests::test_ncat_send_udp ... ok
+test pivot::port_scan_impl::tests::test_portscan_get_network_and_broadcast ... ok
+test pivot::port_scan_impl::tests::test_portscan_cidrparse ... ok
+test pivot::port_scan_impl::tests::test_portscan_int_to_string ... ok
+test pivot::port_scan_impl::tests::test_portscan_tcp ... ok
+test pivot::port_scan_impl::tests::test_portscan_vec_to_int ... ok
+test pivot::port_scan_impl::tests::test_portscan_return_type_starlark_dict_from_interpreter ... ok
+ 2026-01-02T08:10:13.525Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test file::list_impl::tests::test_file_list_dir ... ok
+test process::info_impl::tests::test_info_default ... ok
+test process::kill_impl::tests::test_process_kill ... ok
+test process::list_impl::tests::test_process_list ... ok
+test process::name_impl::tests::test_process_name ... ok
+test process::netstat_impl::tests::test_netstat ... ok
+test random::bool_impl::tests::test_bool ... ok
+test random::bool_impl::tests::test_bool_uniform ... ok
+test random::int_impl::tests::test_random_int ... ok
+test random::int_impl::tests::test_random_int_uniform_average ... ok
+test pivot::ssh_copy_impl::tests::test_pivot_ssh_copy ... ok
+test random::string_impl::tests::test_string ... ok
+test random::string_impl::tests::test_string_charset ... ok
+test pivot::ssh_exec_impl::tests::test_pivot_ssh_exec ... ok
+test random::int_impl::tests::test_random_int_uniform_chi_square ... ok
+test regex::match_all_impl::tests::test_multi_match ... ok
+test regex::match_all_impl::tests::test_no_match ... ok
+test regex::match_all_impl::tests::test_one_match ... ok
+test regex::match_impl::tests::test_match ... ok
+test regex::match_impl::tests::test_no_match ... ok
+test regex::replace_all_impl::tests::test_replace_all ... ok
+test regex::replace_all_impl::tests::test_replace_not_found ... ok
+test regex::replace_impl::tests::test_replace ... ok
+test regex::replace_impl::tests::test_replace_not_found ... ok
+ 2026-01-02T08:10:16.494Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.496Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test report::file_impl::test::one_file ... ok
+ 2026-01-02T08:10:16.497Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.500Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test report::process_list_impl::test::one_process ... ok
+ 2026-01-02T08:10:16.501Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.502Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test report::ssh_key_impl::test::one_credential ... ok
+ 2026-01-02T08:10:16.503Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.504Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test report::user_password_impl::test::one_credential ... ok
+ 2026-01-02T08:10:16.505Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.506Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test pivot::arp_scan_impl::tests::test_lock_failure ... ok
+test runtime::eprint_impl::test::one_error ... ok
+test runtime::messages::reduce::tests::complex ... ok
+test runtime::messages::reduce::tests::multi_err ... ok
+test runtime::messages::reduce::tests::empty ... ok
+test runtime::messages::reduce::tests::multi_text ... ok
+ 2026-01-02T08:10:16.508Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.508Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.509Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.509Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::agent_bindings ... ok
+test runtime::tests::assets_bindings ... ok
+ 2026-01-02T08:10:16.510Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.510Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.511Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.512Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::file_bindings ... ok
+test runtime::tests::crypto_bindings ... ok
+ 2026-01-02T08:10:16.512Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.513Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.514Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.514Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::http_bindings ... ok
+test runtime::tests::input_params ... ok
+ 2026-01-02T08:10:16.515Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.515Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.517Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.517Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::multi_print ... ok
+test runtime::tests::pivot_bindings ... ok
+ 2026-01-02T08:10:16.517Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.517Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.518Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.519Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::process_bindings ... ok
+test runtime::tests::random_bindings ... ok
+ 2026-01-02T08:10:16.519Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.519Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.520Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.520Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::regex_bindings ... ok
+test runtime::tests::report_bindings ... ok
+ 2026-01-02T08:10:16.521Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.521Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.522Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+ 2026-01-02T08:10:16.523Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::simple_run ... ok
+test runtime::tests::sys_bindings ... ok
+ 2026-01-02T08:10:16.524Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+ 2026-01-02T08:10:16.525Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::time_bindings ... ok
+test sys::dll_reflect_impl::tests::test_dll_reflect_non_windows_test ... ok
+ 2026-01-02T08:10:16.548Z INFO  eldritch::runtime::eval        > evaluating tome (task_id=123)
+test sys::exec_impl::tests::test_sys_exec_complex_linux ... ok
+test sys::exec_impl::tests::test_sys_exec_complex_windows ... ok
+test sys::exec_impl::tests::test_sys_exec_current_user ... ok
+ 2026-01-02T08:10:16.808Z INFO  eldritch::runtime::eval        > tome evaluation successful (task_id=123)
+test runtime::tests::test_library_async ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_no_defunct ... FAILED
+test sys::get_env_impl::tests::test_get_env ... ok
+test sys::get_ip_impl::tests::test_sys_get_ip ... ok
+test sys::get_os_impl::tests::test_sys_get_os ... ok
+test sys::get_pid_impl::tests::test_sys_get_pid ... ok
+test sys::get_user_impl::tests::test_sys_get_user ... ok
+test sys::hostname_impl::tests::test_hostname ... ok
+test sys::shell_impl::tests::test_sys_shell_complex_linux ... ok
+test sys::shell_impl::tests::test_sys_shell_current_user ... ok
+test sys::shell_impl::tests::test_sys_shell_from_interpreter ... ok
+test sys::shell_impl::tests::test_sys_shell_spaces_windows ... ok
+test sys::write_reg_hex_impl::tests::test_write_reg_hex ... ok
+test sys::write_reg_int_impl::tests::test_write_reg_int ... ok
+test sys::write_reg_str_impl::tests::test_write_reg_str ... ok
+test time::format_to_epoch_impl::tests::test_invalid ... ok
+test time::format_to_epoch_impl::tests::test_valid ... ok
+test time::format_to_readable_impl::tests::test_valid ... ok
+test time::now_impl::tests::test_now ... ok
+test sys::exec_impl::tests::test_sys_exec_disown_linux ... ok
+test random::string_impl::tests::test_string_length ... ok
+test time::sleep_impl::tests::test_sleep ... ok
+test random::string_impl::tests::test_string_uniform ... ok
+
+failures:
+
+---- sys::exec_impl::tests::test_sys_exec_disown_no_defunct stdout ----
+
+thread 'sys::exec_impl::tests::test_sys_exec_disown_no_defunct' (30045) panicked at lib/eldritch/src/sys/exec_impl.rs:290:13:
+assertion `left == right` failed
+  left: 1
+ right: 0
+
+
+failures:
+    sys::exec_impl::tests::test_sys_exec_disown_no_defunct
+
+test result: FAILED. 195 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.06s
+
+error: test failed, to rerun pass `-p eldritch --lib`
