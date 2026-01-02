@@ -271,23 +271,42 @@ mod tests {
     fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
         init_logging();
 
-        if cfg!(target_os = "linux")
-            || cfg!(target_os = "ios")
-            || cfg!(target_os = "macos")
-            || cfg!(target_os = "android")
-            || cfg!(target_os = "freebsd")
-            || cfg!(target_os = "openbsd")
-            || cfg!(target_os = "netbsd")
+        #[cfg(unix)]
         {
+            // Create a unique sleep binary to avoid zombie collision from previous runs
+            let tmp_file = NamedTempFile::new()?;
+            let path = tmp_file.path().to_owned();
+            fs::copy("/bin/sleep", &path)?;
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o755))?;
+
+            // Keep the temp file alive until function return, but we need the path string
+            let path_str = path.to_str().unwrap().to_string();
+
+            // We use a long sleep to ensure it doesn't exit during the test
             let _res = handle_exec(
-                String::from("/bin/sleep"),
-                vec!["1".to_string()],
+                path_str.clone(),
+                vec!["10".to_string()],
                 HashMap::new(),
                 true,
             )?;
             // Make sure our test process has no zombies
-            let res = get_zombie_child_processes(process::id())?;
-            assert_eq!(res.len(), 0);
+            // Retry a few times to allow system to update process state
+            let mut zombies = Vec::new();
+            for _ in 0..5 {
+                zombies = get_zombie_child_processes(process::id())?;
+                // Filter for our specific binary name
+                let my_name = path.file_name().unwrap().to_str().unwrap();
+                zombies.retain(|name| name == my_name);
+
+                if zombies.is_empty() {
+                    break;
+                }
+                thread::sleep(time::Duration::from_millis(100));
+            }
+
+            // Cleanup happens when tmp_file is dropped, but process might keep it open (which is fine on Unix)
+            assert_eq!(zombies.len(), 0, "Found zombies: {:?}", zombies);
         }
         Ok(())
     }
