@@ -90,6 +90,15 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
                 }
             }
 
+            if(searchTypes.transport.length > 0){
+                if(beacon?.transport && searchTypes.transport.indexOf(beacon?.transport) > -1){
+                    match = true;
+                }
+                else{
+                    return false;
+                }
+            }
+
             if(searchTypes.primaryIP.length > 0){
                 if(beacon?.host?.primaryIP && searchTypes.primaryIP.indexOf(beacon?.host?.primaryIP) > -1){
                     match = true;

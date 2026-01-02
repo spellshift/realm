@@ -1,4 +1,6 @@
+import { SupportedPlatforms } from "../utils/enums";
 import { HostNode } from "../utils/interfacesQuery";
+import { getEnumKey } from "../utils/utils";
 import Badge from "./tavern-base-ui/badge/Badge";
 import { Globe, Network } from "lucide-react";
 
@@ -13,7 +15,7 @@ const HostTile = ({ data }: { data: HostNode }) => {
                 {data?.externalIP && (
                     <Badge leftIcon={<Globe className="h-3 w-3" />}>{data?.externalIP}</Badge>
                 )}
-                <Badge>{data?.platform}</Badge>
+                {data?.platform && (<Badge>{getEnumKey(SupportedPlatforms, data?.platform)}</Badge>)}
                 {data.tags && data?.tags.edges.map((tag) => {
                     return <Badge key={tag.node.id}>{tag.node.name}</Badge>
                 })}
