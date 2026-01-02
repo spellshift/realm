@@ -1,0 +1,23 @@
+state: |
+  INSERT INTO users (id, name, oauth_id, session_token, photo_url, access_token, is_activated, is_admin) VALUES (1, 'Alice', 'oauth123', 'abcdef123456', '', '', 1, 1);
+  INSERT INTO tomes (id, name, description, author, tactic, param_defs, support_model, eldritch, hash, created_at, last_modified_at) VALUES (1, 'Test Tome', 'Test Description', 'Test Author', 'IMPACT', '', 'COMMUNITY', 'print("hello")', 'hash', datetime('now'), datetime('now'));
+  INSERT INTO hosts (id, name, identifier, platform, created_at, last_modified_at) VALUES (1, 'Host 1', 'host1', 'linux', datetime('now'), datetime('now'));
+  INSERT INTO beacons (id, name, identifier, created_at, last_modified_at, transport, beacon_host) VALUES (1, 'Beacon 1', 'beacon1', datetime('now'), datetime('now'), 'HTTP', 1);
+  INSERT INTO quests (id, name, quest_tome, eldritch_at_creation, param_defs_at_creation, created_at, last_modified_at) VALUES (1, 'Quest 1', 1, 'print("hello")', '', datetime('now'), datetime('now'));
+  INSERT INTO tasks (id, quest_tasks, task_beacon, created_at, last_modified_at) VALUES (1, 1, 1, datetime('now'), datetime('now'));
+  INSERT INTO host_files (id, path, task_reported_files, size, created_at, last_modified_at, host_file_host) VALUES (1, '/tmp/test', 1, 100, datetime('now'), datetime('now'), 1);
+  INSERT INTO host_processes (id, pid, ppid, name, principal, status, task_reported_processes, created_at, last_modified_at, host_process_host) VALUES (1, 1234, 1, 'process', 'root', 'RUNNING', 1, datetime('now'), datetime('now'), 1);
+  INSERT INTO host_credentials (id, principal, secret, kind, task_reported_credentials, created_at, last_modified_at, host_credential_host) VALUES (1, 'user', 'password', 'PLAINTEXT', 1, datetime('now'), datetime('now'), 1);
+
+requestor:
+  session_token: "abcdef123456"
+
+query: |
+  mutation {
+    dropAllData
+  }
+
+variables: {}
+
+expected:
+  dropAllData: true
