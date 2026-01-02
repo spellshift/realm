@@ -12,10 +12,10 @@ import (
 
 func TestLRUCache(t *testing.T) {
 	var session_pub_keys = NewSyncMap()
-	session_pub_keys.Store(1, []byte{0x01, 0x02, 0x03})
+	session_pub_keys.Store(1, SessionKey{ClientPubKey: []byte{0x01, 0x02, 0x03}})
 	res, ok := session_pub_keys.Load(1)
 	assert.True(t, ok)
-	assert.Equal(t, []byte{0x01, 0x02, 0x03}, res)
+	assert.Equal(t, []byte{0x01, 0x02, 0x03}, res.ClientPubKey)
 	_, ok = session_pub_keys.Load(2)
 	assert.False(t, ok)
 }
@@ -29,7 +29,7 @@ func TestNewSyncMap(t *testing.T) {
 func TestSyncMap_StoreLoad(t *testing.T) {
 	sm := NewSyncMap()
 	key := 123
-	val := []byte("test value")
+	val := SessionKey{ClientPubKey: []byte("test value")}
 
 	sm.Store(key, val)
 
@@ -43,7 +43,7 @@ func TestSyncMap_StoreLoad(t *testing.T) {
 
 func TestSyncMap_String(t *testing.T) {
 	sm := NewSyncMap()
-	sm.Store(1, []byte{0xDE, 0xAD, 0xBE, 0xEF})
+	sm.Store(1, SessionKey{ClientPubKey: []byte{0xDE, 0xAD, 0xBE, 0xEF}})
 	s := sm.String()
 	assert.Contains(t, s, "id: 1")
 	assert.Contains(t, s, "deadbeef")
@@ -168,10 +168,17 @@ func TestCryptoSvc_Encrypt_WithSession(t *testing.T) {
 
 	svc := NewCryptoSvc(serverPrivKey)
 
+	// Pre-calculate shared key for test setup to inject into map
+	sharedSecret, err := serverPrivKey.ECDH(clientPrivKey.PublicKey())
+	require.NoError(t, err)
+
 	// Register current goroutine ID with client public key
 	trace, err := goAllIds()
 	require.NoError(t, err)
-	session_pub_keys.Store(trace.Id, clientPubKey)
+	session_pub_keys.Store(trace.Id, SessionKey{
+		ClientPubKey: clientPubKey,
+		SharedKey:    sharedSecret,
+	})
 
 	// Test Encrypt
 	plaintext := []byte("secret message")
@@ -186,8 +193,8 @@ func TestCryptoSvc_Encrypt_WithSession(t *testing.T) {
 	extractedClientPubKey := encrypted[:32]
 	assert.Equal(t, clientPubKey, extractedClientPubKey)
 
-	sharedSecret, err := serverPrivKey.ECDH(clientPrivKey.PublicKey())
-	require.NoError(t, err)
+	// In manual decryption test, we re-derive the shared secret (or use the one we used to populate map)
+	// sharedSecret is already computed above.
 
 	aead, err := chacha20poly1305.NewX(sharedSecret)
 	require.NoError(t, err)

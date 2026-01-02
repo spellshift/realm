@@ -20,10 +20,17 @@ func BenchmarkEncrypt(b *testing.B) {
 
 	svc := NewCryptoSvc(serverPrivKey)
 
+	// Pre-calculate shared key for setup
+	sharedSecret, err := serverPrivKey.ECDH(clientPrivKey.PublicKey())
+	require.NoError(b, err)
+
 	// Register current goroutine ID with client public key
 	trace, err := goAllIds()
 	require.NoError(b, err)
-	session_pub_keys.Store(trace.Id, clientPubKey)
+	session_pub_keys.Store(trace.Id, SessionKey{
+		ClientPubKey: clientPubKey,
+		SharedKey:    sharedSecret,
+	})
 
 	payload := make([]byte, 1024)
 	_, err = rand.Read(payload)

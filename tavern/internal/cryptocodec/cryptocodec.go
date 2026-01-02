@@ -7,8 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"runtime/debug"
+	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/cloudflare/circl/dh/x25519"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -17,6 +18,11 @@ import (
 	"google.golang.org/grpc/mem"
 )
 
+type SessionKey struct {
+	ClientPubKey []byte
+	SharedKey    []byte
+}
+
 var session_pub_keys = NewSyncMap()
 
 // This size limits the number of concurrent connections each server can handle.
@@ -24,11 +30,11 @@ var session_pub_keys = NewSyncMap()
 const LRUCACHE_SIZE = 10480
 
 type SyncMap struct {
-	Map *lru.Cache[int, []byte] // Example data map
+	Map *lru.Cache[int, SessionKey]
 }
 
 func NewSyncMap() *SyncMap {
-	l, err := lru.New[int, []byte](LRUCACHE_SIZE)
+	l, err := lru.New[int, SessionKey](LRUCACHE_SIZE)
 	if err != nil {
 		slog.Error("Failed to create LRU cache")
 	}
@@ -40,16 +46,16 @@ func (s *SyncMap) String() string {
 	allkeys := s.Map.Keys()
 	for _, k := range allkeys {
 		v, _ := s.Map.Peek(k)
-		res = fmt.Sprintf("%sid: %d pubkey: %x\n", res, k, v)
+		res = fmt.Sprintf("%sid: %d pubkey: %x\n", res, k, v.ClientPubKey)
 	}
 	return res
 }
 
-func (s *SyncMap) Load(key int) ([]byte, bool) {
+func (s *SyncMap) Load(key int) (SessionKey, bool) {
 	return s.Map.Get(key)
 }
 
-func (s *SyncMap) Store(key int, value []byte) {
+func (s *SyncMap) Store(key int, value SessionKey) {
 	s.Map.Add(key, value)
 }
 
@@ -154,10 +160,22 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 		slog.Error("failed to get goid")
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
-	session_pub_keys.Store(ids.Id, client_pub_key_bytes)
 
-	// Generate shared secret
-	derived_key := csvc.generate_shared_key(client_pub_key_bytes)
+	// Optimization: Check if we already have the derived shared key for this session
+	// This saves us from doing ECDH on every packet if the client pub key is stable.
+	var derived_key []byte
+	cached, found := session_pub_keys.Load(ids.Id)
+
+	if found && bytes.Equal(cached.ClientPubKey, client_pub_key_bytes) {
+		derived_key = cached.SharedKey
+	} else {
+		// Generate shared secret
+		derived_key = csvc.generate_shared_key(client_pub_key_bytes)
+		session_pub_keys.Store(ids.Id, SessionKey{
+			ClientPubKey: client_pub_key_bytes,
+			SharedKey:    derived_key,
+		})
+	}
 
 	aead, err := chacha20poly1305.NewX(derived_key)
 	if err != nil {
@@ -193,23 +211,22 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 		return FAILURE_BYTES
 	}
 
-	var id int
-	var client_pub_key_bytes []byte
+	var sessionKey SessionKey
 	ok := false
 	for _, id := range []int{ids.Id, ids.ParentId} {
-		client_pub_key_bytes, ok = session_pub_keys.Load(id)
+		sessionKey, ok = session_pub_keys.Load(id)
 		if ok {
 			break
 		}
 	}
 
 	if !ok {
-		slog.Error(fmt.Sprintf("public key not found for id: %d", id))
+		slog.Error(fmt.Sprintf("public key not found for id: %d", ids.Id))
 		return FAILURE_BYTES
 	}
 
-	// Generate shared secret
-	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
+	// Use cached shared key directly
+	shared_key := sessionKey.SharedKey
 	aead, err := chacha20poly1305.NewX(shared_key)
 	if err != nil {
 		slog.Error(fmt.Sprintf("failed to create xchacha key %v", err))
@@ -222,7 +239,7 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 		return FAILURE_BYTES
 	}
 	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
-	return append(client_pub_key_bytes, encryptedMsg...)
+	return append(sessionKey.ClientPubKey, encryptedMsg...)
 }
 
 type GoidTrace struct {
@@ -231,24 +248,51 @@ type GoidTrace struct {
 	Others   []int
 }
 
+// goAllIds returns the current goroutine ID and its creator's ID.
+// Optimized to avoid debug.Stack() which is very expensive.
 func goAllIds() (GoidTrace, error) {
-	buf := debug.Stack()
-	// slog.Info(fmt.Sprintf("debug stack: %s", buf))
-	var ids []int
-	elems := bytes.Fields(buf)
-	for i, elem := range elems {
-		if bytes.Equal(elem, []byte("goroutine")) && i+1 < len(elems) {
-			id, err := strconv.Atoi(string(elems[i+1]))
-			if err != nil {
-				return GoidTrace{}, err
-			}
-			ids = append(ids, id)
+	// 4096 bytes is enough for "goroutine 1 [running]:\n" plus a reasonable stack trace
+	// to ensure the "created by ... in goroutine X" footer is captured.
+	// A small stack trace is usually ~200-300 bytes, but deep stacks can be larger.
+	var buf [4096]byte
+	n := runtime.Stack(buf[:], false)
+	s := string(buf[:n])
+
+	var res GoidTrace
+
+	// Parse current ID: "goroutine <id> [running]:"
+	if !strings.HasPrefix(s, "goroutine ") {
+		return res, errors.New("invalid stack trace format")
+	}
+
+	s = s[10:] // Skip "goroutine "
+	i := strings.IndexByte(s, ' ')
+	if i == -1 {
+		return res, errors.New("invalid stack trace format")
+	}
+	idStr := s[:i]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return res, err
+	}
+	res.Id = id
+
+	// Parse creator ID: "created by ... in goroutine <id>"
+	// It is usually the last line.
+	// Search from the end for "in goroutine "
+	lastIdx := strings.LastIndex(s, "in goroutine ")
+	if lastIdx != -1 {
+		parentStr := s[lastIdx+13:]
+		// parentStr might have newline at the end
+		parentStr = strings.TrimSpace(parentStr)
+		parentId, err := strconv.Atoi(parentStr)
+		if err == nil {
+			res.ParentId = parentId
+			// We can populate others if needed, but the original logic only really used parentId correctly (ids[1])
+			// because ids[2:] would likely be empty or garbage.
+			res.Others = []int{}
 		}
 	}
-	res := GoidTrace{
-		Id:       ids[0],
-		ParentId: ids[1],
-		Others:   ids[2:],
-	}
+
 	return res, nil
 }
