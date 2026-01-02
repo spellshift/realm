@@ -157,6 +157,20 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         Ok(response.tasks)
     }
 
+    pub async fn process_job_request(&self) -> Result<()> {
+        let tasks = self.claim_tasks().await?;
+        if tasks.is_empty() {
+            return Ok(());
+        }
+
+        let registry = self.task_registry.clone();
+        let agent = Arc::new(self.clone());
+        for task in tasks {
+            registry.spawn(task, agent.clone());
+        }
+        Ok(())
+    }
+
     // Helper to run a future on the runtime handle, blocking the current thread.
     fn block_on<F, R>(&self, future: F) -> Result<R, String>
     where
@@ -361,15 +375,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 }
             }
             // We force a check-in to update the server with the new interval
-            if let Ok(tasks) = self.claim_tasks().await {
-                if !tasks.is_empty() {
-                    let registry = self.task_registry.clone();
-                    let agent = Arc::new(self.clone());
-                    for task in tasks {
-                        registry.spawn(task, agent.clone());
-                    }
-                }
-            }
+            let _ = self.process_job_request().await;
             Ok(())
         })
     }
