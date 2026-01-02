@@ -9,9 +9,6 @@ fn test_set_method_arguments() {
     // clear
     assert::fail("s={1}; s.clear(1)", "clear() takes exactly 0 arguments");
 
-    // contains (internal method really, but exposed via 'in')
-    // assert::fail("s={1}; s.contains()", "contains() takes exactly 1 argument"); // Not directly callable usually
-
     // difference
     assert::fail(
         "s={1}; s.difference()",
