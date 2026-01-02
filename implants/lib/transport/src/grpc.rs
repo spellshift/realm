@@ -1,6 +1,8 @@
 use anyhow::Result;
 use hyper::Uri;
 use pb::c2::*;
+use pb::config::Config;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
@@ -35,16 +37,36 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
-    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(callback: String, config: Config) -> Result<Self> {
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        // Create HTTP connector with DNS-over-HTTPS support if enabled
+        // Parse the EXTRA map
+        let extra_map: HashMap<String, String> = if let Some(info) = config.info {
+            if let Some(active_transport) = info.active_transport {
+                serde_json::from_str::<HashMap<String, String>>(&active_transport.extra)?
+            } else {
+                HashMap::new()
+            }
+        } else {
+            HashMap::new()
+        };
+
         #[cfg(feature = "grpc-doh")]
-        let mut http: HttpConnector<HickoryResolverService> =
-            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
+        let doh: Option<&String> = extra_map.get("DOH");
+
+        #[cfg(feature = "grpc-doh")]
+        let mut http = match doh {
+            // TODO: Add provider selection
+            Some(_provider) => {
+                crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
+            }
+            None => hyper::client::HttpConnector::new(),
+        };
 
         #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
+
+        let proxy_uri = extra_map.get("HTTP_PROXY");
 
         http.enforce_http(false);
         http.set_nodelay(true);
@@ -194,9 +216,10 @@ impl Transport for GRPC {
         Ok(())
     }
 
-    fn get_type(&mut self) -> pb::c2::beacon::Transport {
-        return pb::c2::beacon::Transport::Grpc;
+    fn get_type(&mut self) -> pb::c2::active_transport::Type {
+        pb::c2::active_transport::Type::TransportGrpc
     }
+
     fn is_active(&self) -> bool {
         self.grpc.is_some()
     }

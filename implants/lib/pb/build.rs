@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use which::which;
@@ -64,8 +65,28 @@ fn get_pub_key() {
     );
 }
 
+fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
+    let mut res = HashMap::new();
+    for (key, value) in std::env::vars() {
+        if key.starts_with("IMIX_TRANSPORT_EXTRA_") {
+            println!("{}", key);
+            match key.strip_prefix("IMIX_TRANSPORT_EXTRA_") {
+                Some(k) => {
+                    let suffixed_key = String::from(k);
+                    res.insert(suffixed_key, value);
+                }
+                None => panic!("failed to strip prefix"),
+            }
+        }
+    }
+    let res_str = serde_json::to_string(&res)?;
+    println!("cargo:rustc-env=IMIX_TRANSPORT_EXTRA={}", res_str);
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     get_pub_key();
+    build_extra_vars()?;
 
     // Skip if no `protoc` can be found
     match env::var_os("PROTOC")

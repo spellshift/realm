@@ -69,7 +69,7 @@ type BeaconMutation struct {
 	next_seen_at     *time.Time
 	interval         *uint64
 	addinterval      *int64
-	transport        *c2pb.Beacon_Transport
+	transport        *c2pb.ActiveTransport_Type
 	clearedFields    map[string]struct{}
 	host             *int
 	clearedhost      bool
@@ -593,12 +593,12 @@ func (m *BeaconMutation) ResetInterval() {
 }
 
 // SetTransport sets the "transport" field.
-func (m *BeaconMutation) SetTransport(ct c2pb.Beacon_Transport) {
-	m.transport = &ct
+func (m *BeaconMutation) SetTransport(ctt c2pb.ActiveTransport_Type) {
+	m.transport = &ctt
 }
 
 // Transport returns the value of the "transport" field in the mutation.
-func (m *BeaconMutation) Transport() (r c2pb.Beacon_Transport, exists bool) {
+func (m *BeaconMutation) Transport() (r c2pb.ActiveTransport_Type, exists bool) {
 	v := m.transport
 	if v == nil {
 		return
@@ -609,7 +609,7 @@ func (m *BeaconMutation) Transport() (r c2pb.Beacon_Transport, exists bool) {
 // OldTransport returns the old "transport" field's value of the Beacon entity.
 // If the Beacon object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BeaconMutation) OldTransport(ctx context.Context) (v c2pb.Beacon_Transport, err error) {
+func (m *BeaconMutation) OldTransport(ctx context.Context) (v c2pb.ActiveTransport_Type, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldTransport is only allowed on UpdateOne operations")
 	}
@@ -970,7 +970,7 @@ func (m *BeaconMutation) SetField(name string, value ent.Value) error {
 		m.SetInterval(v)
 		return nil
 	case beacon.FieldTransport:
-		v, ok := value.(c2pb.Beacon_Transport)
+		v, ok := value.(c2pb.ActiveTransport_Type)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

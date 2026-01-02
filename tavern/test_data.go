@@ -84,11 +84,11 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SaveX(ctx)
 
 			// Cycle through transports: HTTP1, GRPC, DNS
-			getTransport := func(idx int) c2pb.Beacon_Transport {
-				transports := []c2pb.Beacon_Transport{
-					c2pb.Beacon_TRANSPORT_HTTP1,
-					c2pb.Beacon_TRANSPORT_GRPC,
-					c2pb.Beacon_TRANSPORT_DNS,
+			getTransport := func(idx int) c2pb.ActiveTransport_Type {
+				transports := []c2pb.ActiveTransport_Type{
+					c2pb.ActiveTransport_TRANSPORT_HTTP1,
+					c2pb.ActiveTransport_TRANSPORT_GRPC,
+					c2pb.ActiveTransport_TRANSPORT_DNS,
 				}
 				return transports[idx%3]
 			}

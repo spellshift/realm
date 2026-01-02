@@ -84,7 +84,7 @@ func TestReverseShell_E2E(t *testing.T) {
 	require.NoError(t, err)
 	host, err := graph.Host.Create().SetIdentifier("test-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).Save(ctx)
 	require.NoError(t, err)
-	beacon, err := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).Save(ctx)
+	beacon, err := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.ActiveTransport_TRANSPORT_UNSPECIFIED).Save(ctx)
 	require.NoError(t, err)
 	tome, err := graph.Tome.Create().SetName("test-tome").SetDescription("test-desc").SetAuthor("test-author").SetEldritch("test-eldritch").SetUploader(user).Save(ctx)
 	require.NoError(t, err)

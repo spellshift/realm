@@ -12,7 +12,7 @@ mock! {
     impl super::Transport for Transport {
         fn init() -> Self;
 
-        fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+        fn new(uri: String, config: pb::config::Config) -> Result<Self>;
 
         async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 
@@ -48,10 +48,11 @@ mock! {
             tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
         ) -> Result<()>;
 
-        fn get_type(&mut self) -> pb::c2::beacon::Transport {
-            return Transport::Unspecified
-        }
-        fn is_active(&self) -> bool;
+    fn get_type(&mut self) -> pb::c2::active_transport::Type {
+        return pb::c2::active_transport::Type::TransportUnspecified;
+    }
+
+    fn is_active(&self) -> bool;
 
         fn name(&self) -> &'static str;
 

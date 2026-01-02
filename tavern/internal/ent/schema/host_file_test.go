@@ -45,7 +45,7 @@ func newHostFile(graph *ent.Client, path string, content []byte) *ent.HostFile {
 	beacon := graph.Beacon.Create().
 		SetHost(host).
 		SetIdentifier("ABCDEFG").
-		SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+		SetTransport(c2pb.ActiveTransport_TRANSPORT_UNSPECIFIED).
 		SaveX(ctx)
 	tome := graph.Tome.Create().
 		SetName("Wowza").

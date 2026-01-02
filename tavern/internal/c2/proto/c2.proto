@@ -17,22 +17,28 @@ message Agent {
     string identifier = 1;
 }
 
-// Beacon information that is unique to the current running beacon.
-message Beacon {
-    string identifier = 1;
-    string principal = 2;
-    Host host = 3;
-    Agent agent = 4;
-    uint64 interval = 5; // Duration until next callback, in seconds.
+message ActiveTransport {
+    string uri = 1;
+    uint64 interval = 2;
 
-    enum Transport {
+    enum Type {
         TRANSPORT_UNSPECIFIED = 0;
         TRANSPORT_GRPC = 1;
         TRANSPORT_HTTP1 = 2;
         TRANSPORT_DNS = 3;
     }
 
-    Transport transport = 6;
+    Type type = 3;
+    string extra = 4;
+}
+
+// Beacon information that is unique to the current running beacon.
+message Beacon {
+    string identifier = 1;
+    string principal = 2;
+    Host host = 3;
+    Agent agent = 4;
+    ActiveTransport active_transport = 5;
 }
 
  // Host information for the system a beacon is running on.

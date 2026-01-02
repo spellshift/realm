@@ -163,10 +163,10 @@ type BeaconWhereInput struct {
 	IntervalNotNil bool     `json:"intervalNotNil,omitempty"`
 
 	// "transport" field predicates.
-	Transport      *c2pb.Beacon_Transport  `json:"transport,omitempty"`
-	TransportNEQ   *c2pb.Beacon_Transport  `json:"transportNEQ,omitempty"`
-	TransportIn    []c2pb.Beacon_Transport `json:"transportIn,omitempty"`
-	TransportNotIn []c2pb.Beacon_Transport `json:"transportNotIn,omitempty"`
+	Transport      *c2pb.ActiveTransport_Type  `json:"transport,omitempty"`
+	TransportNEQ   *c2pb.ActiveTransport_Type  `json:"transportNEQ,omitempty"`
+	TransportIn    []c2pb.ActiveTransport_Type `json:"transportIn,omitempty"`
+	TransportNotIn []c2pb.ActiveTransport_Type `json:"transportNotIn,omitempty"`
 
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
