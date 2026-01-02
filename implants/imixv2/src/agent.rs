@@ -405,12 +405,12 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
             {
-              let mut cfg = self.config.write().await;
-              if let Some(info) = &mut cfg.info
-                  && let Some(active_transport) = &mut info.active_transport
-              {
-                  active_transport.interval = interval;
-              }
+                let mut cfg = self.config.write().await;
+                if let Some(info) = &mut cfg.info
+                    && let Some(active_transport) = &mut info.active_transport
+                {
+                    active_transport.interval = interval;
+                }
             }
             // We force a check-in to update the server with the new interval
             let _ = self.process_job_request().await;
