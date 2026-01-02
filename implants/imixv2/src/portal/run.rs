@@ -114,21 +114,21 @@ async fn handle_incoming_mote(
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
 ) -> Result<()> {
     // Handle Trace Mote
-    if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload {
-        if bytes_payload.kind == BytesPayloadKind::Trace as i32 {
-            // 1. Add Agent Recv Event
-            add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentRecv)?;
+    if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
+        && bytes_payload.kind == BytesPayloadKind::Trace as i32
+    {
+        // 1. Add Agent Recv Event
+        add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentRecv)?;
 
-            // 2. Add Agent Send Event
-            add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentSend)?;
+        // 2. Add Agent Send Event
+        add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentSend)?;
 
-            // 3. Echo back immediately
-            out_tx
-                .send(mote)
-                .await
-                .map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
-            return Ok(());
-        }
+        // 3. Echo back immediately
+        out_tx
+            .send(mote)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
+        return Ok(());
     }
 
     let stream_id = mote.stream_id.clone();
