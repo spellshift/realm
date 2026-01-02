@@ -7,6 +7,7 @@ import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useFilters } from "../../context/FilterContext";
 import { useState } from "react";
 import AlertError from "../tavern-base-ui/AlertError";
+import { useNavigate } from "react-router-dom";
 
 interface QueueTomeButtonProps {
     tome: string;
@@ -25,6 +26,7 @@ const CREATE_QUEST_MUTATION = gql`
 export const QueueTomeButton = ({ tome: tomeName, host, beacon }: QueueTomeButtonProps) => {
     const { updateFilters } = useFilters();
     const [mutationError, setMutationError] = useState(false);
+    const navigate = useNavigate();
 
     // Query for the tome by name
     const { data: tomeData, loading: tomeLoading, error: tomeError } = useQuery<TomeQueryTopLevel>(GET_TOMES_QUERY, {
@@ -32,9 +34,9 @@ export const QueueTomeButton = ({ tome: tomeName, host, beacon }: QueueTomeButto
     });
 
     const [createQuest, { loading: mutationLoading }] = useMutation(CREATE_QUEST_MUTATION, {
-        onCompleted: () => {
+        onCompleted: (result: { createQuest: { id: string } }) => {
             updateFilters({ 'filtersEnabled': false });
-            // Optionally navigate or show toast
+            navigate(`/tasks/${result.createQuest.id}`);
         },
         onError: () => {
             setMutationError(true);
