@@ -1,6 +1,5 @@
 import { FC } from "react";
 import TaskTimeStamp from "./components/TaskTimeStamp";
-import TaskHostBeacon from "./components/TaskHostBeacon";
 import TaskParameters from "./components/TaskParameters";
 import UserImageAndName from "../UserImageAndName";
 import TaskStatusBadge from "../TaskStatusBadge";
@@ -9,6 +8,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import TaskResults from "./components/TaskResults";
 import { TaskNode } from "../../utils/interfacesQuery";
+import BeaconTile from "../BeaconTile";
 
 interface TaskCardType {
     task: TaskNode
@@ -29,7 +29,7 @@ const TaskCard: FC<TaskCardType> = (
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2">
                 <div className="border-t-4 border-gray-100 flex flex-col gap-4 px-4 py-2 w-full">
-                    <TaskHostBeacon beacon={task.beacon} />
+                    <BeaconTile beacon={task.beacon} isBeaconIconVisible />
                     <TaskTimeStamp {...task} />
                     <TaskParameters quest={task?.quest} />
                     <UserImageAndName userData={task?.quest?.creator} />

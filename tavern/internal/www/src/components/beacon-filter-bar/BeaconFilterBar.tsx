@@ -10,7 +10,7 @@ type Props = {
 }
 export const BeaconFilterBar = (props: Props) => {
     const { data } = useTags();
-    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms } = data;
+    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms, transports } = data;
 
     const { setFiltersSelected, filtersSelected, isDisabled, initialFilters } = props;
 
@@ -18,6 +18,10 @@ export const BeaconFilterBar = (props: Props) => {
         {
             label: "Platform",
             options: platforms
+        },
+        {
+            label: "Transport",
+            options: transports
         },
         {
             label: "Service",
