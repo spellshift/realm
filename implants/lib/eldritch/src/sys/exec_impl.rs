@@ -271,13 +271,7 @@ mod tests {
     fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
         init_logging();
 
-        if cfg!(target_os = "linux")
-            || cfg!(target_os = "ios")
-            || cfg!(target_os = "macos")
-            || cfg!(target_os = "android")
-            || cfg!(target_os = "freebsd")
-            || cfg!(target_os = "openbsd")
-            || cfg!(target_os = "netbsd")
+        #[cfg(unix)]
         {
             // Create a unique sleep binary to avoid zombie collision from previous runs
             let tmp_file = NamedTempFile::new()?;
