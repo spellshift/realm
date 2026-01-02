@@ -354,9 +354,21 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
-            let mut cfg = self.config.write().await;
-            if let Some(info) = &mut cfg.info {
-                info.interval = interval;
+            {
+                let mut cfg = self.config.write().await;
+                if let Some(info) = &mut cfg.info {
+                    info.interval = interval;
+                }
+            }
+            // We force a check-in to update the server with the new interval
+            if let Ok(tasks) = self.claim_tasks().await {
+                if !tasks.is_empty() {
+                    let registry = self.task_registry.clone();
+                    let agent = Arc::new(self.clone());
+                    for task in tasks {
+                        registry.spawn(task, agent.clone());
+                    }
+                }
             }
             Ok(())
         })
