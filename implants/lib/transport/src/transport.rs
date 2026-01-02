@@ -10,7 +10,7 @@ pub trait UnsafeTransport: Clone + Send {
 
     // New will create a new instance of the transport using the provided URI.
     #[allow(dead_code)]
-    fn new(uri: String, proxy_uri: Config) -> Result<Self>;
+    fn new(uri: String, config: Config) -> Result<Self>;
 
     ///
     /// Contact the server for new tasks to execute.
