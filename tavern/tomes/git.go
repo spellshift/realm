@@ -6,16 +6,19 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/go-git/go-billy/v5/osfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"github.com/go-git/go-git/v5/storage/memory"
+	"github.com/go-git/go-git/v5/storage/filesystem"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/ent"
@@ -44,7 +47,8 @@ type GitImporter struct {
 	graph *ent.Client
 }
 
-// Import clones a git repository from the provided URL in memory.
+// Import clones a git repository from the provided URL.
+// It uses a temporary directory for the clone to avoid loading all files into memory.
 // It walks the directory structure, looking for 'main.eldritch' files.
 // For each 'main.eldritch' file found, it's parent directory is treated as the tome's root.
 // All files in that directory and it's subdirectories (recursively) aside from the reserved
@@ -80,8 +84,18 @@ func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository
 		})
 	}
 
-	// Clone Repository (In-Memory)
-	storage := memory.NewStorage()
+	// Clone Repository (Filesystem)
+	// Create a temporary directory for the clone
+	tempDir, err := os.MkdirTemp("", "tavern-git-clone-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Initialize filesystem storage
+	fs := osfs.New(tempDir)
+	storage := filesystem.NewStorage(fs, cache.NewObjectLRUDefault())
+
 	repo, err := git.CloneContext(ctx, storage, nil, &git.CloneOptions{
 		URL:          entRepo.URL,
 		SingleBranch: true,
@@ -148,13 +162,77 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		return fmt.Errorf("failed to get tome tree (%q): %w", path, err)
 	}
 
+	// 1. Fetch and Parse metadata.yml and main.eldritch first
+	metadataFile, err := tree.File("metadata.yml")
+	if err != nil {
+		return fmt.Errorf("tome must include 'metadata.yml' file (%q): %w", path, err)
+	}
+	metadataReader, err := metadataFile.Blob.Reader()
+	if err != nil {
+		return fmt.Errorf("failed to open metadata.yml (%q): %w", path, err)
+	}
+	defer metadataReader.Close()
+	metadataData, err := io.ReadAll(metadataReader)
+	if err != nil {
+		return fmt.Errorf("failed to read metadata.yml (%q): %w", path, err)
+	}
+
+	var metadata MetadataDefinition
+	if err := yaml.Unmarshal(metadataData, &metadata); err != nil {
+		return fmt.Errorf("failed to parse tome metadata %q: %w", path, err)
+	}
+	if err := metadata.Validate(); err != nil {
+		return fmt.Errorf("invalid tome metadata %q: %w", path, err)
+	}
+
+	eldritchFile, err := tree.File("main.eldritch")
+	if err != nil {
+		return fmt.Errorf("tome must include 'main.eldritch' file (%q): %w", path, err)
+	}
+	eldritchReader, err := eldritchFile.Blob.Reader()
+	if err != nil {
+		return fmt.Errorf("failed to open main.eldritch (%q): %w", path, err)
+	}
+	defer eldritchReader.Close()
+	eldritchData, err := io.ReadAll(eldritchReader)
+	if err != nil {
+		return fmt.Errorf("failed to read main.eldritch (%q): %w", path, err)
+	}
+	eldritch := string(eldritchData)
+	if eldritch == "" {
+		return fmt.Errorf("tome must include non-empty 'main.eldritch' file (%q)", path)
+	}
+
+	// Marshal Params
+	paramdefs, err := json.Marshal(metadata.ParamDefs)
+	if err != nil {
+		return fmt.Errorf("failed to marshal param defs for %q: %w", path, err)
+	}
+
+	// 2. Create the tome
+	tomeID, err := importer.graph.Tome.Create().
+		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
+		SetDescription(metadata.Description).
+		SetAuthor(metadata.Author).
+		SetParamDefs(string(paramdefs)).
+		SetSupportModel(tome.SupportModelCOMMUNITY).
+		SetTactic(tome.Tactic(metadata.Tactic)).
+		SetEldritch(eldritch).
+		SetRepository(entRepo).
+		OnConflict().
+		UpdateNewValues().
+		ID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
+	}
+
+	// 3. Iterate Tome Files and add them in batches
 	walker := object.NewTreeWalker(tree, true, make(map[plumbing.Hash]bool))
 	defer walker.Close()
 
-	var metadata MetadataDefinition
-	var eldritch string
-	var tomeFileIDs []int
-	// Iterate Tome Files
+	var batchFileIDs []int
+	const batchSize = 100
+
 	for {
 		name, entry, err := walker.Next()
 		if err == io.EOF {
@@ -169,6 +247,12 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 			continue
 		}
 
+		baseName := filepath.Base(name)
+		// Skip already processed files
+		if baseName == "metadata.yml" || baseName == "main.eldritch" {
+			continue
+		}
+
 		// Read File Data
 		blob, err := repo.BlobObject(entry.Hash)
 		if err != nil {
@@ -178,31 +262,16 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		if err != nil {
 			return fmt.Errorf("failed to get tome blob reader (%q): %w", name, err)
 		}
-		defer reader.Close()
-		data, err := io.ReadAll(reader)
+		// Use a function closure to defer Close() properly in a loop
+		data, err := func() ([]byte, error) {
+			defer reader.Close()
+			return io.ReadAll(reader)
+		}()
 		if err != nil {
 			return fmt.Errorf("failed to read tome file (%q): %w", name, err)
 		}
 
-		// Parse metadata.yml
-		if filepath.Base(name) == "metadata.yml" {
-			if err := yaml.Unmarshal(data, &metadata); err != nil {
-				return fmt.Errorf("failed to parse tome metadata %q: %w", name, err)
-			}
-			if err := metadata.Validate(); err != nil {
-				return fmt.Errorf("invalid tome metadata %q: %w", name, err)
-			}
-
-			continue
-		}
-
-		// Parse main.eldritch
-		if filepath.Base(name) == "main.eldritch" {
-			eldritch = string(data)
-			continue
-		}
-
-		// Upload other files
+		// Upload file
 		// TODO: Namespace tomes to prevent multi-repo conflicts
 		fileID, err := importer.graph.File.Create().
 			SetName(fmt.Sprintf("%s/%s", filepath.Base(path), name)).
@@ -213,42 +282,24 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		if err != nil {
 			return fmt.Errorf("failed to upload tome file %q: %w", name, err)
 		}
-		tomeFileIDs = append(tomeFileIDs, fileID)
+
+		batchFileIDs = append(batchFileIDs, fileID)
+
+		if len(batchFileIDs) >= batchSize {
+			if err := importer.graph.Tome.UpdateOneID(tomeID).AddFileIDs(batchFileIDs...).Exec(ctx); err != nil {
+				return fmt.Errorf("failed to link batch files to tome %d: %w", tomeID, err)
+			}
+			batchFileIDs = nil // reset batch
+		}
 	}
 
-	// Ensure Metadata was found
-	if metadata.Name == "" {
-		return fmt.Errorf("tome must include 'metadata.yml' file (%q)", path)
+	// Flush remaining files
+	if len(batchFileIDs) > 0 {
+		if err := importer.graph.Tome.UpdateOneID(tomeID).AddFileIDs(batchFileIDs...).Exec(ctx); err != nil {
+			return fmt.Errorf("failed to link remaining files to tome %d: %w", tomeID, err)
+		}
 	}
 
-	// Ensure Eldritch not empty
-	if eldritch == "" {
-		return fmt.Errorf("tome must include non-empty 'eldritch.main' file (%q)", path)
-	}
-
-	// Marshal Params
-	paramdefs, err := json.Marshal(metadata.ParamDefs)
-	if err != nil {
-		return fmt.Errorf("failed to marshal param defs for %q: %w", path, err)
-	}
-
-	// Create the tome
-	_, err = importer.graph.Tome.Create().
-		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
-		SetDescription(metadata.Description).
-		SetAuthor(metadata.Author).
-		SetParamDefs(string(paramdefs)).
-		SetSupportModel(tome.SupportModelCOMMUNITY).
-		SetTactic(tome.Tactic(metadata.Tactic)).
-		SetEldritch(eldritch).
-		SetRepository(entRepo).
-		AddFileIDs(tomeFileIDs...).
-		OnConflict().
-		UpdateNewValues().
-		ID(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
-	}
 	return nil
 }
 
