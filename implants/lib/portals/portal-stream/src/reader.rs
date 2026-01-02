@@ -76,9 +76,7 @@ impl OrderedReader {
             self.first_buffered_at = Some(Instant::now());
         }
 
-        if !self.buffer.contains_key(&mote.seq_id) {
-            self.buffer.insert(mote.seq_id, mote);
-        }
+        self.buffer.entry(mote.seq_id).or_insert(mote);
 
         if self.buffer.len() > self.max_buffer {
             return Err(anyhow!("stale stream: buffer limit exceeded"));
