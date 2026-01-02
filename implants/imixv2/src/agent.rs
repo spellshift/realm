@@ -304,15 +304,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
         let config = cfg.clone();
 
-        let info = config
+        let active_transport = config
             .info
             .as_ref()
-            .context("failed to get config info")
-            .map_err(|e| e.to_string())?;
-
-        let active_transport = info
-            .clone()
-            .active_transport
+            .and_then(|info| info.active_transport.as_ref())
             .context("failed to get active transport")
             .map_err(|e| e.to_string())?;
 
@@ -337,11 +332,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             }
             if let Some(active_transport) = &info.active_transport {
                 map.insert("uri".to_string(), active_transport.uri.clone());
-                map.insert(
-                    "interval".to_string(),
-                    active_transport.interval.clone().to_string(),
-                );
-                map.insert("primary_ip".to_string(), active_transport.extra.clone());
                 map.insert(
                     "type".to_string(),
                     active_transport.r#type.clone().to_string(),
