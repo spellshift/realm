@@ -291,9 +291,12 @@ mod tests {
         let mut runtime = crate::start(
             123456,
             Tome {
-                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file")"#
+                eldritch: r#"print(file.find(input_params['dir_path'], name="test.txt", file_type="file"))"#
                     .to_owned(),
-                parameters: HashMap::from([("dir_path".to_string(), file.to_str().unwrap().to_string())]),
+                parameters: HashMap::from([(
+                    "dir_path".to_string(),
+                    file.to_str().unwrap().to_string(),
+                )]),
                 file_names: Vec::new(),
             },
         )
@@ -308,6 +311,12 @@ mod tests {
 
         if let Message::Async(AsyncMessage::ReportAggOutput(output)) = message {
             assert!(output.error.is_some());
+            assert!(output
+                .error
+                .as_ref()
+                .unwrap()
+                .msg
+                .contains("Search path is not a directory"));
         } else {
             panic!("Expected ReportAggOutputMessage");
         }
