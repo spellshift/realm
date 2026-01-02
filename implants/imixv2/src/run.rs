@@ -114,20 +114,11 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     agent.update_transport(ActiveTransport::init()).await;
 }
 
-async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegistry) {
-    match agent.claim_tasks().await {
-        Ok(tasks) => {
-            if tasks.is_empty() {
-                #[cfg(debug_assertions)]
-                log::info!("Callback success, no tasks to claim");
-                return;
-            }
-            for task in tasks {
-                #[cfg(debug_assertions)]
-                log::info!("Claimed task: {}", task.id);
-
-                registry.spawn(task, Arc::new(agent.clone()));
-            }
+async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegistry) {
+    match agent.process_job_request().await {
+        Ok(_) => {
+            #[cfg(debug_assertions)]
+            log::info!("Callback success");
         }
         Err(_e) => {
             #[cfg(debug_assertions)]
