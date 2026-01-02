@@ -235,6 +235,21 @@ func TestPortalIntegration(t *testing.T) {
 		return resp.Mote, nil
 	})
 
+	// Synchronize: Ensure User is fully connected
+	// We send a ping from User to Agent and verify receipt.
+	// This ensures that the server's OpenPortal handler has reached sendPortalInput,
+	// which occurs *after* the subscription to the output topic (PORTAL_OUT) is established.
+	// This synchronization avoids a race condition where the Agent publishes to PORTAL_OUT
+	// before the User has subscribed, causing the message to be dropped (as mempubsub warns).
+	pingData := []byte("ping")
+	err = userWriter.WriteBytes(pingData, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_DATA)
+	require.NoError(t, err)
+
+	pingMote, err := agentReader.Read()
+	require.NoError(t, err)
+	require.Equal(t, pingData, pingMote.GetBytes().Data)
+	// Note: this consumes User->Agent Seq 0.
+
 	// 5. Test Agent -> User (Ordered)
 	t.Run("AgentToUser_Ordered", func(t *testing.T) {
 		data := []byte("hello user")
