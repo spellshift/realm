@@ -20,10 +20,10 @@ const (
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldPath holds the string denoting the path field in the database.
 	FieldPath = "path"
-	// FieldActiveBefore holds the string denoting the active_before field in the database.
-	FieldActiveBefore = "active_before"
-	// FieldActiveClicks holds the string denoting the active_clicks field in the database.
-	FieldActiveClicks = "active_clicks"
+	// FieldExpiresAt holds the string denoting the expires_at field in the database.
+	FieldExpiresAt = "expires_at"
+	// FieldDownloadsRemaining holds the string denoting the downloads_remaining field in the database.
+	FieldDownloadsRemaining = "downloads_remaining"
 	// EdgeFile holds the string denoting the file edge name in mutations.
 	EdgeFile = "file"
 	// Table holds the table name of the link in the database.
@@ -43,8 +43,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldLastModifiedAt,
 	FieldPath,
-	FieldActiveBefore,
-	FieldActiveClicks,
+	FieldExpiresAt,
+	FieldDownloadsRemaining,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "links"
@@ -79,12 +79,12 @@ var (
 	DefaultPath func() string
 	// PathValidator is a validator for the "path" field. It is called by the builders before save.
 	PathValidator func(string) error
-	// DefaultActiveBefore holds the default value on creation for the "active_before" field.
-	DefaultActiveBefore time.Time
-	// DefaultActiveClicks holds the default value on creation for the "active_clicks" field.
-	DefaultActiveClicks int
-	// ActiveClicksValidator is a validator for the "active_clicks" field. It is called by the builders before save.
-	ActiveClicksValidator func(int) error
+	// DefaultExpiresAt holds the default value on creation for the "expires_at" field.
+	DefaultExpiresAt time.Time
+	// DefaultDownloadsRemaining holds the default value on creation for the "downloads_remaining" field.
+	DefaultDownloadsRemaining int
+	// DownloadsRemainingValidator is a validator for the "downloads_remaining" field. It is called by the builders before save.
+	DownloadsRemainingValidator func(int) error
 )
 
 // OrderOption defines the ordering options for the Link queries.
@@ -110,14 +110,14 @@ func ByPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPath, opts...).ToFunc()
 }
 
-// ByActiveBefore orders the results by the active_before field.
-func ByActiveBefore(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActiveBefore, opts...).ToFunc()
+// ByExpiresAt orders the results by the expires_at field.
+func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
 }
 
-// ByActiveClicks orders the results by the active_clicks field.
-func ByActiveClicks(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActiveClicks, opts...).ToFunc()
+// ByDownloadsRemaining orders the results by the downloads_remaining field.
+func ByDownloadsRemaining(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDownloadsRemaining, opts...).ToFunc()
 }
 
 // ByFileField orders the results by file field.

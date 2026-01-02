@@ -70,14 +70,14 @@ func Path(v string) predicate.Link {
 	return predicate.Link(sql.FieldEQ(FieldPath, v))
 }
 
-// ActiveBefore applies equality check predicate on the "active_before" field. It's identical to ActiveBeforeEQ.
-func ActiveBefore(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldEQ(FieldActiveBefore, v))
+// ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
+func ExpiresAt(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldExpiresAt, v))
 }
 
-// ActiveClicks applies equality check predicate on the "active_clicks" field. It's identical to ActiveClicksEQ.
-func ActiveClicks(v int) predicate.Link {
-	return predicate.Link(sql.FieldEQ(FieldActiveClicks, v))
+// DownloadsRemaining applies equality check predicate on the "downloads_remaining" field. It's identical to DownloadsRemainingEQ.
+func DownloadsRemaining(v int) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldDownloadsRemaining, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -225,84 +225,84 @@ func PathContainsFold(v string) predicate.Link {
 	return predicate.Link(sql.FieldContainsFold(FieldPath, v))
 }
 
-// ActiveBeforeEQ applies the EQ predicate on the "active_before" field.
-func ActiveBeforeEQ(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldEQ(FieldActiveBefore, v))
+// ExpiresAtEQ applies the EQ predicate on the "expires_at" field.
+func ExpiresAtEQ(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldExpiresAt, v))
 }
 
-// ActiveBeforeNEQ applies the NEQ predicate on the "active_before" field.
-func ActiveBeforeNEQ(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldNEQ(FieldActiveBefore, v))
+// ExpiresAtNEQ applies the NEQ predicate on the "expires_at" field.
+func ExpiresAtNEQ(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldNEQ(FieldExpiresAt, v))
 }
 
-// ActiveBeforeIn applies the In predicate on the "active_before" field.
-func ActiveBeforeIn(vs ...time.Time) predicate.Link {
-	return predicate.Link(sql.FieldIn(FieldActiveBefore, vs...))
+// ExpiresAtIn applies the In predicate on the "expires_at" field.
+func ExpiresAtIn(vs ...time.Time) predicate.Link {
+	return predicate.Link(sql.FieldIn(FieldExpiresAt, vs...))
 }
 
-// ActiveBeforeNotIn applies the NotIn predicate on the "active_before" field.
-func ActiveBeforeNotIn(vs ...time.Time) predicate.Link {
-	return predicate.Link(sql.FieldNotIn(FieldActiveBefore, vs...))
+// ExpiresAtNotIn applies the NotIn predicate on the "expires_at" field.
+func ExpiresAtNotIn(vs ...time.Time) predicate.Link {
+	return predicate.Link(sql.FieldNotIn(FieldExpiresAt, vs...))
 }
 
-// ActiveBeforeGT applies the GT predicate on the "active_before" field.
-func ActiveBeforeGT(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldGT(FieldActiveBefore, v))
+// ExpiresAtGT applies the GT predicate on the "expires_at" field.
+func ExpiresAtGT(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldGT(FieldExpiresAt, v))
 }
 
-// ActiveBeforeGTE applies the GTE predicate on the "active_before" field.
-func ActiveBeforeGTE(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldGTE(FieldActiveBefore, v))
+// ExpiresAtGTE applies the GTE predicate on the "expires_at" field.
+func ExpiresAtGTE(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldGTE(FieldExpiresAt, v))
 }
 
-// ActiveBeforeLT applies the LT predicate on the "active_before" field.
-func ActiveBeforeLT(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldLT(FieldActiveBefore, v))
+// ExpiresAtLT applies the LT predicate on the "expires_at" field.
+func ExpiresAtLT(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldLT(FieldExpiresAt, v))
 }
 
-// ActiveBeforeLTE applies the LTE predicate on the "active_before" field.
-func ActiveBeforeLTE(v time.Time) predicate.Link {
-	return predicate.Link(sql.FieldLTE(FieldActiveBefore, v))
+// ExpiresAtLTE applies the LTE predicate on the "expires_at" field.
+func ExpiresAtLTE(v time.Time) predicate.Link {
+	return predicate.Link(sql.FieldLTE(FieldExpiresAt, v))
 }
 
-// ActiveClicksEQ applies the EQ predicate on the "active_clicks" field.
-func ActiveClicksEQ(v int) predicate.Link {
-	return predicate.Link(sql.FieldEQ(FieldActiveClicks, v))
+// DownloadsRemainingEQ applies the EQ predicate on the "downloads_remaining" field.
+func DownloadsRemainingEQ(v int) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldDownloadsRemaining, v))
 }
 
-// ActiveClicksNEQ applies the NEQ predicate on the "active_clicks" field.
-func ActiveClicksNEQ(v int) predicate.Link {
-	return predicate.Link(sql.FieldNEQ(FieldActiveClicks, v))
+// DownloadsRemainingNEQ applies the NEQ predicate on the "downloads_remaining" field.
+func DownloadsRemainingNEQ(v int) predicate.Link {
+	return predicate.Link(sql.FieldNEQ(FieldDownloadsRemaining, v))
 }
 
-// ActiveClicksIn applies the In predicate on the "active_clicks" field.
-func ActiveClicksIn(vs ...int) predicate.Link {
-	return predicate.Link(sql.FieldIn(FieldActiveClicks, vs...))
+// DownloadsRemainingIn applies the In predicate on the "downloads_remaining" field.
+func DownloadsRemainingIn(vs ...int) predicate.Link {
+	return predicate.Link(sql.FieldIn(FieldDownloadsRemaining, vs...))
 }
 
-// ActiveClicksNotIn applies the NotIn predicate on the "active_clicks" field.
-func ActiveClicksNotIn(vs ...int) predicate.Link {
-	return predicate.Link(sql.FieldNotIn(FieldActiveClicks, vs...))
+// DownloadsRemainingNotIn applies the NotIn predicate on the "downloads_remaining" field.
+func DownloadsRemainingNotIn(vs ...int) predicate.Link {
+	return predicate.Link(sql.FieldNotIn(FieldDownloadsRemaining, vs...))
 }
 
-// ActiveClicksGT applies the GT predicate on the "active_clicks" field.
-func ActiveClicksGT(v int) predicate.Link {
-	return predicate.Link(sql.FieldGT(FieldActiveClicks, v))
+// DownloadsRemainingGT applies the GT predicate on the "downloads_remaining" field.
+func DownloadsRemainingGT(v int) predicate.Link {
+	return predicate.Link(sql.FieldGT(FieldDownloadsRemaining, v))
 }
 
-// ActiveClicksGTE applies the GTE predicate on the "active_clicks" field.
-func ActiveClicksGTE(v int) predicate.Link {
-	return predicate.Link(sql.FieldGTE(FieldActiveClicks, v))
+// DownloadsRemainingGTE applies the GTE predicate on the "downloads_remaining" field.
+func DownloadsRemainingGTE(v int) predicate.Link {
+	return predicate.Link(sql.FieldGTE(FieldDownloadsRemaining, v))
 }
 
-// ActiveClicksLT applies the LT predicate on the "active_clicks" field.
-func ActiveClicksLT(v int) predicate.Link {
-	return predicate.Link(sql.FieldLT(FieldActiveClicks, v))
+// DownloadsRemainingLT applies the LT predicate on the "downloads_remaining" field.
+func DownloadsRemainingLT(v int) predicate.Link {
+	return predicate.Link(sql.FieldLT(FieldDownloadsRemaining, v))
 }
 
-// ActiveClicksLTE applies the LTE predicate on the "active_clicks" field.
-func ActiveClicksLTE(v int) predicate.Link {
-	return predicate.Link(sql.FieldLTE(FieldActiveClicks, v))
+// DownloadsRemainingLTE applies the LTE predicate on the "downloads_remaining" field.
+func DownloadsRemainingLTE(v int) predicate.Link {
+	return predicate.Link(sql.FieldLTE(FieldDownloadsRemaining, v))
 }
 
 // HasFile applies the HasEdge predicate on the "file" edge.

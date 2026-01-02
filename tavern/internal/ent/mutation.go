@@ -6155,21 +6155,21 @@ func (m *HostProcessMutation) ResetEdge(name string) error {
 // LinkMutation represents an operation that mutates the Link nodes in the graph.
 type LinkMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	_path            *string
-	active_before    *time.Time
-	active_clicks    *int
-	addactive_clicks *int
-	clearedFields    map[string]struct{}
-	file             *int
-	clearedfile      bool
-	done             bool
-	oldValue         func(context.Context) (*Link, error)
-	predicates       []predicate.Link
+	op                     Op
+	typ                    string
+	id                     *int
+	created_at             *time.Time
+	last_modified_at       *time.Time
+	_path                  *string
+	expires_at             *time.Time
+	downloads_remaining    *int
+	adddownloads_remaining *int
+	clearedFields          map[string]struct{}
+	file                   *int
+	clearedfile            bool
+	done                   bool
+	oldValue               func(context.Context) (*Link, error)
+	predicates             []predicate.Link
 }
 
 var _ ent.Mutation = (*LinkMutation)(nil)
@@ -6378,96 +6378,96 @@ func (m *LinkMutation) ResetPath() {
 	m._path = nil
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (m *LinkMutation) SetActiveBefore(t time.Time) {
-	m.active_before = &t
+// SetExpiresAt sets the "expires_at" field.
+func (m *LinkMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
 }
 
-// ActiveBefore returns the value of the "active_before" field in the mutation.
-func (m *LinkMutation) ActiveBefore() (r time.Time, exists bool) {
-	v := m.active_before
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *LinkMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldActiveBefore returns the old "active_before" field's value of the Link entity.
+// OldExpiresAt returns the old "expires_at" field's value of the Link entity.
 // If the Link object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LinkMutation) OldActiveBefore(ctx context.Context) (v time.Time, err error) {
+func (m *LinkMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldActiveBefore is only allowed on UpdateOne operations")
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldActiveBefore requires an ID field in the mutation")
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldActiveBefore: %w", err)
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
 	}
-	return oldValue.ActiveBefore, nil
+	return oldValue.ExpiresAt, nil
 }
 
-// ResetActiveBefore resets all changes to the "active_before" field.
-func (m *LinkMutation) ResetActiveBefore() {
-	m.active_before = nil
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *LinkMutation) ResetExpiresAt() {
+	m.expires_at = nil
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (m *LinkMutation) SetActiveClicks(i int) {
-	m.active_clicks = &i
-	m.addactive_clicks = nil
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (m *LinkMutation) SetDownloadsRemaining(i int) {
+	m.downloads_remaining = &i
+	m.adddownloads_remaining = nil
 }
 
-// ActiveClicks returns the value of the "active_clicks" field in the mutation.
-func (m *LinkMutation) ActiveClicks() (r int, exists bool) {
-	v := m.active_clicks
+// DownloadsRemaining returns the value of the "downloads_remaining" field in the mutation.
+func (m *LinkMutation) DownloadsRemaining() (r int, exists bool) {
+	v := m.downloads_remaining
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldActiveClicks returns the old "active_clicks" field's value of the Link entity.
+// OldDownloadsRemaining returns the old "downloads_remaining" field's value of the Link entity.
 // If the Link object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LinkMutation) OldActiveClicks(ctx context.Context) (v int, err error) {
+func (m *LinkMutation) OldDownloadsRemaining(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldActiveClicks is only allowed on UpdateOne operations")
+		return v, errors.New("OldDownloadsRemaining is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldActiveClicks requires an ID field in the mutation")
+		return v, errors.New("OldDownloadsRemaining requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldActiveClicks: %w", err)
+		return v, fmt.Errorf("querying old value for OldDownloadsRemaining: %w", err)
 	}
-	return oldValue.ActiveClicks, nil
+	return oldValue.DownloadsRemaining, nil
 }
 
-// AddActiveClicks adds i to the "active_clicks" field.
-func (m *LinkMutation) AddActiveClicks(i int) {
-	if m.addactive_clicks != nil {
-		*m.addactive_clicks += i
+// AddDownloadsRemaining adds i to the "downloads_remaining" field.
+func (m *LinkMutation) AddDownloadsRemaining(i int) {
+	if m.adddownloads_remaining != nil {
+		*m.adddownloads_remaining += i
 	} else {
-		m.addactive_clicks = &i
+		m.adddownloads_remaining = &i
 	}
 }
 
-// AddedActiveClicks returns the value that was added to the "active_clicks" field in this mutation.
-func (m *LinkMutation) AddedActiveClicks() (r int, exists bool) {
-	v := m.addactive_clicks
+// AddedDownloadsRemaining returns the value that was added to the "downloads_remaining" field in this mutation.
+func (m *LinkMutation) AddedDownloadsRemaining() (r int, exists bool) {
+	v := m.adddownloads_remaining
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetActiveClicks resets all changes to the "active_clicks" field.
-func (m *LinkMutation) ResetActiveClicks() {
-	m.active_clicks = nil
-	m.addactive_clicks = nil
+// ResetDownloadsRemaining resets all changes to the "downloads_remaining" field.
+func (m *LinkMutation) ResetDownloadsRemaining() {
+	m.downloads_remaining = nil
+	m.adddownloads_remaining = nil
 }
 
 // SetFileID sets the "file" edge to the File entity by id.
@@ -6553,11 +6553,11 @@ func (m *LinkMutation) Fields() []string {
 	if m._path != nil {
 		fields = append(fields, link.FieldPath)
 	}
-	if m.active_before != nil {
-		fields = append(fields, link.FieldActiveBefore)
+	if m.expires_at != nil {
+		fields = append(fields, link.FieldExpiresAt)
 	}
-	if m.active_clicks != nil {
-		fields = append(fields, link.FieldActiveClicks)
+	if m.downloads_remaining != nil {
+		fields = append(fields, link.FieldDownloadsRemaining)
 	}
 	return fields
 }
@@ -6573,10 +6573,10 @@ func (m *LinkMutation) Field(name string) (ent.Value, bool) {
 		return m.LastModifiedAt()
 	case link.FieldPath:
 		return m.Path()
-	case link.FieldActiveBefore:
-		return m.ActiveBefore()
-	case link.FieldActiveClicks:
-		return m.ActiveClicks()
+	case link.FieldExpiresAt:
+		return m.ExpiresAt()
+	case link.FieldDownloadsRemaining:
+		return m.DownloadsRemaining()
 	}
 	return nil, false
 }
@@ -6592,10 +6592,10 @@ func (m *LinkMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldLastModifiedAt(ctx)
 	case link.FieldPath:
 		return m.OldPath(ctx)
-	case link.FieldActiveBefore:
-		return m.OldActiveBefore(ctx)
-	case link.FieldActiveClicks:
-		return m.OldActiveClicks(ctx)
+	case link.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case link.FieldDownloadsRemaining:
+		return m.OldDownloadsRemaining(ctx)
 	}
 	return nil, fmt.Errorf("unknown Link field %s", name)
 }
@@ -6626,19 +6626,19 @@ func (m *LinkMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPath(v)
 		return nil
-	case link.FieldActiveBefore:
+	case link.FieldExpiresAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetActiveBefore(v)
+		m.SetExpiresAt(v)
 		return nil
-	case link.FieldActiveClicks:
+	case link.FieldDownloadsRemaining:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetActiveClicks(v)
+		m.SetDownloadsRemaining(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Link field %s", name)
@@ -6648,8 +6648,8 @@ func (m *LinkMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *LinkMutation) AddedFields() []string {
 	var fields []string
-	if m.addactive_clicks != nil {
-		fields = append(fields, link.FieldActiveClicks)
+	if m.adddownloads_remaining != nil {
+		fields = append(fields, link.FieldDownloadsRemaining)
 	}
 	return fields
 }
@@ -6659,8 +6659,8 @@ func (m *LinkMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *LinkMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case link.FieldActiveClicks:
-		return m.AddedActiveClicks()
+	case link.FieldDownloadsRemaining:
+		return m.AddedDownloadsRemaining()
 	}
 	return nil, false
 }
@@ -6670,12 +6670,12 @@ func (m *LinkMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *LinkMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case link.FieldActiveClicks:
+	case link.FieldDownloadsRemaining:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddActiveClicks(v)
+		m.AddDownloadsRemaining(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Link numeric field %s", name)
@@ -6713,11 +6713,11 @@ func (m *LinkMutation) ResetField(name string) error {
 	case link.FieldPath:
 		m.ResetPath()
 		return nil
-	case link.FieldActiveBefore:
-		m.ResetActiveBefore()
+	case link.FieldExpiresAt:
+		m.ResetExpiresAt()
 		return nil
-	case link.FieldActiveClicks:
-		m.ResetActiveClicks()
+	case link.FieldDownloadsRemaining:
+		m.ResetDownloadsRemaining()
 		return nil
 	}
 	return fmt.Errorf("unknown Link field %s", name)

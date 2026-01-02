@@ -2,6 +2,7 @@ package cdn
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -33,27 +34,33 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 			WithFile()
 
 		// Ensure the link exists
-		if exists := linkQuery.Clone().ExistX(ctx); !exists {
+		if exists, err := linkQuery.Clone().Exist(ctx); !exists || err != nil {
 			return ErrFileNotFound
 		}
 
-		l := linkQuery.OnlyX(ctx)
+		l, err := linkQuery.Only(ctx)
+		if err != nil {
+			return ErrFileNotFound
+		}
 
 		// Check if the link is active based on active_clicks or active_before
 		currentTime := time.Now()
-		isActiveByClicks := l.ActiveClicks > 0
-		isActiveByTime := currentTime.Before(l.ActiveBefore)
+		hasDownloadsRemaining := l.DownloadsRemaining > 0
+		hasTimeRemaining := currentTime.Before(l.ExpiresAt)
 
 		// If neither condition is met, return 404
-		if !isActiveByClicks && !isActiveByTime {
+		if !hasDownloadsRemaining && !hasTimeRemaining {
 			return ErrFileNotFound
 		}
 
 		// If active by clicks, decrement the counter
-		if isActiveByClicks {
-			graph.Link.UpdateOne(l).
-				SetActiveClicks(l.ActiveClicks - 1).
-				SaveX(ctx)
+		if hasDownloadsRemaining {
+			_, err := graph.Link.UpdateOne(l).
+				SetDownloadsRemaining(l.DownloadsRemaining - 1).
+				Save(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to decrement active clicks: %w", err)
+			}
 		}
 
 		// Get the associated file

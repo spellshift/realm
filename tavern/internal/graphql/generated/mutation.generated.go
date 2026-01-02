@@ -2007,10 +2007,10 @@ func (ec *executionContext) fieldContext_Mutation_createLink(ctx context.Context
 				return ec.fieldContext_Link_lastModifiedAt(ctx, field)
 			case "path":
 				return ec.fieldContext_Link_path(ctx, field)
-			case "activeBefore":
-				return ec.fieldContext_Link_activeBefore(ctx, field)
-			case "activeClicks":
-				return ec.fieldContext_Link_activeClicks(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_Link_expiresAt(ctx, field)
+			case "downloadsRemaining":
+				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
 			case "file":
 				return ec.fieldContext_Link_file(ctx, field)
 			}
@@ -2105,10 +2105,10 @@ func (ec *executionContext) fieldContext_Mutation_updateLink(ctx context.Context
 				return ec.fieldContext_Link_lastModifiedAt(ctx, field)
 			case "path":
 				return ec.fieldContext_Link_path(ctx, field)
-			case "activeBefore":
-				return ec.fieldContext_Link_activeBefore(ctx, field)
-			case "activeClicks":
-				return ec.fieldContext_Link_activeClicks(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_Link_expiresAt(ctx, field)
+			case "downloadsRemaining":
+				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
 			case "file":
 				return ec.fieldContext_Link_file(ctx, field)
 			}
@@ -2203,10 +2203,10 @@ func (ec *executionContext) fieldContext_Mutation_disableLink(ctx context.Contex
 				return ec.fieldContext_Link_lastModifiedAt(ctx, field)
 			case "path":
 				return ec.fieldContext_Link_path(ctx, field)
-			case "activeBefore":
-				return ec.fieldContext_Link_activeBefore(ctx, field)
-			case "activeClicks":
-				return ec.fieldContext_Link_activeClicks(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_Link_expiresAt(ctx, field)
+			case "downloadsRemaining":
+				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
 			case "file":
 				return ec.fieldContext_Link_file(ctx, field)
 			}

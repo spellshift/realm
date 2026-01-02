@@ -1739,15 +1739,15 @@ func (l *LinkQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				selectedFields = append(selectedFields, link.FieldPath)
 				fieldSeen[link.FieldPath] = struct{}{}
 			}
-		case "activeBefore":
-			if _, ok := fieldSeen[link.FieldActiveBefore]; !ok {
-				selectedFields = append(selectedFields, link.FieldActiveBefore)
-				fieldSeen[link.FieldActiveBefore] = struct{}{}
+		case "expiresAt":
+			if _, ok := fieldSeen[link.FieldExpiresAt]; !ok {
+				selectedFields = append(selectedFields, link.FieldExpiresAt)
+				fieldSeen[link.FieldExpiresAt] = struct{}{}
 			}
-		case "activeClicks":
-			if _, ok := fieldSeen[link.FieldActiveClicks]; !ok {
-				selectedFields = append(selectedFields, link.FieldActiveClicks)
-				fieldSeen[link.FieldActiveClicks] = struct{}{}
+		case "downloadsRemaining":
+			if _, ok := fieldSeen[link.FieldDownloadsRemaining]; !ok {
+				selectedFields = append(selectedFields, link.FieldDownloadsRemaining)
+				fieldSeen[link.FieldDownloadsRemaining] = struct{}{}
 			}
 		case "id":
 		case "__typename":

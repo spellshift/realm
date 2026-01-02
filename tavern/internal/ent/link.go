@@ -25,9 +25,9 @@ type Link struct {
 	// Unique path for accessing the file via the CDN
 	Path string `json:"path,omitempty"`
 	// Timestamp before which the link is active. Default is epoch 0
-	ActiveBefore time.Time `json:"active_before,omitempty"`
+	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// Number of times this link can be clicked before it becomes inactive
-	ActiveClicks int `json:"active_clicks,omitempty"`
+	DownloadsRemaining int `json:"downloads_remaining,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LinkQuery when eager-loading is set.
 	Edges        LinkEdges `json:"edges"`
@@ -62,11 +62,11 @@ func (*Link) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case link.FieldID, link.FieldActiveClicks:
+		case link.FieldID, link.FieldDownloadsRemaining:
 			values[i] = new(sql.NullInt64)
 		case link.FieldPath:
 			values[i] = new(sql.NullString)
-		case link.FieldCreatedAt, link.FieldLastModifiedAt, link.FieldActiveBefore:
+		case link.FieldCreatedAt, link.FieldLastModifiedAt, link.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
 		case link.ForeignKeys[0]: // link_file
 			values[i] = new(sql.NullInt64)
@@ -109,17 +109,17 @@ func (l *Link) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				l.Path = value.String
 			}
-		case link.FieldActiveBefore:
+		case link.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field active_before", values[i])
+				return fmt.Errorf("unexpected type %T for field expires_at", values[i])
 			} else if value.Valid {
-				l.ActiveBefore = value.Time
+				l.ExpiresAt = value.Time
 			}
-		case link.FieldActiveClicks:
+		case link.FieldDownloadsRemaining:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field active_clicks", values[i])
+				return fmt.Errorf("unexpected type %T for field downloads_remaining", values[i])
 			} else if value.Valid {
-				l.ActiveClicks = int(value.Int64)
+				l.DownloadsRemaining = int(value.Int64)
 			}
 		case link.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -178,11 +178,11 @@ func (l *Link) String() string {
 	builder.WriteString("path=")
 	builder.WriteString(l.Path)
 	builder.WriteString(", ")
-	builder.WriteString("active_before=")
-	builder.WriteString(l.ActiveBefore.Format(time.ANSIC))
+	builder.WriteString("expires_at=")
+	builder.WriteString(l.ExpiresAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("active_clicks=")
-	builder.WriteString(fmt.Sprintf("%v", l.ActiveClicks))
+	builder.WriteString("downloads_remaining=")
+	builder.WriteString(fmt.Sprintf("%v", l.DownloadsRemaining))
 	builder.WriteByte(')')
 	return builder.String()
 }

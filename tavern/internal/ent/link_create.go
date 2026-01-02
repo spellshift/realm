@@ -65,30 +65,30 @@ func (lc *LinkCreate) SetNillablePath(s *string) *LinkCreate {
 	return lc
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (lc *LinkCreate) SetActiveBefore(t time.Time) *LinkCreate {
-	lc.mutation.SetActiveBefore(t)
+// SetExpiresAt sets the "expires_at" field.
+func (lc *LinkCreate) SetExpiresAt(t time.Time) *LinkCreate {
+	lc.mutation.SetExpiresAt(t)
 	return lc
 }
 
-// SetNillableActiveBefore sets the "active_before" field if the given value is not nil.
-func (lc *LinkCreate) SetNillableActiveBefore(t *time.Time) *LinkCreate {
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (lc *LinkCreate) SetNillableExpiresAt(t *time.Time) *LinkCreate {
 	if t != nil {
-		lc.SetActiveBefore(*t)
+		lc.SetExpiresAt(*t)
 	}
 	return lc
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (lc *LinkCreate) SetActiveClicks(i int) *LinkCreate {
-	lc.mutation.SetActiveClicks(i)
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (lc *LinkCreate) SetDownloadsRemaining(i int) *LinkCreate {
+	lc.mutation.SetDownloadsRemaining(i)
 	return lc
 }
 
-// SetNillableActiveClicks sets the "active_clicks" field if the given value is not nil.
-func (lc *LinkCreate) SetNillableActiveClicks(i *int) *LinkCreate {
+// SetNillableDownloadsRemaining sets the "downloads_remaining" field if the given value is not nil.
+func (lc *LinkCreate) SetNillableDownloadsRemaining(i *int) *LinkCreate {
 	if i != nil {
-		lc.SetActiveClicks(*i)
+		lc.SetDownloadsRemaining(*i)
 	}
 	return lc
 }
@@ -151,13 +151,13 @@ func (lc *LinkCreate) defaults() {
 		v := link.DefaultPath()
 		lc.mutation.SetPath(v)
 	}
-	if _, ok := lc.mutation.ActiveBefore(); !ok {
-		v := link.DefaultActiveBefore
-		lc.mutation.SetActiveBefore(v)
+	if _, ok := lc.mutation.ExpiresAt(); !ok {
+		v := link.DefaultExpiresAt
+		lc.mutation.SetExpiresAt(v)
 	}
-	if _, ok := lc.mutation.ActiveClicks(); !ok {
-		v := link.DefaultActiveClicks
-		lc.mutation.SetActiveClicks(v)
+	if _, ok := lc.mutation.DownloadsRemaining(); !ok {
+		v := link.DefaultDownloadsRemaining
+		lc.mutation.SetDownloadsRemaining(v)
 	}
 }
 
@@ -177,15 +177,15 @@ func (lc *LinkCreate) check() error {
 			return &ValidationError{Name: "path", err: fmt.Errorf(`ent: validator failed for field "Link.path": %w`, err)}
 		}
 	}
-	if _, ok := lc.mutation.ActiveBefore(); !ok {
-		return &ValidationError{Name: "active_before", err: errors.New(`ent: missing required field "Link.active_before"`)}
+	if _, ok := lc.mutation.ExpiresAt(); !ok {
+		return &ValidationError{Name: "expires_at", err: errors.New(`ent: missing required field "Link.expires_at"`)}
 	}
-	if _, ok := lc.mutation.ActiveClicks(); !ok {
-		return &ValidationError{Name: "active_clicks", err: errors.New(`ent: missing required field "Link.active_clicks"`)}
+	if _, ok := lc.mutation.DownloadsRemaining(); !ok {
+		return &ValidationError{Name: "downloads_remaining", err: errors.New(`ent: missing required field "Link.downloads_remaining"`)}
 	}
-	if v, ok := lc.mutation.ActiveClicks(); ok {
-		if err := link.ActiveClicksValidator(v); err != nil {
-			return &ValidationError{Name: "active_clicks", err: fmt.Errorf(`ent: validator failed for field "Link.active_clicks": %w`, err)}
+	if v, ok := lc.mutation.DownloadsRemaining(); ok {
+		if err := link.DownloadsRemainingValidator(v); err != nil {
+			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
 		}
 	}
 	if len(lc.mutation.FileIDs()) == 0 {
@@ -230,13 +230,13 @@ func (lc *LinkCreate) createSpec() (*Link, *sqlgraph.CreateSpec) {
 		_spec.SetField(link.FieldPath, field.TypeString, value)
 		_node.Path = value
 	}
-	if value, ok := lc.mutation.ActiveBefore(); ok {
-		_spec.SetField(link.FieldActiveBefore, field.TypeTime, value)
-		_node.ActiveBefore = value
+	if value, ok := lc.mutation.ExpiresAt(); ok {
+		_spec.SetField(link.FieldExpiresAt, field.TypeTime, value)
+		_node.ExpiresAt = value
 	}
-	if value, ok := lc.mutation.ActiveClicks(); ok {
-		_spec.SetField(link.FieldActiveClicks, field.TypeInt, value)
-		_node.ActiveClicks = value
+	if value, ok := lc.mutation.DownloadsRemaining(); ok {
+		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
+		_node.DownloadsRemaining = value
 	}
 	if nodes := lc.mutation.FileIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -331,33 +331,33 @@ func (u *LinkUpsert) UpdatePath() *LinkUpsert {
 	return u
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (u *LinkUpsert) SetActiveBefore(v time.Time) *LinkUpsert {
-	u.Set(link.FieldActiveBefore, v)
+// SetExpiresAt sets the "expires_at" field.
+func (u *LinkUpsert) SetExpiresAt(v time.Time) *LinkUpsert {
+	u.Set(link.FieldExpiresAt, v)
 	return u
 }
 
-// UpdateActiveBefore sets the "active_before" field to the value that was provided on create.
-func (u *LinkUpsert) UpdateActiveBefore() *LinkUpsert {
-	u.SetExcluded(link.FieldActiveBefore)
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *LinkUpsert) UpdateExpiresAt() *LinkUpsert {
+	u.SetExcluded(link.FieldExpiresAt)
 	return u
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (u *LinkUpsert) SetActiveClicks(v int) *LinkUpsert {
-	u.Set(link.FieldActiveClicks, v)
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (u *LinkUpsert) SetDownloadsRemaining(v int) *LinkUpsert {
+	u.Set(link.FieldDownloadsRemaining, v)
 	return u
 }
 
-// UpdateActiveClicks sets the "active_clicks" field to the value that was provided on create.
-func (u *LinkUpsert) UpdateActiveClicks() *LinkUpsert {
-	u.SetExcluded(link.FieldActiveClicks)
+// UpdateDownloadsRemaining sets the "downloads_remaining" field to the value that was provided on create.
+func (u *LinkUpsert) UpdateDownloadsRemaining() *LinkUpsert {
+	u.SetExcluded(link.FieldDownloadsRemaining)
 	return u
 }
 
-// AddActiveClicks adds v to the "active_clicks" field.
-func (u *LinkUpsert) AddActiveClicks(v int) *LinkUpsert {
-	u.Add(link.FieldActiveClicks, v)
+// AddDownloadsRemaining adds v to the "downloads_remaining" field.
+func (u *LinkUpsert) AddDownloadsRemaining(v int) *LinkUpsert {
+	u.Add(link.FieldDownloadsRemaining, v)
 	return u
 }
 
@@ -434,38 +434,38 @@ func (u *LinkUpsertOne) UpdatePath() *LinkUpsertOne {
 	})
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (u *LinkUpsertOne) SetActiveBefore(v time.Time) *LinkUpsertOne {
+// SetExpiresAt sets the "expires_at" field.
+func (u *LinkUpsertOne) SetExpiresAt(v time.Time) *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.SetActiveBefore(v)
+		s.SetExpiresAt(v)
 	})
 }
 
-// UpdateActiveBefore sets the "active_before" field to the value that was provided on create.
-func (u *LinkUpsertOne) UpdateActiveBefore() *LinkUpsertOne {
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *LinkUpsertOne) UpdateExpiresAt() *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.UpdateActiveBefore()
+		s.UpdateExpiresAt()
 	})
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (u *LinkUpsertOne) SetActiveClicks(v int) *LinkUpsertOne {
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (u *LinkUpsertOne) SetDownloadsRemaining(v int) *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.SetActiveClicks(v)
+		s.SetDownloadsRemaining(v)
 	})
 }
 
-// AddActiveClicks adds v to the "active_clicks" field.
-func (u *LinkUpsertOne) AddActiveClicks(v int) *LinkUpsertOne {
+// AddDownloadsRemaining adds v to the "downloads_remaining" field.
+func (u *LinkUpsertOne) AddDownloadsRemaining(v int) *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.AddActiveClicks(v)
+		s.AddDownloadsRemaining(v)
 	})
 }
 
-// UpdateActiveClicks sets the "active_clicks" field to the value that was provided on create.
-func (u *LinkUpsertOne) UpdateActiveClicks() *LinkUpsertOne {
+// UpdateDownloadsRemaining sets the "downloads_remaining" field to the value that was provided on create.
+func (u *LinkUpsertOne) UpdateDownloadsRemaining() *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.UpdateActiveClicks()
+		s.UpdateDownloadsRemaining()
 	})
 }
 
@@ -708,38 +708,38 @@ func (u *LinkUpsertBulk) UpdatePath() *LinkUpsertBulk {
 	})
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (u *LinkUpsertBulk) SetActiveBefore(v time.Time) *LinkUpsertBulk {
+// SetExpiresAt sets the "expires_at" field.
+func (u *LinkUpsertBulk) SetExpiresAt(v time.Time) *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.SetActiveBefore(v)
+		s.SetExpiresAt(v)
 	})
 }
 
-// UpdateActiveBefore sets the "active_before" field to the value that was provided on create.
-func (u *LinkUpsertBulk) UpdateActiveBefore() *LinkUpsertBulk {
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *LinkUpsertBulk) UpdateExpiresAt() *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.UpdateActiveBefore()
+		s.UpdateExpiresAt()
 	})
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (u *LinkUpsertBulk) SetActiveClicks(v int) *LinkUpsertBulk {
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (u *LinkUpsertBulk) SetDownloadsRemaining(v int) *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.SetActiveClicks(v)
+		s.SetDownloadsRemaining(v)
 	})
 }
 
-// AddActiveClicks adds v to the "active_clicks" field.
-func (u *LinkUpsertBulk) AddActiveClicks(v int) *LinkUpsertBulk {
+// AddDownloadsRemaining adds v to the "downloads_remaining" field.
+func (u *LinkUpsertBulk) AddDownloadsRemaining(v int) *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.AddActiveClicks(v)
+		s.AddDownloadsRemaining(v)
 	})
 }
 
-// UpdateActiveClicks sets the "active_clicks" field to the value that was provided on create.
-func (u *LinkUpsertBulk) UpdateActiveClicks() *LinkUpsertBulk {
+// UpdateDownloadsRemaining sets the "downloads_remaining" field to the value that was provided on create.
+func (u *LinkUpsertBulk) UpdateDownloadsRemaining() *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.UpdateActiveClicks()
+		s.UpdateDownloadsRemaining()
 	})
 }
 

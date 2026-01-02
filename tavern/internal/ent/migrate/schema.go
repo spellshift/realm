@@ -196,8 +196,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "path", Type: field.TypeString, Unique: true},
-		{Name: "active_before", Type: field.TypeTime},
-		{Name: "active_clicks", Type: field.TypeInt, Default: 0},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "downloads_remaining", Type: field.TypeInt, Default: 0},
 		{Name: "link_file", Type: field.TypeInt},
 	}
 	// LinksTable holds the schema information for the "links" table.

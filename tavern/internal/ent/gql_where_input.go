@@ -3346,25 +3346,25 @@ type LinkWhereInput struct {
 	PathEqualFold    *string  `json:"pathEqualFold,omitempty"`
 	PathContainsFold *string  `json:"pathContainsFold,omitempty"`
 
-	// "active_before" field predicates.
-	ActiveBefore      *time.Time  `json:"activeBefore,omitempty"`
-	ActiveBeforeNEQ   *time.Time  `json:"activeBeforeNEQ,omitempty"`
-	ActiveBeforeIn    []time.Time `json:"activeBeforeIn,omitempty"`
-	ActiveBeforeNotIn []time.Time `json:"activeBeforeNotIn,omitempty"`
-	ActiveBeforeGT    *time.Time  `json:"activeBeforeGT,omitempty"`
-	ActiveBeforeGTE   *time.Time  `json:"activeBeforeGTE,omitempty"`
-	ActiveBeforeLT    *time.Time  `json:"activeBeforeLT,omitempty"`
-	ActiveBeforeLTE   *time.Time  `json:"activeBeforeLTE,omitempty"`
+	// "expires_at" field predicates.
+	ExpiresAt      *time.Time  `json:"expiresAt,omitempty"`
+	ExpiresAtNEQ   *time.Time  `json:"expiresAtNEQ,omitempty"`
+	ExpiresAtIn    []time.Time `json:"expiresAtIn,omitempty"`
+	ExpiresAtNotIn []time.Time `json:"expiresAtNotIn,omitempty"`
+	ExpiresAtGT    *time.Time  `json:"expiresAtGT,omitempty"`
+	ExpiresAtGTE   *time.Time  `json:"expiresAtGTE,omitempty"`
+	ExpiresAtLT    *time.Time  `json:"expiresAtLT,omitempty"`
+	ExpiresAtLTE   *time.Time  `json:"expiresAtLTE,omitempty"`
 
-	// "active_clicks" field predicates.
-	ActiveClicks      *int  `json:"activeClicks,omitempty"`
-	ActiveClicksNEQ   *int  `json:"activeClicksNEQ,omitempty"`
-	ActiveClicksIn    []int `json:"activeClicksIn,omitempty"`
-	ActiveClicksNotIn []int `json:"activeClicksNotIn,omitempty"`
-	ActiveClicksGT    *int  `json:"activeClicksGT,omitempty"`
-	ActiveClicksGTE   *int  `json:"activeClicksGTE,omitempty"`
-	ActiveClicksLT    *int  `json:"activeClicksLT,omitempty"`
-	ActiveClicksLTE   *int  `json:"activeClicksLTE,omitempty"`
+	// "downloads_remaining" field predicates.
+	DownloadsRemaining      *int  `json:"downloadsRemaining,omitempty"`
+	DownloadsRemainingNEQ   *int  `json:"downloadsRemainingNEQ,omitempty"`
+	DownloadsRemainingIn    []int `json:"downloadsRemainingIn,omitempty"`
+	DownloadsRemainingNotIn []int `json:"downloadsRemainingNotIn,omitempty"`
+	DownloadsRemainingGT    *int  `json:"downloadsRemainingGT,omitempty"`
+	DownloadsRemainingGTE   *int  `json:"downloadsRemainingGTE,omitempty"`
+	DownloadsRemainingLT    *int  `json:"downloadsRemainingLT,omitempty"`
+	DownloadsRemainingLTE   *int  `json:"downloadsRemainingLTE,omitempty"`
 
 	// "file" edge predicates.
 	HasFile     *bool             `json:"hasFile,omitempty"`
@@ -3553,53 +3553,53 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 	if i.PathContainsFold != nil {
 		predicates = append(predicates, link.PathContainsFold(*i.PathContainsFold))
 	}
-	if i.ActiveBefore != nil {
-		predicates = append(predicates, link.ActiveBeforeEQ(*i.ActiveBefore))
+	if i.ExpiresAt != nil {
+		predicates = append(predicates, link.ExpiresAtEQ(*i.ExpiresAt))
 	}
-	if i.ActiveBeforeNEQ != nil {
-		predicates = append(predicates, link.ActiveBeforeNEQ(*i.ActiveBeforeNEQ))
+	if i.ExpiresAtNEQ != nil {
+		predicates = append(predicates, link.ExpiresAtNEQ(*i.ExpiresAtNEQ))
 	}
-	if len(i.ActiveBeforeIn) > 0 {
-		predicates = append(predicates, link.ActiveBeforeIn(i.ActiveBeforeIn...))
+	if len(i.ExpiresAtIn) > 0 {
+		predicates = append(predicates, link.ExpiresAtIn(i.ExpiresAtIn...))
 	}
-	if len(i.ActiveBeforeNotIn) > 0 {
-		predicates = append(predicates, link.ActiveBeforeNotIn(i.ActiveBeforeNotIn...))
+	if len(i.ExpiresAtNotIn) > 0 {
+		predicates = append(predicates, link.ExpiresAtNotIn(i.ExpiresAtNotIn...))
 	}
-	if i.ActiveBeforeGT != nil {
-		predicates = append(predicates, link.ActiveBeforeGT(*i.ActiveBeforeGT))
+	if i.ExpiresAtGT != nil {
+		predicates = append(predicates, link.ExpiresAtGT(*i.ExpiresAtGT))
 	}
-	if i.ActiveBeforeGTE != nil {
-		predicates = append(predicates, link.ActiveBeforeGTE(*i.ActiveBeforeGTE))
+	if i.ExpiresAtGTE != nil {
+		predicates = append(predicates, link.ExpiresAtGTE(*i.ExpiresAtGTE))
 	}
-	if i.ActiveBeforeLT != nil {
-		predicates = append(predicates, link.ActiveBeforeLT(*i.ActiveBeforeLT))
+	if i.ExpiresAtLT != nil {
+		predicates = append(predicates, link.ExpiresAtLT(*i.ExpiresAtLT))
 	}
-	if i.ActiveBeforeLTE != nil {
-		predicates = append(predicates, link.ActiveBeforeLTE(*i.ActiveBeforeLTE))
+	if i.ExpiresAtLTE != nil {
+		predicates = append(predicates, link.ExpiresAtLTE(*i.ExpiresAtLTE))
 	}
-	if i.ActiveClicks != nil {
-		predicates = append(predicates, link.ActiveClicksEQ(*i.ActiveClicks))
+	if i.DownloadsRemaining != nil {
+		predicates = append(predicates, link.DownloadsRemainingEQ(*i.DownloadsRemaining))
 	}
-	if i.ActiveClicksNEQ != nil {
-		predicates = append(predicates, link.ActiveClicksNEQ(*i.ActiveClicksNEQ))
+	if i.DownloadsRemainingNEQ != nil {
+		predicates = append(predicates, link.DownloadsRemainingNEQ(*i.DownloadsRemainingNEQ))
 	}
-	if len(i.ActiveClicksIn) > 0 {
-		predicates = append(predicates, link.ActiveClicksIn(i.ActiveClicksIn...))
+	if len(i.DownloadsRemainingIn) > 0 {
+		predicates = append(predicates, link.DownloadsRemainingIn(i.DownloadsRemainingIn...))
 	}
-	if len(i.ActiveClicksNotIn) > 0 {
-		predicates = append(predicates, link.ActiveClicksNotIn(i.ActiveClicksNotIn...))
+	if len(i.DownloadsRemainingNotIn) > 0 {
+		predicates = append(predicates, link.DownloadsRemainingNotIn(i.DownloadsRemainingNotIn...))
 	}
-	if i.ActiveClicksGT != nil {
-		predicates = append(predicates, link.ActiveClicksGT(*i.ActiveClicksGT))
+	if i.DownloadsRemainingGT != nil {
+		predicates = append(predicates, link.DownloadsRemainingGT(*i.DownloadsRemainingGT))
 	}
-	if i.ActiveClicksGTE != nil {
-		predicates = append(predicates, link.ActiveClicksGTE(*i.ActiveClicksGTE))
+	if i.DownloadsRemainingGTE != nil {
+		predicates = append(predicates, link.DownloadsRemainingGTE(*i.DownloadsRemainingGTE))
 	}
-	if i.ActiveClicksLT != nil {
-		predicates = append(predicates, link.ActiveClicksLT(*i.ActiveClicksLT))
+	if i.DownloadsRemainingLT != nil {
+		predicates = append(predicates, link.DownloadsRemainingLT(*i.DownloadsRemainingLT))
 	}
-	if i.ActiveClicksLTE != nil {
-		predicates = append(predicates, link.ActiveClicksLTE(*i.ActiveClicksLTE))
+	if i.DownloadsRemainingLTE != nil {
+		predicates = append(predicates, link.DownloadsRemainingLTE(*i.DownloadsRemainingLTE))
 	}
 
 	if i.HasFile != nil {

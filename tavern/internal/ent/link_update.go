@@ -49,38 +49,38 @@ func (lu *LinkUpdate) SetNillablePath(s *string) *LinkUpdate {
 	return lu
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (lu *LinkUpdate) SetActiveBefore(t time.Time) *LinkUpdate {
-	lu.mutation.SetActiveBefore(t)
+// SetExpiresAt sets the "expires_at" field.
+func (lu *LinkUpdate) SetExpiresAt(t time.Time) *LinkUpdate {
+	lu.mutation.SetExpiresAt(t)
 	return lu
 }
 
-// SetNillableActiveBefore sets the "active_before" field if the given value is not nil.
-func (lu *LinkUpdate) SetNillableActiveBefore(t *time.Time) *LinkUpdate {
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (lu *LinkUpdate) SetNillableExpiresAt(t *time.Time) *LinkUpdate {
 	if t != nil {
-		lu.SetActiveBefore(*t)
+		lu.SetExpiresAt(*t)
 	}
 	return lu
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (lu *LinkUpdate) SetActiveClicks(i int) *LinkUpdate {
-	lu.mutation.ResetActiveClicks()
-	lu.mutation.SetActiveClicks(i)
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (lu *LinkUpdate) SetDownloadsRemaining(i int) *LinkUpdate {
+	lu.mutation.ResetDownloadsRemaining()
+	lu.mutation.SetDownloadsRemaining(i)
 	return lu
 }
 
-// SetNillableActiveClicks sets the "active_clicks" field if the given value is not nil.
-func (lu *LinkUpdate) SetNillableActiveClicks(i *int) *LinkUpdate {
+// SetNillableDownloadsRemaining sets the "downloads_remaining" field if the given value is not nil.
+func (lu *LinkUpdate) SetNillableDownloadsRemaining(i *int) *LinkUpdate {
 	if i != nil {
-		lu.SetActiveClicks(*i)
+		lu.SetDownloadsRemaining(*i)
 	}
 	return lu
 }
 
-// AddActiveClicks adds i to the "active_clicks" field.
-func (lu *LinkUpdate) AddActiveClicks(i int) *LinkUpdate {
-	lu.mutation.AddActiveClicks(i)
+// AddDownloadsRemaining adds i to the "downloads_remaining" field.
+func (lu *LinkUpdate) AddDownloadsRemaining(i int) *LinkUpdate {
+	lu.mutation.AddDownloadsRemaining(i)
 	return lu
 }
 
@@ -149,9 +149,9 @@ func (lu *LinkUpdate) check() error {
 			return &ValidationError{Name: "path", err: fmt.Errorf(`ent: validator failed for field "Link.path": %w`, err)}
 		}
 	}
-	if v, ok := lu.mutation.ActiveClicks(); ok {
-		if err := link.ActiveClicksValidator(v); err != nil {
-			return &ValidationError{Name: "active_clicks", err: fmt.Errorf(`ent: validator failed for field "Link.active_clicks": %w`, err)}
+	if v, ok := lu.mutation.DownloadsRemaining(); ok {
+		if err := link.DownloadsRemainingValidator(v); err != nil {
+			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
 		}
 	}
 	if lu.mutation.FileCleared() && len(lu.mutation.FileIDs()) > 0 {
@@ -178,14 +178,14 @@ func (lu *LinkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := lu.mutation.Path(); ok {
 		_spec.SetField(link.FieldPath, field.TypeString, value)
 	}
-	if value, ok := lu.mutation.ActiveBefore(); ok {
-		_spec.SetField(link.FieldActiveBefore, field.TypeTime, value)
+	if value, ok := lu.mutation.ExpiresAt(); ok {
+		_spec.SetField(link.FieldExpiresAt, field.TypeTime, value)
 	}
-	if value, ok := lu.mutation.ActiveClicks(); ok {
-		_spec.SetField(link.FieldActiveClicks, field.TypeInt, value)
+	if value, ok := lu.mutation.DownloadsRemaining(); ok {
+		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
 	}
-	if value, ok := lu.mutation.AddedActiveClicks(); ok {
-		_spec.AddField(link.FieldActiveClicks, field.TypeInt, value)
+	if value, ok := lu.mutation.AddedDownloadsRemaining(); ok {
+		_spec.AddField(link.FieldDownloadsRemaining, field.TypeInt, value)
 	}
 	if lu.mutation.FileCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -256,38 +256,38 @@ func (luo *LinkUpdateOne) SetNillablePath(s *string) *LinkUpdateOne {
 	return luo
 }
 
-// SetActiveBefore sets the "active_before" field.
-func (luo *LinkUpdateOne) SetActiveBefore(t time.Time) *LinkUpdateOne {
-	luo.mutation.SetActiveBefore(t)
+// SetExpiresAt sets the "expires_at" field.
+func (luo *LinkUpdateOne) SetExpiresAt(t time.Time) *LinkUpdateOne {
+	luo.mutation.SetExpiresAt(t)
 	return luo
 }
 
-// SetNillableActiveBefore sets the "active_before" field if the given value is not nil.
-func (luo *LinkUpdateOne) SetNillableActiveBefore(t *time.Time) *LinkUpdateOne {
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (luo *LinkUpdateOne) SetNillableExpiresAt(t *time.Time) *LinkUpdateOne {
 	if t != nil {
-		luo.SetActiveBefore(*t)
+		luo.SetExpiresAt(*t)
 	}
 	return luo
 }
 
-// SetActiveClicks sets the "active_clicks" field.
-func (luo *LinkUpdateOne) SetActiveClicks(i int) *LinkUpdateOne {
-	luo.mutation.ResetActiveClicks()
-	luo.mutation.SetActiveClicks(i)
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (luo *LinkUpdateOne) SetDownloadsRemaining(i int) *LinkUpdateOne {
+	luo.mutation.ResetDownloadsRemaining()
+	luo.mutation.SetDownloadsRemaining(i)
 	return luo
 }
 
-// SetNillableActiveClicks sets the "active_clicks" field if the given value is not nil.
-func (luo *LinkUpdateOne) SetNillableActiveClicks(i *int) *LinkUpdateOne {
+// SetNillableDownloadsRemaining sets the "downloads_remaining" field if the given value is not nil.
+func (luo *LinkUpdateOne) SetNillableDownloadsRemaining(i *int) *LinkUpdateOne {
 	if i != nil {
-		luo.SetActiveClicks(*i)
+		luo.SetDownloadsRemaining(*i)
 	}
 	return luo
 }
 
-// AddActiveClicks adds i to the "active_clicks" field.
-func (luo *LinkUpdateOne) AddActiveClicks(i int) *LinkUpdateOne {
-	luo.mutation.AddActiveClicks(i)
+// AddDownloadsRemaining adds i to the "downloads_remaining" field.
+func (luo *LinkUpdateOne) AddDownloadsRemaining(i int) *LinkUpdateOne {
+	luo.mutation.AddDownloadsRemaining(i)
 	return luo
 }
 
@@ -369,9 +369,9 @@ func (luo *LinkUpdateOne) check() error {
 			return &ValidationError{Name: "path", err: fmt.Errorf(`ent: validator failed for field "Link.path": %w`, err)}
 		}
 	}
-	if v, ok := luo.mutation.ActiveClicks(); ok {
-		if err := link.ActiveClicksValidator(v); err != nil {
-			return &ValidationError{Name: "active_clicks", err: fmt.Errorf(`ent: validator failed for field "Link.active_clicks": %w`, err)}
+	if v, ok := luo.mutation.DownloadsRemaining(); ok {
+		if err := link.DownloadsRemainingValidator(v); err != nil {
+			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
 		}
 	}
 	if luo.mutation.FileCleared() && len(luo.mutation.FileIDs()) > 0 {
@@ -415,14 +415,14 @@ func (luo *LinkUpdateOne) sqlSave(ctx context.Context) (_node *Link, err error) 
 	if value, ok := luo.mutation.Path(); ok {
 		_spec.SetField(link.FieldPath, field.TypeString, value)
 	}
-	if value, ok := luo.mutation.ActiveBefore(); ok {
-		_spec.SetField(link.FieldActiveBefore, field.TypeTime, value)
+	if value, ok := luo.mutation.ExpiresAt(); ok {
+		_spec.SetField(link.FieldExpiresAt, field.TypeTime, value)
 	}
-	if value, ok := luo.mutation.ActiveClicks(); ok {
-		_spec.SetField(link.FieldActiveClicks, field.TypeInt, value)
+	if value, ok := luo.mutation.DownloadsRemaining(); ok {
+		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
 	}
-	if value, ok := luo.mutation.AddedActiveClicks(); ok {
-		_spec.AddField(link.FieldActiveClicks, field.TypeInt, value)
+	if value, ok := luo.mutation.AddedDownloadsRemaining(); ok {
+		_spec.AddField(link.FieldDownloadsRemaining, field.TypeInt, value)
 	}
 	if luo.mutation.FileCleared() {
 		edge := &sqlgraph.EdgeSpec{

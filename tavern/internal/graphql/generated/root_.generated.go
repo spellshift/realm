@@ -199,13 +199,13 @@ type ComplexityRoot struct {
 	}
 
 	Link struct {
-		ActiveBefore   func(childComplexity int) int
-		ActiveClicks   func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		File           func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Path           func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		DownloadsRemaining func(childComplexity int) int
+		ExpiresAt          func(childComplexity int) int
+		File               func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		LastModifiedAt     func(childComplexity int) int
+		Path               func(childComplexity int) int
 	}
 
 	LinkConnection struct {
@@ -1190,26 +1190,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HostProcessEdge.Node(childComplexity), true
 
-	case "Link.activeBefore":
-		if e.complexity.Link.ActiveBefore == nil {
-			break
-		}
-
-		return e.complexity.Link.ActiveBefore(childComplexity), true
-
-	case "Link.activeClicks":
-		if e.complexity.Link.ActiveClicks == nil {
-			break
-		}
-
-		return e.complexity.Link.ActiveClicks(childComplexity), true
-
 	case "Link.createdAt":
 		if e.complexity.Link.CreatedAt == nil {
 			break
 		}
 
 		return e.complexity.Link.CreatedAt(childComplexity), true
+
+	case "Link.downloadsRemaining":
+		if e.complexity.Link.DownloadsRemaining == nil {
+			break
+		}
+
+		return e.complexity.Link.DownloadsRemaining(childComplexity), true
+
+	case "Link.expiresAt":
+		if e.complexity.Link.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.Link.ExpiresAt(childComplexity), true
 
 	case "Link.file":
 		if e.complexity.Link.File == nil {
@@ -2932,11 +2932,11 @@ input CreateLinkInput {
   """
   Timestamp before which the link is active. Default is epoch 0
   """
-  activeBefore: Time
+  expiresAt: Time
   """
   Number of times this link can be clicked before it becomes inactive
   """
-  activeClicks: Int
+  downloadsRemaining: Int
   fileID: ID!
 }
 """
@@ -4433,11 +4433,11 @@ type Link implements Node {
   """
   Timestamp before which the link is active. Default is epoch 0
   """
-  activeBefore: Time!
+  expiresAt: Time!
   """
   Number of times this link can be clicked before it becomes inactive
   """
-  activeClicks: Int!
+  downloadsRemaining: Int!
   """
   The file that this link points to
   """
@@ -4493,8 +4493,8 @@ enum LinkOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   PATH
-  ACTIVE_BEFORE
-  ACTIVE_CLICKS
+  EXPIRES_AT
+  DOWNLOADS_REMAINING
 }
 """
 LinkWhereInput is used for filtering Link objects.
@@ -4554,27 +4554,27 @@ input LinkWhereInput {
   pathEqualFold: String
   pathContainsFold: String
   """
-  active_before field predicates
+  expires_at field predicates
   """
-  activeBefore: Time
-  activeBeforeNEQ: Time
-  activeBeforeIn: [Time!]
-  activeBeforeNotIn: [Time!]
-  activeBeforeGT: Time
-  activeBeforeGTE: Time
-  activeBeforeLT: Time
-  activeBeforeLTE: Time
+  expiresAt: Time
+  expiresAtNEQ: Time
+  expiresAtIn: [Time!]
+  expiresAtNotIn: [Time!]
+  expiresAtGT: Time
+  expiresAtGTE: Time
+  expiresAtLT: Time
+  expiresAtLTE: Time
   """
-  active_clicks field predicates
+  downloads_remaining field predicates
   """
-  activeClicks: Int
-  activeClicksNEQ: Int
-  activeClicksIn: [Int!]
-  activeClicksNotIn: [Int!]
-  activeClicksGT: Int
-  activeClicksGTE: Int
-  activeClicksLT: Int
-  activeClicksLTE: Int
+  downloadsRemaining: Int
+  downloadsRemainingNEQ: Int
+  downloadsRemainingIn: [Int!]
+  downloadsRemainingNotIn: [Int!]
+  downloadsRemainingGT: Int
+  downloadsRemainingGTE: Int
+  downloadsRemainingLT: Int
+  downloadsRemainingLTE: Int
   """
   file edge predicates
   """
@@ -6175,11 +6175,11 @@ input UpdateLinkInput {
   """
   Timestamp before which the link is active. Default is epoch 0
   """
-  activeBefore: Time
+  expiresAt: Time
   """
   Number of times this link can be clicked before it becomes inactive
   """
-  activeClicks: Int
+  downloadsRemaining: Int
 }
 """
 UpdateTagInput is used for update Tag object.

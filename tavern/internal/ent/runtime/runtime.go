@@ -209,16 +209,16 @@ func init() {
 	link.DefaultPath = linkDescPath.Default.(func() string)
 	// link.PathValidator is a validator for the "path" field. It is called by the builders before save.
 	link.PathValidator = linkDescPath.Validators[0].(func(string) error)
-	// linkDescActiveBefore is the schema descriptor for active_before field.
-	linkDescActiveBefore := linkFields[1].Descriptor()
-	// link.DefaultActiveBefore holds the default value on creation for the active_before field.
-	link.DefaultActiveBefore = linkDescActiveBefore.Default.(time.Time)
-	// linkDescActiveClicks is the schema descriptor for active_clicks field.
-	linkDescActiveClicks := linkFields[2].Descriptor()
-	// link.DefaultActiveClicks holds the default value on creation for the active_clicks field.
-	link.DefaultActiveClicks = linkDescActiveClicks.Default.(int)
-	// link.ActiveClicksValidator is a validator for the "active_clicks" field. It is called by the builders before save.
-	link.ActiveClicksValidator = linkDescActiveClicks.Validators[0].(func(int) error)
+	// linkDescExpiresAt is the schema descriptor for expires_at field.
+	linkDescExpiresAt := linkFields[1].Descriptor()
+	// link.DefaultExpiresAt holds the default value on creation for the expires_at field.
+	link.DefaultExpiresAt = linkDescExpiresAt.Default.(time.Time)
+	// linkDescDownloadsRemaining is the schema descriptor for downloads_remaining field.
+	linkDescDownloadsRemaining := linkFields[2].Descriptor()
+	// link.DefaultDownloadsRemaining holds the default value on creation for the downloads_remaining field.
+	link.DefaultDownloadsRemaining = linkDescDownloadsRemaining.Default.(int)
+	// link.DownloadsRemainingValidator is a validator for the "downloads_remaining" field. It is called by the builders before save.
+	link.DownloadsRemainingValidator = linkDescDownloadsRemaining.Validators[0].(func(int) error)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0

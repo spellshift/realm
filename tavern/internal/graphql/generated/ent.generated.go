@@ -9552,8 +9552,8 @@ func (ec *executionContext) fieldContext_Link_path(_ context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _Link_activeBefore(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_activeBefore(ctx, field)
+func (ec *executionContext) _Link_expiresAt(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Link_expiresAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9566,7 +9566,7 @@ func (ec *executionContext) _Link_activeBefore(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ActiveBefore, nil
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9583,7 +9583,7 @@ func (ec *executionContext) _Link_activeBefore(ctx context.Context, field graphq
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Link_activeBefore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Link_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Link",
 		Field:      field,
@@ -9596,8 +9596,8 @@ func (ec *executionContext) fieldContext_Link_activeBefore(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Link_activeClicks(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_activeClicks(ctx, field)
+func (ec *executionContext) _Link_downloadsRemaining(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Link_downloadsRemaining(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9610,7 +9610,7 @@ func (ec *executionContext) _Link_activeClicks(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ActiveClicks, nil
+		return obj.DownloadsRemaining, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9627,7 +9627,7 @@ func (ec *executionContext) _Link_activeClicks(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Link_activeClicks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Link_downloadsRemaining(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Link",
 		Field:      field,
@@ -9891,10 +9891,10 @@ func (ec *executionContext) fieldContext_LinkEdge_node(_ context.Context, field 
 				return ec.fieldContext_Link_lastModifiedAt(ctx, field)
 			case "path":
 				return ec.fieldContext_Link_path(ctx, field)
-			case "activeBefore":
-				return ec.fieldContext_Link_activeBefore(ctx, field)
-			case "activeClicks":
-				return ec.fieldContext_Link_activeClicks(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_Link_expiresAt(ctx, field)
+			case "downloadsRemaining":
+				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
 			case "file":
 				return ec.fieldContext_Link_file(ctx, field)
 			}
@@ -17364,7 +17364,7 @@ func (ec *executionContext) unmarshalInputCreateLinkInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"path", "activeBefore", "activeClicks", "fileID"}
+	fieldsInOrder := [...]string{"path", "expiresAt", "downloadsRemaining", "fileID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -17378,20 +17378,20 @@ func (ec *executionContext) unmarshalInputCreateLinkInput(ctx context.Context, o
 				return it, err
 			}
 			it.Path = data
-		case "activeBefore":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBefore"))
+		case "expiresAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBefore = data
-		case "activeClicks":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicks"))
+			it.ExpiresAt = data
+		case "downloadsRemaining":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemaining"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicks = data
+			it.DownloadsRemaining = data
 		case "fileID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
 			data, err := ec.unmarshalNID2int(ctx, v)
@@ -21383,7 +21383,7 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "activeBefore", "activeBeforeNEQ", "activeBeforeIn", "activeBeforeNotIn", "activeBeforeGT", "activeBeforeGTE", "activeBeforeLT", "activeBeforeLTE", "activeClicks", "activeClicksNEQ", "activeClicksIn", "activeClicksNotIn", "activeClicksGT", "activeClicksGTE", "activeClicksLT", "activeClicksLTE", "hasFile", "hasFileWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "downloadsRemaining", "downloadsRemainingNEQ", "downloadsRemainingIn", "downloadsRemainingNotIn", "downloadsRemainingGT", "downloadsRemainingGTE", "downloadsRemainingLT", "downloadsRemainingLTE", "hasFile", "hasFileWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -21670,118 +21670,118 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.PathContainsFold = data
-		case "activeBefore":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBefore"))
+		case "expiresAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBefore = data
-		case "activeBeforeNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeNEQ"))
+			it.ExpiresAt = data
+		case "expiresAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeNEQ = data
-		case "activeBeforeIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeIn"))
+			it.ExpiresAtNEQ = data
+		case "expiresAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeIn = data
-		case "activeBeforeNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeNotIn"))
+			it.ExpiresAtIn = data
+		case "expiresAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeNotIn = data
-		case "activeBeforeGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeGT"))
+			it.ExpiresAtNotIn = data
+		case "expiresAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeGT = data
-		case "activeBeforeGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeGTE"))
+			it.ExpiresAtGT = data
+		case "expiresAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeGTE = data
-		case "activeBeforeLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeLT"))
+			it.ExpiresAtGTE = data
+		case "expiresAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeLT = data
-		case "activeBeforeLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBeforeLTE"))
+			it.ExpiresAtLT = data
+		case "expiresAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBeforeLTE = data
-		case "activeClicks":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicks"))
+			it.ExpiresAtLTE = data
+		case "downloadsRemaining":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemaining"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicks = data
-		case "activeClicksNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksNEQ"))
+			it.DownloadsRemaining = data
+		case "downloadsRemainingNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingNEQ"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksNEQ = data
-		case "activeClicksIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksIn"))
+			it.DownloadsRemainingNEQ = data
+		case "downloadsRemainingIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingIn"))
 			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksIn = data
-		case "activeClicksNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksNotIn"))
+			it.DownloadsRemainingIn = data
+		case "downloadsRemainingNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingNotIn"))
 			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksNotIn = data
-		case "activeClicksGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksGT"))
+			it.DownloadsRemainingNotIn = data
+		case "downloadsRemainingGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingGT"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksGT = data
-		case "activeClicksGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksGTE"))
+			it.DownloadsRemainingGT = data
+		case "downloadsRemainingGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingGTE"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksGTE = data
-		case "activeClicksLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksLT"))
+			it.DownloadsRemainingGTE = data
+		case "downloadsRemainingLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingLT"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksLT = data
-		case "activeClicksLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicksLTE"))
+			it.DownloadsRemainingLT = data
+		case "downloadsRemainingLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingLTE"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicksLTE = data
+			it.DownloadsRemainingLTE = data
 		case "hasFile":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasFile"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -25487,7 +25487,7 @@ func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "path", "activeBefore", "activeClicks"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "path", "expiresAt", "downloadsRemaining"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25508,20 +25508,20 @@ func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, o
 				return it, err
 			}
 			it.Path = data
-		case "activeBefore":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeBefore"))
+		case "expiresAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expiresAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveBefore = data
-		case "activeClicks":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("activeClicks"))
+			it.ExpiresAt = data
+		case "downloadsRemaining":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemaining"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.ActiveClicks = data
+			it.DownloadsRemaining = data
 		}
 	}
 
@@ -27783,13 +27783,13 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "activeBefore":
-			out.Values[i] = ec._Link_activeBefore(ctx, field, obj)
+		case "expiresAt":
+			out.Values[i] = ec._Link_expiresAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "activeClicks":
-			out.Values[i] = ec._Link_activeClicks(ctx, field, obj)
+		case "downloadsRemaining":
+			out.Values[i] = ec._Link_downloadsRemaining(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

@@ -158,10 +158,10 @@ func (c *HostCredentialCreate) SetInput(i CreateHostCredentialInput) *HostCreden
 
 // CreateLinkInput represents a mutation input for creating links.
 type CreateLinkInput struct {
-	Path         *string
-	ActiveBefore *time.Time
-	ActiveClicks *int
-	FileID       int
+	Path               *string
+	ExpiresAt          *time.Time
+	DownloadsRemaining *int
+	FileID             int
 }
 
 // Mutate applies the CreateLinkInput on the LinkMutation builder.
@@ -169,11 +169,11 @@ func (i *CreateLinkInput) Mutate(m *LinkMutation) {
 	if v := i.Path; v != nil {
 		m.SetPath(*v)
 	}
-	if v := i.ActiveBefore; v != nil {
-		m.SetActiveBefore(*v)
+	if v := i.ExpiresAt; v != nil {
+		m.SetExpiresAt(*v)
 	}
-	if v := i.ActiveClicks; v != nil {
-		m.SetActiveClicks(*v)
+	if v := i.DownloadsRemaining; v != nil {
+		m.SetDownloadsRemaining(*v)
 	}
 	m.SetFileID(i.FileID)
 }
@@ -186,10 +186,10 @@ func (c *LinkCreate) SetInput(i CreateLinkInput) *LinkCreate {
 
 // UpdateLinkInput represents a mutation input for updating links.
 type UpdateLinkInput struct {
-	LastModifiedAt *time.Time
-	Path           *string
-	ActiveBefore   *time.Time
-	ActiveClicks   *int
+	LastModifiedAt     *time.Time
+	Path               *string
+	ExpiresAt          *time.Time
+	DownloadsRemaining *int
 }
 
 // Mutate applies the UpdateLinkInput on the LinkMutation builder.
@@ -200,11 +200,11 @@ func (i *UpdateLinkInput) Mutate(m *LinkMutation) {
 	if v := i.Path; v != nil {
 		m.SetPath(*v)
 	}
-	if v := i.ActiveBefore; v != nil {
-		m.SetActiveBefore(*v)
+	if v := i.ExpiresAt; v != nil {
+		m.SetExpiresAt(*v)
 	}
-	if v := i.ActiveClicks; v != nil {
-		m.SetActiveClicks(*v)
+	if v := i.DownloadsRemaining; v != nil {
+		m.SetDownloadsRemaining(*v)
 	}
 }
 

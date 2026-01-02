@@ -38,17 +38,17 @@ func (Link) Fields() []ent.Field {
 				entgql.OrderField("PATH"),
 			).
 			Comment("Unique path for accessing the file via the CDN"),
-		field.Time("active_before").
+		field.Time("expires_at").
 			Default(time.Unix(0, 0)).
 			Annotations(
-				entgql.OrderField("ACTIVE_BEFORE"),
+				entgql.OrderField("EXPIRES_AT"),
 			).
 			Comment("Timestamp before which the link is active. Default is epoch 0"),
-		field.Int("active_clicks").
+		field.Int("downloads_remaining").
 			Default(0).
 			Min(0).
 			Annotations(
-				entgql.OrderField("ACTIVE_CLICKS"),
+				entgql.OrderField("DOWNLOADS_REMAINING"),
 			).
 			Comment("Number of times this link can be clicked before it becomes inactive"),
 	}

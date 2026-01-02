@@ -2732,31 +2732,31 @@ var (
 			}
 		},
 	}
-	// LinkOrderFieldActiveBefore orders Link by active_before.
-	LinkOrderFieldActiveBefore = &LinkOrderField{
+	// LinkOrderFieldExpiresAt orders Link by expires_at.
+	LinkOrderFieldExpiresAt = &LinkOrderField{
 		Value: func(l *Link) (ent.Value, error) {
-			return l.ActiveBefore, nil
+			return l.ExpiresAt, nil
 		},
-		column: link.FieldActiveBefore,
-		toTerm: link.ByActiveBefore,
+		column: link.FieldExpiresAt,
+		toTerm: link.ByExpiresAt,
 		toCursor: func(l *Link) Cursor {
 			return Cursor{
 				ID:    l.ID,
-				Value: l.ActiveBefore,
+				Value: l.ExpiresAt,
 			}
 		},
 	}
-	// LinkOrderFieldActiveClicks orders Link by active_clicks.
-	LinkOrderFieldActiveClicks = &LinkOrderField{
+	// LinkOrderFieldDownloadsRemaining orders Link by downloads_remaining.
+	LinkOrderFieldDownloadsRemaining = &LinkOrderField{
 		Value: func(l *Link) (ent.Value, error) {
-			return l.ActiveClicks, nil
+			return l.DownloadsRemaining, nil
 		},
-		column: link.FieldActiveClicks,
-		toTerm: link.ByActiveClicks,
+		column: link.FieldDownloadsRemaining,
+		toTerm: link.ByDownloadsRemaining,
 		toCursor: func(l *Link) Cursor {
 			return Cursor{
 				ID:    l.ID,
-				Value: l.ActiveClicks,
+				Value: l.DownloadsRemaining,
 			}
 		},
 	}
@@ -2772,10 +2772,10 @@ func (f LinkOrderField) String() string {
 		str = "LAST_MODIFIED_AT"
 	case LinkOrderFieldPath.column:
 		str = "PATH"
-	case LinkOrderFieldActiveBefore.column:
-		str = "ACTIVE_BEFORE"
-	case LinkOrderFieldActiveClicks.column:
-		str = "ACTIVE_CLICKS"
+	case LinkOrderFieldExpiresAt.column:
+		str = "EXPIRES_AT"
+	case LinkOrderFieldDownloadsRemaining.column:
+		str = "DOWNLOADS_REMAINING"
 	}
 	return str
 }
@@ -2798,10 +2798,10 @@ func (f *LinkOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *LinkOrderFieldLastModifiedAt
 	case "PATH":
 		*f = *LinkOrderFieldPath
-	case "ACTIVE_BEFORE":
-		*f = *LinkOrderFieldActiveBefore
-	case "ACTIVE_CLICKS":
-		*f = *LinkOrderFieldActiveClicks
+	case "EXPIRES_AT":
+		*f = *LinkOrderFieldExpiresAt
+	case "DOWNLOADS_REMAINING":
+		*f = *LinkOrderFieldDownloadsRemaining
 	default:
 		return fmt.Errorf("%s is not a valid LinkOrderField", str)
 	}
