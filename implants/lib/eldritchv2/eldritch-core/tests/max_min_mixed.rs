@@ -44,19 +44,17 @@ errors
 "#;
         let mut interp = Interpreter::new();
         match interp.interpret(code) {
-            Ok(val) => {
-                 match val {
-                     Value::List(l) => {
-                         let errors = l.read();
-                         if !errors.is_empty() {
-                             for err in errors.iter() {
-                                 println!("{}", err);
-                             }
-                             panic!("Test failed with {} errors", errors.len());
-                         }
-                     },
-                     _ => panic!("Expected list of errors"),
-                 }
+            Ok(val) => match val {
+                Value::List(l) => {
+                    let errors = l.read();
+                    if !errors.is_empty() {
+                        for err in errors.iter() {
+                            println!("{}", err);
+                        }
+                        panic!("Test failed with {} errors", errors.len());
+                    }
+                }
+                _ => panic!("Expected list of errors"),
             },
             Err(e) => panic!("Interpreter error: {}", e),
         }
