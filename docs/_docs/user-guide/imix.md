@@ -120,13 +120,7 @@ Every callback interval imix will query each active thread for new output and re
 
 ## Proxy support
 
-Imix's default `grpc` transport supports http and https proxies for outbound communication.
-By default imix will try to determine the systems proxy settings:
-
-- On Linux reading the environment variables `http_proxy` and then `https_proxy`
-- On Windows - we cannot automatically determine the default proxy
-- On MacOS - we cannot automatically determine the default proxy
-- On FreeBSD - we cannot automatically determine the default proxy
+Imix's default `grpc` transport supports http and https proxies for outbound communication. These must be set at compile time.
 
 ## Identifying unique hosts
 
