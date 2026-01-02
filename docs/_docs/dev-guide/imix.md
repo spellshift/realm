@@ -163,7 +163,7 @@ impl Transport for Custom {
             // e.g., client: None
         }
     }
-    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(callback: String, config: Config) -> Result<Self> {
         // TODO: setup connection/client hook in proxy, anything else needed
         // before functions get called.
         Err(anyhow!("Unimplemented!"))

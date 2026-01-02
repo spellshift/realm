@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use uuid::Uuid;
 
 use crate::c2::ActiveTransport;
@@ -19,16 +21,6 @@ macro_rules! callback_uri {
             Some(uri) => uri,
             None => "http://127.0.0.1:8000",
         }
-    };
-}
-
-/*
- * Compile-time constant for the agent proxy URI, derived from the IMIX_PROXY_URI environment variable during compilation.
- * Defaults to None if this is unset.
- */
-macro_rules! proxy_uri {
-    () => {
-        option_env!("IMIX_PROXY_URI")
     };
 }
 
@@ -169,45 +161,6 @@ impl Config {
                 }
             }
         }
-    }
-}
-
-fn get_system_proxy() -> Option<String> {
-    let proxy_uri_compile_time_override = proxy_uri!();
-    if let Some(proxy_uri) = proxy_uri_compile_time_override {
-        return Some(proxy_uri.to_string());
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        match std::env::var("http_proxy") {
-            Ok(val) => return Some(val),
-            Err(_e) => {
-                #[cfg(debug_assertions)]
-                log::debug!("Didn't find http_proxy env var: {}", _e);
-            }
-        }
-
-        match std::env::var("https_proxy") {
-            Ok(val) => return Some(val),
-            Err(_e) => {
-                #[cfg(debug_assertions)]
-                log::debug!("Didn't find https_proxy env var: {}", _e);
-            }
-        }
-        None
-    }
-    #[cfg(target_os = "windows")]
-    {
-        None
-    }
-    #[cfg(target_os = "macos")]
-    {
-        None
-    }
-    #[cfg(target_os = "freebsd")]
-    {
-        None
     }
 }
 

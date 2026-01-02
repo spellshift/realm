@@ -148,8 +148,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
 
         // 2. Create new transport from config
-        let (callback_uri, proxy_uri) = self.get_transport_config().await;
-        let t = T::new(callback_uri, proxy_uri).context("Failed to create on-demand transport")?;
+        let (callback_uri, config) = self.get_transport_config().await;
+        let t = T::new(callback_uri, config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -317,10 +317,6 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .map_err(|e| e.to_string())?;
 
         map.insert("callback_uri".to_string(), active_uri);
-        // TODO: Re-add proxy URI via an "extra" field in config.
-        // if let Some(proxy) = &cfg.proxy_uri {
-        //     map.insert("proxy_uri".to_string(), proxy.clone());
-        // }
         map.insert(
             "retry_interval".to_string(),
             active_transport.interval.to_string(),
@@ -349,6 +345,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 map.insert(
                     "type".to_string(),
                     active_transport.r#type.clone().to_string(),
+                );
+                map.insert(
+                    "extra".to_string(),
+                    active_transport.extra.clone().to_string(),
                 );
             }
         }

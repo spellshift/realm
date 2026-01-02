@@ -22,9 +22,11 @@ Building in the dev container limits variables that might cause issues and is th
 | IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | automatic | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
-| IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
 | IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
+| IMIX_TRANSPORT_EXTRA_HTTP_PROXY | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
+| IMIX_TRANSPORT_EXTRA_DOH | Enable DoH, eventually specify which DoH service to use. Requires the grpc-doh flag. | No DoH. | No |
+
 
 Imix has run-time configuration, that may be specified using environment variables during execution.
 
