@@ -3,7 +3,7 @@ import { ApolloError, useQuery } from "@apollo/client";
 import { GET_TAG_FILTERS } from "../utils/queries";
 import { BeaconEdge, BeaconNode, HostEdge, HostNode, TagContextQueryResponse, TagEdge, TagNode } from "../utils/interfacesQuery";
 import { FilterBarOption, TagContextProps } from "../utils/interfacesUI";
-import { SupportedPlatforms } from "../utils/enums";
+import { SupportedPlatforms, SupportedTransports } from "../utils/enums";
 
 type TagContextType = {
     data: TagContextProps;
@@ -21,7 +21,8 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         hosts: [],
         principals: [],
         primaryIPs: [],
-        platforms: []
+        platforms: [],
+        transports: [],
     });
 
     const PARAMS = {
@@ -39,6 +40,8 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             return;
         }
         const supportedPlatformsList = Object.values(SupportedPlatforms);
+        const supportedTransportList = Object.values(SupportedTransports);
+
         const beacons: Array<FilterBarOption & BeaconNode> = [];
         const principalsSet = new Set<string>();
         const principals: FilterBarOption[] = [];
@@ -116,6 +119,15 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             kind: "platform"
         }));
 
+        // Build transport options
+        const transports: FilterBarOption[] = supportedTransportList.map((transport: string) => ({
+            id: transport,
+            name: transport,
+            value: transport,
+            label: transport,
+            kind: "transport"
+        }));
+
         // Set tags state with formatted options
         const tags: TagContextProps = {
             beacons,
@@ -124,7 +136,8 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             hosts,
             principals,
             primaryIPs,
-            platforms
+            platforms,
+            transports
         };
         setTags(tags);
     }, []);

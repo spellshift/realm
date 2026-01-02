@@ -14,7 +14,8 @@ const BeaconTile = (props: Props) => {
     const {
         host,
         principal,
-        name
+        name,
+        transport
     } = beacon;
     const beaconOffline = checkIfBeaconOffline(beacon);
 
@@ -28,6 +29,9 @@ const BeaconTile = (props: Props) => {
                 <div className="flex flex-row gap-2 flex-wrap">
                     {(principal && principal !== "") &&
                         <Badge>{principal}</Badge>
+                    }
+                    {transport &&
+                        <Badge>{transport}</Badge>
                     }
                     {host?.primaryIP && (
                         <Badge leftIcon={<Network className="h-3 w-3" />}>{host?.primaryIP}</Badge>

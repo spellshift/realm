@@ -21,6 +21,13 @@ export enum SupportedPlatforms {
     BSD='PLATFORM_BSD',
     Unknown='PLATFORM_UNSPECIFIED'
 }
+
+export enum SupportedTransports {
+    TRANSPORT_DNS="TRANSPORT_DNS",
+    TRANSPORT_GRPC="TRANSPORT_GRPC",
+    TRANSPORT_HTTP1="TRANSPORT_HTTP1",
+    TRANSPORT_UNSPECIFIED="TRANSPORT_UNSPECIFIED"
+}
 export enum TableRowLimit {
     QuestRowLimit=8,
     TaskRowLimit=8,

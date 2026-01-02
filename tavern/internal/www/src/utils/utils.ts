@@ -31,7 +31,8 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
     "host":  Array<string>,
     "platform": Array<string>,
     "principal": Array<string>,
-    "primaryIP": Array<string>
+    "primaryIP": Array<string>,
+    "transport": Array<string>
 } {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
@@ -55,6 +56,9 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
         else if (currentValue.kind === "primaryIP"){
             accumulator.primaryIP.push(currentValue.name);
         }
+        else if (currentValue.kind === "transport"){
+            accumulator.transport.push(currentValue.name);
+        }
         return accumulator;
     },
         {
@@ -64,7 +68,8 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             "host": [],
             "platform": [],
             "principal": [],
-            "primaryIP": []
+            "primaryIP": [],
+            "transport": []
         });
 };
 
