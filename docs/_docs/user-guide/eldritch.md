@@ -252,7 +252,7 @@ Key must be 16 Bytes (Characters)
 
 ### crypto.encode_b64
 
-`crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
+`crypto.encode_b64(content: str, encode_type: Option<str>) -> str`
 
 The <b>crypto.encode_b64</b> method encodes the given text using the given base64 encoding method. Valid methods include:
 
@@ -263,7 +263,7 @@ The <b>crypto.encode_b64</b> method encodes the given text using the given base6
 
 ### crypto.decode_b64
 
-`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
+`crypto.decode_b64(content: str, decode_type: Option<str>) -> str`
 
 The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
 
@@ -612,9 +612,11 @@ The <b>pivot.bind_proxy</b> method is being proposed to provide users another op
 
 ### pivot.ncat
 
-`pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
+`pivot.ncat(address: str, port: int, data: str, protocol: str, timeout: Option<int>) -> str`
 
 The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
+
+Timeout is the number of seconds to wait for the ncat connection to succeed before closing it. Defaults to 2 seconds if not specified.
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
@@ -663,7 +665,7 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 ### pivot.reverse_shell_pty
 
-`pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
+`pivot.reverse_shell_pty(cmd: Option<str>) -> None`
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
@@ -685,7 +687,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_exec
 
-`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
+`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Option<str>, key: Option<str>, key_password: Option<str>, timeout: Option<int>) -> List<Dict>`
 
 The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
 Stdout returns the string result from the command output.
@@ -706,7 +708,7 @@ Status will be equal to the code returned by the command being run and -1 in the
 
 ### process.info
 
-`process.info(pid: Optional<int>) -> Dict`
+`process.info(pid: Option<int>) -> Dict`
 
 The <b>process.info</b> method returns all information on a given process ID. Default is the current process.
 
