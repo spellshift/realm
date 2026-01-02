@@ -1,0 +1,150 @@
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.0",
+  "generatedBy": "junit-to-ctrf",
+  "timestamp": "2026-01-02T17:45:33.392Z",
+  "results": {
+    "tool": {
+      "name": "junit-to-ctrf"
+    },
+    "summary": {
+      "tests": 14,
+      "passed": 13,
+      "failed": 1,
+      "skipped": 0,
+      "pending": 0,
+      "other": 0,
+      "start": 0,
+      "stop": 0
+    },
+    "tests": [
+      {
+        "name": "eldritch: agent::set_callback_interval_impl::test::change_interval",
+        "status": "passed",
+        "duration": 57,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: agent::eval_impl::tests::test_eval_fail",
+        "status": "passed",
+        "duration": 57,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: agent::set_callback_uri_impl::test::change_interval",
+        "status": "passed",
+        "duration": 58,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: agent::eval_impl::tests::test_eval",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::copy_impl::tests::test_remote_copy",
+        "status": "passed",
+        "duration": 20,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::list_impl::tests::test_asset_list_remote",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::list_impl::tests::test_asset_list_local",
+        "status": "passed",
+        "duration": 79,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::copy_impl::tests::test_remote_copy_full",
+        "status": "passed",
+        "duration": 272,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_binary_impl::tests::test_asset_read_binary_remote",
+        "status": "passed",
+        "duration": 193,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_binary_impl::tests::test_assets_read_binary",
+        "status": "passed",
+        "duration": 196,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::copy_impl::tests::test_embedded_copy",
+        "status": "failed",
+        "duration": 277,
+        "message": "thread 'assets::copy_impl::tests::test_embedded_copy' (12797) panicked at lib/eldritch/src/assets/copy_impl.rs:227:9",
+        "trace": "thread 'assets::copy_impl::tests::test_embedded_copy' (12797) panicked at lib/eldritch/src/assets/copy_impl.rs:227:9:\nassertion failed: contents.contains(\"hello from an embedded shell script\")\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace",
+        "suite": [
+          "eldritch"
+        ],
+        "stdout": [
+          "running 1 test",
+          "test assets::copy_impl::tests::test_embedded_copy ... FAILED",
+          "failures:",
+          "failures:",
+          "assets::copy_impl::tests::test_embedded_copy",
+          "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 195 filtered out; finished in 0.22s"
+        ],
+        "stderr": [
+          "thread 'assets::copy_impl::tests::test_embedded_copy' (12797) panicked at lib/eldritch/src/assets/copy_impl.rs:227:9:",
+          "assertion failed: contents.contains(\"hello from an embedded shell script\")",
+          "note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_impl::tests::test_asset_read_local",
+        "status": "passed",
+        "duration": 61,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: crypto::aes_decrypt_file_impl::tests::test_decrypt",
+        "status": "passed",
+        "duration": 64,
+        "suite": [
+          "eldritch"
+        ]
+      },
+      {
+        "name": "eldritch: assets::read_impl::tests::test_asset_read_remote",
+        "status": "passed",
+        "duration": 151,
+        "suite": [
+          "eldritch"
+        ]
+      }
+    ]
+  }
+}
