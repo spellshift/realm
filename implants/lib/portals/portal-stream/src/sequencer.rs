@@ -1,4 +1,4 @@
-use pb::portal::{mote::Payload, BytesPayload, BytesPayloadKind, Mote, TcpPayload, UdpPayload};
+use pb::portal::{BytesPayload, BytesPayloadKind, Mote, TcpPayload, UdpPayload, mote::Payload};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// PayloadSequencer sequences payloads with a stream ID and monotonic sequence ID.
