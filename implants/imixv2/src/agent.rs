@@ -123,7 +123,6 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             // Fallback, should not happen unless empty
             uris.first().cloned().unwrap_or_default()
         };
-        //TODO: Re-add proxy URI via an "extra" field in config.
         (callback_uri, config)
     }
 

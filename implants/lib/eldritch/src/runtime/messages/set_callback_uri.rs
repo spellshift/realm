@@ -16,7 +16,6 @@ pub struct SetCallbackUriMessage {
 impl SyncDispatcher for SetCallbackUriMessage {
     fn dispatch(self, _transport: &mut impl Transport, cfg: Config) -> Result<Config> {
         let mut c = cfg.clone();
-        //TODO: make sure this works :?
         c.info
             .as_mut()
             .context("missing config info")?
