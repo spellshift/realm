@@ -32,6 +32,8 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	s := grpc.NewServer(
 		grpc.UnknownServiceHandler(r.handler(upstream)),
 		grpc.ForceServerCodec(encoding.GetCodec("raw")),
+		grpc.MaxRecvMsgSize(100*1024*1024),
+		grpc.MaxSendMsgSize(100*1024*1024),
 	)
 
 	go func() {
@@ -65,7 +67,9 @@ func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
 			StreamName:    fullMethodName,
 			ServerStreams: true,
 			ClientStreams: true,
-		}, fullMethodName, grpc.CallContentSubtype("raw"))
+		}, fullMethodName, grpc.CallContentSubtype("raw"),
+			grpc.MaxCallRecvMsgSize(100*1024*1024),
+			grpc.MaxCallSendMsgSize(100*1024*1024))
 		if err != nil {
 			return fmt.Errorf("failed to create new client stream: %w", err)
 		}
