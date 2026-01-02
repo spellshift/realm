@@ -6,6 +6,8 @@ import TagModal from "./TagModal";
 import EditableTag from "./editable-tag/EditableTag";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { Globe, Network } from "lucide-react";
+import { getEnumKey } from "../../../utils/utils";
+import { SupportedPlatforms } from "../../../utils/enums";
 
 const HostDetailsSection = () => {
     const [isOpen, setOpen] = useState(false);
@@ -44,7 +46,7 @@ const HostDetailsSection = () => {
                         </div>
                         <div className="text-gray-600 text-sm ml-6  min-h-[38px] flex flex-col justify-center">
                             {host?.platform && (
-                                <Badge>{host?.platform}</Badge>
+                                <Badge>{getEnumKey(SupportedPlatforms, host?.platform)}</Badge>
                             )}
                         </div>
                     </div>

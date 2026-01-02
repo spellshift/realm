@@ -42,7 +42,7 @@ const FinalizeStep = (props: Props) => {
                 <Heading size="sm" >Beacons ({formik.values.beacons.length})</Heading>
                 <div className="flex flex-col gap-2 max-h-80 overflow-scroll px-4">
                     {beaconsSelected.map((beacon) => {
-                        return <BeaconTile key={`beaconTile_${beacon.id}`} beaconData={beacon} />
+                        return <BeaconTile key={`beaconTile_${beacon.id}`} beacon={beacon} />
                     })}
                 </div>
             </div>
