@@ -12,8 +12,6 @@ import (
 	"sync/atomic"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/stream"
@@ -21,7 +19,7 @@ import (
 
 const (
 	maxStreamBufferedMessages = 1024
-	maxReadBuffSize           = 512 * 1024 // 512 KB
+	maxBuffSize               = 512 * 1024 // 512 KB
 )
 
 type Proxy struct {
@@ -40,9 +38,9 @@ type Proxy struct {
 }
 
 func (p *Proxy) Run() error {
-	conn, err := grpc.NewClient(p.upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithWriteBufferSize(512*1024), grpc.WithReadBufferSize(512*1024))
+	conn, err := connect(p.upstreamAddr)
 	if err != nil {
-		return fmt.Errorf("failed to connect to upstream: %w", err)
+		return err
 	}
 	defer conn.Close()
 
@@ -265,7 +263,7 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 	go func() {
 		defer wg.Done()
 		defer cancel() // Cancel context when client disconnects
-		buf := make([]byte, maxReadBuffSize)
+		buf := make([]byte, maxBuffSize)
 		for {
 			n, err := conn.Read(buf)
 			if n > 0 {
