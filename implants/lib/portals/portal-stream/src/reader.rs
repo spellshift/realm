@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use pb::portal::Mote;
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
@@ -76,9 +76,7 @@ impl OrderedReader {
             self.first_buffered_at = Some(Instant::now());
         }
 
-        if !self.buffer.contains_key(&mote.seq_id) {
-            self.buffer.insert(mote.seq_id, mote);
-        }
+        self.buffer.entry(mote.seq_id).or_insert(mote);
 
         if self.buffer.len() > self.max_buffer {
             return Err(anyhow!("stale stream: buffer limit exceeded"));
@@ -92,15 +90,14 @@ impl OrderedReader {
 
     /// Checks if the reader has stalled waiting for a packet.
     pub fn check_timeout(&self) -> Result<()> {
-        if !self.buffer.is_empty() {
-            if let Some(start) = self.first_buffered_at {
-                if start.elapsed() > self.stale_timeout {
-                    return Err(anyhow!(
-                        "stale stream: timeout waiting for seqID {}",
-                        self.next_seq_id
-                    ));
-                }
-            }
+        if !self.buffer.is_empty()
+            && let Some(start) = self.first_buffered_at
+            && start.elapsed() > self.stale_timeout
+        {
+            return Err(anyhow!(
+                "stale stream: timeout waiting for seqID {}",
+                self.next_seq_id
+            ));
         }
         Ok(())
     }

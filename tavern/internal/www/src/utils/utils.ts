@@ -31,7 +31,8 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
     "host":  Array<string>,
     "platform": Array<string>,
     "principal": Array<string>,
-    "primaryIP": Array<string>
+    "primaryIP": Array<string>,
+    "transport": Array<string>
 } {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
@@ -55,6 +56,9 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
         else if (currentValue.kind === "primaryIP"){
             accumulator.primaryIP.push(currentValue.name);
         }
+        else if (currentValue.kind === "transport"){
+            accumulator.transport.push(currentValue.name);
+        }
         return accumulator;
     },
         {
@@ -64,7 +68,8 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             "host": [],
             "platform": [],
             "principal": [],
-            "primaryIP": []
+            "primaryIP": [],
+            "transport": []
         });
 };
 
@@ -219,3 +224,15 @@ export const mapEnumToUIOptionField = (enumObj: Record<string, string>, kind: st
         kind: kind
     }));
 };
+
+export function getEnumKey<T extends Record<string, string>>(
+    enumObj: T,
+    value: string | undefined | null
+): string {
+    if (!value) {
+        return "";
+    }
+
+    const key = Object.keys(enumObj).find(k => enumObj[k] === value);
+    return key || value;
+}

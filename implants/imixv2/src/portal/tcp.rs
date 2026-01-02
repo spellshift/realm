@@ -5,6 +5,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 
+const BUF_SIZE: usize = 64 * 1024;
+
 pub async fn handle_tcp(
     first_mote: Mote,
     mut rx: mpsc::Receiver<Mote>,
@@ -39,7 +41,7 @@ pub async fn handle_tcp(
     let dst_addr_clone = dst_addr.clone();
 
     let read_task = tokio::spawn(async move {
-        let mut buf = [0u8; 512 * 1024];
+        let mut buf = [0u8; BUF_SIZE];
         loop {
             match read_half.read(&mut buf).await {
                 Ok(0) => break, // EOF
@@ -57,9 +59,15 @@ pub async fn handle_tcp(
 
     // Write Loop (C2 -> Socket)
     while let Some(mote) = rx.recv().await {
-        if let Some(Payload::Tcp(tcp)) = mote.payload {
-            if !tcp.data.is_empty() {
-                if write_half.write_all(&tcp.data).await.is_err() {
+        if let Some(Payload::Tcp(tcp)) = mote.payload
+            && !tcp.data.is_empty()
+        {
+            match write_half.write_all(&tcp.data).await {
+                Ok(_) => {}
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to write tcp: {_e:?}");
+
                     break;
                 }
             }

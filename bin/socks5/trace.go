@@ -9,8 +9,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 
 	"realm.pub/tavern/portals/portalpb"
@@ -21,7 +19,7 @@ func traceCommand(args []string) {
 	fs := flag.NewFlagSet("trace", flag.ExitOnError)
 	portalID := fs.Int64("portal", 0, "Portal ID (required)")
 	size := fs.Int("size", 0, "Payload padding size (bytes)")
-	upstreamAddr := fs.String("upstream_addr", "127.0.0.1:8000", "Upstream gRPC Address")
+	upstreamAddr := fs.String("upstream", "127.0.0.1:8000", "Upstream gRPC Address")
 
 	if err := fs.Parse(args); err != nil {
 		log.Fatal(err)
@@ -37,9 +35,9 @@ func traceCommand(args []string) {
 }
 
 func runTrace(ctx context.Context, upstreamAddr string, portalID int64, size int) {
-	conn, err := grpc.NewClient(upstreamAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := connect(upstreamAddr)
 	if err != nil {
-		log.Fatalf("Failed to connect to upstream: %v", err)
+		log.Fatalf("failed to run trace: %v", err)
 	}
 	defer conn.Close()
 

@@ -23,7 +23,7 @@ impl OrderedWriter<tokio::sync::mpsc::Sender<Mote>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pb::portal::{mote::Payload, BytesPayloadKind, Mote};
+    use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
     use std::thread;
     use std::time::Duration;
 

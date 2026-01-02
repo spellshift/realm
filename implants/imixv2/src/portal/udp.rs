@@ -5,6 +5,8 @@ use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc;
 
+const BUF_SIZE: usize = 64 * 1024;
+
 pub async fn handle_udp(
     first_mote: Mote,
     mut rx: mpsc::Receiver<Mote>,
@@ -42,7 +44,7 @@ pub async fn handle_udp(
     let dst_addr_clone = dst_addr.clone();
 
     let read_task = tokio::spawn(async move {
-        let mut buf = [0u8; 4096];
+        let mut buf = [0u8; BUF_SIZE];
         loop {
             match socket_read.recv(&mut buf).await {
                 Ok(n) => {
@@ -52,16 +54,25 @@ pub async fn handle_udp(
                         break;
                     }
                 }
-                Err(_) => break,
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to read from udp socket: {_e:?}");
+                }
             }
         }
     });
 
     // Write Loop (C2 -> Socket)
     while let Some(mote) = rx.recv().await {
-        if let Some(Payload::Udp(udp)) = mote.payload {
-            if !udp.data.is_empty() {
-                if socket.send(&udp.data).await.is_err() {
+        if let Some(Payload::Udp(udp)) = mote.payload
+            && !udp.data.is_empty()
+        {
+            match socket.send(&udp.data).await {
+                Ok(_) => {}
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to write udp: {_e:?}");
+
                     break;
                 }
             }
@@ -69,7 +80,7 @@ pub async fn handle_udp(
     }
 
     // Cleanup
-    let _ = read_task.abort(); // UDP recv might block forever
+    read_task.abort(); // UDP recv might block forever
 
     Ok(())
 }

@@ -19,7 +19,14 @@ export enum SupportedPlatforms {
     Linux='PLATFORM_LINUX',
     MacOS='PLATFORM_MACOS',
     BSD='PLATFORM_BSD',
-    Unknown='PLATFORM_UNSPECIFIED'
+    Platform_Unknown='PLATFORM_UNSPECIFIED'
+}
+
+export enum SupportedTransports {
+    DNS="TRANSPORT_DNS",
+    GRPC="TRANSPORT_GRPC",
+    HTTP1="TRANSPORT_HTTP1",
+    Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 export enum TableRowLimit {
     QuestRowLimit=8,

@@ -48,10 +48,10 @@ export function constructHostFieldQuery(
 };
 
 export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>){
-    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP} = getBeaconFilterNameByTypes(beaconFields);
+    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP, transport} = getBeaconFilterNameByTypes(beaconFields);
     const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP);
 
-    if(beacons.length < 1 && principal.length < 1 && !hostFiledQuery){
+    if(beacons.length < 1 && principal.length < 1 && transport.length < 1 && !hostFiledQuery){
       return null;
     }
 
@@ -59,6 +59,7 @@ export function constructBeaconFilterQuery(beaconFields: Array<FilterBarOption>)
       "hasBeaconWith": {
           ...(beacons.length > 0 && {"nameIn": beacons}),
           ...(principal.length > 0 && {"principalIn": principal}),
+          ...(transport.length > 0 && {"transportIn": transport}),
           ...hostFiledQuery
       }
     };
