@@ -1,8 +1,9 @@
 import { BugAntIcon } from "@heroicons/react/24/outline";
 import { BeaconNode, TagEdge } from "../utils/interfacesQuery";
-import { checkIfBeaconOffline } from "../utils/utils";
+import { checkIfBeaconOffline, getEnumKey } from "../utils/utils";
 import Badge from "./tavern-base-ui/badge/Badge";
 import { Globe, Network } from "lucide-react";
+import { SupportedPlatforms, SupportedTransports } from "../utils/enums";
 
 
 type Props = {
@@ -31,7 +32,7 @@ const BeaconTile = (props: Props) => {
                         <Badge>{principal}</Badge>
                     }
                     {transport &&
-                        <Badge>{transport}</Badge>
+                        <Badge>{getEnumKey(SupportedTransports, transport)}</Badge>
                     }
                     {host?.primaryIP && (
                         <Badge leftIcon={<Network className="h-3 w-3" />}>{host?.primaryIP}</Badge>
@@ -40,7 +41,7 @@ const BeaconTile = (props: Props) => {
                         <Badge leftIcon={<Globe className="h-3 w-3" />}>{host?.externalIP}</Badge>
                     )}
                     {host?.platform &&
-                        <Badge>{host?.platform}</Badge>
+                        <Badge>{getEnumKey(SupportedPlatforms, host?.platform)}</Badge>
                     }
                     {host?.tags && host?.tags?.edges?.map((tag: TagEdge) => {
                         return <Badge key={tag.node.id}>{tag.node.name}</Badge>

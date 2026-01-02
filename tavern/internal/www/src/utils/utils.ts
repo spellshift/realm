@@ -224,3 +224,15 @@ export const mapEnumToUIOptionField = (enumObj: Record<string, string>, kind: st
         kind: kind
     }));
 };
+
+export function getEnumKey<T extends Record<string, string>>(
+    enumObj: T,
+    value: string | undefined | null
+): string {
+    if (!value) {
+        return "";
+    }
+
+    const key = Object.keys(enumObj).find(k => enumObj[k] === value);
+    return key || value;
+}

@@ -39,8 +39,8 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         if (!data) {
             return;
         }
-        const supportedPlatformsList = Object.values(SupportedPlatforms);
-        const supportedTransportList = Object.values(SupportedTransports);
+        const supportedPlatformsList = Object.entries(SupportedPlatforms);
+        const supportedTransportList = Object.entries(SupportedTransports);
 
         const beacons: Array<FilterBarOption & BeaconNode> = [];
         const principalsSet = new Set<string>();
@@ -111,20 +111,20 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         });
 
         // Build platform options
-        const platforms: FilterBarOption[] = supportedPlatformsList.map((platform: string) => ({
-            id: platform,
-            name: platform,
-            value: platform,
-            label: platform,
+        const platforms: FilterBarOption[] = supportedPlatformsList.map(([label, value]) => ({
+            id: value,
+            name: value,
+            value: value,
+            label: label,
             kind: "platform"
         }));
 
-        // Build transport options
-        const transports: FilterBarOption[] = supportedTransportList.map((transport: string) => ({
-            id: transport,
-            name: transport,
-            value: transport,
-            label: transport,
+        // Build transport options with user-friendly labels
+        const transports: FilterBarOption[] = supportedTransportList.map(([label, value]) => ({
+            id: value,
+            name: value,
+            value: value,
+            label: label,
             kind: "transport"
         }));
 

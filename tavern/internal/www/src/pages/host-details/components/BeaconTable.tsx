@@ -3,8 +3,8 @@ import { formatDistance } from "date-fns";
 import { useNavigate } from 'react-router-dom';
 
 import Table from "../../../components/tavern-base-ui/Table";
-import { PrincipalAdminTypes } from "../../../utils/enums";
-import { checkIfBeaconOffline } from "../../../utils/utils";
+import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
+import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { BeaconEdge } from "../../../utils/interfacesQuery";
@@ -51,7 +51,7 @@ const BeaconTable = ({ beacons }: { beacons: Array<BeaconEdge> }) => {
                     return null;
                 }
                 return (
-                    <Badge>{transport}</Badge>
+                    <Badge>{getEnumKey(SupportedTransports, transport)}</Badge>
                 );
             }
         },
