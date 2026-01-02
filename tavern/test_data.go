@@ -83,6 +83,16 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
 
+			// Cycle through transports: HTTP1, GRPC, DNS
+			getTransport := func(idx int) c2pb.Beacon_Transport {
+				transports := []c2pb.Beacon_Transport{
+					c2pb.Beacon_TRANSPORT_HTTP1,
+					c2pb.Beacon_TRANSPORT_GRPC,
+					c2pb.Beacon_TRANSPORT_DNS,
+				}
+				return transports[idx%3]
+			}
+
 			if i == 4 && groupNum == 5 {
 				// Host with dead beacons Group 5 - Service 5
 				testBeacons = append(testBeacons,
@@ -94,7 +104,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
 						SaveX(ctx),
 				)
 				testBeacons = append(testBeacons,
@@ -106,7 +116,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
 						SaveX(ctx),
 				)
 				testBeacons = append(testBeacons,
@@ -118,7 +128,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
 						SaveX(ctx),
 				)
 			} else {
@@ -131,7 +141,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(600000).
 						SetPrincipal("root").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
 						SaveX(ctx),
 				)
 				if i == 3 {
@@ -144,7 +154,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 							SetHost(testHost).
 							SetInterval(600).
 							SetPrincipal("janet").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
 						SaveX(ctx),
 					)
 				}
@@ -158,7 +168,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 							SetHost(testHost).
 							SetInterval(600000).
 							SetPrincipal("jane").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
 						SaveX(ctx),
 					)
 				}
@@ -172,7 +182,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(1000).
 						SetPrincipal("admin").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 3)).
 						SaveX(ctx),
 				)
 
@@ -185,7 +195,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(4).
 						SetPrincipal("Administrator").
-						SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+						SetTransport(getTransport(groupNum*100 + i*10 + 4)).
 						SaveX(ctx),
 				)
 			}
