@@ -5,6 +5,7 @@ extern crate alloc;
 extern crate self as eldritch_core;
 
 // Internal
+pub mod analysis;
 mod ast;
 mod interpreter;
 mod lexer;
@@ -12,7 +13,8 @@ mod parser;
 mod token;
 
 // Re-export core types
-pub use ast::{Environment, ExprKind, ForeignValue, StmtKind, Value};
+pub use analysis::find_node_at_offset;
+pub use ast::{Environment, ExprKind, ForeignValue, Stmt, StmtKind, Value};
 pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
 pub use token::{Span, TokenKind};

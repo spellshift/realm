@@ -24,6 +24,7 @@ export interface TagContextProps {
     principals: Array<FilterBarOption>;
     primaryIPs: Array<FilterBarOption>;
     platforms: Array<FilterBarOption>;
+    transports: Array<FilterBarOption>;
 }
 
 export interface OnlineOfflineStatus {

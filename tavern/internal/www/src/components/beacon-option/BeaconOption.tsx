@@ -27,7 +27,7 @@ export const BeaconOption = (props: Props) => {
             <Card>
                 <CardBody>
                     <Checkbox colorScheme={"purple"} size="lg" isChecked={isChecked} onChange={() => toggleCheck(beacon.id)}>
-                        <div className="ml-2"><BeaconTile beaconData={beacon} /></div>
+                        <div className="ml-2"><BeaconTile beacon={beacon} /></div>
                     </Checkbox>
                 </CardBody>
             </Card>

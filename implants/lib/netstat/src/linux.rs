@@ -347,7 +347,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Requires actual system with /proc
     fn test_netstat_integration() {
         let result = netstat();
         assert!(result.is_ok());
