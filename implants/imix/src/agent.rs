@@ -88,7 +88,7 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        //TODO: Re-add proxy support
+        //TODO: De-dupe this fields - probably just need to pass the config not the callback URI.
         self.t = T::new(
             self.cfg
                 .info
@@ -97,7 +97,7 @@ impl<T: Transport + 'static> Agent<T> {
                 .active_transport
                 .context("failed to get transport")?
                 .uri,
-            None,
+            self.cfg.clone(),
         )?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;

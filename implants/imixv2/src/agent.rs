@@ -113,7 +113,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Helper to get config URIs for creating new transport
-    pub async fn get_transport_config(&self) -> (String, Option<String>) {
+    pub async fn get_transport_config(&self) -> (String, Config) {
+        let config = self.config.read().await.clone();
         let uris = self.callback_uris.read().await;
         let idx = *self.active_uri_idx.read().await;
         let callback_uri = if idx < uris.len() {
@@ -122,9 +123,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             // Fallback, should not happen unless empty
             uris.first().cloned().unwrap_or_default()
         };
-        // let cfg = self.config.read().await;
         //TODO: Re-add proxy URI via an "extra" field in config.
-        (callback_uri, None)
+        (callback_uri, config)
     }
 
     pub async fn rotate_callback_uri(&self) {
@@ -338,6 +338,18 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 map.insert("hostname".to_string(), host.name.clone());
                 map.insert("platform".to_string(), host.platform.to_string());
                 map.insert("primary_ip".to_string(), host.primary_ip.clone());
+            }
+            if let Some(active_transport) = &info.active_transport {
+                map.insert("uri".to_string(), active_transport.uri.clone());
+                map.insert(
+                    "interval".to_string(),
+                    active_transport.interval.clone().to_string(),
+                );
+                map.insert("primary_ip".to_string(), active_transport.extra.clone());
+                map.insert(
+                    "type".to_string(),
+                    active_transport.r#type.clone().to_string(),
+                );
             }
         }
         Ok(map)

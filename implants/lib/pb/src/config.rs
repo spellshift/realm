@@ -1,22 +1,14 @@
-use tonic::transport;
 use uuid::Uuid;
 
 use crate::c2::ActiveTransport;
 
-//TODO: Migrate most of this into a config crate or as a part of the agent.
-
+//TODO: Can this struct be removed?
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Config {
     #[prost(message, optional, tag = "1")]
     pub info: ::core::option::Option<crate::c2::Beacon>,
-    // #[prost(string, tag = "2")]
-    // pub callback_uri: ::prost::alloc::string::String,
-    // #[prost(string, optional, tag = "3")]
-    // pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
-    // #[prost(uint64, tag = "4")]
-    // pub retry_interval: u64,
     #[prost(bool, tag = "2")]
     pub run_once: bool,
 }
@@ -81,6 +73,15 @@ macro_rules! run_once {
     };
 }
 
+macro_rules! extra {
+    () => {
+        match option_env!("IMIX_TRANSPORT_EXTRA") {
+            Some(extra) => extra.to_string(),
+            None => String::from(""),
+        }
+    };
+}
+
 /* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
  * Defaults to false if unset.
  */
@@ -129,7 +130,7 @@ impl Config {
                 }
             },
             r#type: transport_type as i32,
-            extra: String::from(""),
+            extra: extra!(),
         };
 
         let info = crate::c2::Beacon {

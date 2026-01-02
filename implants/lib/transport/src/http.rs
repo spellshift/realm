@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use bytes::BytesMut;
 use hyper::body::HttpBody;
 use hyper::StatusCode;
-use pb::c2::*;
+use pb::{c2::*, config::Config};
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -309,7 +309,7 @@ impl Transport for HTTP {
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(callback: String, _config: Config) -> Result<Self> {
         // Create HTTP connector
         let mut connector = hyper::client::HttpConnector::new();
         connector.enforce_http(false); // Allow HTTPS

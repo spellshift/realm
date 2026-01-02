@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use pb::c2::*;
+use pb::{c2::*, config::Config};
 use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(feature = "grpc")]
@@ -40,7 +40,7 @@ impl Transport for ActiveTransport {
         Self::Empty
     }
 
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(uri: String, proxy_uri: Config) -> Result<Self> {
         match uri {
             // 1. gRPC: Passthrough
             s if s.starts_with("http://") || s.starts_with("https://") => {
@@ -283,7 +283,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
 
             // 1. Assert strictly on the Variant type
             assert!(
@@ -322,7 +322,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Dns(_))),
@@ -352,7 +352,7 @@ mod tests {
         let inputs = vec!["ftp://example.com", "ws://example.com", "random-string", ""];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
             assert!(
                 result.is_err(),
                 "Expected error for unknown URI scheme: '{}'",
