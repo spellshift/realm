@@ -29,6 +29,7 @@ query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
               principal
               lastSeenAt
               interval
+              transport
               host{
                   id
                   name
@@ -109,6 +110,7 @@ export const GET_HOST_QUERY = gql`
                             principal
                             interval
                             lastSeenAt
+                            transport
                         }
                     }
                 }
@@ -339,6 +341,7 @@ export const GET_TASK_QUERY = gql`
                         principal
                         lastSeenAt
                         interval
+                        transport
                         host {
                             id
                             name
