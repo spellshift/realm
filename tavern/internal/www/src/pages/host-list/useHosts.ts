@@ -29,14 +29,17 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
     },[pagination, id, filters, hostSort, lastFetchedTimestamp]);
 
     const { loading, data, error, refetch } = useQuery(
-        GET_HOST_QUERY, {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true}
+        GET_HOST_QUERY,
+        {
+            variables: constructDefaultQuery(),
+            notifyOnNetworkStatusChange: true,
+        }
     );
 
     const updateHosts = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
         return refetch(query);
       },[constructDefaultQuery, refetch]);
-
 
     useEffect(()=>{
         const abortController = new AbortController();
