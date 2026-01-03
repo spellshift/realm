@@ -4,8 +4,6 @@ use alloc::string::String;
 use anyhow::Result;
 
 #[cfg(target_os = "windows")]
-use std::ffi::c_void;
-#[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     Foundation::CloseHandle,
     Security::SECURITY_ATTRIBUTES,
@@ -46,7 +44,7 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<()> {
         // Allocate memory in the remote process that we'll copy the DLL path string to.
         let target_process_allocated_memory_handle = VirtualAllocEx(
             target_process_memory_handle,
-            std::ptr::null::<c_void>(),
+            std::ptr::null::<std::ffi::c_void>(),
             dll_path_null_terminated.len() + 1,
             MEM_RESERVE | MEM_COMMIT,
             PAGE_EXECUTE_READWRITE,
@@ -56,7 +54,7 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<()> {
         let _write_proccess_memory_res = WriteProcessMemory(
             target_process_memory_handle,
             target_process_allocated_memory_handle,
-            dll_path_null_terminated.as_bytes().as_ptr() as *const c_void,
+            dll_path_null_terminated.as_bytes().as_ptr() as *const std::ffi::c_void,
             dll_path_null_terminated.len(),
             std::ptr::null_mut::<usize>(),
         );
@@ -70,7 +68,7 @@ pub fn dll_inject(dll_path: String, pid: u32) -> Result<()> {
                 // Translate our existing function return to the one LoadLibraryA wants.
                 std::mem::transmute::<
                     unsafe extern "system" fn() -> isize,
-                    extern "system" fn(*mut c_void) -> u32,
+                    extern "system" fn(*mut std::ffi::c_void) -> u32,
                 >(loadlibrary_function_ref),
             ),
             target_process_allocated_memory_handle,

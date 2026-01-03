@@ -6,7 +6,7 @@ use std::process::Command;
 
 #[cfg(target_os = "windows")]
 use {
-    std::ffi::{OsStr, OsString, c_void},
+    std::ffi::{OsStr, OsString},
     std::iter::once,
     std::os::windows::ffi::{OsStrExt, OsStringExt},
     std::path::Path,

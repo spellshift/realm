@@ -1,5 +1,4 @@
-use anyhow::{Context, Result};
-use eldritch_agent::Agent;
+use anyhow::Result;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -55,10 +54,10 @@ pub async fn run_agent() -> Result<()> {
             last_interval = new_interval;
         }
 
-        if let Err(e) = sleep_until_next_cycle(&agent, start).await {
+        if let Err(_e) = sleep_until_next_cycle(&agent, start).await {
             #[cfg(debug_assertions)]
             log::error!(
-                "Failed to sleep, falling back to last interval {last_interval} sec: {e:#}"
+                "Failed to sleep, falling back to last interval {last_interval} sec: {_e:#}"
             );
 
             // Prevent tight loop on config read failure

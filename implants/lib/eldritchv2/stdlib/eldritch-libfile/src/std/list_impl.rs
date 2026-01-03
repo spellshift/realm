@@ -71,8 +71,6 @@ fn list_impl(path: String) -> AnyhowResult<Vec<BTreeMap<String, Value>>> {
 
 #[cfg(feature = "stdlib")]
 fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
-    use alloc::format;
-
     let metadata = fs::metadata(path)?;
     let mut dict = BTreeMap::new();
 
