@@ -7,7 +7,7 @@ import {
 import { Link } from 'react-router-dom';
 import { classNames } from '../../utils/utils';
 import { usePageNavigation } from './usePageNavigation';
-import { PollingCountdown } from './PollingCountdown';
+import { PollingCountdown } from '../../context/PollingContext';
 
 type MobileNavProps = {
     sidebarOpen: boolean;

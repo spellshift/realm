@@ -3,7 +3,7 @@ import { classNames } from '../../utils/utils';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import logo from '../../assets/eldrich.png';
 import { usePageNavigation } from './usePageNavigation';
-import { PollingCountdown } from './PollingCountdown';
+import { PollingCountdown } from '../../context/PollingContext';
 
 type MinimizedSidebarNavProps = {
     currNavItem?: string;

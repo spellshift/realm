@@ -3,7 +3,7 @@ import { classNames } from '../../utils/utils';
 import logo from '../../assets/eldrich.png';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { usePageNavigation } from './usePageNavigation';
-import { PollingCountdown } from './PollingCountdown';
+import { PollingCountdown } from '../../context/PollingContext';
 
 type FullSidebarNavProps = {
     currNavItem?: string;
