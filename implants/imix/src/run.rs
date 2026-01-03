@@ -25,7 +25,8 @@ pub async fn handle_main() {
         let retry_interval = cfg
             .info
             .as_ref()
-            .and_then(|beacon| beacon.active_transport.as_ref())
+            .and_then(|beacon| beacon.available_transports.as_ref())
+            .and_then(|available| available.transports.get(available.active_index as usize))
             .map(|transport| transport.interval)
             .unwrap_or(DEFAULT_RETRY_INTERVAL);
 
