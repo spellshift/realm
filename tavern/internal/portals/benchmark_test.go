@@ -61,7 +61,7 @@ func BenchmarkPortalThroughput(b *testing.B) {
 
 	beacon := client.Beacon.Create().
 		SetName("benchbeacon").
-		SetTransport(c2pb.Beacon_TRANSPORT_HTTP1).
+		SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).
 		SetHost(h).
 		SaveX(ctx)
 
