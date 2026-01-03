@@ -89,7 +89,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     agent.refresh_ip().await;
 
     // Create new active transport
-    let (_callback_uri, config) = agent.get_transport_config().await;
+    let config = agent.get_transport_config().await;
 
     let transport = match ActiveTransport::new(config) {
         Ok(t) => t,

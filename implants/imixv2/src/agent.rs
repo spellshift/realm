@@ -110,27 +110,9 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Helper to get config URIs for creating new transport
-    pub async fn get_transport_config(&self) -> (String, Config) {
+    pub async fn get_transport_config(&self) -> Config {
         let config = self.config.read().await.clone();
-
-        // Get the URI from available_transports, ensuring no query params
-        let callback_uri = config
-            .info
-            .as_ref()
-            .and_then(|info| info.available_transports.as_ref())
-            .and_then(|at| {
-                let active_idx = at.active_index as usize;
-                at.transports
-                    .get(active_idx)
-                    .or_else(|| at.transports.first())
-            })
-            .map(|t| {
-                // Strip query parameters if present (they shouldn't be, but be defensive)
-                t.uri.split('?').next().unwrap_or(&t.uri).to_string()
-            })
-            .unwrap_or_default();
-
-        (callback_uri, config)
+        config
     }
 
     pub async fn rotate_callback_uri(&self) {
@@ -159,7 +141,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
 
         // 2. Create new transport from config
-        let (_callback_uri, config) = self.get_transport_config().await;
+        let config = self.get_transport_config().await;
         let t = T::new(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
@@ -405,7 +387,8 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if let Some(info) = cfg.info.as_mut() {
                 if let Some(available_transports) = info.available_transports.as_mut() {
                     let active_idx = available_transports.active_index as usize;
-                    if let Some(current_transport) = available_transports.transports.get(active_idx) {
+                    if let Some(current_transport) = available_transports.transports.get(active_idx)
+                    {
                         let current_uri = &current_transport.uri;
                         // Create new URI with the new transport scheme
                         let new_uri = if let Some(pos) = current_uri.find("://") {
@@ -424,7 +407,8 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
                         // Append the new transport and update active_index
                         available_transports.transports.push(new_transport);
-                        available_transports.active_index = (available_transports.transports.len() - 1) as u32;
+                        available_transports.active_index =
+                            (available_transports.transports.len() - 1) as u32;
                     }
                 }
             }
@@ -465,7 +449,11 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             if let Some(info) = cfg.info.as_mut() {
                 if let Some(available_transports) = info.available_transports.as_mut() {
                     // Check if URI already exists
-                    if let Some(pos) = available_transports.transports.iter().position(|t| t.uri == uri) {
+                    if let Some(pos) = available_transports
+                        .transports
+                        .iter()
+                        .position(|t| t.uri == uri)
+                    {
                         // Set active_index to existing transport
                         available_transports.active_index = pos as u32;
                     } else {
@@ -486,7 +474,8 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                                 extra: tmpl.extra,
                             };
                             available_transports.transports.push(new_transport);
-                            available_transports.active_index = (available_transports.transports.len() - 1) as u32;
+                            available_transports.active_index =
+                                (available_transports.transports.len() - 1) as u32;
                         }
                     }
                 }
@@ -582,11 +571,17 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             let mut cfg = self.config.write().await;
             if let Some(info) = cfg.info.as_mut() {
                 if let Some(available_transports) = info.available_transports.as_mut() {
-                    if let Some(pos) = available_transports.transports.iter().position(|t| t.uri == uri) {
+                    if let Some(pos) = available_transports
+                        .transports
+                        .iter()
+                        .position(|t| t.uri == uri)
+                    {
                         available_transports.transports.remove(pos);
                         // Adjust active_index if needed
                         let active_idx = available_transports.active_index as usize;
-                        if active_idx >= available_transports.transports.len() && !available_transports.transports.is_empty() {
+                        if active_idx >= available_transports.transports.len()
+                            && !available_transports.transports.is_empty()
+                        {
                             available_transports.active_index = 0;
                         }
                     }
