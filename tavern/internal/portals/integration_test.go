@@ -131,7 +131,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 	b, err := client.Beacon.Create().
 		SetIdentifier("testbeacon").
 		SetHost(h).
-		SetTransport(c2pb.Beacon_TRANSPORT_HTTP1).
+		SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).
 		Save(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create beacon: %w", err)
