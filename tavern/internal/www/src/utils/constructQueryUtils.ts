@@ -43,11 +43,7 @@ export function constructHostFieldQuery(
   ){
     const tagQuery = constructTagFieldsQuery(groups, services);
 
-    const hostStatusValues = onlineOfflineStatus.filter(status =>
-      status === OnlineOfflineFilterType.OfflineHost ||
-      status === OnlineOfflineFilterType.RecentlyLostHost
-    );
-    const hostStatusFilter = constructHostStatusFilter(hostStatusValues, currentTimestamp);
+    const hostStatusFilter = constructHostStatusFilter(onlineOfflineStatus, currentTimestamp);
 
     if(hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && !hostStatusFilter){
       return null;
@@ -70,13 +66,7 @@ export function constructBeaconFilterQuery(
 ){
     const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP, transport, onlineOfflineStatus} = getBeaconFilterNameByTypes(beaconFields);
 
-    // Separate beacon-level and host-level status filters
-    const beaconStatusValues = onlineOfflineStatus.filter(status =>
-      status === OnlineOfflineFilterType.OnlineBeacons ||
-      status === OnlineOfflineFilterType.RecentlyLostBeacons
-    );
-
-    const beaconStatusFilter = constructBeaconStatusFilter(beaconStatusValues, currentTimestamp);
+    const beaconStatusFilter = constructBeaconStatusFilter(onlineOfflineStatus, currentTimestamp);
 
     const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, onlineOfflineStatus, currentTimestamp);
 
@@ -181,7 +171,6 @@ export function constructHostTaskFilterQuery(
 
 };
 
-// Time-based query primitives
 const createRecentlyLostQuery = (start: Date, end: Date) => ({
   and: [
     { nextSeenAtGTE: start.toISOString() },
@@ -189,58 +178,34 @@ const createRecentlyLostQuery = (start: Date, end: Date) => ({
   ]
 });
 
-const createAfterQuery = (time: Date) => ({
-  nextSeenAtGTE: time.toISOString()
-});
-
-const createBeforeQuery = (time: Date) => ({
-  nextSeenAtLT: time.toISOString()
-});
-
-// Status filter builders for each domain
-const beaconStatusFilters = (currentTime: Date) => ({
-  [OnlineOfflineFilterType.OnlineBeacons]: createAfterQuery(currentTime),
-  [OnlineOfflineFilterType.RecentlyLostBeacons]: createRecentlyLostQuery(
-    sub(currentTime, { minutes: 5 }),
-    currentTime
-  )
-});
-
-const hostStatusFilters = (currentTime: Date) => ({
-  [OnlineOfflineFilterType.OfflineHost]: createBeforeQuery(currentTime),
-  [OnlineOfflineFilterType.RecentlyLostHost]: createRecentlyLostQuery(
-    sub(currentTime, { minutes: 5 }),
-    currentTime
-  )
-});
-
-// Generic helper to build OR queries from status array
-function buildStatusQuery<T extends string>(
-  statusValues: T[],
-  filterMap: Record<T, any>
+export function constructBeaconStatusFilter(
+  status: Array<string>,
+  currentTimestamp?: Date
 ) {
-  const conditions = statusValues
-    .map(status => filterMap[status])
-    .filter(Boolean);
+  if (!currentTimestamp) return null;
+
+  const conditions = [
+    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{nextSeenAtGTE: currentTimestamp.toISOString()}] : [],
+    ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(sub(currentTimestamp, { minutes: 5 }), currentTimestamp)] : [],
+  ]
 
   if (conditions.length === 0) return null;
   if (conditions.length === 1) return conditions[0];
   return { or: conditions };
 }
 
-// Export helpers for each domain
-export function constructBeaconStatusFilter(
-  status: Array<string>,
-  currentTimestamp?: Date
-) {
-  if (!currentTimestamp || status.length === 0) return null;
-  return buildStatusQuery(status, beaconStatusFilters(currentTimestamp));
-}
-
 export function constructHostStatusFilter(
   status: Array<string>,
   currentTimestamp?: Date
 ) {
-  if (!currentTimestamp || status.length === 0) return null;
-  return buildStatusQuery(status, hostStatusFilters(currentTimestamp));
+  if (!currentTimestamp) return null;
+
+  const conditions = [
+    ...status.includes(OnlineOfflineFilterType.OfflineHost) ? [{nextSeenAtLT: currentTimestamp.toISOString()}] : [],
+    ...status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(sub(currentTimestamp, { minutes: 5 }), currentTimestamp)] : [],
+  ]
+
+  if (conditions.length === 0) return null;
+  if (conditions.length === 1) return conditions[0];
+  return { or: conditions };
 }
