@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router-dom';
 import { classNames } from '../../utils/utils';
 import { usePageNavigation } from './usePageNavigation';
+import { PollingCountdown } from './PollingCountdown';
 
 type MobileNavProps = {
     sidebarOpen: boolean;
@@ -112,6 +113,7 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                                             </li>
                                         </ul>
                                     </nav>
+                                    <PollingCountdown variant="full" />
                                 </div>
                             </Dialog.Panel>
                         </Transition.Child>

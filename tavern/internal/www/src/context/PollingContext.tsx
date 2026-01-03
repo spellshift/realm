@@ -1,27 +1,48 @@
 import { useApolloClient } from "@apollo/client";
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-const PollingContext = createContext<{}>({});
+const PollingContext = createContext<{ secondsUntilNextPoll: number }>({ secondsUntilNextPoll: 30 });
 
-export const PollingProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+export const PollingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const apolloClient = useApolloClient();
+    const [secondsUntilNextPoll, setSecondsUntilNextPoll] = useState(30);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            // Refetch all active queries (queries currently being watched by mounted components)
+        setSecondsUntilNextPoll(30);
+
+        const pollInterval = setInterval(() => {
             apolloClient.refetchQueries({
                 include: "active",
             });
-        }, 60000);
+            setSecondsUntilNextPoll(30);
+        }, 30000);
 
-        return () => clearInterval(interval);
+        const countdownTimer = setInterval(() => {
+            setSecondsUntilNextPoll((prev) => {
+                if (prev <= 1) {
+                    return 30; // Safety fallback, shouldn't happen if synced
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => {
+            clearInterval(pollInterval);
+            clearInterval(countdownTimer);
+        };
     }, [apolloClient]);
 
     return (
-        <PollingContext.Provider value={{}}>
+        <PollingContext.Provider value={{ secondsUntilNextPoll }}>
             {children}
         </PollingContext.Provider>
     );
 };
 
-export const usePolling = () => useContext(PollingContext);
+export const usePolling = () => {
+    const context = useContext(PollingContext);
+    if (context === undefined) {
+        throw new Error('usePolling must be used within a PollingContextProvider');
+    }
+    return context;
+};
