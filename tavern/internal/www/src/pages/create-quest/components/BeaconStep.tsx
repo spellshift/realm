@@ -97,7 +97,7 @@ const BeaconStep = (props: Props) => {
                 <StackItem>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="col-span-1 md:col-span-2">
-                            <BeaconFilterBar initialFilters={typeFilters} setFiltersSelected={setTypeFilters} />
+                            <BeaconFilterBar initialFilters={typeFilters} setFiltersSelected={setTypeFilters} hideStatusFilter={true} />
                         </div>
                         <div className="flex-1 flex flex-col gap-2">
                             <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">

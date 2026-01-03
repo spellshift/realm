@@ -1,6 +1,6 @@
 import { add } from "date-fns";
 import { BeaconEdge, BeaconNode } from "./interfacesQuery";
-import { PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
+import { OnlineOfflineFilterType, PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
 import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
 
 export function classNames(...classes: string[]) {
@@ -32,7 +32,8 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
     "platform": Array<string>,
     "principal": Array<string>,
     "primaryIP": Array<string>,
-    "transport": Array<string>
+    "transport": Array<string>,
+    "onlineOfflineStatus": Array<string>
 } {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
@@ -59,6 +60,9 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
         else if (currentValue.kind === "transport"){
             accumulator.transport.push(currentValue.name);
         }
+        else if (currentValue.kind === "onlineOfflineStatus"){
+            accumulator.onlineOfflineStatus.push(currentValue.value);
+        }
         return accumulator;
     },
         {
@@ -69,7 +73,8 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             "platform": [],
             "principal": [],
             "primaryIP": [],
-            "transport": []
+            "transport": [],
+            "onlineOfflineStatus": []
         });
 };
 
@@ -236,3 +241,34 @@ export function getEnumKey<T extends Record<string, string>>(
     const key = Object.keys(enumObj).find(k => enumObj[k] === value);
     return key || value;
 }
+
+export const OnlineOfflineOptions = [
+    {
+        id: OnlineOfflineFilterType.OnlineBeacons,
+        name: "Online beacons",
+        value: OnlineOfflineFilterType.OnlineBeacons,
+        label: "Online beacons",
+        kind: "onlineOfflineStatus"
+    },
+    {
+        id: OnlineOfflineFilterType.OfflineHost,
+        name: "Offline hosts",
+        value:  OnlineOfflineFilterType.OfflineHost,
+        label: "Offline hosts",
+        kind: "onlineOfflineStatus"
+    },
+    {
+        id: OnlineOfflineFilterType.RecentlyLostHost,
+        name: "Recently lost hosts",
+        value: OnlineOfflineFilterType.RecentlyLostHost,
+        label: "Recently lost hosts",
+        kind: "onlineOfflineStatus"
+    },
+    {
+        id: OnlineOfflineFilterType.RecentlyLostBeacons,
+        name: "Recently lost beacons",
+        value: OnlineOfflineFilterType.RecentlyLostBeacons,
+        label: "Recently lost beacons",
+        kind: "onlineOfflineStatus"
+    },
+] as FilterBarOption[];
