@@ -84,7 +84,38 @@ fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
+    // Check if IMIX_CALLBACK_URI contains query parameters
+    let callback_uri = std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
+    let has_query_params = callback_uri.contains('?');
+
+    // Check if legacy config environment variables are set
+    let has_callback_interval = std::env::var("IMIX_CALLBACK_INTERVAL").is_ok();
+    let has_transport_extra = std::env::vars().any(|(k, _)| k.starts_with("IMIX_TRANSPORT_EXTRA_"));
+
+    // If DSN has query parameters AND legacy config is set, this is an error
+    if has_query_params && (has_callback_interval || has_transport_extra) {
+        let mut error_msg = String::from("Configuration error: Cannot use both DSN query parameters and legacy environment variables.\n");
+        error_msg.push_str("Found query parameters in IMIX_CALLBACK_URI and one or more of:\n");
+
+        if has_callback_interval {
+            error_msg.push_str("  - IMIX_CALLBACK_INTERVAL\n");
+        }
+        if has_transport_extra {
+            error_msg.push_str("  - IMIX_TRANSPORT_EXTRA_*\n");
+        }
+
+        error_msg.push_str("\nPlease use ONLY DSN query parameters (e.g., https://example.com?interval=10&extra={...})\n");
+        error_msg.push_str("OR use legacy environment variables, but not both.");
+
+        return Err(error_msg.into());
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    validate_dsn_config()?;
     get_pub_key();
     build_extra_vars()?;
 
