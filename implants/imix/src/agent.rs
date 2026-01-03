@@ -93,12 +93,12 @@ impl<T: Transport + 'static> Agent<T> {
         let available_transports = beacon
             .available_transports
             .context("failed to get available transports")?;
-        let active_transport = available_transports
+        let _active_transport = available_transports
             .transports
             .get(available_transports.active_index as usize)
             .context("active transport index out of bounds")?;
 
-        self.t = T::new(active_transport.uri.clone(), self.cfg.clone())?;
+        self.t = T::new(self.cfg.clone())?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
         self.t = T::init(); // re-init to make sure no active connections during sleep

