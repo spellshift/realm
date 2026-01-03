@@ -6,6 +6,7 @@ import { Filters, useFilters } from "../../context/FilterContext";
 import { constructBeaconFilterQuery, } from "../../utils/constructQueryUtils";
 import { Cursor, HostQueryTopLevel, OrderByField } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
+import { useTags } from "../../context/TagContext";
 
 interface HostsHook {
     data: HostQueryTopLevel
@@ -20,11 +21,12 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
     const [page, setPage] = useState<number>(1);
     const {filters} = useFilters();
     const {sorts} = useSorts();
+    const {lastFetchedTimestamp} = useTags();
     const hostSort = sorts[PageNavItem.hosts];
 
     const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-        return getDefaultHostQuery(pagination, afterCursor, beforeCursor, id, filters, hostSort);
-    },[pagination, id, filters, hostSort]);
+        return getDefaultHostQuery(pagination, afterCursor, beforeCursor, id, filters, hostSort, lastFetchedTimestamp);
+    },[pagination, id, filters, hostSort, lastFetchedTimestamp]);
 
     const { loading, data, error, refetch } = useQuery(
         GET_HOST_QUERY, {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true}
@@ -59,28 +61,20 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook =>  {
     }
 };
 
-const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCursor?: Cursor, id?: string | undefined, filters?: Filters, sort?: OrderByField) => {
+const getDefaultHostQuery = (pagination: boolean, afterCursor?: Cursor, beforeCursor?: Cursor, id?: string | undefined, filters?: Filters, sort?: OrderByField, currentTimestamp?: Date) => {
     const defaultRowLimit = TableRowLimit.HostRowLimit;
-    const filterInfo = (filters && filters.filtersEnabled) && constructBeaconFilterQuery(filters.beaconFields);
+    const filterInfo = (filters && filters.filtersEnabled) && constructBeaconFilterQuery(filters.beaconFields, currentTimestamp);
 
-    const hasBeaconsWithFilter: Record<string, any> = {};
-    if (filterInfo) {
-      if (filterInfo.hasBeaconWith.nameIn) {
-        hasBeaconsWithFilter.nameIn = filterInfo.hasBeaconWith.nameIn;
-      }
-      if (filterInfo.hasBeaconWith.principalIn) {
-        hasBeaconsWithFilter.principalIn = filterInfo.hasBeaconWith.principalIn;
-      }
-      if (filterInfo.hasBeaconWith.transportIn) {
-        hasBeaconsWithFilter.transportIn = filterInfo.hasBeaconWith.transportIn;
-      }
-    }
+    // Separate host fields from beacon fields
+    const hostFields = (filterInfo && filterInfo.hasBeaconWith?.hasHostWith) || {};
+    const beaconFields = (filterInfo && filterInfo.hasBeaconWith) ? { ...filterInfo.hasBeaconWith } : {};
+    delete beaconFields.hasHostWith; // Remove host fields from beacon fields
 
     const query = {
       "where": {
         ...id && {"id": id},
-        ...filterInfo && filterInfo.hasBeaconWith.hasHostWith,
-        ...(Object.keys(hasBeaconsWithFilter).length > 0) && {"hasBeaconsWith": hasBeaconsWithFilter},
+        ...hostFields,
+        ...(Object.keys(beaconFields).length > 0) && {"hasBeaconsWith": beaconFields}
       },
       ...(sort && {orderBy: [sort]})
     } as any;
