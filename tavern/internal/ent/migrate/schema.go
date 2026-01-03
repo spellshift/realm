@@ -190,6 +190,30 @@ var (
 			},
 		},
 	}
+	// LinksColumns holds the columns for the "links" table.
+	LinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "path", Type: field.TypeString, Unique: true},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "downloads_remaining", Type: field.TypeInt, Default: 0},
+		{Name: "link_file", Type: field.TypeInt},
+	}
+	// LinksTable holds the schema information for the "links" table.
+	LinksTable = &schema.Table{
+		Name:       "links",
+		Columns:    LinksColumns,
+		PrimaryKey: []*schema.Column{LinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "links_files_file",
+				Columns:    []*schema.Column{LinksColumns[6]},
+				RefColumns: []*schema.Column{FilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// QuestsColumns holds the columns for the "quests" table.
 	QuestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -473,6 +497,7 @@ var (
 		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
+		LinksTable,
 		QuestsTable,
 		RepositoriesTable,
 		ShellsTable,
@@ -512,6 +537,10 @@ func init() {
 	HostProcessesTable.ForeignKeys[1].RefTable = HostsTable
 	HostProcessesTable.ForeignKeys[2].RefTable = TasksTable
 	HostProcessesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	LinksTable.ForeignKeys[0].RefTable = FilesTable
+	LinksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable

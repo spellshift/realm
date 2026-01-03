@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/tome"
 )
 
@@ -96,6 +97,21 @@ func (fc *FileCreate) AddTomes(t ...*Tome) *FileCreate {
 		ids[i] = t[i].ID
 	}
 	return fc.AddTomeIDs(ids...)
+}
+
+// AddLinkIDs adds the "links" edge to the Link entity by IDs.
+func (fc *FileCreate) AddLinkIDs(ids ...int) *FileCreate {
+	fc.mutation.AddLinkIDs(ids...)
+	return fc
+}
+
+// AddLinks adds the "links" edges to the Link entity.
+func (fc *FileCreate) AddLinks(l ...*Link) *FileCreate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return fc.AddLinkIDs(ids...)
 }
 
 // Mutation returns the FileMutation object of the builder.
@@ -251,6 +267,22 @@ func (fc *FileCreate) createSpec() (*File, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := fc.mutation.LinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

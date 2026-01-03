@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -25,9 +26,11 @@ type FileQuery struct {
 	inters         []Interceptor
 	predicates     []predicate.File
 	withTomes      *TomeQuery
+	withLinks      *LinkQuery
 	modifiers      []func(*sql.Selector)
 	loadTotal      []func(context.Context, []*File) error
 	withNamedTomes map[string]*TomeQuery
+	withNamedLinks map[string]*LinkQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +82,28 @@ func (fq *FileQuery) QueryTomes() *TomeQuery {
 			sqlgraph.From(file.Table, file.FieldID, selector),
 			sqlgraph.To(tome.Table, tome.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, file.TomesTable, file.TomesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(fq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLinks chains the current query on the "links" edge.
+func (fq *FileQuery) QueryLinks() *LinkQuery {
+	query := (&LinkClient{config: fq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := fq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := fq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(file.Table, file.FieldID, selector),
+			sqlgraph.To(link.Table, link.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, file.LinksTable, file.LinksColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(fq.driver.Dialect(), step)
 		return fromU, nil
@@ -279,6 +304,7 @@ func (fq *FileQuery) Clone() *FileQuery {
 		inters:     append([]Interceptor{}, fq.inters...),
 		predicates: append([]predicate.File{}, fq.predicates...),
 		withTomes:  fq.withTomes.Clone(),
+		withLinks:  fq.withLinks.Clone(),
 		// clone intermediate query.
 		sql:  fq.sql.Clone(),
 		path: fq.path,
@@ -293,6 +319,17 @@ func (fq *FileQuery) WithTomes(opts ...func(*TomeQuery)) *FileQuery {
 		opt(query)
 	}
 	fq.withTomes = query
+	return fq
+}
+
+// WithLinks tells the query-builder to eager-load the nodes that are connected to
+// the "links" edge. The optional arguments are used to configure the query builder of the edge.
+func (fq *FileQuery) WithLinks(opts ...func(*LinkQuery)) *FileQuery {
+	query := (&LinkClient{config: fq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	fq.withLinks = query
 	return fq
 }
 
@@ -374,8 +411,9 @@ func (fq *FileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*File, e
 	var (
 		nodes       = []*File{}
 		_spec       = fq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			fq.withTomes != nil,
+			fq.withLinks != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -406,10 +444,24 @@ func (fq *FileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*File, e
 			return nil, err
 		}
 	}
+	if query := fq.withLinks; query != nil {
+		if err := fq.loadLinks(ctx, query, nodes,
+			func(n *File) { n.Edges.Links = []*Link{} },
+			func(n *File, e *Link) { n.Edges.Links = append(n.Edges.Links, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range fq.withNamedTomes {
 		if err := fq.loadTomes(ctx, query, nodes,
 			func(n *File) { n.appendNamedTomes(name) },
 			func(n *File, e *Tome) { n.appendNamedTomes(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range fq.withNamedLinks {
+		if err := fq.loadLinks(ctx, query, nodes,
+			func(n *File) { n.appendNamedLinks(name) },
+			func(n *File, e *Link) { n.appendNamedLinks(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -479,6 +531,37 @@ func (fq *FileQuery) loadTomes(ctx context.Context, query *TomeQuery, nodes []*F
 		for kn := range nodes {
 			assign(kn, n)
 		}
+	}
+	return nil
+}
+func (fq *FileQuery) loadLinks(ctx context.Context, query *LinkQuery, nodes []*File, init func(*File), assign func(*File, *Link)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*File)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Link(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(file.LinksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.link_file
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "link_file" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "link_file" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
@@ -578,6 +661,20 @@ func (fq *FileQuery) WithNamedTomes(name string, opts ...func(*TomeQuery)) *File
 		fq.withNamedTomes = make(map[string]*TomeQuery)
 	}
 	fq.withNamedTomes[name] = query
+	return fq
+}
+
+// WithNamedLinks tells the query-builder to eager-load the nodes that are connected to the "links"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (fq *FileQuery) WithNamedLinks(name string, opts ...func(*LinkQuery)) *FileQuery {
+	query := (&LinkClient{config: fq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if fq.withNamedLinks == nil {
+		fq.withNamedLinks = make(map[string]*LinkQuery)
+	}
+	fq.withNamedLinks[name] = query
 	return fq
 }
 

@@ -21,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
@@ -64,6 +65,11 @@ var hostprocessImplementors = []string{"HostProcess", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*HostProcess) IsNode() {}
+
+var linkImplementors = []string{"Link", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Link) IsNode() {}
 
 var questImplementors = []string{"Quest", "Node"}
 
@@ -208,6 +214,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(hostprocess.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostprocessImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case link.Table:
+		query := c.Link.Query().
+			Where(link.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, linkImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -432,6 +447,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.HostProcess.Query().
 			Where(hostprocess.IDIn(ids...))
 		query, err := query.CollectFields(ctx, hostprocessImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case link.Table:
+		query := c.Link.Query().
+			Where(link.IDIn(ids...))
+		query, err := query.CollectFields(ctx, linkImplementors...)
 		if err != nil {
 			return nil, err
 		}
