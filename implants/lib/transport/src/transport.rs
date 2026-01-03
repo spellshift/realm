@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pb::c2::{beacon, *};
+use pb::{c2::*, config::Config};
 use std::sync::mpsc::{Receiver, Sender};
 
 #[trait_variant::make(Transport: Send)]
@@ -10,7 +10,7 @@ pub trait UnsafeTransport: Clone + Send {
 
     // New will create a new instance of the transport using the provided URI.
     #[allow(dead_code)]
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+    fn new(uri: String, config: Config) -> Result<Self>;
 
     ///
     /// Contact the server for new tasks to execute.
@@ -89,7 +89,7 @@ pub trait UnsafeTransport: Clone + Send {
     ) -> Result<()>;
 
     #[allow(dead_code)]
-    fn get_type(&mut self) -> beacon::Transport;
+    fn get_type(&mut self) -> active_transport::Type;
     /// Returns true if the transport is fully initialized and active
     #[allow(dead_code)]
     fn is_active(&self) -> bool;

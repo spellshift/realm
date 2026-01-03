@@ -243,6 +243,27 @@ impl Value {
             visited.insert(pair);
         }
 
+        // Special case for Int vs Float comparison to make them behave numerically
+        // This must be done before discriminant check because they have different discriminants
+        // but we want them to compare by value.
+        match (self, other) {
+            (Value::Int(i), Value::Float(f)) => {
+                if p1 != 0 && p2 != 0 {
+                    let pair = (p1, p2);
+                    visited.remove(&pair);
+                }
+                return (*i as f64).total_cmp(f);
+            }
+            (Value::Float(f), Value::Int(i)) => {
+                if p1 != 0 && p2 != 0 {
+                    let pair = (p1, p2);
+                    visited.remove(&pair);
+                }
+                return f.total_cmp(&(*i as f64));
+            }
+            _ => {}
+        }
+
         // Define an ordering between types:
         // None < Bool < Int < Float < String < Bytes < List < Tuple < Dict < Set < Function < Native < Bound < Foreign
         let self_discriminant = self.discriminant_value();

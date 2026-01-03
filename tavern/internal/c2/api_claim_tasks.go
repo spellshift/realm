@@ -69,7 +69,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetExternalIP(clientIP).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
+		SetNextSeenAt(now.Add(time.Duration(req.Beacon.ActiveTransport.Interval) * time.Second)).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
@@ -162,9 +162,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetNillableName(beaconNameAddr).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.Interval) * time.Second)).
-		SetInterval(req.Beacon.Interval).
-		SetTransport(req.Beacon.Transport).
+		SetNextSeenAt(now.Add(time.Duration(req.Beacon.ActiveTransport.Interval) * time.Second)).
+		SetInterval(req.Beacon.ActiveTransport.Interval).
+		SetTransport(req.Beacon.ActiveTransport.Type).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)

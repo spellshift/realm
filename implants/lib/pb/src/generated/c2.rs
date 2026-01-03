@@ -6,26 +6,20 @@ pub struct Agent {
     #[prost(string, tag = "1")]
     pub identifier: ::prost::alloc::string::String,
 }
-/// Beacon information that is unique to the current running beacon.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Beacon {
+pub struct ActiveTransport {
     #[prost(string, tag = "1")]
-    pub identifier: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub principal: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
-    pub host: ::core::option::Option<Host>,
-    #[prost(message, optional, tag = "4")]
-    pub agent: ::core::option::Option<Agent>,
-    /// Duration until next callback, in seconds.
-    #[prost(uint64, tag = "5")]
+    pub uri: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "2")]
     pub interval: u64,
-    #[prost(enumeration = "beacon::Transport", tag = "6")]
-    pub transport: i32,
+    #[prost(enumeration = "active_transport::Type", tag = "3")]
+    pub r#type: i32,
+    #[prost(string, tag = "4")]
+    pub extra: ::prost::alloc::string::String,
 }
-/// Nested message and enum types in `Beacon`.
-pub mod beacon {
+/// Nested message and enum types in `ActiveTransport`.
+pub mod active_transport {
     #[derive(
         Clone,
         Copy,
@@ -38,36 +32,51 @@ pub mod beacon {
         ::prost::Enumeration
     )]
     #[repr(i32)]
-    pub enum Transport {
-        Unspecified = 0,
-        Grpc = 1,
-        Http1 = 2,
-        Dns = 3,
+    pub enum Type {
+        TransportUnspecified = 0,
+        TransportGrpc = 1,
+        TransportHttp1 = 2,
+        TransportDns = 3,
     }
-    impl Transport {
+    impl Type {
         /// String value of the enum field names used in the ProtoBuf definition.
         ///
         /// The values are not transformed in any way and thus are considered stable
         /// (if the ProtoBuf definition does not change) and safe for programmatic use.
         pub fn as_str_name(&self) -> &'static str {
             match self {
-                Transport::Unspecified => "TRANSPORT_UNSPECIFIED",
-                Transport::Grpc => "TRANSPORT_GRPC",
-                Transport::Http1 => "TRANSPORT_HTTP1",
-                Transport::Dns => "TRANSPORT_DNS",
+                Type::TransportUnspecified => "TRANSPORT_UNSPECIFIED",
+                Type::TransportGrpc => "TRANSPORT_GRPC",
+                Type::TransportHttp1 => "TRANSPORT_HTTP1",
+                Type::TransportDns => "TRANSPORT_DNS",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
         pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
             match value {
-                "TRANSPORT_UNSPECIFIED" => Some(Self::Unspecified),
-                "TRANSPORT_GRPC" => Some(Self::Grpc),
-                "TRANSPORT_HTTP1" => Some(Self::Http1),
-                "TRANSPORT_DNS" => Some(Self::Dns),
+                "TRANSPORT_UNSPECIFIED" => Some(Self::TransportUnspecified),
+                "TRANSPORT_GRPC" => Some(Self::TransportGrpc),
+                "TRANSPORT_HTTP1" => Some(Self::TransportHttp1),
+                "TRANSPORT_DNS" => Some(Self::TransportDns),
                 _ => None,
             }
         }
     }
+}
+/// Beacon information that is unique to the current running beacon.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Beacon {
+    #[prost(string, tag = "1")]
+    pub identifier: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub principal: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub host: ::core::option::Option<Host>,
+    #[prost(message, optional, tag = "4")]
+    pub agent: ::core::option::Option<Agent>,
+    #[prost(message, optional, tag = "5")]
+    pub active_transport: ::core::option::Option<ActiveTransport>,
 }
 /// Host information for the system a beacon is running on.
 #[allow(clippy::derive_partial_eq_without_eq)]

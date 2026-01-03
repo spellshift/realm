@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use pb::c2::*;
+use pb::{c2::*, config::Config};
 use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(feature = "grpc")]
@@ -40,12 +40,12 @@ impl Transport for ActiveTransport {
         Self::Empty
     }
 
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(uri: String, config: Config) -> Result<Self> {
         match uri {
             // 1. gRPC: Passthrough
             s if s.starts_with("http://") || s.starts_with("https://") => {
                 #[cfg(feature = "grpc")]
-                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, proxy_uri)?));
+                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, config)?));
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
             }
@@ -57,7 +57,7 @@ impl Transport for ActiveTransport {
                     let new = s
                         .replacen("grpcs://", "https://", 1)
                         .replacen("grpc://", "http://", 1);
-                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, proxy_uri)?))
+                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, config)?))
                 }
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
@@ -70,7 +70,7 @@ impl Transport for ActiveTransport {
                     let new = s
                         .replacen("https1://", "https://", 1)
                         .replacen("http1://", "http://", 1);
-                    Ok(ActiveTransport::Http(http::HTTP::new(new, proxy_uri)?))
+                    Ok(ActiveTransport::Http(http::HTTP::new(new, config)?))
                 }
                 #[cfg(not(feature = "http1"))]
                 return Err(anyhow!("http1 transport not enabled"));
@@ -80,7 +80,7 @@ impl Transport for ActiveTransport {
             s if s.starts_with("dns://") => {
                 #[cfg(feature = "dns")]
                 {
-                    Ok(ActiveTransport::Dns(dns::DNS::new(s, proxy_uri)?))
+                    Ok(ActiveTransport::Dns(dns::DNS::new(s, config)?))
                 }
                 #[cfg(not(feature = "dns"))]
                 return Err(anyhow!("DNS transport not enabled"));
@@ -225,8 +225,8 @@ impl Transport for ActiveTransport {
             Self::Empty => Err(anyhow!("Transport not initialized")),
         }
     }
-
-    fn get_type(&mut self) -> beacon::Transport {
+  
+    fn get_type(&mut self) -> active_transport::Type {
         match self {
             #[cfg(feature = "grpc")]
             Self::Grpc(t) => t.get_type(),
@@ -236,7 +236,7 @@ impl Transport for ActiveTransport {
             Self::Dns(t) => t.get_type(),
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.get_type(),
-            Self::Empty => beacon::Transport::Unspecified,
+            Self::Empty => active_transport::Type::TransportUnspecified,
         }
     }
 
@@ -301,7 +301,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
 
             // 1. Assert strictly on the Variant type
             assert!(
@@ -340,7 +340,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Dns(_))),
@@ -370,7 +370,7 @@ mod tests {
         let inputs = vec!["ftp://example.com", "ws://example.com", "random-string", ""];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
             assert!(
                 result.is_err(),
                 "Expected error for unknown URI scheme: '{}'",

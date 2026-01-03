@@ -30,7 +30,14 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
-        let uri = config.callback_uri.clone();
+        //TODO: simplyify this section transport, callback_uris, active_uri_idx, and config seem to duplicate information.
+        let c = config.clone();
+        let active_transport = c
+            .info
+            .as_ref()
+            .and_then(|info| info.active_transport.as_ref());
+        let uri = active_transport.map(|t| t.uri.clone()).unwrap_or_default();
+
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
@@ -53,7 +60,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .info
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
-        Ok(info.interval)
+        let interval = info
+            .active_transport
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no active transport set"))?
+            .interval;
+
+        Ok(interval)
     }
 
     // Triggers config.refresh_primary_ip() in a write lock
@@ -101,7 +114,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Helper to get config URIs for creating new transport
-    pub async fn get_transport_config(&self) -> (String, Option<String>) {
+    pub async fn get_transport_config(&self) -> (String, Config) {
+        let config = self.config.read().await.clone();
         let uris = self.callback_uris.read().await;
         let idx = *self.active_uri_idx.read().await;
         let callback_uri = if idx < uris.len() {
@@ -110,8 +124,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             // Fallback, should not happen unless empty
             uris.first().cloned().unwrap_or_default()
         };
-        let cfg = self.config.read().await;
-        (callback_uri, cfg.proxy_uri.clone())
+        (callback_uri, config)
     }
 
     pub async fn rotate_callback_uri(&self) {
@@ -135,8 +148,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
 
         // 2. Create new transport from config
-        let (callback_uri, proxy_uri) = self.get_transport_config().await;
-        let t = T::new(callback_uri, proxy_uri).context("Failed to create on-demand transport")?;
+        let (callback_uri, config) = self.get_transport_config().await;
+        let t = T::new(callback_uri, config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -156,6 +169,20 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .await
             .context("Failed to claim tasks")?;
         Ok(response.tasks)
+    }
+
+    pub async fn process_job_request(&self) -> Result<()> {
+        let tasks = self.claim_tasks().await?;
+        if tasks.is_empty() {
+            return Ok(());
+        }
+
+        let registry = self.task_registry.clone();
+        let agent = Arc::new(self.clone());
+        for task in tasks {
+            registry.spawn(task, agent.clone());
+        }
+        Ok(())
     }
 
     // Helper to run a future on the runtime handle, blocking the current thread.
@@ -295,21 +322,44 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             .map_err(|e: String| e)?;
 
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
+        let config = cfg.clone();
+
+        let active_transport = config
+            .info
+            .as_ref()
+            .and_then(|info| info.active_transport.as_ref())
+            .context("failed to get active transport")
+            .map_err(|e| e.to_string())?;
+
         map.insert("callback_uri".to_string(), active_uri);
-        if let Some(proxy) = &cfg.proxy_uri {
-            map.insert("proxy_uri".to_string(), proxy.clone());
-        }
-        map.insert("retry_interval".to_string(), cfg.retry_interval.to_string());
+        map.insert(
+            "retry_interval".to_string(),
+            active_transport.interval.to_string(),
+        );
         map.insert("run_once".to_string(), cfg.run_once.to_string());
 
         if let Some(info) = &cfg.info {
             map.insert("beacon_id".to_string(), info.identifier.clone());
             map.insert("principal".to_string(), info.principal.clone());
-            map.insert("interval".to_string(), info.interval.to_string());
+            map.insert(
+                "interval".to_string(),
+                active_transport.interval.to_string(),
+            );
             if let Some(host) = &info.host {
                 map.insert("hostname".to_string(), host.name.clone());
                 map.insert("platform".to_string(), host.platform.to_string());
                 map.insert("primary_ip".to_string(), host.primary_ip.clone());
+            }
+            if let Some(active_transport) = &info.active_transport {
+                map.insert("uri".to_string(), active_transport.uri.clone());
+                map.insert(
+                    "type".to_string(),
+                    active_transport.r#type.clone().to_string(),
+                );
+                map.insert(
+                    "extra".to_string(),
+                    active_transport.extra.clone().to_string(),
+                );
             }
         }
         Ok(map)
@@ -361,10 +411,16 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
-            let mut cfg = self.config.write().await;
-            if let Some(info) = &mut cfg.info {
-                info.interval = interval;
+            {
+                let mut cfg = self.config.write().await;
+                if let Some(info) = &mut cfg.info
+                    && let Some(active_transport) = &mut info.active_transport
+                {
+                    active_transport.interval = interval;
+                }
             }
+            // We force a check-in to update the server with the new interval
+            let _ = self.process_job_request().await;
             Ok(())
         })
     }

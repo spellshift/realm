@@ -199,9 +199,14 @@ async fn test_imix_agent_report_file() {
 #[allow(clippy::field_reassign_with_default)]
 async fn test_imix_agent_config_access() {
     let mut config = Config::default();
-    config.callback_uri = "http://localhost:8080".to_string();
+
     config.info = Some(pb::c2::Beacon {
         identifier: "agent1".to_string(),
+        active_transport: Some(pb::c2::ActiveTransport {
+            uri: "http://localhost:8080".to_string(),
+            interval: 5,
+            ..Default::default()
+        }),
         ..Default::default()
     });
 

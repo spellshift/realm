@@ -73,24 +73,24 @@ func (ReverseShellMessageKind) EnumDescriptor() ([]byte, []int) {
 	return file_c2_proto_rawDescGZIP(), []int{0}
 }
 
-type Beacon_Transport int32
+type ActiveTransport_Type int32
 
 const (
-	Beacon_TRANSPORT_UNSPECIFIED Beacon_Transport = 0
-	Beacon_TRANSPORT_GRPC        Beacon_Transport = 1
-	Beacon_TRANSPORT_HTTP1       Beacon_Transport = 2
-	Beacon_TRANSPORT_DNS         Beacon_Transport = 3
+	ActiveTransport_TRANSPORT_UNSPECIFIED ActiveTransport_Type = 0
+	ActiveTransport_TRANSPORT_GRPC        ActiveTransport_Type = 1
+	ActiveTransport_TRANSPORT_HTTP1       ActiveTransport_Type = 2
+	ActiveTransport_TRANSPORT_DNS         ActiveTransport_Type = 3
 )
 
-// Enum value maps for Beacon_Transport.
+// Enum value maps for ActiveTransport_Type.
 var (
-	Beacon_Transport_name = map[int32]string{
+	ActiveTransport_Type_name = map[int32]string{
 		0: "TRANSPORT_UNSPECIFIED",
 		1: "TRANSPORT_GRPC",
 		2: "TRANSPORT_HTTP1",
 		3: "TRANSPORT_DNS",
 	}
-	Beacon_Transport_value = map[string]int32{
+	ActiveTransport_Type_value = map[string]int32{
 		"TRANSPORT_UNSPECIFIED": 0,
 		"TRANSPORT_GRPC":        1,
 		"TRANSPORT_HTTP1":       2,
@@ -98,30 +98,30 @@ var (
 	}
 )
 
-func (x Beacon_Transport) Enum() *Beacon_Transport {
-	p := new(Beacon_Transport)
+func (x ActiveTransport_Type) Enum() *ActiveTransport_Type {
+	p := new(ActiveTransport_Type)
 	*p = x
 	return p
 }
 
-func (x Beacon_Transport) String() string {
+func (x ActiveTransport_Type) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Beacon_Transport) Descriptor() protoreflect.EnumDescriptor {
+func (ActiveTransport_Type) Descriptor() protoreflect.EnumDescriptor {
 	return file_c2_proto_enumTypes[1].Descriptor()
 }
 
-func (Beacon_Transport) Type() protoreflect.EnumType {
+func (ActiveTransport_Type) Type() protoreflect.EnumType {
 	return &file_c2_proto_enumTypes[1]
 }
 
-func (x Beacon_Transport) Number() protoreflect.EnumNumber {
+func (x ActiveTransport_Type) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Beacon_Transport.Descriptor instead.
-func (Beacon_Transport) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ActiveTransport_Type.Descriptor instead.
+func (ActiveTransport_Type) EnumDescriptor() ([]byte, []int) {
 	return file_c2_proto_rawDescGZIP(), []int{1, 0}
 }
 
@@ -177,7 +177,7 @@ func (x Host_Platform) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Host_Platform.Descriptor instead.
 func (Host_Platform) EnumDescriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{2, 0}
+	return file_c2_proto_rawDescGZIP(), []int{3, 0}
 }
 
 // Agent information to identify the type of beacon.
@@ -225,22 +225,89 @@ func (x *Agent) GetIdentifier() string {
 	return ""
 }
 
-// Beacon information that is unique to the current running beacon.
-type Beacon struct {
+type ActiveTransport struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Identifier    string                 `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
-	Principal     string                 `protobuf:"bytes,2,opt,name=principal,proto3" json:"principal,omitempty"`
-	Host          *Host                  `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`
-	Agent         *Agent                 `protobuf:"bytes,4,opt,name=agent,proto3" json:"agent,omitempty"`
-	Interval      uint64                 `protobuf:"varint,5,opt,name=interval,proto3" json:"interval,omitempty"` // Duration until next callback, in seconds.
-	Transport     Beacon_Transport       `protobuf:"varint,6,opt,name=transport,proto3,enum=c2.Beacon_Transport" json:"transport,omitempty"`
+	Uri           string                 `protobuf:"bytes,1,opt,name=uri,proto3" json:"uri,omitempty"`
+	Interval      uint64                 `protobuf:"varint,2,opt,name=interval,proto3" json:"interval,omitempty"`
+	Type          ActiveTransport_Type   `protobuf:"varint,3,opt,name=type,proto3,enum=c2.ActiveTransport_Type" json:"type,omitempty"`
+	Extra         string                 `protobuf:"bytes,4,opt,name=extra,proto3" json:"extra,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *ActiveTransport) Reset() {
+	*x = ActiveTransport{}
+	mi := &file_c2_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ActiveTransport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActiveTransport) ProtoMessage() {}
+
+func (x *ActiveTransport) ProtoReflect() protoreflect.Message {
+	mi := &file_c2_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActiveTransport.ProtoReflect.Descriptor instead.
+func (*ActiveTransport) Descriptor() ([]byte, []int) {
+	return file_c2_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ActiveTransport) GetUri() string {
+	if x != nil {
+		return x.Uri
+	}
+	return ""
+}
+
+func (x *ActiveTransport) GetInterval() uint64 {
+	if x != nil {
+		return x.Interval
+	}
+	return 0
+}
+
+func (x *ActiveTransport) GetType() ActiveTransport_Type {
+	if x != nil {
+		return x.Type
+	}
+	return ActiveTransport_TRANSPORT_UNSPECIFIED
+}
+
+func (x *ActiveTransport) GetExtra() string {
+	if x != nil {
+		return x.Extra
+	}
+	return ""
+}
+
+// Beacon information that is unique to the current running beacon.
+type Beacon struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Identifier      string                 `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	Principal       string                 `protobuf:"bytes,2,opt,name=principal,proto3" json:"principal,omitempty"`
+	Host            *Host                  `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`
+	Agent           *Agent                 `protobuf:"bytes,4,opt,name=agent,proto3" json:"agent,omitempty"`
+	ActiveTransport *ActiveTransport       `protobuf:"bytes,5,opt,name=active_transport,json=activeTransport,proto3" json:"active_transport,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
 func (x *Beacon) Reset() {
 	*x = Beacon{}
-	mi := &file_c2_proto_msgTypes[1]
+	mi := &file_c2_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -252,7 +319,7 @@ func (x *Beacon) String() string {
 func (*Beacon) ProtoMessage() {}
 
 func (x *Beacon) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[1]
+	mi := &file_c2_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -265,7 +332,7 @@ func (x *Beacon) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Beacon.ProtoReflect.Descriptor instead.
 func (*Beacon) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{1}
+	return file_c2_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Beacon) GetIdentifier() string {
@@ -296,18 +363,11 @@ func (x *Beacon) GetAgent() *Agent {
 	return nil
 }
 
-func (x *Beacon) GetInterval() uint64 {
+func (x *Beacon) GetActiveTransport() *ActiveTransport {
 	if x != nil {
-		return x.Interval
+		return x.ActiveTransport
 	}
-	return 0
-}
-
-func (x *Beacon) GetTransport() Beacon_Transport {
-	if x != nil {
-		return x.Transport
-	}
-	return Beacon_TRANSPORT_UNSPECIFIED
+	return nil
 }
 
 // Host information for the system a beacon is running on.
@@ -323,7 +383,7 @@ type Host struct {
 
 func (x *Host) Reset() {
 	*x = Host{}
-	mi := &file_c2_proto_msgTypes[2]
+	mi := &file_c2_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -335,7 +395,7 @@ func (x *Host) String() string {
 func (*Host) ProtoMessage() {}
 
 func (x *Host) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[2]
+	mi := &file_c2_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -348,7 +408,7 @@ func (x *Host) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Host.ProtoReflect.Descriptor instead.
 func (*Host) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{2}
+	return file_c2_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Host) GetIdentifier() string {
@@ -391,7 +451,7 @@ type Task struct {
 
 func (x *Task) Reset() {
 	*x = Task{}
-	mi := &file_c2_proto_msgTypes[3]
+	mi := &file_c2_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -403,7 +463,7 @@ func (x *Task) String() string {
 func (*Task) ProtoMessage() {}
 
 func (x *Task) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[3]
+	mi := &file_c2_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -416,7 +476,7 @@ func (x *Task) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Task.ProtoReflect.Descriptor instead.
 func (*Task) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{3}
+	return file_c2_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Task) GetId() int64 {
@@ -450,7 +510,7 @@ type TaskError struct {
 
 func (x *TaskError) Reset() {
 	*x = TaskError{}
-	mi := &file_c2_proto_msgTypes[4]
+	mi := &file_c2_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -462,7 +522,7 @@ func (x *TaskError) String() string {
 func (*TaskError) ProtoMessage() {}
 
 func (x *TaskError) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[4]
+	mi := &file_c2_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -475,7 +535,7 @@ func (x *TaskError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskError.ProtoReflect.Descriptor instead.
 func (*TaskError) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{4}
+	return file_c2_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TaskError) GetMsg() string {
@@ -501,7 +561,7 @@ type TaskOutput struct {
 
 func (x *TaskOutput) Reset() {
 	*x = TaskOutput{}
-	mi := &file_c2_proto_msgTypes[5]
+	mi := &file_c2_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -513,7 +573,7 @@ func (x *TaskOutput) String() string {
 func (*TaskOutput) ProtoMessage() {}
 
 func (x *TaskOutput) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[5]
+	mi := &file_c2_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -526,7 +586,7 @@ func (x *TaskOutput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskOutput.ProtoReflect.Descriptor instead.
 func (*TaskOutput) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{5}
+	return file_c2_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TaskOutput) GetId() int64 {
@@ -574,7 +634,7 @@ type ClaimTasksRequest struct {
 
 func (x *ClaimTasksRequest) Reset() {
 	*x = ClaimTasksRequest{}
-	mi := &file_c2_proto_msgTypes[6]
+	mi := &file_c2_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -586,7 +646,7 @@ func (x *ClaimTasksRequest) String() string {
 func (*ClaimTasksRequest) ProtoMessage() {}
 
 func (x *ClaimTasksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[6]
+	mi := &file_c2_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -599,7 +659,7 @@ func (x *ClaimTasksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimTasksRequest.ProtoReflect.Descriptor instead.
 func (*ClaimTasksRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{6}
+	return file_c2_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ClaimTasksRequest) GetBeacon() *Beacon {
@@ -618,7 +678,7 @@ type ClaimTasksResponse struct {
 
 func (x *ClaimTasksResponse) Reset() {
 	*x = ClaimTasksResponse{}
-	mi := &file_c2_proto_msgTypes[7]
+	mi := &file_c2_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -630,7 +690,7 @@ func (x *ClaimTasksResponse) String() string {
 func (*ClaimTasksResponse) ProtoMessage() {}
 
 func (x *ClaimTasksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[7]
+	mi := &file_c2_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -643,7 +703,7 @@ func (x *ClaimTasksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimTasksResponse.ProtoReflect.Descriptor instead.
 func (*ClaimTasksResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{7}
+	return file_c2_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ClaimTasksResponse) GetTasks() []*Task {
@@ -662,7 +722,7 @@ type FetchAssetRequest struct {
 
 func (x *FetchAssetRequest) Reset() {
 	*x = FetchAssetRequest{}
-	mi := &file_c2_proto_msgTypes[8]
+	mi := &file_c2_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -674,7 +734,7 @@ func (x *FetchAssetRequest) String() string {
 func (*FetchAssetRequest) ProtoMessage() {}
 
 func (x *FetchAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[8]
+	mi := &file_c2_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -687,7 +747,7 @@ func (x *FetchAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FetchAssetRequest.ProtoReflect.Descriptor instead.
 func (*FetchAssetRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{8}
+	return file_c2_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FetchAssetRequest) GetName() string {
@@ -706,7 +766,7 @@ type FetchAssetResponse struct {
 
 func (x *FetchAssetResponse) Reset() {
 	*x = FetchAssetResponse{}
-	mi := &file_c2_proto_msgTypes[9]
+	mi := &file_c2_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -718,7 +778,7 @@ func (x *FetchAssetResponse) String() string {
 func (*FetchAssetResponse) ProtoMessage() {}
 
 func (x *FetchAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[9]
+	mi := &file_c2_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -731,7 +791,7 @@ func (x *FetchAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FetchAssetResponse.ProtoReflect.Descriptor instead.
 func (*FetchAssetResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{9}
+	return file_c2_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *FetchAssetResponse) GetChunk() []byte {
@@ -751,7 +811,7 @@ type ReportCredentialRequest struct {
 
 func (x *ReportCredentialRequest) Reset() {
 	*x = ReportCredentialRequest{}
-	mi := &file_c2_proto_msgTypes[10]
+	mi := &file_c2_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -763,7 +823,7 @@ func (x *ReportCredentialRequest) String() string {
 func (*ReportCredentialRequest) ProtoMessage() {}
 
 func (x *ReportCredentialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[10]
+	mi := &file_c2_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -776,7 +836,7 @@ func (x *ReportCredentialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportCredentialRequest.ProtoReflect.Descriptor instead.
 func (*ReportCredentialRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{10}
+	return file_c2_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ReportCredentialRequest) GetTaskId() int64 {
@@ -801,7 +861,7 @@ type ReportCredentialResponse struct {
 
 func (x *ReportCredentialResponse) Reset() {
 	*x = ReportCredentialResponse{}
-	mi := &file_c2_proto_msgTypes[11]
+	mi := &file_c2_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -813,7 +873,7 @@ func (x *ReportCredentialResponse) String() string {
 func (*ReportCredentialResponse) ProtoMessage() {}
 
 func (x *ReportCredentialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[11]
+	mi := &file_c2_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -826,7 +886,7 @@ func (x *ReportCredentialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportCredentialResponse.ProtoReflect.Descriptor instead.
 func (*ReportCredentialResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{11}
+	return file_c2_proto_rawDescGZIP(), []int{12}
 }
 
 type ReportFileRequest struct {
@@ -839,7 +899,7 @@ type ReportFileRequest struct {
 
 func (x *ReportFileRequest) Reset() {
 	*x = ReportFileRequest{}
-	mi := &file_c2_proto_msgTypes[12]
+	mi := &file_c2_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -851,7 +911,7 @@ func (x *ReportFileRequest) String() string {
 func (*ReportFileRequest) ProtoMessage() {}
 
 func (x *ReportFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[12]
+	mi := &file_c2_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -864,7 +924,7 @@ func (x *ReportFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportFileRequest.ProtoReflect.Descriptor instead.
 func (*ReportFileRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{12}
+	return file_c2_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ReportFileRequest) GetTaskId() int64 {
@@ -889,7 +949,7 @@ type ReportFileResponse struct {
 
 func (x *ReportFileResponse) Reset() {
 	*x = ReportFileResponse{}
-	mi := &file_c2_proto_msgTypes[13]
+	mi := &file_c2_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +961,7 @@ func (x *ReportFileResponse) String() string {
 func (*ReportFileResponse) ProtoMessage() {}
 
 func (x *ReportFileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[13]
+	mi := &file_c2_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +974,7 @@ func (x *ReportFileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportFileResponse.ProtoReflect.Descriptor instead.
 func (*ReportFileResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{13}
+	return file_c2_proto_rawDescGZIP(), []int{14}
 }
 
 type ReportProcessListRequest struct {
@@ -927,7 +987,7 @@ type ReportProcessListRequest struct {
 
 func (x *ReportProcessListRequest) Reset() {
 	*x = ReportProcessListRequest{}
-	mi := &file_c2_proto_msgTypes[14]
+	mi := &file_c2_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -939,7 +999,7 @@ func (x *ReportProcessListRequest) String() string {
 func (*ReportProcessListRequest) ProtoMessage() {}
 
 func (x *ReportProcessListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[14]
+	mi := &file_c2_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -952,7 +1012,7 @@ func (x *ReportProcessListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportProcessListRequest.ProtoReflect.Descriptor instead.
 func (*ReportProcessListRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{14}
+	return file_c2_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ReportProcessListRequest) GetTaskId() int64 {
@@ -977,7 +1037,7 @@ type ReportProcessListResponse struct {
 
 func (x *ReportProcessListResponse) Reset() {
 	*x = ReportProcessListResponse{}
-	mi := &file_c2_proto_msgTypes[15]
+	mi := &file_c2_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -989,7 +1049,7 @@ func (x *ReportProcessListResponse) String() string {
 func (*ReportProcessListResponse) ProtoMessage() {}
 
 func (x *ReportProcessListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[15]
+	mi := &file_c2_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1002,7 +1062,7 @@ func (x *ReportProcessListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportProcessListResponse.ProtoReflect.Descriptor instead.
 func (*ReportProcessListResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{15}
+	return file_c2_proto_rawDescGZIP(), []int{16}
 }
 
 type ReportTaskOutputRequest struct {
@@ -1014,7 +1074,7 @@ type ReportTaskOutputRequest struct {
 
 func (x *ReportTaskOutputRequest) Reset() {
 	*x = ReportTaskOutputRequest{}
-	mi := &file_c2_proto_msgTypes[16]
+	mi := &file_c2_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1026,7 +1086,7 @@ func (x *ReportTaskOutputRequest) String() string {
 func (*ReportTaskOutputRequest) ProtoMessage() {}
 
 func (x *ReportTaskOutputRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[16]
+	mi := &file_c2_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1039,7 +1099,7 @@ func (x *ReportTaskOutputRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportTaskOutputRequest.ProtoReflect.Descriptor instead.
 func (*ReportTaskOutputRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{16}
+	return file_c2_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ReportTaskOutputRequest) GetOutput() *TaskOutput {
@@ -1057,7 +1117,7 @@ type ReportTaskOutputResponse struct {
 
 func (x *ReportTaskOutputResponse) Reset() {
 	*x = ReportTaskOutputResponse{}
-	mi := &file_c2_proto_msgTypes[17]
+	mi := &file_c2_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1069,7 +1129,7 @@ func (x *ReportTaskOutputResponse) String() string {
 func (*ReportTaskOutputResponse) ProtoMessage() {}
 
 func (x *ReportTaskOutputResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[17]
+	mi := &file_c2_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1082,7 +1142,7 @@ func (x *ReportTaskOutputResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportTaskOutputResponse.ProtoReflect.Descriptor instead.
 func (*ReportTaskOutputResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{17}
+	return file_c2_proto_rawDescGZIP(), []int{18}
 }
 
 type ReverseShellRequest struct {
@@ -1096,7 +1156,7 @@ type ReverseShellRequest struct {
 
 func (x *ReverseShellRequest) Reset() {
 	*x = ReverseShellRequest{}
-	mi := &file_c2_proto_msgTypes[18]
+	mi := &file_c2_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1108,7 +1168,7 @@ func (x *ReverseShellRequest) String() string {
 func (*ReverseShellRequest) ProtoMessage() {}
 
 func (x *ReverseShellRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[18]
+	mi := &file_c2_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1121,7 +1181,7 @@ func (x *ReverseShellRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReverseShellRequest.ProtoReflect.Descriptor instead.
 func (*ReverseShellRequest) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{18}
+	return file_c2_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ReverseShellRequest) GetKind() ReverseShellMessageKind {
@@ -1155,7 +1215,7 @@ type ReverseShellResponse struct {
 
 func (x *ReverseShellResponse) Reset() {
 	*x = ReverseShellResponse{}
-	mi := &file_c2_proto_msgTypes[19]
+	mi := &file_c2_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1167,7 +1227,7 @@ func (x *ReverseShellResponse) String() string {
 func (*ReverseShellResponse) ProtoMessage() {}
 
 func (x *ReverseShellResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_c2_proto_msgTypes[19]
+	mi := &file_c2_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1180,7 +1240,7 @@ func (x *ReverseShellResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReverseShellResponse.ProtoReflect.Descriptor instead.
 func (*ReverseShellResponse) Descriptor() ([]byte, []int) {
-	return file_c2_proto_rawDescGZIP(), []int{19}
+	return file_c2_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ReverseShellResponse) GetKind() ReverseShellMessageKind {
@@ -1491,7 +1551,7 @@ var file_c2_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_c2_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_c2_proto_goTypes = []any{
 	(ReverseShellMessageKind)(0),      // 0: c2.ReverseShellMessageKind
-	(Beacon_Transport)(0),             // 1: c2.Beacon.Transport
+	(ActiveTransport_Type)(0),         // 1: c2.ActiveTransport.Type
 	(Host_Platform)(0),                // 2: c2.Host.Platform
 	(*Agent)(nil),                     // 3: c2.Agent
 	(*Beacon)(nil),                    // 4: c2.Beacon

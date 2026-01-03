@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use eldritch_agent::Agent;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -15,7 +16,7 @@ pub async fn run_agent() -> Result<()> {
     init_logger();
 
     // Load config / defaults
-    let config = Config::default_with_imix_verison(VERSION);
+    let config = Config::default_with_imix_version(VERSION);
     #[cfg(debug_assertions)]
     log::info!("Loaded config: {config:#?}");
 
@@ -88,9 +89,9 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     agent.refresh_ip().await;
 
     // Create new active transport
-    let (callback_uri, proxy_uri) = agent.get_transport_config().await;
+    let (callback_uri, config) = agent.get_transport_config().await;
 
-    let transport = match ActiveTransport::new(callback_uri, proxy_uri) {
+    let transport = match ActiveTransport::new(callback_uri, config) {
         Ok(t) => t,
         Err(_e) => {
             #[cfg(debug_assertions)]
@@ -113,20 +114,11 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     agent.update_transport(ActiveTransport::init()).await;
 }
 
-async fn process_tasks(agent: &ImixAgent<ActiveTransport>, registry: &TaskRegistry) {
-    match agent.claim_tasks().await {
-        Ok(tasks) => {
-            if tasks.is_empty() {
-                #[cfg(debug_assertions)]
-                log::info!("Callback success, no tasks to claim");
-                return;
-            }
-            for task in tasks {
-                #[cfg(debug_assertions)]
-                log::info!("Claimed task: {}", task.id);
-
-                registry.spawn(task, Arc::new(agent.clone()));
-            }
+async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegistry) {
+    match agent.process_job_request().await {
+        Ok(_) => {
+            #[cfg(debug_assertions)]
+            log::info!("Callback success");
         }
         Err(_e) => {
             #[cfg(debug_assertions)]

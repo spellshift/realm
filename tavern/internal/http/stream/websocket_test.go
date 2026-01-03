@@ -53,7 +53,7 @@ func TestNewShellHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a test beacon
-	beacon, err := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).Save(ctx)
+	beacon, err := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.ActiveTransport_TRANSPORT_UNSPECIFIED).Save(ctx)
 	require.NoError(t, err)
 
 	// Create a test tome

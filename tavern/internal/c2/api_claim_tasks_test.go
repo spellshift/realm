@@ -56,7 +56,9 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(60),
+					ActiveTransport: &c2pb.ActiveTransport{
+						Interval: uint64(60),
+					},
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{},
@@ -81,7 +83,9 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(100),
+					ActiveTransport: &c2pb.ActiveTransport{
+						Interval: uint64(100),
+					},
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{},
@@ -106,7 +110,9 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(100),
+					ActiveTransport: &c2pb.ActiveTransport{
+						Interval: uint64(100),
+					},
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{

