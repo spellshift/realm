@@ -8,6 +8,7 @@ import (
 	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/portals/portalpb"
 )
 
 // CreatePortal sets up a new portal for a task.
@@ -117,6 +118,15 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 		client.Portal.UpdateOneID(p.ID).
 			SetClosedAt(time.Now()).
 			Save(context.Background())
+
+		// Send CLOSE Mote
+		m.Publish(context.Background(), topicOut, &portalpb.Mote{
+			Payload: &portalpb.Mote_Bytes{
+				Bytes: &portalpb.BytesPayload{
+					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+				},
+			},
+		})
 	}
 
 	return portalID, teardown, nil
