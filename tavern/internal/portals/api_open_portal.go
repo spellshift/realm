@@ -3,7 +3,6 @@ package portals
 import (
 	"context"
 	"log/slog"
-	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -49,21 +48,27 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 
 	// Start goroutine to subscribe to portal output and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
+	defer cancel()
+
+	errChan := make(chan error, 2)
+
+	go func() {
 		sendPortalOutput(ctx, portalID, gstream, recv)
-	}(ctx)
+		errChan <- nil
+	}()
 
 	// Send portal input from gRPC stream to portal input topic
-	sendPortalInput(ctx, portalID, gstream, srv.mux)
+	go func() {
+		sendPortalInput(ctx, portalID, gstream, srv.mux)
+		errChan <- nil
+	}()
 
-	// Cleanup
-	cancel()
-	wg.Wait()
-
-	return nil
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-errChan:
+		return err
+	}
 }
 
 func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_OpenPortalServer, mux *mux.Mux) {
@@ -118,7 +123,14 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 		select {
 		case <-ctx.Done():
 			return
-		case mote := <-recv:
+		case mote, ok := <-recv:
+			if !ok {
+				return
+			}
+			if bytesMote := mote.GetBytes(); bytesMote != nil && bytesMote.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				return
+			}
+
 			// TRACE: Server User Sub
 			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server User Sub)", "error", err)
