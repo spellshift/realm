@@ -48,8 +48,8 @@ mock! {
             tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
         ) -> Result<()>;
 
-    fn get_type(&mut self) -> pb::c2::active_transport::Type {
-        return pb::c2::active_transport::Type::TransportUnspecified;
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        return pb::c2::transport::Type::TransportUnspecified;
     }
 
     fn is_active(&self) -> bool;

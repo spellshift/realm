@@ -31,17 +31,31 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     ) -> Self {
         //TODO: simplyify this section transport, callback_uris, active_uri_idx, and config seem to duplicate information.
         let c = config.clone();
-        let active_transport = c
+        let available_transports = c
             .info
             .as_ref()
-            .and_then(|info| info.active_transport.as_ref());
-        let uri = active_transport.map(|t| t.uri.clone()).unwrap_or_default();
+            .and_then(|info| info.available_transports.as_ref());
+
+        // Extract all URIs from available transports
+        let callback_uris = available_transports
+            .map(|at| {
+                at.transports
+                    .iter()
+                    .map(|t| t.uri.clone())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+
+        // Get the active index from available transports
+        let active_index = available_transports
+            .map(|at| at.active_index as usize)
+            .unwrap_or(0);
 
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
-            callback_uris: Arc::new(RwLock::new(vec![uri])),
-            active_uri_idx: Arc::new(RwLock::new(0)),
+            callback_uris: Arc::new(RwLock::new(callback_uris)),
+            active_uri_idx: Arc::new(RwLock::new(active_index)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -59,10 +73,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .info
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
-        let interval = info
-            .active_transport
+
+        let available_transports = info
+            .available_transports
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("no active transport set"))?
+            .ok_or_else(|| anyhow::anyhow!("no available transports set"))?;
+
+        let active_idx = available_transports.active_index as usize;
+        let interval = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .ok_or_else(|| anyhow::anyhow!("no transports configured"))?
             .interval;
 
         Ok(interval)
@@ -317,11 +339,19 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
         let config = cfg.clone();
 
-        let active_transport = config
+        let available_transports = config
             .info
             .as_ref()
-            .and_then(|info| info.active_transport.as_ref())
-            .context("failed to get active transport")
+            .and_then(|info| info.available_transports.as_ref())
+            .context("failed to get available transports")
+            .map_err(|e| e.to_string())?;
+
+        let active_idx = available_transports.active_index as usize;
+        let active_transport = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .context("no transports configured")
             .map_err(|e| e.to_string())?;
 
         map.insert("callback_uri".to_string(), active_uri);
@@ -343,17 +373,15 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 map.insert("platform".to_string(), host.platform.to_string());
                 map.insert("primary_ip".to_string(), host.primary_ip.clone());
             }
-            if let Some(active_transport) = &info.active_transport {
-                map.insert("uri".to_string(), active_transport.uri.clone());
-                map.insert(
-                    "type".to_string(),
-                    active_transport.r#type.clone().to_string(),
-                );
-                map.insert(
-                    "extra".to_string(),
-                    active_transport.extra.clone().to_string(),
-                );
-            }
+            map.insert("uri".to_string(), active_transport.uri.clone());
+            map.insert(
+                "type".to_string(),
+                active_transport.r#type.clone().to_string(),
+            );
+            map.insert(
+                "extra".to_string(),
+                active_transport.extra.clone().to_string(),
+            );
         }
         Ok(map)
     }
@@ -407,9 +435,12 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             {
                 let mut cfg = self.config.write().await;
                 if let Some(info) = &mut cfg.info
-                    && let Some(active_transport) = &mut info.active_transport
+                    && let Some(available_transports) = &mut info.available_transports
                 {
-                    active_transport.interval = interval;
+                    let active_idx = available_transports.active_index as usize;
+                    if let Some(transport) = available_transports.transports.get_mut(active_idx) {
+                        transport.interval = interval;
+                    }
                 }
             }
             // We force a check-in to update the server with the new interval

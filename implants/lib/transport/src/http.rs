@@ -422,8 +422,8 @@ impl Transport for HTTP {
         ))
     }
 
-    fn get_type(&mut self) -> pb::c2::active_transport::Type {
-        return pb::c2::active_transport::Type::TransportHttp1;
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        return pb::c2::transport::Type::TransportHttp1;
     }
 
     fn is_active(&self) -> bool {

@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use uuid::Uuid;
 
-use crate::c2::ActiveTransport;
+use crate::c2::{AvailableTransports, Transport};
 
 //TODO: Can this struct be removed?
 /// Config holds values necessary to configure an Agent.
@@ -38,10 +36,13 @@ macro_rules! callback_interval {
         }
     };
 }
-/* Compile-time constant for the agent retry interval, derived from the IMIX_RETRY_INTERVAL environment variable during compilation.
+/* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
  * Defaults to 5 if unset.
  */
 pub const CALLBACK_INTERVAL: &str = callback_interval!();
+
+/* Default interval value in seconds */
+const DEFAULT_INTERVAL_SECONDS: u64 = 5;
 
 macro_rules! retry_interval {
     () => {
@@ -80,6 +81,57 @@ macro_rules! extra {
 pub const RUN_ONCE: bool = run_once!();
 
 /*
+ * Helper function to determine transport type from URI scheme
+ */
+fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
+    match uri.split(":").next().unwrap_or("unspecified") {
+        "dns" => crate::c2::transport::Type::TransportDns,
+        "http1" => crate::c2::transport::Type::TransportHttp1,
+        "https1" => crate::c2::transport::Type::TransportHttp1,
+        "https" => crate::c2::transport::Type::TransportGrpc,
+        "http" => crate::c2::transport::Type::TransportGrpc,
+        _ => crate::c2::transport::Type::TransportUnspecified,
+    }
+}
+
+/*
+ * Helper function to parse URIs into Transport objects
+ */
+fn parse_transports(uri_string: &str, callback_interval: u64, extra_config: String) -> Vec<Transport> {
+    uri_string
+        .split(';')
+        .filter(|s| !s.trim().is_empty())
+        .map(|uri| {
+            let uri_trimmed = uri.trim();
+            Transport {
+                uri: String::from(uri_trimmed),
+                interval: callback_interval,
+                r#type: get_transport_type(uri_trimmed) as i32,
+                extra: extra_config.clone(),
+            }
+        })
+        .collect()
+}
+
+/*
+ * Helper function to parse callback interval with fallback
+ */
+fn parse_callback_interval() -> u64 {
+    match CALLBACK_INTERVAL.parse::<u64>() {
+        Ok(i) => i,
+        Err(_err) => {
+            #[cfg(debug_assertions)]
+            log::error!(
+                "failed to parse callback interval constant, defaulting to {} seconds: {_err}",
+                DEFAULT_INTERVAL_SECONDS
+            );
+
+            DEFAULT_INTERVAL_SECONDS
+        }
+    }
+}
+
+/*
  * Config methods.
  */
 impl Config {
@@ -101,34 +153,21 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
-        let transport_type = match CALLBACK_URI.split(":").nth(0).unwrap_or("unspecified") {
-            "dns" => crate::c2::active_transport::Type::TransportDns,
-            "http1" => crate::c2::active_transport::Type::TransportHttp1,
-            "https1" => crate::c2::active_transport::Type::TransportHttp1,
-            "https" => crate::c2::active_transport::Type::TransportGrpc,
-            "http" => crate::c2::active_transport::Type::TransportGrpc,
-            _ => crate::c2::active_transport::Type::TransportUnspecified,
-        };
+        // Parse CALLBACK_URI by splitting on ';' to support multiple transports
+        let callback_interval = parse_callback_interval();
+        let extra_config = extra!();
+        let transports = parse_transports(CALLBACK_URI, callback_interval, extra_config);
 
-        let active_transport = ActiveTransport {
-            uri: String::from(CALLBACK_URI),
-            interval: match CALLBACK_INTERVAL.parse::<u64>() {
-                Ok(i) => i,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed to parse callback interval constant, defaulting to 5 seconds: {_err}");
-
-                    5_u64
-                }
-            },
-            r#type: transport_type as i32,
-            extra: extra!(),
+        // Create AvailableTransports with the 0th element as the first active transport
+        let available_transports = AvailableTransports {
+            transports,
+            active_index: 0,
         };
 
         let info = crate::c2::Beacon {
             identifier: beacon_id,
             principal: whoami::username(),
-            active_transport: Some(active_transport),
+            available_transports: Some(available_transports),
             host: Some(host),
             agent: Some(agent),
         };
@@ -207,5 +246,92 @@ fn get_primary_ip() -> String {
 
             String::from("")
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_single_uri_parsing() {
+        // Simulating a single URI at compile time
+        let config = Config::default_with_imix_version("test");
+
+        let info = config.info.expect("Config should have info");
+        let available = info
+            .available_transports
+            .expect("Should have available transports");
+
+        assert_eq!(available.transports.len(), 1);
+        assert_eq!(available.active_index, 0);
+        assert_eq!(available.transports[0].uri, CALLBACK_URI);
+    }
+
+    #[test]
+    fn test_transport_type_detection_grpc() {
+        let grpc_type = get_transport_type("http://example.com");
+        assert_eq!(grpc_type, crate::c2::transport::Type::TransportGrpc);
+
+        let grpcs_type = get_transport_type("https://example.com");
+        assert_eq!(grpcs_type, crate::c2::transport::Type::TransportGrpc);
+    }
+
+    #[test]
+    fn test_transport_type_detection_http1() {
+        let http1_type = get_transport_type("http1://example.com");
+        assert_eq!(http1_type, crate::c2::transport::Type::TransportHttp1);
+
+        let https1_type = get_transport_type("https1://example.com");
+        assert_eq!(https1_type, crate::c2::transport::Type::TransportHttp1);
+    }
+
+    #[test]
+    fn test_transport_type_detection_dns() {
+        let dns_type = get_transport_type("dns://8.8.8.8");
+        assert_eq!(dns_type, crate::c2::transport::Type::TransportDns);
+    }
+
+    #[test]
+    fn test_transport_type_detection_unspecified() {
+        let unknown_type = get_transport_type("ftp://example.com");
+        assert_eq!(
+            unknown_type,
+            crate::c2::transport::Type::TransportUnspecified
+        );
+    }
+
+    #[test]
+    fn test_parse_callback_interval_valid() {
+        let interval = parse_callback_interval();
+        // Should parse successfully or default to DEFAULT_INTERVAL_SECONDS
+        assert!(interval >= DEFAULT_INTERVAL_SECONDS);
+    }
+
+    #[test]
+    fn test_config_creates_available_transports() {
+        let config = Config::default_with_imix_version("v2");
+
+        assert!(config.info.is_some());
+        let info = config.info.unwrap();
+        assert!(info.available_transports.is_some());
+
+        let available = info.available_transports.unwrap();
+        assert!(
+            !available.transports.is_empty(),
+            "Should have at least one transport"
+        );
+        assert_eq!(available.active_index, 0, "Active index should be 0");
+    }
+
+    #[test]
+    fn test_empty_uri_filtered() {
+        // Test that empty URIs are filtered out using parse_transports
+        let uris = "http://example.com;;https://example2.com";
+        let transports = parse_transports(uris, 5, String::new());
+
+        assert_eq!(transports.len(), 2);
+        assert_eq!(transports[0].uri, "http://example.com");
+        assert_eq!(transports[1].uri, "https://example2.com");
     }
 }

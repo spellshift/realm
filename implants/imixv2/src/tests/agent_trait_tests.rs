@@ -202,10 +202,13 @@ async fn test_imix_agent_config_access() {
 
     config.info = Some(pb::c2::Beacon {
         identifier: "agent1".to_string(),
-        active_transport: Some(pb::c2::ActiveTransport {
-            uri: "http://localhost:8080".to_string(),
-            interval: 5,
-            ..Default::default()
+        available_transports: Some(pb::c2::AvailableTransports {
+            transports: vec![pb::c2::Transport {
+                uri: "http://localhost:8080".to_string(),
+                interval: 5,
+                ..Default::default()
+            }],
+            active_index: 0,
         }),
         ..Default::default()
     });

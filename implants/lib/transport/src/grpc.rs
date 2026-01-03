@@ -42,8 +42,17 @@ impl Transport for GRPC {
 
         // Parse the EXTRA map
         let extra_map: HashMap<String, String> = if let Some(info) = config.info {
-            if let Some(active_transport) = info.active_transport {
-                serde_json::from_str::<HashMap<String, String>>(&active_transport.extra)?
+            if let Some(available_transports) = info.available_transports {
+                let active_idx = available_transports.active_index as usize;
+                if let Some(transport) = available_transports
+                    .transports
+                    .get(active_idx)
+                    .or_else(|| available_transports.transports.first())
+                {
+                    serde_json::from_str::<HashMap<String, String>>(&transport.extra)?
+                } else {
+                    HashMap::new()
+                }
             } else {
                 HashMap::new()
             }
@@ -216,8 +225,8 @@ impl Transport for GRPC {
         Ok(())
     }
 
-    fn get_type(&mut self) -> pb::c2::active_transport::Type {
-        pb::c2::active_transport::Type::TransportGrpc
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        pb::c2::transport::Type::TransportGrpc
     }
 
     fn is_active(&self) -> bool {

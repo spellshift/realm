@@ -80,7 +80,7 @@ pub trait UnsafeTransport: Clone + Send {
     ) -> Result<()>;
 
     #[allow(dead_code)]
-    fn get_type(&mut self) -> active_transport::Type;
+    fn get_type(&mut self) -> pb::c2::transport::Type;
     /// Returns true if the transport is fully initialized and active
     #[allow(dead_code)]
     fn is_active(&self) -> bool;

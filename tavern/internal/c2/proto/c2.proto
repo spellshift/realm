@@ -17,7 +17,7 @@ message Agent {
     string identifier = 1;
 }
 
-message ActiveTransport {
+message Transport {
     string uri = 1;
     uint64 interval = 2;
 
@@ -32,13 +32,18 @@ message ActiveTransport {
     string extra = 4;
 }
 
+message AvailableTransports {
+    repeated Transport transports = 1;
+    uint32 active_index = 2;
+}
+
 // Beacon information that is unique to the current running beacon.
 message Beacon {
     string identifier = 1;
     string principal = 2;
     Host host = 3;
     Agent agent = 4;
-    ActiveTransport active_transport = 5;
+    AvailableTransports available_transports = 5;
 }
 
  // Host information for the system a beacon is running on.
