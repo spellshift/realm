@@ -39,13 +39,16 @@ type File struct {
 type FileEdges struct {
 	// Tomes holds the value of the tomes edge.
 	Tomes []*Tome `json:"tomes,omitempty"`
+	// Links that point to this file
+	Links []*Link `json:"links,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
 	namedTomes map[string][]*Tome
+	namedLinks map[string][]*Link
 }
 
 // TomesOrErr returns the Tomes value or an error if the edge
@@ -55,6 +58,15 @@ func (e FileEdges) TomesOrErr() ([]*Tome, error) {
 		return e.Tomes, nil
 	}
 	return nil, &NotLoadedError{edge: "tomes"}
+}
+
+// LinksOrErr returns the Links value or an error if the edge
+// was not loaded in eager-loading.
+func (e FileEdges) LinksOrErr() ([]*Link, error) {
+	if e.loadedTypes[1] {
+		return e.Links, nil
+	}
+	return nil, &NotLoadedError{edge: "links"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -145,6 +157,11 @@ func (f *File) QueryTomes() *TomeQuery {
 	return NewFileClient(f.config).QueryTomes(f)
 }
 
+// QueryLinks queries the "links" edge of the File entity.
+func (f *File) QueryLinks() *LinkQuery {
+	return NewFileClient(f.config).QueryLinks(f)
+}
+
 // Update returns a builder for updating this File.
 // Note that you need to call File.Unwrap() before calling this method if this File
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -210,6 +227,30 @@ func (f *File) appendNamedTomes(name string, edges ...*Tome) {
 		f.Edges.namedTomes[name] = []*Tome{}
 	} else {
 		f.Edges.namedTomes[name] = append(f.Edges.namedTomes[name], edges...)
+	}
+}
+
+// NamedLinks returns the Links named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (f *File) NamedLinks(name string) ([]*Link, error) {
+	if f.Edges.namedLinks == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := f.Edges.namedLinks[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (f *File) appendNamedLinks(name string, edges ...*Link) {
+	if f.Edges.namedLinks == nil {
+		f.Edges.namedLinks = make(map[string][]*Link)
+	}
+	if len(edges) == 0 {
+		f.Edges.namedLinks[name] = []*Link{}
+	} else {
+		f.Edges.namedLinks[name] = append(f.Edges.namedLinks[name], edges...)
 	}
 }
 

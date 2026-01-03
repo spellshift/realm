@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -105,6 +106,21 @@ func (fu *FileUpdate) AddTomes(t ...*Tome) *FileUpdate {
 	return fu.AddTomeIDs(ids...)
 }
 
+// AddLinkIDs adds the "links" edge to the Link entity by IDs.
+func (fu *FileUpdate) AddLinkIDs(ids ...int) *FileUpdate {
+	fu.mutation.AddLinkIDs(ids...)
+	return fu
+}
+
+// AddLinks adds the "links" edges to the Link entity.
+func (fu *FileUpdate) AddLinks(l ...*Link) *FileUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return fu.AddLinkIDs(ids...)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fu *FileUpdate) Mutation() *FileMutation {
 	return fu.mutation
@@ -129,6 +145,27 @@ func (fu *FileUpdate) RemoveTomes(t ...*Tome) *FileUpdate {
 		ids[i] = t[i].ID
 	}
 	return fu.RemoveTomeIDs(ids...)
+}
+
+// ClearLinks clears all "links" edges to the Link entity.
+func (fu *FileUpdate) ClearLinks() *FileUpdate {
+	fu.mutation.ClearLinks()
+	return fu
+}
+
+// RemoveLinkIDs removes the "links" edge to Link entities by IDs.
+func (fu *FileUpdate) RemoveLinkIDs(ids ...int) *FileUpdate {
+	fu.mutation.RemoveLinkIDs(ids...)
+	return fu
+}
+
+// RemoveLinks removes "links" edges to Link entities.
+func (fu *FileUpdate) RemoveLinks(l ...*Link) *FileUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return fu.RemoveLinkIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -268,6 +305,51 @@ func (fu *FileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if fu.mutation.LinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.RemovedLinksIDs(); len(nodes) > 0 && !fu.mutation.LinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fu.mutation.LinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, fu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{file.Label}
@@ -364,6 +446,21 @@ func (fuo *FileUpdateOne) AddTomes(t ...*Tome) *FileUpdateOne {
 	return fuo.AddTomeIDs(ids...)
 }
 
+// AddLinkIDs adds the "links" edge to the Link entity by IDs.
+func (fuo *FileUpdateOne) AddLinkIDs(ids ...int) *FileUpdateOne {
+	fuo.mutation.AddLinkIDs(ids...)
+	return fuo
+}
+
+// AddLinks adds the "links" edges to the Link entity.
+func (fuo *FileUpdateOne) AddLinks(l ...*Link) *FileUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return fuo.AddLinkIDs(ids...)
+}
+
 // Mutation returns the FileMutation object of the builder.
 func (fuo *FileUpdateOne) Mutation() *FileMutation {
 	return fuo.mutation
@@ -388,6 +485,27 @@ func (fuo *FileUpdateOne) RemoveTomes(t ...*Tome) *FileUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return fuo.RemoveTomeIDs(ids...)
+}
+
+// ClearLinks clears all "links" edges to the Link entity.
+func (fuo *FileUpdateOne) ClearLinks() *FileUpdateOne {
+	fuo.mutation.ClearLinks()
+	return fuo
+}
+
+// RemoveLinkIDs removes the "links" edge to Link entities by IDs.
+func (fuo *FileUpdateOne) RemoveLinkIDs(ids ...int) *FileUpdateOne {
+	fuo.mutation.RemoveLinkIDs(ids...)
+	return fuo
+}
+
+// RemoveLinks removes "links" edges to Link entities.
+func (fuo *FileUpdateOne) RemoveLinks(l ...*Link) *FileUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return fuo.RemoveLinkIDs(ids...)
 }
 
 // Where appends a list predicates to the FileUpdate builder.
@@ -550,6 +668,51 @@ func (fuo *FileUpdateOne) sqlSave(ctx context.Context) (_node *File, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tome.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if fuo.mutation.LinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.RemovedLinksIDs(); len(nodes) > 0 && !fuo.mutation.LinksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := fuo.mutation.LinksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   file.LinksTable,
+			Columns: []string{file.LinksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -283,7 +283,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: newPortalGRPCHandler(client, portalMux),
 		},
 		"/cdn/": tavernhttp.Endpoint{
-			Handler:              cdn.NewDownloadHandler(client, "/cdn/"),
+			Handler:              cdn.NewLinkDownloadHandler(client, "/cdn/"),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
