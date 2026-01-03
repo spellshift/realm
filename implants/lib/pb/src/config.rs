@@ -1,5 +1,5 @@
-use uuid::Uuid;
 use url::Url;
+use uuid::Uuid;
 
 use crate::c2::{AvailableTransports, Transport};
 
@@ -70,7 +70,7 @@ macro_rules! run_once {
 macro_rules! extra {
     () => {
         match option_env!("IMIX_TRANSPORT_EXTRA") {
-            Some(extra) => extra.to_string(),
+            Some(extra) => extra.to_lowercase(),
             None => String::from(""),
         }
     };
@@ -103,7 +103,11 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
  *
  * Example: https://example.com?interval=10&extra={"key":"value"}
  */
-fn parse_transports(uri_string: &str, default_callback_interval: u64, default_extra_config: String) -> Vec<Transport> {
+fn parse_transports(
+    uri_string: &str,
+    default_callback_interval: u64,
+    default_extra_config: String,
+) -> Vec<Transport> {
     uri_string
         .split(';')
         .filter(|s| !s.trim().is_empty())
@@ -111,7 +115,11 @@ fn parse_transports(uri_string: &str, default_callback_interval: u64, default_ex
             let uri_trimmed = uri.trim();
 
             // Parse the URI to extract query parameters
-            let (base_uri, interval, extra) = parse_dsn(uri_trimmed, default_callback_interval, &default_extra_config);
+            let (base_uri, interval, extra) = parse_dsn(
+                uri_trimmed,
+                default_callback_interval,
+                &default_extra_config,
+            );
 
             Transport {
                 uri: base_uri,
@@ -142,11 +150,14 @@ fn parse_dsn(uri: &str, default_interval: u64, default_extra: &str) -> (String, 
                             interval = parsed_interval;
                         } else {
                             #[cfg(debug_assertions)]
-                            log::warn!("Failed to parse interval parameter '{}', using default", value);
+                            log::warn!(
+                                "Failed to parse interval parameter '{}', using default",
+                                value
+                            );
                         }
                     }
                     "extra" => {
-                        extra = value.to_string();
+                        extra = value.to_lowercase();
                     }
                     _ => {
                         #[cfg(debug_assertions)]
@@ -322,7 +333,9 @@ mod tests {
         assert_eq!(available.transports.len(), 1);
         assert_eq!(available.active_index, 0);
         // The URL crate normalizes URIs, potentially adding trailing slashes
-        assert!(available.transports[0].uri.starts_with("http://127.0.0.1:8000"));
+        assert!(available.transports[0]
+            .uri
+            .starts_with("http://127.0.0.1:8000"));
     }
 
     #[test]
@@ -406,7 +419,7 @@ mod tests {
 
     #[test]
     fn test_dsn_with_extra_query_param() {
-        // Test DSN parsing with extra query parameter
+        // Test DSN parsing with extra query parameter (converted to lowercase)
         let uris = "https://example.com?extra=%7B%22key%22%3A%22value%22%7D";
         let transports = parse_transports(uris, 5, String::new());
 
@@ -418,7 +431,7 @@ mod tests {
 
     #[test]
     fn test_dsn_with_both_query_params() {
-        // Test DSN parsing with both interval and extra query parameters
+        // Test DSN parsing with both interval and extra query parameters (extra converted to lowercase)
         let uris = "https://example.com?interval=15&extra=%7B%22proxy%22%3A%22http%3A%2F%2Fproxy.local%22%7D";
         let transports = parse_transports(uris, 5, String::new());
 
@@ -481,12 +494,16 @@ mod tests {
     fn test_dsn_with_unencoded_json() {
         // Test DSN parsing with unencoded JSON in extra parameter
         // The url crate should handle the parsing automatically
-        let uris = r#"https://example.com?interval=20&extra={"key":"value","nested":{"foo":"bar"}}"#;
+        let uris =
+            r#"https://example.com?interval=20&extra={"key":"value","nested":{"Foo":"Bar"}}"#;
         let transports = parse_transports(uris, 5, String::new());
 
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, 20);
-        assert_eq!(transports[0].extra, r#"{"key":"value","nested":{"foo":"bar"}}"#);
+        assert_eq!(
+            transports[0].extra,
+            r#"{"key":"value","nested":{"foo":"bar"}}"#
+        );
     }
 }

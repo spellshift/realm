@@ -75,7 +75,7 @@ impl Transport for GRPC {
         #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
 
-        let proxy_uri = extra_map.get("HTTP_PROXY");
+        let proxy_uri = extra_map.get("http_proxy");
 
         http.enforce_http(false);
         http.set_nodelay(true);
