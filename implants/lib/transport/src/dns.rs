@@ -1075,6 +1075,16 @@ impl Transport for DNS {
         pb::c2::transport::Type::TransportDns
     }
 
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "create_portal not supported over DNS transport"
+        ))
+    }
+
     fn is_active(&self) -> bool {
         !self.base_domain.is_empty() && !self.dns_servers.is_empty()
     }

@@ -257,6 +257,24 @@ func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.Creat
 	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
 }
 
+// CreateLink is the resolver for the createLink field.
+func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error) {
+	return r.client.Link.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateLink is the resolver for the updateLink field.
+func (r *mutationResolver) UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error) {
+	return r.client.Link.UpdateOneID(linkID).SetInput(input).Save(ctx)
+}
+
+// DisableLink is the resolver for the disableLink field.
+func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Link, error) {
+	return r.client.Link.UpdateOneID(linkID).
+		SetExpiresAt(time.Unix(0, 0)).
+		SetDownloadsRemaining(0).
+		Save(ctx)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

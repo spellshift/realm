@@ -422,6 +422,16 @@ impl Transport for HTTP {
         ))
     }
 
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "http/1.1 transport does not support portal"
+        ))
+    }
+
     fn get_type(&mut self) -> pb::c2::transport::Type {
         return pb::c2::transport::Type::TransportHttp1;
     }

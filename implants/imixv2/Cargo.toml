@@ -13,6 +13,7 @@ http1 = ["transport/http1"]
 dns = ["transport/dns"]
 win_service = []
 install = []
+tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [dependencies]
 tokio = { workspace = true, features = [
@@ -20,10 +21,15 @@ tokio = { workspace = true, features = [
     "macros",
     "sync",
     "time",
+    "net",
+    "io-util",
+    "tracing",
 ] }
+portal-stream = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 futures = { workspace = true }
+prost = { workspace = true }
 crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
@@ -37,6 +43,7 @@ transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
+console-subscriber = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }

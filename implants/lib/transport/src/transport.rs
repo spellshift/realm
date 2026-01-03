@@ -79,6 +79,15 @@ pub trait UnsafeTransport: Clone + Send {
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()>;
 
+    ///
+    /// Create a portal via the transport.
+    #[allow(dead_code)]
+    async fn create_portal(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()>;
+
     #[allow(dead_code)]
     fn get_type(&mut self) -> pb::c2::transport::Type;
     /// Returns true if the transport is fully initialized and active

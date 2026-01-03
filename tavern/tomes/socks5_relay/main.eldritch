@@ -1,0 +1,2 @@
+pivot.create_portal()
+print("Portal created")

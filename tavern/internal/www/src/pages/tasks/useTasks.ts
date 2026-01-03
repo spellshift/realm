@@ -6,16 +6,18 @@ import { useFilters } from "../../context/FilterContext";
 import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
+import { useTags } from "../../context/TagContext";
 
 export const useTasks = (id?: string) => {
     const [page, setPage] = useState<number>(1);
     const {filters} = useFilters();
     const { sorts } = useSorts();
+    const {lastFetchedTimestamp} = useTags();
     const taskSort = sorts[PageNavItem.tasks];
 
     const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
       const defaultRowLimit = TableRowLimit.TaskRowLimit;
-      const filterQueryFields = (filters && filters.filtersEnabled) && constructTaskFilterQuery(filters);
+      const filterQueryFields = (filters && filters.filtersEnabled) && constructTaskFilterQuery(filters, lastFetchedTimestamp);
 
       const query = {
         "where": {
@@ -30,16 +32,21 @@ export const useTasks = (id?: string) => {
       } as any;
 
       return query;
-    },[id, filters, taskSort]);
+    },[id, filters, taskSort, lastFetchedTimestamp]);
 
 
-    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
+    const { loading, error, data, refetch} = useQuery(
+        GET_TASK_QUERY,
+        {
+            variables: constructDefaultQuery(),
+            notifyOnNetworkStatusChange: true,
+        }
+    );
 
     const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
         return refetch(query);
     },[constructDefaultQuery, refetch]);
-
 
     useEffect(()=> {
         const abortController = new AbortController();

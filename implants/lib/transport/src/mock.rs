@@ -48,11 +48,17 @@ mock! {
             tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
         ) -> Result<()>;
 
-    fn get_type(&mut self) -> pb::c2::transport::Type {
-        return pb::c2::transport::Type::TransportUnspecified;
-    }
+        fn get_type(&mut self) -> pb::c2::transport::Type {
+            return pb::c2::transport::Type::TransportUnspecified;
+        }
+        async fn create_portal(
+            &mut self,
+            rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+            tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+        ) -> Result<()>;
 
-    fn is_active(&self) -> bool;
+
+        fn is_active(&self) -> bool;
 
         fn name(&self) -> &'static str;
 

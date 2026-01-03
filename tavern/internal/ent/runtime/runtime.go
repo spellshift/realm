@@ -11,6 +11,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
@@ -187,6 +189,52 @@ func init() {
 	hostprocessDescPrincipal := hostprocessFields[3].Descriptor()
 	// hostprocess.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
 	hostprocess.PrincipalValidator = hostprocessDescPrincipal.Validators[0].(func(string) error)
+	linkMixin := schema.Link{}.Mixin()
+	linkMixinFields0 := linkMixin[0].Fields()
+	_ = linkMixinFields0
+	linkFields := schema.Link{}.Fields()
+	_ = linkFields
+	// linkDescCreatedAt is the schema descriptor for created_at field.
+	linkDescCreatedAt := linkMixinFields0[0].Descriptor()
+	// link.DefaultCreatedAt holds the default value on creation for the created_at field.
+	link.DefaultCreatedAt = linkDescCreatedAt.Default.(func() time.Time)
+	// linkDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	linkDescLastModifiedAt := linkMixinFields0[1].Descriptor()
+	// link.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	link.DefaultLastModifiedAt = linkDescLastModifiedAt.Default.(func() time.Time)
+	// link.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	link.UpdateDefaultLastModifiedAt = linkDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// linkDescPath is the schema descriptor for path field.
+	linkDescPath := linkFields[0].Descriptor()
+	// link.DefaultPath holds the default value on creation for the path field.
+	link.DefaultPath = linkDescPath.Default.(func() string)
+	// link.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	link.PathValidator = linkDescPath.Validators[0].(func(string) error)
+	// linkDescExpiresAt is the schema descriptor for expires_at field.
+	linkDescExpiresAt := linkFields[1].Descriptor()
+	// link.DefaultExpiresAt holds the default value on creation for the expires_at field.
+	link.DefaultExpiresAt = linkDescExpiresAt.Default.(time.Time)
+	// linkDescDownloadsRemaining is the schema descriptor for downloads_remaining field.
+	linkDescDownloadsRemaining := linkFields[2].Descriptor()
+	// link.DefaultDownloadsRemaining holds the default value on creation for the downloads_remaining field.
+	link.DefaultDownloadsRemaining = linkDescDownloadsRemaining.Default.(int)
+	// link.DownloadsRemainingValidator is a validator for the "downloads_remaining" field. It is called by the builders before save.
+	link.DownloadsRemainingValidator = linkDescDownloadsRemaining.Validators[0].(func(int) error)
+	portalMixin := schema.Portal{}.Mixin()
+	portalMixinFields0 := portalMixin[0].Fields()
+	_ = portalMixinFields0
+	portalFields := schema.Portal{}.Fields()
+	_ = portalFields
+	// portalDescCreatedAt is the schema descriptor for created_at field.
+	portalDescCreatedAt := portalMixinFields0[0].Descriptor()
+	// portal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	portal.DefaultCreatedAt = portalDescCreatedAt.Default.(func() time.Time)
+	// portalDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	portalDescLastModifiedAt := portalMixinFields0[1].Descriptor()
+	// portal.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	portal.DefaultLastModifiedAt = portalDescLastModifiedAt.Default.(func() time.Time)
+	// portal.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	portal.UpdateDefaultLastModifiedAt = portalDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	questMixin := schema.Quest{}.Mixin()
 	questMixinFields0 := questMixin[0].Fields()
 	_ = questMixinFields0

@@ -190,6 +190,66 @@ var (
 			},
 		},
 	}
+	// LinksColumns holds the columns for the "links" table.
+	LinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "path", Type: field.TypeString, Unique: true},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "downloads_remaining", Type: field.TypeInt, Default: 0},
+		{Name: "link_file", Type: field.TypeInt},
+	}
+	// LinksTable holds the schema information for the "links" table.
+	LinksTable = &schema.Table{
+		Name:       "links",
+		Columns:    LinksColumns,
+		PrimaryKey: []*schema.Column{LinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "links_files_file",
+				Columns:    []*schema.Column{LinksColumns[6]},
+				RefColumns: []*schema.Column{FilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// PortalsColumns holds the columns for the "portals" table.
+	PortalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "portal_task", Type: field.TypeInt},
+		{Name: "portal_beacon", Type: field.TypeInt},
+		{Name: "portal_owner", Type: field.TypeInt},
+	}
+	// PortalsTable holds the schema information for the "portals" table.
+	PortalsTable = &schema.Table{
+		Name:       "portals",
+		Columns:    PortalsColumns,
+		PrimaryKey: []*schema.Column{PortalsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "portals_tasks_task",
+				Columns:    []*schema.Column{PortalsColumns[4]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "portals_beacons_beacon",
+				Columns:    []*schema.Column{PortalsColumns[5]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "portals_users_owner",
+				Columns:    []*schema.Column{PortalsColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// QuestsColumns holds the columns for the "quests" table.
 	QuestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -383,12 +443,21 @@ var (
 		{Name: "access_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
+		{Name: "portal_active_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_portals_active_users",
+				Columns:    []*schema.Column{UsersColumns[8]},
+				RefColumns: []*schema.Column{PortalsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// HostTagsColumns holds the columns for the "host_tags" table.
 	HostTagsColumns = []*schema.Column{
@@ -473,6 +542,8 @@ var (
 		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
+		LinksTable,
+		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
 		ShellsTable,
@@ -514,6 +585,16 @@ func init() {
 	HostProcessesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	LinksTable.ForeignKeys[0].RefTable = FilesTable
+	LinksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	PortalsTable.ForeignKeys[0].RefTable = TasksTable
+	PortalsTable.ForeignKeys[1].RefTable = BeaconsTable
+	PortalsTable.ForeignKeys[2].RefTable = UsersTable
+	PortalsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = FilesTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
@@ -544,6 +625,7 @@ func init() {
 	TomesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	UsersTable.ForeignKeys[0].RefTable = PortalsTable
 	UsersTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

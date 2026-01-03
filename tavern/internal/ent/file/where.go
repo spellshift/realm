@@ -398,6 +398,29 @@ func HasTomesWith(preds ...predicate.Tome) predicate.File {
 	})
 }
 
+// HasLinks applies the HasEdge predicate on the "links" edge.
+func HasLinks() predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, LinksTable, LinksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLinksWith applies the HasEdge predicate on the "links" edge with a given conditions (other predicates).
+func HasLinksWith(preds ...predicate.Link) predicate.File {
+	return predicate.File(func(s *sql.Selector) {
+		step := newLinksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.File) predicate.File {
 	return predicate.File(sql.AndPredicates(predicates...))
