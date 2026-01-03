@@ -60,7 +60,7 @@ export const useQuests = (pagination: boolean) => {
       GET_QUEST_QUERY,
       {
         variables: queryVariables,
-        notifyOnNetworkStatusChange: true
+        notifyOnNetworkStatusChange: true,
       }
     );
 

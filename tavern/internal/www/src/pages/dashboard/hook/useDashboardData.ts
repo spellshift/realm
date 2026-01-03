@@ -19,8 +19,6 @@ export const useDashboardData = (): UseDashboardDataReturn => {
             }],
         },
         notifyOnNetworkStatusChange: true,
-        fetchPolicy: "cache-and-network",
-        pollInterval: 60000,
     });
 
     const {
@@ -29,8 +27,6 @@ export const useDashboardData = (): UseDashboardDataReturn => {
         error: hostError
     } = useQuery<HostQueryTopLevel>(GET_HOST_QUERY, {
         notifyOnNetworkStatusChange: true,
-        pollInterval: 60000,
-        fetchPolicy: "cache-and-network",
     });
 
     const { loading: questFormatLoading, formattedData } = useQuestData(taskData);

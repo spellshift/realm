@@ -37,7 +37,7 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         }
     }
 
-    const { loading: isLoading, error, data, startPolling, stopPolling } = useQuery(GET_TAG_FILTERS, PARAMS);
+    const { loading: isLoading, error, data } = useQuery(GET_TAG_FILTERS, PARAMS);
 
 
     const getTags = useCallback((data: TagContextQueryResponse) => {
@@ -147,13 +147,6 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         };
         setTags(tags);
     }, []);
-
-    useEffect(() => {
-        startPolling(60000);
-        return () => {
-            stopPolling();
-        }
-    }, [startPolling, stopPolling])
 
     useEffect(() => {
         if (data) {
