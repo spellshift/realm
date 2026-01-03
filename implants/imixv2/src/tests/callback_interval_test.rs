@@ -80,22 +80,39 @@ async fn test_set_callback_uri_new_transport() {
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
         // Verify initial state - should have 2 URIs, active is the first one
-        let initial_uris = agent_clone.list_callback_uris().expect("Failed to list URIs");
+        let initial_uris = agent_clone
+            .list_callback_uris()
+            .expect("Failed to list URIs");
         assert_eq!(initial_uris.len(), 2);
 
-        let initial_active = agent_clone.get_active_callback_uri().expect("Failed to get active URI");
+        let initial_active = agent_clone
+            .get_active_callback_uri()
+            .expect("Failed to get active URI");
         assert_eq!(initial_active, "http://primary.example.com");
 
         // Add a new URI that doesn't exist
         let new_uri = "https://new.example.com".to_string();
-        agent_clone.set_callback_uri(new_uri.clone()).expect("Failed to set new callback URI");
+        agent_clone
+            .set_callback_uri(new_uri.clone())
+            .expect("Failed to set new callback URI");
 
         // Verify the new URI was added and is now active
-        let updated_uris = agent_clone.list_callback_uris().expect("Failed to list URIs after update");
-        assert_eq!(updated_uris.len(), 3, "Should have 3 URIs after adding new one");
-        assert!(updated_uris.contains(&new_uri), "New URI should be in the list");
+        let updated_uris = agent_clone
+            .list_callback_uris()
+            .expect("Failed to list URIs after update");
+        assert_eq!(
+            updated_uris.len(),
+            3,
+            "Should have 3 URIs after adding new one"
+        );
+        assert!(
+            updated_uris.contains(&new_uri),
+            "New URI should be in the list"
+        );
 
-        let active_uri = agent_clone.get_active_callback_uri().expect("Failed to get active URI after update");
+        let active_uri = agent_clone
+            .get_active_callback_uri()
+            .expect("Failed to get active URI after update");
         assert_eq!(active_uri, new_uri, "New URI should be the active one");
     })
     .join();
@@ -141,20 +158,31 @@ async fn test_set_callback_uri_existing_transport() {
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
         // Verify initial active URI
-        let initial_active = agent_clone.get_active_callback_uri().expect("Failed to get initial active URI");
+        let initial_active = agent_clone
+            .get_active_callback_uri()
+            .expect("Failed to get initial active URI");
         assert_eq!(initial_active, "http://primary.example.com");
 
         // Switch to an existing URI (the DNS one)
         let existing_uri = "dns://8.8.8.8".to_string();
-        agent_clone.set_callback_uri(existing_uri.clone()).expect("Failed to set existing callback URI");
+        agent_clone
+            .set_callback_uri(existing_uri.clone())
+            .expect("Failed to set existing callback URI");
 
         // Verify the URI list didn't grow (no duplicate added)
-        let uris = agent_clone.list_callback_uris().expect("Failed to list URIs");
+        let uris = agent_clone
+            .list_callback_uris()
+            .expect("Failed to list URIs");
         assert_eq!(uris.len(), 3, "Should still have 3 URIs, no duplicates");
 
         // Verify the active URI changed to the existing one
-        let active_uri = agent_clone.get_active_callback_uri().expect("Failed to get active URI after switch");
-        assert_eq!(active_uri, existing_uri, "Should have switched to the existing DNS URI");
+        let active_uri = agent_clone
+            .get_active_callback_uri()
+            .expect("Failed to get active URI after switch");
+        assert_eq!(
+            active_uri, existing_uri,
+            "Should have switched to the existing DNS URI"
+        );
     })
     .join();
 

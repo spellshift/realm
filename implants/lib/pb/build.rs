@@ -96,7 +96,8 @@ fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
 
 fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
     // Check if IMIX_CALLBACK_URI contains query parameters
-    let callback_uri = std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
+    let callback_uri =
+        std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
     let has_query_params = callback_uri.contains('?');
 
     // Check if legacy config environment variables are set
