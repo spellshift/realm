@@ -253,6 +253,14 @@ func (hp *HostProcess) Task(ctx context.Context) (*Task, error) {
 	return result, err
 }
 
+func (l *Link) File(ctx context.Context) (*File, error) {
+	result, err := l.Edges.FileOrErr()
+	if IsNotLoaded(err) {
+		result, err = l.QueryFile().Only(ctx)
+	}
+	return result, err
+}
+
 func (po *Portal) Task(ctx context.Context) (*Task, error) {
 	result, err := po.Edges.TaskOrErr()
 	if IsNotLoaded(err) {

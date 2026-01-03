@@ -2561,6 +2561,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
 		ec.unmarshalInputImportRepositoryInput,
+		ec.unmarshalInputLinkOrder,
+		ec.unmarshalInputLinkWhereInput,
 		ec.unmarshalInputPortalOrder,
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
@@ -2859,15 +2861,6 @@ enum BeaconOrderField {
   LAST_SEEN_AT
   NEXT_SEEN_AT
   INTERVAL
-}
-"""
-BeaconTransport is enum for the field transport
-"""
-enum BeaconTransport @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Beacon_Transport") {
-  TRANSPORT_DNS
-  TRANSPORT_GRPC
-  TRANSPORT_HTTP1
-  TRANSPORT_UNSPECIFIED
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.

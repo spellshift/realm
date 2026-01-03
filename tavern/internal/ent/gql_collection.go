@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -1688,6 +1689,132 @@ func newHostProcessPaginateArgs(rv map[string]any) *hostprocessPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*HostProcessWhereInput); ok {
 		args.opts = append(args.opts, WithHostProcessFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (l *LinkQuery) CollectFields(ctx context.Context, satisfies ...string) (*LinkQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return l, nil
+	}
+	if err := l.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return l, nil
+}
+
+func (l *LinkQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(link.Columns))
+		selectedFields = []string{link.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "file":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&FileClient{config: l.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, fileImplementors)...); err != nil {
+				return err
+			}
+			l.withFile = query
+		case "createdAt":
+			if _, ok := fieldSeen[link.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, link.FieldCreatedAt)
+				fieldSeen[link.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[link.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, link.FieldLastModifiedAt)
+				fieldSeen[link.FieldLastModifiedAt] = struct{}{}
+			}
+		case "path":
+			if _, ok := fieldSeen[link.FieldPath]; !ok {
+				selectedFields = append(selectedFields, link.FieldPath)
+				fieldSeen[link.FieldPath] = struct{}{}
+			}
+		case "expiresAt":
+			if _, ok := fieldSeen[link.FieldExpiresAt]; !ok {
+				selectedFields = append(selectedFields, link.FieldExpiresAt)
+				fieldSeen[link.FieldExpiresAt] = struct{}{}
+			}
+		case "downloadsRemaining":
+			if _, ok := fieldSeen[link.FieldDownloadsRemaining]; !ok {
+				selectedFields = append(selectedFields, link.FieldDownloadsRemaining)
+				fieldSeen[link.FieldDownloadsRemaining] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		l.Select(selectedFields...)
+	}
+	return nil
+}
+
+type linkPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []LinkPaginateOption
+}
+
+func newLinkPaginateArgs(rv map[string]any) *linkPaginateArgs {
+	args := &linkPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*LinkOrder:
+			args.opts = append(args.opts, WithLinkOrder(v))
+		case []any:
+			var orders []*LinkOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &LinkOrder{Field: &LinkOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithLinkOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*LinkWhereInput); ok {
+		args.opts = append(args.opts, WithLinkFilter(v.Filter))
 	}
 	return args
 }
