@@ -25,18 +25,3 @@ The `TAVERN_API_TOKEN` is a separate token used for authenticating CLI tools and
 You typically need to use the `TAVERN_API_TOKEN` in scenarios where you are running tools on a remote machine (like a Kali VM via SSH) and cannot perform the standard local browser-based authentication flow due to networking restrictions (e.g., you cannot define the auth redirection port for SSH port forwarding).
 
 In a standard local setup, CLI tools might pop open a browser window to authenticate. However, when you are SSH'd into a remote box, this isn't possible. The `TAVERN_API_TOKEN` provides a way to bypass this limitation.
-
-#### Portal Auth Flow
-
-To obtain a `TAVERN_API_TOKEN`, you can use the Portal Auth Flow:
-
-1.  Navigate to your User Profile in the Tavern Web UI.
-2.  Look for an option to generate or view your API Token.
-3.  Copy this token.
-4.  On your remote machine (e.g., the Kali VM), set the `TAVERN_API_TOKEN` environment variable:
-
-    ```bash
-    export TAVERN_API_TOKEN="your_token_here"
-    ```
-
-Once this environment variable is set, compatible Tavern CLI tools and scripts will use it to authenticate their requests, bypassing the need for an interactive browser login.
