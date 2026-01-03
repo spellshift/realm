@@ -39,13 +39,18 @@ export const useHostTasks = (id?: string) => {
     },[id, filters, taskSort, lastFetchedTimestamp]);
 
 
-    const { loading, error, data, refetch} = useQuery(GET_TASK_QUERY,  {variables: constructDefaultQuery(),  notifyOnNetworkStatusChange: true});
+    const { loading, error, data, refetch} = useQuery(
+        GET_TASK_QUERY,
+        {
+            variables: constructDefaultQuery(),
+            notifyOnNetworkStatusChange: true,
+        }
+    );
 
     const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
         const query = constructDefaultQuery(afterCursor, beforeCursor);
         return refetch(query);
     },[constructDefaultQuery, refetch]);
-
 
     useEffect(()=> {
         const abortController = new AbortController();
