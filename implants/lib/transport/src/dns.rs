@@ -1081,8 +1081,8 @@ impl Transport for DNS {
         ))
     }
 
-    fn get_type(&mut self) -> beacon::Transport {
-        beacon::Transport::Dns
+    fn get_type(&mut self) -> pb::c2::active_transport::Type {
+        pb::c2::active_transport::Type::TransportDns
     }
 
     fn is_active(&self) -> bool {

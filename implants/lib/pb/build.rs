@@ -4,9 +4,13 @@ use std::path::PathBuf;
 use which::which;
 
 fn get_pub_key() {
+    // Default pubkey to use when server is not available (for testing/CI)
+    const DEFAULT_PUBKEY: &str = "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU=";
+
     // Check if IMIX_SERVER_PUBKEY is already set
-    if std::env::var("IMIX_SERVER_PUBKEY").is_ok() {
+    if let Ok(existing_key) = std::env::var("IMIX_SERVER_PUBKEY") {
         println!("cargo:warning=IMIX_SERVER_PUBKEY already set, skipping fetch");
+        println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", existing_key);
         return;
     }
 
@@ -22,6 +26,8 @@ fn get_pub_key() {
         Ok(resp) => resp,
         Err(e) => {
             println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
+            println!("cargo:warning=Using default IMIX_SERVER_PUBKEY for build");
+            println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", DEFAULT_PUBKEY);
             return;
         }
     };
@@ -32,6 +38,8 @@ fn get_pub_key() {
             status_url,
             response.status()
         );
+        println!("cargo:warning=Using default IMIX_SERVER_PUBKEY for build");
+        println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", DEFAULT_PUBKEY);
         return;
     }
 
@@ -42,6 +50,8 @@ fn get_pub_key() {
                 "cargo:warning=Failed to parse JSON response from {}: {}",
                 status_url, e
             );
+            println!("cargo:warning=Using default IMIX_SERVER_PUBKEY for build");
+            println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", DEFAULT_PUBKEY);
             return;
         }
     };
@@ -53,6 +63,8 @@ fn get_pub_key() {
                 "cargo:warning=Pubkey field not found in response from {}",
                 status_url
             );
+            println!("cargo:warning=Using default IMIX_SERVER_PUBKEY for build");
+            println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", DEFAULT_PUBKEY);
             return;
         }
     };

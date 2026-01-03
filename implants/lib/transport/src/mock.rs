@@ -54,8 +54,8 @@ mock! {
             tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
         ) -> Result<()>;
 
-        fn get_type(&mut self) -> pb::c2::beacon::Transport {
-            return Transport::Unspecified
+        fn get_type(&mut self) -> pb::c2::active_transport::Type {
+            return pb::c2::active_transport::Type::TransportUnspecified
         }
         fn is_active(&self) -> bool;
 
