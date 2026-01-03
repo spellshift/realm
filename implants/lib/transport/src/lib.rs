@@ -225,7 +225,7 @@ impl Transport for ActiveTransport {
             Self::Empty => Err(anyhow!("Transport not initialized")),
         }
     }
-  
+
     fn get_type(&mut self) -> active_transport::Type {
         match self {
             #[cfg(feature = "grpc")]
