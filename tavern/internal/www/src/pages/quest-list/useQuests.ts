@@ -6,15 +6,17 @@ import { Filters, useFilters } from "../../context/FilterContext";
 import { constructQuestFilterQuery, constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, GetQuestQueryVariables, OrderByField, QuestQueryTopLevel } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
+import { useTags } from "../../context/TagContext";
 
 export const useQuests = (pagination: boolean) => {
     const [page, setPage] = useState<number>(1);
     const { filters } = useFilters();
     const { sorts } = useSorts();
+    const {lastFetchedTimestamp} = useTags();
 
-    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters, sort?: OrderByField): GetQuestQueryVariables => {
+    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor, currentFilters?: Filters, sort?: OrderByField, currentTimestamp?: Date): GetQuestQueryVariables => {
         const defaultRowLimit = TableRowLimit.QuestRowLimit;
-        const filterQueryTaskFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters) : null;
+        const filterQueryTaskFields = (currentFilters?.filtersEnabled) ? constructTaskFilterQuery(currentFilters, currentTimestamp) : null;
         const questFilterFields = (currentFilters?.filtersEnabled) ? constructQuestFilterQuery(currentFilters) : null;
 
         const query: GetQuestQueryVariables = {
@@ -52,7 +54,7 @@ export const useQuests = (pagination: boolean) => {
     }, [pagination]);
 
     const questSort = sorts[PageNavItem.quests];
-    const queryVariables = useMemo(() => constructDefaultQuery(undefined, undefined, filters, questSort), [constructDefaultQuery, filters, questSort]);
+    const queryVariables = useMemo(() => constructDefaultQuery(undefined, undefined, filters, questSort, lastFetchedTimestamp), [constructDefaultQuery, filters, questSort, lastFetchedTimestamp]);
 
     const { loading, data, error, refetch } = useQuery<QuestQueryTopLevel>(
       GET_QUEST_QUERY,
@@ -63,9 +65,9 @@ export const useQuests = (pagination: boolean) => {
     );
 
     const updateQuestList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-      const query = constructDefaultQuery(afterCursor, beforeCursor, filters, questSort);
+      const query = constructDefaultQuery(afterCursor, beforeCursor, filters, questSort, lastFetchedTimestamp);
       return refetch(query);
-    }, [filters, questSort, constructDefaultQuery, refetch]);
+    }, [filters, questSort, constructDefaultQuery, refetch, lastFetchedTimestamp]);
 
     useEffect(() => {
       const abortController = new AbortController();

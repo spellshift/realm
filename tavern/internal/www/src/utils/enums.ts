@@ -28,6 +28,14 @@ export enum SupportedTransports {
     HTTP1="TRANSPORT_HTTP1",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
+
+export enum OnlineOfflineFilterType {
+  OnlineBeacons = 'onlineBeacons',
+  OfflineHost = 'offlineHost',
+  RecentlyLostHost = 'recentlyLostHost',
+  RecentlyLostBeacons = 'recentlyLostBeacons'
+}
+
 export enum TableRowLimit {
     QuestRowLimit=8,
     TaskRowLimit=8,
