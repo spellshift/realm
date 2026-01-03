@@ -15,7 +15,7 @@ vi.mock('@apollo/client', () => ({
     }),
 }));
 
-function TestWrapper({ variant }: { variant: 'full' | 'minimal' | 'icon-only' }) {
+function TestWrapper({ variant }: { variant: 'full' | 'minimal' }) {
     return (
         <PollingProvider>
             <PollingCountdown variant={variant} />
@@ -29,16 +29,6 @@ describe('PollingCountdown', () => {
     });
 
     describe('Rendering variants', () => {
-        it('should render icon-only variant correctly', () => {
-            render(<TestWrapper variant="icon-only" />);
-
-            const icon = screen.getByTestId('rotate-icon');
-            expect(icon).toBeInTheDocument();
-
-            // Should not display any text
-            expect(screen.queryByText(/\d+s/)).not.toBeInTheDocument();
-            expect(screen.queryByText('Next update:')).not.toBeInTheDocument();
-        });
 
         it('should render minimal variant with icon and countdown', () => {
             render(<TestWrapper variant="minimal" />);
@@ -82,10 +72,5 @@ describe('PollingCountdown', () => {
             expect(screen.getByText('30s')).toBeInTheDocument();
         });
 
-        it('should not display countdown in icon-only variant', () => {
-            render(<TestWrapper variant="icon-only" />);
-
-            expect(screen.queryByText('30s')).not.toBeInTheDocument();
-        });
     });
 });

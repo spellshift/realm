@@ -8,14 +8,6 @@ type PollingCountdownProps = {
 export const PollingCountdown = ({ variant }: PollingCountdownProps) => {
     const { secondsUntilNextPoll } = usePolling();
 
-    if (variant === "icon-only") {
-        return (
-            <div className="flex items-center justify-center p-2">
-                <RotateCw className="h-3 w-3 text-gray-500" />
-            </div>
-        );
-    }
-
     if (variant === "minimal") {
         return (
             <div className="flex flex-col items-center justify-center p-2 text-gray-500">
