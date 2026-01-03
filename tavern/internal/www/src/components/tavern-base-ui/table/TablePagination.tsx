@@ -1,5 +1,5 @@
-import { Cursor, QueryPageInfo } from "../../utils/interfacesQuery";
-import Button from "./button/Button";
+import { Cursor, QueryPageInfo } from "../../../utils/interfacesQuery";
+import Button from "../button/Button";
 
 type Props = {
   totalCount: number;
@@ -30,12 +30,17 @@ export default function TablePagination(props: Props) {
 
   return (
     <nav
-      className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"
+      className="sticky bottom-0 z-10 flex items-center justify-between border-t border-gray-200 bg-white px-4 sm:px-6 xl:px-8 py-3 shadow-md"
       aria-label="Pagination"
     >
       <div className="hidden sm:block">
         <p className="text-sm text-gray-800">
-          Page <span className="font-semibold">{page}</span> of <span className="font-semibold">{getPageCount()}</span> {`(${totalCount} results)`}
+          <span className="hidden md:inline">Page </span>
+          <span className="font-semibold">{page}</span>
+          <span className="hidden md:inline"> of </span>
+          <span className="font-semibold hidden md:inline">{getPageCount()}</span>
+          <span className="md:hidden font-semibold">/{getPageCount()}</span>
+          <span className="hidden lg:inline"> ({totalCount} results)</span>
         </p>
       </div>
       <div className="flex flex-1 justify-between sm:justify-end gap-2">

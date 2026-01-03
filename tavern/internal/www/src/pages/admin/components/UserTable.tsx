@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import Table from "../../../components/tavern-base-ui/Table";
+import Table from "../../../components/tavern-base-ui/table/Table";
 import UserImageAndName from "../../../components/UserImageAndName";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { UserEdge, UserNode } from "../../../utils/interfacesQuery";
