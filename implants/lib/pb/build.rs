@@ -14,8 +14,18 @@ fn get_pub_key() {
     let callback_uri =
         std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
 
+    // Extract the first URI from semicolon-separated list and strip query parameters
+    let base_uri = callback_uri
+        .split(';')
+        .next()
+        .unwrap_or(&callback_uri)
+        .trim()
+        .split('?')
+        .next()
+        .unwrap_or(&callback_uri);
+
     // Construct the status endpoint URL
-    let status_url = format!("{}/status", callback_uri);
+    let status_url = format!("{}/status", base_uri);
 
     // Make a GET request to /status
     let response = match reqwest::blocking::get(&status_url) {
