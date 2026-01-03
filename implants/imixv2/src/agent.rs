@@ -10,6 +10,7 @@ use transport::Transport;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
+// TODO: Remove callback_uris and active_uri_idx since it lives in config.Beacon.AvailableTransports
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
     config: Arc<RwLock<Config>>,
@@ -153,6 +154,14 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         let mut idx = self.active_uri_idx.write().await;
         if !uris.is_empty() {
             *idx = (*idx + 1) % uris.len();
+
+            // Update the active_index in the config's available_transports
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                available_transports.active_index = *idx as u32;
+            }
         }
     }
 
