@@ -245,23 +245,23 @@ export function getEnumKey<T extends Record<string, string>>(
 export const OnlineOfflineOptions = [
     {
         id: OnlineOfflineFilterType.OnlineBeacons,
-        name: "Beacons online",
+        name: "Online beacons",
         value: OnlineOfflineFilterType.OnlineBeacons,
-        label: "Beacons online",
+        label: "Online beacons",
         kind: "onlineOfflineStatus"
     },
     {
         id: OnlineOfflineFilterType.OfflineHost,
-        name: "Host is offline",
+        name: "Offline hosts",
         value:  OnlineOfflineFilterType.OfflineHost,
-        label: "Host is offline",
+        label: "Offline hosts",
         kind: "onlineOfflineStatus"
     },
     {
         id: OnlineOfflineFilterType.RecentlyLostHost,
-        name: "Host recently lost",
+        name: "Recently lost hosts",
         value: OnlineOfflineFilterType.RecentlyLostHost,
-        label: "Host recently lost",
+        label: "Recently lost hosts",
         kind: "onlineOfflineStatus"
     },
     {
