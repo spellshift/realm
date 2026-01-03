@@ -261,6 +261,51 @@ func (l *Link) File(ctx context.Context) (*File, error) {
 	return result, err
 }
 
+func (po *Portal) Task(ctx context.Context) (*Task, error) {
+	result, err := po.Edges.TaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryTask().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := po.Edges.BeaconOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryBeacon().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) Owner(ctx context.Context) (*User, error) {
+	result, err := po.Edges.OwnerOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryOwner().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) ActiveUsers(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*UserOrder, where *UserWhereInput,
+) (*UserConnection, error) {
+	opts := []UserPaginateOption{
+		WithUserOrder(orderBy),
+		WithUserFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := po.Edges.totalCount[3][alias]
+	if nodes, err := po.NamedActiveUsers(alias); err == nil || hasTotalCount {
+		pager, err := newUserPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &UserConnection{Edges: []*UserEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return po.QueryActiveUsers().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (q *Quest) Tome(ctx context.Context) (*Tome, error) {
 	result, err := q.Edges.TomeOrErr()
 	if IsNotLoaded(err) {
