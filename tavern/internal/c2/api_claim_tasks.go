@@ -81,10 +81,27 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		if !shouldRun && t.RunOnSchedule != "" {
 			sched, err := parser.Parse(t.RunOnSchedule)
 			if err == nil {
-				// Check if any point between now and the next expected check-in matches the run schedule
-				// Next(now-1sec) <= now + interval?
-				next := sched.Next(now.Add(-1 * time.Second))
-				if !next.After(cutoff) {
+				isMatch := false
+				// If schedule contains a range (hyphen), checking for strict current match
+				// without factoring in callback interval.
+				if strings.Contains(t.RunOnSchedule, "-") {
+					currentMinute := now.Truncate(time.Minute)
+					// Verify if 'currentMinute' is a valid trigger time.
+					// We check if the next trigger after (currentMinute - 1s) is exactly currentMinute.
+					next := sched.Next(currentMinute.Add(-1 * time.Second))
+					if next.Equal(currentMinute) {
+						isMatch = true
+					}
+				} else {
+					// Check if any point between now and the next expected check-in matches the run schedule
+					// Next(now-1sec) <= now + interval?
+					next := sched.Next(now.Add(-1 * time.Second))
+					if !next.After(cutoff) {
+						isMatch = true
+					}
+				}
+
+				if isMatch {
 					// Check scheduled_hosts constraint
 					hostCount, err := t.QueryScheduledHosts().Count(ctx)
 					if err != nil {

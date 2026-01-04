@@ -244,3 +244,42 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	count = client.Task.Query().CountX(ctx)
 	assert.Equal(t, 0, count, "Tome should NOT be queued at 3:02:56")
 }
+
+func TestHandleTomeAutomation_CronRange(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	srv := &Server{graph: client}
+	// 06:05:00
+	now := time.Date(2023, 10, 27, 6, 5, 0, 0, time.UTC)
+
+	h := client.Host.Create().SetIdentifier("h").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("b").SetHost(h).SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).SaveX(ctx)
+
+	// Range Schedule: "* 6-12 * * *" (Every minute of hours 6-12)
+	client.Tome.Create().
+		SetName("Range Tome").
+		SetDescription("Test").
+		SetAuthor("Test").
+		SetEldritch("print('range')").
+		SetRunOnSchedule("* 6-12 * * *").
+		SaveX(ctx)
+
+	// 1. Current time 06:05:00. Matches range. Should run.
+	// Interval irrelevant (using 1h to prove lookahead is ignored if range logic applies)
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 1*time.Hour)
+	count := client.Task.Query().CountX(ctx)
+	assert.Equal(t, 1, count, "Range tome should run at 06:05:00")
+
+	client.Task.Delete().ExecX(ctx)
+	client.Quest.Delete().ExecX(ctx)
+
+	// 2. Current time 05:55:00. Does NOT match range.
+	// Lookahead (1h) would see 06:00:00.
+	// But Range logic should IGNORE lookahead.
+	early := now.Add(-10 * time.Minute) // 05:55:00
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, early, 1*time.Hour)
+	count = client.Task.Query().CountX(ctx)
+	assert.Equal(t, 0, count, "Range tome should NOT run at 05:55:00 even with lookahead")
+}
