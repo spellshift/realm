@@ -33,7 +33,7 @@ impl Printer for StreamPrinter {
 }
 
 struct SubtaskHandle {
-    name: String,
+    _name: String,
     _handle: tokio::task::JoinHandle<()>,
 }
 
@@ -105,6 +105,7 @@ impl TaskRegistry {
         true
     }
 
+    #[allow(dead_code)]
     pub fn register_subtask(
         &self,
         task_id: i64,
@@ -115,7 +116,7 @@ impl TaskRegistry {
         if let Some(task) = tasks.get(&task_id) {
             let mut subtasks = task.subtasks.write().unwrap();
             subtasks.push(SubtaskHandle {
-                name,
+                _name: name,
                 _handle: handle,
             });
         } else {
@@ -296,9 +297,9 @@ fn report_result(
     agent: &Arc<dyn Agent>,
 ) {
     match result {
-        Ok(v) => {
+        Ok(_v) => {
             #[cfg(debug_assertions)]
-            log::info!("task={task_id} Success: {v}");
+            log::info!("task={task_id} Success: {_v}");
 
             let _ = agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {

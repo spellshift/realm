@@ -91,6 +91,18 @@ fn build_bin_reflective_loader() {
 
     assert!(loader_root_path.is_dir());
 
+    // Check if DLL already exists, skip build if it does
+    let relative_path_to_loader_dll = format!(
+        "{}/target/{}/release/reflective_loader.dll",
+        reflective_loader_path_str, loader_target_triple
+    );
+    let loader_dll_path = Path::new(cargo_root).join(&relative_path_to_loader_dll);
+
+    if loader_dll_path.exists() {
+        println!("cargo:warning=reflective_loader.dll already exists, skipping build");
+        return;
+    }
+
     println!("Starting cargo xwin build for reflective_loader");
 
     // Command:

@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use {
     object::LittleEndian as LE,
     object::{Object, ObjectSection},
-    std::{os::raw::c_void, ptr::null_mut},
+    std::ptr::null_mut,
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
     windows_sys::Win32::{
@@ -21,19 +21,6 @@ use {
     },
     windows_sys::core::BOOL,
 };
-
-#[cfg(all(host_family = "windows", target_os = "windows"))]
-macro_rules! win_target {
-    () => {
-        r"x86_64-pc-windows-msvc"
-    };
-}
-#[cfg(all(host_family = "unix", target_os = "windows"))]
-macro_rules! win_target {
-    () => {
-        r"x86_64-pc-windows-gnu"
-    };
-}
 
 #[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
@@ -71,7 +58,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    win_target!(),
+    "x86_64-pc-windows-msvc",
     sep!(),
     "release",
     sep!(),
@@ -102,12 +89,12 @@ fn open_process(
 #[cfg(target_os = "windows")]
 fn virtual_alloc_ex(
     hprocess: HANDLE,
-    lpaddress: *const c_void,
+    lpaddress: *const std::ffi::c_void,
     dwsize: usize,
     flallocationtype: VIRTUAL_ALLOCATION_TYPE,
     flprotect: PAGE_PROTECTION_FLAGS,
-) -> anyhow::Result<*mut c_void> {
-    let buffer_handle: *mut c_void =
+) -> anyhow::Result<*mut std::ffi::c_void> {
+    let buffer_handle: *mut std::ffi::c_void =
         unsafe { VirtualAllocEx(hprocess, lpaddress, dwsize, flallocationtype, flprotect) };
     if buffer_handle.is_null() {
         let error_code = unsafe { GetLastError() };
@@ -124,8 +111,8 @@ fn virtual_alloc_ex(
 #[cfg(target_os = "windows")]
 fn write_process_memory(
     hprocess: HANDLE,
-    lpbaseaddress: *const c_void,
-    lpbuffer: *const c_void,
+    lpbaseaddress: *const std::ffi::c_void,
+    lpbuffer: *const std::ffi::c_void,
     nsize: usize,
 ) -> anyhow::Result<usize> {
     let mut lpnumberofbyteswritten: usize = 0;
@@ -152,14 +139,14 @@ fn write_process_memory(
 
 #[cfg(target_os = "windows")]
 fn create_remote_thread(
-    hprocess: *mut c_void,
+    hprocess: *mut std::ffi::c_void,
     lpthreadattributes: *const SECURITY_ATTRIBUTES,
     dwstacksize: usize,
-    lpstartaddress: Option<*mut c_void>,
-    lpparameter: *const c_void,
+    lpstartaddress: Option<*mut std::ffi::c_void>,
+    lpparameter: *const std::ffi::c_void,
     dwcreationflags: u32,
     lpthreadid: *mut u32,
-) -> anyhow::Result<*mut c_void> {
+) -> anyhow::Result<*mut std::ffi::c_void> {
     let tmp_lpstartaddress: Option<unsafe extern "system" fn(_) -> _> = match lpstartaddress {
         Some(local_lpstartaddress) => Some(unsafe { std::mem::transmute(local_lpstartaddress) }),
         None => todo!(),
@@ -322,7 +309,7 @@ fn handle_dll_reflect(
         process_handle,
         null_mut(),
         0,
-        Some(loader_address as *mut c_void),
+        Some(loader_address as *mut std::ffi::c_void),
         remote_buffer_target_dll,
         0,
         null_mut(),
