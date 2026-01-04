@@ -1,5 +1,6 @@
 use crate::Transport;
 use anyhow::{Context, Result};
+use pb::c2::transport::Type as TransportType;
 use pb::c2::*;
 use pb::config::Config;
 use pb::dns::*;
@@ -1191,7 +1192,7 @@ mod tests {
                     transports: vec![Transport {
                         uri: uri.to_string(),
                         interval: 5,
-                        r#type: 3, // DNS
+                        r#type: TransportType::TransportDns as i32,
                         extra: "{}".to_string(),
                     }],
                     active_index: 0,

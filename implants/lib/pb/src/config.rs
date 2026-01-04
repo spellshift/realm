@@ -1,3 +1,4 @@
+use anyhow::Context;
 use url::Url;
 use uuid::Uuid;
 
@@ -44,6 +45,9 @@ pub const CALLBACK_INTERVAL: &str = callback_interval!();
 
 /* Default interval value in seconds */
 const DEFAULT_INTERVAL_SECONDS: u64 = 5;
+
+/* Default extra config value */
+const DEFAULT_EXTRA_CONFIG: &str = "";
 
 macro_rules! retry_interval {
     () => {
@@ -103,99 +107,65 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
  *
  * Example: https://example.com?interval=10&extra={"key":"value"}
  */
-fn parse_transports(
-    uri_string: &str,
-    default_callback_interval: u64,
-    default_extra_config: String,
-) -> Vec<Transport> {
+fn parse_transports(uri_string: &str) -> Vec<Transport> {
     uri_string
         .split(';')
         .filter(|s| !s.trim().is_empty())
-        .map(|uri| {
+        .filter_map(|uri| {
             let uri_trimmed = uri.trim();
-
-            // Parse the URI to extract query parameters
-            let (base_uri, interval, extra) = parse_dsn(
-                uri_trimmed,
-                default_callback_interval,
-                &default_extra_config,
-            );
-
-            Transport {
-                uri: base_uri,
-                interval,
-                r#type: get_transport_type(uri_trimmed) as i32,
-                extra,
-            }
+            parse_dsn(uri_trimmed).ok()
         })
         .collect()
 }
 
 /*
  * Helper function to parse DSN query parameters
- * Returns (base_uri, interval, extra_config)
+ * Returns a Transport struct
  */
-fn parse_dsn(uri: &str, default_interval: u64, default_extra: &str) -> (String, u64, String) {
-    // Try to parse as a URL to extract query parameters
-    match Url::parse(uri) {
-        Ok(parsed_url) => {
-            let mut interval = default_interval;
-            let mut extra = default_extra.to_string();
+fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
+    // Parse as a URL to extract query parameters
+    let parsed_url = Url::parse(uri)
+        .with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
-            // Parse query parameters
-            for (key, value) in parsed_url.query_pairs() {
-                match key.as_ref() {
-                    "interval" => {
-                        if let Ok(parsed_interval) = value.parse::<u64>() {
-                            interval = parsed_interval;
-                        } else {
-                            #[cfg(debug_assertions)]
-                            log::warn!(
-                                "Failed to parse interval parameter '{}', using default",
-                                value
-                            );
-                        }
-                    }
-                    "extra" => {
-                        extra = value.to_lowercase();
-                    }
-                    _ => {
-                        #[cfg(debug_assertions)]
-                        log::debug!("Ignoring unknown query parameter: {}", key);
-                    }
-                }
+    let mut interval = DEFAULT_INTERVAL_SECONDS;
+    let mut extra = DEFAULT_EXTRA_CONFIG.to_string();
+
+    // Parse query parameters
+    for (key, value) in parsed_url.query_pairs() {
+        match key.as_ref() {
+            "interval" => {
+                interval = value.parse::<u64>()
+                    .with_context(|| format!("Failed to parse interval parameter '{}'", value))?;
             }
-
-            // Reconstruct the base URI without query parameters
-            let mut base_uri = parsed_url.clone();
-            base_uri.set_query(None);
-            (base_uri.to_string(), interval, extra)
-        }
-        Err(_) => {
-            // If URL parsing fails, return the original URI with defaults
-            #[cfg(debug_assertions)]
-            log::warn!("Failed to parse URI '{}', using defaults", uri);
-            (uri.to_string(), default_interval, default_extra.to_string())
+            "extra" => {
+                extra = value.to_lowercase();
+            }
+            _ => {
+                #[cfg(debug_assertions)]
+                log::debug!("Ignoring unknown query parameter: {}", key);
+            }
         }
     }
+
+    // Reconstruct the base URI without query parameters
+    let mut base_uri = parsed_url.clone();
+    base_uri.set_query(None);
+
+    Ok(Transport {
+        uri: base_uri.to_string(),
+        interval,
+        r#type: get_transport_type(uri) as i32,
+        extra,
+    })
 }
 
 /*
  * Helper function to parse callback interval with fallback
  */
-fn parse_callback_interval() -> u64 {
-    match CALLBACK_INTERVAL.parse::<u64>() {
-        Ok(i) => i,
-        Err(_err) => {
-            #[cfg(debug_assertions)]
-            log::error!(
-                "failed to parse callback interval constant, defaulting to {} seconds: {_err}",
-                DEFAULT_INTERVAL_SECONDS
-            );
-
-            DEFAULT_INTERVAL_SECONDS
-        }
-    }
+fn parse_callback_interval() -> anyhow::Result<u64> {
+    CALLBACK_INTERVAL
+        .parse::<u64>()
+        .with_context(|| format!("Failed to parse callback interval constant '{}'", CALLBACK_INTERVAL))
 }
 
 /*
@@ -221,9 +191,7 @@ impl Config {
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
         // Parse CALLBACK_URI by splitting on ';' to support multiple transports
-        let callback_interval = parse_callback_interval();
-        let extra_config = extra!();
-        let transports = parse_transports(CALLBACK_URI, callback_interval, extra_config);
+        let transports = parse_transports(CALLBACK_URI);
 
         // Create AvailableTransports with the 0th element as the first active transport
         let available_transports = AvailableTransports {
@@ -398,7 +366,7 @@ mod tests {
     fn test_empty_uri_filtered() {
         // Test that empty URIs are filtered out using parse_transports
         let uris = "http://example.com;;https://example2.com";
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 2);
         assert_eq!(transports[0].uri, "http://example.com/");
@@ -409,7 +377,7 @@ mod tests {
     fn test_dsn_with_interval_query_param() {
         // Test DSN parsing with interval query parameter
         let uris = "https://example.com?interval=10";
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
@@ -421,11 +389,11 @@ mod tests {
     fn test_dsn_with_extra_query_param() {
         // Test DSN parsing with extra query parameter (converted to lowercase)
         let uris = "https://example.com?extra=%7B%22key%22%3A%22value%22%7D";
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
-        assert_eq!(transports[0].interval, 5);
+        assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
         assert_eq!(transports[0].extra, r#"{"key":"value"}"#);
     }
 
@@ -433,7 +401,7 @@ mod tests {
     fn test_dsn_with_both_query_params() {
         // Test DSN parsing with both interval and extra query parameters (extra converted to lowercase)
         let uris = "https://example.com?interval=15&extra=%7B%22proxy%22%3A%22http%3A%2F%2Fproxy.local%22%7D";
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
@@ -445,7 +413,7 @@ mod tests {
     fn test_dsn_multiple_uris_with_different_params() {
         // Test multiple DSNs with different parameters
         let uris = "https://primary.com?interval=10;https://fallback.com?interval=30";
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 2);
         assert_eq!(transports[0].uri, "https://primary.com/");
@@ -458,35 +426,34 @@ mod tests {
     fn test_dsn_no_query_params_uses_defaults() {
         // Test that URIs without query parameters use default values
         let uris = "https://example.com";
-        let default_extra = r#"{"default":"config"}"#.to_string();
-        let transports = parse_transports(uris, 20, default_extra.clone());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
-        assert_eq!(transports[0].interval, 20);
-        assert_eq!(transports[0].extra, default_extra);
+        assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
+        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG);
     }
 
     #[test]
     fn test_dsn_invalid_interval_uses_default() {
-        // Test that invalid interval values fall back to default
+        // Test that invalid interval values are filtered out (error bubbles up)
         let uris = "https://example.com?interval=invalid";
-        let transports = parse_transports(uris, 7, String::new());
+        let transports = parse_transports(uris);
 
-        assert_eq!(transports.len(), 1);
-        assert_eq!(transports[0].uri, "https://example.com/");
-        assert_eq!(transports[0].interval, 7); // Should use default
+        // Since parse_dsn now returns Result and invalid intervals bubble up errors,
+        // the filter_map will filter out this entry
+        assert_eq!(transports.len(), 0);
     }
 
     #[test]
     fn test_dsn_mixed_with_and_without_params() {
         // Test mixed URIs (some with params, some without)
         let uris = "https://first.com?interval=10;https://second.com;https://third.com?interval=25";
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 3);
         assert_eq!(transports[0].interval, 10);
-        assert_eq!(transports[1].interval, 5); // Uses default
+        assert_eq!(transports[1].interval, DEFAULT_INTERVAL_SECONDS); // Uses default
         assert_eq!(transports[2].interval, 25);
     }
 
@@ -496,7 +463,7 @@ mod tests {
         // The url crate should handle the parsing automatically
         let uris =
             r#"https://example.com?interval=20&extra={"key":"value","nested":{"Foo":"Bar"}}"#;
-        let transports = parse_transports(uris, 5, String::new());
+        let transports = parse_transports(uris);
 
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");

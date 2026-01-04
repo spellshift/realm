@@ -88,16 +88,6 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        //TODO: De-dupe this fields - probably just need to pass the config not the callback URI.
-        let beacon = self.cfg.info.clone().context("failed to get info")?;
-        let available_transports = beacon
-            .available_transports
-            .context("failed to get available transports")?;
-        let _active_transport = available_transports
-            .transports
-            .get(available_transports.active_index as usize)
-            .context("active transport index out of bounds")?;
-
         self.t = T::new(self.cfg.clone())?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
@@ -130,19 +120,23 @@ impl<T: Transport + 'static> Agent<T> {
                 return Ok(());
             }
 
-            let interval = match self.cfg.info.clone() {
-                Some(b) => {
-                    let available_transports = b
-                        .available_transports
-                        .context("failed to get available transports")?;
-                    let active_transport = available_transports
+            let interval = self
+                .cfg
+                .info
+                .clone()
+                .context("beacon info is missing from agent")
+                .and_then(|b| {
+                    b.available_transports
+                        .context("failed to get available transports")
+                })
+                .and_then(|available_transports| {
+                    available_transports
                         .transports
                         .get(available_transports.active_index as usize)
-                        .context("active transport index out of bounds")?;
-                    Ok(active_transport.interval)
-                }
-                None => Err(anyhow::anyhow!("beacon info is missing from agent")),
-            }?;
+                        .cloned()
+                        .context("active transport index out of bounds")
+                })
+                .map(|active_transport| active_transport.interval)?;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),

@@ -313,7 +313,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let config = create_test_config(uri, 1); // TRANSPORT_GRPC = 1
+            let config = create_test_config(uri, TransportType::TransportGrpc as i32);
             let result = ActiveTransport::new(config);
 
             // 1. Assert strictly on the Variant type
@@ -332,7 +332,7 @@ mod tests {
         let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
 
         for uri in inputs {
-            let config = create_test_config(uri, 2); // TRANSPORT_HTTP1 = 2
+            let config = create_test_config(uri, TransportType::TransportHttp1 as i32);
             let result = ActiveTransport::new(config);
 
             assert!(
@@ -354,7 +354,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let config = create_test_config(uri, 3); // TRANSPORT_DNS = 3
+            let config = create_test_config(uri, TransportType::TransportDns as i32);
             let result = ActiveTransport::new(config);
 
             assert!(
@@ -371,7 +371,7 @@ mod tests {
         // If the feature is off, these should error out
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
         for uri in inputs {
-            let config = create_test_config(uri, 1); // TRANSPORT_GRPC = 1
+            let config = create_test_config(uri, TransportType::TransportGrpc as i32);
             let result = ActiveTransport::new(config);
             assert!(
                 result.is_err(),
@@ -384,7 +384,7 @@ mod tests {
     #[tokio::test]
     async fn test_unknown_transport_errors() {
         // Test with unspecified transport type
-        let config = create_test_config("ftp://example.com", 0); // TRANSPORT_UNSPECIFIED = 0
+        let config = create_test_config("ftp://example.com", TransportType::TransportUnspecified as i32);
         let result = ActiveTransport::new(config);
         assert!(result.is_err(), "Expected error for unknown transport type");
     }
