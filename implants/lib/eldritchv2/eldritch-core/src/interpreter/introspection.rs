@@ -120,6 +120,9 @@ fn levenshtein_distance(s1: &str, s2: &str) -> usize {
 }
 
 pub fn find_best_match(target: &str, candidates: &[String]) -> Option<String> {
+    if target.is_empty() {
+        return None;
+    }
     let mut best_match: Option<String> = None;
     let mut min_dist = usize::MAX;
 
