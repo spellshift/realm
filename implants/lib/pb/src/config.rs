@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_parse_callback_interval_valid() {
-        let interval = parse_callback_interval();
+        let interval = parse_callback_interval().expect("Failed to parse callback interval");
         // Should parse successfully or default to DEFAULT_INTERVAL_SECONDS
         assert!(interval >= DEFAULT_INTERVAL_SECONDS);
     }
