@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use eldritch_agent::Agent;
+use pb::c2::active_transport::Type;
 use pb::c2::host::Platform;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
@@ -361,7 +362,10 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 map.insert("uri".to_string(), active_transport.uri.clone());
                 map.insert(
                     "type".to_string(),
-                    active_transport.r#type.clone().to_string(),
+                    Type::try_from(active_transport.r#type)
+                        .unwrap_or_default()
+                        .as_str_name()
+                        .into(),
                 );
                 map.insert(
                     "extra".to_string(),
