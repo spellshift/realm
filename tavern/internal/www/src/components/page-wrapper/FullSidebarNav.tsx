@@ -24,6 +24,8 @@ const FullSidebarNav = ({ currNavItem, handleSidebarMinimized }: FullSidebarNavP
                                 className="h-10 w-auto"
                                 src={logo}
                                 alt="Realm"
+                                width="40"
+                                height="40"
                             />
                             <div className="text-white text-3xl leading-6 font-semibold tracking-wide">Realm</div>
                         </div>

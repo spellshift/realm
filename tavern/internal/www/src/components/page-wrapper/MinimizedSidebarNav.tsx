@@ -70,6 +70,8 @@ const MinimizedSidebarNav = ({ currNavItem, handleSidebarMinimized }: MinimizedS
                         className="h-8 w-auto"
                         src={logo}
                         alt="Realm"
+                        width="32"
+                        height="32"
                     />
                 </a>
             </div>
