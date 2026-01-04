@@ -243,6 +243,10 @@ mod tests {
         fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
             Ok(())
         }
+
+        fn create_portal(&self, task_id: i64) -> std::result::Result<(), String> {
+            Ok(())
+        }
     }
 
     #[test]

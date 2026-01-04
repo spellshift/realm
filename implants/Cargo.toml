@@ -27,6 +27,7 @@ members = [
     "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/stdlib/migration",
     "lib/eldritchv2/eldritchv2",
+    "lib/portals/portal-stream",
 ]
 resolver = "2"
 
@@ -55,6 +56,7 @@ eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-fe
 eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
 eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
 eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
+portal-stream = { path = "lib/portals/portal-stream" }
 
 aes = "0.8.3"
 allocative = "0.3.2"
@@ -143,6 +145,7 @@ x25519-dalek = "2.0.1"
 lru = "0.16.0"
 crossterm = "0.27"
 futures = "0.3"
+console-subscriber = "0.5.0"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.

@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
@@ -50,6 +51,8 @@ type Client struct {
 	HostProcess *HostProcessClient
 	// Link is the client for interacting with the Link builders.
 	Link *LinkClient
+	// Portal is the client for interacting with the Portal builders.
+	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
@@ -84,6 +87,7 @@ func (c *Client) init() {
 	c.HostFile = NewHostFileClient(c.config)
 	c.HostProcess = NewHostProcessClient(c.config)
 	c.Link = NewLinkClient(c.config)
+	c.Portal = NewPortalClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
 	c.Shell = NewShellClient(c.config)
@@ -190,6 +194,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		HostFile:       NewHostFileClient(cfg),
 		HostProcess:    NewHostProcessClient(cfg),
 		Link:           NewLinkClient(cfg),
+		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
 		Shell:          NewShellClient(cfg),
@@ -223,6 +228,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		HostFile:       NewHostFileClient(cfg),
 		HostProcess:    NewHostProcessClient(cfg),
 		Link:           NewLinkClient(cfg),
+		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
 		Shell:          NewShellClient(cfg),
@@ -260,7 +266,7 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
-		c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
+		c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -271,7 +277,7 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
-		c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
+		c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -294,6 +300,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.HostProcess.mutate(ctx, m)
 	case *LinkMutation:
 		return c.Link.mutate(ctx, m)
+	case *PortalMutation:
+		return c.Portal.mutate(ctx, m)
 	case *QuestMutation:
 		return c.Quest.mutate(ctx, m)
 	case *RepositoryMutation:
@@ -1515,6 +1523,203 @@ func (c *LinkClient) mutate(ctx context.Context, m *LinkMutation) (Value, error)
 		return (&LinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Link mutation op: %q", m.Op())
+	}
+}
+
+// PortalClient is a client for the Portal schema.
+type PortalClient struct {
+	config
+}
+
+// NewPortalClient returns a client for the Portal from the given config.
+func NewPortalClient(c config) *PortalClient {
+	return &PortalClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `portal.Hooks(f(g(h())))`.
+func (c *PortalClient) Use(hooks ...Hook) {
+	c.hooks.Portal = append(c.hooks.Portal, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `portal.Intercept(f(g(h())))`.
+func (c *PortalClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Portal = append(c.inters.Portal, interceptors...)
+}
+
+// Create returns a builder for creating a Portal entity.
+func (c *PortalClient) Create() *PortalCreate {
+	mutation := newPortalMutation(c.config, OpCreate)
+	return &PortalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Portal entities.
+func (c *PortalClient) CreateBulk(builders ...*PortalCreate) *PortalCreateBulk {
+	return &PortalCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PortalClient) MapCreateBulk(slice any, setFunc func(*PortalCreate, int)) *PortalCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PortalCreateBulk{err: fmt.Errorf("calling to PortalClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PortalCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PortalCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Portal.
+func (c *PortalClient) Update() *PortalUpdate {
+	mutation := newPortalMutation(c.config, OpUpdate)
+	return &PortalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PortalClient) UpdateOne(po *Portal) *PortalUpdateOne {
+	mutation := newPortalMutation(c.config, OpUpdateOne, withPortal(po))
+	return &PortalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PortalClient) UpdateOneID(id int) *PortalUpdateOne {
+	mutation := newPortalMutation(c.config, OpUpdateOne, withPortalID(id))
+	return &PortalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Portal.
+func (c *PortalClient) Delete() *PortalDelete {
+	mutation := newPortalMutation(c.config, OpDelete)
+	return &PortalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PortalClient) DeleteOne(po *Portal) *PortalDeleteOne {
+	return c.DeleteOneID(po.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PortalClient) DeleteOneID(id int) *PortalDeleteOne {
+	builder := c.Delete().Where(portal.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PortalDeleteOne{builder}
+}
+
+// Query returns a query builder for Portal.
+func (c *PortalClient) Query() *PortalQuery {
+	return &PortalQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePortal},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Portal entity by its id.
+func (c *PortalClient) Get(ctx context.Context, id int) (*Portal, error) {
+	return c.Query().Where(portal.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PortalClient) GetX(ctx context.Context, id int) *Portal {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTask queries the task edge of a Portal.
+func (c *PortalClient) QueryTask(po *Portal) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(portal.Table, portal.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, portal.TaskTable, portal.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBeacon queries the beacon edge of a Portal.
+func (c *PortalClient) QueryBeacon(po *Portal) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(portal.Table, portal.FieldID, id),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, portal.BeaconTable, portal.BeaconColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOwner queries the owner edge of a Portal.
+func (c *PortalClient) QueryOwner(po *Portal) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(portal.Table, portal.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, portal.OwnerTable, portal.OwnerColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryActiveUsers queries the active_users edge of a Portal.
+func (c *PortalClient) QueryActiveUsers(po *Portal) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(portal.Table, portal.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, portal.ActiveUsersTable, portal.ActiveUsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PortalClient) Hooks() []Hook {
+	return c.hooks.Portal
+}
+
+// Interceptors returns the client interceptors.
+func (c *PortalClient) Interceptors() []Interceptor {
+	return c.inters.Portal
+}
+
+func (c *PortalClient) mutate(ctx context.Context, m *PortalMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PortalCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PortalUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PortalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PortalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Portal mutation op: %q", m.Op())
 	}
 }
 
@@ -2807,11 +3012,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Host, HostCredential, HostFile, HostProcess, Link, Quest,
+		Beacon, File, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
 		Repository, Shell, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Host, HostCredential, HostFile, HostProcess, Link, Quest,
+		Beacon, File, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
 		Repository, Shell, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

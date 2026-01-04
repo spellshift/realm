@@ -1,0 +1,45 @@
+syntax = "proto3";
+// edition = "2024";
+
+package trace;
+
+option go_package = "realm.pub/tavern/portals/tracepb";
+
+// Trace the lifecycle of a mote through the portal infrastructure.
+enum TraceEventKind {
+    TRACE_EVENT_KIND_UNSPECIFIED = 0;       // Something went wrong
+
+    // User -> Server
+    TRACE_EVENT_KIND_USER_SEND = 1;         // Proxy writes to Server stream
+    TRACE_EVENT_KIND_SERVER_USER_RECV = 2;  // Server receives on User stream
+    TRACE_EVENT_KIND_SERVER_USER_PUB = 3;   // Server publishes to PubSub (OpenPortal)
+
+    // Server -> Agent
+    TRACE_EVENT_KIND_SERVER_AGENT_SUB = 4;  // Server receives from PubSub
+    TRACE_EVENT_KIND_SERVER_AGENT_SEND = 5; // Server writes to Agent stream
+    TRACE_EVENT_KIND_AGENT_RECV = 6;        // Agent receives on Server stream
+
+    // Agent -> Server (Echo)
+    TRACE_EVENT_KIND_AGENT_SEND = 7;        // Agent echoes back to Server stream
+    TRACE_EVENT_KIND_SERVER_AGENT_RECV = 8; // Server receives on Agent stream
+    TRACE_EVENT_KIND_SERVER_AGENT_PUB = 9;  // Server publishes to PubSub (CreatePortal)
+
+    // Server -> User
+    TRACE_EVENT_KIND_SERVER_USER_SUB = 10;  // Server receives from PubSub
+    TRACE_EVENT_KIND_SERVER_USER_SEND = 11; // Server writes to User stream
+    TRACE_EVENT_KIND_USER_RECV = 12;        // Proxy receives the result
+}
+
+// A single timestamped trace event
+message TraceEvent {
+    TraceEventKind kind = 1;
+    int64 timestamp_micros = 2; // Unix microsecond timestamp
+}
+
+// When BytesPayloadKind is TRACE, the `data` field of the mote
+// should contain the serialized bytes of this message.
+message TraceData {
+    int64 start_micros = 1;       // Time the trace started
+    bytes padding = 2;            // Arbitrary bytes to simulate payload size
+    repeated TraceEvent events = 3; // The ordered history of the journey
+}

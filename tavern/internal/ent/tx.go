@@ -26,6 +26,8 @@ type Tx struct {
 	HostProcess *HostProcessClient
 	// Link is the client for interacting with the Link builders.
 	Link *LinkClient
+	// Portal is the client for interacting with the Portal builders.
+	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
@@ -178,6 +180,7 @@ func (tx *Tx) init() {
 	tx.HostFile = NewHostFileClient(tx.config)
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Link = NewLinkClient(tx.config)
+	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
