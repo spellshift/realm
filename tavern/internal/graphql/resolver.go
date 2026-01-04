@@ -6,6 +6,7 @@ import (
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/events"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
 
@@ -19,14 +20,19 @@ type RepoImporter interface {
 
 // Resolver is the resolver root.
 type Resolver struct {
-	client   *ent.Client
-	importer RepoImporter
+	client              *ent.Client
+	importer            RepoImporter
+	hostCreatedBroadcaster *events.HostCreatedBroadcaster
 }
 
 // NewSchema creates a graphql executable schema.
-func NewSchema(client *ent.Client, importer RepoImporter) graphql.ExecutableSchema {
+func NewSchema(client *ent.Client, importer RepoImporter, hostCreatedBroadcaster *events.HostCreatedBroadcaster) graphql.ExecutableSchema {
 	cfg := generated.Config{
-		Resolvers: &Resolver{client, importer},
+		Resolvers: &Resolver{
+			client:              client,
+			importer:            importer,
+			hostCreatedBroadcaster: hostCreatedBroadcaster,
+		},
 	}
 	cfg.Directives.RequireRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, requiredRole models.Role) (interface{}, error) {
 		// Allow unauthenticated contexts to continue for open endpoints

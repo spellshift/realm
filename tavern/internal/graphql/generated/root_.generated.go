@@ -37,6 +37,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -351,6 +352,10 @@ type ComplexityRoot struct {
 	ShellEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	Subscription struct {
+		HostCreated func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -2080,6 +2085,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ShellEdge.Node(childComplexity), true
 
+	case "Subscription.hostCreated":
+		if e.complexity.Subscription.HostCreated == nil {
+			break
+		}
+
+		return e.complexity.Subscription.HostCreated(childComplexity), true
+
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
 			break
@@ -2629,6 +2641,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, opCtx.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next(ctx)
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -7060,6 +7089,14 @@ scalar Uint64
     createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
     updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
     disableLink(linkID: ID!): Link! @requireRole(role: USER)
+}
+`, BuiltIn: false},
+	{Name: "../schema/subscription.graphql", Input: `type Subscription {
+  """
+  Subscribe to notifications when a new host is registered.
+  Requires USER role.
+  """
+  hostCreated: Host! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"context"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
@@ -8,6 +10,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent/hook"
+	"realm.pub/tavern/internal/events"
 )
 
 // Host holds the schema definition for the Host entity.
@@ -121,4 +125,45 @@ func (Host) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
 	}
+}
+
+// Hooks of the Host.
+func (Host) Hooks() []ent.Hook {
+	return []ent.Hook{
+		HookPublishHostCreated(),
+	}
+}
+
+// HookPublishHostCreated returns a hook that publishes host created events to the event bus.
+func HookPublishHostCreated() ent.Hook {
+	return hook.On(func(next ent.Mutator) ent.Mutator {
+		return hook.HostFunc(func(ctx context.Context, m *ent.HostMutation) (ent.Value, error) {
+			// Execute the mutation
+			value, err := next.Mutate(ctx, m)
+			if err != nil {
+				return value, err
+			}
+
+			// Get the event bus from context
+			eventBus, ok := ctx.Value(events.EventBusContextKey).(*events.Bus)
+			if !ok || eventBus == nil {
+				// Event bus not in context, skip publishing
+				return value, nil
+			}
+
+			// Get the created host
+			host, ok := value.(*ent.Host)
+			if !ok {
+				return value, nil
+			}
+
+			// Publish the event
+			eventBus.Publish(events.Event{
+				Type: events.HostCreatedEvent,
+				Host: host,
+			})
+
+			return value, nil
+		})
+	}, ent.OpCreate)
 }

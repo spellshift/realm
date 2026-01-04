@@ -4,6 +4,7 @@ schema:
   - schema/scalars.graphql
   - schema/query.graphql
   - schema/mutation.graphql
+  - schema/subscription.graphql
   - schema/inputs.graphql
 
 model:

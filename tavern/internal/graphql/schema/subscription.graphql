@@ -1,0 +1,7 @@
+type Subscription {
+  """
+  Subscribe to notifications when a new host is registered.
+  Requires USER role.
+  """
+  hostCreated: Host! @requireRole(role: USER)
+}

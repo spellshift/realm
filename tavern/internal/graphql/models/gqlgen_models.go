@@ -48,6 +48,9 @@ type SubmitTaskResultInput struct {
 	Error *string `json:"error,omitempty"`
 }
 
+type Subscription struct {
+}
+
 type Role string
 
 const (
