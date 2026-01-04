@@ -1184,7 +1184,7 @@ mod tests {
 
     // Helper function to create a test config with a DNS URI
     fn create_dns_test_config(uri: &str) -> Config {
-        use pb::c2::{Beacon, AvailableTransports, Transport};
+        use pb::c2::{AvailableTransports, Beacon, Transport};
         Config {
             info: Some(Beacon {
                 available_transports: Some(AvailableTransports {

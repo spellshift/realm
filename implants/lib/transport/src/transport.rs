@@ -15,7 +15,12 @@ pub fn extract_uri_from_config(config: &Config) -> Result<String> {
                 .or_else(|| available_transports.transports.first())
                 .ok_or_else(|| anyhow::anyhow!("No transports configured"))?;
 
-            let uri = transport.uri.split('?').next().unwrap_or(&transport.uri).to_string();
+            let uri = transport
+                .uri
+                .split('?')
+                .next()
+                .unwrap_or(&transport.uri)
+                .to_string();
             Ok(uri)
         } else {
             Err(anyhow::anyhow!("No available_transports in config"))

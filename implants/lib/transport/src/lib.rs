@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
-use pb::{c2::*, config::Config};
 use pb::c2::transport::Type as TransportType;
+use pb::{c2::*, config::Config};
 use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(feature = "grpc")]
@@ -278,7 +278,7 @@ impl Transport for ActiveTransport {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pb::c2::{Beacon, AvailableTransports};
+    use pb::c2::{AvailableTransports, Beacon};
 
     // Helper to create a test config with a specific URI and transport type
     fn create_test_config(uri: &str, transport_type: i32) -> Config {
@@ -386,9 +386,6 @@ mod tests {
         // Test with unspecified transport type
         let config = create_test_config("ftp://example.com", 0); // TRANSPORT_UNSPECIFIED = 0
         let result = ActiveTransport::new(config);
-        assert!(
-            result.is_err(),
-            "Expected error for unknown transport type"
-        );
+        assert!(result.is_err(), "Expected error for unknown transport type");
     }
 }
