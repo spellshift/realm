@@ -44,7 +44,7 @@ func init() {
 	prometheus.MustRegister(metricTomeAutomationErrors)
 }
 
-func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval int) {
+func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
 	// Tome Automation Logic
 	candidateTomes, err := srv.graph.Tome.Query().
 		Where(tome.Or(
@@ -62,7 +62,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 
 	selectedTomes := make(map[int]*ent.Tome)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-	cutoff := now.Add(time.Duration(interval) * time.Second)
+	cutoff := now.Add(interval)
 
 	for _, t := range candidateTomes {
 		shouldRun := false
@@ -294,7 +294,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	// Run Tome Automation (non-blocking, best effort)
-	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, int(req.GetBeacon().GetActiveTransport().GetInterval()))
+	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, time.Duration(req.GetBeacon().GetActiveTransport().GetInterval())*time.Second)
 
 	// Load Tasks
 	tasks, err := srv.graph.Task.Query().

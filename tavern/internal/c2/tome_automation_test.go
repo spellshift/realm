@@ -226,7 +226,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	// 1. First Check-in at 3:00:56 PM. Interval 120s.
 	// Window: [3:00:56, 3:02:56].
 	// Schedule 3:01:00 is in window.
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 120)
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 120*time.Second)
 
 	count := client.Task.Query().CountX(ctx)
 	assert.Equal(t, 1, count, "Tome should be queued at 3:00:56 for 3:01:00 schedule")
@@ -239,7 +239,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	// Next checkin: 3:04:56.
 	// Schedule 3:01:00 (tomorrow) is NOT in window.
 	nextCheckin := now.Add(2 * time.Minute) // 3:02:56
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, nextCheckin, 120)
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, nextCheckin, 120*time.Second)
 
 	count = client.Task.Query().CountX(ctx)
 	assert.Equal(t, 0, count, "Tome should NOT be queued at 3:02:56")
