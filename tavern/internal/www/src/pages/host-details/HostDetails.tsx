@@ -15,7 +15,7 @@ const HostDetails = () => {
             <PageWrapper currNavItem={PageNavItem.hosts}>
                 <HostBreadcrumbs />
                 <HostDetailsSection />
-                <div className="flex flex-col gap-4 mt-2">
+                <div className="flex flex-col mt-2">
                     <TabGroup>
                         <HostTabs />
                         <TabPanels>

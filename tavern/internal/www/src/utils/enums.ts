@@ -37,9 +37,9 @@ export enum OnlineOfflineFilterType {
 }
 
 export enum TableRowLimit {
-    QuestRowLimit=8,
-    TaskRowLimit=8,
-    HostRowLimit=8
+    QuestRowLimit=10,
+    TaskRowLimit=10,
+    HostRowLimit=10
 }
 export enum PrincipalAdminTypes {
     root='root',
