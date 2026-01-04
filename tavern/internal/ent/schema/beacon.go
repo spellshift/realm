@@ -75,7 +75,7 @@ func (Beacon) Fields() []ent.Field {
 			).
 			Comment("Duration until next callback, in seconds."),
 		field.Enum("transport").
-			GoType(c2pb.ActiveTransport_Type(0)).
+			GoType(c2pb.Transport_Type(0)).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).

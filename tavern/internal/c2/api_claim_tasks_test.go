@@ -56,8 +56,15 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					ActiveTransport: &c2pb.ActiveTransport{
-						Interval: uint64(60),
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(60),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
 					},
 				},
 			},
@@ -83,8 +90,15 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					ActiveTransport: &c2pb.ActiveTransport{
-						Interval: uint64(100),
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(100),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
 					},
 				},
 			},
@@ -110,8 +124,15 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					ActiveTransport: &c2pb.ActiveTransport{
-						Interval: uint64(100),
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(100),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
 					},
 				},
 			},
