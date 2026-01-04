@@ -1318,6 +1318,12 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 				return ec.fieldContext_Tome_supportModel(ctx, field)
 			case "tactic":
 				return ec.fieldContext_Tome_tactic(ctx, field)
+			case "runOnNewBeaconCallback":
+				return ec.fieldContext_Tome_runOnNewBeaconCallback(ctx, field)
+			case "runOnFirstHostCallback":
+				return ec.fieldContext_Tome_runOnFirstHostCallback(ctx, field)
+			case "runOnSchedule":
+				return ec.fieldContext_Tome_runOnSchedule(ctx, field)
 			case "paramDefs":
 				return ec.fieldContext_Tome_paramDefs(ctx, field)
 			case "eldritch":
@@ -1328,6 +1334,8 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 				return ec.fieldContext_Tome_uploader(ctx, field)
 			case "repository":
 				return ec.fieldContext_Tome_repository(ctx, field)
+			case "scheduledHosts":
+				return ec.fieldContext_Tome_scheduledHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
@@ -1428,6 +1436,12 @@ func (ec *executionContext) fieldContext_Mutation_updateTome(ctx context.Context
 				return ec.fieldContext_Tome_supportModel(ctx, field)
 			case "tactic":
 				return ec.fieldContext_Tome_tactic(ctx, field)
+			case "runOnNewBeaconCallback":
+				return ec.fieldContext_Tome_runOnNewBeaconCallback(ctx, field)
+			case "runOnFirstHostCallback":
+				return ec.fieldContext_Tome_runOnFirstHostCallback(ctx, field)
+			case "runOnSchedule":
+				return ec.fieldContext_Tome_runOnSchedule(ctx, field)
 			case "paramDefs":
 				return ec.fieldContext_Tome_paramDefs(ctx, field)
 			case "eldritch":
@@ -1438,6 +1452,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTome(ctx context.Context
 				return ec.fieldContext_Tome_uploader(ctx, field)
 			case "repository":
 				return ec.fieldContext_Tome_repository(ctx, field)
+			case "scheduledHosts":
+				return ec.fieldContext_Tome_scheduledHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
 		},
