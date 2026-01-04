@@ -120,9 +120,13 @@ fn handle_exec(
 #[cfg(test)]
 mod tests {
     use std::{fs, path::Path, process, thread, time};
+    use std::sync::Mutex;
+    use once_cell::sync::Lazy;
 
     use sysinfo::{PidExt, ProcessExt, System, SystemExt};
     use tempfile::NamedTempFile;
+
+    static TEST_MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
     fn init_logging() {
         let _ = pretty_env_logger::formatted_timed_builder()
@@ -168,6 +172,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_sys_exec_current_user() -> anyhow::Result<()> {
+        let _lock = TEST_MUTEX.lock().unwrap();
         if cfg!(target_os = "linux")
             || cfg!(target_os = "ios")
             || cfg!(target_os = "android")
@@ -216,6 +221,7 @@ mod tests {
     }
     #[test]
     fn test_sys_exec_complex_linux() -> anyhow::Result<()> {
+        let _lock = TEST_MUTEX.lock().unwrap();
         if cfg!(target_os = "linux")
             || cfg!(target_os = "ios")
             || cfg!(target_os = "macos")
@@ -239,6 +245,7 @@ mod tests {
 
     #[test]
     fn test_sys_exec_disown_linux() -> anyhow::Result<()> {
+        let _lock = TEST_MUTEX.lock().unwrap();
         if cfg!(target_os = "linux")
             || cfg!(target_os = "ios")
             || cfg!(target_os = "macos")
@@ -269,6 +276,7 @@ mod tests {
 
     #[test]
     fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
+        let _lock = TEST_MUTEX.lock().unwrap();
         init_logging();
 
         if cfg!(target_os = "linux")
@@ -294,6 +302,7 @@ mod tests {
 
     #[test]
     fn test_sys_exec_complex_windows() -> anyhow::Result<()> {
+        let _lock = TEST_MUTEX.lock().unwrap();
         if cfg!(target_os = "windows") {
             let res = handle_exec(
                 String::from("C:\\Windows\\System32\\cmd.exe"),
