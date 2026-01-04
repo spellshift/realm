@@ -20,7 +20,6 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
     const buttonRef = useRef<HTMLButtonElement | null>(null);
     const panelRef = useRef<HTMLDivElement | null>(null);
 
-    // Detect mobile on mount and window resize
     useEffect(() => {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 768) // md breakpoint
@@ -33,7 +32,6 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
 
     const openDialog = (): void => {
         if (!isMobile) {
-            // Desktop: Calculate popover position
             const dialogWidth = 384;
             const spacing = 8;
 
@@ -43,12 +41,12 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                 const viewportWidth = window.innerWidth
 
                 const calculatedLeft = Math.min(
-                    rect.left + window.scrollX,
+                    rect.left,
                     viewportWidth - dialogWidth - 16
                 )
 
                 setPosition({
-                    top: rect.bottom + window.scrollY + spacing,
+                    top: rect.bottom + spacing,
                     left: calculatedLeft,
                 })
             }
@@ -58,7 +56,6 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
 
     const closeDialog = (): void => setIsOpen(false)
 
-    // Desktop: Click outside to close
     useEffect(() => {
         if (!isOpen || isMobile) return
 
@@ -121,7 +118,7 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                                     {/* Header with close button */}
                                     <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
                                         <Dialog.Title className="text-lg font-medium text-gray-900">
-                                            Filters
+                                            {label}
                                         </Dialog.Title>
                                         <button
                                             onClick={closeDialog}
@@ -152,7 +149,7 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                             >
                                 <div
                                     ref={panelRef}
-                                    className="absolute bg-white border rounded-lg shadow-lg w-96 p-4 flex flex-col gap-4"
+                                    className="fixed bg-white border rounded-lg shadow-lg w-96 p-4 flex flex-col gap-4"
                                     style={{
                                         top: position.top,
                                         left: position.left,

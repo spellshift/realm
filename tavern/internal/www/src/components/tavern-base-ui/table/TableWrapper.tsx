@@ -30,7 +30,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
     if (error) {
       return <EmptyState type={EmptyStateType.error} label="Error loading data" />;
     }
-    else if (loading || !totalItems) {
+    else if (loading || totalItems === null) {
       return <EmptyState type={EmptyStateType.loading} label="Loading data..." />;
     }
     else if (totalItems === 0) {
