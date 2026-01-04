@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use eldritch_agent::Agent;
+use pb::c2::host::Platform;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
@@ -347,7 +348,13 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             );
             if let Some(host) = &info.host {
                 map.insert("hostname".to_string(), host.name.clone());
-                map.insert("platform".to_string(), host.platform.to_string());
+                map.insert(
+                    "platform".to_string(),
+                    Platform::try_from(host.platform)
+                        .unwrap_or_default()
+                        .as_str_name()
+                        .into(),
+                );
                 map.insert("primary_ip".to_string(), host.primary_ip.clone());
             }
             if let Some(active_transport) = &info.active_transport {
