@@ -101,7 +101,7 @@ impl Agent for MockAgent {
         Ok(())
     }
 
-    fn create_portal(&self, task_id: i64) -> Result<(), String> {
+    fn create_portal(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
 }

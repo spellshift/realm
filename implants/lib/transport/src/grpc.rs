@@ -2,7 +2,6 @@ use anyhow::Result;
 use hyper::Uri;
 use pb::c2::*;
 use pb::config::Config;
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;

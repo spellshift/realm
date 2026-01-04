@@ -1,5 +1,4 @@
-use anyhow::{Context, Result};
-use eldritch_agent::Agent;
+use anyhow::Result;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
