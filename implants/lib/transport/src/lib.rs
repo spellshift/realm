@@ -384,7 +384,10 @@ mod tests {
     #[tokio::test]
     async fn test_unknown_transport_errors() {
         // Test with unspecified transport type
-        let config = create_test_config("ftp://example.com", TransportType::TransportUnspecified as i32);
+        let config = create_test_config(
+            "ftp://example.com",
+            TransportType::TransportUnspecified as i32,
+        );
         let result = ActiveTransport::new(config);
         assert!(result.is_err(), "Expected error for unknown transport type");
     }

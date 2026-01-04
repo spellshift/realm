@@ -124,8 +124,7 @@ fn parse_transports(uri_string: &str) -> Vec<Transport> {
  */
 fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     // Parse as a URL to extract query parameters
-    let parsed_url = Url::parse(uri)
-        .with_context(|| format!("Failed to parse URI '{}'", uri))?;
+    let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
     let mut interval = DEFAULT_INTERVAL_SECONDS;
     let mut extra = DEFAULT_EXTRA_CONFIG.to_string();
@@ -134,7 +133,8 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     for (key, value) in parsed_url.query_pairs() {
         match key.as_ref() {
             "interval" => {
-                interval = value.parse::<u64>()
+                interval = value
+                    .parse::<u64>()
                     .with_context(|| format!("Failed to parse interval parameter '{}'", value))?;
             }
             "extra" => {
@@ -163,9 +163,12 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
  * Helper function to parse callback interval with fallback
  */
 fn parse_callback_interval() -> anyhow::Result<u64> {
-    CALLBACK_INTERVAL
-        .parse::<u64>()
-        .with_context(|| format!("Failed to parse callback interval constant '{}'", CALLBACK_INTERVAL))
+    CALLBACK_INTERVAL.parse::<u64>().with_context(|| {
+        format!(
+            "Failed to parse callback interval constant '{}'",
+            CALLBACK_INTERVAL
+        )
+    })
 }
 
 /*
