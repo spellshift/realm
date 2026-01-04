@@ -8,18 +8,18 @@ pub struct Agent {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ActiveTransport {
+pub struct Transport {
     #[prost(string, tag = "1")]
     pub uri: ::prost::alloc::string::String,
     #[prost(uint64, tag = "2")]
     pub interval: u64,
-    #[prost(enumeration = "active_transport::Type", tag = "3")]
+    #[prost(enumeration = "transport::Type", tag = "3")]
     pub r#type: i32,
     #[prost(string, tag = "4")]
     pub extra: ::prost::alloc::string::String,
 }
-/// Nested message and enum types in `ActiveTransport`.
-pub mod active_transport {
+/// Nested message and enum types in `Transport`.
+pub mod transport {
     #[derive(
         Clone,
         Copy,
@@ -63,6 +63,14 @@ pub mod active_transport {
         }
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AvailableTransports {
+    #[prost(message, repeated, tag = "1")]
+    pub transports: ::prost::alloc::vec::Vec<Transport>,
+    #[prost(uint32, tag = "2")]
+    pub active_index: u32,
+}
 /// Beacon information that is unique to the current running beacon.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -76,7 +84,7 @@ pub struct Beacon {
     #[prost(message, optional, tag = "4")]
     pub agent: ::core::option::Option<Agent>,
     #[prost(message, optional, tag = "5")]
-    pub active_transport: ::core::option::Option<ActiveTransport>,
+    pub available_transports: ::core::option::Option<AvailableTransports>,
 }
 /// Host information for the system a beacon is running on.
 #[allow(clippy::derive_partial_eq_without_eq)]

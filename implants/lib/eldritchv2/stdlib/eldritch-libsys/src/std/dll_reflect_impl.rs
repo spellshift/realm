@@ -71,7 +71,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    win_target!(),
+    "x86_64-pc-windows-msvc",
     sep!(),
     "release",
     sep!(),

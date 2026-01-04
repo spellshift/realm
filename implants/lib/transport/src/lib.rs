@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use pb::c2::transport::Type as TransportType;
 use pb::{c2::*, config::Config};
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -40,53 +41,44 @@ impl Transport for ActiveTransport {
         Self::Empty
     }
 
-    fn new(uri: String, config: Config) -> Result<Self> {
-        match uri {
-            // 1. gRPC: Passthrough
-            s if s.starts_with("http://") || s.starts_with("https://") => {
+    fn new(config: Config) -> Result<Self> {
+        // Extract transport type from config
+        let transport_type = config
+            .info
+            .as_ref()
+            .and_then(|info| info.available_transports.as_ref())
+            .and_then(|at| {
+                let active_idx = at.active_index as usize;
+                at.transports
+                    .get(active_idx)
+                    .or_else(|| at.transports.first())
+            })
+            .map(|t| t.r#type)
+            .ok_or_else(|| anyhow!("No transports configured"))?;
+
+        // Match on the transport type enum
+        match TransportType::try_from(transport_type) {
+            Ok(TransportType::TransportGrpc) => {
                 #[cfg(feature = "grpc")]
-                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(s, config)?));
+                return Ok(ActiveTransport::Grpc(grpc::GRPC::new(config)?));
                 #[cfg(not(feature = "grpc"))]
                 return Err(anyhow!("gRPC transport not enabled"));
             }
-
-            // 2. gRPC: Rewrite (Order: longest match 'grpcs' first)
-            s if s.starts_with("grpc://") || s.starts_with("grpcs://") => {
-                #[cfg(feature = "grpc")]
-                {
-                    let new = s
-                        .replacen("grpcs://", "https://", 1)
-                        .replacen("grpc://", "http://", 1);
-                    Ok(ActiveTransport::Grpc(grpc::GRPC::new(new, config)?))
-                }
-                #[cfg(not(feature = "grpc"))]
-                return Err(anyhow!("gRPC transport not enabled"));
-            }
-
-            // 3. HTTP1: Rewrite
-            s if s.starts_with("http1://") || s.starts_with("https1://") => {
+            Ok(TransportType::TransportHttp1) => {
                 #[cfg(feature = "http1")]
-                {
-                    let new = s
-                        .replacen("https1://", "https://", 1)
-                        .replacen("http1://", "http://", 1);
-                    Ok(ActiveTransport::Http(http::HTTP::new(new, config)?))
-                }
+                return Ok(ActiveTransport::Http(http::HTTP::new(config)?));
                 #[cfg(not(feature = "http1"))]
                 return Err(anyhow!("http1 transport not enabled"));
             }
-
-            // 4. DNS
-            s if s.starts_with("dns://") => {
+            Ok(TransportType::TransportDns) => {
                 #[cfg(feature = "dns")]
-                {
-                    Ok(ActiveTransport::Dns(dns::DNS::new(s, config)?))
-                }
+                return Ok(ActiveTransport::Dns(dns::DNS::new(config)?));
                 #[cfg(not(feature = "dns"))]
                 return Err(anyhow!("DNS transport not enabled"));
             }
-
-            _ => Err(anyhow!("Could not determine transport from URI: {}", uri)),
+            Ok(TransportType::TransportUnspecified) | Err(_) => {
+                Err(anyhow!("Invalid or unspecified transport type"))
+            }
         }
     }
 
@@ -226,7 +218,7 @@ impl Transport for ActiveTransport {
         }
     }
 
-    fn get_type(&mut self) -> active_transport::Type {
+    fn get_type(&mut self) -> pb::c2::transport::Type {
         match self {
             #[cfg(feature = "grpc")]
             Self::Grpc(t) => t.get_type(),
@@ -236,7 +228,7 @@ impl Transport for ActiveTransport {
             Self::Dns(t) => t.get_type(),
             #[cfg(feature = "mock")]
             Self::Mock(t) => t.get_type(),
-            Self::Empty => active_transport::Type::TransportUnspecified,
+            Self::Empty => pb::c2::transport::Type::TransportUnspecified,
         }
     }
 
@@ -286,6 +278,26 @@ impl Transport for ActiveTransport {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pb::c2::{AvailableTransports, Beacon};
+
+    // Helper to create a test config with a specific URI and transport type
+    fn create_test_config(uri: &str, transport_type: i32) -> Config {
+        Config {
+            info: Some(Beacon {
+                available_transports: Some(AvailableTransports {
+                    transports: vec![pb::c2::Transport {
+                        uri: uri.to_string(),
+                        interval: 5,
+                        r#type: transport_type,
+                        extra: "{}".to_string(),
+                    }],
+                    active_index: 0,
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
 
     #[tokio::test]
     #[cfg(feature = "grpc")]
@@ -301,7 +313,8 @@ mod tests {
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), Config::default());
+            let config = create_test_config(uri, TransportType::TransportGrpc as i32);
+            let result = ActiveTransport::new(config);
 
             // 1. Assert strictly on the Variant type
             assert!(
@@ -313,13 +326,14 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(feature = "http1"))]
+    #[cfg(feature = "http1")]
     async fn test_routes_to_http1_transport() {
         // All these prefixes should result in the Http1 variant
         let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let config = create_test_config(uri, TransportType::TransportHttp1 as i32);
+            let result = ActiveTransport::new(config);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Http(_))),
@@ -340,7 +354,8 @@ mod tests {
         ];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), Config::default());
+            let config = create_test_config(uri, TransportType::TransportDns as i32);
+            let result = ActiveTransport::new(config);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Dns(_))),
@@ -356,7 +371,8 @@ mod tests {
         // If the feature is off, these should error out
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let config = create_test_config(uri, TransportType::TransportGrpc as i32);
+            let result = ActiveTransport::new(config);
             assert!(
                 result.is_err(),
                 "Expected error for '{}' when gRPC feature is disabled",
@@ -367,15 +383,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_unknown_transport_errors() {
-        let inputs = vec!["ftp://example.com", "ws://example.com", "random-string", ""];
-
-        for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), Config::default());
-            assert!(
-                result.is_err(),
-                "Expected error for unknown URI scheme: '{}'",
-                uri
-            );
-        }
+        // Test with unspecified transport type
+        let config = create_test_config(
+            "ftp://example.com",
+            TransportType::TransportUnspecified as i32,
+        );
+        let result = ActiveTransport::new(config);
+        assert!(result.is_err(), "Expected error for unknown transport type");
     }
 }

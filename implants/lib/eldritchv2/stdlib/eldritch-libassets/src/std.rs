@@ -244,7 +244,7 @@ mod tests {
             Ok(())
         }
 
-        fn create_portal(&self, task_id: i64) -> std::result::Result<(), String> {
+        fn create_portal(&self, _task_id: i64) -> std::result::Result<(), String> {
             Ok(())
         }
     }

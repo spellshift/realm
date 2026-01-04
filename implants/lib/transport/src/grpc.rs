@@ -2,7 +2,6 @@ use anyhow::Result;
 use hyper::Uri;
 use pb::c2::*;
 use pb::config::Config;
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
@@ -38,19 +37,12 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
-    fn new(callback: String, config: Config) -> Result<Self> {
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+    fn new(config: Config) -> Result<Self> {
+        // Extract URI and EXTRA from config using helper functions
+        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        // Parse the EXTRA map
-        let extra_map: HashMap<String, String> = if let Some(info) = config.info {
-            if let Some(active_transport) = info.active_transport {
-                serde_json::from_str::<HashMap<String, String>>(&active_transport.extra)?
-            } else {
-                HashMap::new()
-            }
-        } else {
-            HashMap::new()
-        };
+        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
         #[cfg(feature = "grpc-doh")]
         let doh: Option<&String> = extra_map.get("DOH");
@@ -67,7 +59,7 @@ impl Transport for GRPC {
         #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
 
-        let proxy_uri = extra_map.get("HTTP_PROXY");
+        let proxy_uri = extra_map.get("http_proxy");
 
         http.enforce_http(false);
         http.set_nodelay(true);
@@ -255,8 +247,8 @@ impl Transport for GRPC {
         Ok(())
     }
 
-    fn get_type(&mut self) -> pb::c2::active_transport::Type {
-        pb::c2::active_transport::Type::TransportGrpc
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        pb::c2::transport::Type::TransportGrpc
     }
 
     fn is_active(&self) -> bool {
