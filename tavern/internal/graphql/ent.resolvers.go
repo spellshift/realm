@@ -10,6 +10,7 @@ import (
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/graphql/generated"
+	"realm.pub/tavern/internal/graphql/models"
 )
 
 // Node is the resolver for the node field.
@@ -22,7 +23,16 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 	panic(fmt.Errorf("not implemented: Nodes - nodes"))
 }
 
+// Schedule is the resolver for the schedule field.
+func (r *taskResolver) Schedule(ctx context.Context, obj *ent.Task) (*models.Schedule, error) {
+	panic(fmt.Errorf("not implemented: Schedule - schedule"))
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Task returns generated.TaskResolver implementation.
+func (r *Resolver) Task() generated.TaskResolver { return &taskResolver{r} }
+
 type queryResolver struct{ *Resolver }
+type taskResolver struct{ *Resolver }

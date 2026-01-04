@@ -34,6 +34,16 @@ type ImportRepositoryInput struct {
 	IncludeDirs []string `json:"includeDirs,omitempty"`
 }
 
+// Schedule configuration for automatic task execution
+type Schedule struct {
+	// Execute task on new hosts
+	NewHost bool `json:"newHost"`
+	// Execute task on new beacons
+	NewBeacon bool `json:"newBeacon"`
+	// Cron schedule string
+	Cron string `json:"cron"`
+}
+
 type SubmitTaskResultInput struct {
 	// ID of the task to submit results for.
 	TaskID int `json:"taskID"`

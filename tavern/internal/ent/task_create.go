@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/types"
 )
 
 // TaskCreate is the builder for creating a Task entity.
@@ -137,6 +138,12 @@ func (tc *TaskCreate) SetNillableError(s *string) *TaskCreate {
 	if s != nil {
 		tc.SetError(*s)
 	}
+	return tc
+}
+
+// SetSchedule sets the "schedule" field.
+func (tc *TaskCreate) SetSchedule(t *types.Schedule) *TaskCreate {
+	tc.mutation.SetSchedule(t)
 	return tc
 }
 
@@ -360,6 +367,10 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Error(); ok {
 		_spec.SetField(task.FieldError, field.TypeString, value)
 		_node.Error = value
+	}
+	if value, ok := tc.mutation.Schedule(); ok {
+		_spec.SetField(task.FieldSchedule, field.TypeJSON, value)
+		_node.Schedule = value
 	}
 	if nodes := tc.mutation.QuestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -631,6 +642,24 @@ func (u *TaskUpsert) ClearError() *TaskUpsert {
 	return u
 }
 
+// SetSchedule sets the "schedule" field.
+func (u *TaskUpsert) SetSchedule(v *types.Schedule) *TaskUpsert {
+	u.Set(task.FieldSchedule, v)
+	return u
+}
+
+// UpdateSchedule sets the "schedule" field to the value that was provided on create.
+func (u *TaskUpsert) UpdateSchedule() *TaskUpsert {
+	u.SetExcluded(task.FieldSchedule)
+	return u
+}
+
+// ClearSchedule clears the value of the "schedule" field.
+func (u *TaskUpsert) ClearSchedule() *TaskUpsert {
+	u.SetNull(task.FieldSchedule)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -813,6 +842,27 @@ func (u *TaskUpsertOne) UpdateError() *TaskUpsertOne {
 func (u *TaskUpsertOne) ClearError() *TaskUpsertOne {
 	return u.Update(func(s *TaskUpsert) {
 		s.ClearError()
+	})
+}
+
+// SetSchedule sets the "schedule" field.
+func (u *TaskUpsertOne) SetSchedule(v *types.Schedule) *TaskUpsertOne {
+	return u.Update(func(s *TaskUpsert) {
+		s.SetSchedule(v)
+	})
+}
+
+// UpdateSchedule sets the "schedule" field to the value that was provided on create.
+func (u *TaskUpsertOne) UpdateSchedule() *TaskUpsertOne {
+	return u.Update(func(s *TaskUpsert) {
+		s.UpdateSchedule()
+	})
+}
+
+// ClearSchedule clears the value of the "schedule" field.
+func (u *TaskUpsertOne) ClearSchedule() *TaskUpsertOne {
+	return u.Update(func(s *TaskUpsert) {
+		s.ClearSchedule()
 	})
 }
 
@@ -1164,6 +1214,27 @@ func (u *TaskUpsertBulk) UpdateError() *TaskUpsertBulk {
 func (u *TaskUpsertBulk) ClearError() *TaskUpsertBulk {
 	return u.Update(func(s *TaskUpsert) {
 		s.ClearError()
+	})
+}
+
+// SetSchedule sets the "schedule" field.
+func (u *TaskUpsertBulk) SetSchedule(v *types.Schedule) *TaskUpsertBulk {
+	return u.Update(func(s *TaskUpsert) {
+		s.SetSchedule(v)
+	})
+}
+
+// UpdateSchedule sets the "schedule" field to the value that was provided on create.
+func (u *TaskUpsertBulk) UpdateSchedule() *TaskUpsertBulk {
+	return u.Update(func(s *TaskUpsert) {
+		s.UpdateSchedule()
+	})
+}
+
+// ClearSchedule clears the value of the "schedule" field.
+func (u *TaskUpsertBulk) ClearSchedule() *TaskUpsertBulk {
+	return u.Update(func(s *TaskUpsert) {
+		s.ClearSchedule()
 	})
 }
 

@@ -3061,6 +3061,23 @@ input TagWhereInput {
   hasHosts: Boolean
   hasHostsWith: [HostWhereInput!]
 }
+"""
+Schedule configuration for automatic task execution
+"""
+type Schedule {
+  """
+  Execute task on new hosts
+  """
+  newHost: Boolean!
+  """
+  Execute task on new beacons
+  """
+  newBeacon: Boolean!
+  """
+  Cron schedule string
+  """
+  cron: String!
+}
 type Task implements Node {
   id: ID!
   """
@@ -3095,6 +3112,10 @@ type Task implements Node {
   Error, if any, produced while executing the Task
   """
   error: String
+  """
+  Schedule configuration for automatic task execution on new hosts or beacons
+  """
+  schedule: Schedule
   quest: Quest!
   beacon: Beacon!
   reportedFiles(

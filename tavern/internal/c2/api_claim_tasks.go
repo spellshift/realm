@@ -61,6 +61,14 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
 	}
 
+	// Check if host exists before upserting
+	hostExists, err := srv.graph.Host.Query().
+		Where(host.IdentifierEQ(req.Beacon.Host.Identifier)).
+		Exist(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to query host entity: %v", err)
+	}
+
 	// Upsert the host
 	hostID, err := srv.graph.Host.Create().
 		SetIdentifier(req.Beacon.Host.Identifier).
@@ -76,6 +84,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
 	}
+
+	isNewHost := !hostExists
+	isNewBeacon := false
 
 	// Metrics
 	defer func() {
@@ -118,6 +129,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
 	}
+	isNewBeacon = !beaconExists
 	var beaconNameAddr *string = nil
 	if !beaconExists {
 		candidateNames := []string{
@@ -170,6 +182,43 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		ID(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
+	}
+
+	// Queue scheduled tasks for new hosts/beacons
+	if isNewHost || isNewBeacon {
+		// Query for tasks with schedules that match our condition
+		scheduledTasks, err := srv.graph.Task.Query().
+			Where(task.ScheduleNotNil()).
+			WithQuest().
+			All(ctx)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to query scheduled tasks: %v", err)
+		}
+
+		// Create task instances for matching scheduled tasks
+		for _, scheduledTask := range scheduledTasks {
+			if scheduledTask.Schedule != nil {
+				shouldQueue := false
+				if isNewHost && scheduledTask.Schedule.NewHost {
+					shouldQueue = true
+				}
+				if isNewBeacon && scheduledTask.Schedule.NewBeacon {
+					shouldQueue = true
+				}
+
+				if shouldQueue {
+					// Create a new task instance based on the scheduled task
+					_, err := srv.graph.Task.Create().
+						SetQuestID(scheduledTask.Edges.Quest.ID).
+						SetBeaconID(beaconID).
+						Save(ctx)
+					if err != nil {
+						slog.ErrorContext(ctx, "failed to create scheduled task instance", "err", err, "scheduled_task_id", scheduledTask.ID, "beacon_id", beaconID)
+						// Continue with other tasks even if one fails
+					}
+				}
+			}
+		}
 	}
 
 	// Load Tasks

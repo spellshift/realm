@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/hook"
+	"realm.pub/tavern/internal/types"
 )
 
 // Task holds the schema definition for the Task entity.
@@ -59,6 +60,9 @@ func (Task) Fields() []ent.Field {
 				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
 			}).
 			Comment("Error, if any, produced while executing the Task"),
+		field.JSON("schedule", &types.Schedule{}).
+			Optional().
+			Comment("Schedule configuration for automatic task execution on new hosts or beacons"),
 	}
 }
 

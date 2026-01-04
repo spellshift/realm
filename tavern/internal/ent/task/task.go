@@ -31,6 +31,8 @@ const (
 	FieldOutputSize = "output_size"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
+	// FieldSchedule holds the string denoting the schedule field in the database.
+	FieldSchedule = "schedule"
 	// EdgeQuest holds the string denoting the quest edge name in mutations.
 	EdgeQuest = "quest"
 	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
@@ -100,6 +102,7 @@ var Columns = []string{
 	FieldOutput,
 	FieldOutputSize,
 	FieldError,
+	FieldSchedule,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "tasks"

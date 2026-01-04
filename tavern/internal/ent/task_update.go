@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/types"
 )
 
 // TaskUpdate is the builder for updating Task entities.
@@ -158,6 +159,18 @@ func (tu *TaskUpdate) SetNillableError(s *string) *TaskUpdate {
 // ClearError clears the value of the "error" field.
 func (tu *TaskUpdate) ClearError() *TaskUpdate {
 	tu.mutation.ClearError()
+	return tu
+}
+
+// SetSchedule sets the "schedule" field.
+func (tu *TaskUpdate) SetSchedule(t *types.Schedule) *TaskUpdate {
+	tu.mutation.SetSchedule(t)
+	return tu
+}
+
+// ClearSchedule clears the value of the "schedule" field.
+func (tu *TaskUpdate) ClearSchedule() *TaskUpdate {
+	tu.mutation.ClearSchedule()
 	return tu
 }
 
@@ -452,6 +465,12 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if tu.mutation.ErrorCleared() {
 		_spec.ClearField(task.FieldError, field.TypeString)
+	}
+	if value, ok := tu.mutation.Schedule(); ok {
+		_spec.SetField(task.FieldSchedule, field.TypeJSON, value)
+	}
+	if tu.mutation.ScheduleCleared() {
+		_spec.ClearField(task.FieldSchedule, field.TypeJSON)
 	}
 	if tu.mutation.QuestCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -838,6 +857,18 @@ func (tuo *TaskUpdateOne) ClearError() *TaskUpdateOne {
 	return tuo
 }
 
+// SetSchedule sets the "schedule" field.
+func (tuo *TaskUpdateOne) SetSchedule(t *types.Schedule) *TaskUpdateOne {
+	tuo.mutation.SetSchedule(t)
+	return tuo
+}
+
+// ClearSchedule clears the value of the "schedule" field.
+func (tuo *TaskUpdateOne) ClearSchedule() *TaskUpdateOne {
+	tuo.mutation.ClearSchedule()
+	return tuo
+}
+
 // SetQuestID sets the "quest" edge to the Quest entity by ID.
 func (tuo *TaskUpdateOne) SetQuestID(id int) *TaskUpdateOne {
 	tuo.mutation.SetQuestID(id)
@@ -1159,6 +1190,12 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	}
 	if tuo.mutation.ErrorCleared() {
 		_spec.ClearField(task.FieldError, field.TypeString)
+	}
+	if value, ok := tuo.mutation.Schedule(); ok {
+		_spec.SetField(task.FieldSchedule, field.TypeJSON, value)
+	}
+	if tuo.mutation.ScheduleCleared() {
+		_spec.ClearField(task.FieldSchedule, field.TypeJSON)
 	}
 	if tuo.mutation.QuestCleared() {
 		edge := &sqlgraph.EdgeSpec{

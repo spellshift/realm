@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/types"
 )
 
 // Task is the model entity for the Task schema.
@@ -35,6 +37,8 @@ type Task struct {
 	OutputSize int `json:"output_size,omitempty"`
 	// Error, if any, produced while executing the Task
 	Error string `json:"error,omitempty"`
+	// Schedule configuration for automatic task execution on new hosts or beacons
+	Schedule *types.Schedule `json:"schedule,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
 	Edges        TaskEdges `json:"edges"`
@@ -132,6 +136,8 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case task.FieldSchedule:
+			values[i] = new([]byte)
 		case task.FieldID, task.FieldOutputSize:
 			values[i] = new(sql.NullInt64)
 		case task.FieldOutput, task.FieldError:
@@ -210,6 +216,14 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field error", values[i])
 			} else if value.Valid {
 				t.Error = value.String
+			}
+		case task.FieldSchedule:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field schedule", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &t.Schedule); err != nil {
+					return fmt.Errorf("unmarshal field schedule: %w", err)
+				}
 			}
 		case task.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -314,6 +328,9 @@ func (t *Task) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("error=")
 	builder.WriteString(t.Error)
+	builder.WriteString(", ")
+	builder.WriteString("schedule=")
+	builder.WriteString(fmt.Sprintf("%v", t.Schedule))
 	builder.WriteByte(')')
 	return builder.String()
 }

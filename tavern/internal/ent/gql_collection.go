@@ -3366,6 +3366,11 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				selectedFields = append(selectedFields, task.FieldError)
 				fieldSeen[task.FieldError] = struct{}{}
 			}
+		case "schedule":
+			if _, ok := fieldSeen[task.FieldSchedule]; !ok {
+				selectedFields = append(selectedFields, task.FieldSchedule)
+				fieldSeen[task.FieldSchedule] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

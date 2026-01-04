@@ -515,6 +515,16 @@ func ErrorContainsFold(v string) predicate.Task {
 	return predicate.Task(sql.FieldContainsFold(FieldError, v))
 }
 
+// ScheduleIsNil applies the IsNil predicate on the "schedule" field.
+func ScheduleIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldSchedule))
+}
+
+// ScheduleNotNil applies the NotNil predicate on the "schedule" field.
+func ScheduleNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldSchedule))
+}
+
 // HasQuest applies the HasEdge predicate on the "quest" edge.
 func HasQuest() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {

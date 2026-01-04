@@ -29,6 +29,7 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/types"
 )
 
 const (
@@ -10489,6 +10490,7 @@ type TaskMutation struct {
 	output_size                 *int
 	addoutput_size              *int
 	error                       *string
+	schedule                    **types.Schedule
 	clearedFields               map[string]struct{}
 	quest                       *int
 	clearedquest                bool
@@ -10982,6 +10984,55 @@ func (m *TaskMutation) ResetError() {
 	delete(m.clearedFields, task.FieldError)
 }
 
+// SetSchedule sets the "schedule" field.
+func (m *TaskMutation) SetSchedule(t *types.Schedule) {
+	m.schedule = &t
+}
+
+// Schedule returns the value of the "schedule" field in the mutation.
+func (m *TaskMutation) Schedule() (r *types.Schedule, exists bool) {
+	v := m.schedule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSchedule returns the old "schedule" field's value of the Task entity.
+// If the Task object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TaskMutation) OldSchedule(ctx context.Context) (v *types.Schedule, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSchedule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSchedule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSchedule: %w", err)
+	}
+	return oldValue.Schedule, nil
+}
+
+// ClearSchedule clears the value of the "schedule" field.
+func (m *TaskMutation) ClearSchedule() {
+	m.schedule = nil
+	m.clearedFields[task.FieldSchedule] = struct{}{}
+}
+
+// ScheduleCleared returns if the "schedule" field was cleared in this mutation.
+func (m *TaskMutation) ScheduleCleared() bool {
+	_, ok := m.clearedFields[task.FieldSchedule]
+	return ok
+}
+
+// ResetSchedule resets all changes to the "schedule" field.
+func (m *TaskMutation) ResetSchedule() {
+	m.schedule = nil
+	delete(m.clearedFields, task.FieldSchedule)
+}
+
 // SetQuestID sets the "quest" edge to the Quest entity by id.
 func (m *TaskMutation) SetQuestID(id int) {
 	m.quest = &id
@@ -11310,7 +11361,7 @@ func (m *TaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TaskMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, task.FieldCreatedAt)
 	}
@@ -11334,6 +11385,9 @@ func (m *TaskMutation) Fields() []string {
 	}
 	if m.error != nil {
 		fields = append(fields, task.FieldError)
+	}
+	if m.schedule != nil {
+		fields = append(fields, task.FieldSchedule)
 	}
 	return fields
 }
@@ -11359,6 +11413,8 @@ func (m *TaskMutation) Field(name string) (ent.Value, bool) {
 		return m.OutputSize()
 	case task.FieldError:
 		return m.Error()
+	case task.FieldSchedule:
+		return m.Schedule()
 	}
 	return nil, false
 }
@@ -11384,6 +11440,8 @@ func (m *TaskMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldOutputSize(ctx)
 	case task.FieldError:
 		return m.OldError(ctx)
+	case task.FieldSchedule:
+		return m.OldSchedule(ctx)
 	}
 	return nil, fmt.Errorf("unknown Task field %s", name)
 }
@@ -11449,6 +11507,13 @@ func (m *TaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetError(v)
 		return nil
+	case task.FieldSchedule:
+		v, ok := value.(*types.Schedule)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSchedule(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Task field %s", name)
 }
@@ -11509,6 +11574,9 @@ func (m *TaskMutation) ClearedFields() []string {
 	if m.FieldCleared(task.FieldError) {
 		fields = append(fields, task.FieldError)
 	}
+	if m.FieldCleared(task.FieldSchedule) {
+		fields = append(fields, task.FieldSchedule)
+	}
 	return fields
 }
 
@@ -11537,6 +11605,9 @@ func (m *TaskMutation) ClearField(name string) error {
 		return nil
 	case task.FieldError:
 		m.ClearError()
+		return nil
+	case task.FieldSchedule:
+		m.ClearSchedule()
 		return nil
 	}
 	return fmt.Errorf("unknown Task nullable field %s", name)
@@ -11569,6 +11640,9 @@ func (m *TaskMutation) ResetField(name string) error {
 		return nil
 	case task.FieldError:
 		m.ResetError()
+		return nil
+	case task.FieldSchedule:
+		m.ResetSchedule()
 		return nil
 	}
 	return fmt.Errorf("unknown Task field %s", name)

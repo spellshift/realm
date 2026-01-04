@@ -37,6 +37,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Task() TaskResolver
 }
 
 type DirectiveRoot struct {
@@ -331,6 +332,12 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Schedule struct {
+		Cron      func(childComplexity int) int
+		NewBeacon func(childComplexity int) int
+		NewHost   func(childComplexity int) int
+	}
+
 	Shell struct {
 		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Beacon         func(childComplexity int) int
@@ -386,6 +393,7 @@ type ComplexityRoot struct {
 		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		Schedule            func(childComplexity int) int
 		Shells              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 	}
 
@@ -1984,6 +1992,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RepositoryEdge.Node(childComplexity), true
 
+	case "Schedule.cron":
+		if e.complexity.Schedule.Cron == nil {
+			break
+		}
+
+		return e.complexity.Schedule.Cron(childComplexity), true
+
+	case "Schedule.newBeacon":
+		if e.complexity.Schedule.NewBeacon == nil {
+			break
+		}
+
+		return e.complexity.Schedule.NewBeacon(childComplexity), true
+
+	case "Schedule.newHost":
+		if e.complexity.Schedule.NewHost == nil {
+			break
+		}
+
+		return e.complexity.Schedule.NewHost(childComplexity), true
+
 	case "Shell.activeUsers":
 		if e.complexity.Shell.ActiveUsers == nil {
 			break
@@ -2260,6 +2289,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.ReportedProcesses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
+
+	case "Task.schedule":
+		if e.complexity.Task.Schedule == nil {
+			break
+		}
+
+		return e.complexity.Task.Schedule(childComplexity), true
 
 	case "Task.shells":
 		if e.complexity.Task.Shells == nil {
@@ -5752,6 +5788,23 @@ input TagWhereInput {
   hasHosts: Boolean
   hasHostsWith: [HostWhereInput!]
 }
+"""
+Schedule configuration for automatic task execution
+"""
+type Schedule {
+  """
+  Execute task on new hosts
+  """
+  newHost: Boolean!
+  """
+  Execute task on new beacons
+  """
+  newBeacon: Boolean!
+  """
+  Cron schedule string
+  """
+  cron: String!
+}
 type Task implements Node {
   id: ID!
   """
@@ -5786,6 +5839,10 @@ type Task implements Node {
   Error, if any, produced while executing the Task
   """
   error: String
+  """
+  Schedule configuration for automatic task execution on new hosts or beacons
+  """
+  schedule: Schedule
   quest: Quest!
   beacon: Beacon!
   reportedFiles(
