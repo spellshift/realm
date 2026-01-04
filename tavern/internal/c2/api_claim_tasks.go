@@ -44,7 +44,7 @@ func init() {
 	prometheus.MustRegister(metricTomeAutomationErrors)
 }
 
-func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time) {
+func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
 	// Tome Automation Logic
 	candidateTomes, err := srv.graph.Tome.Query().
 		Where(tome.Or(
@@ -62,7 +62,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 
 	selectedTomes := make(map[int]*ent.Tome)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-	currentMinute := now.Truncate(time.Minute)
+	cutoff := now.Add(interval)
 
 	for _, t := range candidateTomes {
 		shouldRun := false
@@ -81,10 +81,27 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		if !shouldRun && t.RunOnSchedule != "" {
 			sched, err := parser.Parse(t.RunOnSchedule)
 			if err == nil {
-				// Check if schedule matches current time
-				// Next(now-1sec) == now?
-				next := sched.Next(currentMinute.Add(-1 * time.Second))
-				if next.Equal(currentMinute) {
+				isMatch := false
+				// If schedule contains a range (hyphen), checking for strict current match
+				// without factoring in callback interval.
+				if strings.Contains(t.RunOnSchedule, "-") {
+					currentMinute := now.Truncate(time.Minute)
+					// Verify if 'currentMinute' is a valid trigger time.
+					// We check if the next trigger after (currentMinute - 1s) is exactly currentMinute.
+					next := sched.Next(currentMinute.Add(-1 * time.Second))
+					if next.Equal(currentMinute) {
+						isMatch = true
+					}
+				} else {
+					// Check if any point between now and the next expected check-in matches the run schedule
+					// Next(now-1sec) <= now + interval?
+					next := sched.Next(now.Add(-1 * time.Second))
+					if !next.After(cutoff) {
+						isMatch = true
+					}
+				}
+
+				if isMatch {
 					// Check scheduled_hosts constraint
 					hostCount, err := t.QueryScheduledHosts().Count(ctx)
 					if err != nil {
@@ -294,7 +311,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	// Run Tome Automation (non-blocking, best effort)
-	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now)
+	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, time.Duration(req.GetBeacon().GetActiveTransport().GetInterval())*time.Second)
 
 	// Load Tasks
 	tasks, err := srv.graph.Task.Query().
