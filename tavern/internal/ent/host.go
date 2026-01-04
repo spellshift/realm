@@ -38,8 +38,9 @@ type Host struct {
 	NextSeenAt time.Time `json:"next_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostQuery when eager-loading is set.
-	Edges        HostEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges                HostEdges `json:"edges"`
+	tome_scheduled_hosts *int
+	selectValues         sql.SelectValues
 }
 
 // HostEdges holds the relations/edges for other nodes in the graph.
@@ -125,6 +126,8 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt, host.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
+		case host.ForeignKeys[0]: // tome_scheduled_hosts
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -199,6 +202,13 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field next_seen_at", values[i])
 			} else if value.Valid {
 				h.NextSeenAt = value.Time
+			}
+		case host.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field tome_scheduled_hosts", value)
+			} else if value.Valid {
+				h.tome_scheduled_hosts = new(int)
+				*h.tome_scheduled_hosts = int(value.Int64)
 			}
 		default:
 			h.selectValues.Set(columns[i], values[i])

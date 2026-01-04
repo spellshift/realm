@@ -401,19 +401,23 @@ type ComplexityRoot struct {
 	}
 
 	Tome struct {
-		Author         func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Description    func(childComplexity int) int
-		Eldritch       func(childComplexity int) int
-		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		ParamDefs      func(childComplexity int) int
-		Repository     func(childComplexity int) int
-		SupportModel   func(childComplexity int) int
-		Tactic         func(childComplexity int) int
-		Uploader       func(childComplexity int) int
+		Author                 func(childComplexity int) int
+		CreatedAt              func(childComplexity int) int
+		Description            func(childComplexity int) int
+		Eldritch               func(childComplexity int) int
+		Files                  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) int
+		ID                     func(childComplexity int) int
+		LastModifiedAt         func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		ParamDefs              func(childComplexity int) int
+		Repository             func(childComplexity int) int
+		RunOnFirstHostCallback func(childComplexity int) int
+		RunOnNewBeaconCallback func(childComplexity int) int
+		RunOnSchedule          func(childComplexity int) int
+		ScheduledHosts         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		SupportModel           func(childComplexity int) int
+		Tactic                 func(childComplexity int) int
+		Uploader               func(childComplexity int) int
 	}
 
 	TomeConnection struct {
@@ -2383,6 +2387,39 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Repository(childComplexity), true
 
+	case "Tome.runOnFirstHostCallback":
+		if e.complexity.Tome.RunOnFirstHostCallback == nil {
+			break
+		}
+
+		return e.complexity.Tome.RunOnFirstHostCallback(childComplexity), true
+
+	case "Tome.runOnNewBeaconCallback":
+		if e.complexity.Tome.RunOnNewBeaconCallback == nil {
+			break
+		}
+
+		return e.complexity.Tome.RunOnNewBeaconCallback(childComplexity), true
+
+	case "Tome.runOnSchedule":
+		if e.complexity.Tome.RunOnSchedule == nil {
+			break
+		}
+
+		return e.complexity.Tome.RunOnSchedule(childComplexity), true
+
+	case "Tome.scheduledHosts":
+		if e.complexity.Tome.ScheduledHosts == nil {
+			break
+		}
+
+		args, err := ec.field_Tome_scheduledHosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tome.ScheduledHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
+
 	case "Tome.supportModel":
 		if e.complexity.Tome.SupportModel == nil {
 			break
@@ -3138,6 +3175,18 @@ input CreateTomeInput {
   """
   tactic: TomeTactic
   """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -3146,6 +3195,7 @@ input CreateTomeInput {
   """
   eldritch: String!
   fileIDs: [ID!]
+  scheduledHostIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
@@ -6156,6 +6206,18 @@ type Tome implements Node {
   """
   tactic: TomeTactic!
   """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean!
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean!
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String!
+  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -6202,6 +6264,37 @@ type Tome implements Node {
   Repository from which this Tome was imported (may be null).
   """
   repository: Repository
+  scheduledHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
 }
 """
 A connection to a list of items.
@@ -6386,6 +6479,32 @@ input TomeWhereInput {
   tacticIn: [TomeTactic!]
   tacticNotIn: [TomeTactic!]
   """
+  run_on_new_beacon_callback field predicates
+  """
+  runOnNewBeaconCallback: Boolean
+  runOnNewBeaconCallbackNEQ: Boolean
+  """
+  run_on_first_host_callback field predicates
+  """
+  runOnFirstHostCallback: Boolean
+  runOnFirstHostCallbackNEQ: Boolean
+  """
+  run_on_schedule field predicates
+  """
+  runOnSchedule: String
+  runOnScheduleNEQ: String
+  runOnScheduleIn: [String!]
+  runOnScheduleNotIn: [String!]
+  runOnScheduleGT: String
+  runOnScheduleGTE: String
+  runOnScheduleLT: String
+  runOnScheduleLTE: String
+  runOnScheduleContains: String
+  runOnScheduleHasPrefix: String
+  runOnScheduleHasSuffix: String
+  runOnScheduleEqualFold: String
+  runOnScheduleContainsFold: String
+  """
   param_defs field predicates
   """
   paramDefs: String
@@ -6434,6 +6553,11 @@ input TomeWhereInput {
   """
   hasRepository: Boolean
   hasRepositoryWith: [RepositoryWhereInput!]
+  """
+  scheduled_hosts edge predicates
+  """
+  hasScheduledHosts: Boolean
+  hasScheduledHostsWith: [HostWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -6545,6 +6669,18 @@ input UpdateTomeInput {
   """
   tactic: TomeTactic
   """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -6556,6 +6692,9 @@ input UpdateTomeInput {
   addFileIDs: [ID!]
   removeFileIDs: [ID!]
   clearFiles: Boolean
+  addScheduledHostIDs: [ID!]
+  removeScheduledHostIDs: [ID!]
+  clearScheduledHosts: Boolean
 }
 """
 UpdateUserInput is used for update User object.

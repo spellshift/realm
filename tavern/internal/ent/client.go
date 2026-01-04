@@ -2818,6 +2818,22 @@ func (c *TomeClient) QueryRepository(t *Tome) *RepositoryQuery {
 	return query
 }
 
+// QueryScheduledHosts queries the scheduled_hosts edge of a Tome.
+func (c *TomeClient) QueryScheduledHosts(t *Tome) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tome.ScheduledHostsTable, tome.ScheduledHostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TomeClient) Hooks() []Hook {
 	hooks := c.hooks.Tome

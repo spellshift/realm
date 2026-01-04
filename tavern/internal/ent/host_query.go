@@ -33,6 +33,7 @@ type HostQuery struct {
 	withFiles            *HostFileQuery
 	withProcesses        *HostProcessQuery
 	withCredentials      *HostCredentialQuery
+	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Host) error
 	withNamedTags        map[string]*TagQuery
@@ -521,6 +522,7 @@ func (hq *HostQuery) prepareQuery(ctx context.Context) error {
 func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, error) {
 	var (
 		nodes       = []*Host{}
+		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
 		loadedTypes = [5]bool{
 			hq.withTags != nil,
@@ -530,6 +532,9 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			hq.withCredentials != nil,
 		}
 	)
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, host.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Host).scanValues(nil, columns)
 	}

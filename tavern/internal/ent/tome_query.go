@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
@@ -22,17 +23,19 @@ import (
 // TomeQuery is the builder for querying Tome entities.
 type TomeQuery struct {
 	config
-	ctx            *QueryContext
-	order          []tome.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.Tome
-	withFiles      *FileQuery
-	withUploader   *UserQuery
-	withRepository *RepositoryQuery
-	withFKs        bool
-	modifiers      []func(*sql.Selector)
-	loadTotal      []func(context.Context, []*Tome) error
-	withNamedFiles map[string]*FileQuery
+	ctx                     *QueryContext
+	order                   []tome.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.Tome
+	withFiles               *FileQuery
+	withUploader            *UserQuery
+	withRepository          *RepositoryQuery
+	withScheduledHosts      *HostQuery
+	withFKs                 bool
+	modifiers               []func(*sql.Selector)
+	loadTotal               []func(context.Context, []*Tome) error
+	withNamedFiles          map[string]*FileQuery
+	withNamedScheduledHosts map[string]*HostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -128,6 +131,28 @@ func (tq *TomeQuery) QueryRepository() *RepositoryQuery {
 			sqlgraph.From(tome.Table, tome.FieldID, selector),
 			sqlgraph.To(repository.Table, repository.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, tome.RepositoryTable, tome.RepositoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryScheduledHosts chains the current query on the "scheduled_hosts" edge.
+func (tq *TomeQuery) QueryScheduledHosts() *HostQuery {
+	query := (&HostClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, selector),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tome.ScheduledHostsTable, tome.ScheduledHostsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -322,14 +347,15 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 		return nil
 	}
 	return &TomeQuery{
-		config:         tq.config,
-		ctx:            tq.ctx.Clone(),
-		order:          append([]tome.OrderOption{}, tq.order...),
-		inters:         append([]Interceptor{}, tq.inters...),
-		predicates:     append([]predicate.Tome{}, tq.predicates...),
-		withFiles:      tq.withFiles.Clone(),
-		withUploader:   tq.withUploader.Clone(),
-		withRepository: tq.withRepository.Clone(),
+		config:             tq.config,
+		ctx:                tq.ctx.Clone(),
+		order:              append([]tome.OrderOption{}, tq.order...),
+		inters:             append([]Interceptor{}, tq.inters...),
+		predicates:         append([]predicate.Tome{}, tq.predicates...),
+		withFiles:          tq.withFiles.Clone(),
+		withUploader:       tq.withUploader.Clone(),
+		withRepository:     tq.withRepository.Clone(),
+		withScheduledHosts: tq.withScheduledHosts.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -366,6 +392,17 @@ func (tq *TomeQuery) WithRepository(opts ...func(*RepositoryQuery)) *TomeQuery {
 		opt(query)
 	}
 	tq.withRepository = query
+	return tq
+}
+
+// WithScheduledHosts tells the query-builder to eager-load the nodes that are connected to
+// the "scheduled_hosts" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithScheduledHosts(opts ...func(*HostQuery)) *TomeQuery {
+	query := (&HostClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withScheduledHosts = query
 	return tq
 }
 
@@ -448,10 +485,11 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 		nodes       = []*Tome{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			tq.withFiles != nil,
 			tq.withUploader != nil,
 			tq.withRepository != nil,
+			tq.withScheduledHosts != nil,
 		}
 	)
 	if tq.withUploader != nil || tq.withRepository != nil {
@@ -500,10 +538,24 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 			return nil, err
 		}
 	}
+	if query := tq.withScheduledHosts; query != nil {
+		if err := tq.loadScheduledHosts(ctx, query, nodes,
+			func(n *Tome) { n.Edges.ScheduledHosts = []*Host{} },
+			func(n *Tome, e *Host) { n.Edges.ScheduledHosts = append(n.Edges.ScheduledHosts, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range tq.withNamedFiles {
 		if err := tq.loadFiles(ctx, query, nodes,
 			func(n *Tome) { n.appendNamedFiles(name) },
 			func(n *Tome, e *File) { n.appendNamedFiles(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedScheduledHosts {
+		if err := tq.loadScheduledHosts(ctx, query, nodes,
+			func(n *Tome) { n.appendNamedScheduledHosts(name) },
+			func(n *Tome, e *Host) { n.appendNamedScheduledHosts(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -640,6 +692,37 @@ func (tq *TomeQuery) loadRepository(ctx context.Context, query *RepositoryQuery,
 	}
 	return nil
 }
+func (tq *TomeQuery) loadScheduledHosts(ctx context.Context, query *HostQuery, nodes []*Tome, init func(*Tome), assign func(*Tome, *Host)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Tome)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Host(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(tome.ScheduledHostsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.tome_scheduled_hosts
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "tome_scheduled_hosts" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "tome_scheduled_hosts" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (tq *TomeQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := tq.querySpec()
@@ -736,6 +819,20 @@ func (tq *TomeQuery) WithNamedFiles(name string, opts ...func(*FileQuery)) *Tome
 		tq.withNamedFiles = make(map[string]*FileQuery)
 	}
 	tq.withNamedFiles[name] = query
+	return tq
+}
+
+// WithNamedScheduledHosts tells the query-builder to eager-load the nodes that are connected to the "scheduled_hosts"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithNamedScheduledHosts(name string, opts ...func(*HostQuery)) *TomeQuery {
+	query := (&HostClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedScheduledHosts == nil {
+		tq.withNamedScheduledHosts = make(map[string]*HostQuery)
+	}
+	tq.withNamedScheduledHosts[name] = query
 	return tq
 }
 

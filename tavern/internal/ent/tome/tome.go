@@ -32,6 +32,12 @@ const (
 	FieldSupportModel = "support_model"
 	// FieldTactic holds the string denoting the tactic field in the database.
 	FieldTactic = "tactic"
+	// FieldRunOnNewBeaconCallback holds the string denoting the run_on_new_beacon_callback field in the database.
+	FieldRunOnNewBeaconCallback = "run_on_new_beacon_callback"
+	// FieldRunOnFirstHostCallback holds the string denoting the run_on_first_host_callback field in the database.
+	FieldRunOnFirstHostCallback = "run_on_first_host_callback"
+	// FieldRunOnSchedule holds the string denoting the run_on_schedule field in the database.
+	FieldRunOnSchedule = "run_on_schedule"
 	// FieldParamDefs holds the string denoting the param_defs field in the database.
 	FieldParamDefs = "param_defs"
 	// FieldHash holds the string denoting the hash field in the database.
@@ -44,6 +50,8 @@ const (
 	EdgeUploader = "uploader"
 	// EdgeRepository holds the string denoting the repository edge name in mutations.
 	EdgeRepository = "repository"
+	// EdgeScheduledHosts holds the string denoting the scheduled_hosts edge name in mutations.
+	EdgeScheduledHosts = "scheduled_hosts"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
 	// FilesTable is the table that holds the files relation/edge. The primary key declared below.
@@ -65,6 +73,13 @@ const (
 	RepositoryInverseTable = "repositories"
 	// RepositoryColumn is the table column denoting the repository relation/edge.
 	RepositoryColumn = "tome_repository"
+	// ScheduledHostsTable is the table that holds the scheduled_hosts relation/edge.
+	ScheduledHostsTable = "hosts"
+	// ScheduledHostsInverseTable is the table name for the Host entity.
+	// It exists in this package in order to avoid circular dependency with the "host" package.
+	ScheduledHostsInverseTable = "hosts"
+	// ScheduledHostsColumn is the table column denoting the scheduled_hosts relation/edge.
+	ScheduledHostsColumn = "tome_scheduled_hosts"
 )
 
 // Columns holds all SQL columns for tome fields.
@@ -77,6 +92,9 @@ var Columns = []string{
 	FieldAuthor,
 	FieldSupportModel,
 	FieldTactic,
+	FieldRunOnNewBeaconCallback,
+	FieldRunOnFirstHostCallback,
+	FieldRunOnSchedule,
 	FieldParamDefs,
 	FieldHash,
 	FieldEldritch,
@@ -125,6 +143,12 @@ var (
 	UpdateDefaultLastModifiedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultRunOnNewBeaconCallback holds the default value on creation for the "run_on_new_beacon_callback" field.
+	DefaultRunOnNewBeaconCallback bool
+	// DefaultRunOnFirstHostCallback holds the default value on creation for the "run_on_first_host_callback" field.
+	DefaultRunOnFirstHostCallback bool
+	// DefaultRunOnSchedule holds the default value on creation for the "run_on_schedule" field.
+	DefaultRunOnSchedule string
 	// ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
 	ParamDefsValidator func(string) error
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
@@ -240,6 +264,21 @@ func ByTactic(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTactic, opts...).ToFunc()
 }
 
+// ByRunOnNewBeaconCallback orders the results by the run_on_new_beacon_callback field.
+func ByRunOnNewBeaconCallback(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRunOnNewBeaconCallback, opts...).ToFunc()
+}
+
+// ByRunOnFirstHostCallback orders the results by the run_on_first_host_callback field.
+func ByRunOnFirstHostCallback(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRunOnFirstHostCallback, opts...).ToFunc()
+}
+
+// ByRunOnSchedule orders the results by the run_on_schedule field.
+func ByRunOnSchedule(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRunOnSchedule, opts...).ToFunc()
+}
+
 // ByParamDefs orders the results by the param_defs field.
 func ByParamDefs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParamDefs, opts...).ToFunc()
@@ -282,6 +321,20 @@ func ByRepositoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRepositoryStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByScheduledHostsCount orders the results by scheduled_hosts count.
+func ByScheduledHostsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScheduledHostsStep(), opts...)
+	}
+}
+
+// ByScheduledHosts orders the results by scheduled_hosts terms.
+func ByScheduledHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScheduledHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newFilesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -301,6 +354,13 @@ func newRepositoryStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RepositoryInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, RepositoryTable, RepositoryColumn),
+	)
+}
+func newScheduledHostsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScheduledHostsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ScheduledHostsTable, ScheduledHostsColumn),
 	)
 }
 
