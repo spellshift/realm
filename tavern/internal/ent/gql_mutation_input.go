@@ -322,14 +322,18 @@ func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 
 // CreateTomeInput represents a mutation input for creating tomes.
 type CreateTomeInput struct {
-	Name         string
-	Description  string
-	Author       string
-	SupportModel *tome.SupportModel
-	Tactic       *tome.Tactic
-	ParamDefs    *string
-	Eldritch     string
-	FileIDs      []int
+	Name                   string
+	Description            string
+	Author                 string
+	SupportModel           *tome.SupportModel
+	Tactic                 *tome.Tactic
+	RunOnNewBeaconCallback *bool
+	RunOnFirstHostCallback *bool
+	RunOnSchedule          *string
+	ParamDefs              *string
+	Eldritch               string
+	FileIDs                []int
+	ScheduledHostIDs       []int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
@@ -343,12 +347,24 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.Tactic; v != nil {
 		m.SetTactic(*v)
 	}
+	if v := i.RunOnNewBeaconCallback; v != nil {
+		m.SetRunOnNewBeaconCallback(*v)
+	}
+	if v := i.RunOnFirstHostCallback; v != nil {
+		m.SetRunOnFirstHostCallback(*v)
+	}
+	if v := i.RunOnSchedule; v != nil {
+		m.SetRunOnSchedule(*v)
+	}
 	if v := i.ParamDefs; v != nil {
 		m.SetParamDefs(*v)
 	}
 	m.SetEldritch(i.Eldritch)
 	if v := i.FileIDs; len(v) > 0 {
 		m.AddFileIDs(v...)
+	}
+	if v := i.ScheduledHostIDs; len(v) > 0 {
+		m.AddScheduledHostIDs(v...)
 	}
 }
 
@@ -360,18 +376,24 @@ func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
 
 // UpdateTomeInput represents a mutation input for updating tomes.
 type UpdateTomeInput struct {
-	LastModifiedAt *time.Time
-	Name           *string
-	Description    *string
-	Author         *string
-	SupportModel   *tome.SupportModel
-	Tactic         *tome.Tactic
-	ClearParamDefs bool
-	ParamDefs      *string
-	Eldritch       *string
-	ClearFiles     bool
-	AddFileIDs     []int
-	RemoveFileIDs  []int
+	LastModifiedAt         *time.Time
+	Name                   *string
+	Description            *string
+	Author                 *string
+	SupportModel           *tome.SupportModel
+	Tactic                 *tome.Tactic
+	RunOnNewBeaconCallback *bool
+	RunOnFirstHostCallback *bool
+	RunOnSchedule          *string
+	ClearParamDefs         bool
+	ParamDefs              *string
+	Eldritch               *string
+	ClearFiles             bool
+	AddFileIDs             []int
+	RemoveFileIDs          []int
+	ClearScheduledHosts    bool
+	AddScheduledHostIDs    []int
+	RemoveScheduledHostIDs []int
 }
 
 // Mutate applies the UpdateTomeInput on the TomeMutation builder.
@@ -394,6 +416,15 @@ func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.Tactic; v != nil {
 		m.SetTactic(*v)
 	}
+	if v := i.RunOnNewBeaconCallback; v != nil {
+		m.SetRunOnNewBeaconCallback(*v)
+	}
+	if v := i.RunOnFirstHostCallback; v != nil {
+		m.SetRunOnFirstHostCallback(*v)
+	}
+	if v := i.RunOnSchedule; v != nil {
+		m.SetRunOnSchedule(*v)
+	}
 	if i.ClearParamDefs {
 		m.ClearParamDefs()
 	}
@@ -411,6 +442,15 @@ func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
 	}
 	if v := i.RemoveFileIDs; len(v) > 0 {
 		m.RemoveFileIDs(v...)
+	}
+	if i.ClearScheduledHosts {
+		m.ClearScheduledHosts()
+	}
+	if v := i.AddScheduledHostIDs; len(v) > 0 {
+		m.AddScheduledHostIDs(v...)
+	}
+	if v := i.RemoveScheduledHostIDs; len(v) > 0 {
+		m.RemoveScheduledHostIDs(v...)
 	}
 }
 

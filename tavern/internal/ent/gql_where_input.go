@@ -6101,6 +6101,29 @@ type TomeWhereInput struct {
 	TacticIn    []tome.Tactic `json:"tacticIn,omitempty"`
 	TacticNotIn []tome.Tactic `json:"tacticNotIn,omitempty"`
 
+	// "run_on_new_beacon_callback" field predicates.
+	RunOnNewBeaconCallback    *bool `json:"runOnNewBeaconCallback,omitempty"`
+	RunOnNewBeaconCallbackNEQ *bool `json:"runOnNewBeaconCallbackNEQ,omitempty"`
+
+	// "run_on_first_host_callback" field predicates.
+	RunOnFirstHostCallback    *bool `json:"runOnFirstHostCallback,omitempty"`
+	RunOnFirstHostCallbackNEQ *bool `json:"runOnFirstHostCallbackNEQ,omitempty"`
+
+	// "run_on_schedule" field predicates.
+	RunOnSchedule             *string  `json:"runOnSchedule,omitempty"`
+	RunOnScheduleNEQ          *string  `json:"runOnScheduleNEQ,omitempty"`
+	RunOnScheduleIn           []string `json:"runOnScheduleIn,omitempty"`
+	RunOnScheduleNotIn        []string `json:"runOnScheduleNotIn,omitempty"`
+	RunOnScheduleGT           *string  `json:"runOnScheduleGT,omitempty"`
+	RunOnScheduleGTE          *string  `json:"runOnScheduleGTE,omitempty"`
+	RunOnScheduleLT           *string  `json:"runOnScheduleLT,omitempty"`
+	RunOnScheduleLTE          *string  `json:"runOnScheduleLTE,omitempty"`
+	RunOnScheduleContains     *string  `json:"runOnScheduleContains,omitempty"`
+	RunOnScheduleHasPrefix    *string  `json:"runOnScheduleHasPrefix,omitempty"`
+	RunOnScheduleHasSuffix    *string  `json:"runOnScheduleHasSuffix,omitempty"`
+	RunOnScheduleEqualFold    *string  `json:"runOnScheduleEqualFold,omitempty"`
+	RunOnScheduleContainsFold *string  `json:"runOnScheduleContainsFold,omitempty"`
+
 	// "param_defs" field predicates.
 	ParamDefs             *string  `json:"paramDefs,omitempty"`
 	ParamDefsNEQ          *string  `json:"paramDefsNEQ,omitempty"`
@@ -6144,6 +6167,10 @@ type TomeWhereInput struct {
 	// "repository" edge predicates.
 	HasRepository     *bool                   `json:"hasRepository,omitempty"`
 	HasRepositoryWith []*RepositoryWhereInput `json:"hasRepositoryWith,omitempty"`
+
+	// "scheduled_hosts" edge predicates.
+	HasScheduledHosts     *bool             `json:"hasScheduledHosts,omitempty"`
+	HasScheduledHostsWith []*HostWhereInput `json:"hasScheduledHostsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -6430,6 +6457,57 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 	if len(i.TacticNotIn) > 0 {
 		predicates = append(predicates, tome.TacticNotIn(i.TacticNotIn...))
 	}
+	if i.RunOnNewBeaconCallback != nil {
+		predicates = append(predicates, tome.RunOnNewBeaconCallbackEQ(*i.RunOnNewBeaconCallback))
+	}
+	if i.RunOnNewBeaconCallbackNEQ != nil {
+		predicates = append(predicates, tome.RunOnNewBeaconCallbackNEQ(*i.RunOnNewBeaconCallbackNEQ))
+	}
+	if i.RunOnFirstHostCallback != nil {
+		predicates = append(predicates, tome.RunOnFirstHostCallbackEQ(*i.RunOnFirstHostCallback))
+	}
+	if i.RunOnFirstHostCallbackNEQ != nil {
+		predicates = append(predicates, tome.RunOnFirstHostCallbackNEQ(*i.RunOnFirstHostCallbackNEQ))
+	}
+	if i.RunOnSchedule != nil {
+		predicates = append(predicates, tome.RunOnScheduleEQ(*i.RunOnSchedule))
+	}
+	if i.RunOnScheduleNEQ != nil {
+		predicates = append(predicates, tome.RunOnScheduleNEQ(*i.RunOnScheduleNEQ))
+	}
+	if len(i.RunOnScheduleIn) > 0 {
+		predicates = append(predicates, tome.RunOnScheduleIn(i.RunOnScheduleIn...))
+	}
+	if len(i.RunOnScheduleNotIn) > 0 {
+		predicates = append(predicates, tome.RunOnScheduleNotIn(i.RunOnScheduleNotIn...))
+	}
+	if i.RunOnScheduleGT != nil {
+		predicates = append(predicates, tome.RunOnScheduleGT(*i.RunOnScheduleGT))
+	}
+	if i.RunOnScheduleGTE != nil {
+		predicates = append(predicates, tome.RunOnScheduleGTE(*i.RunOnScheduleGTE))
+	}
+	if i.RunOnScheduleLT != nil {
+		predicates = append(predicates, tome.RunOnScheduleLT(*i.RunOnScheduleLT))
+	}
+	if i.RunOnScheduleLTE != nil {
+		predicates = append(predicates, tome.RunOnScheduleLTE(*i.RunOnScheduleLTE))
+	}
+	if i.RunOnScheduleContains != nil {
+		predicates = append(predicates, tome.RunOnScheduleContains(*i.RunOnScheduleContains))
+	}
+	if i.RunOnScheduleHasPrefix != nil {
+		predicates = append(predicates, tome.RunOnScheduleHasPrefix(*i.RunOnScheduleHasPrefix))
+	}
+	if i.RunOnScheduleHasSuffix != nil {
+		predicates = append(predicates, tome.RunOnScheduleHasSuffix(*i.RunOnScheduleHasSuffix))
+	}
+	if i.RunOnScheduleEqualFold != nil {
+		predicates = append(predicates, tome.RunOnScheduleEqualFold(*i.RunOnScheduleEqualFold))
+	}
+	if i.RunOnScheduleContainsFold != nil {
+		predicates = append(predicates, tome.RunOnScheduleContainsFold(*i.RunOnScheduleContainsFold))
+	}
 	if i.ParamDefs != nil {
 		predicates = append(predicates, tome.ParamDefsEQ(*i.ParamDefs))
 	}
@@ -6568,6 +6646,24 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, tome.HasRepositoryWith(with...))
+	}
+	if i.HasScheduledHosts != nil {
+		p := tome.HasScheduledHosts()
+		if !*i.HasScheduledHosts {
+			p = tome.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScheduledHostsWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasScheduledHostsWith))
+		for _, w := range i.HasScheduledHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScheduledHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tome.HasScheduledHostsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
