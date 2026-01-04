@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/namegen"
 )
 
@@ -60,6 +61,15 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if req.Beacon.Agent.Identifier == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
 	}
+
+	// Check if host exists (for new host detection)
+	hostExists, err := srv.graph.Host.Query().
+		Where(host.IdentifierEQ(req.Beacon.Host.Identifier)).
+		Exist(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to query host entity: %v", err)
+	}
+	isNewHost := !hostExists
 
 	// Upsert the host
 	hostID, err := srv.graph.Host.Create().
@@ -170,6 +180,39 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		ID(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
+	}
+
+	// Auto-queue Agent Info tome for new hosts
+	if isNewHost {
+		agentInfoTome, err := srv.graph.Tome.Query().
+			Where(tome.NameEQ("Agent Info")).
+			Only(ctx)
+		if err != nil {
+			slog.WarnContext(ctx, "failed to load Agent Info tome for auto-queuing on new host", "err", err, "host_identifier", req.Beacon.Host.Identifier)
+		} else {
+			// Create quest for Agent Info tome
+			quest, err := srv.graph.Quest.Create().
+				SetName(fmt.Sprintf("Auto: Agent Info (%s)", req.Beacon.Host.Name)).
+				SetTomeID(agentInfoTome.ID).
+				SetParameters("{}").
+				SetEldritchAtCreation(agentInfoTome.Eldritch).
+				SetParamDefsAtCreation(agentInfoTome.ParamDefs).
+				Save(ctx)
+			if err != nil {
+				slog.WarnContext(ctx, "failed to create auto quest for new host", "err", err, "host_identifier", req.Beacon.Host.Identifier)
+			} else {
+				// Create task for the new beacon
+				_, err := srv.graph.Task.Create().
+					SetQuestID(quest.ID).
+					SetBeaconID(beaconID).
+					Save(ctx)
+				if err != nil {
+					slog.WarnContext(ctx, "failed to create auto task for new host", "err", err, "host_identifier", req.Beacon.Host.Identifier, "beacon_id", beaconID)
+				} else {
+					slog.InfoContext(ctx, "auto-queued Agent Info tome for new host", "host_identifier", req.Beacon.Host.Identifier, "host_name", req.Beacon.Host.Name, "beacon_id", beaconID)
+				}
+			}
+		}
 	}
 
 	// Load Tasks
