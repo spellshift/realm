@@ -2,6 +2,7 @@ package portals_test
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"fmt"
 	"log/slog"
@@ -25,6 +26,7 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/jwt"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -92,7 +94,17 @@ func BenchmarkPortalThroughput(b *testing.B) {
 	// Create a placeholder shellMux since C2 requires it, but we won't use it.
 	var shellMux *stream.Mux = nil
 
-	c2Srv := c2.New(client, shellMux, portalMux)
+	// Setup JWT service for testing
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		b.Fatalf("failed to generate ed25519 key: %v", err)
+	}
+	jwtService, err := jwt.NewService(privKey, pubKey)
+	if err != nil {
+		b.Fatalf("failed to create JWT service: %v", err)
+	}
+
+	c2Srv := c2.New(client, shellMux, portalMux, jwtService)
 	portalSrv := portals.New(client, portalMux)
 
 	// 4. Start gRPC Server
