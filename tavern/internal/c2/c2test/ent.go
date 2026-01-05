@@ -11,8 +11,8 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/namegen"
 )
 
@@ -50,15 +50,15 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 		),
 	)
 
-	var fileNames []string
-	files := task.
+	var assetNames []string
+	assets := task.
 		QueryQuest().
 		QueryTome().
-		QueryFiles().
-		Order(file.ByID()).
+		QueryAssets().
+		Order(asset.ByID()).
 		AllX(ctx)
-	for _, f := range files {
-		fileNames = append(fileNames, f.Name)
+	for _, a := range assets {
+		assetNames = append(assetNames, a.Name)
 	}
 
 	return &c2pb.Task{
@@ -70,7 +70,7 @@ func ConvertTaskToC2PB(t *testing.T, ctx context.Context, task *ent.Task) *c2pb.
 				OnlyX(ctx).
 				Eldritch,
 			Parameters: params,
-			FileNames:  fileNames,
+			FileNames:  assetNames,
 		},
 		QuestName: task.
 			QueryQuest().
@@ -85,16 +85,16 @@ func NewRandomAssignedTask(ctx context.Context, graph *ent.Client, beaconIdentif
 		Where(
 			beacon.Identifier(beaconIdentifier),
 		).OnlyX(ctx)
-	bundle := graph.File.Create().
+	bundle := graph.Asset.Create().
 		SetName(namegen.NewComplex()).
 		SetContent(newRandomBytes(1024)).
 		SaveX(ctx)
-	files := []*ent.File{
-		graph.File.Create().
+	assets := []*ent.Asset{
+		graph.Asset.Create().
 			SetName(namegen.NewComplex()).
 			SetContent(newRandomBytes(1024)).
 			SaveX(ctx),
-		graph.File.Create().
+		graph.Asset.Create().
 			SetName(namegen.NewComplex()).
 			SetContent(newRandomBytes(1024)).
 			SaveX(ctx),
@@ -105,7 +105,7 @@ func NewRandomAssignedTask(ctx context.Context, graph *ent.Client, beaconIdentif
 		SetDescription(string(newRandomBytes(120))).
 		SetAuthor("kcarretto").
 		SetParamDefs(`[{"name":"test-param","label":"Test","type":"string","placeholder":"Enter text..."}]`).
-		AddFiles(files...).
+		AddAssets(assets...).
 		SaveX(ctx)
 	quest := graph.Quest.Create().
 		SetName(namegen.NewComplex()).

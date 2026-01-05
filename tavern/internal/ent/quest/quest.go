@@ -45,9 +45,9 @@ const (
 	TomeColumn = "quest_tome"
 	// BundleTable is the table that holds the bundle relation/edge.
 	BundleTable = "quests"
-	// BundleInverseTable is the table name for the File entity.
-	// It exists in this package in order to avoid circular dependency with the "file" package.
-	BundleInverseTable = "files"
+	// BundleInverseTable is the table name for the Asset entity.
+	// It exists in this package in order to avoid circular dependency with the "asset" package.
+	BundleInverseTable = "assets"
 	// BundleColumn is the table column denoting the bundle relation/edge.
 	BundleColumn = "quest_bundle"
 	// TasksTable is the table that holds the tasks relation/edge.

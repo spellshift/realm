@@ -28,38 +28,38 @@ func TestUpload(t *testing.T) {
 
 	expectedContent := []byte("file_content")
 	newExpectedContent := []byte("new_file_content")
-	existingFile := newFile(graph, "ExistingTestFile", expectedContent)
+	existingAsset := newAsset(graph, "ExistingTestAsset", expectedContent)
 
-	t.Run("NewFile", newUploadTest(
+	t.Run("NewAsset", newUploadTest(
 		graph,
-		newUploadRequest(t, "NewUploadTestFile", expectedContent),
+		newUploadRequest(t, "NewUploadTestAsset", expectedContent),
 		func(t *testing.T, id int, err error) {
 			require.NoError(t, err)
 			assert.NotEqual(t, 0, id)
 
-			f, err := graph.File.Get(context.Background(), id)
+			a, err := graph.Asset.Get(context.Background(), id)
 			require.NoError(t, err)
-			assert.Equal(t, id, f.ID)
-			assert.Equal(t, "NewUploadTestFile", f.Name)
-			assert.Equal(t, len(expectedContent), f.Size)
-			assert.Equal(t, fmt.Sprintf("%x", sha3.Sum256(expectedContent)), f.Hash)
-			assert.Equal(t, expectedContent, f.Content)
+			assert.Equal(t, id, a.ID)
+			assert.Equal(t, "NewUploadTestAsset", a.Name)
+			assert.Equal(t, len(expectedContent), a.Size)
+			assert.Equal(t, fmt.Sprintf("%x", sha3.Sum256(expectedContent)), a.Hash)
+			assert.Equal(t, expectedContent, a.Content)
 		},
 	))
-	t.Run("ExistingFile", newUploadTest(
+	t.Run("ExistingAsset", newUploadTest(
 		graph,
-		newUploadRequest(t, existingFile.Name, newExpectedContent),
+		newUploadRequest(t, existingAsset.Name, newExpectedContent),
 		func(t *testing.T, id int, err error) {
 			require.NoError(t, err)
 			assert.NotEqual(t, 0, id)
 
-			f, err := graph.File.Get(context.Background(), id)
+			a, err := graph.Asset.Get(context.Background(), id)
 			require.NoError(t, err)
-			assert.Equal(t, existingFile.ID, f.ID)
-			assert.Equal(t, existingFile.Name, f.Name)
-			assert.Equal(t, len(newExpectedContent), f.Size)
-			assert.Equal(t, fmt.Sprintf("%x", sha3.Sum256(newExpectedContent)), f.Hash)
-			assert.Equal(t, newExpectedContent, f.Content)
+			assert.Equal(t, existingAsset.ID, a.ID)
+			assert.Equal(t, existingAsset.Name, a.Name)
+			assert.Equal(t, len(newExpectedContent), a.Size)
+			assert.Equal(t, fmt.Sprintf("%x", sha3.Sum256(newExpectedContent)), a.Hash)
+			assert.Equal(t, newExpectedContent, a.Content)
 		},
 	))
 
@@ -81,19 +81,19 @@ func newUploadTest(graph *ent.Client, req *http.Request, checks ...func(t *testi
 		require.NoError(t, err, "failed to parse response body")
 		defer result.Body.Close()
 
-		// Parse FileID from successful response and run checks
+		// Parse AssetID from successful response and run checks
 		if result.StatusCode == 200 {
 			var resp struct {
 				Data struct {
-					File struct {
+					Asset struct {
 						ID int `json:"id"`
-					} `json:"file"`
+					} `json:"asset"`
 				} `json:"data"`
 			}
 			require.NoError(t, json.Unmarshal(body, &resp), "failed to unmarshal json with 200 response code: %s", body)
 
 			for _, check := range checks {
-				check(t, resp.Data.File.ID, nil)
+				check(t, resp.Data.Asset.ID, nil)
 			}
 			return
 		}
@@ -132,9 +132,9 @@ func newUploadRequest(t *testing.T, fileName string, fileContent []byte) *http.R
 	return req
 }
 
-// newFile is a helper to create files directly via ent
-func newFile(graph *ent.Client, name string, content []byte) *ent.File {
-	return graph.File.Create().
+// newAsset is a helper to create assets directly via ent
+func newAsset(graph *ent.Client, name string, content []byte) *ent.Asset {
+	return graph.Asset.Create().
 		SetName(name).
 		SetContent(content).
 		SaveX(context.Background())

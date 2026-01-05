@@ -37,7 +37,7 @@ func (Link) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("PATH"),
 			).
-			Comment("Unique path for accessing the file via the CDN"),
+			Comment("Unique path for accessing the asset via the CDN"),
 		field.Time("expires_at").
 			Default(time.Unix(0, 0)).
 			Annotations(
@@ -57,13 +57,13 @@ func (Link) Fields() []ent.Field {
 // Edges of the Link.
 func (Link) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("file", File.Type).
+		edge.To("asset", Asset.Type).
 			Unique().
 			Required().
 			Annotations(
-				entgql.Skip(entgql.SkipMutationUpdateInput), // Don't allow changing the file after creation
+				entgql.Skip(entgql.SkipMutationUpdateInput), // Don't allow changing the asset after creation
 			).
-			Comment("The file that this link points to"),
+			Comment("The asset that this link points to"),
 	}
 }
 

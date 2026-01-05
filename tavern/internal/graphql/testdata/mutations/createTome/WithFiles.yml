@@ -5,9 +5,9 @@ state: |
     VALUES (1010,"db1","EXISTING-HOST", "PLATFORM_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
   INSERT INTO `beacons` (id, name, identifier, beacon_host, transport, created_at, last_modified_at)
     VALUES (1337,"delightful-lich","ABCDEFG-123456",1010, "TRANSPORT_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
-  INSERT INTO `files` (id, name, content, hash, created_at, last_modified_at)
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
     VALUES (3000,"TestFile1", "hello world", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
-  INSERT INTO `files` (id, name, content, hash, created_at, last_modified_at)
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
     VALUES (3001,"TestFile2", "some test", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
 requestor:
   session_token: secretToken
@@ -18,7 +18,7 @@ query: |
         description
         author
         eldritch
-        files {
+        assets {
           edges {
             node {
               id
@@ -33,7 +33,7 @@ variables:
     description: So we can test things
     author: kcarretto
     eldritch: print("yay!")
-    fileIDs:
+    assetIDs:
       - 3000
       - 3001
 
@@ -43,7 +43,7 @@ expected:
     description: So we can test things
     author: kcarretto
     eldritch: print("yay!")
-    files:
+    assets:
       edges:
         - node:
             id: "3000"

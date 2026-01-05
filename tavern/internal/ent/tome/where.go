@@ -715,21 +715,21 @@ func EldritchContainsFold(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldContainsFold(FieldEldritch, v))
 }
 
-// HasFiles applies the HasEdge predicate on the "files" edge.
-func HasFiles() predicate.Tome {
+// HasAssets applies the HasEdge predicate on the "assets" edge.
+func HasAssets() predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, FilesTable, FilesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, AssetsTable, AssetsPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasFilesWith applies the HasEdge predicate on the "files" edge with a given conditions (other predicates).
-func HasFilesWith(preds ...predicate.File) predicate.Tome {
+// HasAssetsWith applies the HasEdge predicate on the "assets" edge with a given conditions (other predicates).
+func HasAssetsWith(preds ...predicate.Asset) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
-		step := newFilesStep()
+		step := newAssetsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

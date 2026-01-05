@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
@@ -168,19 +168,19 @@ func (tc *TomeCreate) SetEldritch(s string) *TomeCreate {
 	return tc
 }
 
-// AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tc *TomeCreate) AddFileIDs(ids ...int) *TomeCreate {
-	tc.mutation.AddFileIDs(ids...)
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (tc *TomeCreate) AddAssetIDs(ids ...int) *TomeCreate {
+	tc.mutation.AddAssetIDs(ids...)
 	return tc
 }
 
-// AddFiles adds the "files" edges to the File entity.
-func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// AddAssets adds the "assets" edges to the Asset entity.
+func (tc *TomeCreate) AddAssets(a ...*Asset) *TomeCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tc.AddFileIDs(ids...)
+	return tc.AddAssetIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
@@ -452,15 +452,15 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 		_node.Eldritch = value
 	}
-	if nodes := tc.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.AssetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

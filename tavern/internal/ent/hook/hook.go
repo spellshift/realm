@@ -9,6 +9,18 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
+// The AssetFunc type is an adapter to allow the use of ordinary
+// function as Asset mutator.
+type AssetFunc func(context.Context, *ent.AssetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AssetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AssetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetMutation", m)
+}
+
 // The BeaconFunc type is an adapter to allow the use of ordinary
 // function as Beacon mutator.
 type BeaconFunc func(context.Context, *ent.BeaconMutation) (ent.Value, error)
@@ -19,18 +31,6 @@ func (f BeaconFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BeaconMutation", m)
-}
-
-// The FileFunc type is an adapter to allow the use of ordinary
-// function as File mutator.
-type FileFunc func(context.Context, *ent.FileMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f FileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.FileMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FileMutation", m)
 }
 
 // The HostFunc type is an adapter to allow the use of ordinary

@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -23,7 +23,7 @@ type LinkQuery struct {
 	order      []link.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Link
-	withFile   *FileQuery
+	withAsset  *AssetQuery
 	withFKs    bool
 	modifiers  []func(*sql.Selector)
 	loadTotal  []func(context.Context, []*Link) error
@@ -63,9 +63,9 @@ func (lq *LinkQuery) Order(o ...link.OrderOption) *LinkQuery {
 	return lq
 }
 
-// QueryFile chains the current query on the "file" edge.
-func (lq *LinkQuery) QueryFile() *FileQuery {
-	query := (&FileClient{config: lq.config}).Query()
+// QueryAsset chains the current query on the "asset" edge.
+func (lq *LinkQuery) QueryAsset() *AssetQuery {
+	query := (&AssetClient{config: lq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := lq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,8 +76,8 @@ func (lq *LinkQuery) QueryFile() *FileQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(link.Table, link.FieldID, selector),
-			sqlgraph.To(file.Table, file.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, link.FileTable, link.FileColumn),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, link.AssetTable, link.AssetColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
 		return fromU, nil
@@ -277,21 +277,21 @@ func (lq *LinkQuery) Clone() *LinkQuery {
 		order:      append([]link.OrderOption{}, lq.order...),
 		inters:     append([]Interceptor{}, lq.inters...),
 		predicates: append([]predicate.Link{}, lq.predicates...),
-		withFile:   lq.withFile.Clone(),
+		withAsset:  lq.withAsset.Clone(),
 		// clone intermediate query.
 		sql:  lq.sql.Clone(),
 		path: lq.path,
 	}
 }
 
-// WithFile tells the query-builder to eager-load the nodes that are connected to
-// the "file" edge. The optional arguments are used to configure the query builder of the edge.
-func (lq *LinkQuery) WithFile(opts ...func(*FileQuery)) *LinkQuery {
-	query := (&FileClient{config: lq.config}).Query()
+// WithAsset tells the query-builder to eager-load the nodes that are connected to
+// the "asset" edge. The optional arguments are used to configure the query builder of the edge.
+func (lq *LinkQuery) WithAsset(opts ...func(*AssetQuery)) *LinkQuery {
+	query := (&AssetClient{config: lq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	lq.withFile = query
+	lq.withAsset = query
 	return lq
 }
 
@@ -375,10 +375,10 @@ func (lq *LinkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Link, e
 		withFKs     = lq.withFKs
 		_spec       = lq.querySpec()
 		loadedTypes = [1]bool{
-			lq.withFile != nil,
+			lq.withAsset != nil,
 		}
 	)
-	if lq.withFile != nil {
+	if lq.withAsset != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -405,9 +405,9 @@ func (lq *LinkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Link, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := lq.withFile; query != nil {
-		if err := lq.loadFile(ctx, query, nodes, nil,
-			func(n *Link, e *File) { n.Edges.File = e }); err != nil {
+	if query := lq.withAsset; query != nil {
+		if err := lq.loadAsset(ctx, query, nodes, nil,
+			func(n *Link, e *Asset) { n.Edges.Asset = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -419,14 +419,14 @@ func (lq *LinkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Link, e
 	return nodes, nil
 }
 
-func (lq *LinkQuery) loadFile(ctx context.Context, query *FileQuery, nodes []*Link, init func(*Link), assign func(*Link, *File)) error {
+func (lq *LinkQuery) loadAsset(ctx context.Context, query *AssetQuery, nodes []*Link, init func(*Link), assign func(*Link, *Asset)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Link)
 	for i := range nodes {
-		if nodes[i].link_file == nil {
+		if nodes[i].link_asset == nil {
 			continue
 		}
-		fk := *nodes[i].link_file
+		fk := *nodes[i].link_asset
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -435,7 +435,7 @@ func (lq *LinkQuery) loadFile(ctx context.Context, query *FileQuery, nodes []*Li
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(file.IDIn(ids...))
+	query.Where(asset.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -443,7 +443,7 @@ func (lq *LinkQuery) loadFile(ctx context.Context, query *FileQuery, nodes []*Li
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "link_file" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "link_asset" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

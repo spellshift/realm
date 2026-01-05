@@ -33,13 +33,13 @@ func TestTomeMutations(t *testing.T) {
 	gqlClient := client.New(srv, client.Path("/graphql"))
 
 	// Initialize sample data
-	testFiles := []*ent.File{
-		graph.File.Create().
-			SetName("TestFile1").
+	testAssets := []*ent.Asset{
+		graph.Asset.Create().
+			SetName("TestAsset1").
 			SetContent([]byte("supersecretfile")).
 			SaveX(ctx),
-		graph.File.Create().
-			SetName("TestFile2").
+		graph.Asset.Create().
+			SetName("TestAsset2").
 			SetContent([]byte("expect_this")).
 			SaveX(ctx),
 	}
@@ -89,18 +89,18 @@ mutation newCreateTomeTest($input: CreateTomeInput!) {
 		})
 
 		/*
-		* Test when the `createTome` mutation is run with files.
+		* Test when the `createTome` mutation is run with assets.
 		*
 		* Expected that the Tome is created and it's ID is returned.
 		 */
-		t.Run("WithFiles", func(t *testing.T) {
-			expectedFileIDs := []int{testFiles[0].ID, testFiles[1].ID}
+		t.Run("WithAssets", func(t *testing.T) {
+			expectedAssetIDs := []int{testAssets[0].ID, testAssets[1].ID}
 			expected := map[string]any{
-				"name":        "TestTomeWithFiles",
+				"name":        "TestTomeWithAssets",
 				"description": "Helps us make sure this all works",
 				"author":      "kcarretto",
 				"eldritch":    `print("hello world")`,
-				"fileIDs":     expectedFileIDs,
+				"assetIDs":    expectedAssetIDs,
 			}
 			id, err := createTome(expected)
 			require.NoError(t, err)
@@ -112,11 +112,11 @@ mutation newCreateTomeTest($input: CreateTomeInput!) {
 			assert.NotZero(t, testTome.Hash)
 			assert.NotZero(t, testTome.CreatedAt)
 			assert.NotZero(t, testTome.LastModifiedAt)
-			testTomeFiles, err := testTome.QueryFiles().All(ctx)
+			testTomeAssets, err := testTome.QueryAssets().All(ctx)
 			require.NoError(t, err)
-			assert.Len(t, testTomeFiles, 2)
-			assert.Equal(t, expectedFileIDs[0], testTomeFiles[0].ID)
-			assert.Equal(t, expectedFileIDs[1], testTomeFiles[1].ID)
+			assert.Len(t, testTomeAssets, 2)
+			assert.Equal(t, expectedAssetIDs[0], testTomeAssets[0].ID)
+			assert.Equal(t, expectedAssetIDs[1], testTomeAssets[1].ID)
 		})
 
 	})

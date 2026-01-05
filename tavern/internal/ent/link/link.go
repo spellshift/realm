@@ -24,17 +24,17 @@ const (
 	FieldExpiresAt = "expires_at"
 	// FieldDownloadsRemaining holds the string denoting the downloads_remaining field in the database.
 	FieldDownloadsRemaining = "downloads_remaining"
-	// EdgeFile holds the string denoting the file edge name in mutations.
-	EdgeFile = "file"
+	// EdgeAsset holds the string denoting the asset edge name in mutations.
+	EdgeAsset = "asset"
 	// Table holds the table name of the link in the database.
 	Table = "links"
-	// FileTable is the table that holds the file relation/edge.
-	FileTable = "links"
-	// FileInverseTable is the table name for the File entity.
-	// It exists in this package in order to avoid circular dependency with the "file" package.
-	FileInverseTable = "files"
-	// FileColumn is the table column denoting the file relation/edge.
-	FileColumn = "link_file"
+	// AssetTable is the table that holds the asset relation/edge.
+	AssetTable = "links"
+	// AssetInverseTable is the table name for the Asset entity.
+	// It exists in this package in order to avoid circular dependency with the "asset" package.
+	AssetInverseTable = "assets"
+	// AssetColumn is the table column denoting the asset relation/edge.
+	AssetColumn = "link_asset"
 )
 
 // Columns holds all SQL columns for link fields.
@@ -50,7 +50,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "links"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"link_file",
+	"link_asset",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -120,16 +120,16 @@ func ByDownloadsRemaining(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDownloadsRemaining, opts...).ToFunc()
 }
 
-// ByFileField orders the results by file field.
-func ByFileField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByAssetField orders the results by asset field.
+func ByAssetField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newFileStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newAssetStep(), sql.OrderByField(field, opts...))
 	}
 }
-func newFileStep() *sqlgraph.Step {
+func newAssetStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(FileInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, FileTable, FileColumn),
+		sqlgraph.To(AssetInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, AssetTable, AssetColumn),
 	)
 }

@@ -161,7 +161,7 @@ type CreateLinkInput struct {
 	Path               *string
 	ExpiresAt          *time.Time
 	DownloadsRemaining *int
-	FileID             int
+	AssetID            int
 }
 
 // Mutate applies the CreateLinkInput on the LinkMutation builder.
@@ -175,7 +175,7 @@ func (i *CreateLinkInput) Mutate(m *LinkMutation) {
 	if v := i.DownloadsRemaining; v != nil {
 		m.SetDownloadsRemaining(*v)
 	}
-	m.SetFileID(i.FileID)
+	m.SetAssetID(i.AssetID)
 }
 
 // SetInput applies the change-set in the CreateLinkInput on the LinkCreate builder.
@@ -332,7 +332,7 @@ type CreateTomeInput struct {
 	RunOnSchedule          *string
 	ParamDefs              *string
 	Eldritch               string
-	FileIDs                []int
+	AssetIDs               []int
 	ScheduledHostIDs       []int
 }
 
@@ -360,8 +360,8 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 		m.SetParamDefs(*v)
 	}
 	m.SetEldritch(i.Eldritch)
-	if v := i.FileIDs; len(v) > 0 {
-		m.AddFileIDs(v...)
+	if v := i.AssetIDs; len(v) > 0 {
+		m.AddAssetIDs(v...)
 	}
 	if v := i.ScheduledHostIDs; len(v) > 0 {
 		m.AddScheduledHostIDs(v...)
@@ -388,9 +388,9 @@ type UpdateTomeInput struct {
 	ClearParamDefs         bool
 	ParamDefs              *string
 	Eldritch               *string
-	ClearFiles             bool
-	AddFileIDs             []int
-	RemoveFileIDs          []int
+	ClearAssets            bool
+	AddAssetIDs            []int
+	RemoveAssetIDs         []int
 	ClearScheduledHosts    bool
 	AddScheduledHostIDs    []int
 	RemoveScheduledHostIDs []int
@@ -434,14 +434,14 @@ func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.Eldritch; v != nil {
 		m.SetEldritch(*v)
 	}
-	if i.ClearFiles {
-		m.ClearFiles()
+	if i.ClearAssets {
+		m.ClearAssets()
 	}
-	if v := i.AddFileIDs; len(v) > 0 {
-		m.AddFileIDs(v...)
+	if v := i.AddAssetIDs; len(v) > 0 {
+		m.AddAssetIDs(v...)
 	}
-	if v := i.RemoveFileIDs; len(v) > 0 {
-		m.RemoveFileIDs(v...)
+	if v := i.RemoveAssetIDs; len(v) > 0 {
+		m.RemoveAssetIDs(v...)
 	}
 	if i.ClearScheduledHosts {
 		m.ClearScheduledHosts()

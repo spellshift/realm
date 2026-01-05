@@ -12,10 +12,10 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Asset is the client for interacting with the Asset builders.
+	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
-	// File is the client for interacting with the File builders.
-	File *FileClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -173,8 +173,8 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
-	tx.File = NewFileClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
 	tx.HostCredential = NewHostCredentialClient(tx.config)
 	tx.HostFile = NewHostFileClient(tx.config)
@@ -197,7 +197,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Beacon.QueryXXX(), the query will be executed
+// applies a query, for example: Asset.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

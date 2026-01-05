@@ -28,10 +28,10 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 			return ErrFileNotFound
 		}
 
-		// Query for the link by path, including the associated file
+		// Query for the link by path, including the associated asset
 		linkQuery := graph.Link.Query().
 			Where(link.Path(linkPath)).
-			WithFile()
+			WithAsset()
 
 		// Ensure the link exists
 		if exists, err := linkQuery.Clone().Exist(ctx); !exists || err != nil {
@@ -63,18 +63,18 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 			}
 		}
 
-		// Get the associated file
-		f := l.Edges.File
-		if f == nil {
+		// Get the associated asset
+		a := l.Edges.Asset
+		if a == nil {
 			return ErrFileNotFound
 		}
 
-		// Set Etag to hash of file
-		w.Header().Set(HeaderEtag, f.Hash)
+		// Set Etag to hash of asset
+		w.Header().Set(HeaderEtag, a.Hash)
 
 		// Set Content-Type and serve content
 		w.Header().Set("Content-Type", "application/octet-stream")
-		http.ServeContent(w, req, f.Name, f.LastModifiedAt, bytes.NewReader(f.Content))
+		http.ServeContent(w, req, a.Name, a.LastModifiedAt, bytes.NewReader(a.Content))
 
 		return nil
 	})

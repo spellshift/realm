@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 )
 
@@ -22,7 +22,7 @@ type Link struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
-	// Unique path for accessing the file via the CDN
+	// Unique path for accessing the asset via the CDN
 	Path string `json:"path,omitempty"`
 	// Timestamp before which the link is active. Default is epoch 0
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
@@ -31,14 +31,14 @@ type Link struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LinkQuery when eager-loading is set.
 	Edges        LinkEdges `json:"edges"`
-	link_file    *int
+	link_asset   *int
 	selectValues sql.SelectValues
 }
 
 // LinkEdges holds the relations/edges for other nodes in the graph.
 type LinkEdges struct {
-	// The file that this link points to
-	File *File `json:"file,omitempty"`
+	// The asset that this link points to
+	Asset *Asset `json:"asset,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -46,15 +46,15 @@ type LinkEdges struct {
 	totalCount [1]map[string]int
 }
 
-// FileOrErr returns the File value or an error if the edge
+// AssetOrErr returns the Asset value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e LinkEdges) FileOrErr() (*File, error) {
-	if e.File != nil {
-		return e.File, nil
+func (e LinkEdges) AssetOrErr() (*Asset, error) {
+	if e.Asset != nil {
+		return e.Asset, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: file.Label}
+		return nil, &NotFoundError{label: asset.Label}
 	}
-	return nil, &NotLoadedError{edge: "file"}
+	return nil, &NotLoadedError{edge: "asset"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -68,7 +68,7 @@ func (*Link) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case link.FieldCreatedAt, link.FieldLastModifiedAt, link.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
-		case link.ForeignKeys[0]: // link_file
+		case link.ForeignKeys[0]: // link_asset
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -123,10 +123,10 @@ func (l *Link) assignValues(columns []string, values []any) error {
 			}
 		case link.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field link_file", value)
+				return fmt.Errorf("unexpected type %T for edge-field link_asset", value)
 			} else if value.Valid {
-				l.link_file = new(int)
-				*l.link_file = int(value.Int64)
+				l.link_asset = new(int)
+				*l.link_asset = int(value.Int64)
 			}
 		default:
 			l.selectValues.Set(columns[i], values[i])
@@ -141,9 +141,9 @@ func (l *Link) Value(name string) (ent.Value, error) {
 	return l.selectValues.Get(name)
 }
 
-// QueryFile queries the "file" edge of the Link entity.
-func (l *Link) QueryFile() *FileQuery {
-	return NewLinkClient(l.config).QueryFile(l)
+// QueryAsset queries the "asset" edge of the Link entity.
+func (l *Link) QueryAsset() *AssetQuery {
+	return NewLinkClient(l.config).QueryAsset(l)
 }
 
 // Update returns a builder for updating this Link.

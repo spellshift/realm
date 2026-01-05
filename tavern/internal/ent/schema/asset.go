@@ -16,13 +16,13 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// File holds the schema definition for the File entity.
-type File struct {
+// Asset holds the schema definition for the Asset entity.
+type Asset struct {
 	ent.Schema
 }
 
-// Fields of the File.
-func (File) Fields() []ent.Field {
+// Fields of the Asset.
+func (Asset) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
 			NotEmpty().
@@ -30,14 +30,14 @@ func (File) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("NAME"),
 			).
-			Comment("The name of the file, used to reference it for downloads"),
+			Comment("The name of the asset, used to reference it for downloads"),
 		field.Int("size").
 			Default(0).
 			Min(0).
 			Annotations(
 				entgql.OrderField("SIZE"),
 			).
-			Comment("The size of the file in bytes"),
+			Comment("The size of the asset in bytes"),
 		field.String("hash").
 			MaxLen(100).
 			Comment("A SHA3-256 digest of the content field"),
@@ -46,33 +46,33 @@ func (File) Fields() []ent.Field {
 				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
 			}).
 			Annotations(
-				entgql.Skip(), // Don't return file content in GraphQL queries
+				entgql.Skip(), // Don't return asset content in GraphQL queries
 			).
-			Comment("The content of the file"),
+			Comment("The content of the asset"),
 	}
 }
 
-// Edges of the File.
-func (File) Edges() []ent.Edge {
+// Edges of the Asset.
+func (Asset) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("tomes", Tome.Type).
 			Annotations(
 				entgql.RelayConnection(),
 				entgql.MultiOrder(),
 			).
-			Ref("files"),
+			Ref("assets"),
 		edge.From("links", Link.Type).
 			Annotations(
 				entgql.RelayConnection(),
 				entgql.MultiOrder(),
 			).
-			Ref("file").
-			Comment("Links that point to this file"),
+			Ref("asset").
+			Comment("Links that point to this asset"),
 	}
 }
 
 // Annotations describes additional information for the ent.
-func (File) Annotations() []schema.Annotation {
+func (Asset) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
 		entgql.MultiOrder(),
@@ -83,22 +83,22 @@ func (File) Annotations() []schema.Annotation {
 }
 
 // Mixin defines common shared properties for the ent.
-func (File) Mixin() []ent.Mixin {
+func (Asset) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
 	}
 }
 
 // Hooks defines middleware for mutations for the ent.
-func (File) Hooks() []ent.Hook {
+func (Asset) Hooks() []ent.Hook {
 	return []ent.Hook{
-		hook.On(HookDeriveFileInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
+		hook.On(HookDeriveAssetInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
 	}
 }
 
-// HookDeriveFileInfo will update file info (e.g. size, hash) whenever it is mutated.
-func HookDeriveFileInfo() ent.Hook {
-	// Get the relevant methods from the File Mutation
+// HookDeriveAssetInfo will update asset info (e.g. size, hash) whenever it is mutated.
+func HookDeriveAssetInfo() ent.Hook {
+	// Get the relevant methods from the Asset Mutation
 	// See this example: https://github.com/ent/ent/blob/master/entc/integration/hooks/ent/schema/user.go#L98
 	type fMutation interface {
 		Content() ([]byte, bool)
@@ -108,10 +108,10 @@ func HookDeriveFileInfo() ent.Hook {
 
 	return func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-			// Get the file mutation
+			// Get the asset mutation
 			f, ok := m.(fMutation)
 			if !ok {
-				return nil, fmt.Errorf("expected file mutation in schema hook, got: %+v", m)
+				return nil, fmt.Errorf("expected asset mutation in schema hook, got: %+v", m)
 			}
 
 			// Set the new size

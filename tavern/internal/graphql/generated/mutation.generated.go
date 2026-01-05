@@ -1328,8 +1328,8 @@ func (ec *executionContext) fieldContext_Mutation_createTome(ctx context.Context
 				return ec.fieldContext_Tome_paramDefs(ctx, field)
 			case "eldritch":
 				return ec.fieldContext_Tome_eldritch(ctx, field)
-			case "files":
-				return ec.fieldContext_Tome_files(ctx, field)
+			case "assets":
+				return ec.fieldContext_Tome_assets(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
 			case "repository":
@@ -1446,8 +1446,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTome(ctx context.Context
 				return ec.fieldContext_Tome_paramDefs(ctx, field)
 			case "eldritch":
 				return ec.fieldContext_Tome_eldritch(ctx, field)
-			case "files":
-				return ec.fieldContext_Tome_files(ctx, field)
+			case "assets":
+				return ec.fieldContext_Tome_assets(ctx, field)
 			case "uploader":
 				return ec.fieldContext_Tome_uploader(ctx, field)
 			case "repository":
@@ -2027,8 +2027,8 @@ func (ec *executionContext) fieldContext_Mutation_createLink(ctx context.Context
 				return ec.fieldContext_Link_expiresAt(ctx, field)
 			case "downloadsRemaining":
 				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
-			case "file":
-				return ec.fieldContext_Link_file(ctx, field)
+			case "asset":
+				return ec.fieldContext_Link_asset(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},
@@ -2125,8 +2125,8 @@ func (ec *executionContext) fieldContext_Mutation_updateLink(ctx context.Context
 				return ec.fieldContext_Link_expiresAt(ctx, field)
 			case "downloadsRemaining":
 				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
-			case "file":
-				return ec.fieldContext_Link_file(ctx, field)
+			case "asset":
+				return ec.fieldContext_Link_asset(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},
@@ -2223,8 +2223,8 @@ func (ec *executionContext) fieldContext_Mutation_disableLink(ctx context.Contex
 				return ec.fieldContext_Link_expiresAt(ctx, field)
 			case "downloadsRemaining":
 				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
-			case "file":
-				return ec.fieldContext_Link_file(ctx, field)
+			case "asset":
+				return ec.fieldContext_Link_asset(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},

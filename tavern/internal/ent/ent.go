@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -87,8 +87,8 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			asset.Table:          asset.ValidColumn,
 			beacon.Table:         beacon.ValidColumn,
-			file.Table:           file.ValidColumn,
 			host.Table:           host.ValidColumn,
 			hostcredential.Table: hostcredential.ValidColumn,
 			hostfile.Table:       hostfile.ValidColumn,

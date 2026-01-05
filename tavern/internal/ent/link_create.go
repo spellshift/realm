@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 )
 
@@ -93,15 +93,15 @@ func (lc *LinkCreate) SetNillableDownloadsRemaining(i *int) *LinkCreate {
 	return lc
 }
 
-// SetFileID sets the "file" edge to the File entity by ID.
-func (lc *LinkCreate) SetFileID(id int) *LinkCreate {
-	lc.mutation.SetFileID(id)
+// SetAssetID sets the "asset" edge to the Asset entity by ID.
+func (lc *LinkCreate) SetAssetID(id int) *LinkCreate {
+	lc.mutation.SetAssetID(id)
 	return lc
 }
 
-// SetFile sets the "file" edge to the File entity.
-func (lc *LinkCreate) SetFile(f *File) *LinkCreate {
-	return lc.SetFileID(f.ID)
+// SetAsset sets the "asset" edge to the Asset entity.
+func (lc *LinkCreate) SetAsset(a *Asset) *LinkCreate {
+	return lc.SetAssetID(a.ID)
 }
 
 // Mutation returns the LinkMutation object of the builder.
@@ -188,8 +188,8 @@ func (lc *LinkCreate) check() error {
 			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
 		}
 	}
-	if len(lc.mutation.FileIDs()) == 0 {
-		return &ValidationError{Name: "file", err: errors.New(`ent: missing required edge "Link.file"`)}
+	if len(lc.mutation.AssetIDs()) == 0 {
+		return &ValidationError{Name: "asset", err: errors.New(`ent: missing required edge "Link.asset"`)}
 	}
 	return nil
 }
@@ -238,21 +238,21 @@ func (lc *LinkCreate) createSpec() (*Link, *sqlgraph.CreateSpec) {
 		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
 		_node.DownloadsRemaining = value
 	}
-	if nodes := lc.mutation.FileIDs(); len(nodes) > 0 {
+	if nodes := lc.mutation.AssetIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   link.FileTable,
-			Columns: []string{link.FileColumn},
+			Table:   link.AssetTable,
+			Columns: []string{link.AssetColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.link_file = &nodes[0]
+		_node.link_asset = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
