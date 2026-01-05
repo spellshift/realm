@@ -2,8 +2,8 @@ package portals
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
-	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,27 +43,47 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 	defer cleanup()
 
 	portalOutTopic := srv.mux.TopicOut(portalID)
-	// portalOutSub := srv.mux.SubName(portalOutTopic)
 	recv, cleanup := srv.mux.Subscribe(portalOutTopic)
 	defer cleanup()
 
+	done := make(chan struct{}, 2)
+
 	// Start goroutine to subscribe to portal output and send to gRPC stream
-	ctx, cancel := context.WithCancel(ctx)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
+	go func() {
 		sendPortalOutput(ctx, portalID, gstream, recv)
-	}(ctx)
+		done <- struct{}{}
+	}()
 
 	// Send portal input from gRPC stream to portal input topic
-	sendPortalInput(ctx, portalID, gstream, srv.mux)
+	go func() {
+		sendPortalInput(ctx, portalID, gstream, srv.mux)
+		done <- struct{}{}
+	}()
 
-	// Cleanup
-	cancel()
-	wg.Wait()
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-done:
+		return fmt.Errorf("portal closed")
+	}
 
-	return nil
+	// ctx, cancel := context.WithCancel(ctx)
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// go func(ctx context.Context) {
+	// 	defer wg.Done()
+	// 	defer cancel()
+	// 	sendPortalOutput(ctx, portalID, gstream, recv)
+	// }(ctx)
+
+	// Send portal input from gRPC stream to portal input topic
+	// sendPortalInput(ctx, portalID, gstream, srv.mux)
+
+	// // Cleanup
+	// cancel()
+	// wg.Wait()
+
+	// return nil
 }
 
 func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_OpenPortalServer, mux *mux.Mux) {
@@ -118,7 +138,11 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 		select {
 		case <-ctx.Done():
 			return
-		case mote := <-recv:
+		case mote, ok := <-recv:
+			if !ok {
+				return
+			}
+
 			// TRACE: Server User Sub
 			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server User Sub)", "error", err)
@@ -137,102 +161,11 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 					"error", err,
 				)
 			}
+
+			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				slog.InfoContext(ctx, "received portal close, disconnecting client", "portal_id", portalID, "reason", string(payload.Data))
+				return
+			}
 		}
 	}
 }
-
-// func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_InvokePortalServer, pubsubStream *stream.Stream) {
-// 	for {
-// 		select {
-// 		case <-ctx.Done():
-// 			return
-// 		case msg := <-pubsubStream.Messages():
-// 			payload := &portalpb.Payload{}
-// 			if err := proto.Unmarshal(msg.Body, payload); err != nil {
-// 				slog.ErrorContext(ctx, "failed to unmarshal portal input message",
-// 					"portal_id", portalID,
-// 					"error", err,
-// 				)
-// 				continue
-// 			}
-// 			msgLen := len(msg.Body)
-// 			if err := gstream.Send(&portalpb.InvokePortalResponse{
-// 				Payload: payload,
-// 			}); err != nil {
-// 				slog.ErrorContext(ctx, "failed to send input through portal",
-// 					"portal_id", portalID,
-// 					"msg_len", msgLen,
-// 					"error", err,
-// 				)
-// 				return
-// 			}
-// 			slog.DebugContext(ctx, "input sent through portal via gRPC",
-// 				"portal_id", portalID,
-// 				"msg_len", msgLen,
-// 			)
-// 		}
-// 	}
-// }
-
-// func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal_InvokePortalServer, pubsubStream *stream.Stream, mux *stream.Mux) error {
-// 	for {
-// 		req, err := gstream.Recv()
-// 		if err == io.EOF {
-// 			return nil
-// 		}
-// 		if err != nil {
-// 			return status.Errorf(codes.Internal, "failed to receive portal request: %v", err)
-// 		}
-// 		if req.Payload == nil {
-// 			continue
-// 		}
-
-// 		// Marshal Payload
-// 		data, err := proto.Marshal(req.Payload)
-// 		if err != nil {
-// 			return status.Errorf(codes.Internal, "failed to marshal portal payload: %v", err)
-// 		}
-
-// 		// Send Pubsub Message
-// 		msgLen := len(data)
-// 		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
-// 			Body: data,
-// 		}, mux); err != nil {
-// 			slog.ErrorContext(ctx, "portal failed to publish output",
-// 				"portal_id", portalID,
-// 				"msg_len", msgLen,
-// 				"error", err,
-// 			)
-// 			return status.Errorf(codes.Internal, "failed to publish message: %v", err)
-// 		}
-// 		slog.DebugContext(ctx, "portal published output",
-// 			"portal_id", portalID,
-// 			"msg_len", msgLen,
-// 		)
-// 	}
-// }
-
-// func sendPortalKeepAlives(ctx context.Context, gstream portalpb.Portal_InvokePortalServer) {
-// 	ticker := time.NewTicker(30 * time.Second) // TODO: #m elmos_magic_numbers define this elsewhere
-// 	defer ticker.Stop()
-
-// 	for {
-// 		select {
-// 		case <-ctx.Done():
-// 			return
-// 		case <-ticker.C:
-// 			if err := gstream.Send(&portalpb.InvokePortalResponse{
-// 				Payload: &portalpb.Payload{
-// 					Payload: &portalpb.Payload_Bytes{
-// 						Bytes: &portalpb.BytesMessage{
-// 							Kind: portalpb.BytesMessageKind_BYTES_MESSAGE_KIND_PING,
-// 							Data: []byte(time.Now().UTC().Format(time.RFC3339Nano)),
-// 						},
-// 					},
-// 				},
-// 			}); err != nil {
-// 				slog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
-// 			}
-// 		}
-// 	}
-// }
