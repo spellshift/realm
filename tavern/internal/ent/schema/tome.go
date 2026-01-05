@@ -93,12 +93,12 @@ func (Tome) Fields() []ent.Field {
 // Edges of the Tome.
 func (Tome) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("files", File.Type).
+		edge.To("assets", Asset.Type).
 			Annotations(
 				entgql.RelayConnection(),
 				entgql.MultiOrder(),
 			).
-			Comment("Any files required for tome execution that will be bundled and provided to the agent for download"),
+			Comment("Any assets required for tome execution that will be bundled and provided to the agent for download"),
 		edge.To("uploader", User.Type).
 			Unique().
 			Annotations(

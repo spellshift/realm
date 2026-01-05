@@ -379,13 +379,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
 			}
 		}
-		claimedFiles, err := claimedTome.QueryFiles().All(ctx)
+		claimedAssets, err := claimedTome.QueryAssets().All(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load tome files (id=%d,tomeID=%d)", taskID, claimedTome.ID))
+			return nil, rollback(tx, fmt.Errorf("failed to load tome assets (id=%d,tomeID=%d)", taskID, claimedTome.ID))
 		}
-		claimedFileNames := make([]string, 0, len(claimedFiles))
-		for _, f := range claimedFiles {
-			claimedFileNames = append(claimedFileNames, f.Name)
+		claimedAssetNames := make([]string, 0, len(claimedAssets))
+		for _, a := range claimedAssets {
+			claimedAssetNames = append(claimedAssetNames, a.Name)
 		}
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
 			Id:        int64(claimedTask.ID),
@@ -393,7 +393,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			Tome: &epb.Tome{
 				Eldritch:   claimedTome.Eldritch,
 				Parameters: params,
-				FileNames:  claimedFileNames,
+				FileNames:  claimedAssetNames,
 			},
 		})
 	}

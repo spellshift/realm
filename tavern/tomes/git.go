@@ -202,18 +202,18 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 			continue
 		}
 
-		// Upload other files
+		// Upload other assets
 		// TODO: Namespace tomes to prevent multi-repo conflicts
-		fileID, err := importer.graph.File.Create().
+		assetID, err := importer.graph.Asset.Create().
 			SetName(fmt.Sprintf("%s/%s", filepath.Base(path), name)).
 			SetContent(data).
 			OnConflict().
 			UpdateNewValues().
 			ID(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to upload tome file %q: %w", name, err)
+			return fmt.Errorf("failed to upload tome asset %q: %w", name, err)
 		}
-		tomeFileIDs = append(tomeFileIDs, fileID)
+		tomeFileIDs = append(tomeFileIDs, assetID)
 	}
 
 	// Ensure Metadata was found
@@ -242,7 +242,7 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		SetTactic(tome.Tactic(metadata.Tactic)).
 		SetEldritch(eldritch).
 		SetRepository(entRepo).
-		AddFileIDs(tomeFileIDs...).
+		AddAssetIDs(tomeFileIDs...).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)

@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
@@ -198,19 +198,19 @@ func (tu *TomeUpdate) SetNillableEldritch(s *string) *TomeUpdate {
 	return tu
 }
 
-// AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tu *TomeUpdate) AddFileIDs(ids ...int) *TomeUpdate {
-	tu.mutation.AddFileIDs(ids...)
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (tu *TomeUpdate) AddAssetIDs(ids ...int) *TomeUpdate {
+	tu.mutation.AddAssetIDs(ids...)
 	return tu
 }
 
-// AddFiles adds the "files" edges to the File entity.
-func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// AddAssets adds the "assets" edges to the Asset entity.
+func (tu *TomeUpdate) AddAssets(a ...*Asset) *TomeUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tu.AddFileIDs(ids...)
+	return tu.AddAssetIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
@@ -271,25 +271,25 @@ func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
 }
 
-// ClearFiles clears all "files" edges to the File entity.
-func (tu *TomeUpdate) ClearFiles() *TomeUpdate {
-	tu.mutation.ClearFiles()
+// ClearAssets clears all "assets" edges to the Asset entity.
+func (tu *TomeUpdate) ClearAssets() *TomeUpdate {
+	tu.mutation.ClearAssets()
 	return tu
 }
 
-// RemoveFileIDs removes the "files" edge to File entities by IDs.
-func (tu *TomeUpdate) RemoveFileIDs(ids ...int) *TomeUpdate {
-	tu.mutation.RemoveFileIDs(ids...)
+// RemoveAssetIDs removes the "assets" edge to Asset entities by IDs.
+func (tu *TomeUpdate) RemoveAssetIDs(ids ...int) *TomeUpdate {
+	tu.mutation.RemoveAssetIDs(ids...)
 	return tu
 }
 
-// RemoveFiles removes "files" edges to File entities.
-func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// RemoveAssets removes "assets" edges to Asset entities.
+func (tu *TomeUpdate) RemoveAssets(a ...*Asset) *TomeUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tu.RemoveFileIDs(ids...)
+	return tu.RemoveAssetIDs(ids...)
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
@@ -448,28 +448,28 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if tu.mutation.FilesCleared() {
+	if tu.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tu.mutation.FilesCleared() {
+	if nodes := tu.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !tu.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -477,15 +477,15 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.AssetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -782,19 +782,19 @@ func (tuo *TomeUpdateOne) SetNillableEldritch(s *string) *TomeUpdateOne {
 	return tuo
 }
 
-// AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tuo *TomeUpdateOne) AddFileIDs(ids ...int) *TomeUpdateOne {
-	tuo.mutation.AddFileIDs(ids...)
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (tuo *TomeUpdateOne) AddAssetIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.AddAssetIDs(ids...)
 	return tuo
 }
 
-// AddFiles adds the "files" edges to the File entity.
-func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// AddAssets adds the "assets" edges to the Asset entity.
+func (tuo *TomeUpdateOne) AddAssets(a ...*Asset) *TomeUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tuo.AddFileIDs(ids...)
+	return tuo.AddAssetIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
@@ -855,25 +855,25 @@ func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
 }
 
-// ClearFiles clears all "files" edges to the File entity.
-func (tuo *TomeUpdateOne) ClearFiles() *TomeUpdateOne {
-	tuo.mutation.ClearFiles()
+// ClearAssets clears all "assets" edges to the Asset entity.
+func (tuo *TomeUpdateOne) ClearAssets() *TomeUpdateOne {
+	tuo.mutation.ClearAssets()
 	return tuo
 }
 
-// RemoveFileIDs removes the "files" edge to File entities by IDs.
-func (tuo *TomeUpdateOne) RemoveFileIDs(ids ...int) *TomeUpdateOne {
-	tuo.mutation.RemoveFileIDs(ids...)
+// RemoveAssetIDs removes the "assets" edge to Asset entities by IDs.
+func (tuo *TomeUpdateOne) RemoveAssetIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.RemoveAssetIDs(ids...)
 	return tuo
 }
 
-// RemoveFiles removes "files" edges to File entities.
-func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// RemoveAssets removes "assets" edges to Asset entities.
+func (tuo *TomeUpdateOne) RemoveAssets(a ...*Asset) *TomeUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tuo.RemoveFileIDs(ids...)
+	return tuo.RemoveAssetIDs(ids...)
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
@@ -1062,28 +1062,28 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if tuo.mutation.FilesCleared() {
+	if tuo.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tuo.mutation.FilesCleared() {
+	if nodes := tuo.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !tuo.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1091,15 +1091,15 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.AssetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -9,8 +9,8 @@ import (
 
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -26,6 +26,384 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
+
+// AssetWhereInput represents a where input for filtering Asset queries.
+type AssetWhereInput struct {
+	Predicates []predicate.Asset  `json:"-"`
+	Not        *AssetWhereInput   `json:"not,omitempty"`
+	Or         []*AssetWhereInput `json:"or,omitempty"`
+	And        []*AssetWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "size" field predicates.
+	Size      *int  `json:"size,omitempty"`
+	SizeNEQ   *int  `json:"sizeNEQ,omitempty"`
+	SizeIn    []int `json:"sizeIn,omitempty"`
+	SizeNotIn []int `json:"sizeNotIn,omitempty"`
+	SizeGT    *int  `json:"sizeGT,omitempty"`
+	SizeGTE   *int  `json:"sizeGTE,omitempty"`
+	SizeLT    *int  `json:"sizeLT,omitempty"`
+	SizeLTE   *int  `json:"sizeLTE,omitempty"`
+
+	// "hash" field predicates.
+	Hash             *string  `json:"hash,omitempty"`
+	HashNEQ          *string  `json:"hashNEQ,omitempty"`
+	HashIn           []string `json:"hashIn,omitempty"`
+	HashNotIn        []string `json:"hashNotIn,omitempty"`
+	HashGT           *string  `json:"hashGT,omitempty"`
+	HashGTE          *string  `json:"hashGTE,omitempty"`
+	HashLT           *string  `json:"hashLT,omitempty"`
+	HashLTE          *string  `json:"hashLTE,omitempty"`
+	HashContains     *string  `json:"hashContains,omitempty"`
+	HashHasPrefix    *string  `json:"hashHasPrefix,omitempty"`
+	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
+	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
+	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
+
+	// "tomes" edge predicates.
+	HasTomes     *bool             `json:"hasTomes,omitempty"`
+	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
+
+	// "links" edge predicates.
+	HasLinks     *bool             `json:"hasLinks,omitempty"`
+	HasLinksWith []*LinkWhereInput `json:"hasLinksWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *AssetWhereInput) AddPredicates(predicates ...predicate.Asset) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the AssetWhereInput filter on the AssetQuery builder.
+func (i *AssetWhereInput) Filter(q *AssetQuery) (*AssetQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyAssetWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyAssetWhereInput is returned in case the AssetWhereInput is empty.
+var ErrEmptyAssetWhereInput = errors.New("ent: empty predicate AssetWhereInput")
+
+// P returns a predicate for filtering assets.
+// An error is returned if the input is empty or invalid.
+func (i *AssetWhereInput) P() (predicate.Asset, error) {
+	var predicates []predicate.Asset
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, asset.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Asset, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, asset.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Asset, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, asset.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, asset.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, asset.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, asset.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, asset.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, asset.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, asset.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, asset.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, asset.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, asset.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, asset.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, asset.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, asset.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, asset.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, asset.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, asset.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, asset.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, asset.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, asset.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, asset.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, asset.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, asset.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, asset.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, asset.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, asset.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, asset.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, asset.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, asset.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, asset.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, asset.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, asset.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, asset.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, asset.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, asset.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, asset.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, asset.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, asset.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, asset.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Size != nil {
+		predicates = append(predicates, asset.SizeEQ(*i.Size))
+	}
+	if i.SizeNEQ != nil {
+		predicates = append(predicates, asset.SizeNEQ(*i.SizeNEQ))
+	}
+	if len(i.SizeIn) > 0 {
+		predicates = append(predicates, asset.SizeIn(i.SizeIn...))
+	}
+	if len(i.SizeNotIn) > 0 {
+		predicates = append(predicates, asset.SizeNotIn(i.SizeNotIn...))
+	}
+	if i.SizeGT != nil {
+		predicates = append(predicates, asset.SizeGT(*i.SizeGT))
+	}
+	if i.SizeGTE != nil {
+		predicates = append(predicates, asset.SizeGTE(*i.SizeGTE))
+	}
+	if i.SizeLT != nil {
+		predicates = append(predicates, asset.SizeLT(*i.SizeLT))
+	}
+	if i.SizeLTE != nil {
+		predicates = append(predicates, asset.SizeLTE(*i.SizeLTE))
+	}
+	if i.Hash != nil {
+		predicates = append(predicates, asset.HashEQ(*i.Hash))
+	}
+	if i.HashNEQ != nil {
+		predicates = append(predicates, asset.HashNEQ(*i.HashNEQ))
+	}
+	if len(i.HashIn) > 0 {
+		predicates = append(predicates, asset.HashIn(i.HashIn...))
+	}
+	if len(i.HashNotIn) > 0 {
+		predicates = append(predicates, asset.HashNotIn(i.HashNotIn...))
+	}
+	if i.HashGT != nil {
+		predicates = append(predicates, asset.HashGT(*i.HashGT))
+	}
+	if i.HashGTE != nil {
+		predicates = append(predicates, asset.HashGTE(*i.HashGTE))
+	}
+	if i.HashLT != nil {
+		predicates = append(predicates, asset.HashLT(*i.HashLT))
+	}
+	if i.HashLTE != nil {
+		predicates = append(predicates, asset.HashLTE(*i.HashLTE))
+	}
+	if i.HashContains != nil {
+		predicates = append(predicates, asset.HashContains(*i.HashContains))
+	}
+	if i.HashHasPrefix != nil {
+		predicates = append(predicates, asset.HashHasPrefix(*i.HashHasPrefix))
+	}
+	if i.HashHasSuffix != nil {
+		predicates = append(predicates, asset.HashHasSuffix(*i.HashHasSuffix))
+	}
+	if i.HashEqualFold != nil {
+		predicates = append(predicates, asset.HashEqualFold(*i.HashEqualFold))
+	}
+	if i.HashContainsFold != nil {
+		predicates = append(predicates, asset.HashContainsFold(*i.HashContainsFold))
+	}
+
+	if i.HasTomes != nil {
+		p := asset.HasTomes()
+		if !*i.HasTomes {
+			p = asset.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTomesWith) > 0 {
+		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
+		for _, w := range i.HasTomesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, asset.HasTomesWith(with...))
+	}
+	if i.HasLinks != nil {
+		p := asset.HasLinks()
+		if !*i.HasLinks {
+			p = asset.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasLinksWith) > 0 {
+		with := make([]predicate.Link, 0, len(i.HasLinksWith))
+		for _, w := range i.HasLinksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasLinksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, asset.HasLinksWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyAssetWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return asset.And(predicates...), nil
+	}
+}
 
 // BeaconWhereInput represents a where input for filtering Beacon queries.
 type BeaconWhereInput struct {
@@ -658,384 +1036,6 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 		return predicates[0], nil
 	default:
 		return beacon.And(predicates...), nil
-	}
-}
-
-// FileWhereInput represents a where input for filtering File queries.
-type FileWhereInput struct {
-	Predicates []predicate.File  `json:"-"`
-	Not        *FileWhereInput   `json:"not,omitempty"`
-	Or         []*FileWhereInput `json:"or,omitempty"`
-	And        []*FileWhereInput `json:"and,omitempty"`
-
-	// "id" field predicates.
-	ID      *int  `json:"id,omitempty"`
-	IDNEQ   *int  `json:"idNEQ,omitempty"`
-	IDIn    []int `json:"idIn,omitempty"`
-	IDNotIn []int `json:"idNotIn,omitempty"`
-	IDGT    *int  `json:"idGT,omitempty"`
-	IDGTE   *int  `json:"idGTE,omitempty"`
-	IDLT    *int  `json:"idLT,omitempty"`
-	IDLTE   *int  `json:"idLTE,omitempty"`
-
-	// "created_at" field predicates.
-	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
-	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
-	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
-	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
-	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
-	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
-	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
-	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
-
-	// "last_modified_at" field predicates.
-	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
-	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
-	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
-	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
-	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
-	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
-	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
-	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
-
-	// "name" field predicates.
-	Name             *string  `json:"name,omitempty"`
-	NameNEQ          *string  `json:"nameNEQ,omitempty"`
-	NameIn           []string `json:"nameIn,omitempty"`
-	NameNotIn        []string `json:"nameNotIn,omitempty"`
-	NameGT           *string  `json:"nameGT,omitempty"`
-	NameGTE          *string  `json:"nameGTE,omitempty"`
-	NameLT           *string  `json:"nameLT,omitempty"`
-	NameLTE          *string  `json:"nameLTE,omitempty"`
-	NameContains     *string  `json:"nameContains,omitempty"`
-	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
-	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
-	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
-	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
-
-	// "size" field predicates.
-	Size      *int  `json:"size,omitempty"`
-	SizeNEQ   *int  `json:"sizeNEQ,omitempty"`
-	SizeIn    []int `json:"sizeIn,omitempty"`
-	SizeNotIn []int `json:"sizeNotIn,omitempty"`
-	SizeGT    *int  `json:"sizeGT,omitempty"`
-	SizeGTE   *int  `json:"sizeGTE,omitempty"`
-	SizeLT    *int  `json:"sizeLT,omitempty"`
-	SizeLTE   *int  `json:"sizeLTE,omitempty"`
-
-	// "hash" field predicates.
-	Hash             *string  `json:"hash,omitempty"`
-	HashNEQ          *string  `json:"hashNEQ,omitempty"`
-	HashIn           []string `json:"hashIn,omitempty"`
-	HashNotIn        []string `json:"hashNotIn,omitempty"`
-	HashGT           *string  `json:"hashGT,omitempty"`
-	HashGTE          *string  `json:"hashGTE,omitempty"`
-	HashLT           *string  `json:"hashLT,omitempty"`
-	HashLTE          *string  `json:"hashLTE,omitempty"`
-	HashContains     *string  `json:"hashContains,omitempty"`
-	HashHasPrefix    *string  `json:"hashHasPrefix,omitempty"`
-	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
-	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
-	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
-
-	// "tomes" edge predicates.
-	HasTomes     *bool             `json:"hasTomes,omitempty"`
-	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
-
-	// "links" edge predicates.
-	HasLinks     *bool             `json:"hasLinks,omitempty"`
-	HasLinksWith []*LinkWhereInput `json:"hasLinksWith,omitempty"`
-}
-
-// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
-func (i *FileWhereInput) AddPredicates(predicates ...predicate.File) {
-	i.Predicates = append(i.Predicates, predicates...)
-}
-
-// Filter applies the FileWhereInput filter on the FileQuery builder.
-func (i *FileWhereInput) Filter(q *FileQuery) (*FileQuery, error) {
-	if i == nil {
-		return q, nil
-	}
-	p, err := i.P()
-	if err != nil {
-		if err == ErrEmptyFileWhereInput {
-			return q, nil
-		}
-		return nil, err
-	}
-	return q.Where(p), nil
-}
-
-// ErrEmptyFileWhereInput is returned in case the FileWhereInput is empty.
-var ErrEmptyFileWhereInput = errors.New("ent: empty predicate FileWhereInput")
-
-// P returns a predicate for filtering files.
-// An error is returned if the input is empty or invalid.
-func (i *FileWhereInput) P() (predicate.File, error) {
-	var predicates []predicate.File
-	if i.Not != nil {
-		p, err := i.Not.P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'not'", err)
-		}
-		predicates = append(predicates, file.Not(p))
-	}
-	switch n := len(i.Or); {
-	case n == 1:
-		p, err := i.Or[0].P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'or'", err)
-		}
-		predicates = append(predicates, p)
-	case n > 1:
-		or := make([]predicate.File, 0, n)
-		for _, w := range i.Or {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'or'", err)
-			}
-			or = append(or, p)
-		}
-		predicates = append(predicates, file.Or(or...))
-	}
-	switch n := len(i.And); {
-	case n == 1:
-		p, err := i.And[0].P()
-		if err != nil {
-			return nil, fmt.Errorf("%w: field 'and'", err)
-		}
-		predicates = append(predicates, p)
-	case n > 1:
-		and := make([]predicate.File, 0, n)
-		for _, w := range i.And {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'and'", err)
-			}
-			and = append(and, p)
-		}
-		predicates = append(predicates, file.And(and...))
-	}
-	predicates = append(predicates, i.Predicates...)
-	if i.ID != nil {
-		predicates = append(predicates, file.IDEQ(*i.ID))
-	}
-	if i.IDNEQ != nil {
-		predicates = append(predicates, file.IDNEQ(*i.IDNEQ))
-	}
-	if len(i.IDIn) > 0 {
-		predicates = append(predicates, file.IDIn(i.IDIn...))
-	}
-	if len(i.IDNotIn) > 0 {
-		predicates = append(predicates, file.IDNotIn(i.IDNotIn...))
-	}
-	if i.IDGT != nil {
-		predicates = append(predicates, file.IDGT(*i.IDGT))
-	}
-	if i.IDGTE != nil {
-		predicates = append(predicates, file.IDGTE(*i.IDGTE))
-	}
-	if i.IDLT != nil {
-		predicates = append(predicates, file.IDLT(*i.IDLT))
-	}
-	if i.IDLTE != nil {
-		predicates = append(predicates, file.IDLTE(*i.IDLTE))
-	}
-	if i.CreatedAt != nil {
-		predicates = append(predicates, file.CreatedAtEQ(*i.CreatedAt))
-	}
-	if i.CreatedAtNEQ != nil {
-		predicates = append(predicates, file.CreatedAtNEQ(*i.CreatedAtNEQ))
-	}
-	if len(i.CreatedAtIn) > 0 {
-		predicates = append(predicates, file.CreatedAtIn(i.CreatedAtIn...))
-	}
-	if len(i.CreatedAtNotIn) > 0 {
-		predicates = append(predicates, file.CreatedAtNotIn(i.CreatedAtNotIn...))
-	}
-	if i.CreatedAtGT != nil {
-		predicates = append(predicates, file.CreatedAtGT(*i.CreatedAtGT))
-	}
-	if i.CreatedAtGTE != nil {
-		predicates = append(predicates, file.CreatedAtGTE(*i.CreatedAtGTE))
-	}
-	if i.CreatedAtLT != nil {
-		predicates = append(predicates, file.CreatedAtLT(*i.CreatedAtLT))
-	}
-	if i.CreatedAtLTE != nil {
-		predicates = append(predicates, file.CreatedAtLTE(*i.CreatedAtLTE))
-	}
-	if i.LastModifiedAt != nil {
-		predicates = append(predicates, file.LastModifiedAtEQ(*i.LastModifiedAt))
-	}
-	if i.LastModifiedAtNEQ != nil {
-		predicates = append(predicates, file.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
-	}
-	if len(i.LastModifiedAtIn) > 0 {
-		predicates = append(predicates, file.LastModifiedAtIn(i.LastModifiedAtIn...))
-	}
-	if len(i.LastModifiedAtNotIn) > 0 {
-		predicates = append(predicates, file.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
-	}
-	if i.LastModifiedAtGT != nil {
-		predicates = append(predicates, file.LastModifiedAtGT(*i.LastModifiedAtGT))
-	}
-	if i.LastModifiedAtGTE != nil {
-		predicates = append(predicates, file.LastModifiedAtGTE(*i.LastModifiedAtGTE))
-	}
-	if i.LastModifiedAtLT != nil {
-		predicates = append(predicates, file.LastModifiedAtLT(*i.LastModifiedAtLT))
-	}
-	if i.LastModifiedAtLTE != nil {
-		predicates = append(predicates, file.LastModifiedAtLTE(*i.LastModifiedAtLTE))
-	}
-	if i.Name != nil {
-		predicates = append(predicates, file.NameEQ(*i.Name))
-	}
-	if i.NameNEQ != nil {
-		predicates = append(predicates, file.NameNEQ(*i.NameNEQ))
-	}
-	if len(i.NameIn) > 0 {
-		predicates = append(predicates, file.NameIn(i.NameIn...))
-	}
-	if len(i.NameNotIn) > 0 {
-		predicates = append(predicates, file.NameNotIn(i.NameNotIn...))
-	}
-	if i.NameGT != nil {
-		predicates = append(predicates, file.NameGT(*i.NameGT))
-	}
-	if i.NameGTE != nil {
-		predicates = append(predicates, file.NameGTE(*i.NameGTE))
-	}
-	if i.NameLT != nil {
-		predicates = append(predicates, file.NameLT(*i.NameLT))
-	}
-	if i.NameLTE != nil {
-		predicates = append(predicates, file.NameLTE(*i.NameLTE))
-	}
-	if i.NameContains != nil {
-		predicates = append(predicates, file.NameContains(*i.NameContains))
-	}
-	if i.NameHasPrefix != nil {
-		predicates = append(predicates, file.NameHasPrefix(*i.NameHasPrefix))
-	}
-	if i.NameHasSuffix != nil {
-		predicates = append(predicates, file.NameHasSuffix(*i.NameHasSuffix))
-	}
-	if i.NameEqualFold != nil {
-		predicates = append(predicates, file.NameEqualFold(*i.NameEqualFold))
-	}
-	if i.NameContainsFold != nil {
-		predicates = append(predicates, file.NameContainsFold(*i.NameContainsFold))
-	}
-	if i.Size != nil {
-		predicates = append(predicates, file.SizeEQ(*i.Size))
-	}
-	if i.SizeNEQ != nil {
-		predicates = append(predicates, file.SizeNEQ(*i.SizeNEQ))
-	}
-	if len(i.SizeIn) > 0 {
-		predicates = append(predicates, file.SizeIn(i.SizeIn...))
-	}
-	if len(i.SizeNotIn) > 0 {
-		predicates = append(predicates, file.SizeNotIn(i.SizeNotIn...))
-	}
-	if i.SizeGT != nil {
-		predicates = append(predicates, file.SizeGT(*i.SizeGT))
-	}
-	if i.SizeGTE != nil {
-		predicates = append(predicates, file.SizeGTE(*i.SizeGTE))
-	}
-	if i.SizeLT != nil {
-		predicates = append(predicates, file.SizeLT(*i.SizeLT))
-	}
-	if i.SizeLTE != nil {
-		predicates = append(predicates, file.SizeLTE(*i.SizeLTE))
-	}
-	if i.Hash != nil {
-		predicates = append(predicates, file.HashEQ(*i.Hash))
-	}
-	if i.HashNEQ != nil {
-		predicates = append(predicates, file.HashNEQ(*i.HashNEQ))
-	}
-	if len(i.HashIn) > 0 {
-		predicates = append(predicates, file.HashIn(i.HashIn...))
-	}
-	if len(i.HashNotIn) > 0 {
-		predicates = append(predicates, file.HashNotIn(i.HashNotIn...))
-	}
-	if i.HashGT != nil {
-		predicates = append(predicates, file.HashGT(*i.HashGT))
-	}
-	if i.HashGTE != nil {
-		predicates = append(predicates, file.HashGTE(*i.HashGTE))
-	}
-	if i.HashLT != nil {
-		predicates = append(predicates, file.HashLT(*i.HashLT))
-	}
-	if i.HashLTE != nil {
-		predicates = append(predicates, file.HashLTE(*i.HashLTE))
-	}
-	if i.HashContains != nil {
-		predicates = append(predicates, file.HashContains(*i.HashContains))
-	}
-	if i.HashHasPrefix != nil {
-		predicates = append(predicates, file.HashHasPrefix(*i.HashHasPrefix))
-	}
-	if i.HashHasSuffix != nil {
-		predicates = append(predicates, file.HashHasSuffix(*i.HashHasSuffix))
-	}
-	if i.HashEqualFold != nil {
-		predicates = append(predicates, file.HashEqualFold(*i.HashEqualFold))
-	}
-	if i.HashContainsFold != nil {
-		predicates = append(predicates, file.HashContainsFold(*i.HashContainsFold))
-	}
-
-	if i.HasTomes != nil {
-		p := file.HasTomes()
-		if !*i.HasTomes {
-			p = file.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasTomesWith) > 0 {
-		with := make([]predicate.Tome, 0, len(i.HasTomesWith))
-		for _, w := range i.HasTomesWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasTomesWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, file.HasTomesWith(with...))
-	}
-	if i.HasLinks != nil {
-		p := file.HasLinks()
-		if !*i.HasLinks {
-			p = file.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasLinksWith) > 0 {
-		with := make([]predicate.Link, 0, len(i.HasLinksWith))
-		for _, w := range i.HasLinksWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasLinksWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, file.HasLinksWith(with...))
-	}
-	switch len(predicates) {
-	case 0:
-		return nil, ErrEmptyFileWhereInput
-	case 1:
-		return predicates[0], nil
-	default:
-		return file.And(predicates...), nil
 	}
 }
 
@@ -3367,9 +3367,9 @@ type LinkWhereInput struct {
 	DownloadsRemainingLT    *int  `json:"downloadsRemainingLT,omitempty"`
 	DownloadsRemainingLTE   *int  `json:"downloadsRemainingLTE,omitempty"`
 
-	// "file" edge predicates.
-	HasFile     *bool             `json:"hasFile,omitempty"`
-	HasFileWith []*FileWhereInput `json:"hasFileWith,omitempty"`
+	// "asset" edge predicates.
+	HasAsset     *bool              `json:"hasAsset,omitempty"`
+	HasAssetWith []*AssetWhereInput `json:"hasAssetWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3603,23 +3603,23 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 		predicates = append(predicates, link.DownloadsRemainingLTE(*i.DownloadsRemainingLTE))
 	}
 
-	if i.HasFile != nil {
-		p := link.HasFile()
-		if !*i.HasFile {
+	if i.HasAsset != nil {
+		p := link.HasAsset()
+		if !*i.HasAsset {
 			p = link.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasFileWith) > 0 {
-		with := make([]predicate.File, 0, len(i.HasFileWith))
-		for _, w := range i.HasFileWith {
+	if len(i.HasAssetWith) > 0 {
+		with := make([]predicate.Asset, 0, len(i.HasAssetWith))
+		for _, w := range i.HasAssetWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasFileWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasAssetWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, link.HasFileWith(with...))
+		predicates = append(predicates, link.HasAssetWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -4061,8 +4061,8 @@ type QuestWhereInput struct {
 	HasTomeWith []*TomeWhereInput `json:"hasTomeWith,omitempty"`
 
 	// "bundle" edge predicates.
-	HasBundle     *bool             `json:"hasBundle,omitempty"`
-	HasBundleWith []*FileWhereInput `json:"hasBundleWith,omitempty"`
+	HasBundle     *bool              `json:"hasBundle,omitempty"`
+	HasBundleWith []*AssetWhereInput `json:"hasBundleWith,omitempty"`
 
 	// "tasks" edge predicates.
 	HasTasks     *bool             `json:"hasTasks,omitempty"`
@@ -4417,7 +4417,7 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 		predicates = append(predicates, p)
 	}
 	if len(i.HasBundleWith) > 0 {
-		with := make([]predicate.File, 0, len(i.HasBundleWith))
+		with := make([]predicate.Asset, 0, len(i.HasBundleWith))
 		for _, w := range i.HasBundleWith {
 			p, err := w.P()
 			if err != nil {
@@ -6156,9 +6156,9 @@ type TomeWhereInput struct {
 	EldritchEqualFold    *string  `json:"eldritchEqualFold,omitempty"`
 	EldritchContainsFold *string  `json:"eldritchContainsFold,omitempty"`
 
-	// "files" edge predicates.
-	HasFiles     *bool             `json:"hasFiles,omitempty"`
-	HasFilesWith []*FileWhereInput `json:"hasFilesWith,omitempty"`
+	// "assets" edge predicates.
+	HasAssets     *bool              `json:"hasAssets,omitempty"`
+	HasAssetsWith []*AssetWhereInput `json:"hasAssetsWith,omitempty"`
 
 	// "uploader" edge predicates.
 	HasUploader     *bool             `json:"hasUploader,omitempty"`
@@ -6593,23 +6593,23 @@ func (i *TomeWhereInput) P() (predicate.Tome, error) {
 		predicates = append(predicates, tome.EldritchContainsFold(*i.EldritchContainsFold))
 	}
 
-	if i.HasFiles != nil {
-		p := tome.HasFiles()
-		if !*i.HasFiles {
+	if i.HasAssets != nil {
+		p := tome.HasAssets()
+		if !*i.HasAssets {
 			p = tome.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasFilesWith) > 0 {
-		with := make([]predicate.File, 0, len(i.HasFilesWith))
-		for _, w := range i.HasFilesWith {
+	if len(i.HasAssetsWith) > 0 {
+		with := make([]predicate.Asset, 0, len(i.HasAssetsWith))
+		for _, w := range i.HasAssetsWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasFilesWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasAssetsWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, tome.HasFilesWith(with...))
+		predicates = append(predicates, tome.HasAssetsWith(with...))
 	}
 	if i.HasUploader != nil {
 		p := tome.HasUploader()

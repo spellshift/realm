@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -84,15 +84,15 @@ func (lu *LinkUpdate) AddDownloadsRemaining(i int) *LinkUpdate {
 	return lu
 }
 
-// SetFileID sets the "file" edge to the File entity by ID.
-func (lu *LinkUpdate) SetFileID(id int) *LinkUpdate {
-	lu.mutation.SetFileID(id)
+// SetAssetID sets the "asset" edge to the Asset entity by ID.
+func (lu *LinkUpdate) SetAssetID(id int) *LinkUpdate {
+	lu.mutation.SetAssetID(id)
 	return lu
 }
 
-// SetFile sets the "file" edge to the File entity.
-func (lu *LinkUpdate) SetFile(f *File) *LinkUpdate {
-	return lu.SetFileID(f.ID)
+// SetAsset sets the "asset" edge to the Asset entity.
+func (lu *LinkUpdate) SetAsset(a *Asset) *LinkUpdate {
+	return lu.SetAssetID(a.ID)
 }
 
 // Mutation returns the LinkMutation object of the builder.
@@ -100,9 +100,9 @@ func (lu *LinkUpdate) Mutation() *LinkMutation {
 	return lu.mutation
 }
 
-// ClearFile clears the "file" edge to the File entity.
-func (lu *LinkUpdate) ClearFile() *LinkUpdate {
-	lu.mutation.ClearFile()
+// ClearAsset clears the "asset" edge to the Asset entity.
+func (lu *LinkUpdate) ClearAsset() *LinkUpdate {
+	lu.mutation.ClearAsset()
 	return lu
 }
 
@@ -154,8 +154,8 @@ func (lu *LinkUpdate) check() error {
 			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
 		}
 	}
-	if lu.mutation.FileCleared() && len(lu.mutation.FileIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Link.file"`)
+	if lu.mutation.AssetCleared() && len(lu.mutation.AssetIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Link.asset"`)
 	}
 	return nil
 }
@@ -187,28 +187,28 @@ func (lu *LinkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := lu.mutation.AddedDownloadsRemaining(); ok {
 		_spec.AddField(link.FieldDownloadsRemaining, field.TypeInt, value)
 	}
-	if lu.mutation.FileCleared() {
+	if lu.mutation.AssetCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   link.FileTable,
-			Columns: []string{link.FileColumn},
+			Table:   link.AssetTable,
+			Columns: []string{link.AssetColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := lu.mutation.FileIDs(); len(nodes) > 0 {
+	if nodes := lu.mutation.AssetIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   link.FileTable,
-			Columns: []string{link.FileColumn},
+			Table:   link.AssetTable,
+			Columns: []string{link.AssetColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -291,15 +291,15 @@ func (luo *LinkUpdateOne) AddDownloadsRemaining(i int) *LinkUpdateOne {
 	return luo
 }
 
-// SetFileID sets the "file" edge to the File entity by ID.
-func (luo *LinkUpdateOne) SetFileID(id int) *LinkUpdateOne {
-	luo.mutation.SetFileID(id)
+// SetAssetID sets the "asset" edge to the Asset entity by ID.
+func (luo *LinkUpdateOne) SetAssetID(id int) *LinkUpdateOne {
+	luo.mutation.SetAssetID(id)
 	return luo
 }
 
-// SetFile sets the "file" edge to the File entity.
-func (luo *LinkUpdateOne) SetFile(f *File) *LinkUpdateOne {
-	return luo.SetFileID(f.ID)
+// SetAsset sets the "asset" edge to the Asset entity.
+func (luo *LinkUpdateOne) SetAsset(a *Asset) *LinkUpdateOne {
+	return luo.SetAssetID(a.ID)
 }
 
 // Mutation returns the LinkMutation object of the builder.
@@ -307,9 +307,9 @@ func (luo *LinkUpdateOne) Mutation() *LinkMutation {
 	return luo.mutation
 }
 
-// ClearFile clears the "file" edge to the File entity.
-func (luo *LinkUpdateOne) ClearFile() *LinkUpdateOne {
-	luo.mutation.ClearFile()
+// ClearAsset clears the "asset" edge to the Asset entity.
+func (luo *LinkUpdateOne) ClearAsset() *LinkUpdateOne {
+	luo.mutation.ClearAsset()
 	return luo
 }
 
@@ -374,8 +374,8 @@ func (luo *LinkUpdateOne) check() error {
 			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
 		}
 	}
-	if luo.mutation.FileCleared() && len(luo.mutation.FileIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Link.file"`)
+	if luo.mutation.AssetCleared() && len(luo.mutation.AssetIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Link.asset"`)
 	}
 	return nil
 }
@@ -424,28 +424,28 @@ func (luo *LinkUpdateOne) sqlSave(ctx context.Context) (_node *Link, err error) 
 	if value, ok := luo.mutation.AddedDownloadsRemaining(); ok {
 		_spec.AddField(link.FieldDownloadsRemaining, field.TypeInt, value)
 	}
-	if luo.mutation.FileCleared() {
+	if luo.mutation.AssetCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   link.FileTable,
-			Columns: []string{link.FileColumn},
+			Table:   link.AssetTable,
+			Columns: []string{link.AssetColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := luo.mutation.FileIDs(); len(nodes) > 0 {
+	if nodes := luo.mutation.AssetIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   link.FileTable,
-			Columns: []string{link.FileColumn},
+			Table:   link.AssetTable,
+			Columns: []string{link.AssetColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

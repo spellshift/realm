@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
@@ -27,14 +27,14 @@ type TomeQuery struct {
 	order                   []tome.OrderOption
 	inters                  []Interceptor
 	predicates              []predicate.Tome
-	withFiles               *FileQuery
+	withAssets              *AssetQuery
 	withUploader            *UserQuery
 	withRepository          *RepositoryQuery
 	withScheduledHosts      *HostQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
 	loadTotal               []func(context.Context, []*Tome) error
-	withNamedFiles          map[string]*FileQuery
+	withNamedAssets         map[string]*AssetQuery
 	withNamedScheduledHosts map[string]*HostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -72,9 +72,9 @@ func (tq *TomeQuery) Order(o ...tome.OrderOption) *TomeQuery {
 	return tq
 }
 
-// QueryFiles chains the current query on the "files" edge.
-func (tq *TomeQuery) QueryFiles() *FileQuery {
-	query := (&FileClient{config: tq.config}).Query()
+// QueryAssets chains the current query on the "assets" edge.
+func (tq *TomeQuery) QueryAssets() *AssetQuery {
+	query := (&AssetClient{config: tq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -85,8 +85,8 @@ func (tq *TomeQuery) QueryFiles() *FileQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tome.Table, tome.FieldID, selector),
-			sqlgraph.To(file.Table, file.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, tome.FilesTable, tome.FilesPrimaryKey...),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, tome.AssetsTable, tome.AssetsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -352,7 +352,7 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 		order:              append([]tome.OrderOption{}, tq.order...),
 		inters:             append([]Interceptor{}, tq.inters...),
 		predicates:         append([]predicate.Tome{}, tq.predicates...),
-		withFiles:          tq.withFiles.Clone(),
+		withAssets:         tq.withAssets.Clone(),
 		withUploader:       tq.withUploader.Clone(),
 		withRepository:     tq.withRepository.Clone(),
 		withScheduledHosts: tq.withScheduledHosts.Clone(),
@@ -362,14 +362,14 @@ func (tq *TomeQuery) Clone() *TomeQuery {
 	}
 }
 
-// WithFiles tells the query-builder to eager-load the nodes that are connected to
-// the "files" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TomeQuery) WithFiles(opts ...func(*FileQuery)) *TomeQuery {
-	query := (&FileClient{config: tq.config}).Query()
+// WithAssets tells the query-builder to eager-load the nodes that are connected to
+// the "assets" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TomeQuery) WithAssets(opts ...func(*AssetQuery)) *TomeQuery {
+	query := (&AssetClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withFiles = query
+	tq.withAssets = query
 	return tq
 }
 
@@ -486,7 +486,7 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
 		loadedTypes = [4]bool{
-			tq.withFiles != nil,
+			tq.withAssets != nil,
 			tq.withUploader != nil,
 			tq.withRepository != nil,
 			tq.withScheduledHosts != nil,
@@ -519,10 +519,10 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := tq.withFiles; query != nil {
-		if err := tq.loadFiles(ctx, query, nodes,
-			func(n *Tome) { n.Edges.Files = []*File{} },
-			func(n *Tome, e *File) { n.Edges.Files = append(n.Edges.Files, e) }); err != nil {
+	if query := tq.withAssets; query != nil {
+		if err := tq.loadAssets(ctx, query, nodes,
+			func(n *Tome) { n.Edges.Assets = []*Asset{} },
+			func(n *Tome, e *Asset) { n.Edges.Assets = append(n.Edges.Assets, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -545,10 +545,10 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 			return nil, err
 		}
 	}
-	for name, query := range tq.withNamedFiles {
-		if err := tq.loadFiles(ctx, query, nodes,
-			func(n *Tome) { n.appendNamedFiles(name) },
-			func(n *Tome, e *File) { n.appendNamedFiles(name, e) }); err != nil {
+	for name, query := range tq.withNamedAssets {
+		if err := tq.loadAssets(ctx, query, nodes,
+			func(n *Tome) { n.appendNamedAssets(name) },
+			func(n *Tome, e *Asset) { n.appendNamedAssets(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -567,7 +567,7 @@ func (tq *TomeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tome, e
 	return nodes, nil
 }
 
-func (tq *TomeQuery) loadFiles(ctx context.Context, query *FileQuery, nodes []*Tome, init func(*Tome), assign func(*Tome, *File)) error {
+func (tq *TomeQuery) loadAssets(ctx context.Context, query *AssetQuery, nodes []*Tome, init func(*Tome), assign func(*Tome, *Asset)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[int]*Tome)
 	nids := make(map[int]map[*Tome]struct{})
@@ -579,11 +579,11 @@ func (tq *TomeQuery) loadFiles(ctx context.Context, query *FileQuery, nodes []*T
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(tome.FilesTable)
-		s.Join(joinT).On(s.C(file.FieldID), joinT.C(tome.FilesPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(tome.FilesPrimaryKey[0]), edgeIDs...))
+		joinT := sql.Table(tome.AssetsTable)
+		s.Join(joinT).On(s.C(asset.FieldID), joinT.C(tome.AssetsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(tome.AssetsPrimaryKey[0]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(tome.FilesPrimaryKey[0]))
+		s.Select(joinT.C(tome.AssetsPrimaryKey[0]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -613,14 +613,14 @@ func (tq *TomeQuery) loadFiles(ctx context.Context, query *FileQuery, nodes []*T
 			}
 		})
 	})
-	neighbors, err := withInterceptors[[]*File](ctx, query, qr, query.inters)
+	neighbors, err := withInterceptors[[]*Asset](ctx, query, qr, query.inters)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "files" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "assets" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)
@@ -808,17 +808,17 @@ func (tq *TomeQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// WithNamedFiles tells the query-builder to eager-load the nodes that are connected to the "files"
+// WithNamedAssets tells the query-builder to eager-load the nodes that are connected to the "assets"
 // edge with the given name. The optional arguments are used to configure the query builder of the edge.
-func (tq *TomeQuery) WithNamedFiles(name string, opts ...func(*FileQuery)) *TomeQuery {
-	query := (&FileClient{config: tq.config}).Query()
+func (tq *TomeQuery) WithNamedAssets(name string, opts ...func(*AssetQuery)) *TomeQuery {
+	query := (&AssetClient{config: tq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	if tq.withNamedFiles == nil {
-		tq.withNamedFiles = make(map[string]*FileQuery)
+	if tq.withNamedAssets == nil {
+		tq.withNamedAssets = make(map[string]*AssetQuery)
 	}
-	tq.withNamedFiles[name] = query
+	tq.withNamedAssets[name] = query
 	return tq
 }
 

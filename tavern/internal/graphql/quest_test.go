@@ -61,22 +61,22 @@ func TestCreateQuest(t *testing.T) {
 		SetEldritch(`print("Hello World!")`).
 		SaveX(ctx)
 
-	testFiles := []*ent.File{
-		graph.File.Create().
-			SetName("TestFile1").
+	testAssets := []*ent.Asset{
+		graph.Asset.Create().
+			SetName("TestAsset1").
 			SetContent([]byte("supersecretfile")).
 			SaveX(ctx),
-		graph.File.Create().
-			SetName("TestFile2").
+		graph.Asset.Create().
+			SetName("TestAsset2").
 			SetContent([]byte("expect_this")).
 			SaveX(ctx),
 	}
-	testTomeWithFiles := graph.Tome.Create().
-		SetName("Test Tome With Files").
+	testTomeWithAssets := graph.Tome.Create().
+		SetName("Test Tome With Assets").
 		SetDescription("Ensures the world feels greeted").
 		SetAuthor("kcarretto").
 		SetEldritch(`print("Hello World!")`).
-		AddFiles(testFiles...).
+		AddAssets(testAssets...).
 		SaveX(ctx)
 
 	expectedQuestParams := `{"exampleParam":"Hello World"}`
@@ -103,7 +103,7 @@ func TestCreateQuest(t *testing.T) {
 			assert.Equal(t, testTome.ID, tomeID)
 
 			// Ensure no bundle was created
-			assert.Empty(t, quest.QueryTome().QueryFiles().AllX(ctx))
+			assert.Empty(t, quest.QueryTome().QueryAssets().AllX(ctx))
 			assert.False(t, quest.QueryBundle().ExistX(ctx))
 
 			// Ensure tasks were created properly
@@ -122,12 +122,12 @@ func TestCreateQuest(t *testing.T) {
 			}
 		},
 	))
-	t.Run("CreateWithFiles", newCreateQuestTest(
+	t.Run("CreateWithAssets", newCreateQuestTest(
 		gqlClient,
 		[]int{testBeacons[0].ID, testBeacons[1].ID},
 		ent.CreateQuestInput{
-			Name:   "TestQuestWithFiles",
-			TomeID: testTomeWithFiles.ID,
+			Name:   "TestQuestWithAssets",
+			TomeID: testTomeWithAssets.ID,
 		},
 		func(t *testing.T, id int, err error) {
 			require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestCreateQuest(t *testing.T) {
 
 			// Ensure quest was created with proper fields
 			quest := graph.Quest.GetX(ctx, id)
-			assert.Equal(t, "TestQuestWithFiles", quest.Name)
+			assert.Equal(t, "TestQuestWithAssets", quest.Name)
 
 			// Ensure bundle was created properly
 			bundle := quest.QueryBundle().OnlyX(ctx)
@@ -143,21 +143,21 @@ func TestCreateQuest(t *testing.T) {
 			require.NoError(t, err)
 			tarReader := tar.NewReader(gr)
 
-			// Read files from bundle and ensure they're correct
-			for i, testFile := range testFiles {
+			// Read assets from bundle and ensure they're correct
+			for i, testAsset := range testAssets {
 				hdr, err := tarReader.Next()
-				require.NoError(t, err, "failed to read file header %q (index=%d)", testFile.Name, i)
-				assert.Equal(t, testFile.Name, hdr.Name)
-				fileContent, err := io.ReadAll(tarReader)
-				require.NoError(t, err, "failed to read file %q (index=%d)", testFile.Name, i)
-				assert.Equal(t, string(testFile.Content), string(fileContent))
+				require.NoError(t, err, "failed to read asset header %q (index=%d)", testAsset.Name, i)
+				assert.Equal(t, testAsset.Name, hdr.Name)
+				assetContent, err := io.ReadAll(tarReader)
+				require.NoError(t, err, "failed to read asset %q (index=%d)", testAsset.Name, i)
+				assert.Equal(t, string(testAsset.Content), string(assetContent))
 			}
 			_, readerErr := tarReader.Next()
-			assert.ErrorIs(t, readerErr, io.EOF) // Ensure these are the only files present
+			assert.ErrorIs(t, readerErr, io.EOF) // Ensure these are the only assets present
 
 			// Ensure tome edge was set
 			tomeID := quest.QueryTome().OnlyIDX(ctx)
-			assert.Equal(t, testTomeWithFiles.ID, tomeID)
+			assert.Equal(t, testTomeWithAssets.ID, tomeID)
 
 			// Ensure tasks were created properly
 			tasks := quest.QueryTasks().AllX(ctx)

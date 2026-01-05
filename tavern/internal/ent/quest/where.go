@@ -490,7 +490,7 @@ func HasBundle() predicate.Quest {
 }
 
 // HasBundleWith applies the HasEdge predicate on the "bundle" edge with a given conditions (other predicates).
-func HasBundleWith(preds ...predicate.File) predicate.Quest {
+func HasBundleWith(preds ...predicate.Asset) predicate.Quest {
 	return predicate.Quest(func(s *sql.Selector) {
 		step := newBundleStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

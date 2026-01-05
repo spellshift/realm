@@ -55,8 +55,8 @@ type Tome struct {
 
 // TomeEdges holds the relations/edges for other nodes in the graph.
 type TomeEdges struct {
-	// Any files required for tome execution that will be bundled and provided to the agent for download
-	Files []*File `json:"files,omitempty"`
+	// Any assets required for tome execution that will be bundled and provided to the agent for download
+	Assets []*Asset `json:"assets,omitempty"`
 	// User who uploaded the tome (may be null).
 	Uploader *User `json:"uploader,omitempty"`
 	// Repository from which this Tome was imported (may be null).
@@ -69,17 +69,17 @@ type TomeEdges struct {
 	// totalCount holds the count of the edges above.
 	totalCount [4]map[string]int
 
-	namedFiles          map[string][]*File
+	namedAssets         map[string][]*Asset
 	namedScheduledHosts map[string][]*Host
 }
 
-// FilesOrErr returns the Files value or an error if the edge
+// AssetsOrErr returns the Assets value or an error if the edge
 // was not loaded in eager-loading.
-func (e TomeEdges) FilesOrErr() ([]*File, error) {
+func (e TomeEdges) AssetsOrErr() ([]*Asset, error) {
 	if e.loadedTypes[0] {
-		return e.Files, nil
+		return e.Assets, nil
 	}
-	return nil, &NotLoadedError{edge: "files"}
+	return nil, &NotLoadedError{edge: "assets"}
 }
 
 // UploaderOrErr returns the Uploader value or an error if the edge
@@ -256,9 +256,9 @@ func (t *Tome) Value(name string) (ent.Value, error) {
 	return t.selectValues.Get(name)
 }
 
-// QueryFiles queries the "files" edge of the Tome entity.
-func (t *Tome) QueryFiles() *FileQuery {
-	return NewTomeClient(t.config).QueryFiles(t)
+// QueryAssets queries the "assets" edge of the Tome entity.
+func (t *Tome) QueryAssets() *AssetQuery {
+	return NewTomeClient(t.config).QueryAssets(t)
 }
 
 // QueryUploader queries the "uploader" edge of the Tome entity.
@@ -341,27 +341,27 @@ func (t *Tome) String() string {
 	return builder.String()
 }
 
-// NamedFiles returns the Files named value or an error if the edge was not
+// NamedAssets returns the Assets named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Tome) NamedFiles(name string) ([]*File, error) {
-	if t.Edges.namedFiles == nil {
+func (t *Tome) NamedAssets(name string) ([]*Asset, error) {
+	if t.Edges.namedAssets == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedFiles[name]
+	nodes, ok := t.Edges.namedAssets[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Tome) appendNamedFiles(name string, edges ...*File) {
-	if t.Edges.namedFiles == nil {
-		t.Edges.namedFiles = make(map[string][]*File)
+func (t *Tome) appendNamedAssets(name string, edges ...*Asset) {
+	if t.Edges.namedAssets == nil {
+		t.Edges.namedAssets = make(map[string][]*Asset)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedFiles[name] = []*File{}
+		t.Edges.namedAssets[name] = []*Asset{}
 	} else {
-		t.Edges.namedFiles[name] = append(t.Edges.namedFiles[name], edges...)
+		t.Edges.namedAssets[name] = append(t.Edges.namedAssets[name], edges...)
 	}
 }
 

@@ -7,13 +7,13 @@ state: |
     VALUES (1337,"delightful-lich","ABCDEFG-123456",1010, "TRANSPORT_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
   INSERT INTO `tomes` (id, name, description, author, eldritch, hash, created_at, last_modified_at)
     VALUES (2000,"Test Tome","Used in a unit test :D", "kcarretto", "print('Hello World!')", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
-  INSERT INTO `files` (id, name, content, hash, created_at, last_modified_at)
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
     VALUES (3000, "TestFile1", "hello world", "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
-  INSERT INTO `files` (id, name, content, hash, created_at, last_modified_at)
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
     VALUES (3001, "TestFile2", "some test", "a9d9e8df0488c7e7e9236e43fe0c9385d7ea6920700db55d305f55dca76ddb0b", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
-  INSERT INTO `tome_files` (tome_id, file_id)
+  INSERT INTO `tome_assets` (tome_id, asset_id)
     VALUES (2000, 3000);
-  INSERT INTO `tome_files` (tome_id, file_id)
+  INSERT INTO `tome_assets` (tome_id, asset_id)
     VALUES (2000, 3001);
 requestor:
   session_token: secretToken
@@ -24,7 +24,7 @@ query: |
       tome {
         id
         name
-        files {
+        assets {
         	edges {
             node {
               id
@@ -62,7 +62,7 @@ expected:
     tome:
       id: "2000"
       name: "Test Tome"
-      files:
+      assets:
         edges:
           - node:
               id: "3000"

@@ -9,11 +9,11 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 )
 
-// File is the model entity for the File schema.
-type File struct {
+// Asset is the model entity for the Asset schema.
+type Asset struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
@@ -21,25 +21,25 @@ type File struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
-	// The name of the file, used to reference it for downloads
+	// The name of the asset, used to reference it for downloads
 	Name string `json:"name,omitempty"`
-	// The size of the file in bytes
+	// The size of the asset in bytes
 	Size int `json:"size,omitempty"`
 	// A SHA3-256 digest of the content field
 	Hash string `json:"hash,omitempty"`
-	// The content of the file
+	// The content of the asset
 	Content []byte `json:"content,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the FileQuery when eager-loading is set.
-	Edges        FileEdges `json:"edges"`
+	// The values are being populated by the AssetQuery when eager-loading is set.
+	Edges        AssetEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// FileEdges holds the relations/edges for other nodes in the graph.
-type FileEdges struct {
+// AssetEdges holds the relations/edges for other nodes in the graph.
+type AssetEdges struct {
 	// Tomes holds the value of the tomes edge.
 	Tomes []*Tome `json:"tomes,omitempty"`
-	// Links that point to this file
+	// Links that point to this asset
 	Links []*Link `json:"links,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
@@ -53,7 +53,7 @@ type FileEdges struct {
 
 // TomesOrErr returns the Tomes value or an error if the edge
 // was not loaded in eager-loading.
-func (e FileEdges) TomesOrErr() ([]*Tome, error) {
+func (e AssetEdges) TomesOrErr() ([]*Tome, error) {
 	if e.loadedTypes[0] {
 		return e.Tomes, nil
 	}
@@ -62,7 +62,7 @@ func (e FileEdges) TomesOrErr() ([]*Tome, error) {
 
 // LinksOrErr returns the Links value or an error if the edge
 // was not loaded in eager-loading.
-func (e FileEdges) LinksOrErr() ([]*Link, error) {
+func (e AssetEdges) LinksOrErr() ([]*Link, error) {
 	if e.loadedTypes[1] {
 		return e.Links, nil
 	}
@@ -70,17 +70,17 @@ func (e FileEdges) LinksOrErr() ([]*Link, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*File) scanValues(columns []string) ([]any, error) {
+func (*Asset) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case file.FieldContent:
+		case asset.FieldContent:
 			values[i] = new([]byte)
-		case file.FieldID, file.FieldSize:
+		case asset.FieldID, asset.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case file.FieldName, file.FieldHash:
+		case asset.FieldName, asset.FieldHash:
 			values[i] = new(sql.NullString)
-		case file.FieldCreatedAt, file.FieldLastModifiedAt:
+		case asset.FieldCreatedAt, asset.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -90,169 +90,169 @@ func (*File) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the File fields.
-func (f *File) assignValues(columns []string, values []any) error {
+// to the Asset fields.
+func (a *Asset) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case file.FieldID:
+		case asset.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			f.ID = int(value.Int64)
-		case file.FieldCreatedAt:
+			a.ID = int(value.Int64)
+		case asset.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				f.CreatedAt = value.Time
+				a.CreatedAt = value.Time
 			}
-		case file.FieldLastModifiedAt:
+		case asset.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
-				f.LastModifiedAt = value.Time
+				a.LastModifiedAt = value.Time
 			}
-		case file.FieldName:
+		case asset.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				f.Name = value.String
+				a.Name = value.String
 			}
-		case file.FieldSize:
+		case asset.FieldSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
-				f.Size = int(value.Int64)
+				a.Size = int(value.Int64)
 			}
-		case file.FieldHash:
+		case asset.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
-				f.Hash = value.String
+				a.Hash = value.String
 			}
-		case file.FieldContent:
+		case asset.FieldContent:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
-				f.Content = *value
+				a.Content = *value
 			}
 		default:
-			f.selectValues.Set(columns[i], values[i])
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the File.
+// Value returns the ent.Value that was dynamically selected and assigned to the Asset.
 // This includes values selected through modifiers, order, etc.
-func (f *File) Value(name string) (ent.Value, error) {
-	return f.selectValues.Get(name)
+func (a *Asset) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
 }
 
-// QueryTomes queries the "tomes" edge of the File entity.
-func (f *File) QueryTomes() *TomeQuery {
-	return NewFileClient(f.config).QueryTomes(f)
+// QueryTomes queries the "tomes" edge of the Asset entity.
+func (a *Asset) QueryTomes() *TomeQuery {
+	return NewAssetClient(a.config).QueryTomes(a)
 }
 
-// QueryLinks queries the "links" edge of the File entity.
-func (f *File) QueryLinks() *LinkQuery {
-	return NewFileClient(f.config).QueryLinks(f)
+// QueryLinks queries the "links" edge of the Asset entity.
+func (a *Asset) QueryLinks() *LinkQuery {
+	return NewAssetClient(a.config).QueryLinks(a)
 }
 
-// Update returns a builder for updating this File.
-// Note that you need to call File.Unwrap() before calling this method if this File
+// Update returns a builder for updating this Asset.
+// Note that you need to call Asset.Unwrap() before calling this method if this Asset
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (f *File) Update() *FileUpdateOne {
-	return NewFileClient(f.config).UpdateOne(f)
+func (a *Asset) Update() *AssetUpdateOne {
+	return NewAssetClient(a.config).UpdateOne(a)
 }
 
-// Unwrap unwraps the File entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the Asset entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (f *File) Unwrap() *File {
-	_tx, ok := f.config.driver.(*txDriver)
+func (a *Asset) Unwrap() *Asset {
+	_tx, ok := a.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: File is not a transactional entity")
+		panic("ent: Asset is not a transactional entity")
 	}
-	f.config.driver = _tx.drv
-	return f
+	a.config.driver = _tx.drv
+	return a
 }
 
 // String implements the fmt.Stringer.
-func (f *File) String() string {
+func (a *Asset) String() string {
 	var builder strings.Builder
-	builder.WriteString("File(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", f.ID))
+	builder.WriteString("Asset(")
+	builder.WriteString(fmt.Sprintf("id=%v, ", a.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(f.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(a.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
-	builder.WriteString(f.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(a.LastModifiedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(f.Name)
+	builder.WriteString(a.Name)
 	builder.WriteString(", ")
 	builder.WriteString("size=")
-	builder.WriteString(fmt.Sprintf("%v", f.Size))
+	builder.WriteString(fmt.Sprintf("%v", a.Size))
 	builder.WriteString(", ")
 	builder.WriteString("hash=")
-	builder.WriteString(f.Hash)
+	builder.WriteString(a.Hash)
 	builder.WriteString(", ")
 	builder.WriteString("content=")
-	builder.WriteString(fmt.Sprintf("%v", f.Content))
+	builder.WriteString(fmt.Sprintf("%v", a.Content))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // NamedTomes returns the Tomes named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (f *File) NamedTomes(name string) ([]*Tome, error) {
-	if f.Edges.namedTomes == nil {
+func (a *Asset) NamedTomes(name string) ([]*Tome, error) {
+	if a.Edges.namedTomes == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := f.Edges.namedTomes[name]
+	nodes, ok := a.Edges.namedTomes[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (f *File) appendNamedTomes(name string, edges ...*Tome) {
-	if f.Edges.namedTomes == nil {
-		f.Edges.namedTomes = make(map[string][]*Tome)
+func (a *Asset) appendNamedTomes(name string, edges ...*Tome) {
+	if a.Edges.namedTomes == nil {
+		a.Edges.namedTomes = make(map[string][]*Tome)
 	}
 	if len(edges) == 0 {
-		f.Edges.namedTomes[name] = []*Tome{}
+		a.Edges.namedTomes[name] = []*Tome{}
 	} else {
-		f.Edges.namedTomes[name] = append(f.Edges.namedTomes[name], edges...)
+		a.Edges.namedTomes[name] = append(a.Edges.namedTomes[name], edges...)
 	}
 }
 
 // NamedLinks returns the Links named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (f *File) NamedLinks(name string) ([]*Link, error) {
-	if f.Edges.namedLinks == nil {
+func (a *Asset) NamedLinks(name string) ([]*Link, error) {
+	if a.Edges.namedLinks == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := f.Edges.namedLinks[name]
+	nodes, ok := a.Edges.namedLinks[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (f *File) appendNamedLinks(name string, edges ...*Link) {
-	if f.Edges.namedLinks == nil {
-		f.Edges.namedLinks = make(map[string][]*Link)
+func (a *Asset) appendNamedLinks(name string, edges ...*Link) {
+	if a.Edges.namedLinks == nil {
+		a.Edges.namedLinks = make(map[string][]*Link)
 	}
 	if len(edges) == 0 {
-		f.Edges.namedLinks[name] = []*Link{}
+		a.Edges.namedLinks[name] = []*Link{}
 	} else {
-		f.Edges.namedLinks[name] = append(f.Edges.namedLinks[name], edges...)
+		a.Edges.namedLinks[name] = append(a.Edges.namedLinks[name], edges...)
 	}
 }
 
-// Files is a parsable slice of File.
-type Files []*File
+// Assets is a parsable slice of Asset.
+type Assets []*Asset

@@ -11,17 +11,17 @@ import (
 
 	"golang.org/x/crypto/sha3"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 )
 
-func createBundle(ctx context.Context, client *ent.Client, bundleFiles []*ent.File) (*ent.File, error) {
+func createBundle(ctx context.Context, client *ent.Client, bundleAssets []*ent.Asset) (*ent.Asset, error) {
 	// Calculate Bundle Hash
-	bundleHash := newBundleHashDigest(bundleFiles...)
+	bundleHash := newBundleHashDigest(bundleAssets...)
 	bundleName := fmt.Sprintf("Bundle-%s", bundleHash)
 
 	// Check if bundle exists
-	bundle, err := client.File.Query().
-		Where(file.Name(bundleName)).
+	bundle, err := client.Asset.Query().
+		Where(asset.Name(bundleName)).
 		First(ctx)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to query tome bundle: %w", err)
@@ -29,12 +29,12 @@ func createBundle(ctx context.Context, client *ent.Client, bundleFiles []*ent.Fi
 
 	// Create a new bundle if it doesn't yet exist
 	if bundle == nil || ent.IsNotFound(err) {
-		bundleContent, err := encodeBundle(bundleFiles...)
+		bundleContent, err := encodeBundle(bundleAssets...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode tome bundle: %w", err)
 		}
 
-		bundle, err = client.File.Create().
+		bundle, err = client.Asset.Create().
 			SetName(bundleName).
 			SetContent(bundleContent).
 			Save(ctx)
@@ -46,21 +46,21 @@ func createBundle(ctx context.Context, client *ent.Client, bundleFiles []*ent.Fi
 	return bundle, nil
 }
 
-func encodeBundle(files ...*ent.File) ([]byte, error) {
+func encodeBundle(assets ...*ent.Asset) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	gw := gzip.NewWriter(buf)
 	tw := tar.NewWriter(gw)
-	for _, f := range files {
+	for _, a := range assets {
 		hdr := &tar.Header{
-			Name: f.Name,
+			Name: a.Name,
 			Mode: 0644,
-			Size: int64(len(f.Content)),
+			Size: int64(len(a.Content)),
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
-			return nil, fmt.Errorf("failed to write header (%q;%q): %w", f.Name, f.Hash, err)
+			return nil, fmt.Errorf("failed to write header (%q;%q): %w", a.Name, a.Hash, err)
 		}
-		if _, err := tw.Write(f.Content); err != nil {
-			return nil, fmt.Errorf("failed to write file (%q;%q): %w", f.Name, f.Hash, err)
+		if _, err := tw.Write(a.Content); err != nil {
+			return nil, fmt.Errorf("failed to write asset (%q;%q): %w", a.Name, a.Hash, err)
 		}
 	}
 	if err := tw.Close(); err != nil {
@@ -73,10 +73,10 @@ func encodeBundle(files ...*ent.File) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func newBundleHashDigest(files ...*ent.File) string {
-	hashes := make([]string, 0, len(files))
-	for _, f := range files {
-		hashes = append(hashes, f.Hash)
+func newBundleHashDigest(assets ...*ent.Asset) string {
+	hashes := make([]string, 0, len(assets))
+	for _, a := range assets {
+		hashes = append(hashes, a.Hash)
 	}
 
 	data := []byte(strings.Join(hashes, ""))

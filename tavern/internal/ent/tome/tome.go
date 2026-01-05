@@ -44,8 +44,8 @@ const (
 	FieldHash = "hash"
 	// FieldEldritch holds the string denoting the eldritch field in the database.
 	FieldEldritch = "eldritch"
-	// EdgeFiles holds the string denoting the files edge name in mutations.
-	EdgeFiles = "files"
+	// EdgeAssets holds the string denoting the assets edge name in mutations.
+	EdgeAssets = "assets"
 	// EdgeUploader holds the string denoting the uploader edge name in mutations.
 	EdgeUploader = "uploader"
 	// EdgeRepository holds the string denoting the repository edge name in mutations.
@@ -54,11 +54,11 @@ const (
 	EdgeScheduledHosts = "scheduled_hosts"
 	// Table holds the table name of the tome in the database.
 	Table = "tomes"
-	// FilesTable is the table that holds the files relation/edge. The primary key declared below.
-	FilesTable = "tome_files"
-	// FilesInverseTable is the table name for the File entity.
-	// It exists in this package in order to avoid circular dependency with the "file" package.
-	FilesInverseTable = "files"
+	// AssetsTable is the table that holds the assets relation/edge. The primary key declared below.
+	AssetsTable = "tome_assets"
+	// AssetsInverseTable is the table name for the Asset entity.
+	// It exists in this package in order to avoid circular dependency with the "asset" package.
+	AssetsInverseTable = "assets"
 	// UploaderTable is the table that holds the uploader relation/edge.
 	UploaderTable = "tomes"
 	// UploaderInverseTable is the table name for the User entity.
@@ -108,9 +108,9 @@ var ForeignKeys = []string{
 }
 
 var (
-	// FilesPrimaryKey and FilesColumn2 are the table columns denoting the
-	// primary key for the files relation (M2M).
-	FilesPrimaryKey = []string{"tome_id", "file_id"}
+	// AssetsPrimaryKey and AssetsColumn2 are the table columns denoting the
+	// primary key for the assets relation (M2M).
+	AssetsPrimaryKey = []string{"tome_id", "asset_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -294,17 +294,17 @@ func ByEldritch(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEldritch, opts...).ToFunc()
 }
 
-// ByFilesCount orders the results by files count.
-func ByFilesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByAssetsCount orders the results by assets count.
+func ByAssetsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newFilesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newAssetsStep(), opts...)
 	}
 }
 
-// ByFiles orders the results by files terms.
-func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByAssets orders the results by assets terms.
+func ByAssets(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newAssetsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -335,11 +335,11 @@ func ByScheduledHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newScheduledHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newFilesStep() *sqlgraph.Step {
+func newAssetsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(FilesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2M, false, FilesTable, FilesPrimaryKey...),
+		sqlgraph.To(AssetsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, AssetsTable, AssetsPrimaryKey...),
 	)
 }
 func newUploaderStep() *sqlgraph.Step {

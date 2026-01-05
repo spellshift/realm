@@ -103,20 +103,20 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 
 		var metadata MetadataDefinition
 		var eldritch string
-		var tomeFiles []*ent.File
+		var tomeAssets []*ent.Asset
 		if err := fs.WalkDir(fileSystem, entry.Name(), func(path string, d fs.DirEntry, err error) error {
 			// Skip directories
 			if d.IsDir() {
 				return nil
 			}
 
-			// Parse File
+			// Parse Asset
 			if err != nil {
 				return rollback(tx, fmt.Errorf("failed to parse tome: %w", err))
 			}
 			content, err := fs.ReadFile(fileSystem, path)
 			if err != nil {
-				return rollback(tx, fmt.Errorf("failed to parse tome file %q: %w", path, err))
+				return rollback(tx, fmt.Errorf("failed to parse tome asset %q: %w", path, err))
 			}
 
 			// Parse metadata.yml
@@ -137,15 +137,15 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 				return nil
 			}
 
-			// Upload other files
-			f, err := graph.File.Create().
+			// Upload other assets
+			a, err := graph.Asset.Create().
 				SetName(path).
 				SetContent(content).
 				Save(ctx)
 			if err != nil {
-				return rollback(tx, fmt.Errorf("failed to upload tome file %q: %w", path, err))
+				return rollback(tx, fmt.Errorf("failed to upload tome asset %q: %w", path, err))
 			}
-			tomeFiles = append(tomeFiles, f)
+			tomeAssets = append(tomeAssets, a)
 
 			return nil
 		}); err != nil {
@@ -167,7 +167,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			SetSupportModel(tome.SupportModel(metadata.SupportModel)).
 			SetTactic(tome.Tactic(metadata.Tactic)).
 			SetEldritch(eldritch).
-			AddFiles(tomeFiles...).
+			AddAssets(tomeAssets...).
 			Save(ctx); err != nil {
 			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err))
 		}

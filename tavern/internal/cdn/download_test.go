@@ -22,19 +22,19 @@ func TestDownload(t *testing.T) {
 	defer graph.Close()
 
 	expectedContent := []byte("file_content")
-	existingFile := newFile(graph, "ExistingTestFile", expectedContent)
+	existingAsset := newAsset(graph, "ExistingTestAsset", expectedContent)
 
-	t.Run("File", newDownloadTest(
+	t.Run("Asset", newDownloadTest(
 		graph,
-		newDownloadRequest(existingFile.Name),
+		newDownloadRequest(existingAsset.Name),
 		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			assert.Nil(t, err)
 			assert.Equal(t, string(expectedContent), string(fileContent))
 		},
 	))
-	t.Run("CachedFile", newDownloadTest(
+	t.Run("CachedAsset", newDownloadTest(
 		graph,
-		newDownloadRequest(existingFile.Name, withIfNoneMatchHeader(existingFile.Hash)),
+		newDownloadRequest(existingAsset.Name, withIfNoneMatchHeader(existingAsset.Hash)),
 		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
 			require.NotNil(t, err)
 			assert.Equal(t, http.StatusNotModified, err.StatusCode)

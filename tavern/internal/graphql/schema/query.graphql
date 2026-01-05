@@ -1,5 +1,5 @@
 extend type Query {
-  files(
+  assets(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
 
@@ -12,12 +12,12 @@ extend type Query {
     """Returns the last _n_ elements from the list."""
     last: Int
 
-    """Ordering options for Files returned from the connection."""
-    orderBy: [FileOrder!]
+    """Ordering options for Assets returned from the connection."""
+    orderBy: [AssetOrder!]
 
-    """Filtering options for Files returned from the connection."""
-    where: FileWhereInput
-  ): FileConnection! @requireRole(role: USER)
+    """Filtering options for Assets returned from the connection."""
+    where: AssetWhereInput
+  ): AssetConnection! @requireRole(role: USER)
   quests(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
