@@ -1,5 +1,5 @@
 # Dependency Cache
-FROM golang:1.23.4-bookworm as base
+FROM golang:1.24.0-bookworm as base
 WORKDIR /app
 RUN mkdir -p /app/build /app/cdn
 COPY ./go.mod /app/go.mod
