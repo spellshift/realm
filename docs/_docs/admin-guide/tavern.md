@@ -188,6 +188,29 @@ By default, Tavern does not export metrics. You may use the below environment co
 | ENABLE_METRICS | Set to any value to enable the "/metrics" endpoint. | Disabled | No |
 | HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8000` | No |
 
+### Debugging & Logging
+
+Use the following environment variables to configure logging verbosity and formats.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| ENABLE_DEBUG_LOGGING | Enable verbose debug logs. | Disabled | No |
+| ENABLE_JSON_LOGGING | Emit logs in JSON format for easier parsing. | Disabled | No |
+| ENABLE_INSTANCE_ID_LOGGING | Include the tavern instance ID in log messages. | Disabled | No |
+| ENABLE_GRAPHQL_RAW_QUERY_LOGGING | Include the raw GraphQL query in logs. | Disabled | No |
+
+### PubSub Configuration
+
+Tavern uses PubSub for handling shell input and output.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS | Interval (ms) to publish no-op messages to avoid cold starts. | 1000 | No |
+| PUBSUB_TOPIC_SHELL_INPUT | Topic for shell input. | `mem://shell_input` | No |
+| PUBSUB_SUBSCRIPTION_SHELL_INPUT | Subscription for shell input. | `mem://shell_input` | No |
+| PUBSUB_TOPIC_SHELL_OUTPUT | Topic for shell output. | `mem://shell_output` | No |
+| PUBSUB_SUBSCRIPTION_SHELL_OUTPUT | Subscription for shell output. | `mem://shell_output` | No |
+
 ### Secrets
 
 By default, Tavern wants to use a GCP KMS for secrets management. The secrets engine is used to generate keypairs when communicating with agents.

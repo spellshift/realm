@@ -99,6 +99,38 @@ The standard library is the default functionality that eldritch provides. It con
 - `sys` - General system capabilities can include loading libraries, or information about the current context.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
 
+## Built-in Methods
+
+Eldritch includes a set of standard built-in functions available in the global scope:
+
+- `abs(x)`
+- `all(iterable)`
+- `any(iterable)`
+- `bool(x)`
+- `bytes(string_or_list)`
+- `chr(i)`
+- `dict(**kwargs)`
+- `dir(object)`
+- `enumerate(iterable)`
+- `float(x)`
+- `int(x)`
+- `len(s)`
+- `list(iterable)`
+- `max(iterable)`
+- `min(iterable)`
+- `ord(c)`
+- `print(*args)`
+- `pprint(object)`
+- `range(stop)` or `range(start, stop[, step])`
+- `repr(object)`
+- `reversed(seq)`
+- `set(iterable)`
+- `sorted(iterable, key=None, reverse=False)`
+- `str(object)`
+- `tuple(iterable)`
+- `type(object)`
+- `zip(*iterables)`
+
 **🚨 DANGER 🚨: Name shadowing**
 
 Do not use the standard library names as local variables as it will prevent you from accessing library functions.
@@ -123,6 +155,18 @@ for user_home_dir in file.list("/home/"):
 ---
 
 ## Agent
+
+### agent.claim_tasks (V2-Only)
+
+`agent.claim_tasks() -> List<Dict>`
+
+The **agent.claim_tasks** method manually triggers a check-in with the C2 server to retrieve and claim any pending tasks.
+
+### agent.fetch_asset
+
+`agent.fetch_asset(name: str) -> List<int>`
+
+The **agent.fetch_asset** method requests a file asset from the C2 server. This is distinct from `assets.read`, which reads assets embedded within the agent binary itself.
 
 ### agent._terminate_this_process_clowntown (V2-Only)
 
@@ -165,6 +209,30 @@ The **agent.list_tasks** method returns a list of dictionaries representing the 
 >>> agent.list_tasks()
 [{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
 ```
+
+### agent.report_credential (V2-Only)
+
+`agent.report_credential(credential: Dict) -> None`
+
+The **agent.report_credential** method is a low-level function to report captured credentials to the C2. Users should generally prefer `report.ssh_key` or `report.user_password`.
+
+### agent.report_file (V2-Only)
+
+`agent.report_file(file: Dict) -> None`
+
+The **agent.report_file** method is a low-level function to report file chunks. Users should generally prefer `report.file`.
+
+### agent.report_process_list (V2-Only)
+
+`agent.report_process_list(list: List<Dict>) -> None`
+
+The **agent.report_process_list** method reports a snapshot of running processes. Users should generally prefer `report.process_list`.
+
+### agent.report_task_output (V2-Only)
+
+`agent.report_task_output(output: str, error: Optional[str]) -> None`
+
+The **agent.report_task_output** method allows a script to manually report output for the current task, potentially before the script finishes execution.
 
 ### agent.stop_task (V2-Only)
 
@@ -234,6 +302,18 @@ The <b>assets.read</b> method returns a UTF-8 string representation of the asset
 
 ## Crypto
 
+### crypto.aes_decrypt
+
+`crypto.aes_decrypt(key: List<int>, iv: List<int>, data: List<int>) -> List<int>`
+
+The **crypto.aes_decrypt** method decrypts the given data using AES (CBC mode) with the provided key and IV. Returns the decrypted bytes.
+
+### crypto.aes_encrypt
+
+`crypto.aes_encrypt(key: List<int>, iv: List<int>, data: List<int>) -> List<int>`
+
+The **crypto.aes_encrypt** method encrypts the given data using AES (CBC mode) with the provided key and IV. Returns the encrypted bytes.
+
 ### crypto.aes_decrypt_file
 
 `crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
@@ -263,7 +343,7 @@ The <b>crypto.encode_b64</b> method encodes the given text using the given base6
 
 ### crypto.decode_b64
 
-`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
+`crypto.decode_b64(content: str, encode_type: Optional<str>) -> str`
 
 The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
 
@@ -300,6 +380,24 @@ True
 crypto.is_json("foobar")
 False
 ```
+
+### crypto.md5
+
+`crypto.md5(data: List<int>) -> str`
+
+The **crypto.md5** method calculates the MD5 hash of the provided bytes and returns the hexadecimal string representation.
+
+### crypto.sha1
+
+`crypto.sha1(data: List<int>) -> str`
+
+The **crypto.sha1** method calculates the SHA1 hash of the provided bytes and returns the hexadecimal string representation.
+
+### crypto.sha256
+
+`crypto.sha256(data: List<int>) -> str`
+
+The **crypto.sha256** method calculates the SHA256 hash of the provided bytes and returns the hexadecimal string representation.
 
 ### crypto.to_json
 
@@ -443,11 +541,11 @@ Here is an example of the Dict layout:
 
 The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
-### file.moveto
+### file.move
 
-`file.moveto(src: str, dst: str) -> None`
+`file.move(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
@@ -476,7 +574,7 @@ file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Win
 
 ### file.read_binary
 
-`file.read(path: str) -> List<int>`
+`file.read_binary(path: str) -> List<int>`
 
 The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
@@ -509,7 +607,7 @@ The <b>file.replace_all</b> method finds all strings matching a regex pattern in
 
 `file.temp_file(name: Option<str>) -> str`
 
-The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The <b>file.temp_file</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
 
@@ -522,9 +620,9 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 ### file.timestomp
 
-`file.timestomp(src: str, dst: str) -> None`
+`file.timestomp(path: str, mtime: Optional<Value>, atime: Optional<Value>, ctime: Optional<Value>, ref_file: Optional<str>) -> None`
 
-Unimplemented.
+The <b>file.timestomp</b> method modifies the timestamps (modified, access, creation) of a file. Timestamps can be provided as explicit values (Int epoch or String) or copied from a reference file.
 
 ### file.write
 
@@ -610,6 +708,12 @@ $> pivot.arp_scan(["192.168.1.1/32"])
 
 The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
 
+### pivot.create_portal
+
+`pivot.create_portal() -> None`
+
+The **pivot.create_portal** method opens a bi-directional stream for portal traffic.
+
 ### pivot.ncat
 
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
@@ -667,6 +771,12 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
 
+### pivot.reverse_shell_repl
+
+`pivot.reverse_shell_repl() -> None`
+
+The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter. This is useful if a PTY is not available.
+
 ### pivot.smb_exec
 
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
@@ -685,7 +795,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_exec
 
-`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
+`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> Dict`
 
 The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
 Stdout returns the string result from the command output.
@@ -814,6 +924,12 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.bytes
+
+`random.bytes(len: int) -> List<int>`
+
+The **random.bytes** method returns a list of random bytes of the specified length.
+
 ### random.int
 
 `random.int(min: i32, max: i32) -> i32`
@@ -824,6 +940,12 @@ The <b>random.int</b> method returns randomly generated integer value between a 
 
 `random.string(length: uint, charset: Optional<str>) -> str`
 The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
+### random.uuid
+
+`random.uuid() -> str`
+
+The **random.uuid** method returns a randomly generated UUID (v4).
 
 ---
 
@@ -908,12 +1030,13 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
+The `input` parameter optionally provides stdin content to the process.
 
 ```python
 sys.exec("/bin/bash",["-c", "whoami"])
