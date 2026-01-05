@@ -2,6 +2,8 @@ package portals_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"fmt"
 	"net"
 	"testing"
@@ -19,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/jwt"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -58,7 +61,13 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctxMux, cancelMux := context.WithCancel(ctx)
 	go c2StreamMux.Start(ctxMux)
 
-	c2Server := c2.New(entClient, c2StreamMux, portalMux)
+	// Setup JWT service for testing
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	jwtService, err := jwt.NewService(privKey, pubKey)
+	require.NoError(t, err)
+
+	c2Server := c2.New(entClient, c2StreamMux, portalMux, jwtService)
 	portalServer := portals.New(entClient, portalMux)
 
 	// 4. Setup gRPC Listener with bufconn

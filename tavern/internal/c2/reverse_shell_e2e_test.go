@@ -2,6 +2,8 @@ package c2_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"net"
 	"net/http/httptest"
 	"strconv"
@@ -21,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/jwt"
 	"realm.pub/tavern/internal/portals/mux"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -62,10 +65,16 @@ func TestReverseShell_E2E(t *testing.T) {
 	grpcMux := stream.NewMux(pubOutput, subInput)
 	portalMux := mux.New(mux.WithInMemoryDriver())
 
+	// Setup JWT service for testing
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	jwtService, err := jwt.NewService(privKey, pubKey)
+	require.NoError(t, err)
+
 	go wsMux.Start(ctx)
 	go grpcMux.Start(ctx)
 
-	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux))
+	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux, jwtService))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			t.Logf("Server exited with error: %v", err)
