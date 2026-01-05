@@ -34,6 +34,7 @@ import (
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/jwt"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
@@ -530,7 +531,14 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 	}
 	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
-	c2srv := c2.New(client, grpcShellMux, portalMux)
+	// Initialize JWT service
+	jwtService, err := jwt.NewService()
+	if err != nil {
+		slog.Error("failed to initialize JWT service", "err", err)
+		panic(err)
+	}
+
+	c2srv := c2.New(client, grpcShellMux, portalMux, jwtService)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}

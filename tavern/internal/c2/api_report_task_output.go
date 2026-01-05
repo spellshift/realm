@@ -17,6 +17,9 @@ func (srv *Server) ReportTaskOutput(ctx context.Context, req *c2pb.ReportTaskOut
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
 
+	// Validate JWT
+	srv.validateTaskJWT(ctx, req.Jwt, req.Output.Id)
+
 	// Parse Input
 	var (
 		execStartedAt  *time.Time

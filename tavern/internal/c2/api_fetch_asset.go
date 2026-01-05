@@ -15,6 +15,13 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
+	// Validate JWT
+	taskID := srv.validateJWT(ctx, req.Jwt)
+	if taskID == -1 {
+		// JWT validation failed, but we'll continue (warning already logged)
+		// Note: task_id is not used for asset fetching, but we validate the JWT anyway
+	}
+
 	// Load Asset
 	name := req.GetName()
 	a, err := srv.graph.Asset.Query().

@@ -400,9 +400,19 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		for _, a := range claimedAssets {
 			claimedAssetNames = append(claimedAssetNames, a.Name)
 		}
+
+		// Generate JWT for this task
+		taskJWT, err := srv.jwtService.GenerateTaskToken(int64(claimedTask.ID), req.Beacon.Identifier)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to generate JWT for task", "task_id", claimedTask.ID, "err", err)
+			// Continue without JWT - this is not critical for task execution
+			taskJWT = ""
+		}
+
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
 			Id:        int64(claimedTask.ID),
 			QuestName: claimedQuest.Name,
+			Jwt:       taskJWT,
 			Tome: &epb.Tome{
 				Eldritch:   claimedTome.Eldritch,
 				Parameters: params,

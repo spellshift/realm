@@ -157,6 +157,8 @@ pub struct Task {
     pub tome: ::core::option::Option<crate::eldritch::Tome>,
     #[prost(string, tag = "3")]
     pub quest_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub jwt: ::prost::alloc::string::String,
 }
 /// TaskError provides information when task execution fails.
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -201,6 +203,8 @@ pub struct ClaimTasksResponse {
 pub struct FetchAssetRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -215,6 +219,8 @@ pub struct ReportCredentialRequest {
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
     pub credential: ::core::option::Option<crate::eldritch::Credential>,
+    #[prost(string, tag = "3")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -226,6 +232,8 @@ pub struct ReportFileRequest {
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
     pub chunk: ::core::option::Option<crate::eldritch::File>,
+    #[prost(string, tag = "3")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -246,6 +254,8 @@ pub struct ReportProcessListResponse {}
 pub struct ReportTaskOutputRequest {
     #[prost(message, optional, tag = "1")]
     pub output: ::core::option::Option<TaskOutput>,
+    #[prost(string, tag = "2")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
