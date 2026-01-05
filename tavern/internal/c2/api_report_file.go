@@ -21,6 +21,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		permissions string
 		size        uint64
 		hash        string
+		jwtToken    string
 
 		content []byte
 	)
@@ -41,6 +42,9 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 		if taskID == 0 {
 			taskID = req.GetTaskId()
+		}
+		if jwtToken == "" {
+			jwtToken = req.GetJwt()
 		}
 		if path == "" && req.Chunk.Metadata != nil {
 			path = req.Chunk.Metadata.GetPath()
@@ -70,6 +74,9 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	if path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
 	}
+
+	// Validate JWT
+	srv.validateTaskJWT(stream.Context(), jwtToken, taskID)
 
 	// Load Task
 	task, err := srv.graph.Task.Get(stream.Context(), int(taskID))
