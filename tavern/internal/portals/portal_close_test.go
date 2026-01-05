@@ -85,11 +85,6 @@ func TestPortalClose(t *testing.T) {
 	// Read from portalStream - expect CLOSE mote
 	msg, err := portalStream.Recv()
 
-	// Handle case where we might get keepalive or other messages, but in this controlled test
-	// we expect the next message to be the close signal or immediately closed.
-	// However, OpenPortal sends the mote BEFORE checking if it is a CLOSE mote.
-	// So we must receive it.
-
 	if err == io.EOF {
 		// If we get immediate EOF, it means we missed the CLOSE mote or it wasn't sent.
 		// But based on code reading, it should be sent.
@@ -103,6 +98,5 @@ func TestPortalClose(t *testing.T) {
 	// Attempt to receive again - expect error (portal closed) or EOF
 	_, err = portalStream.Recv()
 	require.Error(t, err)
-	// Optionally check error message content if needed, but error presence is sufficient
-	// require.Contains(t, err.Error(), "portal closed")
+	require.Contains(t, err.Error(), "portal closed")
 }
