@@ -2,10 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/ecdh"
-	"crypto/ed25519"
-	"crypto/rand"
-	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -35,10 +31,10 @@ import (
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/jwt"
+	"realm.pub/tavern/internal/keyservice"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
-	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/tomes"
@@ -423,85 +419,6 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func generateKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
-	curve := ecdh.X25519()
-	privateKey, err := curve.GenerateKey(rand.Reader)
-	if err != nil {
-		slog.Error(fmt.Sprintf("failed to generate private key: %v\n", err))
-		return nil, nil, err
-	}
-	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
-	if err != nil {
-		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
-		return nil, nil, err
-	}
-
-	return publicKey, privateKey, nil
-}
-
-func GetPubKey() (*ecdh.PublicKey, error) {
-	pub, _, err := getKeyPair()
-	if err != nil {
-		return nil, err
-	}
-	return pub, nil
-}
-
-func newSecretsManager() (secrets.SecretsManager, error) {
-	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
-		slog.Error("No configuration provided for secret manager path, using a potentially insecure default.")
-		return secrets.NewDebugFileSecrets("/tmp/tavern-secrets")
-	}
-	if EnvSecretsManagerPath.String() == "" {
-		return secrets.NewGcp(EnvGCPProjectID.String())
-	}
-
-	return secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
-}
-
-func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
-	curve := ecdh.X25519()
-
-	secretsManager, err := newSecretsManager()
-	if err != nil || secretsManager == nil {
-		return nil, nil, fmt.Errorf("failed to configure secret manager: %w", err)
-	}
-
-	// Check if we already have a key
-	privateKeyString, err := secretsManager.GetValue("tavern_encryption_private_key")
-	if err != nil {
-		// Generate a new one if it doesn't exist
-		pubKey, privateKey, err := generateKeyPair()
-		if err != nil {
-			return nil, nil, fmt.Errorf("key generation failed: %v", err)
-		}
-
-		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to marshal private key: %v", err)
-		}
-		_, err = secretsManager.SetValue("tavern_encryption_private_key", privateKeyBytes)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
-		}
-		return pubKey, privateKey, nil
-	}
-
-	// Parse private key bytes
-	tmp, err := x509.ParsePKCS8PrivateKey(privateKeyString)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to parse private key: %v", err)
-	}
-	privateKey := tmp.(*ecdh.PrivateKey)
-
-	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate public key: %v", err)
-	}
-
-	return publicKey, privateKey, nil
-}
-
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	portalSrv := portals.New(graph, portalMux)
 	grpcSrv := grpc.NewServer(
@@ -525,14 +442,23 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 }
 
 func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
-	pub, priv, err := getKeyPair()
+	// Initialize key service (manages master ed25519 key and derives x25519 key)
+	keyService, err := keyservice.NewKeyService()
 	if err != nil {
+		slog.Error("failed to initialize key service", "err", err)
 		panic(err)
 	}
-	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
-	// Initialize JWT service
-	jwtService, err := jwt.NewService()
+	// Get derived x25519 keys for encryption
+	x25519Pub := keyService.GetX25519PublicKey()
+	x25519Priv := keyService.GetX25519PrivateKey()
+	slog.Info(fmt.Sprintf("x25519 public key (derived from ed25519): %s", base64.StdEncoding.EncodeToString(x25519Pub.Bytes())))
+
+	// Initialize JWT service with ed25519 keys
+	jwtService, err := jwt.NewService(
+		keyService.GetEd25519PrivateKey(),
+		keyService.GetEd25519PublicKey(),
+	)
 	if err != nil {
 		slog.Error("failed to initialize JWT service", "err", err)
 		panic(err)
@@ -540,7 +466,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 
 	c2srv := c2.New(client, grpcShellMux, portalMux, jwtService)
 	xchacha := cryptocodec.StreamDecryptCodec{
-		Csvc: cryptocodec.NewCryptoSvc(priv),
+		Csvc: cryptocodec.NewCryptoSvc(x25519Priv),
 	}
 	grpcSrv := grpc.NewServer(
 		grpc.ForceServerCodecV2(xchacha),
