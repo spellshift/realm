@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -113,13 +113,13 @@ func (qc *QuestCreate) SetTome(t *Tome) *QuestCreate {
 	return qc.SetTomeID(t.ID)
 }
 
-// SetBundleID sets the "bundle" edge to the File entity by ID.
+// SetBundleID sets the "bundle" edge to the Asset entity by ID.
 func (qc *QuestCreate) SetBundleID(id int) *QuestCreate {
 	qc.mutation.SetBundleID(id)
 	return qc
 }
 
-// SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
+// SetNillableBundleID sets the "bundle" edge to the Asset entity by ID if the given value is not nil.
 func (qc *QuestCreate) SetNillableBundleID(id *int) *QuestCreate {
 	if id != nil {
 		qc = qc.SetBundleID(*id)
@@ -127,9 +127,9 @@ func (qc *QuestCreate) SetNillableBundleID(id *int) *QuestCreate {
 	return qc
 }
 
-// SetBundle sets the "bundle" edge to the File entity.
-func (qc *QuestCreate) SetBundle(f *File) *QuestCreate {
-	return qc.SetBundleID(f.ID)
+// SetBundle sets the "bundle" edge to the Asset entity.
+func (qc *QuestCreate) SetBundle(a *Asset) *QuestCreate {
+	return qc.SetBundleID(a.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -316,7 +316,7 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -128,7 +128,7 @@ describe('TableWrapper', () => {
         <TableWrapper {...defaultProps} filterControls={mockFilterControls} stickyControls={true} />
       );
 
-      const controlsDiv = container.querySelector('.sticky.top-0.z-20.shadow-sm');
+      const controlsDiv = container.querySelector('.sticky.top-0.z-5.shadow-sm');
       expect(controlsDiv).toBeInTheDocument();
     });
 
@@ -137,7 +137,7 @@ describe('TableWrapper', () => {
         <TableWrapper {...defaultProps} filterControls={mockFilterControls} stickyControls={false} />
       );
 
-      const controlsDiv = container.querySelector('.sticky.top-0.z-20.shadow-sm');
+      const controlsDiv = container.querySelector('.sticky.top-0.z-5.shadow-sm');
       expect(controlsDiv).not.toBeInTheDocument();
     });
   });

@@ -15,8 +15,8 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -37,10 +37,10 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Asset is the client for interacting with the Asset builders.
+	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
-	// File is the client for interacting with the File builders.
-	File *FileClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -80,8 +80,8 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Asset = NewAssetClient(c.config)
 	c.Beacon = NewBeaconClient(c.config)
-	c.File = NewFileClient(c.config)
 	c.Host = NewHostClient(c.config)
 	c.HostCredential = NewHostCredentialClient(c.config)
 	c.HostFile = NewHostFileClient(c.config)
@@ -187,8 +187,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:            ctx,
 		config:         cfg,
+		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
-		File:           NewFileClient(cfg),
 		Host:           NewHostClient(cfg),
 		HostCredential: NewHostCredentialClient(cfg),
 		HostFile:       NewHostFileClient(cfg),
@@ -221,8 +221,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:            ctx,
 		config:         cfg,
+		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
-		File:           NewFileClient(cfg),
 		Host:           NewHostClient(cfg),
 		HostCredential: NewHostCredentialClient(cfg),
 		HostFile:       NewHostFileClient(cfg),
@@ -242,7 +242,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Beacon.
+//		Asset.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -265,7 +265,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
+		c.Asset, c.Beacon, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
 		c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
@@ -276,7 +276,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Beacon, c.File, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
+		c.Asset, c.Beacon, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
 		c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
@@ -286,10 +286,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *AssetMutation:
+		return c.Asset.mutate(ctx, m)
 	case *BeaconMutation:
 		return c.Beacon.mutate(ctx, m)
-	case *FileMutation:
-		return c.File.mutate(ctx, m)
 	case *HostMutation:
 		return c.Host.mutate(ctx, m)
 	case *HostCredentialMutation:
@@ -318,6 +318,172 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// AssetClient is a client for the Asset schema.
+type AssetClient struct {
+	config
+}
+
+// NewAssetClient returns a client for the Asset from the given config.
+func NewAssetClient(c config) *AssetClient {
+	return &AssetClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `asset.Hooks(f(g(h())))`.
+func (c *AssetClient) Use(hooks ...Hook) {
+	c.hooks.Asset = append(c.hooks.Asset, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `asset.Intercept(f(g(h())))`.
+func (c *AssetClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Asset = append(c.inters.Asset, interceptors...)
+}
+
+// Create returns a builder for creating a Asset entity.
+func (c *AssetClient) Create() *AssetCreate {
+	mutation := newAssetMutation(c.config, OpCreate)
+	return &AssetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Asset entities.
+func (c *AssetClient) CreateBulk(builders ...*AssetCreate) *AssetCreateBulk {
+	return &AssetCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AssetClient) MapCreateBulk(slice any, setFunc func(*AssetCreate, int)) *AssetCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AssetCreateBulk{err: fmt.Errorf("calling to AssetClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AssetCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AssetCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Asset.
+func (c *AssetClient) Update() *AssetUpdate {
+	mutation := newAssetMutation(c.config, OpUpdate)
+	return &AssetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AssetClient) UpdateOne(a *Asset) *AssetUpdateOne {
+	mutation := newAssetMutation(c.config, OpUpdateOne, withAsset(a))
+	return &AssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AssetClient) UpdateOneID(id int) *AssetUpdateOne {
+	mutation := newAssetMutation(c.config, OpUpdateOne, withAssetID(id))
+	return &AssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Asset.
+func (c *AssetClient) Delete() *AssetDelete {
+	mutation := newAssetMutation(c.config, OpDelete)
+	return &AssetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AssetClient) DeleteOne(a *Asset) *AssetDeleteOne {
+	return c.DeleteOneID(a.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AssetClient) DeleteOneID(id int) *AssetDeleteOne {
+	builder := c.Delete().Where(asset.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AssetDeleteOne{builder}
+}
+
+// Query returns a query builder for Asset.
+func (c *AssetClient) Query() *AssetQuery {
+	return &AssetQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAsset},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Asset entity by its id.
+func (c *AssetClient) Get(ctx context.Context, id int) (*Asset, error) {
+	return c.Query().Where(asset.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AssetClient) GetX(ctx context.Context, id int) *Asset {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTomes queries the tomes edge of a Asset.
+func (c *AssetClient) QueryTomes(a *Asset) *TomeQuery {
+	query := (&TomeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(asset.Table, asset.FieldID, id),
+			sqlgraph.To(tome.Table, tome.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, asset.TomesTable, asset.TomesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLinks queries the links edge of a Asset.
+func (c *AssetClient) QueryLinks(a *Asset) *LinkQuery {
+	query := (&LinkClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(asset.Table, asset.FieldID, id),
+			sqlgraph.To(link.Table, link.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, asset.LinksTable, asset.LinksColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AssetClient) Hooks() []Hook {
+	hooks := c.hooks.Asset
+	return append(hooks[:len(hooks):len(hooks)], asset.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *AssetClient) Interceptors() []Interceptor {
+	return c.inters.Asset
+}
+
+func (c *AssetClient) mutate(ctx context.Context, m *AssetMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AssetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AssetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AssetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AssetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Asset mutation op: %q", m.Op())
 	}
 }
 
@@ -499,172 +665,6 @@ func (c *BeaconClient) mutate(ctx context.Context, m *BeaconMutation) (Value, er
 		return (&BeaconDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Beacon mutation op: %q", m.Op())
-	}
-}
-
-// FileClient is a client for the File schema.
-type FileClient struct {
-	config
-}
-
-// NewFileClient returns a client for the File from the given config.
-func NewFileClient(c config) *FileClient {
-	return &FileClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `file.Hooks(f(g(h())))`.
-func (c *FileClient) Use(hooks ...Hook) {
-	c.hooks.File = append(c.hooks.File, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `file.Intercept(f(g(h())))`.
-func (c *FileClient) Intercept(interceptors ...Interceptor) {
-	c.inters.File = append(c.inters.File, interceptors...)
-}
-
-// Create returns a builder for creating a File entity.
-func (c *FileClient) Create() *FileCreate {
-	mutation := newFileMutation(c.config, OpCreate)
-	return &FileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of File entities.
-func (c *FileClient) CreateBulk(builders ...*FileCreate) *FileCreateBulk {
-	return &FileCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *FileClient) MapCreateBulk(slice any, setFunc func(*FileCreate, int)) *FileCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &FileCreateBulk{err: fmt.Errorf("calling to FileClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*FileCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &FileCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for File.
-func (c *FileClient) Update() *FileUpdate {
-	mutation := newFileMutation(c.config, OpUpdate)
-	return &FileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *FileClient) UpdateOne(f *File) *FileUpdateOne {
-	mutation := newFileMutation(c.config, OpUpdateOne, withFile(f))
-	return &FileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *FileClient) UpdateOneID(id int) *FileUpdateOne {
-	mutation := newFileMutation(c.config, OpUpdateOne, withFileID(id))
-	return &FileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for File.
-func (c *FileClient) Delete() *FileDelete {
-	mutation := newFileMutation(c.config, OpDelete)
-	return &FileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *FileClient) DeleteOne(f *File) *FileDeleteOne {
-	return c.DeleteOneID(f.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *FileClient) DeleteOneID(id int) *FileDeleteOne {
-	builder := c.Delete().Where(file.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &FileDeleteOne{builder}
-}
-
-// Query returns a query builder for File.
-func (c *FileClient) Query() *FileQuery {
-	return &FileQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeFile},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a File entity by its id.
-func (c *FileClient) Get(ctx context.Context, id int) (*File, error) {
-	return c.Query().Where(file.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *FileClient) GetX(ctx context.Context, id int) *File {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryTomes queries the tomes edge of a File.
-func (c *FileClient) QueryTomes(f *File) *TomeQuery {
-	query := (&TomeClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := f.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(file.Table, file.FieldID, id),
-			sqlgraph.To(tome.Table, tome.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, file.TomesTable, file.TomesPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryLinks queries the links edge of a File.
-func (c *FileClient) QueryLinks(f *File) *LinkQuery {
-	query := (&LinkClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := f.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(file.Table, file.FieldID, id),
-			sqlgraph.To(link.Table, link.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, file.LinksTable, file.LinksColumn),
-		)
-		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *FileClient) Hooks() []Hook {
-	hooks := c.hooks.File
-	return append(hooks[:len(hooks):len(hooks)], file.Hooks[:]...)
-}
-
-// Interceptors returns the client interceptors.
-func (c *FileClient) Interceptors() []Interceptor {
-	return c.inters.File
-}
-
-func (c *FileClient) mutate(ctx context.Context, m *FileMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&FileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&FileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&FileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&FileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown File mutation op: %q", m.Op())
 	}
 }
 
@@ -1485,15 +1485,15 @@ func (c *LinkClient) GetX(ctx context.Context, id int) *Link {
 	return obj
 }
 
-// QueryFile queries the file edge of a Link.
-func (c *LinkClient) QueryFile(l *Link) *FileQuery {
-	query := (&FileClient{config: c.config}).Query()
+// QueryAsset queries the asset edge of a Link.
+func (c *LinkClient) QueryAsset(l *Link) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := l.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(link.Table, link.FieldID, id),
-			sqlgraph.To(file.Table, file.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, link.FileTable, link.FileColumn),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, link.AssetTable, link.AssetColumn),
 		)
 		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
 		return fromV, nil
@@ -1848,13 +1848,13 @@ func (c *QuestClient) QueryTome(q *Quest) *TomeQuery {
 }
 
 // QueryBundle queries the bundle edge of a Quest.
-func (c *QuestClient) QueryBundle(q *Quest) *FileQuery {
-	query := (&FileClient{config: c.config}).Query()
+func (c *QuestClient) QueryBundle(q *Quest) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := q.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(quest.Table, quest.FieldID, id),
-			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.To(asset.Table, asset.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, quest.BundleTable, quest.BundleColumn),
 		)
 		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
@@ -2770,15 +2770,15 @@ func (c *TomeClient) GetX(ctx context.Context, id int) *Tome {
 	return obj
 }
 
-// QueryFiles queries the files edge of a Tome.
-func (c *TomeClient) QueryFiles(t *Tome) *FileQuery {
-	query := (&FileClient{config: c.config}).Query()
+// QueryAssets queries the assets edge of a Tome.
+func (c *TomeClient) QueryAssets(t *Tome) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(tome.Table, tome.FieldID, id),
-			sqlgraph.To(file.Table, file.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, tome.FilesTable, tome.FilesPrimaryKey...),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, tome.AssetsTable, tome.AssetsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -2811,6 +2811,22 @@ func (c *TomeClient) QueryRepository(t *Tome) *RepositoryQuery {
 			sqlgraph.From(tome.Table, tome.FieldID, id),
 			sqlgraph.To(repository.Table, repository.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, tome.RepositoryTable, tome.RepositoryColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryScheduledHosts queries the scheduled_hosts edge of a Tome.
+func (c *TomeClient) QueryScheduledHosts(t *Tome) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tome.Table, tome.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tome.ScheduledHostsTable, tome.ScheduledHostsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -3012,11 +3028,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Beacon, File, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
+		Asset, Beacon, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
 		Repository, Shell, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Beacon, File, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
+		Asset, Beacon, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
 		Repository, Shell, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

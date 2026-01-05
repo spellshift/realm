@@ -41,6 +41,9 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	recv, cleanup := srv.portalMux.Subscribe(portalInTopic)
 	defer cleanup()
 
+	// Send CLOSE
+	defer sendPortalClose(ctx, srv.portalMux, portalID)
+
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
 	var wg sync.WaitGroup
@@ -147,5 +150,22 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 				)
 			}
 		}
+	}
+}
+
+func sendPortalClose(ctx context.Context, mux *mux.Mux, portalID int) {
+	portalOutTopic := mux.TopicOut(portalID)
+	if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
+		Payload: &portalpb.Mote_Bytes{
+			Bytes: &portalpb.BytesPayload{
+				Data: []byte("portal closed"),
+				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+			},
+		},
+	}); err != nil {
+		slog.ErrorContext(ctx, "failed to notify subscribers that portal closed",
+			"portal_id", portalID,
+			"error", err,
+		)
 	}
 }

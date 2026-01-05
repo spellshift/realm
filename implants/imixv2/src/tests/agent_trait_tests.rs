@@ -1,7 +1,9 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch_libagent::agent::Agent;
-use pb::c2;
+use pb::c2::active_transport::Type;
+use pb::c2::host::Platform;
+use pb::c2::{self, Host};
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
@@ -230,4 +232,65 @@ async fn test_imix_agent_config_access() {
     let map = result.unwrap();
     assert_eq!(map.get("callback_uri").unwrap(), "http://localhost:8080");
     assert_eq!(map.get("beacon_id").unwrap(), "agent1");
+}
+
+#[tokio::test]
+#[allow(clippy::field_reassign_with_default)]
+async fn test_agent_config_platform_as_enum_variant_name() {
+    let mut config = Config::default();
+
+    config.info = Some(pb::c2::Beacon {
+        active_transport: Some(pb::c2::ActiveTransport::default()),
+        host: Some(Host {
+            platform: Platform::Linux as i32,
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
+
+    let mut transport = MockTransport::default();
+    transport.expect_is_active().returning(|| true);
+
+    let handle = tokio::runtime::Handle::current();
+    let registry = Arc::new(TaskRegistry::new());
+    let agent = ImixAgent::new(config, transport, handle, registry);
+
+    let agent_clone = agent.clone();
+    let result = std::thread::spawn(move || agent_clone.get_config())
+        .join()
+        .unwrap();
+
+    assert!(result.is_ok());
+    let map = result.unwrap();
+    assert_eq!(map.get("platform").unwrap(), "PLATFORM_LINUX");
+}
+
+#[tokio::test]
+#[allow(clippy::field_reassign_with_default)]
+async fn test_agent_config_active_transport_type_as_enum_variant_name() {
+    let mut config = Config::default();
+
+    config.info = Some(pb::c2::Beacon {
+        active_transport: Some(pb::c2::ActiveTransport {
+            r#type: Type::TransportGrpc as i32,
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
+
+    let mut transport = MockTransport::default();
+    transport.expect_is_active().returning(|| true);
+
+    let handle = tokio::runtime::Handle::current();
+    let registry = Arc::new(TaskRegistry::new());
+    let agent = ImixAgent::new(config, transport, handle, registry);
+
+    let agent_clone = agent.clone();
+    let result = std::thread::spawn(move || agent_clone.get_config())
+        .join()
+        .unwrap();
+
+    assert!(result.is_ok());
+    let map = result.unwrap();
+    assert_eq!(map.get("type").unwrap(), "TRANSPORT_GRPC");
 }

@@ -12,7 +12,7 @@ import (
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
 )
@@ -92,18 +92,18 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 		return nil, rollback(tx, fmt.Errorf("failed to load tome: %w", err))
 	}
 
-	// 4. Load Tome Files (ordered so that hashing is always the same)
-	bundleFiles, err := questTome.QueryFiles().
-		Order(ent.Asc(file.FieldID)).
+	// 4. Load Tome Assets (ordered so that hashing is always the same)
+	bundleAssets, err := questTome.QueryAssets().
+		Order(ent.Asc(asset.FieldID)).
 		All(ctx)
 	if err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to load tome files: %w", err))
+		return nil, rollback(tx, fmt.Errorf("failed to load tome assets: %w", err))
 	}
 
-	// 5. Create bundle (if tome has files)
+	// 5. Create bundle (if tome has assets)
 	var bundleID *int
-	if len(bundleFiles) > 0 {
-		bundle, err := createBundle(ctx, client, bundleFiles)
+	if len(bundleAssets) > 0 {
+		bundle, err := createBundle(ctx, client, bundleAssets)
 		if err != nil || bundle == nil {
 			return nil, rollback(tx, fmt.Errorf("failed to create bundle: %w", err))
 		}

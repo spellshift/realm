@@ -3,15 +3,14 @@
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"build": {
 		"dockerfile": "Dockerfile",
-		"args": {
-		}
+		"args": {}
 	},
 	"hostRequirements": {
 		"cpus": 4
 	},
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.23"
+			"version": "1.24.3"
 		},
 		"ghcr.io/devcontainers/features/python:1": {
 			"installTools": true,

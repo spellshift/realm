@@ -56,7 +56,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
           <div className={`
             flex flex-row justify-between items-center
             px-4 sm:px-6 xl:px-8 py-2 border-b border-gray-200 bg-white gap-2
-            ${stickyControls ? 'sticky top-0 z-20 shadow-sm' : ''}
+            ${stickyControls ? 'sticky top-0 z-5 shadow-sm' : ''}
           `}>
             <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">{title}</h3>
             <div className="flex flex-row justify-end gap-2 w-full md:w-auto">

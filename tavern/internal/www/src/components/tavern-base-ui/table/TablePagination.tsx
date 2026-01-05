@@ -30,7 +30,7 @@ export default function TablePagination(props: Props) {
 
   return (
     <nav
-      className="sticky bottom-0 z-10 flex items-center justify-between border-t border-gray-200 bg-white px-4 sm:px-6 xl:px-8 py-3 shadow-md"
+      className="sticky bottom-0 z-5 flex items-center justify-between border-t border-gray-200 bg-white px-4 sm:px-6 xl:px-8 py-3 shadow-md z-5"
       aria-label="Pagination"
     >
       <div className="hidden sm:block">

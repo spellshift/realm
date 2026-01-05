@@ -13,8 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -40,8 +40,8 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeAsset          = "Asset"
 	TypeBeacon         = "Beacon"
-	TypeFile           = "File"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
 	TypeHostFile       = "HostFile"
@@ -56,6 +56,814 @@ const (
 	TypeTome           = "Tome"
 	TypeUser           = "User"
 )
+
+// AssetMutation represents an operation that mutates the Asset nodes in the graph.
+type AssetMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	name             *string
+	size             *int
+	addsize          *int
+	hash             *string
+	content          *[]byte
+	clearedFields    map[string]struct{}
+	tomes            map[int]struct{}
+	removedtomes     map[int]struct{}
+	clearedtomes     bool
+	links            map[int]struct{}
+	removedlinks     map[int]struct{}
+	clearedlinks     bool
+	done             bool
+	oldValue         func(context.Context) (*Asset, error)
+	predicates       []predicate.Asset
+}
+
+var _ ent.Mutation = (*AssetMutation)(nil)
+
+// assetOption allows management of the mutation configuration using functional options.
+type assetOption func(*AssetMutation)
+
+// newAssetMutation creates new mutation for the Asset entity.
+func newAssetMutation(c config, op Op, opts ...assetOption) *AssetMutation {
+	m := &AssetMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAsset,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAssetID sets the ID field of the mutation.
+func withAssetID(id int) assetOption {
+	return func(m *AssetMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Asset
+		)
+		m.oldValue = func(ctx context.Context) (*Asset, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Asset.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAsset sets the old Asset of the mutation.
+func withAsset(node *Asset) assetOption {
+	return func(m *AssetMutation) {
+		m.oldValue = func(context.Context) (*Asset, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AssetMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AssetMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AssetMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AssetMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Asset.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AssetMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AssetMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AssetMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *AssetMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *AssetMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *AssetMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *AssetMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AssetMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AssetMutation) ResetName() {
+	m.name = nil
+}
+
+// SetSize sets the "size" field.
+func (m *AssetMutation) SetSize(i int) {
+	m.size = &i
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *AssetMutation) Size() (r int, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldSize(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds i to the "size" field.
+func (m *AssetMutation) AddSize(i int) {
+	if m.addsize != nil {
+		*m.addsize += i
+	} else {
+		m.addsize = &i
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *AssetMutation) AddedSize() (r int, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *AssetMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *AssetMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *AssetMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *AssetMutation) ResetHash() {
+	m.hash = nil
+}
+
+// SetContent sets the "content" field.
+func (m *AssetMutation) SetContent(b []byte) {
+	m.content = &b
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *AssetMutation) Content() (r []byte, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *AssetMutation) ResetContent() {
+	m.content = nil
+}
+
+// AddTomeIDs adds the "tomes" edge to the Tome entity by ids.
+func (m *AssetMutation) AddTomeIDs(ids ...int) {
+	if m.tomes == nil {
+		m.tomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tomes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTomes clears the "tomes" edge to the Tome entity.
+func (m *AssetMutation) ClearTomes() {
+	m.clearedtomes = true
+}
+
+// TomesCleared reports if the "tomes" edge to the Tome entity was cleared.
+func (m *AssetMutation) TomesCleared() bool {
+	return m.clearedtomes
+}
+
+// RemoveTomeIDs removes the "tomes" edge to the Tome entity by IDs.
+func (m *AssetMutation) RemoveTomeIDs(ids ...int) {
+	if m.removedtomes == nil {
+		m.removedtomes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.tomes, ids[i])
+		m.removedtomes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTomes returns the removed IDs of the "tomes" edge to the Tome entity.
+func (m *AssetMutation) RemovedTomesIDs() (ids []int) {
+	for id := range m.removedtomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TomesIDs returns the "tomes" edge IDs in the mutation.
+func (m *AssetMutation) TomesIDs() (ids []int) {
+	for id := range m.tomes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTomes resets all changes to the "tomes" edge.
+func (m *AssetMutation) ResetTomes() {
+	m.tomes = nil
+	m.clearedtomes = false
+	m.removedtomes = nil
+}
+
+// AddLinkIDs adds the "links" edge to the Link entity by ids.
+func (m *AssetMutation) AddLinkIDs(ids ...int) {
+	if m.links == nil {
+		m.links = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.links[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLinks clears the "links" edge to the Link entity.
+func (m *AssetMutation) ClearLinks() {
+	m.clearedlinks = true
+}
+
+// LinksCleared reports if the "links" edge to the Link entity was cleared.
+func (m *AssetMutation) LinksCleared() bool {
+	return m.clearedlinks
+}
+
+// RemoveLinkIDs removes the "links" edge to the Link entity by IDs.
+func (m *AssetMutation) RemoveLinkIDs(ids ...int) {
+	if m.removedlinks == nil {
+		m.removedlinks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.links, ids[i])
+		m.removedlinks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLinks returns the removed IDs of the "links" edge to the Link entity.
+func (m *AssetMutation) RemovedLinksIDs() (ids []int) {
+	for id := range m.removedlinks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LinksIDs returns the "links" edge IDs in the mutation.
+func (m *AssetMutation) LinksIDs() (ids []int) {
+	for id := range m.links {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLinks resets all changes to the "links" edge.
+func (m *AssetMutation) ResetLinks() {
+	m.links = nil
+	m.clearedlinks = false
+	m.removedlinks = nil
+}
+
+// Where appends a list predicates to the AssetMutation builder.
+func (m *AssetMutation) Where(ps ...predicate.Asset) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AssetMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AssetMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Asset, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AssetMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AssetMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Asset).
+func (m *AssetMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AssetMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, asset.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, asset.FieldLastModifiedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, asset.FieldName)
+	}
+	if m.size != nil {
+		fields = append(fields, asset.FieldSize)
+	}
+	if m.hash != nil {
+		fields = append(fields, asset.FieldHash)
+	}
+	if m.content != nil {
+		fields = append(fields, asset.FieldContent)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AssetMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case asset.FieldCreatedAt:
+		return m.CreatedAt()
+	case asset.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case asset.FieldName:
+		return m.Name()
+	case asset.FieldSize:
+		return m.Size()
+	case asset.FieldHash:
+		return m.Hash()
+	case asset.FieldContent:
+		return m.Content()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AssetMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case asset.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case asset.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case asset.FieldName:
+		return m.OldName(ctx)
+	case asset.FieldSize:
+		return m.OldSize(ctx)
+	case asset.FieldHash:
+		return m.OldHash(ctx)
+	case asset.FieldContent:
+		return m.OldContent(ctx)
+	}
+	return nil, fmt.Errorf("unknown Asset field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AssetMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case asset.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case asset.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case asset.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case asset.FieldSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case asset.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case asset.FieldContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Asset field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AssetMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, asset.FieldSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AssetMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case asset.FieldSize:
+		return m.AddedSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AssetMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case asset.FieldSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Asset numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AssetMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AssetMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AssetMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Asset nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AssetMutation) ResetField(name string) error {
+	switch name {
+	case asset.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case asset.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case asset.FieldName:
+		m.ResetName()
+		return nil
+	case asset.FieldSize:
+		m.ResetSize()
+		return nil
+	case asset.FieldHash:
+		m.ResetHash()
+		return nil
+	case asset.FieldContent:
+		m.ResetContent()
+		return nil
+	}
+	return fmt.Errorf("unknown Asset field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AssetMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.tomes != nil {
+		edges = append(edges, asset.EdgeTomes)
+	}
+	if m.links != nil {
+		edges = append(edges, asset.EdgeLinks)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AssetMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case asset.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.tomes))
+		for id := range m.tomes {
+			ids = append(ids, id)
+		}
+		return ids
+	case asset.EdgeLinks:
+		ids := make([]ent.Value, 0, len(m.links))
+		for id := range m.links {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AssetMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedtomes != nil {
+		edges = append(edges, asset.EdgeTomes)
+	}
+	if m.removedlinks != nil {
+		edges = append(edges, asset.EdgeLinks)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AssetMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case asset.EdgeTomes:
+		ids := make([]ent.Value, 0, len(m.removedtomes))
+		for id := range m.removedtomes {
+			ids = append(ids, id)
+		}
+		return ids
+	case asset.EdgeLinks:
+		ids := make([]ent.Value, 0, len(m.removedlinks))
+		for id := range m.removedlinks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AssetMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedtomes {
+		edges = append(edges, asset.EdgeTomes)
+	}
+	if m.clearedlinks {
+		edges = append(edges, asset.EdgeLinks)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AssetMutation) EdgeCleared(name string) bool {
+	switch name {
+	case asset.EdgeTomes:
+		return m.clearedtomes
+	case asset.EdgeLinks:
+		return m.clearedlinks
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AssetMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Asset unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AssetMutation) ResetEdge(name string) error {
+	switch name {
+	case asset.EdgeTomes:
+		m.ResetTomes()
+		return nil
+	case asset.EdgeLinks:
+		m.ResetLinks()
+		return nil
+	}
+	return fmt.Errorf("unknown Asset edge %s", name)
+}
 
 // BeaconMutation represents an operation that mutates the Beacon nodes in the graph.
 type BeaconMutation struct {
@@ -1237,814 +2045,6 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon edge %s", name)
-}
-
-// FileMutation represents an operation that mutates the File nodes in the graph.
-type FileMutation struct {
-	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	name             *string
-	size             *int
-	addsize          *int
-	hash             *string
-	content          *[]byte
-	clearedFields    map[string]struct{}
-	tomes            map[int]struct{}
-	removedtomes     map[int]struct{}
-	clearedtomes     bool
-	links            map[int]struct{}
-	removedlinks     map[int]struct{}
-	clearedlinks     bool
-	done             bool
-	oldValue         func(context.Context) (*File, error)
-	predicates       []predicate.File
-}
-
-var _ ent.Mutation = (*FileMutation)(nil)
-
-// fileOption allows management of the mutation configuration using functional options.
-type fileOption func(*FileMutation)
-
-// newFileMutation creates new mutation for the File entity.
-func newFileMutation(c config, op Op, opts ...fileOption) *FileMutation {
-	m := &FileMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeFile,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withFileID sets the ID field of the mutation.
-func withFileID(id int) fileOption {
-	return func(m *FileMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *File
-		)
-		m.oldValue = func(ctx context.Context) (*File, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().File.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withFile sets the old File of the mutation.
-func withFile(node *File) fileOption {
-	return func(m *FileMutation) {
-		m.oldValue = func(context.Context) (*File, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m FileMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m FileMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *FileMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *FileMutation) IDs(ctx context.Context) ([]int, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []int{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().File.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *FileMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *FileMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *FileMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetLastModifiedAt sets the "last_modified_at" field.
-func (m *FileMutation) SetLastModifiedAt(t time.Time) {
-	m.last_modified_at = &t
-}
-
-// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
-func (m *FileMutation) LastModifiedAt() (r time.Time, exists bool) {
-	v := m.last_modified_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastModifiedAt returns the old "last_modified_at" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
-	}
-	return oldValue.LastModifiedAt, nil
-}
-
-// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
-func (m *FileMutation) ResetLastModifiedAt() {
-	m.last_modified_at = nil
-}
-
-// SetName sets the "name" field.
-func (m *FileMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *FileMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *FileMutation) ResetName() {
-	m.name = nil
-}
-
-// SetSize sets the "size" field.
-func (m *FileMutation) SetSize(i int) {
-	m.size = &i
-	m.addsize = nil
-}
-
-// Size returns the value of the "size" field in the mutation.
-func (m *FileMutation) Size() (r int, exists bool) {
-	v := m.size
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSize returns the old "size" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldSize(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSize is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSize requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSize: %w", err)
-	}
-	return oldValue.Size, nil
-}
-
-// AddSize adds i to the "size" field.
-func (m *FileMutation) AddSize(i int) {
-	if m.addsize != nil {
-		*m.addsize += i
-	} else {
-		m.addsize = &i
-	}
-}
-
-// AddedSize returns the value that was added to the "size" field in this mutation.
-func (m *FileMutation) AddedSize() (r int, exists bool) {
-	v := m.addsize
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetSize resets all changes to the "size" field.
-func (m *FileMutation) ResetSize() {
-	m.size = nil
-	m.addsize = nil
-}
-
-// SetHash sets the "hash" field.
-func (m *FileMutation) SetHash(s string) {
-	m.hash = &s
-}
-
-// Hash returns the value of the "hash" field in the mutation.
-func (m *FileMutation) Hash() (r string, exists bool) {
-	v := m.hash
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHash returns the old "hash" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldHash(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldHash is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldHash requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHash: %w", err)
-	}
-	return oldValue.Hash, nil
-}
-
-// ResetHash resets all changes to the "hash" field.
-func (m *FileMutation) ResetHash() {
-	m.hash = nil
-}
-
-// SetContent sets the "content" field.
-func (m *FileMutation) SetContent(b []byte) {
-	m.content = &b
-}
-
-// Content returns the value of the "content" field in the mutation.
-func (m *FileMutation) Content() (r []byte, exists bool) {
-	v := m.content
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldContent returns the old "content" field's value of the File entity.
-// If the File object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *FileMutation) OldContent(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldContent is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldContent requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldContent: %w", err)
-	}
-	return oldValue.Content, nil
-}
-
-// ResetContent resets all changes to the "content" field.
-func (m *FileMutation) ResetContent() {
-	m.content = nil
-}
-
-// AddTomeIDs adds the "tomes" edge to the Tome entity by ids.
-func (m *FileMutation) AddTomeIDs(ids ...int) {
-	if m.tomes == nil {
-		m.tomes = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.tomes[ids[i]] = struct{}{}
-	}
-}
-
-// ClearTomes clears the "tomes" edge to the Tome entity.
-func (m *FileMutation) ClearTomes() {
-	m.clearedtomes = true
-}
-
-// TomesCleared reports if the "tomes" edge to the Tome entity was cleared.
-func (m *FileMutation) TomesCleared() bool {
-	return m.clearedtomes
-}
-
-// RemoveTomeIDs removes the "tomes" edge to the Tome entity by IDs.
-func (m *FileMutation) RemoveTomeIDs(ids ...int) {
-	if m.removedtomes == nil {
-		m.removedtomes = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.tomes, ids[i])
-		m.removedtomes[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedTomes returns the removed IDs of the "tomes" edge to the Tome entity.
-func (m *FileMutation) RemovedTomesIDs() (ids []int) {
-	for id := range m.removedtomes {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// TomesIDs returns the "tomes" edge IDs in the mutation.
-func (m *FileMutation) TomesIDs() (ids []int) {
-	for id := range m.tomes {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetTomes resets all changes to the "tomes" edge.
-func (m *FileMutation) ResetTomes() {
-	m.tomes = nil
-	m.clearedtomes = false
-	m.removedtomes = nil
-}
-
-// AddLinkIDs adds the "links" edge to the Link entity by ids.
-func (m *FileMutation) AddLinkIDs(ids ...int) {
-	if m.links == nil {
-		m.links = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.links[ids[i]] = struct{}{}
-	}
-}
-
-// ClearLinks clears the "links" edge to the Link entity.
-func (m *FileMutation) ClearLinks() {
-	m.clearedlinks = true
-}
-
-// LinksCleared reports if the "links" edge to the Link entity was cleared.
-func (m *FileMutation) LinksCleared() bool {
-	return m.clearedlinks
-}
-
-// RemoveLinkIDs removes the "links" edge to the Link entity by IDs.
-func (m *FileMutation) RemoveLinkIDs(ids ...int) {
-	if m.removedlinks == nil {
-		m.removedlinks = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.links, ids[i])
-		m.removedlinks[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedLinks returns the removed IDs of the "links" edge to the Link entity.
-func (m *FileMutation) RemovedLinksIDs() (ids []int) {
-	for id := range m.removedlinks {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// LinksIDs returns the "links" edge IDs in the mutation.
-func (m *FileMutation) LinksIDs() (ids []int) {
-	for id := range m.links {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetLinks resets all changes to the "links" edge.
-func (m *FileMutation) ResetLinks() {
-	m.links = nil
-	m.clearedlinks = false
-	m.removedlinks = nil
-}
-
-// Where appends a list predicates to the FileMutation builder.
-func (m *FileMutation) Where(ps ...predicate.File) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// WhereP appends storage-level predicates to the FileMutation builder. Using this method,
-// users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *FileMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.File, len(ps))
-	for i := range ps {
-		p[i] = ps[i]
-	}
-	m.Where(p...)
-}
-
-// Op returns the operation name.
-func (m *FileMutation) Op() Op {
-	return m.op
-}
-
-// SetOp allows setting the mutation operation.
-func (m *FileMutation) SetOp(op Op) {
-	m.op = op
-}
-
-// Type returns the node type of this mutation (File).
-func (m *FileMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *FileMutation) Fields() []string {
-	fields := make([]string, 0, 6)
-	if m.created_at != nil {
-		fields = append(fields, file.FieldCreatedAt)
-	}
-	if m.last_modified_at != nil {
-		fields = append(fields, file.FieldLastModifiedAt)
-	}
-	if m.name != nil {
-		fields = append(fields, file.FieldName)
-	}
-	if m.size != nil {
-		fields = append(fields, file.FieldSize)
-	}
-	if m.hash != nil {
-		fields = append(fields, file.FieldHash)
-	}
-	if m.content != nil {
-		fields = append(fields, file.FieldContent)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *FileMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case file.FieldCreatedAt:
-		return m.CreatedAt()
-	case file.FieldLastModifiedAt:
-		return m.LastModifiedAt()
-	case file.FieldName:
-		return m.Name()
-	case file.FieldSize:
-		return m.Size()
-	case file.FieldHash:
-		return m.Hash()
-	case file.FieldContent:
-		return m.Content()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *FileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case file.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case file.FieldLastModifiedAt:
-		return m.OldLastModifiedAt(ctx)
-	case file.FieldName:
-		return m.OldName(ctx)
-	case file.FieldSize:
-		return m.OldSize(ctx)
-	case file.FieldHash:
-		return m.OldHash(ctx)
-	case file.FieldContent:
-		return m.OldContent(ctx)
-	}
-	return nil, fmt.Errorf("unknown File field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *FileMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case file.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case file.FieldLastModifiedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastModifiedAt(v)
-		return nil
-	case file.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
-	case file.FieldSize:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSize(v)
-		return nil
-	case file.FieldHash:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHash(v)
-		return nil
-	case file.FieldContent:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetContent(v)
-		return nil
-	}
-	return fmt.Errorf("unknown File field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *FileMutation) AddedFields() []string {
-	var fields []string
-	if m.addsize != nil {
-		fields = append(fields, file.FieldSize)
-	}
-	return fields
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *FileMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case file.FieldSize:
-		return m.AddedSize()
-	}
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *FileMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	case file.FieldSize:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddSize(v)
-		return nil
-	}
-	return fmt.Errorf("unknown File numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *FileMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *FileMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *FileMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown File nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *FileMutation) ResetField(name string) error {
-	switch name {
-	case file.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case file.FieldLastModifiedAt:
-		m.ResetLastModifiedAt()
-		return nil
-	case file.FieldName:
-		m.ResetName()
-		return nil
-	case file.FieldSize:
-		m.ResetSize()
-		return nil
-	case file.FieldHash:
-		m.ResetHash()
-		return nil
-	case file.FieldContent:
-		m.ResetContent()
-		return nil
-	}
-	return fmt.Errorf("unknown File field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *FileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.tomes != nil {
-		edges = append(edges, file.EdgeTomes)
-	}
-	if m.links != nil {
-		edges = append(edges, file.EdgeLinks)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *FileMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case file.EdgeTomes:
-		ids := make([]ent.Value, 0, len(m.tomes))
-		for id := range m.tomes {
-			ids = append(ids, id)
-		}
-		return ids
-	case file.EdgeLinks:
-		ids := make([]ent.Value, 0, len(m.links))
-		for id := range m.links {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *FileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.removedtomes != nil {
-		edges = append(edges, file.EdgeTomes)
-	}
-	if m.removedlinks != nil {
-		edges = append(edges, file.EdgeLinks)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *FileMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case file.EdgeTomes:
-		ids := make([]ent.Value, 0, len(m.removedtomes))
-		for id := range m.removedtomes {
-			ids = append(ids, id)
-		}
-		return ids
-	case file.EdgeLinks:
-		ids := make([]ent.Value, 0, len(m.removedlinks))
-		for id := range m.removedlinks {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *FileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.clearedtomes {
-		edges = append(edges, file.EdgeTomes)
-	}
-	if m.clearedlinks {
-		edges = append(edges, file.EdgeLinks)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *FileMutation) EdgeCleared(name string) bool {
-	switch name {
-	case file.EdgeTomes:
-		return m.clearedtomes
-	case file.EdgeLinks:
-		return m.clearedlinks
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *FileMutation) ClearEdge(name string) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown File unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *FileMutation) ResetEdge(name string) error {
-	switch name {
-	case file.EdgeTomes:
-		m.ResetTomes()
-		return nil
-	case file.EdgeLinks:
-		m.ResetLinks()
-		return nil
-	}
-	return fmt.Errorf("unknown File edge %s", name)
 }
 
 // HostMutation represents an operation that mutates the Host nodes in the graph.
@@ -6167,8 +6167,8 @@ type LinkMutation struct {
 	downloads_remaining    *int
 	adddownloads_remaining *int
 	clearedFields          map[string]struct{}
-	file                   *int
-	clearedfile            bool
+	asset                  *int
+	clearedasset           bool
 	done                   bool
 	oldValue               func(context.Context) (*Link, error)
 	predicates             []predicate.Link
@@ -6472,43 +6472,43 @@ func (m *LinkMutation) ResetDownloadsRemaining() {
 	m.adddownloads_remaining = nil
 }
 
-// SetFileID sets the "file" edge to the File entity by id.
-func (m *LinkMutation) SetFileID(id int) {
-	m.file = &id
+// SetAssetID sets the "asset" edge to the Asset entity by id.
+func (m *LinkMutation) SetAssetID(id int) {
+	m.asset = &id
 }
 
-// ClearFile clears the "file" edge to the File entity.
-func (m *LinkMutation) ClearFile() {
-	m.clearedfile = true
+// ClearAsset clears the "asset" edge to the Asset entity.
+func (m *LinkMutation) ClearAsset() {
+	m.clearedasset = true
 }
 
-// FileCleared reports if the "file" edge to the File entity was cleared.
-func (m *LinkMutation) FileCleared() bool {
-	return m.clearedfile
+// AssetCleared reports if the "asset" edge to the Asset entity was cleared.
+func (m *LinkMutation) AssetCleared() bool {
+	return m.clearedasset
 }
 
-// FileID returns the "file" edge ID in the mutation.
-func (m *LinkMutation) FileID() (id int, exists bool) {
-	if m.file != nil {
-		return *m.file, true
+// AssetID returns the "asset" edge ID in the mutation.
+func (m *LinkMutation) AssetID() (id int, exists bool) {
+	if m.asset != nil {
+		return *m.asset, true
 	}
 	return
 }
 
-// FileIDs returns the "file" edge IDs in the mutation.
+// AssetIDs returns the "asset" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// FileID instead. It exists only for internal usage by the builders.
-func (m *LinkMutation) FileIDs() (ids []int) {
-	if id := m.file; id != nil {
+// AssetID instead. It exists only for internal usage by the builders.
+func (m *LinkMutation) AssetIDs() (ids []int) {
+	if id := m.asset; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetFile resets all changes to the "file" edge.
-func (m *LinkMutation) ResetFile() {
-	m.file = nil
-	m.clearedfile = false
+// ResetAsset resets all changes to the "asset" edge.
+func (m *LinkMutation) ResetAsset() {
+	m.asset = nil
+	m.clearedasset = false
 }
 
 // Where appends a list predicates to the LinkMutation builder.
@@ -6728,8 +6728,8 @@ func (m *LinkMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *LinkMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.file != nil {
-		edges = append(edges, link.EdgeFile)
+	if m.asset != nil {
+		edges = append(edges, link.EdgeAsset)
 	}
 	return edges
 }
@@ -6738,8 +6738,8 @@ func (m *LinkMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *LinkMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case link.EdgeFile:
-		if id := m.file; id != nil {
+	case link.EdgeAsset:
+		if id := m.asset; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -6761,8 +6761,8 @@ func (m *LinkMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *LinkMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedfile {
-		edges = append(edges, link.EdgeFile)
+	if m.clearedasset {
+		edges = append(edges, link.EdgeAsset)
 	}
 	return edges
 }
@@ -6771,8 +6771,8 @@ func (m *LinkMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *LinkMutation) EdgeCleared(name string) bool {
 	switch name {
-	case link.EdgeFile:
-		return m.clearedfile
+	case link.EdgeAsset:
+		return m.clearedasset
 	}
 	return false
 }
@@ -6781,8 +6781,8 @@ func (m *LinkMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *LinkMutation) ClearEdge(name string) error {
 	switch name {
-	case link.EdgeFile:
-		m.ClearFile()
+	case link.EdgeAsset:
+		m.ClearAsset()
 		return nil
 	}
 	return fmt.Errorf("unknown Link unique edge %s", name)
@@ -6792,8 +6792,8 @@ func (m *LinkMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *LinkMutation) ResetEdge(name string) error {
 	switch name {
-	case link.EdgeFile:
-		m.ResetFile()
+	case link.EdgeAsset:
+		m.ResetAsset()
 		return nil
 	}
 	return fmt.Errorf("unknown Link edge %s", name)
@@ -7944,17 +7944,17 @@ func (m *QuestMutation) ResetTome() {
 	m.clearedtome = false
 }
 
-// SetBundleID sets the "bundle" edge to the File entity by id.
+// SetBundleID sets the "bundle" edge to the Asset entity by id.
 func (m *QuestMutation) SetBundleID(id int) {
 	m.bundle = &id
 }
 
-// ClearBundle clears the "bundle" edge to the File entity.
+// ClearBundle clears the "bundle" edge to the Asset entity.
 func (m *QuestMutation) ClearBundle() {
 	m.clearedbundle = true
 }
 
-// BundleCleared reports if the "bundle" edge to the File entity was cleared.
+// BundleCleared reports if the "bundle" edge to the Asset entity was cleared.
 func (m *QuestMutation) BundleCleared() bool {
 	return m.clearedbundle
 }
@@ -11775,30 +11775,36 @@ func (m *TaskMutation) ResetEdge(name string) error {
 // TomeMutation represents an operation that mutates the Tome nodes in the graph.
 type TomeMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	last_modified_at  *time.Time
-	name              *string
-	description       *string
-	author            *string
-	support_model     *tome.SupportModel
-	tactic            *tome.Tactic
-	param_defs        *string
-	hash              *string
-	eldritch          *string
-	clearedFields     map[string]struct{}
-	files             map[int]struct{}
-	removedfiles      map[int]struct{}
-	clearedfiles      bool
-	uploader          *int
-	cleareduploader   bool
-	repository        *int
-	clearedrepository bool
-	done              bool
-	oldValue          func(context.Context) (*Tome, error)
-	predicates        []predicate.Tome
+	op                         Op
+	typ                        string
+	id                         *int
+	created_at                 *time.Time
+	last_modified_at           *time.Time
+	name                       *string
+	description                *string
+	author                     *string
+	support_model              *tome.SupportModel
+	tactic                     *tome.Tactic
+	run_on_new_beacon_callback *bool
+	run_on_first_host_callback *bool
+	run_on_schedule            *string
+	param_defs                 *string
+	hash                       *string
+	eldritch                   *string
+	clearedFields              map[string]struct{}
+	assets                     map[int]struct{}
+	removedassets              map[int]struct{}
+	clearedassets              bool
+	uploader                   *int
+	cleareduploader            bool
+	repository                 *int
+	clearedrepository          bool
+	scheduled_hosts            map[int]struct{}
+	removedscheduled_hosts     map[int]struct{}
+	clearedscheduled_hosts     bool
+	done                       bool
+	oldValue                   func(context.Context) (*Tome, error)
+	predicates                 []predicate.Tome
 }
 
 var _ ent.Mutation = (*TomeMutation)(nil)
@@ -12151,6 +12157,114 @@ func (m *TomeMutation) ResetTactic() {
 	m.tactic = nil
 }
 
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (m *TomeMutation) SetRunOnNewBeaconCallback(b bool) {
+	m.run_on_new_beacon_callback = &b
+}
+
+// RunOnNewBeaconCallback returns the value of the "run_on_new_beacon_callback" field in the mutation.
+func (m *TomeMutation) RunOnNewBeaconCallback() (r bool, exists bool) {
+	v := m.run_on_new_beacon_callback
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunOnNewBeaconCallback returns the old "run_on_new_beacon_callback" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldRunOnNewBeaconCallback(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunOnNewBeaconCallback is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunOnNewBeaconCallback requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunOnNewBeaconCallback: %w", err)
+	}
+	return oldValue.RunOnNewBeaconCallback, nil
+}
+
+// ResetRunOnNewBeaconCallback resets all changes to the "run_on_new_beacon_callback" field.
+func (m *TomeMutation) ResetRunOnNewBeaconCallback() {
+	m.run_on_new_beacon_callback = nil
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (m *TomeMutation) SetRunOnFirstHostCallback(b bool) {
+	m.run_on_first_host_callback = &b
+}
+
+// RunOnFirstHostCallback returns the value of the "run_on_first_host_callback" field in the mutation.
+func (m *TomeMutation) RunOnFirstHostCallback() (r bool, exists bool) {
+	v := m.run_on_first_host_callback
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunOnFirstHostCallback returns the old "run_on_first_host_callback" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldRunOnFirstHostCallback(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunOnFirstHostCallback is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunOnFirstHostCallback requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunOnFirstHostCallback: %w", err)
+	}
+	return oldValue.RunOnFirstHostCallback, nil
+}
+
+// ResetRunOnFirstHostCallback resets all changes to the "run_on_first_host_callback" field.
+func (m *TomeMutation) ResetRunOnFirstHostCallback() {
+	m.run_on_first_host_callback = nil
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (m *TomeMutation) SetRunOnSchedule(s string) {
+	m.run_on_schedule = &s
+}
+
+// RunOnSchedule returns the value of the "run_on_schedule" field in the mutation.
+func (m *TomeMutation) RunOnSchedule() (r string, exists bool) {
+	v := m.run_on_schedule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunOnSchedule returns the old "run_on_schedule" field's value of the Tome entity.
+// If the Tome object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TomeMutation) OldRunOnSchedule(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunOnSchedule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunOnSchedule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunOnSchedule: %w", err)
+	}
+	return oldValue.RunOnSchedule, nil
+}
+
+// ResetRunOnSchedule resets all changes to the "run_on_schedule" field.
+func (m *TomeMutation) ResetRunOnSchedule() {
+	m.run_on_schedule = nil
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (m *TomeMutation) SetParamDefs(s string) {
 	m.param_defs = &s
@@ -12272,58 +12386,58 @@ func (m *TomeMutation) ResetEldritch() {
 	m.eldritch = nil
 }
 
-// AddFileIDs adds the "files" edge to the File entity by ids.
-func (m *TomeMutation) AddFileIDs(ids ...int) {
-	if m.files == nil {
-		m.files = make(map[int]struct{})
+// AddAssetIDs adds the "assets" edge to the Asset entity by ids.
+func (m *TomeMutation) AddAssetIDs(ids ...int) {
+	if m.assets == nil {
+		m.assets = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.files[ids[i]] = struct{}{}
+		m.assets[ids[i]] = struct{}{}
 	}
 }
 
-// ClearFiles clears the "files" edge to the File entity.
-func (m *TomeMutation) ClearFiles() {
-	m.clearedfiles = true
+// ClearAssets clears the "assets" edge to the Asset entity.
+func (m *TomeMutation) ClearAssets() {
+	m.clearedassets = true
 }
 
-// FilesCleared reports if the "files" edge to the File entity was cleared.
-func (m *TomeMutation) FilesCleared() bool {
-	return m.clearedfiles
+// AssetsCleared reports if the "assets" edge to the Asset entity was cleared.
+func (m *TomeMutation) AssetsCleared() bool {
+	return m.clearedassets
 }
 
-// RemoveFileIDs removes the "files" edge to the File entity by IDs.
-func (m *TomeMutation) RemoveFileIDs(ids ...int) {
-	if m.removedfiles == nil {
-		m.removedfiles = make(map[int]struct{})
+// RemoveAssetIDs removes the "assets" edge to the Asset entity by IDs.
+func (m *TomeMutation) RemoveAssetIDs(ids ...int) {
+	if m.removedassets == nil {
+		m.removedassets = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.files, ids[i])
-		m.removedfiles[ids[i]] = struct{}{}
+		delete(m.assets, ids[i])
+		m.removedassets[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedFiles returns the removed IDs of the "files" edge to the File entity.
-func (m *TomeMutation) RemovedFilesIDs() (ids []int) {
-	for id := range m.removedfiles {
+// RemovedAssets returns the removed IDs of the "assets" edge to the Asset entity.
+func (m *TomeMutation) RemovedAssetsIDs() (ids []int) {
+	for id := range m.removedassets {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// FilesIDs returns the "files" edge IDs in the mutation.
-func (m *TomeMutation) FilesIDs() (ids []int) {
-	for id := range m.files {
+// AssetsIDs returns the "assets" edge IDs in the mutation.
+func (m *TomeMutation) AssetsIDs() (ids []int) {
+	for id := range m.assets {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetFiles resets all changes to the "files" edge.
-func (m *TomeMutation) ResetFiles() {
-	m.files = nil
-	m.clearedfiles = false
-	m.removedfiles = nil
+// ResetAssets resets all changes to the "assets" edge.
+func (m *TomeMutation) ResetAssets() {
+	m.assets = nil
+	m.clearedassets = false
+	m.removedassets = nil
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by id.
@@ -12404,6 +12518,60 @@ func (m *TomeMutation) ResetRepository() {
 	m.clearedrepository = false
 }
 
+// AddScheduledHostIDs adds the "scheduled_hosts" edge to the Host entity by ids.
+func (m *TomeMutation) AddScheduledHostIDs(ids ...int) {
+	if m.scheduled_hosts == nil {
+		m.scheduled_hosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.scheduled_hosts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScheduledHosts clears the "scheduled_hosts" edge to the Host entity.
+func (m *TomeMutation) ClearScheduledHosts() {
+	m.clearedscheduled_hosts = true
+}
+
+// ScheduledHostsCleared reports if the "scheduled_hosts" edge to the Host entity was cleared.
+func (m *TomeMutation) ScheduledHostsCleared() bool {
+	return m.clearedscheduled_hosts
+}
+
+// RemoveScheduledHostIDs removes the "scheduled_hosts" edge to the Host entity by IDs.
+func (m *TomeMutation) RemoveScheduledHostIDs(ids ...int) {
+	if m.removedscheduled_hosts == nil {
+		m.removedscheduled_hosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.scheduled_hosts, ids[i])
+		m.removedscheduled_hosts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScheduledHosts returns the removed IDs of the "scheduled_hosts" edge to the Host entity.
+func (m *TomeMutation) RemovedScheduledHostsIDs() (ids []int) {
+	for id := range m.removedscheduled_hosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScheduledHostsIDs returns the "scheduled_hosts" edge IDs in the mutation.
+func (m *TomeMutation) ScheduledHostsIDs() (ids []int) {
+	for id := range m.scheduled_hosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScheduledHosts resets all changes to the "scheduled_hosts" edge.
+func (m *TomeMutation) ResetScheduledHosts() {
+	m.scheduled_hosts = nil
+	m.clearedscheduled_hosts = false
+	m.removedscheduled_hosts = nil
+}
+
 // Where appends a list predicates to the TomeMutation builder.
 func (m *TomeMutation) Where(ps ...predicate.Tome) {
 	m.predicates = append(m.predicates, ps...)
@@ -12438,7 +12606,7 @@ func (m *TomeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TomeMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, tome.FieldCreatedAt)
 	}
@@ -12459,6 +12627,15 @@ func (m *TomeMutation) Fields() []string {
 	}
 	if m.tactic != nil {
 		fields = append(fields, tome.FieldTactic)
+	}
+	if m.run_on_new_beacon_callback != nil {
+		fields = append(fields, tome.FieldRunOnNewBeaconCallback)
+	}
+	if m.run_on_first_host_callback != nil {
+		fields = append(fields, tome.FieldRunOnFirstHostCallback)
+	}
+	if m.run_on_schedule != nil {
+		fields = append(fields, tome.FieldRunOnSchedule)
 	}
 	if m.param_defs != nil {
 		fields = append(fields, tome.FieldParamDefs)
@@ -12491,6 +12668,12 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.SupportModel()
 	case tome.FieldTactic:
 		return m.Tactic()
+	case tome.FieldRunOnNewBeaconCallback:
+		return m.RunOnNewBeaconCallback()
+	case tome.FieldRunOnFirstHostCallback:
+		return m.RunOnFirstHostCallback()
+	case tome.FieldRunOnSchedule:
+		return m.RunOnSchedule()
 	case tome.FieldParamDefs:
 		return m.ParamDefs()
 	case tome.FieldHash:
@@ -12520,6 +12703,12 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSupportModel(ctx)
 	case tome.FieldTactic:
 		return m.OldTactic(ctx)
+	case tome.FieldRunOnNewBeaconCallback:
+		return m.OldRunOnNewBeaconCallback(ctx)
+	case tome.FieldRunOnFirstHostCallback:
+		return m.OldRunOnFirstHostCallback(ctx)
+	case tome.FieldRunOnSchedule:
+		return m.OldRunOnSchedule(ctx)
 	case tome.FieldParamDefs:
 		return m.OldParamDefs(ctx)
 	case tome.FieldHash:
@@ -12583,6 +12772,27 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTactic(v)
+		return nil
+	case tome.FieldRunOnNewBeaconCallback:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunOnNewBeaconCallback(v)
+		return nil
+	case tome.FieldRunOnFirstHostCallback:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunOnFirstHostCallback(v)
+		return nil
+	case tome.FieldRunOnSchedule:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunOnSchedule(v)
 		return nil
 	case tome.FieldParamDefs:
 		v, ok := value.(string)
@@ -12684,6 +12894,15 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldTactic:
 		m.ResetTactic()
 		return nil
+	case tome.FieldRunOnNewBeaconCallback:
+		m.ResetRunOnNewBeaconCallback()
+		return nil
+	case tome.FieldRunOnFirstHostCallback:
+		m.ResetRunOnFirstHostCallback()
+		return nil
+	case tome.FieldRunOnSchedule:
+		m.ResetRunOnSchedule()
+		return nil
 	case tome.FieldParamDefs:
 		m.ResetParamDefs()
 		return nil
@@ -12699,15 +12918,18 @@ func (m *TomeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TomeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.files != nil {
-		edges = append(edges, tome.EdgeFiles)
+	edges := make([]string, 0, 4)
+	if m.assets != nil {
+		edges = append(edges, tome.EdgeAssets)
 	}
 	if m.uploader != nil {
 		edges = append(edges, tome.EdgeUploader)
 	}
 	if m.repository != nil {
 		edges = append(edges, tome.EdgeRepository)
+	}
+	if m.scheduled_hosts != nil {
+		edges = append(edges, tome.EdgeScheduledHosts)
 	}
 	return edges
 }
@@ -12716,9 +12938,9 @@ func (m *TomeMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *TomeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case tome.EdgeFiles:
-		ids := make([]ent.Value, 0, len(m.files))
-		for id := range m.files {
+	case tome.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.assets))
+		for id := range m.assets {
 			ids = append(ids, id)
 		}
 		return ids
@@ -12730,15 +12952,24 @@ func (m *TomeMutation) AddedIDs(name string) []ent.Value {
 		if id := m.repository; id != nil {
 			return []ent.Value{*id}
 		}
+	case tome.EdgeScheduledHosts:
+		ids := make([]ent.Value, 0, len(m.scheduled_hosts))
+		for id := range m.scheduled_hosts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TomeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.removedfiles != nil {
-		edges = append(edges, tome.EdgeFiles)
+	edges := make([]string, 0, 4)
+	if m.removedassets != nil {
+		edges = append(edges, tome.EdgeAssets)
+	}
+	if m.removedscheduled_hosts != nil {
+		edges = append(edges, tome.EdgeScheduledHosts)
 	}
 	return edges
 }
@@ -12747,9 +12978,15 @@ func (m *TomeMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case tome.EdgeFiles:
-		ids := make([]ent.Value, 0, len(m.removedfiles))
-		for id := range m.removedfiles {
+	case tome.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.removedassets))
+		for id := range m.removedassets {
+			ids = append(ids, id)
+		}
+		return ids
+	case tome.EdgeScheduledHosts:
+		ids := make([]ent.Value, 0, len(m.removedscheduled_hosts))
+		for id := range m.removedscheduled_hosts {
 			ids = append(ids, id)
 		}
 		return ids
@@ -12759,15 +12996,18 @@ func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TomeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.clearedfiles {
-		edges = append(edges, tome.EdgeFiles)
+	edges := make([]string, 0, 4)
+	if m.clearedassets {
+		edges = append(edges, tome.EdgeAssets)
 	}
 	if m.cleareduploader {
 		edges = append(edges, tome.EdgeUploader)
 	}
 	if m.clearedrepository {
 		edges = append(edges, tome.EdgeRepository)
+	}
+	if m.clearedscheduled_hosts {
+		edges = append(edges, tome.EdgeScheduledHosts)
 	}
 	return edges
 }
@@ -12776,12 +13016,14 @@ func (m *TomeMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *TomeMutation) EdgeCleared(name string) bool {
 	switch name {
-	case tome.EdgeFiles:
-		return m.clearedfiles
+	case tome.EdgeAssets:
+		return m.clearedassets
 	case tome.EdgeUploader:
 		return m.cleareduploader
 	case tome.EdgeRepository:
 		return m.clearedrepository
+	case tome.EdgeScheduledHosts:
+		return m.clearedscheduled_hosts
 	}
 	return false
 }
@@ -12804,14 +13046,17 @@ func (m *TomeMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TomeMutation) ResetEdge(name string) error {
 	switch name {
-	case tome.EdgeFiles:
-		m.ResetFiles()
+	case tome.EdgeAssets:
+		m.ResetAssets()
 		return nil
 	case tome.EdgeUploader:
 		m.ResetUploader()
 		return nil
 	case tome.EdgeRepository:
 		m.ResetRepository()
+		return nil
+	case tome.EdgeScheduledHosts:
+		m.ResetScheduledHosts()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome edge %s", name)

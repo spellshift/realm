@@ -5,8 +5,8 @@ package runtime
 import (
 	"time"
 
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -27,6 +27,37 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	assetMixin := schema.Asset{}.Mixin()
+	assetHooks := schema.Asset{}.Hooks()
+	asset.Hooks[0] = assetHooks[0]
+	assetMixinFields0 := assetMixin[0].Fields()
+	_ = assetMixinFields0
+	assetFields := schema.Asset{}.Fields()
+	_ = assetFields
+	// assetDescCreatedAt is the schema descriptor for created_at field.
+	assetDescCreatedAt := assetMixinFields0[0].Descriptor()
+	// asset.DefaultCreatedAt holds the default value on creation for the created_at field.
+	asset.DefaultCreatedAt = assetDescCreatedAt.Default.(func() time.Time)
+	// assetDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	assetDescLastModifiedAt := assetMixinFields0[1].Descriptor()
+	// asset.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	asset.DefaultLastModifiedAt = assetDescLastModifiedAt.Default.(func() time.Time)
+	// asset.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	asset.UpdateDefaultLastModifiedAt = assetDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// assetDescName is the schema descriptor for name field.
+	assetDescName := assetFields[0].Descriptor()
+	// asset.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	asset.NameValidator = assetDescName.Validators[0].(func(string) error)
+	// assetDescSize is the schema descriptor for size field.
+	assetDescSize := assetFields[1].Descriptor()
+	// asset.DefaultSize holds the default value on creation for the size field.
+	asset.DefaultSize = assetDescSize.Default.(int)
+	// asset.SizeValidator is a validator for the "size" field. It is called by the builders before save.
+	asset.SizeValidator = assetDescSize.Validators[0].(func(int) error)
+	// assetDescHash is the schema descriptor for hash field.
+	assetDescHash := assetFields[2].Descriptor()
+	// asset.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	asset.HashValidator = assetDescHash.Validators[0].(func(string) error)
 	beaconMixin := schema.Beacon{}.Mixin()
 	beaconMixinFields0 := beaconMixin[0].Fields()
 	_ = beaconMixinFields0
@@ -62,37 +93,6 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
-	fileMixin := schema.File{}.Mixin()
-	fileHooks := schema.File{}.Hooks()
-	file.Hooks[0] = fileHooks[0]
-	fileMixinFields0 := fileMixin[0].Fields()
-	_ = fileMixinFields0
-	fileFields := schema.File{}.Fields()
-	_ = fileFields
-	// fileDescCreatedAt is the schema descriptor for created_at field.
-	fileDescCreatedAt := fileMixinFields0[0].Descriptor()
-	// file.DefaultCreatedAt holds the default value on creation for the created_at field.
-	file.DefaultCreatedAt = fileDescCreatedAt.Default.(func() time.Time)
-	// fileDescLastModifiedAt is the schema descriptor for last_modified_at field.
-	fileDescLastModifiedAt := fileMixinFields0[1].Descriptor()
-	// file.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
-	file.DefaultLastModifiedAt = fileDescLastModifiedAt.Default.(func() time.Time)
-	// file.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
-	file.UpdateDefaultLastModifiedAt = fileDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// fileDescName is the schema descriptor for name field.
-	fileDescName := fileFields[0].Descriptor()
-	// file.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	file.NameValidator = fileDescName.Validators[0].(func(string) error)
-	// fileDescSize is the schema descriptor for size field.
-	fileDescSize := fileFields[1].Descriptor()
-	// file.DefaultSize holds the default value on creation for the size field.
-	file.DefaultSize = fileDescSize.Default.(int)
-	// file.SizeValidator is a validator for the "size" field. It is called by the builders before save.
-	file.SizeValidator = fileDescSize.Validators[0].(func(int) error)
-	// fileDescHash is the schema descriptor for hash field.
-	fileDescHash := fileFields[2].Descriptor()
-	// file.HashValidator is a validator for the "hash" field. It is called by the builders before save.
-	file.HashValidator = fileDescHash.Validators[0].(func(string) error)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0
@@ -356,12 +356,24 @@ func init() {
 	tomeDescName := tomeFields[0].Descriptor()
 	// tome.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tome.NameValidator = tomeDescName.Validators[0].(func(string) error)
+	// tomeDescRunOnNewBeaconCallback is the schema descriptor for run_on_new_beacon_callback field.
+	tomeDescRunOnNewBeaconCallback := tomeFields[5].Descriptor()
+	// tome.DefaultRunOnNewBeaconCallback holds the default value on creation for the run_on_new_beacon_callback field.
+	tome.DefaultRunOnNewBeaconCallback = tomeDescRunOnNewBeaconCallback.Default.(bool)
+	// tomeDescRunOnFirstHostCallback is the schema descriptor for run_on_first_host_callback field.
+	tomeDescRunOnFirstHostCallback := tomeFields[6].Descriptor()
+	// tome.DefaultRunOnFirstHostCallback holds the default value on creation for the run_on_first_host_callback field.
+	tome.DefaultRunOnFirstHostCallback = tomeDescRunOnFirstHostCallback.Default.(bool)
+	// tomeDescRunOnSchedule is the schema descriptor for run_on_schedule field.
+	tomeDescRunOnSchedule := tomeFields[7].Descriptor()
+	// tome.DefaultRunOnSchedule holds the default value on creation for the run_on_schedule field.
+	tome.DefaultRunOnSchedule = tomeDescRunOnSchedule.Default.(string)
 	// tomeDescParamDefs is the schema descriptor for param_defs field.
-	tomeDescParamDefs := tomeFields[5].Descriptor()
+	tomeDescParamDefs := tomeFields[8].Descriptor()
 	// tome.ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
 	tome.ParamDefsValidator = tomeDescParamDefs.Validators[0].(func(string) error)
 	// tomeDescHash is the schema descriptor for hash field.
-	tomeDescHash := tomeFields[6].Descriptor()
+	tomeDescHash := tomeFields[9].Descriptor()
 	// tome.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	tome.HashValidator = tomeDescHash.Validators[0].(func(string) error)
 	userFields := schema.User{}.Fields()

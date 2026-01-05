@@ -110,6 +110,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The AssetQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AssetQueryRuleFunc func(context.Context, *ent.AssetQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AssetQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AssetQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AssetQuery", q)
+}
+
+// The AssetMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AssetMutationRuleFunc func(context.Context, *ent.AssetMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AssetMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AssetMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AssetMutation", m)
+}
+
 // The BeaconQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type BeaconQueryRuleFunc func(context.Context, *ent.BeaconQuery) error
@@ -132,30 +156,6 @@ func (f BeaconMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation
 		return f(ctx, m)
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.BeaconMutation", m)
-}
-
-// The FileQueryRuleFunc type is an adapter to allow the use of ordinary
-// functions as a query rule.
-type FileQueryRuleFunc func(context.Context, *ent.FileQuery) error
-
-// EvalQuery return f(ctx, q).
-func (f FileQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.FileQuery); ok {
-		return f(ctx, q)
-	}
-	return Denyf("ent/privacy: unexpected query type %T, expect *ent.FileQuery", q)
-}
-
-// The FileMutationRuleFunc type is an adapter to allow the use of ordinary
-// functions as a mutation rule.
-type FileMutationRuleFunc func(context.Context, *ent.FileMutation) error
-
-// EvalMutation calls f(ctx, m).
-func (f FileMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
-	if m, ok := m.(*ent.FileMutation); ok {
-		return f(ctx, m)
-	}
-	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.FileMutation", m)
 }
 
 // The HostQueryRuleFunc type is an adapter to allow the use of ordinary

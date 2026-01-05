@@ -17,6 +17,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/prometheus/client_golang v1.20.4
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.5
 	github.com/vektah/gqlparser/v2 v2.5.21
