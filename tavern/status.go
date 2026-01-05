@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+
+	"realm.pub/tavern/internal/keyservice"
 )
 
 type Status struct {
@@ -13,19 +15,13 @@ type Status struct {
 
 // OKStatusText is the body returned by the status handler when everything is running as expected.
 const OKStatusText = "RUNNING"
-const NOPUBKEY = "UNAVAILABLE"
 
-func newStatusHandler() http.HandlerFunc {
+func newStatusHandler(keySvc *keyservice.KeyService) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pubStr := NOPUBKEY
-		pub, err := GetPubKey()
-		if err == nil {
-			pubStr = base64.StdEncoding.EncodeToString(pub.Bytes())
-		}
-
+		pub := keySvc.GetEd25519PublicKey()
 		res, err := json.Marshal(Status{
 			OKStatusText: OKStatusText,
-			Pubkey:       pubStr,
+			Pubkey:       base64.StdEncoding.EncodeToString(pub),
 		})
 		if err != nil {
 			panic(err)

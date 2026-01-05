@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdh"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -173,11 +174,28 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
-	// Generate server key pair
-	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	// Initialize key service (manages master ed25519 key and derives x25519 key)
+	keyService, err := keyservice.NewKeyService()
 	if err != nil {
-		log.Fatalf("[FATAL] failed to generate ed25519 keypair: %v", err)
+		slog.Error("failed to initialize key service", "err", err)
+		panic(err)
 	}
+
+	// Get derived x25519 keys for encryption
+	x25519Pub := keyService.GetX25519PublicKey()
+	x25519Priv := keyService.GetX25519PrivateKey()
+	slog.Info(fmt.Sprintf("x25519 public key (derived from ed25519): %s", base64.StdEncoding.EncodeToString(x25519Pub.Bytes())))
+
+	// Initialize JWT service with ed25519 keys
+	jwtService, err := jwt.NewService(
+		keyService.GetEd25519PrivateKey(),
+		keyService.GetEd25519PublicKey(),
+	)
+	if err != nil {
+		slog.Error("failed to initialize JWT service", "err", err)
+		panic(err)
+	}
+
 	// Initialize Config
 	cfg := &Config{}
 	for _, opt := range options {
@@ -244,7 +262,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
-			Handler:              newStatusHandler(),
+			Handler:              newStatusHandler(keyService),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -253,14 +271,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			LoginRedirectURI: "/oauth/login",
 		},
 		"/oauth/login": tavernhttp.Endpoint{
-			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
+			Handler: auth.NewOAuthLoginHandler(cfg.oauth, keyService.GetEd25519PrivateKey()),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
 		"/oauth/authorize": tavernhttp.Endpoint{
 			Handler: auth.NewOAuthAuthorizationHandler(
 				cfg.oauth,
-				pubKey,
+				keyService.GetEd25519PublicKey(),
 				client,
 				cfg.userProfiles,
 			),
@@ -272,7 +290,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux, jwtService, x25519Priv),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -441,29 +459,7 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
-	// Initialize key service (manages master ed25519 key and derives x25519 key)
-	keyService, err := keyservice.NewKeyService()
-	if err != nil {
-		slog.Error("failed to initialize key service", "err", err)
-		panic(err)
-	}
-
-	// Get derived x25519 keys for encryption
-	x25519Pub := keyService.GetX25519PublicKey()
-	x25519Priv := keyService.GetX25519PrivateKey()
-	slog.Info(fmt.Sprintf("x25519 public key (derived from ed25519): %s", base64.StdEncoding.EncodeToString(x25519Pub.Bytes())))
-
-	// Initialize JWT service with ed25519 keys
-	jwtService, err := jwt.NewService(
-		keyService.GetEd25519PrivateKey(),
-		keyService.GetEd25519PublicKey(),
-	)
-	if err != nil {
-		slog.Error("failed to initialize JWT service", "err", err)
-		panic(err)
-	}
-
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux, jwtService *jwt.Service, x25519Priv *ecdh.PrivateKey) http.Handler {
 	c2srv := c2.New(client, grpcShellMux, portalMux, jwtService)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(x25519Priv),

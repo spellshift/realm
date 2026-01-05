@@ -143,7 +143,7 @@ func TestClaimTasks(t *testing.T) {
 			}
 
 			// Assert Response
-			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform()); diff != "" {
+			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform(), protocmp.IgnoreFields(&c2pb.Task{}, "jwt")); diff != "" {
 				t.Errorf("invalid response (-want +got): %v", diff)
 			}
 

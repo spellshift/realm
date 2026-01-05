@@ -4,7 +4,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
+	"realm.pub/tavern/internal/keyservice"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,7 +14,13 @@ import (
 
 func TestStatusHandler(t *testing.T) {
 	// Setup Dependencies
-	handler := newStatusHandler()
+	secretsDir := t.TempDir()
+	secretsPath := filepath.Join(secretsDir, "secrets.yaml")
+	t.Setenv("SECRETS_FILE_PATH", secretsPath)
+
+	keySvc, err := keyservice.NewKeyService()
+	require.NoError(t, err)
+	handler := newStatusHandler(keySvc)
 
 	// Test Cases
 	tests := []struct {
