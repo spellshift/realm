@@ -121,8 +121,15 @@ fn handle_exec(
 mod tests {
     use std::{fs, path::Path, process, thread, time};
 
+    use lazy_static::lazy_static;
+    use std::sync::Mutex;
     use sysinfo::{PidExt, ProcessExt, System, SystemExt};
     use tempfile::NamedTempFile;
+
+    lazy_static! {
+        // Mutex to serialize tests that check for zombie processes to prevent interference
+        static ref ZOMBIE_TEST_MUTEX: Mutex<()> = Mutex::new(());
+    }
 
     fn init_logging() {
         let _ = pretty_env_logger::formatted_timed_builder()
@@ -239,6 +246,9 @@ mod tests {
 
     #[test]
     fn test_sys_exec_disown_linux() -> anyhow::Result<()> {
+        // Acquire mutex to ensure exclusive access to process table/zombie checks
+        let _guard = ZOMBIE_TEST_MUTEX.lock().unwrap();
+
         if cfg!(target_os = "linux")
             || cfg!(target_os = "ios")
             || cfg!(target_os = "macos")
@@ -269,6 +279,9 @@ mod tests {
 
     #[test]
     fn test_sys_exec_disown_no_defunct() -> anyhow::Result<()> {
+        // Acquire mutex to ensure exclusive access to process table/zombie checks
+        let _guard = ZOMBIE_TEST_MUTEX.lock().unwrap();
+
         init_logging();
 
         if cfg!(target_os = "linux")
