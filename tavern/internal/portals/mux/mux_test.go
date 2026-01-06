@@ -84,7 +84,7 @@ func TestMux_CreatePortal(t *testing.T) {
 	// Create User, Tome, Quest, Task required for Portal
 	u := client.User.Create().SetName("testuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)
 	h := client.Host.Create().SetName("host").SetIdentifier("ident").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
-	b := client.Beacon.Create().SetName("beacon").SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
+	b := client.Beacon.Create().SetName("beacon").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
 
 	tomeEnt := client.Tome.Create().SetName("testtome").SetDescription("desc").SetAuthor(u.Name).SetUploader(u).SetTactic(tome.TacticRECON).SetEldritch("print(1)").SaveX(ctx)
 	quest := client.Quest.Create().SetName("testquest").SetParameters("").SetCreator(u).SetTome(tomeEnt).SaveX(ctx)

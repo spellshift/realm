@@ -309,7 +309,10 @@ impl Transport for HTTP {
         }
     }
 
-    fn new(callback: String, _config: Config) -> Result<Self> {
+    fn new(config: Config) -> Result<Self> {
+        // Extract URI from config using helper function
+        let callback = crate::transport::extract_uri_from_config(&config)?;
+
         // Create HTTP connector
         let mut connector = hyper::client::HttpConnector::new();
         connector.enforce_http(false); // Allow HTTPS
@@ -432,8 +435,8 @@ impl Transport for HTTP {
         ))
     }
 
-    fn get_type(&mut self) -> pb::c2::active_transport::Type {
-        return pb::c2::active_transport::Type::TransportHttp1;
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        return pb::c2::transport::Type::TransportHttp1;
     }
 
     fn is_active(&self) -> bool {

@@ -187,6 +187,18 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if req.Beacon.Agent.Identifier == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide agent identifier")
 	}
+	if req.Beacon.AvailableTransports == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "must provide available transports")
+	}
+	if len(req.Beacon.AvailableTransports.Transports) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "must provide at least one transport")
+	}
+	if req.Beacon.AvailableTransports.ActiveIndex >= uint32(len(req.Beacon.AvailableTransports.Transports)) {
+		return nil, status.Errorf(codes.InvalidArgument, "active_index out of bounds")
+	}
+
+	// Get the active transport
+	activeTransport := req.Beacon.AvailableTransports.Transports[req.Beacon.AvailableTransports.ActiveIndex]
 
 	// Check if host is new (before upsert)
 	hostExists, err := srv.graph.Host.Query().
@@ -205,7 +217,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetExternalIP(clientIP).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.ActiveTransport.Interval) * time.Second)).
+		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second)).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
@@ -300,9 +312,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetNillableName(beaconNameAddr).
 		SetHostID(hostID).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(req.Beacon.ActiveTransport.Interval) * time.Second)).
-		SetInterval(req.Beacon.ActiveTransport.Interval).
-		SetTransport(req.Beacon.ActiveTransport.Type).
+		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second)).
+		SetInterval(activeTransport.Interval).
+		SetTransport(activeTransport.Type).
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
@@ -311,7 +323,8 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	// Run Tome Automation (non-blocking, best effort)
-	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, time.Duration(req.GetBeacon().GetActiveTransport().GetInterval())*time.Second)
+	idx := req.GetBeacon().GetAvailableTransports().GetActiveIndex()
+	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, time.Duration(req.GetBeacon().GetAvailableTransports().GetTransports()[idx].GetInterval())*time.Second)
 
 	// Load Tasks
 	tasks, err := srv.graph.Task.Query().

