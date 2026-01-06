@@ -10,8 +10,22 @@ use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
-#[cfg(feature = "stdlib")]
-use pb::c2;
+
+pub mod claim_tasks_impl;
+pub mod fetch_asset_impl;
+pub mod get_callback_interval_impl;
+pub mod get_config_impl;
+pub mod get_transport_impl;
+pub mod list_tasks_impl;
+pub mod list_transports_impl;
+pub mod report_credential_impl;
+pub mod report_file_impl;
+pub mod report_process_list_impl;
+pub mod report_task_output_impl;
+pub mod set_callback_interval_impl;
+pub mod set_callback_uri_impl;
+pub mod stop_task_impl;
+pub mod terminate_impl;
 
 // We need manual Debug impl, and we need to put the macro on the struct.
 #[eldritch_library_impl(AgentLibrary)]
@@ -36,103 +50,65 @@ impl StdAgentLibrary {
 
 impl AgentLibrary for StdAgentLibrary {
     fn get_config(&self) -> Result<BTreeMap<String, Value>, String> {
-        let config = self.agent.get_config()?;
-        let mut result = BTreeMap::new();
-        for (k, v) in config {
-            // Try to parse numbers, otherwise keep as string
-            if let Ok(i) = v.parse::<i64>() {
-                result.insert(k, Value::Int(i));
-            } else if let Ok(b) = v.parse::<bool>() {
-                result.insert(k, Value::Bool(b));
-            } else {
-                result.insert(k, Value::String(v));
-            }
-        }
-        Ok(result)
+        get_config_impl::get_config(self.agent.clone())
     }
 
     fn _terminate_this_process_clowntown(&self) -> Result<(), String> {
-        ::std::process::exit(0);
+        terminate_impl::terminate()
     }
 
     fn set_callback_interval(&self, interval: i64) -> Result<(), String> {
-        self.agent.set_callback_interval(interval as u64)
+        set_callback_interval_impl::set_callback_interval(self.agent.clone(), interval)
     }
 
     // Interactivity
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String> {
-        let req = c2::FetchAssetRequest { name };
-        self.agent.fetch_asset(req)
+        fetch_asset_impl::fetch_asset(self.agent.clone(), name)
     }
 
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String> {
-        let req = c2::ReportCredentialRequest {
-            task_id: self.task_id,
-            credential: Some(credential.0),
-        };
-        self.agent.report_credential(req).map(|_| ())
+        report_credential_impl::report_credential(self.agent.clone(), self.task_id, credential)
     }
 
     fn report_file(&self, file: FileWrapper) -> Result<(), String> {
-        let req = c2::ReportFileRequest {
-            task_id: self.task_id,
-            chunk: Some(file.0),
-        };
-        self.agent.report_file(req).map(|_| ())
+        report_file_impl::report_file(self.agent.clone(), self.task_id, file)
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {
-        let req = c2::ReportProcessListRequest {
-            task_id: self.task_id,
-            list: Some(list.0),
-        };
-        self.agent.report_process_list(req).map(|_| ())
+        report_process_list_impl::report_process_list(self.agent.clone(), self.task_id, list)
     }
 
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String> {
-        let task_error = error.map(|msg| c2::TaskError { msg });
-        let output_msg = c2::TaskOutput {
-            id: self.task_id,
-            output,
-            error: task_error,
-            exec_started_at: None,
-            exec_finished_at: None,
-        };
-        let req = c2::ReportTaskOutputRequest {
-            output: Some(output_msg),
-        };
-        self.agent.report_task_output(req).map(|_| ())
+        report_task_output_impl::report_task_output(self.agent.clone(), self.task_id, output, error)
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
-        let req = c2::ClaimTasksRequest { beacon: None };
-        let resp = self.agent.claim_tasks(req)?;
-        Ok(resp.tasks.into_iter().map(TaskWrapper).collect())
+        claim_tasks_impl::claim_tasks(self.agent.clone())
     }
 
     // Agent Configuration
     fn get_transport(&self) -> Result<String, String> {
-        self.agent.get_transport()
+        get_transport_impl::get_transport(self.agent.clone())
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        self.agent.list_transports()
+        list_transports_impl::list_transports(self.agent.clone())
     }
+
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
-        self.agent.set_callback_uri(uri)
+        set_callback_uri_impl::set_callback_uri(self.agent.clone(), uri)
     }
 
     fn get_callback_interval(&self) -> Result<i64, String> {
-        self.agent.get_callback_interval().map(|i| i as i64)
+        get_callback_interval_impl::get_callback_interval(self.agent.clone())
     }
 
     // Task Management
     fn list_tasks(&self) -> Result<Vec<TaskWrapper>, String> {
-        let tasks = self.agent.list_tasks()?;
-        Ok(tasks.into_iter().map(TaskWrapper).collect())
+        list_tasks_impl::list_tasks(self.agent.clone())
     }
 
     fn stop_task(&self, task_id: i64) -> Result<(), String> {
-        self.agent.stop_task(task_id)
+        stop_task_impl::stop_task(self.agent.clone(), task_id)
     }
 }
