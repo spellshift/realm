@@ -9,11 +9,9 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/vektah/gqlparser/v2/ast"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
@@ -48,4804 +46,1222 @@ type QueryResolver interface {
 func (ec *executionContext) field_Asset_links_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Asset_links_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Asset_links_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Asset_links_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Asset_links_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Asset_links_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOLinkOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Asset_links_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOLinkWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Asset_links_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_links_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_links_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_links_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_links_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.LinkOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.LinkOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOLinkOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.LinkOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_links_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.LinkWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.LinkWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOLinkWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.LinkWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Asset_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Asset_tomes_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Asset_tomes_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Asset_tomes_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Asset_tomes_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Asset_tomes_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Asset_tomes_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Asset_tomes_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_tomes_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_tomes_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_tomes_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_tomes_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TomeOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TomeOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TomeOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Asset_tomes_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TomeWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TomeWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TomeWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Beacon_shells_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Beacon_shells_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Beacon_shells_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Beacon_shells_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Beacon_shells_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Beacon_shells_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Beacon_shells_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Beacon_shells_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_shells_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_shells_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_shells_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_shells_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.ShellOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.ShellOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.ShellOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_shells_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.ShellWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.ShellWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.ShellWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Beacon_tasks_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Beacon_tasks_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Beacon_tasks_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Beacon_tasks_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Beacon_tasks_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Beacon_tasks_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Beacon_tasks_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Beacon_tasks_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_tasks_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_tasks_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_tasks_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_tasks_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TaskOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TaskOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TaskOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Beacon_tasks_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TaskWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TaskWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TaskWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Host_beacons_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Host_beacons_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Host_beacons_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Host_beacons_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Host_beacons_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Host_beacons_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Host_beacons_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOBeaconWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Host_beacons_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_beacons_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_beacons_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_beacons_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_beacons_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.BeaconOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.BeaconOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.BeaconOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_beacons_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.BeaconWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.BeaconWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOBeaconWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.BeaconWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Host_credentials_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Host_credentials_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Host_credentials_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Host_credentials_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Host_credentials_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Host_credentials_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostCredentialOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Host_credentials_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostCredentialWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Host_credentials_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_credentials_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_credentials_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_credentials_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_credentials_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostCredentialOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostCredentialOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostCredentialOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostCredentialOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_credentials_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostCredentialWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostCredentialWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostCredentialWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostCredentialWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Host_files_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Host_files_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Host_files_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Host_files_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Host_files_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Host_files_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostFileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Host_files_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostFileWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Host_files_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_files_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_files_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_files_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_files_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostFileOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostFileOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostFileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostFileOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_files_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostFileWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostFileWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostFileWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostFileWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Host_processes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Host_processes_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Host_processes_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Host_processes_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Host_processes_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Host_processes_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostProcessOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Host_processes_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostProcessWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Host_processes_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_processes_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_processes_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_processes_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_processes_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostProcessOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostProcessOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostProcessOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostProcessOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_processes_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostProcessWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostProcessWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostProcessWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostProcessWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Host_tags_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Host_tags_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Host_tags_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Host_tags_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Host_tags_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Host_tags_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTagOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Host_tags_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTagWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Host_tags_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_tags_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_tags_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_tags_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_tags_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TagOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TagOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTagOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TagOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Host_tags_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TagWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TagWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTagWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TagWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Portal_activeUsers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Portal_activeUsers_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Portal_activeUsers_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Portal_activeUsers_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Portal_activeUsers_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Portal_activeUsers_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Portal_activeUsers_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
-func (ec *executionContext) field_Portal_activeUsers_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Portal_activeUsers_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Portal_activeUsers_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Portal_activeUsers_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Portal_activeUsers_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.UserOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.UserOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.UserOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Portal_activeUsers_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.UserWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.UserWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.UserWhereInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query___type_argsName(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
 	args["name"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query___type_argsName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["name"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-	if tmp, ok := rawArgs["name"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_assets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_assets_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_assets_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_assets_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_assets_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_assets_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAssetOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_assets_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOAssetWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_assets_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assets_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assets_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assets_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assets_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.AssetOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.AssetOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOAssetOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.AssetOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assets_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.AssetWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.AssetWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOAssetWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.AssetWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_beacons_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_beacons_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_beacons_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_beacons_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_beacons_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_beacons_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_beacons_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOBeaconWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_beacons_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_beacons_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_beacons_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_beacons_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_beacons_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.BeaconOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.BeaconOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.BeaconOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_beacons_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.BeaconWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.BeaconWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOBeaconWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.BeaconWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_hosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_hosts_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_hosts_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_hosts_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_hosts_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_hosts_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_hosts_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
-func (ec *executionContext) field_Query_hosts_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_hosts_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_hosts_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_hosts_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_hosts_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_hosts_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostWhereInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_node_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_node_argsID(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2int)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_node_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (int, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2int(ctx, tmp)
-	}
-
-	var zeroVal int
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_nodes_argsIds(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "ids", ec.unmarshalNID2ᚕintᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["ids"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_nodes_argsIds(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]int, error) {
-	if _, ok := rawArgs["ids"]; !ok {
-		var zeroVal []int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ids"))
-	if tmp, ok := rawArgs["ids"]; ok {
-		return ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
-	}
-
-	var zeroVal []int
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_portals_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_portals_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_portals_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_portals_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_portals_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_portals_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPortalOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_portals_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOPortalWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_portals_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_portals_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_portals_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_portals_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_portals_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.PortalOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.PortalOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOPortalOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.PortalOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_portals_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.PortalWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.PortalWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOPortalWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.PortalWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_quests_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_quests_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_quests_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_quests_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_quests_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_quests_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOQuestOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_quests_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOQuestWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_quests_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_quests_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_quests_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_quests_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_quests_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.QuestOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.QuestOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOQuestOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.QuestOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_quests_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.QuestWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.QuestWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOQuestWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.QuestWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_repositories_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_repositories_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_repositories_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_repositories_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_repositories_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_repositories_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalORepositoryOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_repositories_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalORepositoryWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_repositories_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_repositories_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_repositories_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_repositories_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_repositories_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.RepositoryOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.RepositoryOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalORepositoryOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.RepositoryOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_repositories_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.RepositoryWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.RepositoryWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalORepositoryWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.RepositoryWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_shells_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_shells_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_shells_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_shells_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_shells_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_shells_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_shells_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_shells_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_shells_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_shells_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_shells_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_shells_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.ShellOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.ShellOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.ShellOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_shells_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.ShellWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.ShellWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.ShellWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_tags_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_tags_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_tags_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_tags_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_tags_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTagOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_tags_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTagWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_tags_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tags_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tags_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tags_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tags_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TagOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TagOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTagOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TagOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tags_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TagWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TagWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTagWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TagWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_tasks_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_tasks_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_tasks_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_tasks_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_tasks_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_tasks_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_tasks_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_tasks_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tasks_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tasks_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tasks_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tasks_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TaskOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TaskOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TaskOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tasks_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TaskWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TaskWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TaskWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_tomes_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_tomes_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_tomes_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_tomes_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_tomes_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_tomes_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_tomes_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tomes_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tomes_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tomes_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tomes_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TomeOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TomeOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TomeOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tomes_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TomeWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TomeWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TomeWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_users_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Query_users_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Query_users_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Query_users_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Query_users_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Query_users_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Query_users_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_users_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_users_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_users_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_users_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.UserOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.UserOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.UserOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_users_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.UserWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.UserWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.UserWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Quest_tasks_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Quest_tasks_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Quest_tasks_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Quest_tasks_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Quest_tasks_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Quest_tasks_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Quest_tasks_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Quest_tasks_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Quest_tasks_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Quest_tasks_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Quest_tasks_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Quest_tasks_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TaskOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TaskOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TaskOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Quest_tasks_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TaskWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TaskWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TaskWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Repository_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Repository_tomes_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Repository_tomes_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Repository_tomes_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Repository_tomes_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Repository_tomes_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Repository_tomes_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Repository_tomes_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Repository_tomes_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Repository_tomes_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Repository_tomes_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Repository_tomes_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TomeOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TomeOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TomeOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Repository_tomes_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TomeWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TomeWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TomeWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Shell_activeUsers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Shell_activeUsers_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Shell_activeUsers_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Shell_activeUsers_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Shell_activeUsers_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Shell_activeUsers_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Shell_activeUsers_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Shell_activeUsers_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Shell_activeUsers_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Shell_activeUsers_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Shell_activeUsers_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Shell_activeUsers_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.UserOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.UserOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.UserOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Shell_activeUsers_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.UserWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.UserWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.UserWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Tag_hosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Tag_hosts_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Tag_hosts_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Tag_hosts_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Tag_hosts_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Tag_hosts_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Tag_hosts_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Tag_hosts_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tag_hosts_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tag_hosts_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tag_hosts_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tag_hosts_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tag_hosts_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Task_reportedCredentials_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Task_reportedCredentials_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Task_reportedCredentials_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Task_reportedCredentials_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Task_reportedCredentials_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Task_reportedCredentials_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostCredentialOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Task_reportedCredentials_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostCredentialWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Task_reportedCredentials_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedCredentials_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedCredentials_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedCredentials_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedCredentials_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostCredentialOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostCredentialOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostCredentialOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostCredentialOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedCredentials_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostCredentialWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostCredentialWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostCredentialWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostCredentialWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Task_reportedFiles_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Task_reportedFiles_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Task_reportedFiles_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Task_reportedFiles_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Task_reportedFiles_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Task_reportedFiles_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostFileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Task_reportedFiles_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostFileWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Task_reportedFiles_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedFiles_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedFiles_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedFiles_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedFiles_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostFileOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostFileOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostFileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostFileOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedFiles_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostFileWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostFileWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostFileWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostFileWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Task_reportedProcesses_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Task_reportedProcesses_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Task_reportedProcesses_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Task_reportedProcesses_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Task_reportedProcesses_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Task_reportedProcesses_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostProcessOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Task_reportedProcesses_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostProcessWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Task_reportedProcesses_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedProcesses_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedProcesses_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedProcesses_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedProcesses_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostProcessOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostProcessOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostProcessOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostProcessOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_reportedProcesses_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostProcessWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostProcessWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostProcessWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostProcessWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Task_shells_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Task_shells_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Task_shells_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Task_shells_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Task_shells_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Task_shells_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Task_shells_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Task_shells_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_shells_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_shells_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_shells_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_shells_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.ShellOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.ShellOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.ShellOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Task_shells_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.ShellWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.ShellWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.ShellWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Tome_assets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Tome_assets_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Tome_assets_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Tome_assets_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Tome_assets_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Tome_assets_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAssetOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Tome_assets_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOAssetWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Tome_assets_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_assets_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_assets_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_assets_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_assets_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.AssetOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.AssetOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOAssetOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.AssetOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_assets_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.AssetWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.AssetWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOAssetWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.AssetWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Tome_scheduledHosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Tome_scheduledHosts_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Tome_scheduledHosts_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Tome_scheduledHosts_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Tome_scheduledHosts_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Tome_scheduledHosts_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Tome_scheduledHosts_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Tome_scheduledHosts_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_scheduledHosts_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_scheduledHosts_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_scheduledHosts_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_scheduledHosts_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.HostOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.HostOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.HostOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Tome_scheduledHosts_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.HostWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.HostWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.HostWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_User_activeShells_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_User_activeShells_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_User_activeShells_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_User_activeShells_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_User_activeShells_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_User_activeShells_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_User_activeShells_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_User_activeShells_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_activeShells_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_activeShells_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_activeShells_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_activeShells_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.ShellOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.ShellOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.ShellOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_activeShells_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.ShellWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.ShellWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOShellWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.ShellWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_User_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_User_tomes_argsAfter(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_User_tomes_argsFirst(ctx, rawArgs)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_User_tomes_argsBefore(ctx, rawArgs)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_User_tomes_argsLast(ctx, rawArgs)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_User_tomes_argsOrderBy(ctx, rawArgs)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_User_tomes_argsWhere(ctx, rawArgs)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_User_tomes_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_tomes_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_tomes_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[int], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[int]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[int]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_tomes_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_tomes_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]*ent.TomeOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal []*ent.TomeOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderᚄ(ctx, tmp)
-	}
-
-	var zeroVal []*ent.TomeOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_User_tomes_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*ent.TomeWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *ent.TomeWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOTomeWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *ent.TomeWhereInput
-	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
@@ -4857,34 +1273,19 @@ func (ec *executionContext) field_User_tomes_argsWhere(
 // region    **************************** field.gotpl *****************************
 
 func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4901,34 +1302,19 @@ func (ec *executionContext) fieldContext_Asset_id(_ context.Context, field graph
 }
 
 func (ec *executionContext) _Asset_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4945,34 +1331,19 @@ func (ec *executionContext) fieldContext_Asset_createdAt(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Asset_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4989,34 +1360,19 @@ func (ec *executionContext) fieldContext_Asset_lastModifiedAt(_ context.Context,
 }
 
 func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5033,34 +1389,19 @@ func (ec *executionContext) fieldContext_Asset_name(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Asset_size(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_size(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Size, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_size,
+		func(ctx context.Context) (any, error) {
+			return obj.Size, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_size(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5077,34 +1418,19 @@ func (ec *executionContext) fieldContext_Asset_size(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Asset_hash(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_hash(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Hash, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_hash,
+		func(ctx context.Context) (any, error) {
+			return obj.Hash, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_hash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5121,34 +1447,20 @@ func (ec *executionContext) fieldContext_Asset_hash(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Asset_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_tomes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TomeConnection)
-	fc.Result = res
-	return ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_tomes,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
+		},
+		nil,
+		ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5184,34 +1496,20 @@ func (ec *executionContext) fieldContext_Asset_tomes(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Asset_links(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Asset_links(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Links(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.LinkOrder), fc.Args["where"].(*ent.LinkWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.LinkConnection)
-	fc.Result = res
-	return ec.marshalNLinkConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_links,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Links(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.LinkOrder), fc.Args["where"].(*ent.LinkWhereInput))
+		},
+		nil,
+		ec.marshalNLinkConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Asset_links(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5247,31 +1545,19 @@ func (ec *executionContext) fieldContext_Asset_links(ctx context.Context, field 
 }
 
 func (ec *executionContext) _AssetConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.AssetConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AssetConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.AssetEdge)
-	fc.Result = res
-	return ec.marshalOAssetEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AssetConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOAssetEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_AssetConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5294,34 +1580,19 @@ func (ec *executionContext) fieldContext_AssetConnection_edges(_ context.Context
 }
 
 func (ec *executionContext) _AssetConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.AssetConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AssetConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AssetConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_AssetConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5348,34 +1619,19 @@ func (ec *executionContext) fieldContext_AssetConnection_pageInfo(_ context.Cont
 }
 
 func (ec *executionContext) _AssetConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.AssetConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AssetConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AssetConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_AssetConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5392,31 +1648,19 @@ func (ec *executionContext) fieldContext_AssetConnection_totalCount(_ context.Co
 }
 
 func (ec *executionContext) _AssetEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.AssetEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AssetEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Asset)
-	fc.Result = res
-	return ec.marshalOAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AssetEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_AssetEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5451,34 +1695,19 @@ func (ec *executionContext) fieldContext_AssetEdge_node(_ context.Context, field
 }
 
 func (ec *executionContext) _AssetEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.AssetEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AssetEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AssetEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_AssetEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5495,34 +1724,19 @@ func (ec *executionContext) fieldContext_AssetEdge_cursor(_ context.Context, fie
 }
 
 func (ec *executionContext) _Beacon_id(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5539,34 +1753,19 @@ func (ec *executionContext) fieldContext_Beacon_id(_ context.Context, field grap
 }
 
 func (ec *executionContext) _Beacon_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5583,34 +1782,19 @@ func (ec *executionContext) fieldContext_Beacon_createdAt(_ context.Context, fie
 }
 
 func (ec *executionContext) _Beacon_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5627,34 +1811,19 @@ func (ec *executionContext) fieldContext_Beacon_lastModifiedAt(_ context.Context
 }
 
 func (ec *executionContext) _Beacon_name(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5671,31 +1840,19 @@ func (ec *executionContext) fieldContext_Beacon_name(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Beacon_principal(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_principal(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Principal, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_principal,
+		func(ctx context.Context) (any, error) {
+			return obj.Principal, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_principal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5712,34 +1869,19 @@ func (ec *executionContext) fieldContext_Beacon_principal(_ context.Context, fie
 }
 
 func (ec *executionContext) _Beacon_identifier(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_identifier(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Identifier, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_identifier,
+		func(ctx context.Context) (any, error) {
+			return obj.Identifier, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_identifier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5756,31 +1898,19 @@ func (ec *executionContext) fieldContext_Beacon_identifier(_ context.Context, fi
 }
 
 func (ec *executionContext) _Beacon_agentIdentifier(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_agentIdentifier(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AgentIdentifier, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_agentIdentifier,
+		func(ctx context.Context) (any, error) {
+			return obj.AgentIdentifier, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_agentIdentifier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5797,31 +1927,19 @@ func (ec *executionContext) fieldContext_Beacon_agentIdentifier(_ context.Contex
 }
 
 func (ec *executionContext) _Beacon_lastSeenAt(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_lastSeenAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastSeenAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_lastSeenAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastSeenAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_lastSeenAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5838,31 +1956,19 @@ func (ec *executionContext) fieldContext_Beacon_lastSeenAt(_ context.Context, fi
 }
 
 func (ec *executionContext) _Beacon_nextSeenAt(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_nextSeenAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NextSeenAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_nextSeenAt,
+		func(ctx context.Context) (any, error) {
+			return obj.NextSeenAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_nextSeenAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5879,31 +1985,19 @@ func (ec *executionContext) fieldContext_Beacon_nextSeenAt(_ context.Context, fi
 }
 
 func (ec *executionContext) _Beacon_interval(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_interval(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Interval, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(uint64)
-	fc.Result = res
-	return ec.marshalOUint642uint64(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_interval,
+		func(ctx context.Context) (any, error) {
+			return obj.Interval, nil
+		},
+		nil,
+		ec.marshalOUint642uint64,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5920,34 +2014,19 @@ func (ec *executionContext) fieldContext_Beacon_interval(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Beacon_transport(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_transport(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Transport, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(c2pb.Transport_Type)
-	fc.Result = res
-	return ec.marshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_transport,
+		func(ctx context.Context) (any, error) {
+			return obj.Transport, nil
+		},
+		nil,
+		ec.marshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_transport(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5964,34 +2043,19 @@ func (ec *executionContext) fieldContext_Beacon_transport(_ context.Context, fie
 }
 
 func (ec *executionContext) _Beacon_host(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_host(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Host(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Host)
-	fc.Result = res
-	return ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_host,
+		func(ctx context.Context) (any, error) {
+			return obj.Host(ctx)
+		},
+		nil,
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_host(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6040,34 +2104,20 @@ func (ec *executionContext) fieldContext_Beacon_host(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Beacon_tasks(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_tasks(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TaskConnection)
-	fc.Result = res
-	return ec.marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_tasks,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
+		},
+		nil,
+		ec.marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_tasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6103,34 +2153,20 @@ func (ec *executionContext) fieldContext_Beacon_tasks(ctx context.Context, field
 }
 
 func (ec *executionContext) _Beacon_shells(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Beacon_shells(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.ShellConnection)
-	fc.Result = res
-	return ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_shells,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
+		},
+		nil,
+		ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Beacon_shells(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6166,31 +2202,19 @@ func (ec *executionContext) fieldContext_Beacon_shells(ctx context.Context, fiel
 }
 
 func (ec *executionContext) _BeaconConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.BeaconConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_BeaconConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.BeaconEdge)
-	fc.Result = res
-	return ec.marshalOBeaconEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOBeaconEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_BeaconConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6213,34 +2237,19 @@ func (ec *executionContext) fieldContext_BeaconConnection_edges(_ context.Contex
 }
 
 func (ec *executionContext) _BeaconConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.BeaconConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_BeaconConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_BeaconConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6267,34 +2276,19 @@ func (ec *executionContext) fieldContext_BeaconConnection_pageInfo(_ context.Con
 }
 
 func (ec *executionContext) _BeaconConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.BeaconConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_BeaconConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_BeaconConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6311,31 +2305,19 @@ func (ec *executionContext) fieldContext_BeaconConnection_totalCount(_ context.C
 }
 
 func (ec *executionContext) _BeaconEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.BeaconEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_BeaconEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Beacon)
-	fc.Result = res
-	return ec.marshalOBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_BeaconEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6382,34 +2364,19 @@ func (ec *executionContext) fieldContext_BeaconEdge_node(_ context.Context, fiel
 }
 
 func (ec *executionContext) _BeaconEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.BeaconEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_BeaconEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_BeaconEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6426,34 +2393,19 @@ func (ec *executionContext) fieldContext_BeaconEdge_cursor(_ context.Context, fi
 }
 
 func (ec *executionContext) _Host_id(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6470,34 +2422,19 @@ func (ec *executionContext) fieldContext_Host_id(_ context.Context, field graphq
 }
 
 func (ec *executionContext) _Host_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6514,34 +2451,19 @@ func (ec *executionContext) fieldContext_Host_createdAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Host_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6558,34 +2480,19 @@ func (ec *executionContext) fieldContext_Host_lastModifiedAt(_ context.Context, 
 }
 
 func (ec *executionContext) _Host_identifier(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_identifier(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Identifier, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_identifier,
+		func(ctx context.Context) (any, error) {
+			return obj.Identifier, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_identifier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6602,31 +2509,19 @@ func (ec *executionContext) fieldContext_Host_identifier(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Host_name(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6643,31 +2538,19 @@ func (ec *executionContext) fieldContext_Host_name(_ context.Context, field grap
 }
 
 func (ec *executionContext) _Host_primaryIP(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_primaryIP(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PrimaryIP, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_primaryIP,
+		func(ctx context.Context) (any, error) {
+			return obj.PrimaryIP, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_primaryIP(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6684,31 +2567,19 @@ func (ec *executionContext) fieldContext_Host_primaryIP(_ context.Context, field
 }
 
 func (ec *executionContext) _Host_externalIP(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_externalIP(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExternalIP, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_externalIP,
+		func(ctx context.Context) (any, error) {
+			return obj.ExternalIP, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_externalIP(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6725,34 +2596,19 @@ func (ec *executionContext) fieldContext_Host_externalIP(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Host_platform(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_platform(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Platform, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(c2pb.Host_Platform)
-	fc.Result = res
-	return ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_platform,
+		func(ctx context.Context) (any, error) {
+			return obj.Platform, nil
+		},
+		nil,
+		ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_platform(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6769,31 +2625,19 @@ func (ec *executionContext) fieldContext_Host_platform(_ context.Context, field 
 }
 
 func (ec *executionContext) _Host_lastSeenAt(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_lastSeenAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastSeenAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_lastSeenAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastSeenAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_lastSeenAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6810,31 +2654,19 @@ func (ec *executionContext) fieldContext_Host_lastSeenAt(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Host_nextSeenAt(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_nextSeenAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NextSeenAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_nextSeenAt,
+		func(ctx context.Context) (any, error) {
+			return obj.NextSeenAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_nextSeenAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6851,34 +2683,20 @@ func (ec *executionContext) fieldContext_Host_nextSeenAt(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Host_tags(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_tags(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tags(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TagConnection)
-	fc.Result = res
-	return ec.marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_tags,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Tags(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
+		},
+		nil,
+		ec.marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6914,34 +2732,20 @@ func (ec *executionContext) fieldContext_Host_tags(ctx context.Context, field gr
 }
 
 func (ec *executionContext) _Host_beacons(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_beacons(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Beacons(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.BeaconConnection)
-	fc.Result = res
-	return ec.marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_beacons,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Beacons(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
+		},
+		nil,
+		ec.marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_beacons(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6977,34 +2781,20 @@ func (ec *executionContext) fieldContext_Host_beacons(ctx context.Context, field
 }
 
 func (ec *executionContext) _Host_files(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_files(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Files(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostFileOrder), fc.Args["where"].(*ent.HostFileWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostFileConnection)
-	fc.Result = res
-	return ec.marshalNHostFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_files,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Files(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostFileOrder), fc.Args["where"].(*ent.HostFileWhereInput))
+		},
+		nil,
+		ec.marshalNHostFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7040,34 +2830,20 @@ func (ec *executionContext) fieldContext_Host_files(ctx context.Context, field g
 }
 
 func (ec *executionContext) _Host_processes(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_processes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Processes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostProcessOrder), fc.Args["where"].(*ent.HostProcessWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostProcessConnection)
-	fc.Result = res
-	return ec.marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_processes,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Processes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostProcessOrder), fc.Args["where"].(*ent.HostProcessWhereInput))
+		},
+		nil,
+		ec.marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_processes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7103,34 +2879,20 @@ func (ec *executionContext) fieldContext_Host_processes(ctx context.Context, fie
 }
 
 func (ec *executionContext) _Host_credentials(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Host_credentials(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Credentials(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostCredentialOrder), fc.Args["where"].(*ent.HostCredentialWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostCredentialConnection)
-	fc.Result = res
-	return ec.marshalNHostCredentialConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_credentials,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Credentials(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostCredentialOrder), fc.Args["where"].(*ent.HostCredentialWhereInput))
+		},
+		nil,
+		ec.marshalNHostCredentialConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Host_credentials(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7166,31 +2928,19 @@ func (ec *executionContext) fieldContext_Host_credentials(ctx context.Context, f
 }
 
 func (ec *executionContext) _HostConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.HostEdge)
-	fc.Result = res
-	return ec.marshalOHostEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOHostEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7213,34 +2963,19 @@ func (ec *executionContext) fieldContext_HostConnection_edges(_ context.Context,
 }
 
 func (ec *executionContext) _HostConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.HostConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7267,34 +3002,19 @@ func (ec *executionContext) fieldContext_HostConnection_pageInfo(_ context.Conte
 }
 
 func (ec *executionContext) _HostConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.HostConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7311,34 +3031,19 @@ func (ec *executionContext) fieldContext_HostConnection_totalCount(_ context.Con
 }
 
 func (ec *executionContext) _HostCredential_id(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7355,34 +3060,19 @@ func (ec *executionContext) fieldContext_HostCredential_id(_ context.Context, fi
 }
 
 func (ec *executionContext) _HostCredential_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7399,34 +3089,19 @@ func (ec *executionContext) fieldContext_HostCredential_createdAt(_ context.Cont
 }
 
 func (ec *executionContext) _HostCredential_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7443,34 +3118,19 @@ func (ec *executionContext) fieldContext_HostCredential_lastModifiedAt(_ context
 }
 
 func (ec *executionContext) _HostCredential_principal(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_principal(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Principal, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_principal,
+		func(ctx context.Context) (any, error) {
+			return obj.Principal, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_principal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7487,34 +3147,19 @@ func (ec *executionContext) fieldContext_HostCredential_principal(_ context.Cont
 }
 
 func (ec *executionContext) _HostCredential_secret(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_secret(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Secret, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_secret,
+		func(ctx context.Context) (any, error) {
+			return obj.Secret, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_secret(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7531,34 +3176,19 @@ func (ec *executionContext) fieldContext_HostCredential_secret(_ context.Context
 }
 
 func (ec *executionContext) _HostCredential_kind(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_kind(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Kind, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(epb.Credential_Kind)
-	fc.Result = res
-	return ec.marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_kind,
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		ec.marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7575,34 +3205,19 @@ func (ec *executionContext) fieldContext_HostCredential_kind(_ context.Context, 
 }
 
 func (ec *executionContext) _HostCredential_host(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_host(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Host(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Host)
-	fc.Result = res
-	return ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_host,
+		func(ctx context.Context) (any, error) {
+			return obj.Host(ctx)
+		},
+		nil,
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_host(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7651,31 +3266,19 @@ func (ec *executionContext) fieldContext_HostCredential_host(_ context.Context, 
 }
 
 func (ec *executionContext) _HostCredential_task(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredential_task(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Task(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Task)
-	fc.Result = res
-	return ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_task,
+		func(ctx context.Context) (any, error) {
+			return obj.Task(ctx)
+		},
+		nil,
+		ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredential_task(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7724,31 +3327,19 @@ func (ec *executionContext) fieldContext_HostCredential_task(_ context.Context, 
 }
 
 func (ec *executionContext) _HostCredentialConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredentialConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.HostCredentialEdge)
-	fc.Result = res
-	return ec.marshalOHostCredentialEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredentialConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOHostCredentialEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredentialConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7771,34 +3362,19 @@ func (ec *executionContext) fieldContext_HostCredentialConnection_edges(_ contex
 }
 
 func (ec *executionContext) _HostCredentialConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredentialConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredentialConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredentialConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7825,34 +3401,19 @@ func (ec *executionContext) fieldContext_HostCredentialConnection_pageInfo(_ con
 }
 
 func (ec *executionContext) _HostCredentialConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredentialConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredentialConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredentialConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7869,31 +3430,19 @@ func (ec *executionContext) fieldContext_HostCredentialConnection_totalCount(_ c
 }
 
 func (ec *executionContext) _HostCredentialEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredentialEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostCredential)
-	fc.Result = res
-	return ec.marshalOHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredentialEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredentialEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7928,34 +3477,19 @@ func (ec *executionContext) fieldContext_HostCredentialEdge_node(_ context.Conte
 }
 
 func (ec *executionContext) _HostCredentialEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostCredentialEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredentialEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostCredentialEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7972,31 +3506,19 @@ func (ec *executionContext) fieldContext_HostCredentialEdge_cursor(_ context.Con
 }
 
 func (ec *executionContext) _HostEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.HostEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Host)
-	fc.Result = res
-	return ec.marshalOHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8045,34 +3567,19 @@ func (ec *executionContext) fieldContext_HostEdge_node(_ context.Context, field 
 }
 
 func (ec *executionContext) _HostEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.HostEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8089,34 +3596,19 @@ func (ec *executionContext) fieldContext_HostEdge_cursor(_ context.Context, fiel
 }
 
 func (ec *executionContext) _HostFile_id(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8133,34 +3625,19 @@ func (ec *executionContext) fieldContext_HostFile_id(_ context.Context, field gr
 }
 
 func (ec *executionContext) _HostFile_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8177,34 +3654,19 @@ func (ec *executionContext) fieldContext_HostFile_createdAt(_ context.Context, f
 }
 
 func (ec *executionContext) _HostFile_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8221,34 +3683,19 @@ func (ec *executionContext) fieldContext_HostFile_lastModifiedAt(_ context.Conte
 }
 
 func (ec *executionContext) _HostFile_path(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_path(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Path, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_path,
+		func(ctx context.Context) (any, error) {
+			return obj.Path, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8265,31 +3712,19 @@ func (ec *executionContext) fieldContext_HostFile_path(_ context.Context, field 
 }
 
 func (ec *executionContext) _HostFile_owner(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_owner(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Owner, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_owner,
+		func(ctx context.Context) (any, error) {
+			return obj.Owner, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8306,31 +3741,19 @@ func (ec *executionContext) fieldContext_HostFile_owner(_ context.Context, field
 }
 
 func (ec *executionContext) _HostFile_group(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_group(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Group, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_group,
+		func(ctx context.Context) (any, error) {
+			return obj.Group, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_group(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8347,31 +3770,19 @@ func (ec *executionContext) fieldContext_HostFile_group(_ context.Context, field
 }
 
 func (ec *executionContext) _HostFile_permissions(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_permissions(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Permissions, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_permissions,
+		func(ctx context.Context) (any, error) {
+			return obj.Permissions, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_permissions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8388,34 +3799,19 @@ func (ec *executionContext) fieldContext_HostFile_permissions(_ context.Context,
 }
 
 func (ec *executionContext) _HostFile_size(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_size(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Size, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint64)
-	fc.Result = res
-	return ec.marshalNUint642uint64(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_size,
+		func(ctx context.Context) (any, error) {
+			return obj.Size, nil
+		},
+		nil,
+		ec.marshalNUint642uint64,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_size(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8432,31 +3828,19 @@ func (ec *executionContext) fieldContext_HostFile_size(_ context.Context, field 
 }
 
 func (ec *executionContext) _HostFile_hash(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_hash(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Hash, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_hash,
+		func(ctx context.Context) (any, error) {
+			return obj.Hash, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_hash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8473,34 +3857,19 @@ func (ec *executionContext) fieldContext_HostFile_hash(_ context.Context, field 
 }
 
 func (ec *executionContext) _HostFile_host(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_host(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Host(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Host)
-	fc.Result = res
-	return ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_host,
+		func(ctx context.Context) (any, error) {
+			return obj.Host(ctx)
+		},
+		nil,
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_host(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8549,34 +3918,19 @@ func (ec *executionContext) fieldContext_HostFile_host(_ context.Context, field 
 }
 
 func (ec *executionContext) _HostFile_task(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFile_task(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Task(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Task)
-	fc.Result = res
-	return ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFile_task,
+		func(ctx context.Context) (any, error) {
+			return obj.Task(ctx)
+		},
+		nil,
+		ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFile_task(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8625,31 +3979,19 @@ func (ec *executionContext) fieldContext_HostFile_task(_ context.Context, field 
 }
 
 func (ec *executionContext) _HostFileConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostFileConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFileConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.HostFileEdge)
-	fc.Result = res
-	return ec.marshalOHostFileEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFileConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOHostFileEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFileConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8672,34 +4014,19 @@ func (ec *executionContext) fieldContext_HostFileConnection_edges(_ context.Cont
 }
 
 func (ec *executionContext) _HostFileConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.HostFileConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFileConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFileConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFileConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8726,34 +4053,19 @@ func (ec *executionContext) fieldContext_HostFileConnection_pageInfo(_ context.C
 }
 
 func (ec *executionContext) _HostFileConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.HostFileConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFileConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFileConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFileConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8770,31 +4082,19 @@ func (ec *executionContext) fieldContext_HostFileConnection_totalCount(_ context
 }
 
 func (ec *executionContext) _HostFileEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.HostFileEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFileEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostFile)
-	fc.Result = res
-	return ec.marshalOHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFileEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFileEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8835,34 +4135,19 @@ func (ec *executionContext) fieldContext_HostFileEdge_node(_ context.Context, fi
 }
 
 func (ec *executionContext) _HostFileEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.HostFileEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostFileEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostFileEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostFileEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8879,34 +4164,19 @@ func (ec *executionContext) fieldContext_HostFileEdge_cursor(_ context.Context, 
 }
 
 func (ec *executionContext) _HostProcess_id(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8923,34 +4193,19 @@ func (ec *executionContext) fieldContext_HostProcess_id(_ context.Context, field
 }
 
 func (ec *executionContext) _HostProcess_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8967,34 +4222,19 @@ func (ec *executionContext) fieldContext_HostProcess_createdAt(_ context.Context
 }
 
 func (ec *executionContext) _HostProcess_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9011,34 +4251,19 @@ func (ec *executionContext) fieldContext_HostProcess_lastModifiedAt(_ context.Co
 }
 
 func (ec *executionContext) _HostProcess_pid(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_pid(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Pid, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint64)
-	fc.Result = res
-	return ec.marshalNUint642uint64(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_pid,
+		func(ctx context.Context) (any, error) {
+			return obj.Pid, nil
+		},
+		nil,
+		ec.marshalNUint642uint64,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_pid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9055,34 +4280,19 @@ func (ec *executionContext) fieldContext_HostProcess_pid(_ context.Context, fiel
 }
 
 func (ec *executionContext) _HostProcess_ppid(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_ppid(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Ppid, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint64)
-	fc.Result = res
-	return ec.marshalNUint642uint64(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_ppid,
+		func(ctx context.Context) (any, error) {
+			return obj.Ppid, nil
+		},
+		nil,
+		ec.marshalNUint642uint64,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_ppid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9099,34 +4309,19 @@ func (ec *executionContext) fieldContext_HostProcess_ppid(_ context.Context, fie
 }
 
 func (ec *executionContext) _HostProcess_name(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9143,34 +4338,19 @@ func (ec *executionContext) fieldContext_HostProcess_name(_ context.Context, fie
 }
 
 func (ec *executionContext) _HostProcess_principal(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_principal(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Principal, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_principal,
+		func(ctx context.Context) (any, error) {
+			return obj.Principal, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_principal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9187,31 +4367,19 @@ func (ec *executionContext) fieldContext_HostProcess_principal(_ context.Context
 }
 
 func (ec *executionContext) _HostProcess_path(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_path(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Path, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_path,
+		func(ctx context.Context) (any, error) {
+			return obj.Path, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9228,31 +4396,19 @@ func (ec *executionContext) fieldContext_HostProcess_path(_ context.Context, fie
 }
 
 func (ec *executionContext) _HostProcess_cmd(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_cmd(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cmd, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_cmd,
+		func(ctx context.Context) (any, error) {
+			return obj.Cmd, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_cmd(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9269,31 +4425,19 @@ func (ec *executionContext) fieldContext_HostProcess_cmd(_ context.Context, fiel
 }
 
 func (ec *executionContext) _HostProcess_env(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_env(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Env, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_env,
+		func(ctx context.Context) (any, error) {
+			return obj.Env, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_env(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9310,31 +4454,19 @@ func (ec *executionContext) fieldContext_HostProcess_env(_ context.Context, fiel
 }
 
 func (ec *executionContext) _HostProcess_cwd(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_cwd(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cwd, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_cwd,
+		func(ctx context.Context) (any, error) {
+			return obj.Cwd, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_cwd(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9351,34 +4483,19 @@ func (ec *executionContext) fieldContext_HostProcess_cwd(_ context.Context, fiel
 }
 
 func (ec *executionContext) _HostProcess_status(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_status(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(epb.Process_Status)
-	fc.Result = res
-	return ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9395,34 +4512,19 @@ func (ec *executionContext) fieldContext_HostProcess_status(_ context.Context, f
 }
 
 func (ec *executionContext) _HostProcess_host(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_host(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Host(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Host)
-	fc.Result = res
-	return ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_host,
+		func(ctx context.Context) (any, error) {
+			return obj.Host(ctx)
+		},
+		nil,
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_host(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9471,34 +4573,19 @@ func (ec *executionContext) fieldContext_HostProcess_host(_ context.Context, fie
 }
 
 func (ec *executionContext) _HostProcess_task(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcess_task(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Task(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Task)
-	fc.Result = res
-	return ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_task,
+		func(ctx context.Context) (any, error) {
+			return obj.Task(ctx)
+		},
+		nil,
+		ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcess_task(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9547,31 +4634,19 @@ func (ec *executionContext) fieldContext_HostProcess_task(_ context.Context, fie
 }
 
 func (ec *executionContext) _HostProcessConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcessConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcessConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.HostProcessEdge)
-	fc.Result = res
-	return ec.marshalOHostProcessEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcessConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOHostProcessEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcessConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9594,34 +4669,19 @@ func (ec *executionContext) fieldContext_HostProcessConnection_edges(_ context.C
 }
 
 func (ec *executionContext) _HostProcessConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcessConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcessConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcessConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcessConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9648,34 +4708,19 @@ func (ec *executionContext) fieldContext_HostProcessConnection_pageInfo(_ contex
 }
 
 func (ec *executionContext) _HostProcessConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcessConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcessConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcessConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcessConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9692,31 +4737,19 @@ func (ec *executionContext) fieldContext_HostProcessConnection_totalCount(_ cont
 }
 
 func (ec *executionContext) _HostProcessEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcessEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcessEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostProcess)
-	fc.Result = res
-	return ec.marshalOHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcessEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcessEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9763,34 +4796,19 @@ func (ec *executionContext) fieldContext_HostProcessEdge_node(_ context.Context,
 }
 
 func (ec *executionContext) _HostProcessEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcessEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HostProcessEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcessEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_HostProcessEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9807,34 +4825,19 @@ func (ec *executionContext) fieldContext_HostProcessEdge_cursor(_ context.Contex
 }
 
 func (ec *executionContext) _Link_id(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9851,34 +4854,19 @@ func (ec *executionContext) fieldContext_Link_id(_ context.Context, field graphq
 }
 
 func (ec *executionContext) _Link_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9895,34 +4883,19 @@ func (ec *executionContext) fieldContext_Link_createdAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Link_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9939,34 +4912,19 @@ func (ec *executionContext) fieldContext_Link_lastModifiedAt(_ context.Context, 
 }
 
 func (ec *executionContext) _Link_path(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_path(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Path, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_path,
+		func(ctx context.Context) (any, error) {
+			return obj.Path, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9983,34 +4941,19 @@ func (ec *executionContext) fieldContext_Link_path(_ context.Context, field grap
 }
 
 func (ec *executionContext) _Link_expiresAt(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_expiresAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExpiresAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_expiresAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ExpiresAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10027,34 +4970,19 @@ func (ec *executionContext) fieldContext_Link_expiresAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Link_downloadsRemaining(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_downloadsRemaining(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DownloadsRemaining, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_downloadsRemaining,
+		func(ctx context.Context) (any, error) {
+			return obj.DownloadsRemaining, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_downloadsRemaining(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10071,34 +4999,19 @@ func (ec *executionContext) fieldContext_Link_downloadsRemaining(_ context.Conte
 }
 
 func (ec *executionContext) _Link_asset(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Link_asset(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Asset(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Asset)
-	fc.Result = res
-	return ec.marshalNAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Link_asset,
+		func(ctx context.Context) (any, error) {
+			return obj.Asset(ctx)
+		},
+		nil,
+		ec.marshalNAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Link_asset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10133,31 +5046,19 @@ func (ec *executionContext) fieldContext_Link_asset(_ context.Context, field gra
 }
 
 func (ec *executionContext) _LinkConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.LinkConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LinkConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.LinkEdge)
-	fc.Result = res
-	return ec.marshalOLinkEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LinkConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOLinkEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_LinkConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10180,34 +5081,19 @@ func (ec *executionContext) fieldContext_LinkConnection_edges(_ context.Context,
 }
 
 func (ec *executionContext) _LinkConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.LinkConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LinkConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LinkConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_LinkConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10234,34 +5120,19 @@ func (ec *executionContext) fieldContext_LinkConnection_pageInfo(_ context.Conte
 }
 
 func (ec *executionContext) _LinkConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.LinkConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LinkConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LinkConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_LinkConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10278,31 +5149,19 @@ func (ec *executionContext) fieldContext_LinkConnection_totalCount(_ context.Con
 }
 
 func (ec *executionContext) _LinkEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.LinkEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LinkEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Link)
-	fc.Result = res
-	return ec.marshalOLink2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLink(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LinkEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOLink2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLink,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_LinkEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10335,34 +5194,19 @@ func (ec *executionContext) fieldContext_LinkEdge_node(_ context.Context, field 
 }
 
 func (ec *executionContext) _LinkEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.LinkEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_LinkEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LinkEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_LinkEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10379,34 +5223,19 @@ func (ec *executionContext) fieldContext_LinkEdge_cursor(_ context.Context, fiel
 }
 
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasNextPage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_hasNextPage,
+		func(ctx context.Context) (any, error) {
+			return obj.HasNextPage, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10423,34 +5252,19 @@ func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context,
 }
 
 func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasPreviousPage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_hasPreviousPage,
+		func(ctx context.Context) (any, error) {
+			return obj.HasPreviousPage, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10467,31 +5281,19 @@ func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Cont
 }
 
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PageInfo_startCursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StartCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_startCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.StartCursor, nil
+		},
+		nil,
+		ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10508,31 +5310,19 @@ func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context,
 }
 
 func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PageInfo_endCursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EndCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_endCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.EndCursor, nil
+		},
+		nil,
+		ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10549,34 +5339,19 @@ func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, f
 }
 
 func (ec *executionContext) _Portal_id(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10593,34 +5368,19 @@ func (ec *executionContext) fieldContext_Portal_id(_ context.Context, field grap
 }
 
 func (ec *executionContext) _Portal_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10637,34 +5397,19 @@ func (ec *executionContext) fieldContext_Portal_createdAt(_ context.Context, fie
 }
 
 func (ec *executionContext) _Portal_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10681,31 +5426,19 @@ func (ec *executionContext) fieldContext_Portal_lastModifiedAt(_ context.Context
 }
 
 func (ec *executionContext) _Portal_closedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_closedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClosedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_closedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ClosedAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_closedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10722,34 +5455,19 @@ func (ec *executionContext) fieldContext_Portal_closedAt(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Portal_task(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_task(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Task(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Task)
-	fc.Result = res
-	return ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_task,
+		func(ctx context.Context) (any, error) {
+			return obj.Task(ctx)
+		},
+		nil,
+		ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_task(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10798,34 +5516,19 @@ func (ec *executionContext) fieldContext_Portal_task(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Portal_beacon(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_beacon(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Beacon(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Beacon)
-	fc.Result = res
-	return ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_beacon,
+		func(ctx context.Context) (any, error) {
+			return obj.Beacon(ctx)
+		},
+		nil,
+		ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_beacon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10872,34 +5575,19 @@ func (ec *executionContext) fieldContext_Portal_beacon(_ context.Context, field 
 }
 
 func (ec *executionContext) _Portal_owner(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_owner(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Owner(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_owner,
+		func(ctx context.Context) (any, error) {
+			return obj.Owner(ctx)
+		},
+		nil,
+		ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10932,34 +5620,20 @@ func (ec *executionContext) fieldContext_Portal_owner(_ context.Context, field g
 }
 
 func (ec *executionContext) _Portal_activeUsers(ctx context.Context, field graphql.CollectedField, obj *ent.Portal) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Portal_activeUsers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ActiveUsers(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.UserConnection)
-	fc.Result = res
-	return ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Portal_activeUsers,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ActiveUsers(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
+		},
+		nil,
+		ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Portal_activeUsers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10995,31 +5669,19 @@ func (ec *executionContext) fieldContext_Portal_activeUsers(ctx context.Context,
 }
 
 func (ec *executionContext) _PortalConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.PortalConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PortalConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.PortalEdge)
-	fc.Result = res
-	return ec.marshalOPortalEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PortalConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOPortalEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_PortalConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11042,34 +5704,19 @@ func (ec *executionContext) fieldContext_PortalConnection_edges(_ context.Contex
 }
 
 func (ec *executionContext) _PortalConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.PortalConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PortalConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PortalConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_PortalConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11096,34 +5743,19 @@ func (ec *executionContext) fieldContext_PortalConnection_pageInfo(_ context.Con
 }
 
 func (ec *executionContext) _PortalConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.PortalConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PortalConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PortalConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_PortalConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11140,31 +5772,19 @@ func (ec *executionContext) fieldContext_PortalConnection_totalCount(_ context.C
 }
 
 func (ec *executionContext) _PortalEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.PortalEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PortalEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Portal)
-	fc.Result = res
-	return ec.marshalOPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PortalEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_PortalEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11199,34 +5819,19 @@ func (ec *executionContext) fieldContext_PortalEdge_node(_ context.Context, fiel
 }
 
 func (ec *executionContext) _PortalEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.PortalEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PortalEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PortalEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_PortalEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11243,31 +5848,20 @@ func (ec *executionContext) fieldContext_PortalEdge_cursor(_ context.Context, fi
 }
 
 func (ec *executionContext) _Query_node(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Node(rctx, fc.Args["id"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(ent.Noder)
-	fc.Result = res
-	return ec.marshalONode2realmᚗpubᚋtavernᚋinternalᚋentᚐNoder(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_node,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Node(ctx, fc.Args["id"].(int))
+		},
+		nil,
+		ec.marshalONode2realmᚗpubᚋtavernᚋinternalᚋentᚐNoder,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11295,34 +5889,20 @@ func (ec *executionContext) fieldContext_Query_node(ctx context.Context, field g
 }
 
 func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_nodes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Nodes(rctx, fc.Args["ids"].([]int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]ent.Noder)
-	fc.Result = res
-	return ec.marshalNNode2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚐNoder(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_nodes,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Nodes(ctx, fc.Args["ids"].([]int))
+		},
+		nil,
+		ec.marshalNNode2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚐNoder,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11350,61 +5930,38 @@ func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_assets(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Assets(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AssetOrder), fc.Args["where"].(*ent.AssetWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_assets,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Assets(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AssetOrder), fc.Args["where"].(*ent.AssetWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.AssetConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.AssetConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.AssetConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.AssetConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.AssetConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.AssetConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.AssetConnection)
-	fc.Result = res
-	return ec.marshalNAssetConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNAssetConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_assets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11440,61 +5997,38 @@ func (ec *executionContext) fieldContext_Query_assets(ctx context.Context, field
 }
 
 func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_quests(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Quests(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.QuestOrder), fc.Args["where"].(*ent.QuestWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_quests,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Quests(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.QuestOrder), fc.Args["where"].(*ent.QuestWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.QuestConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.QuestConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.QuestConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.QuestConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.QuestConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.QuestConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.QuestConnection)
-	fc.Result = res
-	return ec.marshalNQuestConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNQuestConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_quests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11530,61 +6064,38 @@ func (ec *executionContext) fieldContext_Query_quests(ctx context.Context, field
 }
 
 func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_tasks(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tasks(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_tasks,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.TaskConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.TaskConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.TaskConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.TaskConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.TaskConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.TaskConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TaskConnection)
-	fc.Result = res
-	return ec.marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_tasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11620,61 +6131,38 @@ func (ec *executionContext) fieldContext_Query_tasks(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Query_repositories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_repositories(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Repositories(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.RepositoryOrder), fc.Args["where"].(*ent.RepositoryWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_repositories,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Repositories(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.RepositoryOrder), fc.Args["where"].(*ent.RepositoryWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.RepositoryConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.RepositoryConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.RepositoryConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.RepositoryConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.RepositoryConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.RepositoryConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.RepositoryConnection)
-	fc.Result = res
-	return ec.marshalNRepositoryConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNRepositoryConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_repositories(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11710,61 +6198,38 @@ func (ec *executionContext) fieldContext_Query_repositories(ctx context.Context,
 }
 
 func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_beacons(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Beacons(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_beacons,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Beacons(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.BeaconConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.BeaconConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.BeaconConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.BeaconConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.BeaconConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.BeaconConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.BeaconConnection)
-	fc.Result = res
-	return ec.marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11800,61 +6265,38 @@ func (ec *executionContext) fieldContext_Query_beacons(ctx context.Context, fiel
 }
 
 func (ec *executionContext) _Query_hosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_hosts(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Hosts(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_hosts,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Hosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.HostConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.HostConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.HostConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.HostConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.HostConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.HostConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostConnection)
-	fc.Result = res
-	return ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_hosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11890,61 +6332,38 @@ func (ec *executionContext) fieldContext_Query_hosts(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_tags(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tags(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_tags,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Tags(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.TagConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.TagConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.TagConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.TagConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.TagConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.TagConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TagConnection)
-	fc.Result = res
-	return ec.marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11980,61 +6399,38 @@ func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field g
 }
 
 func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_tomes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tomes(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_tomes,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.TomeConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.TomeConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.TomeConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.TomeConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.TomeConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.TomeConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TomeConnection)
-	fc.Result = res
-	return ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12070,61 +6466,38 @@ func (ec *executionContext) fieldContext_Query_tomes(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_users(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Users(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_users,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Users(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.UserConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.UserConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.UserConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.UserConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.UserConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.UserConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.UserConnection)
-	fc.Result = res
-	return ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12160,61 +6533,38 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Query_portals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_portals(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Portals(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.PortalOrder), fc.Args["where"].(*ent.PortalWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_portals,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Portals(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.PortalOrder), fc.Args["where"].(*ent.PortalWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.PortalConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.PortalConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.PortalConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.PortalConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.PortalConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.PortalConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.PortalConnection)
-	fc.Result = res
-	return ec.marshalNPortalConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNPortalConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_portals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12250,61 +6600,38 @@ func (ec *executionContext) fieldContext_Query_portals(ctx context.Context, fiel
 }
 
 func (ec *executionContext) _Query_shells(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_shells(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Shells(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
-		}
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_shells,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-		directive1 := func(ctx context.Context) (any, error) {
-			role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
-			if err != nil {
-				var zeroVal *ent.ShellConnection
-				return zeroVal, err
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.ShellConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.ShellConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
 			}
-			if ec.directives.RequireRole == nil {
-				var zeroVal *ent.ShellConnection
-				return zeroVal, errors.New("directive requireRole is not implemented")
-			}
-			return ec.directives.RequireRole(ctx, nil, directive0, role)
-		}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.ShellConnection); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *realm.pub/tavern/internal/ent.ShellConnection`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.ShellConnection)
-	fc.Result = res
-	return ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection(ctx, field.Selections, res)
+			next = directive1
+			return next
+		},
+		ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_shells(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12340,34 +6667,19 @@ func (ec *executionContext) fieldContext_Query_shells(ctx context.Context, field
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_me(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Me(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_me,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().Me(ctx)
+		},
+		nil,
+		ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12400,31 +6712,20 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query___type(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.introspectType(fc.Args["name"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*introspection.Type)
-	fc.Result = res
-	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query___type,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.introspectType(fc.Args["name"].(string))
+		},
+		nil,
+		ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12441,6 +6742,8 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -12453,8 +6756,8 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -12474,31 +6777,19 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 }
 
 func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query___schema(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.introspectSchema()
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*introspection.Schema)
-	fc.Result = res
-	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query___schema,
+		func(ctx context.Context) (any, error) {
+			return ec.introspectSchema()
+		},
+		nil,
+		ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12529,34 +6820,19 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 }
 
 func (ec *executionContext) _Quest_id(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12573,34 +6849,19 @@ func (ec *executionContext) fieldContext_Quest_id(_ context.Context, field graph
 }
 
 func (ec *executionContext) _Quest_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12617,34 +6878,19 @@ func (ec *executionContext) fieldContext_Quest_createdAt(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Quest_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12661,34 +6907,19 @@ func (ec *executionContext) fieldContext_Quest_lastModifiedAt(_ context.Context,
 }
 
 func (ec *executionContext) _Quest_name(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12705,31 +6936,19 @@ func (ec *executionContext) fieldContext_Quest_name(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Quest_parameters(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_parameters(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Parameters, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_parameters,
+		func(ctx context.Context) (any, error) {
+			return obj.Parameters, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_parameters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12746,31 +6965,19 @@ func (ec *executionContext) fieldContext_Quest_parameters(_ context.Context, fie
 }
 
 func (ec *executionContext) _Quest_paramDefsAtCreation(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ParamDefsAtCreation, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_paramDefsAtCreation,
+		func(ctx context.Context) (any, error) {
+			return obj.ParamDefsAtCreation, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_paramDefsAtCreation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12787,31 +6994,19 @@ func (ec *executionContext) fieldContext_Quest_paramDefsAtCreation(_ context.Con
 }
 
 func (ec *executionContext) _Quest_eldritchAtCreation(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EldritchAtCreation, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_eldritchAtCreation,
+		func(ctx context.Context) (any, error) {
+			return obj.EldritchAtCreation, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_eldritchAtCreation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12828,34 +7023,19 @@ func (ec *executionContext) fieldContext_Quest_eldritchAtCreation(_ context.Cont
 }
 
 func (ec *executionContext) _Quest_tome(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_tome(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tome(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Tome)
-	fc.Result = res
-	return ec.marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_tome,
+		func(ctx context.Context) (any, error) {
+			return obj.Tome(ctx)
+		},
+		nil,
+		ec.marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_tome(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12908,31 +7088,19 @@ func (ec *executionContext) fieldContext_Quest_tome(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Quest_bundle(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_bundle(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Bundle(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Asset)
-	fc.Result = res
-	return ec.marshalOAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_bundle,
+		func(ctx context.Context) (any, error) {
+			return obj.Bundle(ctx)
+		},
+		nil,
+		ec.marshalOAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_bundle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12967,34 +7135,20 @@ func (ec *executionContext) fieldContext_Quest_bundle(_ context.Context, field g
 }
 
 func (ec *executionContext) _Quest_tasks(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_tasks(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TaskConnection)
-	fc.Result = res
-	return ec.marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_tasks,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
+		},
+		nil,
+		ec.marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_tasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13030,31 +7184,19 @@ func (ec *executionContext) fieldContext_Quest_tasks(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Quest_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Quest_creator(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Creator(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_creator,
+		func(ctx context.Context) (any, error) {
+			return obj.Creator(ctx)
+		},
+		nil,
+		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Quest_creator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13087,31 +7229,19 @@ func (ec *executionContext) fieldContext_Quest_creator(_ context.Context, field 
 }
 
 func (ec *executionContext) _QuestConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_QuestConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.QuestEdge)
-	fc.Result = res
-	return ec.marshalOQuestEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_QuestConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOQuestEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_QuestConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13134,34 +7264,19 @@ func (ec *executionContext) fieldContext_QuestConnection_edges(_ context.Context
 }
 
 func (ec *executionContext) _QuestConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_QuestConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_QuestConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_QuestConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13188,34 +7303,19 @@ func (ec *executionContext) fieldContext_QuestConnection_pageInfo(_ context.Cont
 }
 
 func (ec *executionContext) _QuestConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_QuestConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_QuestConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_QuestConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13232,31 +7332,19 @@ func (ec *executionContext) fieldContext_QuestConnection_totalCount(_ context.Co
 }
 
 func (ec *executionContext) _QuestEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.QuestEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_QuestEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Quest)
-	fc.Result = res
-	return ec.marshalOQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_QuestEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_QuestEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13297,34 +7385,19 @@ func (ec *executionContext) fieldContext_QuestEdge_node(_ context.Context, field
 }
 
 func (ec *executionContext) _QuestEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.QuestEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_QuestEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_QuestEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_QuestEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13341,34 +7414,19 @@ func (ec *executionContext) fieldContext_QuestEdge_cursor(_ context.Context, fie
 }
 
 func (ec *executionContext) _Repository_id(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13385,34 +7443,19 @@ func (ec *executionContext) fieldContext_Repository_id(_ context.Context, field 
 }
 
 func (ec *executionContext) _Repository_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13429,34 +7472,19 @@ func (ec *executionContext) fieldContext_Repository_createdAt(_ context.Context,
 }
 
 func (ec *executionContext) _Repository_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13473,34 +7501,19 @@ func (ec *executionContext) fieldContext_Repository_lastModifiedAt(_ context.Con
 }
 
 func (ec *executionContext) _Repository_url(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_url(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_url,
+		func(ctx context.Context) (any, error) {
+			return obj.URL, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13517,34 +7530,19 @@ func (ec *executionContext) fieldContext_Repository_url(_ context.Context, field
 }
 
 func (ec *executionContext) _Repository_publicKey(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_publicKey(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PublicKey, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_publicKey,
+		func(ctx context.Context) (any, error) {
+			return obj.PublicKey, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_publicKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13561,31 +7559,19 @@ func (ec *executionContext) fieldContext_Repository_publicKey(_ context.Context,
 }
 
 func (ec *executionContext) _Repository_lastImportedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_lastImportedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastImportedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_lastImportedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastImportedAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_lastImportedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13602,34 +7588,20 @@ func (ec *executionContext) fieldContext_Repository_lastImportedAt(_ context.Con
 }
 
 func (ec *executionContext) _Repository_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_tomes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TomeConnection)
-	fc.Result = res
-	return ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_tomes,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
+		},
+		nil,
+		ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13665,31 +7637,19 @@ func (ec *executionContext) fieldContext_Repository_tomes(ctx context.Context, f
 }
 
 func (ec *executionContext) _Repository_owner(ctx context.Context, field graphql.CollectedField, obj *ent.Repository) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Repository_owner(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Owner(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Repository_owner,
+		func(ctx context.Context) (any, error) {
+			return obj.Owner(ctx)
+		},
+		nil,
+		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Repository_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13722,31 +7682,19 @@ func (ec *executionContext) fieldContext_Repository_owner(_ context.Context, fie
 }
 
 func (ec *executionContext) _RepositoryConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.RepositoryConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RepositoryConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.RepositoryEdge)
-	fc.Result = res
-	return ec.marshalORepositoryEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RepositoryConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalORepositoryEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_RepositoryConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13769,34 +7717,19 @@ func (ec *executionContext) fieldContext_RepositoryConnection_edges(_ context.Co
 }
 
 func (ec *executionContext) _RepositoryConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.RepositoryConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RepositoryConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RepositoryConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_RepositoryConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13823,34 +7756,19 @@ func (ec *executionContext) fieldContext_RepositoryConnection_pageInfo(_ context
 }
 
 func (ec *executionContext) _RepositoryConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.RepositoryConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RepositoryConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RepositoryConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_RepositoryConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13867,31 +7785,19 @@ func (ec *executionContext) fieldContext_RepositoryConnection_totalCount(_ conte
 }
 
 func (ec *executionContext) _RepositoryEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.RepositoryEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RepositoryEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Repository)
-	fc.Result = res
-	return ec.marshalORepository2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepository(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RepositoryEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalORepository2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepository,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_RepositoryEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13926,34 +7832,19 @@ func (ec *executionContext) fieldContext_RepositoryEdge_node(_ context.Context, 
 }
 
 func (ec *executionContext) _RepositoryEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.RepositoryEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RepositoryEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_RepositoryEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_RepositoryEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13970,34 +7861,19 @@ func (ec *executionContext) fieldContext_RepositoryEdge_cursor(_ context.Context
 }
 
 func (ec *executionContext) _Shell_id(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14014,34 +7890,19 @@ func (ec *executionContext) fieldContext_Shell_id(_ context.Context, field graph
 }
 
 func (ec *executionContext) _Shell_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14058,34 +7919,19 @@ func (ec *executionContext) fieldContext_Shell_createdAt(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Shell_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14102,31 +7948,19 @@ func (ec *executionContext) fieldContext_Shell_lastModifiedAt(_ context.Context,
 }
 
 func (ec *executionContext) _Shell_closedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_closedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClosedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_closedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ClosedAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_closedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14143,34 +7977,19 @@ func (ec *executionContext) fieldContext_Shell_closedAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Shell_task(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_task(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Task(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Task)
-	fc.Result = res
-	return ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_task,
+		func(ctx context.Context) (any, error) {
+			return obj.Task(ctx)
+		},
+		nil,
+		ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_task(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14219,34 +8038,19 @@ func (ec *executionContext) fieldContext_Shell_task(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Shell_beacon(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_beacon(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Beacon(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Beacon)
-	fc.Result = res
-	return ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_beacon,
+		func(ctx context.Context) (any, error) {
+			return obj.Beacon(ctx)
+		},
+		nil,
+		ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_beacon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14293,34 +8097,19 @@ func (ec *executionContext) fieldContext_Shell_beacon(_ context.Context, field g
 }
 
 func (ec *executionContext) _Shell_owner(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_owner(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Owner(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_owner,
+		func(ctx context.Context) (any, error) {
+			return obj.Owner(ctx)
+		},
+		nil,
+		ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14353,34 +8142,20 @@ func (ec *executionContext) fieldContext_Shell_owner(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Shell_activeUsers(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Shell_activeUsers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ActiveUsers(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.UserConnection)
-	fc.Result = res
-	return ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_activeUsers,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ActiveUsers(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
+		},
+		nil,
+		ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Shell_activeUsers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14416,31 +8191,19 @@ func (ec *executionContext) fieldContext_Shell_activeUsers(ctx context.Context, 
 }
 
 func (ec *executionContext) _ShellConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.ShellConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShellConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.ShellEdge)
-	fc.Result = res
-	return ec.marshalOShellEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ShellConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOShellEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_ShellConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14463,34 +8226,19 @@ func (ec *executionContext) fieldContext_ShellConnection_edges(_ context.Context
 }
 
 func (ec *executionContext) _ShellConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.ShellConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShellConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ShellConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_ShellConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14517,34 +8265,19 @@ func (ec *executionContext) fieldContext_ShellConnection_pageInfo(_ context.Cont
 }
 
 func (ec *executionContext) _ShellConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.ShellConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShellConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ShellConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_ShellConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14561,31 +8294,19 @@ func (ec *executionContext) fieldContext_ShellConnection_totalCount(_ context.Co
 }
 
 func (ec *executionContext) _ShellEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.ShellEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShellEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Shell)
-	fc.Result = res
-	return ec.marshalOShell2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShell(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ShellEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOShell2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShell,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_ShellEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14620,34 +8341,19 @@ func (ec *executionContext) fieldContext_ShellEdge_node(_ context.Context, field
 }
 
 func (ec *executionContext) _ShellEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.ShellEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShellEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ShellEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_ShellEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14664,34 +8370,19 @@ func (ec *executionContext) fieldContext_ShellEdge_cursor(_ context.Context, fie
 }
 
 func (ec *executionContext) _Tag_id(ctx context.Context, field graphql.CollectedField, obj *ent.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tag_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tag_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14708,34 +8399,19 @@ func (ec *executionContext) fieldContext_Tag_id(_ context.Context, field graphql
 }
 
 func (ec *executionContext) _Tag_name(ctx context.Context, field graphql.CollectedField, obj *ent.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tag_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tag_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14752,34 +8428,19 @@ func (ec *executionContext) fieldContext_Tag_name(_ context.Context, field graph
 }
 
 func (ec *executionContext) _Tag_kind(ctx context.Context, field graphql.CollectedField, obj *ent.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_kind(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Kind, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(tag.Kind)
-	fc.Result = res
-	return ec.marshalNTagKind2realmᚗpubᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tag_kind,
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		ec.marshalNTagKind2realmᚗpubᚋtavernᚋinternalᚋentᚋtagᚐKind,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tag_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14796,34 +8457,20 @@ func (ec *executionContext) fieldContext_Tag_kind(_ context.Context, field graph
 }
 
 func (ec *executionContext) _Tag_hosts(ctx context.Context, field graphql.CollectedField, obj *ent.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_hosts(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Hosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostConnection)
-	fc.Result = res
-	return ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tag_hosts,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Hosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
+		},
+		nil,
+		ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tag_hosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14859,31 +8506,19 @@ func (ec *executionContext) fieldContext_Tag_hosts(ctx context.Context, field gr
 }
 
 func (ec *executionContext) _TagConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.TagConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TagConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.TagEdge)
-	fc.Result = res
-	return ec.marshalOTagEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TagConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOTagEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_TagConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14906,34 +8541,19 @@ func (ec *executionContext) fieldContext_TagConnection_edges(_ context.Context, 
 }
 
 func (ec *executionContext) _TagConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.TagConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TagConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TagConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TagConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14960,34 +8580,19 @@ func (ec *executionContext) fieldContext_TagConnection_pageInfo(_ context.Contex
 }
 
 func (ec *executionContext) _TagConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.TagConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TagConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TagConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TagConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15004,31 +8609,19 @@ func (ec *executionContext) fieldContext_TagConnection_totalCount(_ context.Cont
 }
 
 func (ec *executionContext) _TagEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.TagEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TagEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Tag)
-	fc.Result = res
-	return ec.marshalOTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TagEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_TagEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15055,34 +8648,19 @@ func (ec *executionContext) fieldContext_TagEdge_node(_ context.Context, field g
 }
 
 func (ec *executionContext) _TagEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.TagEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TagEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TagEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TagEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15099,34 +8677,19 @@ func (ec *executionContext) fieldContext_TagEdge_cursor(_ context.Context, field
 }
 
 func (ec *executionContext) _Task_id(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15143,34 +8706,19 @@ func (ec *executionContext) fieldContext_Task_id(_ context.Context, field graphq
 }
 
 func (ec *executionContext) _Task_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15187,34 +8735,19 @@ func (ec *executionContext) fieldContext_Task_createdAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Task_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15231,31 +8764,19 @@ func (ec *executionContext) fieldContext_Task_lastModifiedAt(_ context.Context, 
 }
 
 func (ec *executionContext) _Task_claimedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_claimedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClaimedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_claimedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ClaimedAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_claimedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15272,31 +8793,19 @@ func (ec *executionContext) fieldContext_Task_claimedAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Task_execStartedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_execStartedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExecStartedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_execStartedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ExecStartedAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_execStartedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15313,31 +8822,19 @@ func (ec *executionContext) fieldContext_Task_execStartedAt(_ context.Context, f
 }
 
 func (ec *executionContext) _Task_execFinishedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_execFinishedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExecFinishedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_execFinishedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ExecFinishedAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_execFinishedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15354,31 +8851,19 @@ func (ec *executionContext) fieldContext_Task_execFinishedAt(_ context.Context, 
 }
 
 func (ec *executionContext) _Task_output(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_output(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Output, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_output,
+		func(ctx context.Context) (any, error) {
+			return obj.Output, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_output(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15395,34 +8880,19 @@ func (ec *executionContext) fieldContext_Task_output(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Task_outputSize(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_outputSize(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OutputSize, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_outputSize,
+		func(ctx context.Context) (any, error) {
+			return obj.OutputSize, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_outputSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15439,31 +8909,19 @@ func (ec *executionContext) fieldContext_Task_outputSize(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Task_error(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_error(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Error, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_error,
+		func(ctx context.Context) (any, error) {
+			return obj.Error, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15480,34 +8938,19 @@ func (ec *executionContext) fieldContext_Task_error(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Task_quest(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_quest(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Quest(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Quest)
-	fc.Result = res
-	return ec.marshalNQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_quest,
+		func(ctx context.Context) (any, error) {
+			return obj.Quest(ctx)
+		},
+		nil,
+		ec.marshalNQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_quest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15548,34 +8991,19 @@ func (ec *executionContext) fieldContext_Task_quest(_ context.Context, field gra
 }
 
 func (ec *executionContext) _Task_beacon(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_beacon(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Beacon(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Beacon)
-	fc.Result = res
-	return ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_beacon,
+		func(ctx context.Context) (any, error) {
+			return obj.Beacon(ctx)
+		},
+		nil,
+		ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_beacon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15622,34 +9050,20 @@ func (ec *executionContext) fieldContext_Task_beacon(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Task_reportedFiles(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_reportedFiles(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReportedFiles(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostFileOrder), fc.Args["where"].(*ent.HostFileWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostFileConnection)
-	fc.Result = res
-	return ec.marshalNHostFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_reportedFiles,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ReportedFiles(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostFileOrder), fc.Args["where"].(*ent.HostFileWhereInput))
+		},
+		nil,
+		ec.marshalNHostFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_reportedFiles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15685,34 +9099,20 @@ func (ec *executionContext) fieldContext_Task_reportedFiles(ctx context.Context,
 }
 
 func (ec *executionContext) _Task_reportedProcesses(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_reportedProcesses(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReportedProcesses(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostProcessOrder), fc.Args["where"].(*ent.HostProcessWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostProcessConnection)
-	fc.Result = res
-	return ec.marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_reportedProcesses,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ReportedProcesses(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostProcessOrder), fc.Args["where"].(*ent.HostProcessWhereInput))
+		},
+		nil,
+		ec.marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_reportedProcesses(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15748,34 +9148,20 @@ func (ec *executionContext) fieldContext_Task_reportedProcesses(ctx context.Cont
 }
 
 func (ec *executionContext) _Task_reportedCredentials(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_reportedCredentials(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReportedCredentials(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostCredentialOrder), fc.Args["where"].(*ent.HostCredentialWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostCredentialConnection)
-	fc.Result = res
-	return ec.marshalNHostCredentialConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_reportedCredentials,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ReportedCredentials(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostCredentialOrder), fc.Args["where"].(*ent.HostCredentialWhereInput))
+		},
+		nil,
+		ec.marshalNHostCredentialConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_reportedCredentials(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15811,34 +9197,20 @@ func (ec *executionContext) fieldContext_Task_reportedCredentials(ctx context.Co
 }
 
 func (ec *executionContext) _Task_shells(ctx context.Context, field graphql.CollectedField, obj *ent.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_shells(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.ShellConnection)
-	fc.Result = res
-	return ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Task_shells,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
+		},
+		nil,
+		ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Task_shells(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15874,31 +9246,19 @@ func (ec *executionContext) fieldContext_Task_shells(ctx context.Context, field 
 }
 
 func (ec *executionContext) _TaskConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.TaskConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TaskConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.TaskEdge)
-	fc.Result = res
-	return ec.marshalOTaskEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TaskConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOTaskEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_TaskConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15921,34 +9281,19 @@ func (ec *executionContext) fieldContext_TaskConnection_edges(_ context.Context,
 }
 
 func (ec *executionContext) _TaskConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.TaskConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TaskConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TaskConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TaskConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15975,34 +9320,19 @@ func (ec *executionContext) fieldContext_TaskConnection_pageInfo(_ context.Conte
 }
 
 func (ec *executionContext) _TaskConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.TaskConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TaskConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TaskConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TaskConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16019,31 +9349,19 @@ func (ec *executionContext) fieldContext_TaskConnection_totalCount(_ context.Con
 }
 
 func (ec *executionContext) _TaskEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.TaskEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TaskEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Task)
-	fc.Result = res
-	return ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TaskEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_TaskEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16092,34 +9410,19 @@ func (ec *executionContext) fieldContext_TaskEdge_node(_ context.Context, field 
 }
 
 func (ec *executionContext) _TaskEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.TaskEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TaskEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TaskEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TaskEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16136,34 +9439,19 @@ func (ec *executionContext) fieldContext_TaskEdge_cursor(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Tome_id(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16180,34 +9468,19 @@ func (ec *executionContext) fieldContext_Tome_id(_ context.Context, field graphq
 }
 
 func (ec *executionContext) _Tome_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_createdAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16224,34 +9497,19 @@ func (ec *executionContext) fieldContext_Tome_createdAt(_ context.Context, field
 }
 
 func (ec *executionContext) _Tome_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_lastModifiedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastModifiedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16268,34 +9526,19 @@ func (ec *executionContext) fieldContext_Tome_lastModifiedAt(_ context.Context, 
 }
 
 func (ec *executionContext) _Tome_name(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16312,34 +9555,19 @@ func (ec *executionContext) fieldContext_Tome_name(_ context.Context, field grap
 }
 
 func (ec *executionContext) _Tome_description(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_description(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_description,
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16356,34 +9584,19 @@ func (ec *executionContext) fieldContext_Tome_description(_ context.Context, fie
 }
 
 func (ec *executionContext) _Tome_author(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_author(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Author, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_author,
+		func(ctx context.Context) (any, error) {
+			return obj.Author, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16400,34 +9613,19 @@ func (ec *executionContext) fieldContext_Tome_author(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Tome_supportModel(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_supportModel(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SupportModel, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(tome.SupportModel)
-	fc.Result = res
-	return ec.marshalNTomeSupportModel2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐSupportModel(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_supportModel,
+		func(ctx context.Context) (any, error) {
+			return obj.SupportModel, nil
+		},
+		nil,
+		ec.marshalNTomeSupportModel2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐSupportModel,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_supportModel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16444,34 +9642,19 @@ func (ec *executionContext) fieldContext_Tome_supportModel(_ context.Context, fi
 }
 
 func (ec *executionContext) _Tome_tactic(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_tactic(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tactic, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(tome.Tactic)
-	fc.Result = res
-	return ec.marshalNTomeTactic2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐTactic(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_tactic,
+		func(ctx context.Context) (any, error) {
+			return obj.Tactic, nil
+		},
+		nil,
+		ec.marshalNTomeTactic2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐTactic,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_tactic(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16488,34 +9671,19 @@ func (ec *executionContext) fieldContext_Tome_tactic(_ context.Context, field gr
 }
 
 func (ec *executionContext) _Tome_runOnNewBeaconCallback(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_runOnNewBeaconCallback(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RunOnNewBeaconCallback, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_runOnNewBeaconCallback,
+		func(ctx context.Context) (any, error) {
+			return obj.RunOnNewBeaconCallback, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_runOnNewBeaconCallback(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16532,34 +9700,19 @@ func (ec *executionContext) fieldContext_Tome_runOnNewBeaconCallback(_ context.C
 }
 
 func (ec *executionContext) _Tome_runOnFirstHostCallback(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_runOnFirstHostCallback(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RunOnFirstHostCallback, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_runOnFirstHostCallback,
+		func(ctx context.Context) (any, error) {
+			return obj.RunOnFirstHostCallback, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_runOnFirstHostCallback(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16576,34 +9729,19 @@ func (ec *executionContext) fieldContext_Tome_runOnFirstHostCallback(_ context.C
 }
 
 func (ec *executionContext) _Tome_runOnSchedule(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_runOnSchedule(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RunOnSchedule, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_runOnSchedule,
+		func(ctx context.Context) (any, error) {
+			return obj.RunOnSchedule, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_runOnSchedule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16620,31 +9758,19 @@ func (ec *executionContext) fieldContext_Tome_runOnSchedule(_ context.Context, f
 }
 
 func (ec *executionContext) _Tome_paramDefs(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_paramDefs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ParamDefs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_paramDefs,
+		func(ctx context.Context) (any, error) {
+			return obj.ParamDefs, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_paramDefs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16661,34 +9787,19 @@ func (ec *executionContext) fieldContext_Tome_paramDefs(_ context.Context, field
 }
 
 func (ec *executionContext) _Tome_eldritch(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_eldritch(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Eldritch, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_eldritch,
+		func(ctx context.Context) (any, error) {
+			return obj.Eldritch, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_eldritch(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16705,34 +9816,20 @@ func (ec *executionContext) fieldContext_Tome_eldritch(_ context.Context, field 
 }
 
 func (ec *executionContext) _Tome_assets(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_assets(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Assets(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AssetOrder), fc.Args["where"].(*ent.AssetWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.AssetConnection)
-	fc.Result = res
-	return ec.marshalNAssetConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_assets,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Assets(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AssetOrder), fc.Args["where"].(*ent.AssetWhereInput))
+		},
+		nil,
+		ec.marshalNAssetConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_assets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16768,31 +9865,19 @@ func (ec *executionContext) fieldContext_Tome_assets(ctx context.Context, field 
 }
 
 func (ec *executionContext) _Tome_uploader(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_uploader(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Uploader(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_uploader,
+		func(ctx context.Context) (any, error) {
+			return obj.Uploader(ctx)
+		},
+		nil,
+		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_uploader(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16825,31 +9910,19 @@ func (ec *executionContext) fieldContext_Tome_uploader(_ context.Context, field 
 }
 
 func (ec *executionContext) _Tome_repository(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_repository(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Repository(ctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Repository)
-	fc.Result = res
-	return ec.marshalORepository2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepository(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_repository,
+		func(ctx context.Context) (any, error) {
+			return obj.Repository(ctx)
+		},
+		nil,
+		ec.marshalORepository2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepository,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_repository(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16884,34 +9957,20 @@ func (ec *executionContext) fieldContext_Tome_repository(_ context.Context, fiel
 }
 
 func (ec *executionContext) _Tome_scheduledHosts(ctx context.Context, field graphql.CollectedField, obj *ent.Tome) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tome_scheduledHosts(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ScheduledHosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.HostConnection)
-	fc.Result = res
-	return ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tome_scheduledHosts,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ScheduledHosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
+		},
+		nil,
+		ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_Tome_scheduledHosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16947,31 +10006,19 @@ func (ec *executionContext) fieldContext_Tome_scheduledHosts(ctx context.Context
 }
 
 func (ec *executionContext) _TomeConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.TomeConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TomeConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.TomeEdge)
-	fc.Result = res
-	return ec.marshalOTomeEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOTomeEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_TomeConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -16994,34 +10041,19 @@ func (ec *executionContext) fieldContext_TomeConnection_edges(_ context.Context,
 }
 
 func (ec *executionContext) _TomeConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.TomeConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TomeConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TomeConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17048,34 +10080,19 @@ func (ec *executionContext) fieldContext_TomeConnection_pageInfo(_ context.Conte
 }
 
 func (ec *executionContext) _TomeConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.TomeConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TomeConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TomeConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17092,31 +10109,19 @@ func (ec *executionContext) fieldContext_TomeConnection_totalCount(_ context.Con
 }
 
 func (ec *executionContext) _TomeEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.TomeEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TomeEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Tome)
-	fc.Result = res
-	return ec.marshalOTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_TomeEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17169,34 +10174,19 @@ func (ec *executionContext) fieldContext_TomeEdge_node(_ context.Context, field 
 }
 
 func (ec *executionContext) _TomeEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.TomeEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TomeEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_TomeEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17213,34 +10203,19 @@ func (ec *executionContext) fieldContext_TomeEdge_cursor(_ context.Context, fiel
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17257,34 +10232,19 @@ func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphq
 }
 
 func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17301,34 +10261,19 @@ func (ec *executionContext) fieldContext_User_name(_ context.Context, field grap
 }
 
 func (ec *executionContext) _User_photoURL(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_photoURL(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PhotoURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_photoURL,
+		func(ctx context.Context) (any, error) {
+			return obj.PhotoURL, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_photoURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17345,34 +10290,19 @@ func (ec *executionContext) fieldContext_User_photoURL(_ context.Context, field 
 }
 
 func (ec *executionContext) _User_isActivated(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_isActivated(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsActivated, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_isActivated,
+		func(ctx context.Context) (any, error) {
+			return obj.IsActivated, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_isActivated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17389,34 +10319,19 @@ func (ec *executionContext) fieldContext_User_isActivated(_ context.Context, fie
 }
 
 func (ec *executionContext) _User_isAdmin(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_isAdmin(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsAdmin, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_isAdmin,
+		func(ctx context.Context) (any, error) {
+			return obj.IsAdmin, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_isAdmin(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17433,34 +10348,20 @@ func (ec *executionContext) fieldContext_User_isAdmin(_ context.Context, field g
 }
 
 func (ec *executionContext) _User_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_tomes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.TomeConnection)
-	fc.Result = res
-	return ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_tomes,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
+		},
+		nil,
+		ec.marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_tomes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17496,34 +10397,20 @@ func (ec *executionContext) fieldContext_User_tomes(ctx context.Context, field g
 }
 
 func (ec *executionContext) _User_activeShells(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_activeShells(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ActiveShells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.ShellConnection)
-	fc.Result = res
-	return ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_activeShells,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ActiveShells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
+		},
+		nil,
+		ec.marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_User_activeShells(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17559,31 +10446,19 @@ func (ec *executionContext) fieldContext_User_activeShells(ctx context.Context, 
 }
 
 func (ec *executionContext) _UserConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.UserConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserConnection_edges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.UserEdge)
-	fc.Result = res
-	return ec.marshalOUserEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserEdge(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOUserEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserEdge,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_UserConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17606,34 +10481,19 @@ func (ec *executionContext) fieldContext_UserConnection_edges(_ context.Context,
 }
 
 func (ec *executionContext) _UserConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.UserConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserConnection_pageInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.PageInfo[int])
-	fc.Result = res
-	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_UserConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17660,34 +10520,19 @@ func (ec *executionContext) fieldContext_UserConnection_pageInfo(_ context.Conte
 }
 
 func (ec *executionContext) _UserConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.UserConnection) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserConnection_totalCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_UserConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17704,31 +10549,19 @@ func (ec *executionContext) fieldContext_UserConnection_totalCount(_ context.Con
 }
 
 func (ec *executionContext) _UserEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.UserEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserEdge_node(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		false,
+	)
 }
 
 func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17761,34 +10594,19 @@ func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field 
 }
 
 func (ec *executionContext) _UserEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.UserEdge) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UserEdge_cursor(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entgql.Cursor[int])
-	fc.Result = res
-	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_UserEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
 }
 
 func (ec *executionContext) fieldContext_UserEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -28159,83 +20977,87 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case *ent.Asset:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Asset(ctx, sel, obj)
-	case *ent.Beacon:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Beacon(ctx, sel, obj)
-	case *ent.Host:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Host(ctx, sel, obj)
-	case *ent.HostCredential:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._HostCredential(ctx, sel, obj)
-	case *ent.HostFile:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._HostFile(ctx, sel, obj)
-	case *ent.HostProcess:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._HostProcess(ctx, sel, obj)
-	case *ent.Link:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Link(ctx, sel, obj)
-	case *ent.Portal:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Portal(ctx, sel, obj)
-	case *ent.Quest:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Quest(ctx, sel, obj)
-	case *ent.Repository:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Repository(ctx, sel, obj)
-	case *ent.Shell:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Shell(ctx, sel, obj)
-	case *ent.Tag:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Tag(ctx, sel, obj)
-	case *ent.Task:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Task(ctx, sel, obj)
-	case *ent.Tome:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Tome(ctx, sel, obj)
 	case *ent.User:
 		if obj == nil {
 			return graphql.Null
 		}
 		return ec._User(ctx, sel, obj)
+	case *ent.Tome:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Tome(ctx, sel, obj)
+	case *ent.Task:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Task(ctx, sel, obj)
+	case *ent.Tag:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Tag(ctx, sel, obj)
+	case *ent.Shell:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Shell(ctx, sel, obj)
+	case *ent.Repository:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Repository(ctx, sel, obj)
+	case *ent.Quest:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Quest(ctx, sel, obj)
+	case *ent.Portal:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Portal(ctx, sel, obj)
+	case *ent.Link:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Link(ctx, sel, obj)
+	case *ent.HostProcess:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._HostProcess(ctx, sel, obj)
+	case *ent.HostFile:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._HostFile(ctx, sel, obj)
+	case *ent.HostCredential:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._HostCredential(ctx, sel, obj)
+	case *ent.Host:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Host(ctx, sel, obj)
+	case *ent.Beacon:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Beacon(ctx, sel, obj)
+	case *ent.Asset:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Asset(ctx, sel, obj)
 	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
+		if obj, ok := obj.(graphql.Marshaler); ok {
+			return obj
+		} else {
+			panic(fmt.Errorf("unexpected type %T; non-generated variants of Node must implement graphql.Marshaler", obj))
+		}
 	}
 }
 
@@ -32499,7 +25321,7 @@ func (ec *executionContext) _UserEdge(ctx context.Context, sel ast.SelectionSet,
 func (ec *executionContext) marshalNAsset2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAsset(ctx context.Context, sel ast.SelectionSet, v *ent.Asset) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32513,7 +25335,7 @@ func (ec *executionContext) marshalNAssetConnection2realmᚗpubᚋtavernᚋinter
 func (ec *executionContext) marshalNAssetConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetConnection(ctx context.Context, sel ast.SelectionSet, v *ent.AssetConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32534,7 +25356,7 @@ func (ec *executionContext) unmarshalNAssetOrderField2ᚖrealmᚗpubᚋtavernᚋ
 func (ec *executionContext) marshalNAssetOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.AssetOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32553,7 +25375,7 @@ func (ec *executionContext) marshalNBeacon2realmᚗpubᚋtavernᚋinternalᚋent
 func (ec *executionContext) marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v *ent.Beacon) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32567,7 +25389,7 @@ func (ec *executionContext) marshalNBeaconConnection2realmᚗpubᚋtavernᚋinte
 func (ec *executionContext) marshalNBeaconConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconConnection(ctx context.Context, sel ast.SelectionSet, v *ent.BeaconConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32588,7 +25410,7 @@ func (ec *executionContext) unmarshalNBeaconOrderField2ᚖrealmᚗpubᚋtavern�
 func (ec *executionContext) marshalNBeaconOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.BeaconOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32657,7 +25479,7 @@ func (ec *executionContext) marshalNHost2realmᚗpubᚋtavernᚋinternalᚋent�
 func (ec *executionContext) marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost(ctx context.Context, sel ast.SelectionSet, v *ent.Host) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32671,7 +25493,7 @@ func (ec *executionContext) marshalNHostConnection2realmᚗpubᚋtavernᚋintern
 func (ec *executionContext) marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32685,7 +25507,7 @@ func (ec *executionContext) marshalNHostCredential2realmᚗpubᚋtavernᚋintern
 func (ec *executionContext) marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx context.Context, sel ast.SelectionSet, v *ent.HostCredential) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32695,7 +25517,7 @@ func (ec *executionContext) marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋint
 func (ec *executionContext) marshalNHostCredentialConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostCredentialConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32726,7 +25548,7 @@ func (ec *executionContext) unmarshalNHostCredentialOrderField2ᚖrealmᚗpubᚋ
 func (ec *executionContext) marshalNHostCredentialOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.HostCredentialOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32741,7 +25563,7 @@ func (ec *executionContext) unmarshalNHostCredentialWhereInput2ᚖrealmᚗpubᚋ
 func (ec *executionContext) marshalNHostFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostFileConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32762,7 +25584,7 @@ func (ec *executionContext) unmarshalNHostFileOrderField2ᚖrealmᚗpubᚋtavern
 func (ec *executionContext) marshalNHostFileOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.HostFileOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32788,7 +25610,7 @@ func (ec *executionContext) unmarshalNHostOrderField2ᚖrealmᚗpubᚋtavernᚋi
 func (ec *executionContext) marshalNHostOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.HostOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32808,7 +25630,7 @@ func (ec *executionContext) marshalNHostPlatform2realmᚗpubᚋtavernᚋinternal
 func (ec *executionContext) marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostProcessConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32829,7 +25651,7 @@ func (ec *executionContext) unmarshalNHostProcessOrderField2ᚖrealmᚗpubᚋtav
 func (ec *executionContext) marshalNHostProcessOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.HostProcessOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32863,7 +25685,7 @@ func (ec *executionContext) marshalNLink2realmᚗpubᚋtavernᚋinternalᚋent�
 func (ec *executionContext) marshalNLink2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLink(ctx context.Context, sel ast.SelectionSet, v *ent.Link) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32873,7 +25695,7 @@ func (ec *executionContext) marshalNLink2ᚖrealmᚗpubᚋtavernᚋinternalᚋen
 func (ec *executionContext) marshalNLinkConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkConnection(ctx context.Context, sel ast.SelectionSet, v *ent.LinkConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32894,7 +25716,7 @@ func (ec *executionContext) unmarshalNLinkOrderField2ᚖrealmᚗpubᚋtavernᚋi
 func (ec *executionContext) marshalNLinkOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.LinkOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32965,7 +25787,7 @@ func (ec *executionContext) marshalNPortalConnection2realmᚗpubᚋtavernᚋinte
 func (ec *executionContext) marshalNPortalConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection(ctx context.Context, sel ast.SelectionSet, v *ent.PortalConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -32986,7 +25808,7 @@ func (ec *executionContext) unmarshalNPortalOrderField2ᚖrealmᚗpubᚋtavern�
 func (ec *executionContext) marshalNPortalOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.PortalOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33001,7 +25823,7 @@ func (ec *executionContext) unmarshalNPortalWhereInput2ᚖrealmᚗpubᚋtavern�
 func (ec *executionContext) marshalNQuest2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuest(ctx context.Context, sel ast.SelectionSet, v *ent.Quest) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33015,7 +25837,7 @@ func (ec *executionContext) marshalNQuestConnection2realmᚗpubᚋtavernᚋinter
 func (ec *executionContext) marshalNQuestConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection(ctx context.Context, sel ast.SelectionSet, v *ent.QuestConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33036,7 +25858,7 @@ func (ec *executionContext) unmarshalNQuestOrderField2ᚖrealmᚗpubᚋtavernᚋ
 func (ec *executionContext) marshalNQuestOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.QuestOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33055,7 +25877,7 @@ func (ec *executionContext) marshalNRepository2realmᚗpubᚋtavernᚋinternal�
 func (ec *executionContext) marshalNRepository2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepository(ctx context.Context, sel ast.SelectionSet, v *ent.Repository) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33069,7 +25891,7 @@ func (ec *executionContext) marshalNRepositoryConnection2realmᚗpubᚋtavernᚋ
 func (ec *executionContext) marshalNRepositoryConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryConnection(ctx context.Context, sel ast.SelectionSet, v *ent.RepositoryConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33090,7 +25912,7 @@ func (ec *executionContext) unmarshalNRepositoryOrderField2ᚖrealmᚗpubᚋtave
 func (ec *executionContext) marshalNRepositoryOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.RepositoryOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33109,7 +25931,7 @@ func (ec *executionContext) marshalNShellConnection2realmᚗpubᚋtavernᚋinter
 func (ec *executionContext) marshalNShellConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellConnection(ctx context.Context, sel ast.SelectionSet, v *ent.ShellConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33130,7 +25952,7 @@ func (ec *executionContext) unmarshalNShellOrderField2ᚖrealmᚗpubᚋtavernᚋ
 func (ec *executionContext) marshalNShellOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.ShellOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33149,7 +25971,7 @@ func (ec *executionContext) marshalNTag2realmᚗpubᚋtavernᚋinternalᚋentᚐ
 func (ec *executionContext) marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v *ent.Tag) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33163,7 +25985,7 @@ func (ec *executionContext) marshalNTagConnection2realmᚗpubᚋtavernᚋinterna
 func (ec *executionContext) marshalNTagConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagConnection(ctx context.Context, sel ast.SelectionSet, v *ent.TagConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33194,7 +26016,7 @@ func (ec *executionContext) unmarshalNTagOrderField2ᚖrealmᚗpubᚋtavernᚋin
 func (ec *executionContext) marshalNTagOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TagOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33209,7 +26031,7 @@ func (ec *executionContext) unmarshalNTagWhereInput2ᚖrealmᚗpubᚋtavernᚋin
 func (ec *executionContext) marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask(ctx context.Context, sel ast.SelectionSet, v *ent.Task) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33223,7 +26045,7 @@ func (ec *executionContext) marshalNTaskConnection2realmᚗpubᚋtavernᚋintern
 func (ec *executionContext) marshalNTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskConnection(ctx context.Context, sel ast.SelectionSet, v *ent.TaskConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33244,7 +26066,7 @@ func (ec *executionContext) unmarshalNTaskOrderField2ᚖrealmᚗpubᚋtavernᚋi
 func (ec *executionContext) marshalNTaskOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TaskOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33263,7 +26085,7 @@ func (ec *executionContext) marshalNTome2realmᚗpubᚋtavernᚋinternalᚋent�
 func (ec *executionContext) marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome(ctx context.Context, sel ast.SelectionSet, v *ent.Tome) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33277,7 +26099,7 @@ func (ec *executionContext) marshalNTomeConnection2realmᚗpubᚋtavernᚋintern
 func (ec *executionContext) marshalNTomeConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeConnection(ctx context.Context, sel ast.SelectionSet, v *ent.TomeConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33298,7 +26120,7 @@ func (ec *executionContext) unmarshalNTomeOrderField2ᚖrealmᚗpubᚋtavernᚋi
 func (ec *executionContext) marshalNTomeOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.TomeOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33367,7 +26189,7 @@ func (ec *executionContext) marshalNUser2realmᚗpubᚋtavernᚋinternalᚋent�
 func (ec *executionContext) marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33381,7 +26203,7 @@ func (ec *executionContext) marshalNUserConnection2realmᚗpubᚋtavernᚋintern
 func (ec *executionContext) marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v *ent.UserConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33402,7 +26224,7 @@ func (ec *executionContext) unmarshalNUserOrderField2ᚖrealmᚗpubᚋtavernᚋi
 func (ec *executionContext) marshalNUserOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.UserOrderField) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -33474,9 +26296,7 @@ func (ec *executionContext) unmarshalOAssetOrder2ᚕᚖrealmᚗpubᚋtavernᚋin
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.AssetOrder, len(vSlice))
 	for i := range vSlice {
@@ -33494,9 +26314,7 @@ func (ec *executionContext) unmarshalOAssetWhereInput2ᚕᚖrealmᚗpubᚋtavern
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.AssetWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -33577,9 +26395,7 @@ func (ec *executionContext) unmarshalOBeaconOrder2ᚕᚖrealmᚗpubᚋtavernᚋi
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.BeaconOrder, len(vSlice))
 	for i := range vSlice {
@@ -33597,9 +26413,7 @@ func (ec *executionContext) unmarshalOBeaconTransport_Type2ᚕrealmᚗpubᚋtave
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]c2pb.Transport_Type, len(vSlice))
 	for i := range vSlice {
@@ -33680,9 +26494,7 @@ func (ec *executionContext) unmarshalOBeaconWhereInput2ᚕᚖrealmᚗpubᚋtaver
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.BeaconWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -33786,9 +26598,7 @@ func (ec *executionContext) unmarshalOHostCredentialKind2ᚕrealmᚗpubᚋtavern
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]epb.Credential_Kind, len(vSlice))
 	for i := range vSlice {
@@ -33869,9 +26679,7 @@ func (ec *executionContext) unmarshalOHostCredentialOrder2ᚕᚖrealmᚗpubᚋta
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostCredentialOrder, len(vSlice))
 	for i := range vSlice {
@@ -33889,9 +26697,7 @@ func (ec *executionContext) unmarshalOHostCredentialWhereInput2ᚕᚖrealmᚗpub
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostCredentialWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34020,9 +26826,7 @@ func (ec *executionContext) unmarshalOHostFileOrder2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostFileOrder, len(vSlice))
 	for i := range vSlice {
@@ -34040,9 +26844,7 @@ func (ec *executionContext) unmarshalOHostFileWhereInput2ᚕᚖrealmᚗpubᚋtav
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostFileWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34068,9 +26870,7 @@ func (ec *executionContext) unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋint
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostOrder, len(vSlice))
 	for i := range vSlice {
@@ -34088,9 +26888,7 @@ func (ec *executionContext) unmarshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋint
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]c2pb.Host_Platform, len(vSlice))
 	for i := range vSlice {
@@ -34226,9 +27024,7 @@ func (ec *executionContext) unmarshalOHostProcessOrder2ᚕᚖrealmᚗpubᚋtaver
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostProcessOrder, len(vSlice))
 	for i := range vSlice {
@@ -34246,9 +27042,7 @@ func (ec *executionContext) unmarshalOHostProcessStatus2ᚕrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]epb.Process_Status, len(vSlice))
 	for i := range vSlice {
@@ -34329,9 +27123,7 @@ func (ec *executionContext) unmarshalOHostProcessWhereInput2ᚕᚖrealmᚗpubᚋ
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostProcessWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34357,9 +27149,7 @@ func (ec *executionContext) unmarshalOHostWhereInput2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.HostWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34440,9 +27230,7 @@ func (ec *executionContext) unmarshalOLinkOrder2ᚕᚖrealmᚗpubᚋtavernᚋint
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.LinkOrder, len(vSlice))
 	for i := range vSlice {
@@ -34460,9 +27248,7 @@ func (ec *executionContext) unmarshalOLinkWhereInput2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.LinkWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34550,9 +27336,7 @@ func (ec *executionContext) unmarshalOPortalOrder2ᚕᚖrealmᚗpubᚋtavernᚋi
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.PortalOrder, len(vSlice))
 	for i := range vSlice {
@@ -34570,9 +27354,7 @@ func (ec *executionContext) unmarshalOPortalWhereInput2ᚕᚖrealmᚗpubᚋtaver
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.PortalWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34653,9 +27435,7 @@ func (ec *executionContext) unmarshalOQuestOrder2ᚕᚖrealmᚗpubᚋtavernᚋin
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.QuestOrder, len(vSlice))
 	for i := range vSlice {
@@ -34673,9 +27453,7 @@ func (ec *executionContext) unmarshalOQuestWhereInput2ᚕᚖrealmᚗpubᚋtavern
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.QuestWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34756,9 +27534,7 @@ func (ec *executionContext) unmarshalORepositoryOrder2ᚕᚖrealmᚗpubᚋtavern
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.RepositoryOrder, len(vSlice))
 	for i := range vSlice {
@@ -34776,9 +27552,7 @@ func (ec *executionContext) unmarshalORepositoryWhereInput2ᚕᚖrealmᚗpubᚋt
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.RepositoryWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34859,9 +27633,7 @@ func (ec *executionContext) unmarshalOShellOrder2ᚕᚖrealmᚗpubᚋtavernᚋin
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.ShellOrder, len(vSlice))
 	for i := range vSlice {
@@ -34879,9 +27651,7 @@ func (ec *executionContext) unmarshalOShellWhereInput2ᚕᚖrealmᚗpubᚋtavern
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.ShellWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -34962,9 +27732,7 @@ func (ec *executionContext) unmarshalOTagKind2ᚕrealmᚗpubᚋtavernᚋinternal
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]tag.Kind, len(vSlice))
 	for i := range vSlice {
@@ -35045,9 +27813,7 @@ func (ec *executionContext) unmarshalOTagOrder2ᚕᚖrealmᚗpubᚋtavernᚋinte
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.TagOrder, len(vSlice))
 	for i := range vSlice {
@@ -35065,9 +27831,7 @@ func (ec *executionContext) unmarshalOTagWhereInput2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.TagWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -35148,9 +27912,7 @@ func (ec *executionContext) unmarshalOTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋint
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.TaskOrder, len(vSlice))
 	for i := range vSlice {
@@ -35168,9 +27930,7 @@ func (ec *executionContext) unmarshalOTaskWhereInput2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.TaskWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -35251,9 +28011,7 @@ func (ec *executionContext) unmarshalOTomeOrder2ᚕᚖrealmᚗpubᚋtavernᚋint
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.TomeOrder, len(vSlice))
 	for i := range vSlice {
@@ -35271,9 +28029,7 @@ func (ec *executionContext) unmarshalOTomeSupportModel2ᚕrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]tome.SupportModel, len(vSlice))
 	for i := range vSlice {
@@ -35354,9 +28110,7 @@ func (ec *executionContext) unmarshalOTomeTactic2ᚕrealmᚗpubᚋtavernᚋinter
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]tome.Tactic, len(vSlice))
 	for i := range vSlice {
@@ -35437,9 +28191,7 @@ func (ec *executionContext) unmarshalOTomeWhereInput2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.TomeWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -35520,9 +28272,7 @@ func (ec *executionContext) unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋint
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.UserOrder, len(vSlice))
 	for i := range vSlice {
@@ -35540,9 +28290,7 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*ent.UserWhereInput, len(vSlice))
 	for i := range vSlice {
