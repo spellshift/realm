@@ -2,6 +2,7 @@ use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::{get_type_name, is_truthy};
 use alloc::format;
 use alloc::string::String;
+use alloc::string::ToString;
 use alloc::sync::Arc;
 use spin::RwLock;
 
@@ -22,6 +23,7 @@ pub fn builtin_any(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         Value::Tuple(t) => t.clone(),
         Value::Set(s) => s.read().iter().cloned().collect(),
         Value::Dictionary(d) => d.read().keys().cloned().collect(),
+        Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
         _ => {
             return Err(format!(
                 "'{}' object is not iterable",
