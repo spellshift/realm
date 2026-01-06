@@ -18,8 +18,8 @@ pub fn name(pid: i64) -> Result<String, String> {
 
 #[cfg(all(test, feature = "stdlib"))]
 mod tests {
-    use super::super::StdProcessLibrary;
     use super::super::ProcessLibrary;
+    use super::super::StdProcessLibrary;
 
     #[test]
     fn test_std_process_errors() {

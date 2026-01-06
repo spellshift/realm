@@ -1,11 +1,7 @@
 use alloc::string::{String, ToString};
 use regex::{NoExpand, Regex};
 
-pub fn replace_all(
-    haystack: String,
-    pattern: String,
-    value: String,
-) -> Result<String, String> {
+pub fn replace_all(haystack: String, pattern: String, value: String) -> Result<String, String> {
     let re = Regex::new(&pattern).map_err(|e| e.to_string())?;
     let result = re.replace_all(&haystack, NoExpand(&value));
     Ok(String::from(result))
@@ -13,8 +9,8 @@ pub fn replace_all(
 
 #[cfg(test)]
 mod tests {
-    use super::super::StdRegexLibrary;
     use super::super::RegexLibrary;
+    use super::super::StdRegexLibrary;
     use alloc::string::String;
 
     #[test]

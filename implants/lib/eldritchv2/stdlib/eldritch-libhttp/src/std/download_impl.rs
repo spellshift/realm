@@ -4,11 +4,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-pub fn download(
-    uri: String,
-    dst: String,
-    allow_insecure: Option<bool>,
-) -> Result<(), String> {
+pub fn download(uri: String, dst: String, allow_insecure: Option<bool>) -> Result<(), String> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -52,11 +48,7 @@ pub fn download(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use httptest::{
-        Expectation, Server,
-        matchers::request,
-        responders::status_code,
-    };
+    use httptest::{Expectation, Server, matchers::request, responders::status_code};
     use std::fs::read_to_string;
     use tempfile::NamedTempFile;
 

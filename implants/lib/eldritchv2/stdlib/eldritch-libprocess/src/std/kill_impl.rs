@@ -23,8 +23,8 @@ pub fn kill(pid: i64) -> Result<(), String> {
 
 #[cfg(all(test, feature = "stdlib"))]
 mod tests {
-    use super::super::StdProcessLibrary;
     use super::super::ProcessLibrary;
+    use super::super::StdProcessLibrary;
     use ::std::process::Command;
 
     #[test]

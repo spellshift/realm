@@ -20,8 +20,8 @@ pub fn r#match(haystack: String, pattern: String) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::StdRegexLibrary;
     use super::super::RegexLibrary;
+    use super::super::StdRegexLibrary;
     use alloc::string::String;
 
     #[test]

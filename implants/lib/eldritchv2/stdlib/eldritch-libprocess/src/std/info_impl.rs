@@ -84,8 +84,8 @@ pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
 
 #[cfg(all(test, feature = "stdlib"))]
 mod tests {
-    use super::super::StdProcessLibrary;
     use super::super::ProcessLibrary;
+    use super::super::StdProcessLibrary;
     use eldritch_core::Value;
 
     #[test]

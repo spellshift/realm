@@ -97,9 +97,6 @@ mod tests {
 
     #[test]
     fn test_hash_file_not_found() {
-        assert!(
-            hash_file("/non/existent/file".to_string(), "md5".to_string())
-                .is_err()
-        );
+        assert!(hash_file("/non/existent/file".to_string(), "md5".to_string()).is_err());
     }
 }

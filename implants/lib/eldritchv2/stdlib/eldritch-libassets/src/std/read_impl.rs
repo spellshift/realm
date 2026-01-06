@@ -1,6 +1,6 @@
+use crate::RustEmbed;
 use alloc::string::String;
 use alloc::sync::Arc;
-use crate::RustEmbed;
 use eldritch_agent::Agent;
 
 use super::read_binary_impl;

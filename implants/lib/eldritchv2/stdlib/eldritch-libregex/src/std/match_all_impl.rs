@@ -23,8 +23,8 @@ pub fn match_all(haystack: String, pattern: String) -> Result<Vec<String>, Strin
 
 #[cfg(test)]
 mod tests {
-    use super::super::StdRegexLibrary;
     use super::super::RegexLibrary;
+    use super::super::StdRegexLibrary;
     use alloc::string::String;
 
     #[test]

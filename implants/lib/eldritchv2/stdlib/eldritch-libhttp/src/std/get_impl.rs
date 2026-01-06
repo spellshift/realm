@@ -71,7 +71,7 @@ mod tests {
     use super::*;
     use httptest::{
         Expectation, Server,
-        matchers::{all_of, request, url_decoded, contains},
+        matchers::{all_of, contains, request, url_decoded},
         responders::status_code,
     };
 

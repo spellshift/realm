@@ -64,8 +64,8 @@ pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
 
 #[cfg(all(test, feature = "stdlib"))]
 mod tests {
-    use super::super::StdProcessLibrary;
     use super::super::ProcessLibrary;
+    use super::super::StdProcessLibrary;
     use eldritch_core::Value;
 
     #[test]

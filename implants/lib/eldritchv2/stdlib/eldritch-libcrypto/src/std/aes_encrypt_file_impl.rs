@@ -1,5 +1,5 @@
 use aes::Aes128;
-use aes::cipher::{KeyInit, BlockEncrypt, generic_array::GenericArray};
+use aes::cipher::{BlockEncrypt, KeyInit, generic_array::GenericArray};
 use alloc::string::{String, ToString};
 use std::io::{Read, Write};
 
@@ -50,8 +50,8 @@ pub fn aes_encrypt_file(src: String, dst: String, key: String) -> Result<(), Str
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::aes_decrypt_file_impl::aes_decrypt_file;
+    use super::*;
     use std::io::{Read, Write};
     use tempfile::NamedTempFile;
 
@@ -101,8 +101,7 @@ mod tests {
         let dst_file = NamedTempFile::new().unwrap();
         let dst_path = dst_file.path().to_str().unwrap().to_string();
 
-        aes_encrypt_file(src_path, dst_path.clone(), key)
-            .unwrap();
+        aes_encrypt_file(src_path, dst_path.clone(), key).unwrap();
 
         // Empty file padded to 1 block
         let dst_len = std::fs::metadata(&dst_path).unwrap().len();

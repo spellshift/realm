@@ -1,6 +1,6 @@
+use crate::RustEmbed;
 use alloc::string::String;
 use alloc::sync::Arc;
-use crate::RustEmbed;
 use eldritch_agent::Agent;
 use std::io::Write;
 
@@ -29,7 +29,12 @@ mod tests {
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
         let dest_str = dest_path.to_str().unwrap().to_string();
-        let result = copy::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string(), dest_str.clone());
+        let result = copy::<TestAsset>(
+            agent,
+            &Vec::new(),
+            "print/main.eldritch".to_string(),
+            dest_str.clone(),
+        );
         assert!(result.is_ok());
         let content = std::fs::read_to_string(dest_path).unwrap();
         assert_eq!(content.trim(), "print(\"This script just prints\")");
@@ -63,7 +68,12 @@ mod tests {
             .to_str()
             .unwrap()
             .to_string();
-        let result = copy::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string(), invalid_dest);
+        let result = copy::<TestAsset>(
+            agent,
+            &Vec::new(),
+            "print/main.eldritch".to_string(),
+            invalid_dest,
+        );
         assert!(result.is_err());
     }
 }

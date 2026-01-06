@@ -4,8 +4,7 @@ use eldritch_core::Value;
 
 pub fn to_json(content: Value) -> Result<String, String> {
     let json_value = convert_value_to_json(&content)?;
-    serde_json::to_string(&json_value)
-        .map_err(|e| format!("Error serializing to json: {:?}", e))
+    serde_json::to_string(&json_value).map_err(|e| format!("Error serializing to json: {:?}", e))
 }
 
 fn convert_value_to_json(val: &Value) -> Result<serde_json::Value, String> {

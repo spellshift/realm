@@ -1,5 +1,5 @@
 use aes::Aes128;
-use aes::cipher::{KeyInit, BlockDecrypt, generic_array::GenericArray};
+use aes::cipher::{BlockDecrypt, KeyInit, generic_array::GenericArray};
 use alloc::string::{String, ToString};
 use std::io::Read;
 
@@ -57,7 +57,8 @@ pub fn aes_decrypt_file(src: String, dst: String, key: String) -> Result<(), Str
                             .map_err(|e| e.to_string())?;
                     } else {
                         // Invalid padding, write full block? (Mimic aes_decrypt logic which keeps invalid padding)
-                        std::io::Write::write_all(&mut output, &block).map_err(|e| e.to_string())?;
+                        std::io::Write::write_all(&mut output, &block)
+                            .map_err(|e| e.to_string())?;
                     }
                 } else {
                     // Invalid padding length, just write full block
@@ -79,10 +80,7 @@ mod tests {
 
     #[test]
     fn test_aes_file_decrypt_invalid_key() {
-        assert!(
-            aes_decrypt_file("s".into(), "d".into(), "short".into())
-                .is_err()
-        );
+        assert!(aes_decrypt_file("s".into(), "d".into(), "short".into()).is_err());
     }
 
     #[test]

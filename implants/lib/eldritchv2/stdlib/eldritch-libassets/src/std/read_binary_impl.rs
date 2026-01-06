@@ -1,8 +1,8 @@
+use crate::RustEmbed;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
-use crate::RustEmbed;
 use eldritch_agent::Agent;
 use pb::c2::FetchAssetRequest;
 
@@ -181,7 +181,8 @@ pub mod tests {
     #[test]
     fn test_read_binary_embedded_success() {
         let agent = Arc::new(MockAgent::new());
-        let content = read_binary::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string());
+        let content =
+            read_binary::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
         assert!(!content.is_empty());
@@ -194,13 +195,19 @@ pub mod tests {
     #[test]
     fn test_read_binary_embedded_fail() {
         let agent = Arc::new(MockAgent::new());
-        assert!(read_binary::<TestAsset>(agent, &Vec::new(), "nonexistent_file".to_string()).is_err());
+        assert!(
+            read_binary::<TestAsset>(agent, &Vec::new(), "nonexistent_file".to_string()).is_err()
+        );
     }
 
     #[test]
     fn test_read_binary_remote_success() {
         let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
-        let content = read_binary::<TestAsset>(agent, &vec!["remote_file.txt".to_string()], "remote_file.txt".to_string());
+        let content = read_binary::<TestAsset>(
+            agent,
+            &vec!["remote_file.txt".to_string()],
+            "remote_file.txt".to_string(),
+        );
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), b"remote content");
     }
@@ -208,7 +215,11 @@ pub mod tests {
     #[test]
     fn test_read_binary_remote_fail() {
         let agent = Arc::new(MockAgent::new().should_fail());
-        let result = read_binary::<TestAsset>(agent, &vec!["remote_file.txt".to_string()], "remote_file.txt".to_string());
+        let result = read_binary::<TestAsset>(
+            agent,
+            &vec!["remote_file.txt".to_string()],
+            "remote_file.txt".to_string(),
+        );
         assert!(result.is_err());
     }
 }

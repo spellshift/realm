@@ -53,8 +53,8 @@ pub fn aes_decrypt(key: Vec<u8>, _iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>,
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::aes_encrypt_impl::aes_encrypt;
+    use super::*;
 
     #[test]
     fn test_aes_roundtrip() {
@@ -62,13 +62,11 @@ mod tests {
         let iv = vec![0u8; 16]; // Ignored
         let data = b"Hello World!".to_vec();
 
-        let encrypted = aes_encrypt(key.clone(), iv.clone(), data.clone())
-            .expect("encrypt failed");
+        let encrypted = aes_encrypt(key.clone(), iv.clone(), data.clone()).expect("encrypt failed");
         assert_ne!(encrypted, data);
         assert_eq!(encrypted.len() % 16, 0);
 
-        let decrypted = aes_decrypt(key.clone(), iv.clone(), encrypted)
-            .expect("decrypt failed");
+        let decrypted = aes_decrypt(key.clone(), iv.clone(), encrypted).expect("decrypt failed");
         assert_eq!(decrypted, data);
     }
 

@@ -9,8 +9,8 @@ pub fn replace(haystack: String, pattern: String, value: String) -> Result<Strin
 
 #[cfg(test)]
 mod tests {
-    use super::super::StdRegexLibrary;
     use super::super::RegexLibrary;
+    use super::super::StdRegexLibrary;
     use alloc::string::String;
 
     #[test]

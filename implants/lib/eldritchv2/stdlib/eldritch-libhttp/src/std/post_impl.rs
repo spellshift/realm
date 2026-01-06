@@ -3,9 +3,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use eldritch_core::Value;
-use reqwest::{
-    header::{HeaderMap, HeaderName, HeaderValue},
-};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use spin::RwLock;
 
 pub fn post(
@@ -73,7 +71,7 @@ mod tests {
     use super::*;
     use httptest::{
         Expectation, Server,
-        matchers::{all_of, request, url_decoded, contains},
+        matchers::{all_of, contains, request, url_decoded},
         responders::status_code,
     };
 
@@ -90,8 +88,7 @@ mod tests {
 
         let url = server.url("/foo").to_string();
 
-        let res = post(url, Some("request body".into()), None, None, None)
-            .unwrap();
+        let res = post(url, Some("request body".into()), None, None, None).unwrap();
 
         assert_eq!(res.get("status_code").unwrap(), &Value::Int(201));
     }

@@ -4,10 +4,10 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
-pub mod aes_decrypt_impl;
 pub mod aes_decrypt_file_impl;
-pub mod aes_encrypt_impl;
+pub mod aes_decrypt_impl;
 pub mod aes_encrypt_file_impl;
+pub mod aes_encrypt_impl;
 pub mod decode_b64_impl;
 pub mod encode_b64_impl;
 pub mod from_json_impl;
