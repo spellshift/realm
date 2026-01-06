@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/portals/portalpb"
 )
 
 const (
@@ -30,22 +31,28 @@ const (
 	maxMessageSize = 256 * 1024 // 256KB
 )
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins for now (dev/internal)
+	},
+}
+
 type connector struct {
-	*Stream
-	mux  *Mux
-	ws   *websocket.Conn
-	kind string
+	mux      *mux.Mux
+	portalID int
+	ws       *websocket.Conn
 }
 
 // WriteToWebsocket will read messages from the Mux and write them to the underlying websocket.
 func (c *connector) WriteToWebsocket(ctx context.Context) {
 	defer c.ws.Close()
 
-	// Register with mux to receive messages
-	c.mux.Register(c.Stream)
-	defer c.mux.Unregister(c.Stream)
+	topicOut := c.mux.TopicOut(c.portalID)
+	recv, cleanup := c.mux.Subscribe(topicOut)
+	defer cleanup()
 
-	// Keep Alive
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 
@@ -54,77 +61,34 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 		case <-ctx.Done():
 			c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 			return
-		case message, ok := <-c.Messages():
-			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-			if !ok {
-				// The mux closed the channel.
-				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			// Check if stream has closed
-			hasClosed, ok := message.Metadata[MetadataStreamClose]
-			if ok && hasClosed != "" {
-				// The producer ended the stream.
-				slog.DebugContext(ctx, "websocket closed due to producer ending stream",
-					"stream_id", c.Stream.id,
-					"stream_order_key", c.Stream.orderKey,
-				)
-				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			// Filter by kind
-			kind := message.Metadata[MetadataMsgKind]
-			if kind == "" {
-				kind = "data"
-			}
-			if kind != c.kind {
-				continue
-			}
-
-			w, err := c.ws.NextWriter(websocket.BinaryMessage)
-			if err != nil {
-				return
-			}
-			if _, err := w.Write(message.Body); err != nil {
-				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
-					"stream_id", c.Stream.id,
-					"stream_order_key", c.Stream.orderKey,
-					"error", err,
-				)
-			}
-
-			// Flush queued messages to the current websocket message.
-			n := len(c.Messages())
-			for i := 0; i < n; i++ {
-				additionalMsg := <-c.Messages()
-
-				// Filter additional messages too
-				kind := additionalMsg.Metadata[MetadataMsgKind]
-				if kind == "" {
-					kind = "data"
-				}
-				if kind != c.kind {
-					continue
-				}
-
-				if _, err := w.Write(additionalMsg.Body); err != nil {
-					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
-						"stream_id", c.Stream.id,
-						"stream_order_key", c.Stream.orderKey,
-						"error", err,
-					)
-				}
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
 		case <-ticker.C:
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
+			}
+		case mote, ok := <-recv:
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			// Extract Payload
+			if mote.GetRepl() != nil {
+				// REPL Data -> Text/Binary Message
+				w, err := c.ws.NextWriter(websocket.BinaryMessage)
+				if err != nil {
+					return
+				}
+				if _, err := w.Write(mote.GetRepl().Data); err != nil {
+					slog.ErrorContext(ctx, "failed to write repl message to websocket", "error", err)
+				}
+				if err := w.Close(); err != nil {
+					return
+				}
+			} else if mote.GetBytes() != nil {
+				// Handle BytesPayload (e.g. Ping/Keepalive)
+				// Currently we just ignore it as we send our own pings
 			}
 		}
 	}
@@ -134,13 +98,14 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 func (c *connector) ReadFromWebsocket(ctx context.Context) {
 	defer c.ws.Close()
 
-	// Configure connection info
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error {
 		c.ws.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
+
+	topicIn := c.mux.TopicIn(c.portalID)
 
 	for {
 		select {
@@ -150,56 +115,50 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			_, message, err := c.ws.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					slog.ErrorContext(ctx, "websocket closed unexpectedly",
-						"stream_id", c.Stream.id,
-						"stream_order_key", c.Stream.orderKey,
-						"error", err,
-					)
+					slog.ErrorContext(ctx, "websocket closed unexpectedly", "error", err)
 				}
 				return
 			}
 
-			msgLen := len(message)
-			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
-				Body: message,
-				Metadata: map[string]string{
-					metadataID:      c.id,
-					MetadataMsgKind: c.kind,
+			// Wrap in Mote
+			mote := &portalpb.Mote{
+				StreamId: "repl", // Default stream ID for WS
+				Payload: &portalpb.Mote_Repl{
+					Repl: &portalpb.REPLMessage{
+						Data: message,
+					},
 				},
-			}, c.mux); err != nil {
-				slog.ErrorContext(ctx, "websocket failed to publish message",
-					"stream_id", c.Stream.id,
-					"stream_order_key", c.Stream.orderKey,
-					"msg_len", msgLen,
-					"error", err,
-				)
+			}
+
+			if err := c.mux.Publish(ctx, topicIn, mote); err != nil {
+				slog.ErrorContext(ctx, "websocket failed to publish message", "error", err)
 				return
 			}
 		}
 	}
 }
 
-func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Client, shellID int, userID int) {
+func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Client, portalID int, userID int) {
 	defer func() {
-		slog.DebugContext(ctx, "websocket checking user activity for shell before removal", "user_id", userID, "shell_id", shellID)
+		slog.DebugContext(ctx, "websocket checking user activity for portal before removal", "user_id", userID, "portal_id", portalID)
 
-		wasAdded, err := graph.Shell.Query().
-			Where(shell.ID(shellID)).
+		wasAdded, err := graph.Portal.Query().
+			Where(portal.ID(portalID)).
 			QueryActiveUsers().
 			Where(user.ID(userID)).
 			Exist(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "websocket failed to check user activity for shell", "err", err, "user_id", userID, "shell_id", shellID)
+			slog.ErrorContext(ctx, "websocket failed to check user activity for portal", "err", err, "user_id", userID, "portal_id", portalID)
 			return
 		}
 		if !wasAdded {
 			return
 		}
 
-		if _, err := graph.Shell.UpdateOneID(shellID).
+		if _, err := graph.Portal.UpdateOneID(portalID).
 			RemoveActiveUserIDs(userID).
 			Save(ctx); err != nil {
-			slog.ErrorContext(ctx, "websocket failed to remove inactive user from shell", "err", err, "user_id", userID, "shell_id", shellID)
+			slog.ErrorContext(ctx, "websocket failed to remove inactive user from portal", "err", err, "user_id", userID, "portal_id", portalID)
 			return
 		}
 	}()
@@ -213,34 +172,32 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 		case <-done:
 			return
 		case <-ticker.C:
-			// Handle case where user has multiple shells open
-			alreadyAdded, err := graph.Shell.Query().
-				Where(shell.ID(shellID)).
+			alreadyAdded, err := graph.Portal.Query().
+				Where(portal.ID(portalID)).
 				QueryActiveUsers().
 				Where(user.ID(userID)).
 				Exist(ctx)
 			if err != nil {
-				slog.ErrorContext(ctx, "websocket failed to check user activity for shell", "err", err, "user_id", userID, "shell_id", shellID)
+				slog.ErrorContext(ctx, "websocket failed to check user activity for portal", "err", err, "user_id", userID, "portal_id", portalID)
 				continue
 			}
 			if alreadyAdded {
 				continue
 			}
 
-			if _, err := graph.Shell.UpdateOneID(shellID).
+			if _, err := graph.Portal.UpdateOneID(portalID).
 				AddActiveUserIDs(userID).
 				Save(ctx); err != nil {
-				slog.ErrorContext(ctx, "websocket failed to add active user to shell", "err", err, "user_id", userID, "shell_id", shellID)
+				slog.ErrorContext(ctx, "websocket failed to add active user to portal", "err", err, "user_id", userID, "portal_id", portalID)
 			}
 		}
 	}
-
 }
 
 // NewShellHandler provides an HTTP handler which handles a websocket for shell io.
 // It requires a query param "shell_id" be specified (must be an integer).
-// This ID represents which Shell ent the websocket will connect to.
-func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
+// This ID represents which Portal ent the websocket will connect to (mapped from shell_id).
+func NewShellHandler(graph *ent.Client, mux *mux.Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -255,29 +212,29 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			authUserName = authUser.Name
 		}
 
-		// Parse Shell ID
+		// Parse Shell ID (Portal ID)
 		shellIDStr := r.URL.Query().Get("shell_id")
 		if shellIDStr == "" {
 			http.Error(w, "must provide integer value for 'shell_id'", http.StatusBadRequest)
 			return
 		}
-		shellID, err := strconv.Atoi(shellIDStr)
+		portalID, err := strconv.Atoi(shellIDStr)
 		if err != nil {
 			http.Error(w, "invalid 'shell_id' provided, must be integer", http.StatusBadRequest)
 			return
 		}
 
-		// Load Shell
-		revShell, err := graph.Shell.Query().
-			Where(shell.ID(shellID)).
-			Select(shell.FieldClosedAt).
+		// Load Portal
+		p, err := graph.Portal.Query().
+			Where(portal.ID(portalID)).
+			Select(portal.FieldClosedAt).
 			Only(ctx)
 		if err != nil {
 			if ent.IsNotFound(err) {
-				http.Error(w, "shell not found", http.StatusNotFound)
+				http.Error(w, "portal not found", http.StatusNotFound)
 			} else {
-				slog.ErrorContext(ctx, "websocket failed to load shell", "err", err, "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
-				http.Error(w, "failed to load shell", http.StatusInternalServerError)
+				slog.ErrorContext(ctx, "websocket failed to load portal", "err", err, "portal_id", portalID, "user_id", authUserID, "user_name", authUserName)
+				http.Error(w, "failed to load portal", http.StatusInternalServerError)
 			}
 			return
 		}
@@ -287,36 +244,32 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		activeUserDoneCh := make(chan struct{})
 		if authUser != nil {
 			activeUserWG.Add(1)
-			go func(ctx context.Context, shellID, userID int) {
+			go func(ctx context.Context, portalID, userID int) {
 				defer activeUserWG.Done()
-				manageActiveUser(ctx, activeUserDoneCh, graph, shellID, userID)
-			}(ctx, revShell.ID, authUser.ID)
+				manageActiveUser(ctx, activeUserDoneCh, graph, portalID, userID)
+			}(ctx, p.ID, authUser.ID)
 		}
 
-		// Prevent opening closed shells
-		if !revShell.ClosedAt.IsZero() {
-			http.Error(w, "shell already closed", http.StatusBadRequest)
+		// Prevent opening closed portals
+		if !p.ClosedAt.IsZero() {
+			http.Error(w, "portal already closed", http.StatusBadRequest)
 			return
 		}
 
 		// Start Websocket
-		slog.InfoContext(ctx, "new shell websocket connection", "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
+		slog.InfoContext(ctx, "new portal websocket connection", "portal_id", portalID, "user_id", authUserID, "user_name", authUserName)
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			slog.ErrorContext(ctx, "websocket failed to upgrade connection", "err", err, "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
+			slog.ErrorContext(ctx, "websocket failed to upgrade connection", "err", err, "portal_id", portalID, "user_id", authUserID, "user_name", authUserName)
 			return
 		}
-		defer slog.InfoContext(ctx, "websocket shell connection closed", "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
-
-		// Initialize Stream
-		stream := New(shellIDStr)
+		defer slog.InfoContext(ctx, "websocket portal connection closed", "portal_id", portalID, "user_id", authUserID, "user_name", authUserName)
 
 		// Create Connector
 		conn := &connector{
-			Stream: stream,
-			mux:    mux,
-			ws:     ws,
-			kind:   "data",
+			mux:      mux,
+			portalID: portalID,
+			ws:       ws,
 		}
 
 		// Read & Write
@@ -337,60 +290,10 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 	})
 }
 
-// NewPingHandler provides an HTTP handler which handles a websocket for latency pings.
-// It requires a query param "shell_id" be specified (must be an integer).
-func NewPingHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
+// NewPingHandler is a no-op handler to satisfy legacy routes if needed,
+// or we can remove it. For now, let's keep it but just close.
+func NewPingHandler(graph *ent.Client, mux *mux.Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		// Parse Shell ID
-		shellIDStr := r.URL.Query().Get("shell_id")
-		if shellIDStr == "" {
-			http.Error(w, "must provide integer value for 'shell_id'", http.StatusBadRequest)
-			return
-		}
-		shellID, err := strconv.Atoi(shellIDStr)
-		if err != nil {
-			http.Error(w, "invalid 'shell_id' provided, must be integer", http.StatusBadRequest)
-			return
-		}
-
-		// Check if shell exists (optional, but good for consistency)
-		exists, err := graph.Shell.Query().Where(shell.ID(shellID)).Exist(ctx)
-		if err != nil || !exists {
-			http.Error(w, "shell not found", http.StatusNotFound)
-			return
-		}
-
-		// Start Websocket
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			return
-		}
-
-		// Initialize Stream
-		stream := New(shellIDStr)
-
-		// Create Connector
-		conn := &connector{
-			Stream: stream,
-			mux:    mux,
-			ws:     ws,
-			kind:   "ping",
-		}
-
-		// Read & Write
-		var wg sync.WaitGroup
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
-			conn.ReadFromWebsocket(ctx)
-		}()
-		go func() {
-			defer wg.Done()
-			conn.WriteToWebsocket(ctx)
-		}()
-
-		wg.Wait()
+		http.Error(w, "not implemented", http.StatusNotImplemented)
 	})
 }
