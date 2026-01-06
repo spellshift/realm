@@ -323,7 +323,8 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	// Run Tome Automation (non-blocking, best effort)
-	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, time.Duration(req.GetBeacon().GetActiveTransport().GetInterval())*time.Second)
+	idx := req.GetBeacon().GetAvailableTransports().GetActiveIndex()
+	srv.handleTomeAutomation(ctx, beaconID, hostID, isNewBeacon, isNewHost, now, time.Duration(req.GetBeacon().GetAvailableTransports().GetTransports()[idx].GetInterval())*time.Second)
 
 	// Load Tasks
 	tasks, err := srv.graph.Task.Query().

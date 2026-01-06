@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
@@ -29,7 +29,7 @@ func TestHandleTomeAutomation(t *testing.T) {
 	b := client.Beacon.Create().
 		SetIdentifier("test-beacon").
 		SetHost(h).
-		SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
 		SaveX(ctx)
 
 	// 1. Setup Tomes
@@ -173,7 +173,7 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 	b := client.Beacon.Create().
 		SetIdentifier("test").
 		SetHost(h).
-		SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
 		SaveX(ctx)
 
 	// Tome with ALL triggers enabled
@@ -211,7 +211,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	b := client.Beacon.Create().
 		SetIdentifier("test-beacon").
 		SetHost(h).
-		SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
 		SaveX(ctx)
 
 	// Schedule: 3:01:00 PM -> "1 15 * * *"
@@ -255,7 +255,7 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	now := time.Date(2023, 10, 27, 6, 5, 0, 0, time.UTC)
 
 	h := client.Host.Create().SetIdentifier("h").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
-	b := client.Beacon.Create().SetIdentifier("b").SetHost(h).SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("b").SetHost(h).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
 
 	// Range Schedule: "* 6-12 * * *" (Every minute of hours 6-12)
 	client.Tome.Create().
