@@ -1,8 +1,8 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch_libagent::agent::Agent;
-use pb::c2::active_transport::Type;
 use pb::c2::host::Platform;
+use pb::c2::transport::Type;
 use pb::c2::{self, Host};
 use pb::config::Config;
 use std::sync::Arc;
@@ -240,7 +240,7 @@ async fn test_agent_config_platform_as_enum_variant_name() {
     let mut config = Config::default();
 
     config.info = Some(pb::c2::Beacon {
-        active_transport: Some(pb::c2::ActiveTransport::default()),
+        available_transports: Some(pb::c2::AvailableTransports::default()),
         host: Some(Host {
             platform: Platform::Linux as i32,
             ..Default::default()
@@ -271,9 +271,14 @@ async fn test_agent_config_active_transport_type_as_enum_variant_name() {
     let mut config = Config::default();
 
     config.info = Some(pb::c2::Beacon {
-        active_transport: Some(pb::c2::ActiveTransport {
-            r#type: Type::TransportGrpc as i32,
-            ..Default::default()
+        available_transports: Some(c2::AvailableTransports {
+            transports: vec![pb::c2::Transport {
+                r#type: pb::c2::transport::Type::TransportGrpc as i32,
+                uri: "http://localhost:8000".to_string(),
+                interval: 5,
+                extra: "".to_string(),
+            }],
+            active_index: 0,
         }),
         ..Default::default()
     });

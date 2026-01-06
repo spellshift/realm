@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use eldritch_agent::Agent;
-use pb::c2::active_transport::Type;
 use pb::c2::host::Platform;
+use pb::c2::transport::Type::{self, *};
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
@@ -359,7 +359,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                 );
                 map.insert("primary_ip".to_string(), host.primary_ip.clone());
             }
-            if let Some(active_transport) = &info.active_transport {
+            if let Some(available_transports) = &info.available_transports {
+                let idx = available_transports.active_index;
+                let active_transport = &available_transports.transports[idx as usize];
                 map.insert("uri".to_string(), active_transport.uri.clone());
                 map.insert(
                     "type".to_string(),
@@ -397,32 +399,32 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = cfg.info.as_mut() {
-                if let Some(available_transports) = info.available_transports.as_mut() {
-                    let active_idx = available_transports.active_index as usize;
-                    if let Some(current_transport) = available_transports.transports.get(active_idx)
-                    {
-                        let current_uri = &current_transport.uri;
-                        // Create new URI with the new transport scheme
-                        let new_uri = if let Some(pos) = current_uri.find("://") {
-                            format!("{}://{}", transport, &current_uri[pos + 3..])
-                        } else {
-                            format!("{}://{}", transport, current_uri)
-                        };
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                let active_idx = available_transports.active_index as usize;
+                if let Some(current_transport) = available_transports.transports.get(active_idx) {
+                    let current_uri = &current_transport.uri;
+                    // Create new URI with the new transport scheme
+                    // TODO: We probably don't need to decouple schema and uri
+                    let new_uri = if let Some(pos) = current_uri.find("://") {
+                        format!("{}://{}", transport, &current_uri[pos + 3..])
+                    } else {
+                        format!("{}://{}", transport, current_uri)
+                    };
 
-                        // Create a new transport with the new URI
-                        let new_transport = pb::c2::Transport {
-                            uri: new_uri,
-                            interval: current_transport.interval,
-                            r#type: current_transport.r#type,
-                            extra: current_transport.extra.clone(),
-                        };
+                    // Create a new transport with the new URI
+                    let new_transport = pb::c2::Transport {
+                        uri: new_uri,
+                        interval: current_transport.interval,
+                        r#type: current_transport.r#type,
+                        extra: current_transport.extra.clone(),
+                    };
 
-                        // Append the new transport and update active_index
-                        available_transports.transports.push(new_transport);
-                        available_transports.active_index =
-                            (available_transports.transports.len() - 1) as u32;
-                    }
+                    // Append the new transport and update active_index
+                    available_transports.transports.push(new_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
                 }
             }
             Ok(())
@@ -459,37 +461,37 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = cfg.info.as_mut() {
-                if let Some(available_transports) = info.available_transports.as_mut() {
-                    // Check if URI already exists
-                    if let Some(pos) = available_transports
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                // Check if URI already exists
+                if let Some(pos) = available_transports
+                    .transports
+                    .iter()
+                    .position(|t| t.uri == uri)
+                {
+                    // Set active_index to existing transport
+                    available_transports.active_index = pos as u32;
+                } else {
+                    // Get current transport as template
+                    let active_idx = available_transports.active_index as usize;
+                    let template = available_transports
                         .transports
-                        .iter()
-                        .position(|t| t.uri == uri)
-                    {
-                        // Set active_index to existing transport
-                        available_transports.active_index = pos as u32;
-                    } else {
-                        // Get current transport as template
-                        let active_idx = available_transports.active_index as usize;
-                        let template = available_transports
-                            .transports
-                            .get(active_idx)
-                            .or_else(|| available_transports.transports.first())
-                            .cloned();
+                        .get(active_idx)
+                        .or_else(|| available_transports.transports.first())
+                        .cloned();
 
-                        if let Some(tmpl) = template {
-                            // Create new transport with the new URI
-                            let new_transport = pb::c2::Transport {
-                                uri,
-                                interval: tmpl.interval,
-                                r#type: tmpl.r#type,
-                                extra: tmpl.extra,
-                            };
-                            available_transports.transports.push(new_transport);
-                            available_transports.active_index =
-                                (available_transports.transports.len() - 1) as u32;
-                        }
+                    if let Some(tmpl) = template {
+                        // Create new transport with the new URI
+                        let new_transport = pb::c2::Transport {
+                            uri,
+                            interval: tmpl.interval,
+                            r#type: tmpl.r#type,
+                            extra: tmpl.extra,
+                        };
+                        available_transports.transports.push(new_transport);
+                        available_transports.active_index =
+                            (available_transports.transports.len() - 1) as u32;
                     }
                 }
             }
@@ -549,30 +551,30 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn add_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = cfg.info.as_mut() {
-                if let Some(available_transports) = info.available_transports.as_mut() {
-                    // Check if URI already exists
-                    if !available_transports.transports.iter().any(|t| t.uri == uri) {
-                        // Get current transport as template
-                        let template = available_transports
-                            .transports
-                            .first()
-                            .cloned()
-                            .unwrap_or_else(|| pb::c2::Transport {
-                                uri: uri.clone(),
-                                interval: 5,
-                                r#type: 0,
-                                extra: String::new(),
-                            });
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                // Check if URI already exists
+                if !available_transports.transports.iter().any(|t| t.uri == uri) {
+                    // Get current transport as template
+                    let template = available_transports
+                        .transports
+                        .first()
+                        .cloned()
+                        .unwrap_or_else(|| pb::c2::Transport {
+                            uri: uri.clone(),
+                            interval: 5,
+                            r#type: 0,
+                            extra: String::new(),
+                        });
 
-                        let new_transport = pb::c2::Transport {
-                            uri,
-                            interval: template.interval,
-                            r#type: template.r#type,
-                            extra: template.extra,
-                        };
-                        available_transports.transports.push(new_transport);
-                    }
+                    let new_transport = pb::c2::Transport {
+                        uri,
+                        interval: template.interval,
+                        r#type: template.r#type,
+                        extra: template.extra,
+                    };
+                    available_transports.transports.push(new_transport);
                 }
             }
             Ok(())
@@ -582,22 +584,20 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     fn remove_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            if let Some(info) = cfg.info.as_mut() {
-                if let Some(available_transports) = info.available_transports.as_mut() {
-                    if let Some(pos) = available_transports
-                        .transports
-                        .iter()
-                        .position(|t| t.uri == uri)
-                    {
-                        available_transports.transports.remove(pos);
-                        // Adjust active_index if needed
-                        let active_idx = available_transports.active_index as usize;
-                        if active_idx >= available_transports.transports.len()
-                            && !available_transports.transports.is_empty()
-                        {
-                            available_transports.active_index = 0;
-                        }
-                    }
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+                && let Some(pos) = available_transports
+                    .transports
+                    .iter()
+                    .position(|t| t.uri == uri)
+            {
+                available_transports.transports.remove(pos);
+                // Adjust active_index if needed
+                let active_idx = available_transports.active_index as usize;
+                if active_idx >= available_transports.transports.len()
+                    && !available_transports.transports.is_empty()
+                {
+                    available_transports.active_index = 0;
                 }
             }
             Ok(())
