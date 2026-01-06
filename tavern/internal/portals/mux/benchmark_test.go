@@ -24,7 +24,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	// Setup Entities
 	u := client.User.Create().SetName("benchuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)
 	h := client.Host.Create().SetName("benchhost").SetIdentifier("ident").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
-	beacon := client.Beacon.Create().SetName("benchbeacon").SetTransport(c2pb.ActiveTransport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
+	beacon := client.Beacon.Create().SetName("benchbeacon").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
 
 	tomeEnt := client.Tome.Create().SetName("benchtome").SetDescription("desc").SetAuthor(u.Name).SetUploader(u).SetTactic(tome.TacticRECON).SetEldritch("nop").SaveX(ctx)
 	quest := client.Quest.Create().SetName("benchquest").SetParameters("").SetCreator(u).SetTome(tomeEnt).SaveX(ctx)

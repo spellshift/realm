@@ -120,11 +120,11 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SaveX(ctx)
 
 			// Cycle through transports: HTTP1, GRPC, DNS
-			getTransport := func(idx int) c2pb.ActiveTransport_Type {
-				transports := []c2pb.ActiveTransport_Type{
-					c2pb.ActiveTransport_TRANSPORT_HTTP1,
-					c2pb.ActiveTransport_TRANSPORT_GRPC,
-					c2pb.ActiveTransport_TRANSPORT_DNS,
+			getTransport := func(idx int) c2pb.Transport_Type {
+				transports := []c2pb.Transport_Type{
+					c2pb.Transport_TRANSPORT_HTTP1,
+					c2pb.Transport_TRANSPORT_GRPC,
+					c2pb.Transport_TRANSPORT_DNS,
 				}
 				return transports[idx%3]
 			}

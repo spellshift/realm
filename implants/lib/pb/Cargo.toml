@@ -32,6 +32,7 @@ lru = { workspace = true }
 
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
+url = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true, features = ["prost"] }

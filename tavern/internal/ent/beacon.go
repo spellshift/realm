@@ -38,7 +38,7 @@ type Beacon struct {
 	// Duration until next callback, in seconds.
 	Interval uint64 `json:"interval,omitempty"`
 	// Beacon's current transport.
-	Transport c2pb.ActiveTransport_Type `json:"transport,omitempty"`
+	Transport c2pb.Transport_Type `json:"transport,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BeaconQuery when eager-loading is set.
 	Edges        BeaconEdges `json:"edges"`
@@ -99,7 +99,7 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 	for i := range columns {
 		switch columns[i] {
 		case beacon.FieldTransport:
-			values[i] = new(c2pb.ActiveTransport_Type)
+			values[i] = new(c2pb.Transport_Type)
 		case beacon.FieldID, beacon.FieldInterval:
 			values[i] = new(sql.NullInt64)
 		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
@@ -184,7 +184,7 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 				b.Interval = uint64(value.Int64)
 			}
 		case beacon.FieldTransport:
-			if value, ok := values[i].(*c2pb.ActiveTransport_Type); !ok {
+			if value, ok := values[i].(*c2pb.Transport_Type); !ok {
 				return fmt.Errorf("unexpected type %T for field transport", values[i])
 			} else if value != nil {
 				b.Transport = *value

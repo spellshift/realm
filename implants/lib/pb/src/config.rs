@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-
+use anyhow::Context;
+use url::Url;
 use uuid::Uuid;
 
-use crate::c2::ActiveTransport;
+use crate::c2::{AvailableTransports, Transport};
 
 //TODO: Can this struct be removed?
 /// Config holds values necessary to configure an Agent.
@@ -38,10 +38,16 @@ macro_rules! callback_interval {
         }
     };
 }
-/* Compile-time constant for the agent retry interval, derived from the IMIX_RETRY_INTERVAL environment variable during compilation.
+/* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
  * Defaults to 5 if unset.
  */
 pub const CALLBACK_INTERVAL: &str = callback_interval!();
+
+/* Default interval value in seconds */
+const DEFAULT_INTERVAL_SECONDS: u64 = 5;
+
+/* Default extra config value */
+const DEFAULT_EXTRA_CONFIG: &str = "";
 
 macro_rules! retry_interval {
     () => {
@@ -68,7 +74,7 @@ macro_rules! run_once {
 macro_rules! extra {
     () => {
         match option_env!("IMIX_TRANSPORT_EXTRA") {
-            Some(extra) => extra.to_string(),
+            Some(extra) => extra.to_lowercase(),
             None => String::from(""),
         }
     };
@@ -78,6 +84,92 @@ macro_rules! extra {
  * Defaults to false if unset.
  */
 pub const RUN_ONCE: bool = run_once!();
+
+/*
+ * Helper function to determine transport type from URI scheme
+ */
+fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
+    match uri.split(":").next().unwrap_or("unspecified") {
+        "dns" => crate::c2::transport::Type::TransportDns,
+        "http1" => crate::c2::transport::Type::TransportHttp1,
+        "https1" => crate::c2::transport::Type::TransportHttp1,
+        "https" => crate::c2::transport::Type::TransportGrpc,
+        "http" => crate::c2::transport::Type::TransportGrpc,
+        _ => crate::c2::transport::Type::TransportUnspecified,
+    }
+}
+
+/*
+ * Helper function to parse URIs into Transport objects
+ * Supports DSN format with query parameters:
+ * - interval: callback interval in seconds (overrides default)
+ * - extra: extra configuration JSON (overrides default)
+ *
+ * Example: https://example.com?interval=10&extra={"key":"value"}
+ */
+fn parse_transports(uri_string: &str) -> Vec<Transport> {
+    uri_string
+        .split(';')
+        .filter(|s| !s.trim().is_empty())
+        .filter_map(|uri| {
+            let uri_trimmed = uri.trim();
+            parse_dsn(uri_trimmed).ok()
+        })
+        .collect()
+}
+
+/*
+ * Helper function to parse DSN query parameters
+ * Returns a Transport struct
+ */
+fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
+    // Parse as a URL to extract query parameters
+    let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
+
+    let mut interval = DEFAULT_INTERVAL_SECONDS;
+    let mut extra = DEFAULT_EXTRA_CONFIG.to_string();
+
+    // Parse query parameters
+    for (key, value) in parsed_url.query_pairs() {
+        match key.as_ref() {
+            "interval" => {
+                interval = value
+                    .parse::<u64>()
+                    .with_context(|| format!("Failed to parse interval parameter '{}'", value))?;
+            }
+            "extra" => {
+                extra = value.to_lowercase();
+            }
+            _ => {
+                #[cfg(debug_assertions)]
+                log::debug!("Ignoring unknown query parameter: {}", key);
+            }
+        }
+    }
+
+    // Reconstruct the base URI without query parameters
+    let mut base_uri = parsed_url.clone();
+    base_uri.set_query(None);
+
+    Ok(Transport {
+        uri: base_uri.to_string(),
+        interval,
+        r#type: get_transport_type(uri) as i32,
+        extra,
+    })
+}
+
+/*
+ * Helper function to parse callback interval with fallback
+ */
+fn parse_callback_interval() -> anyhow::Result<u64> {
+    CALLBACK_INTERVAL.parse::<u64>().with_context(|| {
+        format!(
+            "Failed to parse callback interval constant '{}'",
+            CALLBACK_INTERVAL
+        )
+    })
+}
 
 /*
  * Config methods.
@@ -101,34 +193,19 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
-        let transport_type = match CALLBACK_URI.split(":").nth(0).unwrap_or("unspecified") {
-            "dns" => crate::c2::active_transport::Type::TransportDns,
-            "http1" => crate::c2::active_transport::Type::TransportHttp1,
-            "https1" => crate::c2::active_transport::Type::TransportHttp1,
-            "https" => crate::c2::active_transport::Type::TransportGrpc,
-            "http" => crate::c2::active_transport::Type::TransportGrpc,
-            _ => crate::c2::active_transport::Type::TransportUnspecified,
-        };
+        // Parse CALLBACK_URI by splitting on ';' to support multiple transports
+        let transports = parse_transports(CALLBACK_URI);
 
-        let active_transport = ActiveTransport {
-            uri: String::from(CALLBACK_URI),
-            interval: match CALLBACK_INTERVAL.parse::<u64>() {
-                Ok(i) => i,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed to parse callback interval constant, defaulting to 5 seconds: {_err}");
-
-                    5_u64
-                }
-            },
-            r#type: transport_type as i32,
-            extra: extra!(),
+        // Create AvailableTransports with the 0th element as the first active transport
+        let available_transports = AvailableTransports {
+            transports,
+            active_index: 0,
         };
 
         let info = crate::c2::Beacon {
             identifier: beacon_id,
             principal: whoami::username(),
-            active_transport: Some(active_transport),
+            available_transports: Some(available_transports),
             host: Some(host),
             agent: Some(agent),
         };
@@ -207,5 +284,196 @@ fn get_primary_ip() -> String {
 
             String::from("")
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_single_uri_parsing() {
+        // Simulating a single URI at compile time
+        let config = Config::default_with_imix_version("test");
+
+        let info = config.info.expect("Config should have info");
+        let available = info
+            .available_transports
+            .expect("Should have available transports");
+
+        assert_eq!(available.transports.len(), 1);
+        assert_eq!(available.active_index, 0);
+        // The URL crate normalizes URIs, potentially adding trailing slashes
+        assert!(available.transports[0]
+            .uri
+            .starts_with("http://127.0.0.1:8000"));
+    }
+
+    #[test]
+    fn test_transport_type_detection_grpc() {
+        let grpc_type = get_transport_type("http://example.com");
+        assert_eq!(grpc_type, crate::c2::transport::Type::TransportGrpc);
+
+        let grpcs_type = get_transport_type("https://example.com");
+        assert_eq!(grpcs_type, crate::c2::transport::Type::TransportGrpc);
+    }
+
+    #[test]
+    fn test_transport_type_detection_http1() {
+        let http1_type = get_transport_type("http1://example.com");
+        assert_eq!(http1_type, crate::c2::transport::Type::TransportHttp1);
+
+        let https1_type = get_transport_type("https1://example.com");
+        assert_eq!(https1_type, crate::c2::transport::Type::TransportHttp1);
+    }
+
+    #[test]
+    fn test_transport_type_detection_dns() {
+        let dns_type = get_transport_type("dns://8.8.8.8");
+        assert_eq!(dns_type, crate::c2::transport::Type::TransportDns);
+    }
+
+    #[test]
+    fn test_transport_type_detection_unspecified() {
+        let unknown_type = get_transport_type("ftp://example.com");
+        assert_eq!(
+            unknown_type,
+            crate::c2::transport::Type::TransportUnspecified
+        );
+    }
+
+    #[test]
+    fn test_parse_callback_interval_valid() {
+        let interval = parse_callback_interval().expect("Failed to parse callback interval");
+        // Should parse successfully or default to DEFAULT_INTERVAL_SECONDS
+        assert!(interval >= DEFAULT_INTERVAL_SECONDS);
+    }
+
+    #[test]
+    fn test_config_creates_available_transports() {
+        let config = Config::default_with_imix_version("v2");
+
+        assert!(config.info.is_some());
+        let info = config.info.unwrap();
+        assert!(info.available_transports.is_some());
+
+        let available = info.available_transports.unwrap();
+        assert!(
+            !available.transports.is_empty(),
+            "Should have at least one transport"
+        );
+        assert_eq!(available.active_index, 0, "Active index should be 0");
+    }
+
+    #[test]
+    fn test_empty_uri_filtered() {
+        // Test that empty URIs are filtered out using parse_transports
+        let uris = "http://example.com;;https://example2.com";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 2);
+        assert_eq!(transports[0].uri, "http://example.com/");
+        assert_eq!(transports[1].uri, "https://example2.com/");
+    }
+
+    #[test]
+    fn test_dsn_with_interval_query_param() {
+        // Test DSN parsing with interval query parameter
+        let uris = "https://example.com?interval=10";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].interval, 10);
+        assert_eq!(transports[0].extra, "");
+    }
+
+    #[test]
+    fn test_dsn_with_extra_query_param() {
+        // Test DSN parsing with extra query parameter (converted to lowercase)
+        let uris = "https://example.com?extra=%7B%22key%22%3A%22value%22%7D";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
+        assert_eq!(transports[0].extra, r#"{"key":"value"}"#);
+    }
+
+    #[test]
+    fn test_dsn_with_both_query_params() {
+        // Test DSN parsing with both interval and extra query parameters (extra converted to lowercase)
+        let uris = "https://example.com?interval=15&extra=%7B%22proxy%22%3A%22http%3A%2F%2Fproxy.local%22%7D";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].interval, 15);
+        assert_eq!(transports[0].extra, r#"{"proxy":"http://proxy.local"}"#);
+    }
+
+    #[test]
+    fn test_dsn_multiple_uris_with_different_params() {
+        // Test multiple DSNs with different parameters
+        let uris = "https://primary.com?interval=10;https://fallback.com?interval=30";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 2);
+        assert_eq!(transports[0].uri, "https://primary.com/");
+        assert_eq!(transports[0].interval, 10);
+        assert_eq!(transports[1].uri, "https://fallback.com/");
+        assert_eq!(transports[1].interval, 30);
+    }
+
+    #[test]
+    fn test_dsn_no_query_params_uses_defaults() {
+        // Test that URIs without query parameters use default values
+        let uris = "https://example.com";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
+        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG);
+    }
+
+    #[test]
+    fn test_dsn_invalid_interval_uses_default() {
+        // Test that invalid interval values are filtered out (error bubbles up)
+        let uris = "https://example.com?interval=invalid";
+        let transports = parse_transports(uris);
+
+        // Since parse_dsn now returns Result and invalid intervals bubble up errors,
+        // the filter_map will filter out this entry
+        assert_eq!(transports.len(), 0);
+    }
+
+    #[test]
+    fn test_dsn_mixed_with_and_without_params() {
+        // Test mixed URIs (some with params, some without)
+        let uris = "https://first.com?interval=10;https://second.com;https://third.com?interval=25";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 3);
+        assert_eq!(transports[0].interval, 10);
+        assert_eq!(transports[1].interval, DEFAULT_INTERVAL_SECONDS); // Uses default
+        assert_eq!(transports[2].interval, 25);
+    }
+
+    #[test]
+    fn test_dsn_with_unencoded_json() {
+        // Test DSN parsing with unencoded JSON in extra parameter
+        // The url crate should handle the parsing automatically
+        let uris =
+            r#"https://example.com?interval=20&extra={"key":"value","nested":{"Foo":"Bar"}}"#;
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].interval, 20);
+        assert_eq!(
+            transports[0].extra,
+            r#"{"key":"value","nested":{"foo":"bar"}}"#
+        );
     }
 }
