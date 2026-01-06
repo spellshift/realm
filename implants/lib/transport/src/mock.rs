@@ -42,12 +42,6 @@ mock! {
             request: ReportTaskOutputRequest,
         ) -> Result<ReportTaskOutputResponse>;
 
-        async fn reverse_shell(
-            &mut self,
-            rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-            tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-        ) -> Result<()>;
-
         async fn create_portal(
             &mut self,
             rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,

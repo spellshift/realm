@@ -26,6 +26,9 @@ message UDPPayload {
     string dst_addr = 2;
     uint32 dst_port = 3;
 }
+message REPLMessage {
+    bytes data = 1;
+}
 
 message Mote {
     // Unique identifier used to route reply traffic back to original port
@@ -39,6 +42,7 @@ message Mote {
         UDPPayload udp = 3;
         TCPPayload tcp = 4;
         BytesPayload bytes = 5;
+        REPLMessage repl = 6;
     }
 }
 

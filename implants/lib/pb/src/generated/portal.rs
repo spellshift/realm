@@ -29,6 +29,12 @@ pub struct UdpPayload {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReplMessage {
+    #[prost(bytes = "vec", tag = "1")]
+    pub data: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Mote {
     /// Unique identifier used to route reply traffic back to original port
     #[prost(string, tag = "1")]
@@ -37,7 +43,7 @@ pub struct Mote {
     #[prost(uint64, tag = "2")]
     pub seq_id: u64,
     /// A payload
-    #[prost(oneof = "mote::Payload", tags = "3, 4, 5")]
+    #[prost(oneof = "mote::Payload", tags = "3, 4, 5, 6")]
     pub payload: ::core::option::Option<mote::Payload>,
 }
 /// Nested message and enum types in `Mote`.
@@ -52,6 +58,8 @@ pub mod mote {
         Tcp(super::TcpPayload),
         #[prost(message, tag = "5")]
         Bytes(super::BytesPayload),
+        #[prost(message, tag = "6")]
+        Repl(super::ReplMessage),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

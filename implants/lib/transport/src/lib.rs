@@ -190,24 +190,6 @@ impl Transport for ActiveTransport {
         }
     }
 
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        match self {
-            #[cfg(feature = "grpc")]
-            Self::Grpc(t) => t.reverse_shell(rx, tx).await,
-            #[cfg(feature = "http1")]
-            Self::Http(t) => t.reverse_shell(rx, tx).await,
-            #[cfg(feature = "dns")]
-            Self::Dns(t) => t.reverse_shell(rx, tx).await,
-            #[cfg(feature = "mock")]
-            Self::Mock(t) => t.reverse_shell(rx, tx).await,
-            Self::Empty => Err(anyhow!("Transport not initialized")),
-        }
-    }
-
     async fn create_portal(
         &mut self,
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
@@ -313,13 +295,13 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg(not(feature = "http1"))]
+    #[cfg(feature = "http1")]
     async fn test_routes_to_http1_transport() {
         // All these prefixes should result in the Http1 variant
         let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
 
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Http(_))),
@@ -356,7 +338,7 @@ mod tests {
         // If the feature is off, these should error out
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
         for uri in inputs {
-            let result = ActiveTransport::new(uri.to_string(), None);
+            let result = ActiveTransport::new(uri.to_string(), Config::default());
             assert!(
                 result.is_err(),
                 "Expected error for '{}' when gRPC feature is disabled",

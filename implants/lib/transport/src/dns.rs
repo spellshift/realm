@@ -1061,16 +1061,6 @@ impl Transport for DNS {
         self.dns_exchange(request, "/c2.C2/ReportTaskOutput").await
     }
 
-    async fn reverse_shell(
-        &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "reverse_shell not supported over DNS transport"
-        ))
-    }
-
     async fn create_portal(
         &mut self,
         _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,

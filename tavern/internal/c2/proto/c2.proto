@@ -128,22 +128,6 @@ message ReportTaskOutputRequest {
 
 message ReportTaskOutputResponse {}
 
-enum ReverseShellMessageKind {
-    REVERSE_SHELL_MESSAGE_KIND_UNSPECIFIED = 0;
-    REVERSE_SHELL_MESSAGE_KIND_DATA = 1;
-    REVERSE_SHELL_MESSAGE_KIND_PING = 2;
-}
-
-message ReverseShellRequest{
-    ReverseShellMessageKind kind = 1;
-    bytes data = 2;
-    int64 task_id = 3;
-}
-message ReverseShellResponse{
-    ReverseShellMessageKind kind = 1;
-    bytes data = 2;
-}
-
 message CreatePortalRequest {
     int64 task_id = 1;
     portal.Mote mote = 2;
@@ -199,11 +183,6 @@ service C2 {
      * Report execution output for a task.
      */
     rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
-
-    /*
-     * Open a reverse shell bi-directional stream.
-     */
-    rpc ReverseShell(stream ReverseShellRequest) returns (stream ReverseShellResponse) {}
 
     /*
      * Open a portal bi-directional stream.

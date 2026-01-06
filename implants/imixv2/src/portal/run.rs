@@ -218,6 +218,11 @@ async fn stream_handler(
             Payload::Tcp(_) => tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await,
             Payload::Udp(_) => udp::handle_udp(first_mote, rx, out_tx, sequencer).await,
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
+            Payload::Repl(_) => {
+                #[cfg(debug_assertions)]
+                log::warn!("Received REPL message in generic portal handler, ignoring.");
+                Ok(())
+            }
         }
     } else {
         Ok(())
