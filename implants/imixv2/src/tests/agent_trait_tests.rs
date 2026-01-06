@@ -259,7 +259,12 @@ fn test_agent_config_platform_as_enum_variant_name() {
     transport.expect_is_active().returning(|| true);
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    let agent = ImixAgent::new(config, transport, runtime.handle().clone(), Arc::new(TaskRegistry::new()));
+    let agent = ImixAgent::new(
+        config,
+        transport,
+        runtime.handle().clone(),
+        Arc::new(TaskRegistry::new()),
+    );
 
     let map = agent.get_config().unwrap();
     assert_eq!(map.get("platform").unwrap(), "PLATFORM_LINUX");
@@ -287,7 +292,12 @@ fn test_agent_config_active_transport_type_as_enum_variant_name() {
     transport.expect_is_active().returning(|| true);
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    let agent = ImixAgent::new(config, transport, runtime.handle().clone(), Arc::new(TaskRegistry::new()));
+    let agent = ImixAgent::new(
+        config,
+        transport,
+        runtime.handle().clone(),
+        Arc::new(TaskRegistry::new()),
+    );
 
     let map = agent.get_config().unwrap();
     assert_eq!(map.get("type").unwrap(), "TRANSPORT_GRPC");
