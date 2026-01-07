@@ -63,6 +63,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             tx: output_tx.clone(),
             task_id,
             agent: agent.clone(),
+            jwt: jwt.clone(),
         });
 
         let mut interpreter = Interpreter::new_with_printer(printer)
@@ -187,6 +188,7 @@ struct ShellPrinter<T: Transport> {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     task_id: i64,
     agent: ImixAgent<T>,
+    jwt: String,
 }
 
 impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
@@ -217,6 +219,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
+            jwt: self.jwt.clone(),
         };
         let _ = self.agent.report_task_output(req);
     }
@@ -240,6 +243,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
+            jwt: "somejwt".to_string(),
         };
         let _ = self.agent.report_task_output(req);
     }

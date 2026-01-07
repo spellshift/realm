@@ -18,6 +18,7 @@ impl AsyncDispatcher for ReportCredentialMessage {
             .report_credential(ReportCredentialRequest {
                 task_id: self.id,
                 credential: Some(self.credential),
+                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

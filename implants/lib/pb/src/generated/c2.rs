@@ -217,6 +217,8 @@ pub struct ReportCredentialRequest {
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
     pub credential: ::core::option::Option<crate::eldritch::Credential>,
+    #[prost(string, tag = "3")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -241,6 +243,8 @@ pub struct ReportProcessListRequest {
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
     pub list: ::core::option::Option<crate::eldritch::ProcessList>,
+    #[prost(string, tag = "3")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -250,6 +254,8 @@ pub struct ReportProcessListResponse {}
 pub struct ReportTaskOutputRequest {
     #[prost(message, optional, tag = "1")]
     pub output: ::core::option::Option<TaskOutput>,
+    #[prost(string, tag = "3")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

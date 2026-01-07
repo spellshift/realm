@@ -19,6 +19,7 @@ impl AsyncDispatcher for ReportProcessListMessage {
             .report_process_list(ReportProcessListRequest {
                 task_id: self.id,
                 list: Some(self.list),
+                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

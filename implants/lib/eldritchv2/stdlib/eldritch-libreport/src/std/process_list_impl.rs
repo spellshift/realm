@@ -9,6 +9,7 @@ use pb::{c2, eldritch};
 pub fn process_list(
     agent: Arc<dyn Agent>,
     task_id: i64,
+    jwt: String,
     list: Vec<BTreeMap<String, Value>>,
 ) -> Result<(), String> {
     let mut processes = Vec::new();
@@ -63,6 +64,7 @@ pub fn process_list(
     let req = c2::ReportProcessListRequest {
         task_id,
         list: Some(eldritch::ProcessList { list: processes }),
+        jwt,
     };
     agent.report_process_list(req).map(|_| ())
 }

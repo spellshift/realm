@@ -29,7 +29,11 @@ impl core::fmt::Debug for StdReportLibrary {
 
 impl StdReportLibrary {
     pub fn new(agent: Arc<dyn Agent>, task_id: i64, jwt: String) -> Self {
-        Self { agent, task_id, jwt }
+        Self {
+            agent,
+            task_id,
+            jwt,
+        }
     }
 }
 
@@ -39,14 +43,26 @@ impl ReportLibrary for StdReportLibrary {
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {
-        process_list_impl::process_list(self.agent.clone(), self.task_id, list)
+        process_list_impl::process_list(self.agent.clone(), self.task_id, self.jwt.clone(), list)
     }
 
     fn ssh_key(&self, username: String, key: String) -> Result<(), String> {
-        ssh_key_impl::ssh_key(self.agent.clone(), self.task_id, username, key)
+        ssh_key_impl::ssh_key(
+            self.agent.clone(),
+            self.task_id,
+            self.jwt.clone(),
+            username,
+            key,
+        )
     }
 
     fn user_password(&self, username: String, password: String) -> Result<(), String> {
-        user_password_impl::user_password(self.agent.clone(), self.task_id, username, password)
+        user_password_impl::user_password(
+            self.agent.clone(),
+            self.task_id,
+            self.jwt.clone(),
+            username,
+            password,
+        )
     }
 }

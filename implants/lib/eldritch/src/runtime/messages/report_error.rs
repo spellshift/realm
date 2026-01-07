@@ -26,6 +26,7 @@ impl AsyncDispatcher for ReportErrorMessage {
                     exec_finished_at: None,
                     error: Some(TaskError { msg: self.error }),
                 }),
+                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

@@ -31,6 +31,7 @@ async fn test_imix_agent_buffer_and_flush() {
             output: "test".to_string(),
             ..Default::default()
         }),
+        jwt: "some jwt".to_string(),
     };
     agent.report_task_output(req).unwrap();
 
@@ -112,6 +113,7 @@ async fn test_imix_agent_report_credential() {
         let _ = agent_clone.report_credential(c2::ReportCredentialRequest {
             task_id: 1,
             credential: None,
+            jwt: "some jwt".to_string(),
         });
     })
     .join()
@@ -141,6 +143,7 @@ async fn test_imix_agent_report_process_list() {
         let _ = agent_clone.report_process_list(c2::ReportProcessListRequest {
             task_id: 1,
             list: None,
+            jwt: "some jwt".to_string(),
         });
     })
     .join()

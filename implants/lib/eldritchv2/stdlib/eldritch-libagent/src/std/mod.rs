@@ -45,7 +45,11 @@ impl core::fmt::Debug for StdAgentLibrary {
 
 impl StdAgentLibrary {
     pub fn new(agent: Arc<dyn Agent>, task_id: i64, jwt: String) -> Self {
-        Self { agent, task_id, jwt }
+        Self {
+            agent,
+            task_id,
+            jwt,
+        }
     }
 }
 
@@ -68,7 +72,12 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String> {
-        report_credential_impl::report_credential(self.agent.clone(), self.task_id, credential)
+        report_credential_impl::report_credential(
+            self.agent.clone(),
+            self.task_id,
+            self.jwt.clone(),
+            credential,
+        )
     }
 
     fn report_file(&self, file: FileWrapper) -> Result<(), String> {
@@ -76,11 +85,22 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {
-        report_process_list_impl::report_process_list(self.agent.clone(), self.task_id, list)
+        report_process_list_impl::report_process_list(
+            self.agent.clone(),
+            self.task_id,
+            self.jwt.clone(),
+            list,
+        )
     }
 
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String> {
-        report_task_output_impl::report_task_output(self.agent.clone(), self.task_id, output, error)
+        report_task_output_impl::report_task_output(
+            self.agent.clone(),
+            self.task_id,
+            self.jwt.clone(),
+            output,
+            error,
+        )
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {

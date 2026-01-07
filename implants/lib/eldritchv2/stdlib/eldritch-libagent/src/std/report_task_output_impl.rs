@@ -9,6 +9,7 @@ use pb::c2;
 pub fn report_task_output(
     agent: Arc<dyn Agent>,
     task_id: i64,
+    jwt: String,
     output: String,
     error: Option<String>,
 ) -> Result<(), String> {
@@ -22,6 +23,7 @@ pub fn report_task_output(
     };
     let req = c2::ReportTaskOutputRequest {
         output: Some(output_msg),
+        jwt,
     };
     agent.report_task_output(req).map(|_| ())
 }
