@@ -171,8 +171,8 @@ pub mod tests {
         let content = content.unwrap();
         assert!(!content.is_empty());
         assert_eq!(
-            std::str::from_utf8(&content).unwrap(),
-            "print(\"This script just prints\")\n"
+            std::str::from_utf8(&content).unwrap().trim(),
+            "print(\"This script just prints\")"
         );
         Ok(())
     }

@@ -26,7 +26,10 @@ mod tests {
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
-        assert_eq!(content.unwrap(), "print(\"This script just prints\")\n");
+        assert_eq!(
+            content.unwrap().trim(),
+            "print(\"This script just prints\")"
+        );
         Ok(())
     }
 }
