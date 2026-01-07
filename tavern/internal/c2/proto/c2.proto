@@ -104,6 +104,7 @@ message ClaimTasksResponse {
 
 message FetchAssetRequest {
     string name = 1;
+    string jwt = 2;
 }
 message FetchAssetResponse {
     bytes chunk = 1;

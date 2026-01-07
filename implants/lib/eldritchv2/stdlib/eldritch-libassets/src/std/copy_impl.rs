@@ -8,11 +8,12 @@ use super::read_binary_impl;
 
 pub fn copy<A: RustEmbed>(
     agent: Arc<dyn Agent>,
+    jwt: String,
     remote_assets: &[String],
     src: String,
     dest: String,
 ) -> Result<(), String> {
-    let bytes = read_binary_impl::read_binary::<A>(agent, remote_assets, src)?;
+    let bytes = read_binary_impl::read_binary::<A>(agent, jwt, remote_assets, src)?;
     let mut file = std::fs::File::create(dest).map_err(|e| e.to_string())?;
     file.write_all(&bytes).map_err(|e| e.to_string())?;
     Ok(())
@@ -31,6 +32,7 @@ mod tests {
         let dest_str = dest_path.to_str().unwrap().to_string();
         let result = copy::<TestAsset>(
             agent,
+            "a jwt".to_string(),
             &Vec::new(),
             "print/main.eldritch".to_string(),
             dest_str.clone(),
@@ -48,6 +50,7 @@ mod tests {
         let dest_path = temp_dir.path().join("should_not_exist");
         let result = copy::<TestAsset>(
             agent,
+            "a jwt".to_string(),
             &Vec::new(),
             "nonexistent".to_string(),
             dest_path.to_str().unwrap().to_string(),
@@ -70,6 +73,7 @@ mod tests {
             .to_string();
         let result = copy::<TestAsset>(
             agent,
+            "a jwt".to_string(),
             &Vec::new(),
             "print/main.eldritch".to_string(),
             invalid_dest,

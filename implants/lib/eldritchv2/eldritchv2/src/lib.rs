@@ -146,8 +146,11 @@ impl Interpreter {
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        let assets_lib =
-            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
+        let assets_lib = StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(
+            agent.clone(),
+            String::new(),
+            Vec::new(),
+        );
         self.inner.register_lib(assets_lib);
 
         self
@@ -176,10 +179,10 @@ impl Interpreter {
         let report_lib = StdReportLibrary::new(agent.clone(), task_id, jwt.clone());
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id, jwt);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id, jwt.clone());
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::<A>::new(agent, remote_assets);
+        let assets_lib = StdAssetsLibrary::<A>::new(agent, jwt, remote_assets);
         self.inner.register_lib(assets_lib);
 
         self

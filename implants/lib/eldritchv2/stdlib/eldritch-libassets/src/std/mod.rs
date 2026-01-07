@@ -28,6 +28,7 @@ impl crate::RustEmbed for EmptyAssets {
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary<A: RustEmbed + Send + Sync + 'static> {
     pub agent: Arc<dyn Agent>,
+    pub jwt: String,
     pub remote_assets: Vec<String>,
     _phantom: PhantomData<A>,
 }
@@ -43,9 +44,10 @@ impl<A: RustEmbed + Send + Sync + 'static> core::fmt::Debug for StdAssetsLibrary
 }
 
 impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
-    pub fn new(agent: Arc<dyn Agent>, remote_assets: Vec<String>) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, jwt: String, remote_assets: Vec<String>) -> Self {
         Self {
             agent,
+            jwt,
             remote_assets,
             _phantom: PhantomData,
         }
@@ -54,15 +56,31 @@ impl<A: RustEmbed + Send + Sync + 'static> StdAssetsLibrary<A> {
 
 impl<A: RustEmbed + Send + Sync + 'static> AssetsLibrary for StdAssetsLibrary<A> {
     fn read_binary(&self, name: String) -> Result<Vec<u8>, String> {
-        read_binary_impl::read_binary::<A>(self.agent.clone(), &self.remote_assets, name)
+        read_binary_impl::read_binary::<A>(
+            self.agent.clone(),
+            self.jwt.clone(),
+            &self.remote_assets,
+            name,
+        )
     }
 
     fn read(&self, name: String) -> Result<String, String> {
-        read_impl::read::<A>(self.agent.clone(), &self.remote_assets, name)
+        read_impl::read::<A>(
+            self.agent.clone(),
+            self.jwt.clone(),
+            &self.remote_assets,
+            name,
+        )
     }
 
     fn copy(&self, src: String, dest: String) -> Result<(), String> {
-        copy_impl::copy::<A>(self.agent.clone(), &self.remote_assets, src, dest)
+        copy_impl::copy::<A>(
+            self.agent.clone(),
+            self.jwt.clone(),
+            &self.remote_assets,
+            src,
+            dest,
+        )
     }
 
     fn list(&self) -> Result<Vec<String>, String> {

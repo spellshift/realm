@@ -79,6 +79,7 @@ async fn test_imix_agent_fetch_asset() {
 
     let req = c2::FetchAssetRequest {
         name: "test_file".to_string(),
+        jwt: "a jwt".to_string(),
     };
 
     let agent_clone = agent.clone();

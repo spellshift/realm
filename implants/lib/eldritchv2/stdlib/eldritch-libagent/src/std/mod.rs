@@ -68,7 +68,7 @@ impl AgentLibrary for StdAgentLibrary {
 
     // Interactivity
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String> {
-        fetch_asset_impl::fetch_asset(self.agent.clone(), name)
+        fetch_asset_impl::fetch_asset(self.agent.clone(), self.jwt.clone(), name)
     }
 
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String> {

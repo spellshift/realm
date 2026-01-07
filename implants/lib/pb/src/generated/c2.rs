@@ -203,6 +203,8 @@ pub struct ClaimTasksResponse {
 pub struct FetchAssetRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

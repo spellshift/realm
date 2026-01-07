@@ -19,7 +19,13 @@ pub struct FetchAssetMessage {
 impl AsyncDispatcher for FetchAssetMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
-            .fetch_asset(FetchAssetRequest { name: self.name }, self.tx)
+            .fetch_asset(
+                FetchAssetRequest {
+                    name: self.name,
+                    jwt: "no_jwt".to_string(),
+                },
+                self.tx,
+            )
             .await?;
         Ok(())
     }

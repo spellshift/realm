@@ -16,11 +16,12 @@ pub fn read_binary_embedded<A: RustEmbed>(src: &str) -> Result<Vec<u8>> {
 
 pub fn read_binary<A: RustEmbed>(
     agent: Arc<dyn Agent>,
+    jwt: String,
     remote_assets: &[String],
     name: String,
 ) -> Result<Vec<u8>, String> {
     if remote_assets.iter().any(|s| s == &name) {
-        let req = FetchAssetRequest { name };
+        let req = FetchAssetRequest { name, jwt };
         return agent.fetch_asset(req);
     }
     read_binary_embedded::<A>(&name).map_err(|e| e.to_string())
@@ -186,8 +187,12 @@ pub mod tests {
     #[test]
     fn test_read_binary_embedded_success() {
         let agent = Arc::new(MockAgent::new());
-        let content =
-            read_binary::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string());
+        let content = read_binary::<TestAsset>(
+            agent,
+            "a jwt".to_string(),
+            &Vec::new(),
+            "print/main.eldritch".to_string(),
+        );
         assert!(content.is_ok());
         let content = content.unwrap();
         assert!(!content.is_empty());
@@ -201,7 +206,13 @@ pub mod tests {
     fn test_read_binary_embedded_fail() {
         let agent = Arc::new(MockAgent::new());
         assert!(
-            read_binary::<TestAsset>(agent, &Vec::new(), "nonexistent_file".to_string()).is_err()
+            read_binary::<TestAsset>(
+                agent,
+                "a jwt".to_string(),
+                &Vec::new(),
+                "nonexistent_file".to_string()
+            )
+            .is_err()
         );
     }
 
@@ -210,6 +221,7 @@ pub mod tests {
         let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
         let content = read_binary::<TestAsset>(
             agent,
+            "a jwt".to_string(),
             &vec!["remote_file.txt".to_string()],
             "remote_file.txt".to_string(),
         );
@@ -222,6 +234,7 @@ pub mod tests {
         let agent = Arc::new(MockAgent::new().should_fail());
         let result = read_binary::<TestAsset>(
             agent,
+            "a jwt".to_string(),
             &vec!["remote_file.txt".to_string()],
             "remote_file.txt".to_string(),
         );
