@@ -29,6 +29,7 @@ use eldritch_agent::Agent;
 pub struct StdPivotLibrary {
     pub agent: Option<Arc<dyn Agent>>,
     pub task_id: Option<i64>,
+    pub jwt: Option<String>,
 }
 
 impl core::fmt::Debug for StdPivotLibrary {
@@ -40,10 +41,11 @@ impl core::fmt::Debug for StdPivotLibrary {
 }
 
 impl StdPivotLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, task_id: i64, jwt: String) -> Self {
         Self {
             agent: Some(agent),
             task_id: Some(task_id),
+            jwt: Some(jwt),
         }
     }
 }
@@ -57,7 +59,11 @@ impl PivotLibrary for StdPivotLibrary {
         let task_id = self
             .task_id
             .ok_or_else(|| "No task_id available".to_string())?;
-        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, cmd)
+        let jwt = self
+            .jwt
+            .clone()
+            .ok_or_else(|| "No JWT available".to_string())?;
+        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, jwt, cmd)
             .map_err(|e| e.to_string())
     }
 
@@ -69,8 +75,12 @@ impl PivotLibrary for StdPivotLibrary {
         let task_id = self
             .task_id
             .ok_or_else(|| "No task_id available".to_string())?;
+        let jwt = self
+            .jwt
+            .clone()
+            .ok_or_else(|| "No JWT available".to_string())?;
         agent
-            .start_repl_reverse_shell(task_id)
+            .start_repl_reverse_shell(task_id, jwt)
             .map_err(|e| e.to_string())
     }
 
@@ -82,7 +92,11 @@ impl PivotLibrary for StdPivotLibrary {
         let task_id = self
             .task_id
             .ok_or_else(|| "No task_id available".to_string())?;
-        agent.create_portal(task_id).map_err(|e| e.to_string())
+        let jwt = self
+            .jwt
+            .clone()
+            .ok_or_else(|| "No JWT available".to_string())?;
+        agent.create_portal(task_id, jwt).map_err(|e| e.to_string())
     }
 
     fn ssh_exec(

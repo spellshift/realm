@@ -32,6 +32,7 @@ pub mod terminate_impl;
 pub struct StdAgentLibrary {
     pub agent: Arc<dyn Agent>,
     pub task_id: i64,
+    pub jwt: String,
 }
 
 impl core::fmt::Debug for StdAgentLibrary {
@@ -43,8 +44,8 @@ impl core::fmt::Debug for StdAgentLibrary {
 }
 
 impl StdAgentLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
-        Self { agent, task_id }
+    pub fn new(agent: Arc<dyn Agent>, task_id: i64, jwt: String) -> Self {
+        Self { agent, task_id, jwt }
     }
 }
 
@@ -71,7 +72,7 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn report_file(&self, file: FileWrapper) -> Result<(), String> {
-        report_file_impl::report_file(self.agent.clone(), self.task_id, file)
+        report_file_impl::report_file(self.agent.clone(), self.task_id, self.jwt.clone(), file)
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {

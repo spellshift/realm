@@ -136,13 +136,13 @@ impl Interpreter {
     pub fn with_agent(mut self, agent: Arc<dyn Agent>) -> Self {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
-        let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
+        let agent_lib = StdAgentLibrary::new(agent.clone(), 0, String::new());
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), 0);
+        let report_lib = StdReportLibrary::new(agent.clone(), 0, String::new());
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), 0);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), 0, String::new());
         self.inner.register_lib(pivot_lib);
 
         // Assets library
@@ -167,15 +167,16 @@ impl Interpreter {
         mut self,
         agent: Arc<dyn Agent>,
         task_id: i64,
+        jwt: String,
         remote_assets: Vec<String>,
     ) -> Self {
-        let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
+        let agent_lib = StdAgentLibrary::new(agent.clone(), task_id, jwt.clone());
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), task_id);
+        let report_lib = StdReportLibrary::new(agent.clone(), task_id, jwt.clone());
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id, jwt);
         self.inner.register_lib(pivot_lib);
 
         let assets_lib = StdAssetsLibrary::<A>::new(agent, remote_assets);

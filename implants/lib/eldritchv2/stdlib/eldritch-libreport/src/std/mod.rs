@@ -16,6 +16,7 @@ pub mod user_password_impl;
 pub struct StdReportLibrary {
     pub agent: Arc<dyn Agent>,
     pub task_id: i64,
+    pub jwt: String,
 }
 
 impl core::fmt::Debug for StdReportLibrary {
@@ -27,14 +28,14 @@ impl core::fmt::Debug for StdReportLibrary {
 }
 
 impl StdReportLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
-        Self { agent, task_id }
+    pub fn new(agent: Arc<dyn Agent>, task_id: i64, jwt: String) -> Self {
+        Self { agent, task_id, jwt }
     }
 }
 
 impl ReportLibrary for StdReportLibrary {
     fn file(&self, path: String) -> Result<(), String> {
-        file_impl::file(self.agent.clone(), self.task_id, path)
+        file_impl::file(self.agent.clone(), self.task_id, self.jwt.clone(), path)
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {

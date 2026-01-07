@@ -62,6 +62,7 @@ impl TaskRegistry {
 
     pub fn spawn(&self, task: Task, agent: Arc<dyn Agent>) {
         let task_id = task.id;
+        let jwt = task.jwt.clone();
 
         // 1. Register logic
         if !self.register_task(&task) {
@@ -78,7 +79,7 @@ impl TaskRegistry {
 
         thread::spawn(move || {
             if let Some(tome) = task.tome {
-                execute_task(task_id, tome, agent, runtime_handle);
+                execute_task(task_id, jwt, tome, agent, runtime_handle);
             } else {
                 log::warn!("Task {task_id} has no tome");
             }
@@ -134,6 +135,7 @@ impl TaskRegistry {
                 id: *id,
                 tome: None,
                 quest_name: handle.quest.clone(),
+                jwt: String::new(),
             })
             .collect()
     }
@@ -154,6 +156,7 @@ impl TaskRegistry {
 
 fn execute_task(
     task_id: i64,
+    jwt: String,
     tome: pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
@@ -161,7 +164,7 @@ fn execute_task(
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx));
-    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), printer.clone());
+    let mut interp = setup_interpreter(task_id, jwt, &tome, agent.clone(), printer.clone());
 
     // Report Start
     report_start(task_id, &agent);
@@ -199,6 +202,7 @@ fn execute_task(
 
 fn setup_interpreter(
     task_id: i64,
+    jwt: String,
     tome: &pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     printer: Arc<StreamPrinter>,
@@ -207,7 +211,7 @@ fn setup_interpreter(
 
     // Register Task Context (Agent, Report, Assets)
     let remote_assets = tome.file_names.clone();
-    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, remote_assets);
+    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, jwt, remote_assets);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome

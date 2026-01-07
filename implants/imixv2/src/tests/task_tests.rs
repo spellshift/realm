@@ -46,13 +46,18 @@ impl Agent for MockAgent {
         self.output_reports.lock().unwrap().push(req);
         Ok(c2::ReportTaskOutputResponse {})
     }
-    fn create_portal(&self, _task_id: i64) -> Result<(), String> {
+    fn create_portal(&self, _task_id: i64, _jwt: String) -> Result<(), String> {
         Ok(())
     }
-    fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
+    fn start_reverse_shell(
+        &self,
+        _task_id: i64,
+        _jwt: String,
+        _cmd: Option<String>,
+    ) -> Result<(), String> {
         Ok(())
     }
-    fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _task_id: i64, _jwt: String) -> Result<(), String> {
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
@@ -113,6 +118,7 @@ async fn test_task_registry_spawn() {
             ..Default::default()
         }),
         quest_name: "test_quest".to_string(),
+        ..Default::default()
     };
 
     let registry = TaskRegistry::new();
@@ -161,6 +167,7 @@ async fn test_task_streaming_output() {
             ..Default::default()
         }),
         quest_name: "streaming_test".to_string(),
+        ..Default::default()
     };
 
     let registry = TaskRegistry::new();
@@ -203,6 +210,7 @@ async fn test_task_streaming_error() {
             ..Default::default()
         }),
         quest_name: "error_test".to_string(),
+        ..Default::default()
     };
 
     let registry = TaskRegistry::new();
@@ -250,6 +258,7 @@ async fn test_task_registry_list_and_stop() {
             ..Default::default()
         }),
         quest_name: "list_stop_quest".to_string(),
+        ..Default::default()
     };
 
     let registry = TaskRegistry::new();

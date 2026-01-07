@@ -3,7 +3,7 @@ use alloc::sync::Arc;
 use eldritch_agent::Agent;
 use pb::{c2, eldritch};
 
-pub fn file(agent: Arc<dyn Agent>, task_id: i64, path: String) -> Result<(), String> {
+pub fn file(agent: Arc<dyn Agent>, task_id: i64, jwt: String, path: String) -> Result<(), String> {
     let content = std::fs::read(&path).map_err(|e| e.to_string())?;
 
     let metadata = eldritch::FileMetadata {
@@ -15,9 +15,11 @@ pub fn file(agent: Arc<dyn Agent>, task_id: i64, path: String) -> Result<(), Str
         chunk: content,
     };
 
+    println!("reporting file chunk with JWT: {}", jwt);
     let req = c2::ReportFileRequest {
         task_id,
         chunk: Some(file_msg),
+        jwt,
     };
 
     agent.report_file(req).map(|_| ())

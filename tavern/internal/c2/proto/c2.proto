@@ -118,7 +118,7 @@ message ReportCredentialResponse {}
 message ReportFileRequest {
     int64 task_id = 1;
     eldritch.File chunk = 2;
-
+    string jwt = 3;
 }
 message ReportFileResponse {}
 

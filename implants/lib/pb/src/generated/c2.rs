@@ -228,6 +228,8 @@ pub struct ReportFileRequest {
     pub task_id: i64,
     #[prost(message, optional, tag = "2")]
     pub chunk: ::core::option::Option<crate::eldritch::File>,
+    #[prost(string, tag = "3")]
+    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
