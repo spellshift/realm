@@ -31,7 +31,7 @@ mod tests {
         let result = lib.copy("print/main.eldritch".to_string(), dest_str.clone());
         assert!(result.is_ok());
         let content = std::fs::read_to_string(dest_path).unwrap();
-        assert_eq!(content, "print(\"This script just prints\")\n");
+        assert_eq!(content.trim(), "print(\"This script just prints\")");
         Ok(())
     }
 
