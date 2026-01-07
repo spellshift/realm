@@ -190,6 +190,7 @@ async fn test_imix_agent_report_file() {
     std::thread::spawn(move || {
         let _ = agent_clone.report_file(c2::ReportFileRequest {
             task_id: 1,
+            jwt: "test jwt".to_string(),
             chunk: None,
         });
     })

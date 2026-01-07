@@ -12,7 +12,12 @@ fn create_interp() -> Interpreter {
         let task_id = 123;
         Interpreter::new()
             .with_default_libs()
-            .with_task_context::<eldritch_libassets::std::EmptyAssets>(agent_mock, task_id, vec![])
+            .with_task_context::<eldritch_libassets::std::EmptyAssets>(
+                agent_mock,
+                task_id,
+                "some jwt".to_string(),
+                vec![],
+            )
     }
     #[cfg(not(feature = "stdlib"))]
     {

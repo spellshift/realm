@@ -37,7 +37,11 @@ async fn test_start_reverse_shell() {
     // Execution must happen in a separate thread to allow block_on
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
-        agent_clone.start_reverse_shell(12345, Some("echo test".to_string()))
+        agent_clone.start_reverse_shell(
+            12345,
+            "some jwt".to_string(),
+            Some("echo test".to_string()),
+        )
     })
     .join()
     .unwrap();

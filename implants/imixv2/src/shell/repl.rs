@@ -65,10 +65,14 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             agent: agent.clone(),
         });
 
-        let mut interpreter =
-            Interpreter::new_with_printer(printer)
-                .with_default_libs()
-                .with_task_context::<crate::assets::Asset>(Arc::new(agent), task_id, jwt, Vec::new());
+        let mut interpreter = Interpreter::new_with_printer(printer)
+            .with_default_libs()
+            .with_task_context::<crate::assets::Asset>(
+            Arc::new(agent),
+            task_id,
+            jwt,
+            Vec::new(),
+        );
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),
