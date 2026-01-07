@@ -2,6 +2,8 @@ package portals_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"fmt"
 	"net"
 	"testing"
@@ -54,11 +56,15 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 
 	c2StreamMux := stream.NewMux(topic, sub)
 
+	// Generate test ED25519 key for JWT signing
+	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
 	// Start c2StreamMux in background
 	ctxMux, cancelMux := context.WithCancel(ctx)
 	go c2StreamMux.Start(ctxMux)
 
-	c2Server := c2.New(entClient, c2StreamMux, portalMux)
+	c2Server := c2.New(entClient, c2StreamMux, portalMux, testPrivKey)
 	portalServer := portals.New(entClient, portalMux)
 
 	// 4. Setup gRPC Listener with bufconn

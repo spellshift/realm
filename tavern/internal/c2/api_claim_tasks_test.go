@@ -163,9 +163,14 @@ func TestClaimTasks(t *testing.T) {
 				return
 			}
 
-			// Assert Response
-			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform()); diff != "" {
+			// Assert Response (ignore JWT field as it contains timestamps and will be different each time)
+			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform(), protocmp.IgnoreFields(&c2pb.Task{}, "jwt")); diff != "" {
 				t.Errorf("invalid response (-want +got): %v", diff)
+			}
+
+			// Verify JWT is present and non-empty for each task
+			for _, task := range resp.Tasks {
+				assert.NotEmpty(t, task.Jwt, "JWT should be present in task")
 			}
 
 			// Load Beacon

@@ -400,6 +400,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		for _, a := range claimedAssets {
 			claimedAssetNames = append(claimedAssetNames, a.Name)
 		}
+
+		// Generate JWT with beacon ID
+		jwtToken, err := srv.generateTaskJWT(beaconID)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to generate JWT for task (id=%d): %w", taskID, err))
+		}
+
 		resp.Tasks = append(resp.Tasks, &c2pb.Task{
 			Id:        int64(claimedTask.ID),
 			QuestName: claimedQuest.Name,
@@ -408,6 +415,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				Parameters: params,
 				FileNames:  claimedAssetNames,
 			},
+			Jwt: jwtToken,
 		})
 	}
 

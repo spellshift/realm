@@ -2,10 +2,14 @@ package c2
 
 import (
 	"context"
+	"crypto/ed25519"
+	"fmt"
 	"log/slog"
 	"net"
 	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -19,16 +23,18 @@ type Server struct {
 	graph            *ent.Client
 	mux              *stream.Mux
 	portalMux        *mux.Mux
+	jwtSigningKey    ed25519.PrivateKey
 
 	c2pb.UnimplementedC2Server
 }
 
-func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux) *Server {
+func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtSigningKey ed25519.PrivateKey) *Server {
 	return &Server{
 		MaxFileChunkSize: 1024 * 1024, // 1 MB
 		graph:            graph,
 		mux:              mux,
 		portalMux:        portalMux,
+		jwtSigningKey:    jwtSigningKey,
 	}
 }
 
@@ -76,4 +82,21 @@ func GetClientIP(ctx context.Context) string {
 		slog.Error("Bad remote IP", "ip", remoteIp)
 	}
 	return "unknown"
+}
+
+// generateTaskJWT creates a signed JWT token containing the beacon ID
+func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
+	claims := jwt.MapClaims{
+		"beacon_id": beaconID,
+		"iat":       time.Now().Unix(),
+		"exp":       time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	signedToken, err := token.SignedString(srv.jwtSigningKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign JWT: %w", err)
+	}
+
+	return signedToken, nil
 }

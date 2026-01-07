@@ -70,6 +70,7 @@ message Task {
     int64 id = 1;
     eldritch.Tome tome = 2;
     string quest_name = 3;
+    string jwt = 4;
 }
 
 // TaskError provides information when task execution fails.

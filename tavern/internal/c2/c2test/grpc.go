@@ -2,6 +2,8 @@ package c2test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"errors"
 	"net"
 	"testing"
@@ -49,10 +51,14 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
 	portalMux := mux.New(mux.WithInMemoryDriver())
 
+	// Generate test ED25519 key for JWT signing
+	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPrivKey))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

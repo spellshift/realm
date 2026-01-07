@@ -157,6 +157,8 @@ pub struct Task {
     pub tome: ::core::option::Option<crate::eldritch::Tome>,
     #[prost(string, tag = "3")]
     pub quest_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub jwt: ::prost::alloc::string::String,
 }
 /// TaskError provides information when task execution fails.
 #[allow(clippy::derive_partial_eq_without_eq)]

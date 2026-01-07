@@ -2,6 +2,7 @@ package portals_test
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"fmt"
 	"log/slog"
@@ -92,7 +93,11 @@ func BenchmarkPortalThroughput(b *testing.B) {
 	// Create a placeholder shellMux since C2 requires it, but we won't use it.
 	var shellMux *stream.Mux = nil
 
-	c2Srv := c2.New(client, shellMux, portalMux)
+	// Generate test ED25519 key for JWT signing
+	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(b, err)
+
+	c2Srv := c2.New(client, shellMux, portalMux, testPrivKey)
 	portalSrv := portals.New(client, portalMux)
 
 	// 4. Start gRPC Server
