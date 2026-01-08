@@ -131,6 +131,18 @@ for user_home_dir in file.list("/home/"):
 > [!CAUTION]
 > **DANGER**: The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
+### agent.claim_tasks (V2-Only)
+
+`agent.claim_tasks() -> List<Dict>`
+
+The **agent.claim_tasks** method contacts the C2 server to claim any pending tasks for this agent.
+
+### agent.fetch_asset (V2-Only)
+
+`agent.fetch_asset(name: str) -> List<int>`
+
+The **agent.fetch_asset** method retrieves the content of an asset from the agent's internal storage or C2.
+
 ### agent.get_config (V2-Only)
 
 `agent.get_config() -> Dict<str, Value>`
@@ -172,6 +184,29 @@ The **agent.list_tasks** method returns a list of dictionaries representing the 
 
 The **agent.stop_task** method stops a specific background task by its ID. If the task cannot be stopped or does not exist, the method will error.
 
+### agent.report_credential (V2-Only)
+
+`agent.report_credential(credential: Dict) -> None`
+
+The **agent.report_credential** method reports a discovered credential to the C2 server.
+
+### agent.report_file (V2-Only)
+
+`agent.report_file(file: Dict) -> None`
+
+The **agent.report_file** method reports a file (metadata and content) to the C2 server.
+
+### agent.report_process_list (V2-Only)
+
+`agent.report_process_list(list: List<Dict>) -> None`
+
+The **agent.report_process_list** method reports the current process list to the C2 server.
+
+### agent.report_task_output (V2-Only)
+
+`agent.report_task_output(output: str, error: Option<str>) -> None`
+
+The **agent.report_task_output** method reports the output (stdout/stderr) of a task to the C2 server.
 
 ### agent.set_callback_interval
 
@@ -250,6 +285,18 @@ The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts 
 
 Key must be 16 Bytes (Characters)
 
+### crypto.aes_decrypt
+
+`crypto.aes_decrypt(key: List<int>, iv: List<int>, data: List<int>) -> List<int>`
+
+The <b>crypto.aes_decrypt</b> method decrypts the given data using AES (CBC mode).
+
+### crypto.aes_encrypt
+
+`crypto.aes_encrypt(key: List<int>, iv: List<int>, data: List<int>) -> List<int>`
+
+The <b>crypto.aes_encrypt</b> method encrypts the given data using AES (CBC mode).
+
 ### crypto.encode_b64
 
 `crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
@@ -323,6 +370,24 @@ The <b>crypto.hash_file</b> method will produce the hash of the given file's con
 - SHA256
 - SHA512
 
+### crypto.md5
+
+`crypto.md5(data: List<int>) -> str`
+
+The <b>crypto.md5</b> method calculates the MD5 hash of the provided byte data and returns it as a hexadecimal string.
+
+### crypto.sha1
+
+`crypto.sha1(data: List<int>) -> str`
+
+The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided byte data and returns it as a hexadecimal string.
+
+### crypto.sha256
+
+`crypto.sha256(data: List<int>) -> str`
+
+The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided byte data and returns it as a hexadecimal string.
+
 ---
 
 ## File
@@ -388,9 +453,9 @@ The <b>file.is_file</b> method checks if a path exists and is a file. If it does
 
 ### file.list
 
-`file.list(path: str) -> List<Dict>`
+`file.list(path: Option<str>) -> List<Dict>`
 
-The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
+The <b>file.list</b> method returns a list of files at the specified path. If `path` is omitted (None), it defaults to the current working directory. The path is relative to your current working directory and can be traversed with `../`.
 This function also supports globbing with `*` for example:
 
 ```python
@@ -443,11 +508,11 @@ Here is an example of the Dict layout:
 
 The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
-### file.moveto
+### file.move
 
-`file.moveto(src: str, dst: str) -> None`
+`file.move(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
@@ -522,9 +587,9 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 ### file.timestomp
 
-`file.timestomp(src: str, dst: str) -> None`
+`file.timestomp(path: str, mtime: Option<Value>, atime: Option<Value>, ctime: Option<Value>, ref_file: Option<str>) -> None`
 
-Unimplemented.
+The <b>file.timestomp</b> method modifies the timestamps (modified, access, creation) of a file. It can use specific values (epoch int or string) or copy timestamps from a reference file.
 
 ### file.write
 
@@ -666,6 +731,18 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 `pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
+
+### pivot.reverse_shell_repl
+
+`pivot.reverse_shell_repl() -> None`
+
+The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter. This is useful if a PTY is not available.
+
+### pivot.create_portal
+
+`pivot.create_portal() -> None`
+
+The **pivot.create_portal** method opens a bi-directional stream (portal) for traffic tunneling.
 
 ### pivot.smb_exec
 
@@ -814,16 +891,28 @@ The random library is designed to enable generation of cryptogrphically secure r
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.bytes
+
+`random.bytes(len: int) -> List<int>`
+
+The <b>random.bytes</b> method generates a list of `len` random bytes.
+
 ### random.int
 
-`random.int(min: i32, max: i32) -> i32`
+`random.int(min: int, max: int) -> int`
 
 The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum.
 
 ### random.string
 
-`random.string(length: uint, charset: Optional<str>) -> str`
+`random.string(length: int, charset: Optional<str>) -> str`
 The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
+### random.uuid
+
+`random.uuid() -> str`
+
+The <b>random.uuid</b> method generates a random UUID (v4) string.
 
 ---
 
@@ -908,9 +997,9 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
-The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
+The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list. The `input` parameter allows passing a string to the process's stdin.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
@@ -1239,6 +1328,6 @@ The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This
 
 ### time.sleep
 
-`time.sleep(secs: float)`
+`time.sleep(secs: int)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.
