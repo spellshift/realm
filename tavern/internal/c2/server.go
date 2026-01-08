@@ -119,6 +119,6 @@ func (srv *Server) ValidateJWT(jwttoken string) error {
 		return nil
     }
 
-	slog.Info(fmt.Sprintf("recieved valid JWT: {}", jwttoken))
+	slog.Info(fmt.Sprintf("recieved valid JWT: %s", jwttoken))
     return nil
 }
