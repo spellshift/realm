@@ -52,13 +52,13 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	portalMux := mux.New(mux.WithInMemoryDriver())
 
 	// Generate test ED25519 key for JWT signing
-	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPrivKey))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPubKey, testPrivKey))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

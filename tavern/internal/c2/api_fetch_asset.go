@@ -15,6 +15,12 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
+	//
+	err := srv.ValidateJWT(req.Jwt)
+	if err != nil {
+		return err
+	}
+
 	// Load Asset
 	name := req.GetName()
 	a, err := srv.graph.Asset.Query().

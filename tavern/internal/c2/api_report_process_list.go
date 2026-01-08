@@ -18,6 +18,11 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	if req.List == nil || len(req.List.List) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
 	}
+	err := srv.ValidateJWT(req.Jwt)
+	if err != nil {
+		return nil, err
+	}
+
 
 	// Load Task
 	task, err := srv.graph.Task.Get(ctx, int(req.TaskId))

@@ -65,13 +65,13 @@ func TestReverseShell_E2E(t *testing.T) {
 	portalMux := mux.New(mux.WithInMemoryDriver())
 
 	// Generate test ED25519 key for JWT signing
-	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
 	go wsMux.Start(ctx)
 	go grpcMux.Start(ctx)
 
-	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux, testPrivKey))
+	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux, testPubKey, testPrivKey))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			t.Logf("Server exited with error: %v", err)

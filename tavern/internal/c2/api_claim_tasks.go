@@ -402,7 +402,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 
 		// Generate JWT with beacon ID
-		jwtToken, err := srv.generateTaskJWT(beaconID)
+		jwtToken, err := srv.generateTaskJWT()
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to generate JWT for task (id=%d): %w", taskID, err))
 		}

@@ -57,14 +57,14 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	c2StreamMux := stream.NewMux(topic, sub)
 
 	// Generate test ED25519 key for JWT signing
-	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
 	// Start c2StreamMux in background
 	ctxMux, cancelMux := context.WithCancel(ctx)
 	go c2StreamMux.Start(ctxMux)
 
-	c2Server := c2.New(entClient, c2StreamMux, portalMux, testPrivKey)
+	c2Server := c2.New(entClient, c2StreamMux, portalMux, testPubKey, testPrivKey)
 	portalServer := portals.New(entClient, portalMux)
 
 	// 4. Setup gRPC Listener with bufconn

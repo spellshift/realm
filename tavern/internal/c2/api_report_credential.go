@@ -17,6 +17,11 @@ func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredent
 	if req.Credential == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide credential")
 	}
+	err := srv.ValidateJWT(req.Jwt)
+	if err != nil {
+		return nil, err
+	}
+
 
 	// Load Task
 	task, err := srv.graph.Task.Get(ctx, int(req.TaskId))

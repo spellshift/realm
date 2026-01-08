@@ -94,10 +94,10 @@ func BenchmarkPortalThroughput(b *testing.B) {
 	var shellMux *stream.Mux = nil
 
 	// Generate test ED25519 key for JWT signing
-	_, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(b, err)
 
-	c2Srv := c2.New(client, shellMux, portalMux, testPrivKey)
+	c2Srv := c2.New(client, shellMux, portalMux, testPubKey, testPrivKey)
 	portalSrv := portals.New(client, portalMux)
 
 	// 4. Start gRPC Server

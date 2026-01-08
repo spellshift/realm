@@ -508,12 +508,12 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
 	// Get ED25519 private key for JWT signing
-	_, ed25519PrivKey, err := getKeyPairEd25519()
+	ed25519PubKey, ed25519PrivKey, err := getKeyPairEd25519()
 	if err != nil {
 		panic(err)
 	}
 
-	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PrivKey)
+	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
