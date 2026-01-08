@@ -289,7 +289,12 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportTaskOutputResponse {})
     }
 
-    fn start_reverse_shell(&self, task_id: i64, jwt: String, cmd: Option<String>) -> Result<(), String> {
+    fn start_reverse_shell(
+        &self,
+        task_id: i64,
+        jwt: String,
+        cmd: Option<String>,
+    ) -> Result<(), String> {
         self.spawn_subtask(task_id, move |transport| async move {
             run_reverse_shell_pty(task_id, jwt, cmd, transport).await
         })
