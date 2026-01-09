@@ -61,13 +61,12 @@ mod tests {
     #[test]
     fn test_assets_read_binary() -> anyhow::Result<()> {
         let res = read_binary_embedded("print/main.eldritch".to_string())?;
-        let res_str: String = res.into_iter()
+        let res_str: String = res
+            .into_iter()
             .map(|u| std::char::from_u32(u).ok_or("Invalid Unicode scalar"))
-            .collect::<Result<String, _>>().map_err(|e| anyhow::format_err!(e))?;
-        assert_eq!(
-            res_str.trim(),
-            "print(\"This script just prints\")"
-        );
+            .collect::<Result<String, _>>()
+            .map_err(|e| anyhow::format_err!(e))?;
+        assert_eq!(res_str.trim(), "print(\"This script just prints\")");
         Ok(())
     }
 
