@@ -187,6 +187,8 @@ By default, Tavern does not export metrics. You may use the below environment co
 | ------- | ----------- | ------- | -------- |
 | ENABLE_METRICS | Set to any value to enable the "/metrics" endpoint. | Disabled | No |
 | HTTP_METRICS_LISTEN_ADDR | Listen address for the metrics HTTP server, it must be different than the value of `HTTP_LISTEN_ADDR`. | `127.0.0.1:8000` | No |
+| ENABLE_INSTANCE_ID_LOGGING | Include the tavern instance id in log messages. | Disabled | No |
+| ENABLE_GRAPHQL_RAW_QUERY_LOGGING | Include the raw GraphQL query in graphql log messages. | Disabled | No |
 
 ### Secrets
 
@@ -339,6 +341,12 @@ ENABLE_TEST_DATA=1 go run ./tavern
 2023/02/24 01:02:37 [WARN] OAuth is not configured, authentication disabled
 2023/02/24 01:02:37 [WARN] Test data is enabled
 2023/02/24 01:02:37 Starting HTTP server on 0.0.0.0:80
+```
+
+Running Tavern with the `ENABLE_TEST_RUN_AND_EXIT` environment variable set will start the application, populate test data (if enabled), and then exit immediately. This is primarily used for integration testing.
+
+```sh
+ENABLE_TEST_RUN_AND_EXIT=1 go run ./tavern
 ```
 
 ### Default Tomes
