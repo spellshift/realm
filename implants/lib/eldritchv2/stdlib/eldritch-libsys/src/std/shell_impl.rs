@@ -107,9 +107,8 @@ mod tests {
 
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
-        let expected = whoami::username();
+        let expected = whoami::username().to_lowercase();
         let res = handle_shell(String::from("whoami"))?.stdout;
-        println!(res, expected);
         assert!(res.contains(&expected));
         Ok(())
     }

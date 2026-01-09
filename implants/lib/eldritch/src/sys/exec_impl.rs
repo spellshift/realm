@@ -177,16 +177,13 @@ mod tests {
         {
             let res = handle_exec(
                 String::from("/bin/sh"),
-                vec![String::from("-c"), String::from("id -u")],
+                vec![String::from("-c"), String::from("id")],
                 HashMap::new(),
                 false,
             )?
             .stdout;
-            let mut bool_res = false;
-            if res == "1001\n" || res == "0\n" {
-                bool_res = true;
-            }
-            assert!(bool_res);
+            let expected = whoami::username().to_lowercase();
+            assert!(res.contains(&expected));
         } else if cfg!(target_os = "macos") {
             let res = handle_exec(
                 String::from("/bin/echo"),
@@ -205,12 +202,8 @@ mod tests {
             )?
             .stdout
             .to_lowercase();
-            let mut bool_res = false;
-            if res.contains("runneradmin") || res.contains("administrator") || res.contains("user")
-            {
-                bool_res = true;
-            }
-            assert!(bool_res);
+            let expected = whoami::username().to_lowercase();
+            assert!(res.contains(&expected));
         }
         Ok(())
     }
