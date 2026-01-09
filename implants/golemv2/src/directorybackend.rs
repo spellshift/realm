@@ -3,7 +3,7 @@ use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use anyhow::anyhow;
 use core::fmt::Debug;
-use eldritch_libassets::std::AssetBackend;
+use eldritchv2::assets::std::AssetBackend;
 use std::fs;
 use std::path::PathBuf;
 
