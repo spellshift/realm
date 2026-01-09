@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"realm.pub/tavern/internal/automation"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
@@ -17,7 +18,10 @@ func TestHandleTomeAutomation(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	srv := &Server{graph: client}
+	srv := &Server{
+		graph:      client,
+		automation: automation.NewService(client),
+	}
 	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
 
 	// Create a dummy host and beacon for testing
@@ -141,7 +145,7 @@ func TestHandleTomeAutomation(t *testing.T) {
 
 			// Use 0 interval to match "current minute" logic (cutoff = now)
 			// effectively checking sched.Next(now-1s) <= now
-			srv.handleTomeAutomation(ctx, b.ID, h.ID, tt.isNewBeacon, tt.isNewHost, now, 0)
+			srv.automation.RunTomeAutomation(ctx, b.ID, h.ID, tt.isNewBeacon, tt.isNewHost, now, 0)
 
 			// Verify Tasks
 			tasks := client.Task.Query().WithQuest(func(q *ent.QuestQuery) {
@@ -163,7 +167,10 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	srv := &Server{graph: client}
+	srv := &Server{
+		graph:      client,
+		automation: automation.NewService(client),
+	}
 	now := time.Now()
 
 	h := client.Host.Create().
@@ -188,7 +195,7 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 		SaveX(ctx)
 
 	// Trigger all conditions
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, true, true, now, 0)
+	srv.automation.RunTomeAutomation(ctx, b.ID, h.ID, true, true, now, 0)
 
 	// Should only have 1 task
 	count := client.Task.Query().CountX(ctx)
@@ -200,7 +207,10 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	srv := &Server{graph: client}
+	srv := &Server{
+		graph:      client,
+		automation: automation.NewService(client),
+	}
 	// Date: 3:00:56 PM
 	now := time.Date(2023, 10, 27, 15, 0, 56, 0, time.UTC)
 
@@ -226,7 +236,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	// 1. First Check-in at 3:00:56 PM. Interval 120s.
 	// Window: [3:00:56, 3:02:56].
 	// Schedule 3:01:00 is in window.
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 120*time.Second)
+	srv.automation.RunTomeAutomation(ctx, b.ID, h.ID, false, false, now, 120*time.Second)
 
 	count := client.Task.Query().CountX(ctx)
 	assert.Equal(t, 1, count, "Tome should be queued at 3:00:56 for 3:01:00 schedule")
@@ -239,7 +249,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	// Next checkin: 3:04:56.
 	// Schedule 3:01:00 (tomorrow) is NOT in window.
 	nextCheckin := now.Add(2 * time.Minute) // 3:02:56
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, nextCheckin, 120*time.Second)
+	srv.automation.RunTomeAutomation(ctx, b.ID, h.ID, false, false, nextCheckin, 120*time.Second)
 
 	count = client.Task.Query().CountX(ctx)
 	assert.Equal(t, 0, count, "Tome should NOT be queued at 3:02:56")
@@ -250,7 +260,10 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	srv := &Server{graph: client}
+	srv := &Server{
+		graph:      client,
+		automation: automation.NewService(client),
+	}
 	// 06:05:00
 	now := time.Date(2023, 10, 27, 6, 5, 0, 0, time.UTC)
 
@@ -268,7 +281,7 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 
 	// 1. Current time 06:05:00. Matches range. Should run.
 	// Interval irrelevant (using 1h to prove lookahead is ignored if range logic applies)
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 1*time.Hour)
+	srv.automation.RunTomeAutomation(ctx, b.ID, h.ID, false, false, now, 1*time.Hour)
 	count := client.Task.Query().CountX(ctx)
 	assert.Equal(t, 1, count, "Range tome should run at 06:05:00")
 
@@ -279,7 +292,7 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	// Lookahead (1h) would see 06:00:00.
 	// But Range logic should IGNORE lookahead.
 	early := now.Add(-10 * time.Minute) // 05:55:00
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, early, 1*time.Hour)
+	srv.automation.RunTomeAutomation(ctx, b.ID, h.ID, false, false, early, 1*time.Hour)
 	count = client.Task.Query().CountX(ctx)
 	assert.Equal(t, 0, count, "Range tome should NOT run at 05:55:00 even with lookahead")
 }

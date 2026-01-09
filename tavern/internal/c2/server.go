@@ -8,10 +8,13 @@ import (
 
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"realm.pub/tavern/internal/automation"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/netutils"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/registration"
 )
 
 type Server struct {
@@ -19,6 +22,8 @@ type Server struct {
 	graph            *ent.Client
 	mux              *stream.Mux
 	portalMux        *mux.Mux
+	automation       *automation.Service
+	registration     *registration.Service
 
 	c2pb.UnimplementedC2Server
 }
@@ -29,6 +34,8 @@ func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux) *Server {
 		graph:            graph,
 		mux:              mux,
 		portalMux:        portalMux,
+		automation:       automation.NewService(graph),
+		registration:     registration.NewService(graph),
 	}
 }
 
@@ -51,7 +58,7 @@ func GetClientIP(ctx context.Context) string {
 	if ok {
 		if redirectedFor, exists := md["x-redirected-for"]; exists && len(redirectedFor) > 0 {
 			clientIP := strings.TrimSpace(redirectedFor[0])
-			if validateIP(clientIP) {
+			if netutils.ValidateIP(clientIP) {
 				return clientIP
 			} else {
 				slog.Error("bad x-redirected-for ip", "ip", clientIP)
@@ -60,7 +67,7 @@ func GetClientIP(ctx context.Context) string {
 		if forwardedFor, exists := md["x-forwarded-for"]; exists && len(forwardedFor) > 0 {
 			// X-Forwarded-For is a comma-separated list, the first IP is the original client
 			clientIP := strings.TrimSpace(strings.Split(forwardedFor[0], ",")[0])
-			if validateIP(clientIP) {
+			if netutils.ValidateIP(clientIP) {
 				return clientIP
 			} else {
 				slog.Error("bad x-forwarded-for ip", "ip", clientIP)
@@ -70,7 +77,7 @@ func GetClientIP(ctx context.Context) string {
 
 	// Fallback to peer address
 	remoteIp := getRemoteIP(ctx)
-	if validateIP(remoteIp) {
+	if netutils.ValidateIP(remoteIp) {
 		return remoteIp
 	} else {
 		slog.Error("Bad remote IP", "ip", remoteIp)
