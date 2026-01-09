@@ -7,8 +7,8 @@ def process_info(pid):
                 print("\t- {}".format(nested_value))
         elif key == "environ":
             print("env_variables=")
-            for nested_value in value.split(","):
-                print("\t- {}".format(nested_value))
+            for k, v in value.items():
+                print("\t- {}={}".format(k, v))
         else:
             print("{}={}".format(key, value))
 
