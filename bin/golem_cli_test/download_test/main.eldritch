@@ -1,14 +1,10 @@
 def download_stuff_test():
-    dest_path = "Fail"
-    if sys.is_linux() or sys.is_macos():
-        dest_path = "/tmp/golem_cli_test-download_test_dest"
-    elif sys.is_windows():
-        dest_path = "C:\Windows\Temp\golem_cli_test-download_test_dest"
-    else:
-        print("Failure - OS not supported")
+    content = http.get("https://raw.githubusercontent.com/spellshift/realm/refs/heads/main/README.md")
+    body = str(content["body"])
+    if not "# Realm" in body:
+        print("failed to download readme")
         return -1
 
-    http.download("https://github.com/spellshift/realm/releases/download/v0.0.1/imix-linux-x64",dest_path)
     print("OKAY!")
     return 0
 

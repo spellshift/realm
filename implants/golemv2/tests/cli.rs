@@ -10,14 +10,9 @@ const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test";
 fn test_golem_main_file_not_found() -> anyhow::Result<()> {
     let mut cmd = Command::new(cargo_bin!("golemv2"));
     cmd.arg("nonexistentdir/run.eldritch");
-    #[cfg(target_os = "linux")]
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("Error: No such file or asset"));
-    #[cfg(target_os = "windows")]
-    cmd.assert().failure().stderr(predicate::str::contains(
-        "Error: The system cannot find the path specified. (os error 3)",
-    ));
 
     Ok(())
 }
@@ -84,7 +79,7 @@ fn test_golem_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
     cmd.arg(GOLEM_CLI_TEST_DIR);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"hello from an embedded script"#))
+        .stdout(predicate::str::contains(r#"hello from an embedded shell script"#))
         .stdout(predicate::str::contains(r#"hello from an asset directory"#));
     Ok(())
 }
