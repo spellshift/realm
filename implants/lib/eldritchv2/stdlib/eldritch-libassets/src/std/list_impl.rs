@@ -1,33 +1,30 @@
-use crate::RustEmbed;
+use crate::std::StdAssetsLibrary;
 use alloc::string::String;
-use alloc::vec::Vec;
 
-pub fn list<A: RustEmbed>(remote_assets: &[String]) -> Result<Vec<String>, String> {
-    let mut files: Vec<String> = A::iter().map(|s| s.to_string()).collect();
-    // Append remote assets to the list if they are not already there
-    for remote in remote_assets {
-        if !files.contains(remote) {
-            files.push(remote.clone());
-        }
+impl StdAssetsLibrary {
+    pub fn list_impl(&self) -> Result<Vec<String>, String> {
+        Ok(self.asset_names.iter().cloned().collect())
     }
-    Ok(files)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::std::read_binary_impl::tests::{MockAgent, TestAsset};
+    use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
+    use std::sync::Arc;
 
     #[test]
-    fn test_list() {
-        use super::super::read_binary_impl::tests::TestAsset;
+    fn test_list() -> anyhow::Result<()> {
+        let agent = Arc::new(MockAgent::new());
         let remote_files = vec!["remote1.txt".to_string(), "remote2.txt".to_string()];
-        let list_result = list::<TestAsset>(&remote_files).unwrap();
-        assert!(
-            list_result
-                .iter()
-                .any(|f| f.contains("print/main.eldritch"))
-        );
-        assert!(list_result.contains(&"remote1.txt".to_string()));
-        assert!(list_result.contains(&"remote2.txt".to_string()));
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(agent, remote_files.clone())))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        let list = lib.list().unwrap();
+        assert!(list.iter().any(|f| f.contains("print/main.eldritch")));
+        assert!(list.contains(&"remote1.txt".to_string()));
+        assert!(list.contains(&"remote2.txt".to_string()));
+        Ok(())
     }
 }

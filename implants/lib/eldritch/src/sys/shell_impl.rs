@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
-        let expected = whoami::username();
+        let expected = whoami::username().to_lowercase();
         let res = handle_shell(String::from("whoami"))?.stdout;
         assert!(res.contains(&expected));
         Ok(())
@@ -217,7 +217,7 @@ func_shell("whoami")
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
         let res_string = res.to_str();
-        let expected = whoami::username();
+        let expected = whoami::username().to_lowercase();
         assert!(res_string.contains(&expected));
         Ok(())
     }

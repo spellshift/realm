@@ -32,6 +32,14 @@ use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
 use crate::agent::{agent::Agent, std::StdAgentLibrary};
 #[cfg(feature = "stdlib")]
+pub use crate::assets::std::AgentAssets;
+#[cfg(feature = "stdlib")]
+pub use crate::assets::std::AssetBackend;
+#[cfg(feature = "stdlib")]
+pub use crate::assets::std::EmbeddedAssets;
+#[cfg(feature = "stdlib")]
+pub use crate::assets::std::EmptyAssets;
+#[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
@@ -146,8 +154,12 @@ impl Interpreter {
         self.inner.register_lib(pivot_lib);
 
         // Assets library
-        let assets_lib =
-            StdAssetsLibrary::<crate::assets::std::EmptyAssets>::new(agent.clone(), Vec::new());
+        let backend = Arc::new(crate::assets::std::AgentAssets::new(
+            agent.clone(),
+            Vec::new(),
+        ));
+        let mut assets_lib = StdAssetsLibrary::new();
+        assets_lib.add_shadow(backend);
         self.inner.register_lib(assets_lib);
 
         self
@@ -163,11 +175,12 @@ impl Interpreter {
     }
 
     #[cfg(feature = "stdlib")]
-    pub fn with_task_context<A: crate::assets::RustEmbed + Send + Sync + 'static>(
+    pub fn with_task_context(
         mut self,
         agent: Arc<dyn Agent>,
         task_id: i64,
         remote_assets: Vec<String>,
+        backend: Arc<dyn assets::std::AssetBackend>,
     ) -> Self {
         let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(agent_lib);
@@ -178,7 +191,14 @@ impl Interpreter {
         let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
         self.inner.register_lib(pivot_lib);
 
-        let assets_lib = StdAssetsLibrary::<A>::new(agent, remote_assets);
+        let mut assets_lib = StdAssetsLibrary::new();
+        // As with previously, remote assets can shadow the Embedded Assets
+        let agent_backend = Arc::new(crate::assets::std::AgentAssets::new(
+            agent.clone(),
+            remote_assets.clone(),
+        ));
+        assets_lib.add_shadow(agent_backend.clone());
+        assets_lib.add_shadow(backend.clone());
         self.inner.register_lib(assets_lib);
 
         self
