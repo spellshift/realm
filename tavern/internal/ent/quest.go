@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -45,8 +45,8 @@ type Quest struct {
 type QuestEdges struct {
 	// Tome that this quest will be executing
 	Tome *Tome `json:"tome,omitempty"`
-	// Bundle file that the executing tome depends on (if any)
-	Bundle *File `json:"bundle,omitempty"`
+	// Bundle asset that the executing tome depends on (if any)
+	Bundle *Asset `json:"bundle,omitempty"`
 	// Tasks tracking the status and output of individual tome execution on targets
 	Tasks []*Task `json:"tasks,omitempty"`
 	// User that created the quest if available.
@@ -73,11 +73,11 @@ func (e QuestEdges) TomeOrErr() (*Tome, error) {
 
 // BundleOrErr returns the Bundle value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e QuestEdges) BundleOrErr() (*File, error) {
+func (e QuestEdges) BundleOrErr() (*Asset, error) {
 	if e.Bundle != nil {
 		return e.Bundle, nil
 	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: file.Label}
+		return nil, &NotFoundError{label: asset.Label}
 	}
 	return nil, &NotLoadedError{edge: "bundle"}
 }
@@ -216,7 +216,7 @@ func (q *Quest) QueryTome() *TomeQuery {
 }
 
 // QueryBundle queries the "bundle" edge of the Quest entity.
-func (q *Quest) QueryBundle() *FileQuery {
+func (q *Quest) QueryBundle() *AssetQuery {
 	return NewQuestClient(q.config).QueryBundle(q)
 }
 

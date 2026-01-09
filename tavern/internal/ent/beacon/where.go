@@ -612,22 +612,22 @@ func IntervalNotNil() predicate.Beacon {
 }
 
 // TransportEQ applies the EQ predicate on the "transport" field.
-func TransportEQ(v c2pb.Beacon_Transport) predicate.Beacon {
+func TransportEQ(v c2pb.Transport_Type) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldTransport, v))
 }
 
 // TransportNEQ applies the NEQ predicate on the "transport" field.
-func TransportNEQ(v c2pb.Beacon_Transport) predicate.Beacon {
+func TransportNEQ(v c2pb.Transport_Type) predicate.Beacon {
 	return predicate.Beacon(sql.FieldNEQ(FieldTransport, v))
 }
 
 // TransportIn applies the In predicate on the "transport" field.
-func TransportIn(vs ...c2pb.Beacon_Transport) predicate.Beacon {
+func TransportIn(vs ...c2pb.Transport_Type) predicate.Beacon {
 	return predicate.Beacon(sql.FieldIn(FieldTransport, vs...))
 }
 
 // TransportNotIn applies the NotIn predicate on the "transport" field.
-func TransportNotIn(vs ...c2pb.Beacon_Transport) predicate.Beacon {
+func TransportNotIn(vs ...c2pb.Transport_Type) predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotIn(FieldTransport, vs...))
 }
 

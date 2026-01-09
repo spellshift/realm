@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from 'react-router-dom';
 
-import Table from "../../../components/tavern-base-ui/Table";
+import Table from "../../../components/tavern-base-ui/table/Table";
 import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
 import Button from "../../../components/tavern-base-ui/button/Button";

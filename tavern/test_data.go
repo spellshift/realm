@@ -68,13 +68,49 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			hostName := fmt.Sprintf("Group %d - %s", groupNum, svcTag.Name)
 			hostID := newRandomIdentifier()
 			hostIP := newRandomIP()
-			testHost := client.Host.Create().
-				SetName(hostName).
-				SetIdentifier(hostID).
-				SetPrimaryIP(hostIP).
-				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
-				AddTags(svcTag, gTag).
-				SaveX(ctx)
+
+			var testHost *ent.Host;
+			if i == 4 && groupNum == 5 {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			} else if i == 3 {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			} else if groupNum == 1 {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			} else {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			}
 
 			client.HostCredential.Create().
 				SetHost(testHost).
@@ -84,11 +120,11 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SaveX(ctx)
 
 			// Cycle through transports: HTTP1, GRPC, DNS
-			getTransport := func(idx int) c2pb.Beacon_Transport {
-				transports := []c2pb.Beacon_Transport{
-					c2pb.Beacon_TRANSPORT_HTTP1,
-					c2pb.Beacon_TRANSPORT_GRPC,
-					c2pb.Beacon_TRANSPORT_DNS,
+			getTransport := func(idx int) c2pb.Transport_Type {
+				transports := []c2pb.Transport_Type{
+					c2pb.Transport_TRANSPORT_HTTP1,
+					c2pb.Transport_TRANSPORT_GRPC,
+					c2pb.Transport_TRANSPORT_DNS,
 				}
 				return transports[idx%3]
 			}

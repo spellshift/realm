@@ -1,0 +1,26 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
+    VALUES (3000, "TestFile1", "hello world", "abcdefg", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
+    VALUES (3001, "TestFile2", "hello world", "zyxwvut", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+
+requestor:
+  session_token: secretToken
+query: |
+  query Files {
+    assets(where: {id: 3000}) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }
+
+expected:
+  assets:
+    edges:
+      - node:
+          id: "3000"

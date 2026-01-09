@@ -3,7 +3,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
-import Table from "../../../components/tavern-base-ui/Table";
+import Table from "../../../components/tavern-base-ui/table/Table";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { useFilters } from "../../../context/FilterContext";
 

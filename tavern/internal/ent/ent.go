@@ -12,12 +12,14 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/ent/file"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
@@ -85,12 +87,14 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			asset.Table:          asset.ValidColumn,
 			beacon.Table:         beacon.ValidColumn,
-			file.Table:           file.ValidColumn,
 			host.Table:           host.ValidColumn,
 			hostcredential.Table: hostcredential.ValidColumn,
 			hostfile.Table:       hostfile.ValidColumn,
 			hostprocess.Table:    hostprocess.ValidColumn,
+			link.Table:           link.ValidColumn,
+			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,
 			shell.Table:          shell.ValidColumn,

@@ -19,6 +19,10 @@ impl PivotLibrary for PivotLibraryFake {
         Ok(())
     }
 
+    fn create_portal(&self) -> Result<(), String> {
+        Ok(())
+    }
+
     fn ssh_exec(
         &self,
         _target: String,

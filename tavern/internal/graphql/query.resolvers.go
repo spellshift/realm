@@ -13,9 +13,9 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
-// Files is the resolver for the files field.
-func (r *queryResolver) Files(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.FileOrder, where *ent.FileWhereInput) (*ent.FileConnection, error) {
-	query, err := r.client.File.Query().CollectFields(ctx)
+// Assets is the resolver for the assets field.
+func (r *queryResolver) Assets(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) (*ent.AssetConnection, error) {
+	query, err := r.client.Asset.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
 	}
@@ -24,9 +24,9 @@ func (r *queryResolver) Files(ctx context.Context, after *entgql.Cursor[int], fi
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.Paginate(ctx, after, first, before, last, ent.WithFileOrder(orderBy))
+		return query.Paginate(ctx, after, first, before, last, ent.WithAssetOrder(orderBy))
 	}
-	return query.Paginate(ctx, after, first, before, last, ent.WithFileOrder(orderBy))
+	return query.Paginate(ctx, after, first, before, last, ent.WithAssetOrder(orderBy))
 }
 
 // Quests is the resolver for the quests field.
@@ -155,6 +155,22 @@ func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[int], fi
 		return query.Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy))
 	}
 	return query.Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy))
+}
+
+// Portals is the resolver for the portals field.
+func (r *queryResolver) Portals(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) (*ent.PortalConnection, error) {
+	query, err := r.client.Portal.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithPortalOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithPortalOrder(orderBy))
 }
 
 // Shells is the resolver for the shells field.

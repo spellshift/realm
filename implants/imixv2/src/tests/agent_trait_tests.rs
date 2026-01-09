@@ -1,7 +1,9 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch_libagent::agent::Agent;
-use pb::c2;
+use pb::c2::host::Platform;
+use pb::c2::transport::Type;
+use pb::c2::{self, Host};
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
@@ -199,9 +201,17 @@ async fn test_imix_agent_report_file() {
 #[allow(clippy::field_reassign_with_default)]
 async fn test_imix_agent_config_access() {
     let mut config = Config::default();
-    config.callback_uri = "http://localhost:8080".to_string();
+
     config.info = Some(pb::c2::Beacon {
         identifier: "agent1".to_string(),
+        available_transports: Some(pb::c2::AvailableTransports {
+            transports: vec![pb::c2::Transport {
+                uri: "http://localhost:8080".to_string(),
+                interval: 5,
+                ..Default::default()
+            }],
+            active_index: 0,
+        }),
         ..Default::default()
     });
 
@@ -222,4 +232,73 @@ async fn test_imix_agent_config_access() {
     let map = result.unwrap();
     assert_eq!(map.get("callback_uri").unwrap(), "http://localhost:8080");
     assert_eq!(map.get("beacon_id").unwrap(), "agent1");
+}
+
+#[test]
+fn test_agent_config_platform_as_enum_variant_name() {
+    let config = Config {
+        info: Some(pb::c2::Beacon {
+            available_transports: Some(pb::c2::AvailableTransports {
+                transports: vec![pb::c2::Transport {
+                    uri: "http://localhost:8080".to_string(),
+                    interval: 5,
+                    ..Default::default()
+                }],
+                active_index: 0,
+            }),
+            host: Some(Host {
+                platform: Platform::Linux as i32,
+                ..Default::default()
+            }),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let mut transport = MockTransport::default();
+    transport.expect_is_active().returning(|| true);
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let agent = ImixAgent::new(
+        config,
+        transport,
+        runtime.handle().clone(),
+        Arc::new(TaskRegistry::new()),
+    );
+
+    let map = agent.get_config().unwrap();
+    assert_eq!(map.get("platform").unwrap(), "PLATFORM_LINUX");
+}
+
+#[test]
+fn test_agent_config_active_transport_type_as_enum_variant_name() {
+    let config = Config {
+        info: Some(pb::c2::Beacon {
+            available_transports: Some(c2::AvailableTransports {
+                transports: vec![pb::c2::Transport {
+                    r#type: pb::c2::transport::Type::TransportGrpc as i32,
+                    uri: "http://localhost:8000".to_string(),
+                    interval: 5,
+                    extra: "".to_string(),
+                }],
+                active_index: 0,
+            }),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let mut transport = MockTransport::default();
+    transport.expect_is_active().returning(|| true);
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let agent = ImixAgent::new(
+        config,
+        transport,
+        runtime.handle().clone(),
+        Arc::new(TaskRegistry::new()),
+    );
+
+    let map = agent.get_config().unwrap();
+    assert_eq!(map.get("type").unwrap(), "TRANSPORT_GRPC");
 }

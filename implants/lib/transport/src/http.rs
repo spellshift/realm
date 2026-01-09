@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use bytes::BytesMut;
 use hyper::body::HttpBody;
 use hyper::StatusCode;
-use pb::c2::*;
+use pb::{c2::*, config::Config};
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -309,7 +309,10 @@ impl Transport for HTTP {
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(config: Config) -> Result<Self> {
+        // Extract URI from config using helper function
+        let callback = crate::transport::extract_uri_from_config(&config)?;
+
         // Create HTTP connector
         let mut connector = hyper::client::HttpConnector::new();
         connector.enforce_http(false); // Allow HTTPS
@@ -422,8 +425,18 @@ impl Transport for HTTP {
         ))
     }
 
-    fn get_type(&mut self) -> pb::c2::beacon::Transport {
-        return pb::c2::beacon::Transport::Http1;
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "http/1.1 transport does not support portal"
+        ))
+    }
+
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        return pb::c2::transport::Type::TransportHttp1;
     }
 
     fn is_active(&self) -> bool {

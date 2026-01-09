@@ -12,7 +12,7 @@ import (
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
 )
@@ -27,11 +27,12 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	client := tx.Client()
 
 	// Delete relevant ents
+	// We must delete children before parents to avoid foreign key constraint violations
 	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
 	}
-	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
+	if _, err := client.HostCredential.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hostcredentials: %w", err))
 	}
 	if _, err := client.HostFile.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hostfiles: %w", err))
@@ -39,17 +40,20 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	if _, err := client.HostProcess.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hostprocesses: %w", err))
 	}
-	if _, err := client.Host.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
+	if _, err := client.Task.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tasks: %w", err))
+	}
+	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
 	}
 	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
 	}
+	if _, err := client.Host.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
+	}
 	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
-	}
-	if _, err := client.Task.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete tasks: %w", err))
 	}
 
 	// Commit
@@ -88,18 +92,18 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 		return nil, rollback(tx, fmt.Errorf("failed to load tome: %w", err))
 	}
 
-	// 4. Load Tome Files (ordered so that hashing is always the same)
-	bundleFiles, err := questTome.QueryFiles().
-		Order(ent.Asc(file.FieldID)).
+	// 4. Load Tome Assets (ordered so that hashing is always the same)
+	bundleAssets, err := questTome.QueryAssets().
+		Order(ent.Asc(asset.FieldID)).
 		All(ctx)
 	if err != nil {
-		return nil, rollback(tx, fmt.Errorf("failed to load tome files: %w", err))
+		return nil, rollback(tx, fmt.Errorf("failed to load tome assets: %w", err))
 	}
 
-	// 5. Create bundle (if tome has files)
+	// 5. Create bundle (if tome has assets)
 	var bundleID *int
-	if len(bundleFiles) > 0 {
-		bundle, err := createBundle(ctx, client, bundleFiles)
+	if len(bundleAssets) > 0 {
+		bundle, err := createBundle(ctx, client, bundleAssets)
 		if err != nil || bundle == nil {
 			return nil, rollback(tx, fmt.Errorf("failed to create bundle: %w", err))
 		}
@@ -251,6 +255,24 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error) {
 	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
+}
+
+// CreateLink is the resolver for the createLink field.
+func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error) {
+	return r.client.Link.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateLink is the resolver for the updateLink field.
+func (r *mutationResolver) UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error) {
+	return r.client.Link.UpdateOneID(linkID).SetInput(input).Save(ctx)
+}
+
+// DisableLink is the resolver for the disableLink field.
+func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Link, error) {
+	return r.client.Link.UpdateOneID(linkID).
+		SetExpiresAt(time.Unix(0, 0)).
+		SetDownloadsRemaining(0).
+		Save(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

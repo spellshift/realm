@@ -3,6 +3,7 @@ import { classNames } from '../../utils/utils';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import logo from '../../assets/eldrich.png';
 import { usePageNavigation } from './usePageNavigation';
+import { PollingCountdown } from '../../context/PollingContext';
 
 type MinimizedSidebarNavProps = {
     currNavItem?: string;
@@ -62,12 +63,15 @@ const MinimizedSidebarNav = ({ currNavItem, handleSidebarMinimized }: MinimizedS
                     </ul>
                 </nav>
             </div>
+            <PollingCountdown variant="minimal" />
             <div className="my-8">
                 <a href='/'>
                     <img
                         className="h-8 w-auto"
                         src={logo}
                         alt="Realm"
+                        width="32"
+                        height="32"
                     />
                 </a>
             </div>

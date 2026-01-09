@@ -3,7 +3,7 @@ import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import Table from "../../../components/tavern-base-ui/Table";
+import Table from "../../../components/tavern-base-ui/table/Table";
 import TomeAccordion from "../../../components/TomeAccordion";
 import { TomeNode } from "../../../utils/interfacesQuery";
 import { constructTomeParams } from "../../../utils/utils";

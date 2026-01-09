@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { useNavigate } from "react-router-dom";
 import HostTile from "../../components/HostTile";
-import Table from "../../components/tavern-base-ui/Table";
+import Table from "../../components/tavern-base-ui/table/Table";
 import { PrincipalAdminTypes } from "../../utils/enums";
 import Badge from "../../components/tavern-base-ui/badge/Badge";
 import { HostEdge } from "../../utils/interfacesQuery";

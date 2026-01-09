@@ -6,59 +6,59 @@ import (
 	"net/http"
 
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/errors"
 )
 
-// DefaultMaxUploadSize defines the maximum number of bytes an uploaded file can be.
+// DefaultMaxUploadSize defines the maximum number of bytes an uploaded asset can be.
 const DefaultMaxUploadSize = 10 << 20
 
-// NewUploadHandler returns an HTTP handler responsible for uploading a file to the CDN.
+// NewUploadHandler returns an HTTP handler responsible for uploading a asset to the CDN.
 func NewUploadHandler(graph *ent.Client) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
 		ctx := req.Context()
 
-		// Get the File name
+		// Get the Asset name
 		if err := req.ParseMultipartForm(DefaultMaxUploadSize); err != nil {
 			return err
 		}
-		fileName := req.PostFormValue("fileName")
-		if fileName == "" {
+		assetName := req.PostFormValue("fileName")
+		if assetName == "" {
 			return ErrInvalidFileName
 		}
 
-		// Get the File content
+		// Get the Asset content
 		f, _, err := req.FormFile("fileContent")
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrInvalidFileContent, err)
 		}
 		defer f.Close()
-		fileContent, err := ioutil.ReadAll(f)
+		assetContent, err := ioutil.ReadAll(f)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrInvalidFileContent, err)
 		}
 
 		// Check if it has already been uploaded
-		fileQuery := graph.File.Query().Where(file.Name(fileName))
-		exists := fileQuery.Clone().ExistX(ctx)
+		assetQuery := graph.Asset.Query().Where(asset.Name(assetName))
+		exists := assetQuery.Clone().ExistX(ctx)
 
-		// Create or Update the file
-		var fileID int
+		// Create or Update the asset
+		var assetID int
 
 		if exists {
-			fileID = fileQuery.OnlyIDX(ctx)
-			graph.File.UpdateOneID(fileID).
-				SetContent(fileContent).
+			assetID = assetQuery.OnlyIDX(ctx)
+			graph.Asset.UpdateOneID(assetID).
+				SetContent(assetContent).
 				SaveX(ctx)
 		} else {
-			fileID = graph.File.Create().
-				SetName(fileName).
-				SetContent(fileContent).
+			assetID = graph.Asset.Create().
+				SetName(assetName).
+				SetContent(assetContent).
 				SaveX(ctx).ID
 		}
 
-		// Respond with JSON of the file ID
-		fmt.Fprintf(w, `{"data":{"file":{"id":%d}}}`, fileID)
+		// Respond with JSON of the asset ID
+		fmt.Fprintf(w, `{"data":{"asset":{"id":%d}}}`, assetID)
 		return nil
 	})
 }

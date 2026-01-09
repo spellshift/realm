@@ -9,7 +9,7 @@ export const useCredsTable = (hostId: number) => {
     const [search, setSearch] = useState("");
     const [groupByPrincipal, setGroupByPrincipal] = useState(false);
 
-    const { loading, data, error, startPolling, stopPolling} = useQuery<HostCredentialsQueryTopLevel>(GET_HOST_CREDENTIALS, {
+    const { loading, data, error } = useQuery<HostCredentialsQueryTopLevel>(GET_HOST_CREDENTIALS, {
         variables: {
             "where": {
                 "id": hostId
@@ -62,15 +62,6 @@ export const useCredsTable = (hostId: number) => {
 
         setCreds(creds);
     }, []);
-
-
-    useEffect(() => {
-        //Update host data
-        startPolling(60000);
-        return () => {
-            stopPolling();
-        }
-    }, [startPolling, stopPolling])
 
     useEffect(()=> {
         if(data){

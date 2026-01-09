@@ -167,8 +167,17 @@ func sendShellInput(ctx context.Context, shellID int, gstream c2pb.C2_ReverseShe
 			return
 		case msg := <-pubsubStream.Messages():
 			msgLen := len(msg.Body)
+			// Determine message kind
+			kind := c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_DATA
+			if msg.Metadata != nil {
+				metadataKind, ok := msg.Metadata[stream.MetadataMsgKind]
+				if ok && metadataKind == "ping" {
+					kind = c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING
+				}
+			}
+
 			if err := gstream.Send(&c2pb.ReverseShellResponse{
-				Kind: c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_DATA,
+				Kind: kind,
 				Data: msg.Body,
 			}); err != nil {
 				slog.ErrorContext(ctx, "failed to send shell input to reverse shell",
@@ -196,15 +205,19 @@ func sendShellOutput(ctx context.Context, shellID int, gstream c2pb.C2_ReverseSh
 			return status.Errorf(codes.Internal, "failed to receive shell request: %v", err)
 		}
 
-		// Ping events are no-ops
+		// Determine message kind
+		kind := "data"
 		if req.Kind == c2pb.ReverseShellMessageKind_REVERSE_SHELL_MESSAGE_KIND_PING {
-			continue
+			kind = "ping"
 		}
 
 		// Send Pubsub Message
 		msgLen := len(req.Data)
 		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
 			Body: req.Data,
+			Metadata: map[string]string{
+				stream.MetadataMsgKind: kind,
+			},
 		}, mux); err != nil {
 			slog.ErrorContext(ctx, "reverse shell failed to publish shell output",
 				"shell_id", shellID,

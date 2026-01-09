@@ -1,6 +1,8 @@
 use crate::Transport;
 use anyhow::{Context, Result};
+use pb::c2::transport::Type as TransportType;
 use pb::c2::*;
+use pb::config::Config;
 use pb::dns::*;
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
@@ -106,7 +108,7 @@ impl DNS {
 
         // Calculate protobuf overhead with worst-case varint sizes
         let sample_packet = DnsPacket {
-            r#type: PacketType::Data.into(),
+            r#type: PacketType::Data as i32,
             sequence: total_chunks,
             conversation_id: "a".repeat(CONV_ID_LENGTH),
             data: vec![],
@@ -462,7 +464,7 @@ impl DNS {
         );
 
         let init_packet = DnsPacket {
-            r#type: PacketType::Init.into(),
+            r#type: PacketType::Init as i32,
             sequence: 0,
             conversation_id: conv_id.to_string(),
             data: init_payload_bytes,
@@ -492,7 +494,7 @@ impl DNS {
         let mut nacks = Vec::new();
 
         if let Ok(status_packet) = DnsPacket::decode(response_data) {
-            if status_packet.r#type == PacketType::Status.into() {
+            if status_packet.r#type == PacketType::Status as i32 {
                 // Process ACKs - collect acknowledged sequences
                 for ack_range in &status_packet.acks {
                     for ack_seq in ack_range.start_seq..=ack_range.end_seq {
@@ -549,7 +551,7 @@ impl DNS {
             // Spawn concurrent task for this packet
             let task = tokio::spawn(async move {
                 let data_packet = DnsPacket {
-                    r#type: PacketType::Data.into(),
+                    r#type: PacketType::Data as i32,
                     sequence: seq_u32,
                     conversation_id: conv_id_clone,
                     data: chunk.clone(),
@@ -666,7 +668,7 @@ impl DNS {
 
                 if let Some(chunk) = chunks.get((nack_seq - 1) as usize) {
                     let retransmit_packet = DnsPacket {
-                        r#type: PacketType::Data.into(),
+                        r#type: PacketType::Data as i32,
                         sequence: nack_seq,
                         conversation_id: conv_id.to_string(),
                         data: chunk.clone(),
@@ -718,7 +720,7 @@ impl DNS {
         );
 
         let fetch_packet = DnsPacket {
-            r#type: PacketType::Fetch.into(),
+            r#type: PacketType::Fetch as i32,
             sequence: (total_chunks + 1) as u32,
             conversation_id: conv_id.to_string(),
             data: vec![],
@@ -775,7 +777,7 @@ impl DNS {
             fetch_payload.encode(&mut fetch_payload_bytes)?;
 
             let fetch_packet = DnsPacket {
-                r#type: PacketType::Fetch.into(),
+                r#type: PacketType::Fetch as i32,
                 sequence: (base_sequence as u32 + 2 + chunk_idx as u32),
                 conversation_id: conv_id.to_string(),
                 data: fetch_payload_bytes,
@@ -865,7 +867,10 @@ impl Transport for DNS {
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
+    fn new(config: Config) -> Result<Self> {
+        // Extract full URI from config (DNS needs query parameters)
+        let callback = crate::transport::extract_full_uri_from_config(&config)?;
+
         // Parse DNS URL formats:
         // dns://server:port?domain=dnsc2.realm.pub&type=txt (single server, TXT records)
         // dns://*?domain=dnsc2.realm.pub&type=a (use system DNS + fallbacks, A records)
@@ -1070,8 +1075,18 @@ impl Transport for DNS {
         ))
     }
 
-    fn get_type(&mut self) -> beacon::Transport {
-        beacon::Transport::Dns
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        pb::c2::transport::Type::TransportDns
+    }
+
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "create_portal not supported over DNS transport"
+        ))
     }
 
     fn is_active(&self) -> bool {
@@ -1168,10 +1183,30 @@ mod tests {
     // URL Parsing / Transport::new Tests
     // ============================================================
 
+    // Helper function to create a test config with a DNS URI
+    fn create_dns_test_config(uri: &str) -> Config {
+        use pb::c2::{AvailableTransports, Beacon, Transport};
+        Config {
+            info: Some(Beacon {
+                available_transports: Some(AvailableTransports {
+                    transports: vec![Transport {
+                        uri: uri.to_string(),
+                        interval: 5,
+                        r#type: TransportType::TransportDns as i32,
+                        extra: "{}".to_string(),
+                    }],
+                    active_index: 0,
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
     #[test]
     fn test_new_single_server() {
-        let dns = DNS::new("dns://8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None)
-            .expect("should parse");
+        let config = create_dns_test_config("dns://8.8.8.8:53?domain=dnsc2.realm.pub");
+        let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
         assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
@@ -1181,11 +1216,8 @@ mod tests {
     #[test]
     fn test_new_multiple_servers() {
         // Multiple servers are specified in the host portion, comma-separated
-        let dns = DNS::new(
-            "dns://8.8.8.8,1.1.1.1:53?domain=dnsc2.realm.pub".to_string(),
-            None,
-        )
-        .expect("should parse");
+        let config = create_dns_test_config("dns://8.8.8.8,1.1.1.1:53?domain=dnsc2.realm.pub");
+        let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.dns_servers.len(), 2);
         assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
@@ -1194,35 +1226,29 @@ mod tests {
 
     #[test]
     fn test_new_record_type_a() {
-        let dns = DNS::new(
-            "dns://8.8.8.8?domain=dnsc2.realm.pub&type=a".to_string(),
-            None,
-        )
-        .expect("should parse");
+        let config = create_dns_test_config("dns://8.8.8.8?domain=dnsc2.realm.pub&type=a");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::A);
     }
 
     #[test]
     fn test_new_record_type_aaaa() {
-        let dns = DNS::new(
-            "dns://8.8.8.8?domain=dnsc2.realm.pub&type=aaaa".to_string(),
-            None,
-        )
-        .expect("should parse");
+        let config = create_dns_test_config("dns://8.8.8.8?domain=dnsc2.realm.pub&type=aaaa");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::AAAA);
     }
 
     #[test]
     fn test_new_record_type_txt_default() {
-        let dns = DNS::new("dns://8.8.8.8?domain=dnsc2.realm.pub".to_string(), None)
-            .expect("should parse");
+        let config = create_dns_test_config("dns://8.8.8.8?domain=dnsc2.realm.pub");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
     fn test_new_wildcard_uses_fallbacks() {
-        let dns =
-            DNS::new("dns://*?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let config = create_dns_test_config("dns://*?domain=dnsc2.realm.pub");
+        let dns = DNS::new(config).expect("should parse");
 
         // Should have fallback servers
         assert!(!dns.dns_servers.is_empty());
@@ -1236,7 +1262,8 @@ mod tests {
 
     #[test]
     fn test_new_missing_domain() {
-        let result = DNS::new("dns://8.8.8.8:53".to_string(), None);
+        let config = create_dns_test_config("dns://8.8.8.8:53");
+        let result = DNS::new(config);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -1246,8 +1273,8 @@ mod tests {
 
     #[test]
     fn test_new_without_scheme() {
-        let dns =
-            DNS::new("8.8.8.8:53?domain=dnsc2.realm.pub".to_string(), None).expect("should parse");
+        let config = create_dns_test_config("8.8.8.8:53?domain=dnsc2.realm.pub");
+        let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
     }
 
@@ -1265,7 +1292,7 @@ mod tests {
         };
 
         let packet = DnsPacket {
-            r#type: PacketType::Init.into(),
+            r#type: PacketType::Init as i32,
             sequence: 0,
             conversation_id: "test1234".to_string(),
             data: vec![0x01, 0x02],
@@ -1304,7 +1331,7 @@ mod tests {
 
         // Create a packet with enough data to require label splitting
         let packet = DnsPacket {
-            r#type: PacketType::Data.into(),
+            r#type: PacketType::Data as i32,
             sequence: 1,
             conversation_id: "test1234".to_string(),
             data: vec![0xAA; 50], // 50 bytes of data
@@ -1540,7 +1567,7 @@ mod tests {
     #[test]
     fn test_get_type() {
         let mut dns = DNS::init();
-        assert_eq!(dns.get_type(), beacon::Transport::Dns);
+        assert_eq!(dns.get_type(), pb::c2::transport::Type::TransportDns);
     }
 
     // ============================================================
@@ -1574,7 +1601,7 @@ mod tests {
     fn test_process_chunk_response_valid_status() {
         // Create a valid STATUS packet with ACKs
         let status_packet = DnsPacket {
-            r#type: PacketType::Status.into(),
+            r#type: PacketType::Status as i32,
             sequence: 0,
             conversation_id: "test".to_string(),
             data: vec![],

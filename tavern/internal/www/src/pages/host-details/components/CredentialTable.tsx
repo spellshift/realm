@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import Table from "../../../components/tavern-base-ui/Table";
+import Table from "../../../components/tavern-base-ui/table/Table";
 import { formatDistance } from "date-fns";
 import Credential from "./Credential";
 

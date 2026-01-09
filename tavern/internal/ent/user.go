@@ -32,8 +32,9 @@ type User struct {
 	IsAdmin bool `json:"is_admin,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges        UserEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges               UserEdges `json:"edges"`
+	portal_active_users *int
+	selectValues        sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
@@ -81,6 +82,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldOauthID, user.FieldPhotoURL, user.FieldSessionToken, user.FieldAccessToken:
 			values[i] = new(sql.NullString)
+		case user.ForeignKeys[0]: // portal_active_users
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -143,6 +146,13 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_admin", values[i])
 			} else if value.Valid {
 				u.IsAdmin = value.Bool
+			}
+		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field portal_active_users", value)
+			} else if value.Valid {
+				u.portal_active_users = new(int)
+				*u.portal_active_users = int(value.Int64)
 			}
 		default:
 			u.selectValues.Set(columns[i], values[i])

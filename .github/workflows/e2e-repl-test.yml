@@ -6,6 +6,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  merge_group:
 
 jobs:
   e2e_repl_test:
@@ -81,7 +82,7 @@ jobs:
     - name: 🧪 Run E2E Tests
       working-directory: tests/e2e
       run: |
-        npx playwright test
+        npx playwright test tests/repl.spec.ts
     - name: 📂 Upload Service Logs
       if: always() # Runs even if tests fail
       uses: actions/upload-artifact@v4

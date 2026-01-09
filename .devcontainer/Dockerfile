@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/base:trixie
 
-ARG ZIG_VERSION=0.16.0-dev.1326+2e6f7d36b
+ARG ZIG_VERSION=0.16.0-dev.1859+212968c57
 
 COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 

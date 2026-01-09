@@ -17,6 +17,7 @@ host_unique = { workspace = true }
 log = { workspace = true }
 netdev = { workspace = true }
 prost = { workspace = true }
+serde_json = { workspace = true }
 prost-types = { workspace = true }
 rand_chacha = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
@@ -31,6 +32,7 @@ lru = { workspace = true }
 
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
+url = { workspace = true }
 
 [build-dependencies]
 tonic-build = { workspace = true, features = ["prost"] }

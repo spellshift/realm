@@ -160,13 +160,13 @@ func (bu *BeaconUpdate) ClearInterval() *BeaconUpdate {
 }
 
 // SetTransport sets the "transport" field.
-func (bu *BeaconUpdate) SetTransport(ct c2pb.Beacon_Transport) *BeaconUpdate {
+func (bu *BeaconUpdate) SetTransport(ct c2pb.Transport_Type) *BeaconUpdate {
 	bu.mutation.SetTransport(ct)
 	return bu
 }
 
 // SetNillableTransport sets the "transport" field if the given value is not nil.
-func (bu *BeaconUpdate) SetNillableTransport(ct *c2pb.Beacon_Transport) *BeaconUpdate {
+func (bu *BeaconUpdate) SetNillableTransport(ct *c2pb.Transport_Type) *BeaconUpdate {
 	if ct != nil {
 		bu.SetTransport(*ct)
 	}
@@ -652,13 +652,13 @@ func (buo *BeaconUpdateOne) ClearInterval() *BeaconUpdateOne {
 }
 
 // SetTransport sets the "transport" field.
-func (buo *BeaconUpdateOne) SetTransport(ct c2pb.Beacon_Transport) *BeaconUpdateOne {
+func (buo *BeaconUpdateOne) SetTransport(ct c2pb.Transport_Type) *BeaconUpdateOne {
 	buo.mutation.SetTransport(ct)
 	return buo
 }
 
 // SetNillableTransport sets the "transport" field if the given value is not nil.
-func (buo *BeaconUpdateOne) SetNillableTransport(ct *c2pb.Beacon_Transport) *BeaconUpdateOne {
+func (buo *BeaconUpdateOne) SetNillableTransport(ct *c2pb.Transport_Type) *BeaconUpdateOne {
 	if ct != nil {
 		buo.SetTransport(*ct)
 	}

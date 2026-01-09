@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
@@ -83,13 +83,13 @@ func (qu *QuestUpdate) SetTome(t *Tome) *QuestUpdate {
 	return qu.SetTomeID(t.ID)
 }
 
-// SetBundleID sets the "bundle" edge to the File entity by ID.
+// SetBundleID sets the "bundle" edge to the Asset entity by ID.
 func (qu *QuestUpdate) SetBundleID(id int) *QuestUpdate {
 	qu.mutation.SetBundleID(id)
 	return qu
 }
 
-// SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
+// SetNillableBundleID sets the "bundle" edge to the Asset entity by ID if the given value is not nil.
 func (qu *QuestUpdate) SetNillableBundleID(id *int) *QuestUpdate {
 	if id != nil {
 		qu = qu.SetBundleID(*id)
@@ -97,9 +97,9 @@ func (qu *QuestUpdate) SetNillableBundleID(id *int) *QuestUpdate {
 	return qu
 }
 
-// SetBundle sets the "bundle" edge to the File entity.
-func (qu *QuestUpdate) SetBundle(f *File) *QuestUpdate {
-	return qu.SetBundleID(f.ID)
+// SetBundle sets the "bundle" edge to the Asset entity.
+func (qu *QuestUpdate) SetBundle(a *Asset) *QuestUpdate {
+	return qu.SetBundleID(a.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -147,7 +147,7 @@ func (qu *QuestUpdate) ClearTome() *QuestUpdate {
 	return qu
 }
 
-// ClearBundle clears the "bundle" edge to the File entity.
+// ClearBundle clears the "bundle" edge to the Asset entity.
 func (qu *QuestUpdate) ClearBundle() *QuestUpdate {
 	qu.mutation.ClearBundle()
 	return qu
@@ -301,7 +301,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -314,7 +314,7 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -467,13 +467,13 @@ func (quo *QuestUpdateOne) SetTome(t *Tome) *QuestUpdateOne {
 	return quo.SetTomeID(t.ID)
 }
 
-// SetBundleID sets the "bundle" edge to the File entity by ID.
+// SetBundleID sets the "bundle" edge to the Asset entity by ID.
 func (quo *QuestUpdateOne) SetBundleID(id int) *QuestUpdateOne {
 	quo.mutation.SetBundleID(id)
 	return quo
 }
 
-// SetNillableBundleID sets the "bundle" edge to the File entity by ID if the given value is not nil.
+// SetNillableBundleID sets the "bundle" edge to the Asset entity by ID if the given value is not nil.
 func (quo *QuestUpdateOne) SetNillableBundleID(id *int) *QuestUpdateOne {
 	if id != nil {
 		quo = quo.SetBundleID(*id)
@@ -481,9 +481,9 @@ func (quo *QuestUpdateOne) SetNillableBundleID(id *int) *QuestUpdateOne {
 	return quo
 }
 
-// SetBundle sets the "bundle" edge to the File entity.
-func (quo *QuestUpdateOne) SetBundle(f *File) *QuestUpdateOne {
-	return quo.SetBundleID(f.ID)
+// SetBundle sets the "bundle" edge to the Asset entity.
+func (quo *QuestUpdateOne) SetBundle(a *Asset) *QuestUpdateOne {
+	return quo.SetBundleID(a.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -531,7 +531,7 @@ func (quo *QuestUpdateOne) ClearTome() *QuestUpdateOne {
 	return quo
 }
 
-// ClearBundle clears the "bundle" edge to the File entity.
+// ClearBundle clears the "bundle" edge to the Asset entity.
 func (quo *QuestUpdateOne) ClearBundle() *QuestUpdateOne {
 	quo.mutation.ClearBundle()
 	return quo
@@ -715,7 +715,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -728,7 +728,7 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Columns: []string{quest.BundleColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

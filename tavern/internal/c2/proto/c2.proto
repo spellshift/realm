@@ -7,6 +7,7 @@ option go_package = "realm.pub/tavern/internal/c2/c2pb";
 
 import "google/protobuf/timestamp.proto";
 import "eldritch.proto";
+import "portal.proto";
 
 /*
  * Messages
@@ -17,22 +18,33 @@ message Agent {
     string identifier = 1;
 }
 
-// Beacon information that is unique to the current running beacon.
-message Beacon {
-    string identifier = 1;
-    string principal = 2;
-    Host host = 3;
-    Agent agent = 4;
-    uint64 interval = 5; // Duration until next callback, in seconds.
+message Transport {
+    string uri = 1;
+    uint64 interval = 2;
 
-    enum Transport {
+    enum Type {
         TRANSPORT_UNSPECIFIED = 0;
         TRANSPORT_GRPC = 1;
         TRANSPORT_HTTP1 = 2;
         TRANSPORT_DNS = 3;
     }
 
-    Transport transport = 6;
+    Type type = 3;
+    string extra = 4;
+}
+
+message AvailableTransports {
+    repeated Transport transports = 1;
+    uint32 active_index = 2;
+}
+
+// Beacon information that is unique to the current running beacon.
+message Beacon {
+    string identifier = 1;
+    string principal = 2;
+    Host host = 3;
+    Agent agent = 4;
+    AvailableTransports available_transports = 5;
 }
 
  // Host information for the system a beacon is running on.
@@ -137,6 +149,14 @@ message ReverseShellResponse{
     bytes data = 2;
 }
 
+message CreatePortalRequest {
+    int64 task_id = 1;
+    portal.Mote mote = 2;
+}
+message CreatePortalResponse {
+    portal.Mote mote = 2;
+}
+
 /*
  * Service
  */
@@ -189,4 +209,9 @@ service C2 {
      * Open a reverse shell bi-directional stream.
      */
     rpc ReverseShell(stream ReverseShellRequest) returns (stream ReverseShellResponse) {}
+
+    /*
+     * Open a portal bi-directional stream.
+     */
+    rpc CreatePortal(stream CreatePortalRequest) returns (stream CreatePortalResponse) {}
 }

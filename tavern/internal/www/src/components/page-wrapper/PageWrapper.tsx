@@ -13,7 +13,7 @@ type Props = {
 }
 
 export const PageWrapper: FunctionComponent<Props> = ({ children, currNavItem }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { sidebarMinimized, setSidebarMinimized } = useContext(UserPreferencesContext);
 
   return (

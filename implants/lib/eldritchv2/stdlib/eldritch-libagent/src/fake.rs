@@ -112,6 +112,9 @@ impl Agent for AgentFake {
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse::default())
     }
+    fn create_portal(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
     fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
         Ok(())
     }

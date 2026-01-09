@@ -1,5 +1,5 @@
 use super::{SyncDispatcher, Transport};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use pb::config::Config;
 
 /*
@@ -16,7 +16,21 @@ pub struct SetCallbackUriMessage {
 impl SyncDispatcher for SetCallbackUriMessage {
     fn dispatch(self, _transport: &mut impl Transport, cfg: Config) -> Result<Config> {
         let mut c = cfg.clone();
-        c.callback_uri = self.new_uri;
+
+        let info = c.info.as_mut().context("missing config info")?;
+        let available_transports = info
+            .available_transports
+            .as_mut()
+            .context("missing available transports")?;
+
+        let active_index = available_transports.active_index as usize;
+        let active_transport = available_transports
+            .transports
+            .get_mut(active_index)
+            .context("active transport index out of bounds")?;
+
+        active_transport.uri = self.new_uri;
+
         Ok(c)
     }
 }

@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
@@ -28,7 +28,7 @@ type QuestQuery struct {
 	inters         []Interceptor
 	predicates     []predicate.Quest
 	withTome       *TomeQuery
-	withBundle     *FileQuery
+	withBundle     *AssetQuery
 	withTasks      *TaskQuery
 	withCreator    *UserQuery
 	withFKs        bool
@@ -94,8 +94,8 @@ func (qq *QuestQuery) QueryTome() *TomeQuery {
 }
 
 // QueryBundle chains the current query on the "bundle" edge.
-func (qq *QuestQuery) QueryBundle() *FileQuery {
-	query := (&FileClient{config: qq.config}).Query()
+func (qq *QuestQuery) QueryBundle() *AssetQuery {
+	query := (&AssetClient{config: qq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := qq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -106,7 +106,7 @@ func (qq *QuestQuery) QueryBundle() *FileQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(quest.Table, quest.FieldID, selector),
-			sqlgraph.To(file.Table, file.FieldID),
+			sqlgraph.To(asset.Table, asset.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, quest.BundleTable, quest.BundleColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
@@ -374,8 +374,8 @@ func (qq *QuestQuery) WithTome(opts ...func(*TomeQuery)) *QuestQuery {
 
 // WithBundle tells the query-builder to eager-load the nodes that are connected to
 // the "bundle" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithBundle(opts ...func(*FileQuery)) *QuestQuery {
-	query := (&FileClient{config: qq.config}).Query()
+func (qq *QuestQuery) WithBundle(opts ...func(*AssetQuery)) *QuestQuery {
+	query := (&AssetClient{config: qq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -526,7 +526,7 @@ func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest,
 	}
 	if query := qq.withBundle; query != nil {
 		if err := qq.loadBundle(ctx, query, nodes, nil,
-			func(n *Quest, e *File) { n.Edges.Bundle = e }); err != nil {
+			func(n *Quest, e *Asset) { n.Edges.Bundle = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -590,7 +590,7 @@ func (qq *QuestQuery) loadTome(ctx context.Context, query *TomeQuery, nodes []*Q
 	}
 	return nil
 }
-func (qq *QuestQuery) loadBundle(ctx context.Context, query *FileQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *File)) error {
+func (qq *QuestQuery) loadBundle(ctx context.Context, query *AssetQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Asset)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Quest)
 	for i := range nodes {
@@ -606,7 +606,7 @@ func (qq *QuestQuery) loadBundle(ctx context.Context, query *FileQuery, nodes []
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(file.IDIn(ids...))
+	query.Where(asset.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err

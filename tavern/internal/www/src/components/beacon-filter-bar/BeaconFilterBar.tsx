@@ -7,47 +7,56 @@ type Props = {
     filtersSelected?: any;
     initialFilters?: any;
     isDisabled?: boolean;
+    hideStatusFilter?: boolean; // Some views may default to only online hosts/beacons
 }
 export const BeaconFilterBar = (props: Props) => {
     const { data } = useTags();
-    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms, transports } = data;
+    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms, transports, onlineOfflineStatus } = data;
 
-    const { setFiltersSelected, filtersSelected, isDisabled, initialFilters } = props;
+    const { setFiltersSelected, filtersSelected, isDisabled, initialFilters, hideStatusFilter } = props;
 
-    const options = useMemo(() => [
-        {
-            label: "Platform",
-            options: platforms
-        },
-        {
-            label: "Transport",
-            options: transports
-        },
-        {
-            label: "Service",
-            options: serviceTags
-        },
-        {
-            label: "Group",
-            options: groupTags
-        },
-        {
-            label: "Principal",
-            options: principals
-        },
-        {
-            label: "PrimaryIPs",
-            options: primaryIPs
-        },
-        {
-            label: "Host",
-            options: hosts
-        },
-        {
-            label: "Beacon",
-            options: beacons
-        }
-    ], [platforms, serviceTags, groupTags, principals, primaryIPs, hosts, beacons]);
+    const options = useMemo(() => {
+        const allOptions = [
+            {
+                label: "Platform",
+                options: platforms
+            },
+            {
+                label: "Transport",
+                options: transports
+            },
+            ...!hideStatusFilter ? [{
+                label: "Status",
+                options: onlineOfflineStatus
+            }] : [],
+            {
+                label: "Service",
+                options: serviceTags
+            },
+            {
+                label: "Group",
+                options: groupTags
+            },
+            {
+                label: "Principal",
+                options: principals
+            },
+            {
+                label: "PrimaryIPs",
+                options: primaryIPs
+            },
+            {
+                label: "Host",
+                options: hosts
+            },
+            {
+                label: "Beacon",
+                options: beacons
+            }
+        ];
+
+        return allOptions;
+    }, [platforms, serviceTags, groupTags, principals, primaryIPs, hosts, beacons, transports, onlineOfflineStatus, hideStatusFilter]);
 
 
     return (

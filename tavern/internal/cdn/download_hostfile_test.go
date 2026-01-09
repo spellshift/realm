@@ -28,7 +28,7 @@ func TestDownloadHostFile(t *testing.T) {
 	existingBeacon := graph.Beacon.Create().
 		SetHost(existingHost).
 		SetIdentifier("ABCDEFG").
-		SetTransport(c2pb.Beacon_TRANSPORT_UNSPECIFIED).
+		SetTransport(c2pb.Transport_TRANSPORT_UNSPECIFIED).
 		SaveX(ctx)
 	existingTome := graph.Tome.Create().
 		SetName("Wowza").

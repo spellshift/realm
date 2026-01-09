@@ -9,6 +9,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
+import { PollingProvider } from "./context/PollingContext";
 import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
@@ -75,15 +76,17 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-        <TagContextProvider>
-          <UserPreferencesContextProvider>
-            <FilterProvider>
-              <SortsProvider>
-                <RouterProvider router={router} />
-              </SortsProvider>
-            </FilterProvider>
-          </UserPreferencesContextProvider>
-        </TagContextProvider>
+        <PollingProvider>
+          <TagContextProvider>
+            <UserPreferencesContextProvider>
+              <FilterProvider>
+                <SortsProvider>
+                  <RouterProvider router={router} />
+                </SortsProvider>
+              </FilterProvider>
+            </UserPreferencesContextProvider>
+          </TagContextProvider>
+        </PollingProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )
