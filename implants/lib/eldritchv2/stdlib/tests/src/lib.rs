@@ -85,8 +85,7 @@ mod tests {
         let eldritch_path = dir.join("main.eldritch");
 
         if !eldritch_path.exists() {
-            println!("Skipping {:?} (no main.eldritch)", dir);
-            return Ok(());
+            return Err(anyhow::anyhow!("Missing main.eldritch in {:?}", dir));
         }
 
         let metadata_content = fs::read_to_string(metadata_path)?;
