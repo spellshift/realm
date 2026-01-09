@@ -7,7 +7,7 @@ use eldritch_libassets::std::AssetBackend;
 use std::fs;
 use std::path::PathBuf;
 
-const MAX_RECURSION_DEPTH: usize = 10;
+const MAX_RECURSION_DEPTH: usize = 64;
 
 #[derive(Debug)]
 pub struct DirectoryAssetBackend {

@@ -1,11 +1,10 @@
 use alloc::collections::BTreeMap;
-use eldritch_libassets::std::EmbeddedAssets;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::SystemTime;
 
 use eldritch_libagent::agent::Agent;
-use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
+use eldritchv2::{Interpreter, Printer, Span, assets::std::EmbeddedAssets, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};

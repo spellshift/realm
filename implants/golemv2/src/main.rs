@@ -3,8 +3,10 @@ extern crate alloc;
 
 use clap::{Arg, ArgAction, Command};
 use eldritch_libagent::fake::AgentFake;
-use eldritch_libassets::AssetsLibrary;
-use eldritch_libassets::std::{EmbeddedAssets, StdAssetsLibrary};
+use eldritchv2::assets::{
+    AssetsLibrary,
+    std::{EmbeddedAssets, StdAssetsLibrary},
+};
 use eldritchv2::conversion::ToValue;
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
 use std::collections::BTreeMap;

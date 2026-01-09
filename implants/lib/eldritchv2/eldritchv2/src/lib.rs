@@ -32,6 +32,14 @@ use alloc::vec::Vec;
 #[cfg(feature = "stdlib")]
 use crate::agent::{agent::Agent, std::StdAgentLibrary};
 #[cfg(feature = "stdlib")]
+pub use crate::assets::std::AgentAssets;
+#[cfg(feature = "stdlib")]
+pub use crate::assets::std::AssetBackend;
+#[cfg(feature = "stdlib")]
+pub use crate::assets::std::EmbeddedAssets;
+#[cfg(feature = "stdlib")]
+pub use crate::assets::std::EmptyAssets;
+#[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
