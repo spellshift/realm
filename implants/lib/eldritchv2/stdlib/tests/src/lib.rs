@@ -93,7 +93,8 @@ mod tests {
 
         let code = fs::read_to_string(&eldritch_path)?.replace("\r\n", "\n");
 
-        let mut interp = Interpreter::new();
+        let printer = Arc::new(eldritchv2::BufferPrinter::new());
+        let mut interp = Interpreter::new_with_printer(printer.clone());
         register_fake_libs(&mut interp);
         register_default_libs(&mut interp);
 
@@ -130,7 +131,14 @@ mod tests {
         interp.define_variable("input_params", input_params_val);
 
         match interp.interpret(&code) {
-            Ok(_) => Ok(()),
+            Ok(_) => {
+                let err = printer.read_err();
+                if !err.is_empty() {
+                    Err(anyhow::anyhow!("Eldritch stderr output: {}", err))
+                } else {
+                    Ok(())
+                }
+            }
             Err(e) => Err(anyhow::anyhow!("Eldritch error: {}", e)),
         }
     }
