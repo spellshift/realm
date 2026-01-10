@@ -100,10 +100,15 @@ pub mod tests {
         ) -> Result<c2::ReportTaskOutputResponse, String> {
             Ok(c2::ReportTaskOutputResponse::default())
         }
-        fn start_reverse_shell(&self, _task_id: i64, _cmd: Option<String>) -> Result<(), String> {
+        fn start_reverse_shell(
+            &self,
+            _task_id: i64,
+            _jwt: String,
+            _cmd: Option<String>,
+        ) -> Result<(), String> {
             Ok(())
         }
-        fn start_repl_reverse_shell(&self, _task_id: i64) -> Result<(), String> {
+        fn start_repl_reverse_shell(&self, _task_id: i64, _jwt: String) -> Result<(), String> {
             Ok(())
         }
         fn claim_tasks(
@@ -157,7 +162,7 @@ pub mod tests {
             Ok(())
         }
 
-        fn create_portal(&self, _: i64) -> std::result::Result<(), String> {
+        fn create_portal(&self, _task_id: i64, _jwt: String) -> std::result::Result<(), String> {
             Ok(())
         }
     }
@@ -191,6 +196,7 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
+            String::new(),
             vec!["remote_file.txt".to_string()],
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
@@ -205,6 +211,7 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
+            String::new(),
             vec!["remote_file.txt".to_string()],
         )))?;
         let result = lib.read_binary("remote_file.txt".to_string());

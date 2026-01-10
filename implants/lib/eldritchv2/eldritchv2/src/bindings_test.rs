@@ -16,6 +16,7 @@ fn create_interp() -> Interpreter {
         Interpreter::new().with_default_libs().with_task_context(
             agent_mock,
             task_id,
+            "some jwt".to_string(),
             vec![],
             backend,
         )

@@ -140,6 +140,7 @@ impl TaskHandle {
                                             exec_started_at: None,
                                             exec_finished_at: None,
                                         }),
+                                        jwt: "no_jwt".to_string(),
                                     })
                                     .await
                                 {

@@ -11,11 +11,13 @@ use pb::c2;
 pub fn report_credential(
     agent: Arc<dyn Agent>,
     task_id: i64,
+    jwt: String,
     credential: CredentialWrapper,
 ) -> Result<(), String> {
     let req = c2::ReportCredentialRequest {
         task_id,
         credential: Some(credential.0),
+        jwt,
     };
     agent.report_credential(req).map(|_| ())
 }

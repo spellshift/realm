@@ -65,13 +65,15 @@ impl<T: rust_embed::Embed + Send + Sync + 'static> AssetBackend for EmbeddedAsse
 // An AssetBackend that gets assets from an agent
 pub struct AgentAssets {
     pub agent: Arc<dyn Agent>,
+    pub jwt: String,
     pub remote_assets: Vec<String>,
 }
 
 impl AgentAssets {
-    pub fn new(agent: Arc<dyn Agent>, remote_assets: Vec<String>) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, jwt: String, remote_assets: Vec<String>) -> Self {
         Self {
             agent,
+            jwt,
             remote_assets,
         }
     }
@@ -82,6 +84,7 @@ impl AssetBackend for AgentAssets {
         if self.remote_assets.iter().any(|s| s == name) {
             let req = FetchAssetRequest {
                 name: name.to_string(),
+                jwt: self.jwt.clone(),
             };
             return self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
         }

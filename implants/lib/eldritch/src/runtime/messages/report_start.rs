@@ -27,6 +27,7 @@ impl AsyncDispatcher for ReportStartMessage {
                     exec_finished_at: None,
                     error: None,
                 }),
+                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

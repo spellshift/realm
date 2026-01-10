@@ -27,6 +27,7 @@ impl AsyncDispatcher for ReportFinishMessage {
                     exec_finished_at: Some(self.exec_finished_at),
                     error: None,
                 }),
+                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

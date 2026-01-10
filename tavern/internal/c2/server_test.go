@@ -2,9 +2,16 @@ package c2
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"fmt"
+	"log/slog"
 	"net"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
@@ -157,4 +164,31 @@ func TestGetClientIP(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestJWTValidate(t *testing.T) {
+	pubkey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		slog.Error(fmt.Sprintf("failed to generate ED25519 key pair: %v\n", err))
+	}
+	srv := Server{
+		jwtPrivateKey: privKey,
+		jwtPublicKey: pubkey,
+	}
+
+	claims := jwt.MapClaims{
+		"task_id": 1234,
+		"iat":       time.Now().Unix(),
+		"exp":       time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	tokenStr, err := token.SignedString(privKey)
+	if err != nil {
+		fmt.Errorf("failed to sign JWT: %w", err)
+	}
+	// Verify
+	err = srv.ValidateJWT(tokenStr)
+	fmt.Println(err)
+ 	assert.Nil(t, err)
 }

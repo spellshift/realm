@@ -9,6 +9,7 @@ require (
 	cloud.google.com/go/secretmanager v1.14.2
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.1
+	filippo.io/edwards25519 v1.1.0
 	github.com/99designs/gqlgen v0.17.62
 	github.com/cloudflare/circl v1.5.0
 	github.com/go-sql-driver/mysql v1.8.1
@@ -37,7 +38,6 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
 	cloud.google.com/go/iam v1.2.2 // indirect
 	dario.cat/mergo v1.0.0 // indirect
-	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect

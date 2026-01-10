@@ -31,6 +31,7 @@ async fn test_imix_agent_buffer_and_flush() {
             output: "test".to_string(),
             ..Default::default()
         }),
+        jwt: "some jwt".to_string(),
     };
     agent.report_task_output(req).unwrap();
 
@@ -78,6 +79,7 @@ async fn test_imix_agent_fetch_asset() {
 
     let req = c2::FetchAssetRequest {
         name: "test_file".to_string(),
+        jwt: "a jwt".to_string(),
     };
 
     let agent_clone = agent.clone();
@@ -112,6 +114,7 @@ async fn test_imix_agent_report_credential() {
         let _ = agent_clone.report_credential(c2::ReportCredentialRequest {
             task_id: 1,
             credential: None,
+            jwt: "some jwt".to_string(),
         });
     })
     .join()
@@ -141,6 +144,7 @@ async fn test_imix_agent_report_process_list() {
         let _ = agent_clone.report_process_list(c2::ReportProcessListRequest {
             task_id: 1,
             list: None,
+            jwt: "some jwt".to_string(),
         });
     })
     .join()
@@ -190,6 +194,7 @@ async fn test_imix_agent_report_file() {
     std::thread::spawn(move || {
         let _ = agent_clone.report_file(c2::ReportFileRequest {
             task_id: 1,
+            jwt: "test jwt".to_string(),
             chunk: None,
         });
     })

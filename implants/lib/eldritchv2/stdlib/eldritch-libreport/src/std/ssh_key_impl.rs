@@ -6,6 +6,7 @@ use pb::{c2, eldritch};
 pub fn ssh_key(
     agent: Arc<dyn Agent>,
     task_id: i64,
+    jwt: String,
     username: String,
     key: String,
 ) -> Result<(), String> {
@@ -17,6 +18,7 @@ pub fn ssh_key(
     let req = c2::ReportCredentialRequest {
         task_id,
         credential: Some(cred),
+        jwt,
     };
     agent.report_credential(req).map(|_| ())
 }

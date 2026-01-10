@@ -82,6 +82,7 @@ impl AsyncDispatcher for ReportFileMessage {
                             // ..n so that we don't upload empty bytes
                             chunk: buffer[..n].to_vec(),
                         }),
+                        jwt: "no_jwt".to_string(),
                     })?;
 
                     if n < 1 {

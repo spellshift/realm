@@ -9,6 +9,7 @@ use std::path::Path;
 
 pub async fn run_reverse_shell_pty<T: Transport>(
     task_id: i64,
+    jwt: String,
     cmd: Option<String>,
     mut transport: T,
 ) -> Result<()> {
