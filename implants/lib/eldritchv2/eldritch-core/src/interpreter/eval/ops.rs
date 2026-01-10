@@ -141,6 +141,7 @@ pub(crate) fn apply_binary_op(
         TokenKind::Plus
             | TokenKind::Minus
             | TokenKind::Star
+            | TokenKind::StarStar
             | TokenKind::Slash
             | TokenKind::SlashSlash
             | TokenKind::Percent
