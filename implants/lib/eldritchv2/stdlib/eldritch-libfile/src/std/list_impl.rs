@@ -79,7 +79,10 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     dict.insert("permissions".to_string(), Value::String(info.permissions));
     dict.insert("owner".to_string(), Value::String(info.owner));
     dict.insert("group".to_string(), Value::String(info.group));
-    dict.insert("absolute_path".to_string(), Value::String(info.absolute_path));
+    dict.insert(
+        "absolute_path".to_string(),
+        Value::String(info.absolute_path),
+    );
     dict.insert("modified".to_string(), Value::String(info.modified));
 
     Ok(dict)

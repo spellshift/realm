@@ -15,6 +15,7 @@ pub mod follow_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;
+pub mod metadata_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;
@@ -28,7 +29,6 @@ pub mod temp_file_impl;
 pub mod template_impl;
 pub mod timestomp_impl;
 pub mod write_impl;
-pub mod metadata_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
