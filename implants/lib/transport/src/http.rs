@@ -115,7 +115,11 @@ enum HttpClientInner {
     #[cfg(feature = "doh")]
     Doh(hyper::Client<hyper::client::HttpConnector<HickoryResolverService>>),
     #[cfg(feature = "doh")]
-    DohProxy(hyper::Client<hyper_proxy::ProxyConnector<hyper::client::HttpConnector<HickoryResolverService>>>),
+    DohProxy(
+        hyper::Client<
+            hyper_proxy::ProxyConnector<hyper::client::HttpConnector<HickoryResolverService>>,
+        >,
+    ),
 }
 
 impl std::fmt::Debug for HttpClientInner {
