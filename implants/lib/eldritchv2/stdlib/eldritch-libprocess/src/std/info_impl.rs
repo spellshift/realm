@@ -1,7 +1,9 @@
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use eldritch_core::Value;
+use spin::RwLock;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
 pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
@@ -26,10 +28,21 @@ pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
             "exe".to_string(),
             Value::String(process.exe().display().to_string()),
         );
+
+        let mut env_map = BTreeMap::new();
+        for env_str in process.environ() {
+            if let Some((key, val)) = env_str.split_once('=') {
+                env_map.insert(
+                    Value::String(key.to_string()),
+                    Value::String(val.to_string()),
+                );
+            }
+        }
         map.insert(
             "environ".to_string(),
-            Value::String(process.environ().join(",")),
+            Value::Dictionary(Arc::new(RwLock::new(env_map))),
         );
+
         map.insert(
             "cwd".to_string(),
             Value::String(process.cwd().display().to_string()),
@@ -99,6 +112,20 @@ mod tests {
         assert!(info.contains_key("cmd"));
         assert!(info.contains_key("exe"));
         assert!(info.contains_key("environ"));
+
+        if let Some(Value::Dictionary(env_dict)) = info.get("environ") {
+            let env_map = env_dict.read();
+            // We can't guarantee any specific variable exists across all platforms, but we can check it's a dict.
+            // On unix/windows PATH or HOME/USERPROFILE usually exists.
+            // But just checking it is a Dictionary is enough per the request "assert_eq(type(proc['env']), dict)"
+            // Using >= 0 is always true for usize, effectively we just want to ensure we could access the map.
+            // So we'll just check that it's a valid map structure which we already did by matching Value::Dictionary.
+            // Let's print the length just to use the variable and avoid warnings if we don't assert anything.
+            let _ = env_map.len();
+        } else {
+            panic!("environ is not a dictionary");
+        }
+
         assert!(info.contains_key("cwd"));
         assert!(info.contains_key("root"));
         assert!(info.contains_key("memory_usage"));
