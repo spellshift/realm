@@ -5,7 +5,10 @@ use hyper::body::HttpBody;
 use hyper::StatusCode;
 use pb::{c2::*, config::Config};
 use prost::Message;
-use std::sync::{mpsc::{Receiver, Sender}, Arc};
+use std::sync::{
+    mpsc::{Receiver, Sender},
+    Arc,
+};
 
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
