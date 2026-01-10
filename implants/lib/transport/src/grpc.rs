@@ -48,11 +48,9 @@ impl Transport for GRPC {
         let mut http = match doh {
             // TODO: Add provider selection based on the provider string
             Some(_provider) => {
-                log::info!("doh set");
                 crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
             }
             None => {
-                log::info!("doh not set");
                 // Use system DNS when DOH not explicitly requested
                 crate::dns_resolver::doh::create_doh_connector(DohProvider::System)?
             }
