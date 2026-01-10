@@ -21,14 +21,21 @@ pub mod doh {
         Cloudflare,
         Google,
         Quad9,
+        System, // Use system DNS configuration
     }
 
     impl DohProvider {
-        fn resolver_config(&self) -> ResolverConfig {
+        fn resolver_config(&self) -> Result<ResolverConfig, anyhow::Error> {
             match self {
-                DohProvider::Cloudflare => ResolverConfig::cloudflare_https(),
-                DohProvider::Google => ResolverConfig::google_https(),
-                DohProvider::Quad9 => ResolverConfig::quad9_https(),
+                DohProvider::Cloudflare => Ok(ResolverConfig::cloudflare_https()),
+                DohProvider::Google => Ok(ResolverConfig::google_https()),
+                DohProvider::Quad9 => Ok(ResolverConfig::quad9_https()),
+                DohProvider::System => {
+                    // Read system DNS configuration
+                    let (config, _opts) = hickory_resolver::system_conf::read_system_conf()
+                        .map_err(|e| anyhow::anyhow!("Failed to read system DNS config: {}", e))?;
+                    Ok(config)
+                }
             }
         }
     }
@@ -41,9 +48,9 @@ pub mod doh {
     }
 
     impl HickoryResolverService {
-        /// Create a new resolver service with the specified DoH provider
+        /// Create a new resolver service with the specified provider (DOH or system DNS)
         pub fn new(provider: DohProvider) -> Result<Self, anyhow::Error> {
-            let config = provider.resolver_config();
+            let config = provider.resolver_config()?;
             let opts = ResolverOpts::default();
 
             let resolver = TokioAsyncResolver::tokio(config, opts);
