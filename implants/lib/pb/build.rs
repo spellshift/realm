@@ -2,6 +2,106 @@ use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use which::which;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct TransportConfig {
+    #[serde(rename = "URI")]
+    uri: String,
+    #[serde(rename = "type")]
+    transport_type: String,
+    extra: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct YamlConfig {
+    transports: Vec<TransportConfig>,
+}
+
+fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
+    // Check if IMIX_CONFIG is set
+    let config_yaml = match std::env::var("IMIX_CONFIG") {
+        Ok(yaml_content) => yaml_content,
+        Err(_) => return Ok(false), // No config set, return false
+    };
+
+    // Check that other configuration options are not set
+    let has_callback_uri = std::env::var("IMIX_CALLBACK_URI").is_ok();
+    let has_callback_interval = std::env::var("IMIX_CALLBACK_INTERVAL").is_ok();
+    let has_transport_extra = std::env::vars().any(|(k, _)| k.starts_with("IMIX_TRANSPORT_EXTRA_"));
+
+    if has_callback_uri || has_callback_interval || has_transport_extra {
+        let mut error_msg = String::from("Configuration error: Cannot use IMIX_CONFIG with other configuration options.\n");
+        error_msg.push_str("When IMIX_CONFIG is set, all configuration must be done through the YAML file.\n");
+        error_msg.push_str("Found one or more of:\n");
+
+        if has_callback_uri {
+            error_msg.push_str("  - IMIX_CALLBACK_URI\n");
+        }
+        if has_callback_interval {
+            error_msg.push_str("  - IMIX_CALLBACK_INTERVAL\n");
+        }
+        if has_transport_extra {
+            error_msg.push_str("  - IMIX_TRANSPORT_EXTRA_*\n");
+        }
+
+        error_msg.push_str("\nPlease use ONLY the YAML config file OR use environment variables, but not both.");
+
+        return Err(error_msg.into());
+    }
+
+    // Parse the YAML config
+    let config: YamlConfig = serde_yaml::from_str(&config_yaml)
+        .map_err(|e| format!("Failed to parse YAML config: {}", e))?;
+
+    // Validate that we have at least one transport
+    if config.transports.is_empty() {
+        return Err("YAML config must contain at least one transport".into());
+    }
+
+    // Build DSN string from transports
+    let mut dsn_parts = Vec::new();
+
+    for transport in &config.transports {
+        // Validate transport type
+        let transport_type_lower = transport.transport_type.to_lowercase();
+        if !["grpc", "http1", "dns"].contains(&transport_type_lower.as_str()) {
+            return Err(format!("Invalid transport type '{}'. Must be one of: GRPC, http1, DNS", transport.transport_type).into());
+        }
+
+        // Validate that extra is valid JSON
+        if !transport.extra.is_empty() {
+            serde_json::from_str::<serde_json::Value>(&transport.extra)
+                .map_err(|e| format!("Invalid JSON in 'extra' field for transport '{}': {}", transport.uri, e))?;
+        }
+
+        // Build DSN part with query parameters
+        let mut dsn_part = transport.uri.clone();
+
+        // Check if URI already has query parameters
+        let separator = if dsn_part.contains('?') { "&" } else { "?" };
+
+        // Add transport type as query parameter
+        dsn_part.push_str(&format!("{}transport={}", separator, transport_type_lower));
+
+        // Add extra as query parameter if not empty
+        if !transport.extra.is_empty() {
+            let encoded_extra = urlencoding::encode(&transport.extra);
+            dsn_part.push_str(&format!("&extra={}", encoded_extra));
+        }
+
+        dsn_parts.push(dsn_part);
+    }
+
+    // Join all DSN parts with semicolons
+    let dsn = dsn_parts.join(";");
+
+    // Emit the DSN configuration
+    println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", dsn);
+    println!("cargo:warning=Successfully parsed YAML config with {} transport(s)", config.transports.len());
+
+    Ok(true)
+}
 
 fn get_pub_key() {
     // Check if IMIX_SERVER_PUBKEY is already set
@@ -95,6 +195,12 @@ fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
+    // Skip validation if YAML config is being used
+    // (parse_yaml_config already handles validation in that case)
+    if std::env::var("IMIX_CONFIG").is_ok() {
+        return Ok(());
+    }
+
     // Check if IMIX_CALLBACK_URI contains query parameters
     let callback_uri =
         std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
@@ -126,7 +232,12 @@ fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
+    parse_yaml_config()?;
+
+    // Validate DSN config (skips if YAML config was used)
     validate_dsn_config()?;
+
     get_pub_key();
     build_extra_vars()?;
 
