@@ -11,6 +11,8 @@ struct TransportConfig {
     #[serde(rename = "type")]
     transport_type: String,
     extra: String,
+    #[serde(default)]
+    interval: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,19 +77,48 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
                 .map_err(|e| format!("Invalid JSON in 'extra' field for transport '{}': {}", transport.uri, e))?;
         }
 
-        // Build DSN part with query parameters
-        let mut dsn_part = transport.uri.clone();
+        // Error if URI already contains query parameters
+        if transport.uri.contains('?') {
+            return Err(format!("URI '{}' already contains query parameters. Query parameters should not be present in the URI field.", transport.uri).into());
+        }
 
-        // Check if URI already has query parameters
-        let separator = if dsn_part.contains('?') { "&" } else { "?" };
+        // Map transport type to appropriate schema
+        let schema = match transport_type_lower.as_str() {
+            "grpc" => "grpc",
+            "http1" => "http",
+            "dns" => "dns",
+            _ => unreachable!(), // Already validated above
+        };
 
-        // Add transport type as query parameter
-        dsn_part.push_str(&format!("{}transport={}", separator, transport_type_lower));
+        // Strip any existing schema from the URI and replace with the correct one
+        let uri_without_schema = transport.uri
+            .split_once("://")
+            .map(|(_, rest)| rest)
+            .unwrap_or(&transport.uri);
+
+        // Build DSN part with correct schema and query parameters
+        let mut dsn_part = format!("{}://{}", schema, uri_without_schema);
+
+        // Add query parameters
+        dsn_part.push('?');
+        let mut params = Vec::new();
+
+        // Add interval if present
+        if let Some(interval) = transport.interval {
+            params.push(format!("interval={}", interval));
+        }
 
         // Add extra as query parameter if not empty
         if !transport.extra.is_empty() {
             let encoded_extra = urlencoding::encode(&transport.extra);
-            dsn_part.push_str(&format!("&extra={}", encoded_extra));
+            params.push(format!("extra={}", encoded_extra));
+        }
+
+        if !params.is_empty() {
+            dsn_part.push_str(&params.join("&"));
+        } else {
+            // Remove the trailing '?' if no params were added
+            dsn_part.pop();
         }
 
         dsn_parts.push(dsn_part);
