@@ -2,6 +2,7 @@ use anyhow::Result;
 use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch_core::Value;
 use eldritch_libagent::agent::Agent;
+use eldritch_libassets::std::EmptyAssets;
 use eldritch_repl::{Repl, ReplAction};
 use eldritchv2::{Interpreter, Printer, Span};
 use pb::c2::{
@@ -66,14 +67,11 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
             jwt: jwt.clone(),
         });
 
+        let backend = Arc::new(EmptyAssets {});
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_task_context::<crate::assets::Asset>(
-            Arc::new(agent),
-            task_id,
-            jwt,
-            Vec::new(),
-        );
+            .with_task_context(Arc::new(agent), task_id, jwt, Vec::new(), backend);
+
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),

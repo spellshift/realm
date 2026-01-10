@@ -8,16 +8,18 @@ use std::sync::Arc;
 fn create_interp() -> Interpreter {
     #[cfg(feature = "stdlib")]
     {
+        use eldritch_libassets::std::EmptyAssets;
+
         let agent_mock = Arc::new(AgentFake);
         let task_id = 123;
-        Interpreter::new()
-            .with_default_libs()
-            .with_task_context::<eldritch_libassets::std::EmptyAssets>(
-                agent_mock,
-                task_id,
-                "some jwt".to_string(),
-                vec![],
-            )
+        let backend = Arc::new(EmptyAssets {});
+        Interpreter::new().with_default_libs().with_task_context(
+            agent_mock,
+            task_id,
+            "some jwt".to_string(),
+            vec![],
+            backend,
+        )
     }
     #[cfg(not(feature = "stdlib"))]
     {

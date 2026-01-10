@@ -1,5 +1,4 @@
 extern crate alloc;
-use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_macros::{eldritch_library, eldritch_method};
@@ -8,12 +7,6 @@ use eldritch_macros::{eldritch_library, eldritch_method};
 pub mod fake;
 #[cfg(feature = "stdlib")]
 pub mod std;
-
-#[cfg(feature = "stdlib")]
-pub trait RustEmbed {
-    fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile>;
-    fn iter() -> impl Iterator<Item = Cow<'static, str>>;
-}
 
 #[eldritch_library("assets")]
 /// The `assets` library provides access to files embedded directly within the agent binary.
