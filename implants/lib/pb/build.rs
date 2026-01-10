@@ -18,6 +18,8 @@ struct TransportConfig {
 #[derive(Debug, Deserialize)]
 struct YamlConfig {
     transports: Vec<TransportConfig>,
+    #[serde(default)]
+    server_pubkey: Option<String>,
 }
 
 fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
@@ -129,6 +131,13 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
 
     // Emit the DSN configuration
     println!("cargo:rustc-env=IMIX_CALLBACK_URI={}", dsn);
+
+    // Emit server_pubkey if present
+    if let Some(ref pubkey) = config.server_pubkey {
+        println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", pubkey);
+        println!("cargo:warning=Using server_pubkey from YAML config");
+    }
+
     println!("cargo:warning=Successfully parsed YAML config with {} transport(s)", config.transports.len());
 
     Ok(true)
