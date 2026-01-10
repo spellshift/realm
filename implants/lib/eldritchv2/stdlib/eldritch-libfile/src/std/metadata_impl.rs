@@ -5,9 +5,6 @@ use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use std::path::Path;
 
-#[cfg(unix)]
-use nix::unistd::{Gid, Group, Uid, User};
-
 #[cfg(feature = "stdlib")]
 #[derive(Debug, Clone, Default)]
 pub struct FileInfo {
@@ -23,7 +20,6 @@ pub struct FileInfo {
 
 #[cfg(feature = "stdlib")]
 pub fn get_file_info(path: &Path) -> AnyhowResult<FileInfo> {
-    use alloc::format;
     use std::fs;
 
     let metadata = fs::metadata(path)?;
@@ -39,37 +35,8 @@ pub fn get_file_info(path: &Path) -> AnyhowResult<FileInfo> {
 
     let size = metadata.len();
 
-    // Permissions
-    #[cfg(unix)]
-    use ::std::os::unix::fs::PermissionsExt;
-    #[cfg(unix)]
-    let perms = format!("{:o}", metadata.permissions().mode());
-    #[cfg(not(unix))]
-    let perms = if metadata.permissions().readonly() {
-        "r"
-    } else {
-        "rw"
-    }
-    .to_string();
-
-    // Owner and Group
-    #[cfg(unix)]
-    let (owner_name, group_name) = {
-        use ::std::os::unix::fs::MetadataExt;
-        let uid = metadata.uid();
-        let gid = metadata.gid();
-
-        let user = User::from_uid(Uid::from_raw(uid)).ok().flatten();
-        let group = Group::from_gid(Gid::from_raw(gid)).ok().flatten();
-
-        let owner_name = user.map(|u| u.name).unwrap_or_else(|| uid.to_string());
-        let group_name = group.map(|g| g.name).unwrap_or_else(|| gid.to_string());
-        (owner_name, group_name)
-    };
-    #[cfg(not(unix))]
-    let (owner_name, group_name) = {
-        ("".to_string(), "".to_string())
-    };
+    let (owner, group) = get_ownership(&metadata);
+    let permissions = get_permissions(&metadata);
 
     // Absolute Path
     let abs_path = path
@@ -87,13 +54,54 @@ pub fn get_file_info(path: &Path) -> AnyhowResult<FileInfo> {
     };
 
     Ok(FileInfo {
-        owner: owner_name,
-        group: group_name,
-        permissions: perms,
+        owner,
+        group,
+        permissions,
         size,
         modified,
         absolute_path: abs_path,
         file_name: name,
         file_type: type_str.to_string(),
     })
+}
+
+#[cfg(all(feature = "stdlib", unix))]
+fn get_ownership(metadata: &std::fs::Metadata) -> (String, String) {
+    use nix::unistd::{Gid, Group, Uid, User};
+    use std::os::unix::fs::MetadataExt;
+
+    let uid = metadata.uid();
+    let gid = metadata.gid();
+
+    // Use `as _` to handle potential type differences (u32 vs uid_t) on different Unix/BSD platforms
+    let user = User::from_uid(Uid::from_raw(uid as _)).ok().flatten();
+    let group = Group::from_gid(Gid::from_raw(gid as _)).ok().flatten();
+
+    let owner_name = user.map(|u| u.name).unwrap_or_else(|| uid.to_string());
+    let group_name = group.map(|g| g.name).unwrap_or_else(|| gid.to_string());
+
+    (owner_name, group_name)
+}
+
+#[cfg(all(feature = "stdlib", not(unix)))]
+fn get_ownership(_metadata: &std::fs::Metadata) -> (String, String) {
+    // Windows/non-Unix fallback
+    ("".to_string(), "".to_string())
+}
+
+#[cfg(all(feature = "stdlib", unix))]
+fn get_permissions(metadata: &std::fs::Metadata) -> String {
+    use alloc::format;
+    use std::os::unix::fs::PermissionsExt;
+    format!("{:o}", metadata.permissions().mode())
+}
+
+#[cfg(all(feature = "stdlib", not(unix)))]
+fn get_permissions(metadata: &std::fs::Metadata) -> String {
+    use alloc::string::ToString;
+    if metadata.permissions().readonly() {
+        "r".to_string()
+    } else {
+        "rw".to_string()
+    }
 }
