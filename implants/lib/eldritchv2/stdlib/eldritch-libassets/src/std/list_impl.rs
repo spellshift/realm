@@ -19,7 +19,7 @@ mod tests {
         let agent = Arc::new(MockAgent::new());
         let remote_files = vec!["remote1.txt".to_string(), "remote2.txt".to_string()];
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, remote_files.clone())))?;
+        lib.add(Arc::new(AgentAssets::new(agent, String::new(), remote_files.clone())))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let list = lib.list().unwrap();
         assert!(list.iter().any(|f| f.contains("print/main.eldritch")));

@@ -156,6 +156,7 @@ impl Interpreter {
         // Assets library
         let backend = Arc::new(crate::assets::std::AgentAssets::new(
             agent.clone(),
+            String::new(),
             Vec::new(),
         ));
         let mut assets_lib = StdAssetsLibrary::new();

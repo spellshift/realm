@@ -162,7 +162,7 @@ pub mod tests {
             Ok(())
         }
 
-        fn create_portal(&self, task_id: i64, _jwt: String) -> std::result::Result<(), String> {
+        fn create_portal(&self, _task_id: i64, _jwt: String) -> std::result::Result<(), String> {
             Ok(())
         }
     }
@@ -196,6 +196,7 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
+            String::new(),
             vec!["remote_file.txt".to_string()],
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
@@ -210,6 +211,7 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
+            String::new(),
             vec!["remote_file.txt".to_string()],
         )))?;
         let result = lib.read_binary("remote_file.txt".to_string());

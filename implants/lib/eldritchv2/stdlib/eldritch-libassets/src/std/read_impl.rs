@@ -21,6 +21,7 @@ mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
+            String::new(),
             vec!["remote_file.txt".to_string()],
         )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
