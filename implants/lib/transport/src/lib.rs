@@ -6,7 +6,7 @@ use std::sync::mpsc::{Receiver, Sender};
 #[cfg(feature = "grpc")]
 mod grpc;
 
-#[cfg(feature = "grpc-doh")]
+#[cfg(feature = "doh")]
 mod dns_resolver;
 
 #[cfg(feature = "http1")]
