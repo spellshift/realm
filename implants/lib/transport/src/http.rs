@@ -113,9 +113,9 @@ enum HttpClientInner {
     Plain(hyper::Client<hyper::client::HttpConnector>),
     Proxy(hyper::Client<hyper_proxy::ProxyConnector<hyper::client::HttpConnector>>),
     #[cfg(feature = "doh")]
-    Doh(hyper::Client<HickoryResolverService<hyper::client::HttpConnector>>),
+    Doh(hyper::Client<hyper::client::HttpConnector<HickoryResolverService>>),
     #[cfg(feature = "doh")]
-    DohProxy(hyper::Client<hyper_proxy::ProxyConnector<HickoryResolverService<hyper::client::HttpConnector>>>),
+    DohProxy(hyper::Client<hyper_proxy::ProxyConnector<hyper::client::HttpConnector<HickoryResolverService>>>),
 }
 
 impl std::fmt::Debug for HttpClientInner {
@@ -349,16 +349,19 @@ impl Transport for HTTP {
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
         #[cfg(feature = "doh")]
-        let doh: Option<&String> = extra_map.get("DOH");
+        let doh: Option<&String> = extra_map.get("doh");
 
-        // Create base HTTP connector (either plain or DOH-enabled)
+        // Create base HTTP connector (either DOH-enabled or system DNS)
         #[cfg(feature = "doh")]
         let mut http = match doh {
-            // TODO: Add provider selection
+            // TODO: Add provider selection based on the provider string
             Some(_provider) => {
                 crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
             }
-            None => hyper::client::HttpConnector::new(),
+            None => {
+                // Use system DNS when DOH not explicitly requested
+                crate::dns_resolver::doh::create_doh_connector(DohProvider::System)?
+            }
         };
 
         #[cfg(not(feature = "doh"))]
@@ -386,12 +389,10 @@ impl Transport for HTTP {
                 let client = hyper::Client::builder().build(proxy_connector);
 
                 #[cfg(feature = "doh")]
-                if doh.is_some() {
-                    // DOH + Proxy configuration
+                {
+                    // When DOH feature is enabled, always use DohProxy variant
+                    // (either with DOH provider or system DNS via HickoryResolverService)
                     HttpClientInner::DohProxy(client)
-                } else {
-                    // Proxy only configuration
-                    HttpClientInner::Proxy(client)
                 }
 
                 #[cfg(not(feature = "doh"))]
@@ -403,12 +404,10 @@ impl Transport for HTTP {
                 let client = hyper::Client::builder().build(http);
 
                 #[cfg(feature = "doh")]
-                if doh.is_some() {
-                    // DOH only configuration
+                {
+                    // When DOH feature is enabled, always use Doh variant
+                    // (either with DOH provider or system DNS via HickoryResolverService)
                     HttpClientInner::Doh(client)
-                } else {
-                    // Plain configuration
-                    HttpClientInner::Plain(client)
                 }
 
                 #[cfg(not(feature = "doh"))]
