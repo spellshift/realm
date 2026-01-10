@@ -42,11 +42,11 @@ RUN set -eux; \
 	case "$arch" in \
 		'amd64') \
 			url="https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz"; \
-			sha256='bceca00afaac856bc48b4cc33db7cd9eb383c81811379faed3bdbc80edb0af65'; \
+			sha256='3333f6ea53afa971e9078895eaa4ac7204a8c6b5c68c10e6bc9a33e8e391bdd8'; \
 			;; \
 		'arm64') \
 			url="https://dl.google.com/go/go$GOLANG_VERSION.linux-arm64.tar.gz"; \
-			sha256='beaf0f51cbe0bd71b8289b2b6fa96c0b11cd86aa58672691ef2f1de88eb621de'; \
+			sha256='a463cb59382bd7ae7d8f4c68846e73c4d589f223c589ac76871b66811ded7836'; \
 			;; \
 		*) echo >&2 "error: unsupported architecture '$arch' (likely packaging update needed)"; exit 1 ;; \
 	esac; \
