@@ -101,7 +101,8 @@ RUN set -eux; \
     rustc --version; \
 	rustup target add aarch64-unknown-linux-gnu \
 		x86_64-unknown-linux-musl x86_64-pc-windows-gnu \
-		x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin; \ 
+		x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin; \
+    rustup component add rustfmt clippy; \
 	cargo install cargo-zigbuild; \
 	cargo +1.89.0 install xwin --locked
 
