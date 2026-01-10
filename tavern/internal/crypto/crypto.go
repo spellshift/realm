@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/secrets"
 )
 
+// https://github.com/openssl/openssl/discussions/23905
 // ed25519ToX25519PrivateKey converts an ED25519 private key to X25519
 func ed25519ToX25519PrivateKey(edPrivKey ed25519.PrivateKey) ([]byte, error) {
 	// ED25519 private key is 64 bytes: [32-byte seed || 32-byte public key]
