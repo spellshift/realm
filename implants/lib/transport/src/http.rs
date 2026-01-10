@@ -722,7 +722,7 @@ mod tests {
         #[test]
         fn test_build_uri_success() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: HttpClientInner::Plain(hyper::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -733,7 +733,7 @@ mod tests {
         #[test]
         fn test_build_uri_with_trailing_slash() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: HttpClientInner::Plain(hyper::Client::new()),
                 base_url: "http://localhost:8080/".to_string(),
             };
 
@@ -744,7 +744,7 @@ mod tests {
         #[test]
         fn test_build_uri_without_leading_slash() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: HttpClientInner::Plain(hyper::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -755,7 +755,7 @@ mod tests {
         #[test]
         fn test_build_uri_invalid() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: HttpClientInner::Plain(hyper::Client::new()),
                 base_url: "not a valid url".to_string(),
             };
 
@@ -766,7 +766,7 @@ mod tests {
         #[test]
         fn test_request_builder_headers_and_method() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: HttpClientInner::Plain(hyper::Client::new()),
                 base_url: "http://localhost".to_string(),
             };
 
@@ -786,7 +786,7 @@ mod tests {
         #[test]
         fn test_request_builder_uri() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: HttpClientInner::Plain(hyper::Client::new()),
                 base_url: "http://example.com".to_string(),
             };
 
