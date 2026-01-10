@@ -1,8 +1,8 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use which::which;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct TransportConfig {
@@ -35,8 +35,12 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
     let has_transport_extra = std::env::vars().any(|(k, _)| k.starts_with("IMIX_TRANSPORT_EXTRA_"));
 
     if has_callback_uri || has_callback_interval || has_transport_extra {
-        let mut error_msg = String::from("Configuration error: Cannot use IMIX_CONFIG with other configuration options.\n");
-        error_msg.push_str("When IMIX_CONFIG is set, all configuration must be done through the YAML file.\n");
+        let mut error_msg = String::from(
+            "Configuration error: Cannot use IMIX_CONFIG with other configuration options.\n",
+        );
+        error_msg.push_str(
+            "When IMIX_CONFIG is set, all configuration must be done through the YAML file.\n",
+        );
         error_msg.push_str("Found one or more of:\n");
 
         if has_callback_uri {
@@ -49,7 +53,9 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
             error_msg.push_str("  - IMIX_TRANSPORT_EXTRA_*\n");
         }
 
-        error_msg.push_str("\nPlease use ONLY the YAML config file OR use environment variables, but not both.");
+        error_msg.push_str(
+            "\nPlease use ONLY the YAML config file OR use environment variables, but not both.",
+        );
 
         return Err(error_msg.into());
     }
@@ -70,13 +76,21 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
         // Validate transport type
         let transport_type_lower = transport.transport_type.to_lowercase();
         if !["grpc", "http1", "dns"].contains(&transport_type_lower.as_str()) {
-            return Err(format!("Invalid transport type '{}'. Must be one of: GRPC, http1, DNS", transport.transport_type).into());
+            return Err(format!(
+                "Invalid transport type '{}'. Must be one of: GRPC, http1, DNS",
+                transport.transport_type
+            )
+            .into());
         }
 
         // Validate that extra is valid JSON
         if !transport.extra.is_empty() {
-            serde_json::from_str::<serde_json::Value>(&transport.extra)
-                .map_err(|e| format!("Invalid JSON in 'extra' field for transport '{}': {}", transport.uri, e))?;
+            serde_json::from_str::<serde_json::Value>(&transport.extra).map_err(|e| {
+                format!(
+                    "Invalid JSON in 'extra' field for transport '{}': {}",
+                    transport.uri, e
+                )
+            })?;
         }
 
         // Error if URI already contains query parameters
@@ -93,7 +107,8 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
         };
 
         // Strip any existing schema from the URI and replace with the correct one
-        let uri_without_schema = transport.uri
+        let uri_without_schema = transport
+            .uri
             .split_once("://")
             .map(|(_, rest)| rest)
             .unwrap_or(&transport.uri);
@@ -138,7 +153,10 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
         println!("cargo:warning=Using server_pubkey from YAML config");
     }
 
-    println!("cargo:warning=Successfully parsed YAML config with {} transport(s)", config.transports.len());
+    println!(
+        "cargo:warning=Successfully parsed YAML config with {} transport(s)",
+        config.transports.len()
+    );
 
     Ok(true)
 }
