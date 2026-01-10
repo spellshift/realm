@@ -7,10 +7,10 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
 
-#[cfg(feature = "grpc-doh")]
+#[cfg(feature = "doh")]
 use hyper::client::HttpConnector;
 
-#[cfg(feature = "grpc-doh")]
+#[cfg(feature = "doh")]
 use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use crate::Transport;
@@ -44,10 +44,10 @@ impl Transport for GRPC {
 
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        #[cfg(feature = "grpc-doh")]
+        #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("DOH");
 
-        #[cfg(feature = "grpc-doh")]
+        #[cfg(feature = "doh")]
         let mut http = match doh {
             // TODO: Add provider selection
             Some(_provider) => {
@@ -56,7 +56,7 @@ impl Transport for GRPC {
             None => hyper::client::HttpConnector::new(),
         };
 
-        #[cfg(not(feature = "grpc-doh"))]
+        #[cfg(not(feature = "doh"))]
         let mut http = hyper::client::HttpConnector::new();
 
         let proxy_uri = extra_map.get("http_proxy");

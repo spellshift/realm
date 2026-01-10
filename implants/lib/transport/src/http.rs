@@ -7,7 +7,7 @@ use pb::{c2::*, config::Config};
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 
-#[cfg(feature = "grpc-doh")]
+#[cfg(feature = "doh")]
 use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use hyper::Uri;
@@ -112,9 +112,9 @@ where
 enum HttpClientInner {
     Plain(hyper::Client<hyper::client::HttpConnector>),
     Proxy(hyper::Client<hyper_proxy::ProxyConnector<hyper::client::HttpConnector>>),
-    #[cfg(feature = "grpc-doh")]
+    #[cfg(feature = "doh")]
     Doh(hyper::Client<HickoryResolverService<hyper::client::HttpConnector>>),
-    #[cfg(feature = "grpc-doh")]
+    #[cfg(feature = "doh")]
     DohProxy(hyper::Client<hyper_proxy::ProxyConnector<HickoryResolverService<hyper::client::HttpConnector>>>),
 }
 
@@ -123,9 +123,9 @@ impl std::fmt::Debug for HttpClientInner {
         match self {
             HttpClientInner::Plain(_) => f.write_str("HttpClientInner::Plain"),
             HttpClientInner::Proxy(_) => f.write_str("HttpClientInner::Proxy"),
-            #[cfg(feature = "grpc-doh")]
+            #[cfg(feature = "doh")]
             HttpClientInner::Doh(_) => f.write_str("HttpClientInner::Doh"),
-            #[cfg(feature = "grpc-doh")]
+            #[cfg(feature = "doh")]
             HttpClientInner::DohProxy(_) => f.write_str("HttpClientInner::DohProxy"),
         }
     }
@@ -161,9 +161,9 @@ impl HTTP {
         let response = match &self.client {
             HttpClientInner::Plain(client) => client.request(req).await,
             HttpClientInner::Proxy(client) => client.request(req).await,
-            #[cfg(feature = "grpc-doh")]
+            #[cfg(feature = "doh")]
             HttpClientInner::Doh(client) => client.request(req).await,
-            #[cfg(feature = "grpc-doh")]
+            #[cfg(feature = "doh")]
             HttpClientInner::DohProxy(client) => client.request(req).await,
         }
         .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
@@ -348,11 +348,11 @@ impl Transport for HTTP {
         let callback = crate::transport::extract_uri_from_config(&config)?;
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        #[cfg(feature = "grpc-doh")]
+        #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("DOH");
 
         // Create base HTTP connector (either plain or DOH-enabled)
-        #[cfg(feature = "grpc-doh")]
+        #[cfg(feature = "doh")]
         let mut http = match doh {
             // TODO: Add provider selection
             Some(_provider) => {
@@ -361,7 +361,7 @@ impl Transport for HTTP {
             None => hyper::client::HttpConnector::new(),
         };
 
-        #[cfg(not(feature = "grpc-doh"))]
+        #[cfg(not(feature = "doh"))]
         let mut http = hyper::client::HttpConnector::new();
 
         // Get proxy configuration from extra field
@@ -385,7 +385,7 @@ impl Transport for HTTP {
                 // Build client with proxy
                 let client = hyper::Client::builder().build(proxy_connector);
 
-                #[cfg(feature = "grpc-doh")]
+                #[cfg(feature = "doh")]
                 if doh.is_some() {
                     // DOH + Proxy configuration
                     HttpClientInner::DohProxy(client)
@@ -394,7 +394,7 @@ impl Transport for HTTP {
                     HttpClientInner::Proxy(client)
                 }
 
-                #[cfg(not(feature = "grpc-doh"))]
+                #[cfg(not(feature = "doh"))]
                 HttpClientInner::Proxy(client)
             }
             #[allow(non_snake_case) /* None is a reserved keyword */]
@@ -402,7 +402,7 @@ impl Transport for HTTP {
                 // No proxy configuration
                 let client = hyper::Client::builder().build(http);
 
-                #[cfg(feature = "grpc-doh")]
+                #[cfg(feature = "doh")]
                 if doh.is_some() {
                     // DOH only configuration
                     HttpClientInner::Doh(client)
@@ -411,7 +411,7 @@ impl Transport for HTTP {
                     HttpClientInner::Plain(client)
                 }
 
-                #[cfg(not(feature = "grpc-doh"))]
+                #[cfg(not(feature = "doh"))]
                 HttpClientInner::Plain(client)
             }
         };
