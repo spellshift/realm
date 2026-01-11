@@ -4,17 +4,23 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
-use core::marker::PhantomData;
 use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
-use rust_embed;
 use std::collections::HashSet;
+#[allow(unused_imports)]
+use chacha20poly1305::{
+    aead::{Aead, KeyInit, generic_array::GenericArray},
+    XChaCha20Poly1305,
+};
 
 pub mod copy_impl;
 pub mod list_impl;
 pub mod read_binary_impl;
 pub mod read_impl;
+pub mod encrypted_assets;
+
+pub use encrypted_assets::{EmbeddedAssets, Embedable};
 
 // Trait for arbitrary backends to get and list assets.
 pub trait AssetBackend: Send + Sync + 'static {
@@ -31,34 +37,6 @@ impl AssetBackend for EmptyAssets {
     }
     fn assets(&self) -> Vec<Cow<'static, str>> {
         Vec::new()
-    }
-}
-
-// An AssetBackend that gets assets from a rust_embed::Embed
-pub struct EmbeddedAssets<T: rust_embed::Embed> {
-    _phantom: PhantomData<T>,
-}
-
-impl<T: rust_embed::Embed> EmbeddedAssets<T> {
-    pub fn new() -> Self {
-        // No arguments needed
-        Self {
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl<T: rust_embed::Embed + Send + Sync + 'static> AssetBackend for EmbeddedAssets<T> {
-    fn get(&self, name: &str) -> Result<Vec<u8>> {
-        // T::get is a static method from the rust_embed::Embed trait
-        T::get(name)
-            .map(|file| file.data.to_vec())
-            .ok_or_else(|| anyhow::anyhow!("asset not found: {}", name))
-    }
-
-    fn assets(&self) -> Vec<Cow<'static, str>> {
-        // T::iter() returns an iterator of Cow<'static, str>
-        T::iter().collect()
     }
 }
 

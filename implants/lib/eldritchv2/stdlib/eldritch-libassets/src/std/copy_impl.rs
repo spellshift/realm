@@ -24,7 +24,7 @@ mod tests {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
-        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new(None)))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
         let dest_str = dest_path.to_str().unwrap().to_string();
@@ -40,7 +40,7 @@ mod tests {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
-        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new(None)))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
         let result = lib.copy(
@@ -56,7 +56,7 @@ mod tests {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
-        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new(None)))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let _dest_str = temp_dir.path().to_str().unwrap().to_string();
         let invalid_dest = temp_dir

@@ -31,10 +31,12 @@ pub mod tests {
     use pb::c2;
     use std::collections::BTreeSet;
     use std::sync::{Arc, Mutex};
+    use eldritch_macros::EncryptedEmbed;
+    use crate::std::Embedable;
 
-    #[cfg(debug_assertions)]
-    #[derive(rust_embed::Embed)]
+    #[derive(EncryptedEmbed)]
     #[folder = "../../../../../bin/embedded_files_test"]
+    #[key = ""]
     pub struct TestAsset;
 
     pub struct MockAgent {
@@ -165,7 +167,7 @@ pub mod tests {
     #[test]
     fn test_read_binary_embedded_success() -> anyhow::Result<()> {
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new(None)))?;
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
@@ -180,7 +182,7 @@ pub mod tests {
     #[test]
     fn test_read_binary_embedded_fail() -> anyhow::Result<()> {
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new(None)))?;
         assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
         Ok(())
     }

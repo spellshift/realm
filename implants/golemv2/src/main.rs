@@ -5,10 +5,11 @@ use clap::{Arg, ArgAction, Command};
 use eldritch_libagent::fake::AgentFake;
 use eldritchv2::assets::{
     AssetsLibrary,
-    std::{EmbeddedAssets, StdAssetsLibrary},
+    std::{EmbeddedAssets, StdAssetsLibrary, Embedable},
 };
 use eldritchv2::conversion::ToValue;
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
+use eldritch_macros::EncryptedEmbed;
 use std::collections::BTreeMap;
 use std::fs;
 use std::process::exit;
@@ -20,14 +21,17 @@ use crate::directorybackend::DirectoryAssetBackend;
 
 // Get some embedded assets and implement them as AssetBackend and RustEmbed
 #[cfg(not(debug_assertions))]
-#[derive(Debug, rust_embed::RustEmbed)]
+#[derive(Debug, EncryptedEmbed)]
 #[folder = "embedded"]
+// You can comment this out, it will then generate a random key at compile time. But the linter flags it
+//#[key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"]
 pub struct GolemEmbeddedAssets;
 
 #[cfg(debug_assertions)]
-#[derive(Debug, rust_embed::RustEmbed)]
+#[derive(Debug, EncryptedEmbed)]
 #[folder = "../../bin/embedded_files_test"]
 pub struct GolemEmbeddedAssets;
+
 
 pub struct ParsedTome {
     pub name: String,
@@ -99,7 +103,7 @@ fn main() -> anyhow::Result<()> {
 
     // If we have specified asset sources, we need to manually include embedded
     if asset_directories.is_empty() || matches.get_flag("embedded") {
-        let backend = EmbeddedAssets::<GolemEmbeddedAssets>::new();
+        let backend = EmbeddedAssets::<GolemEmbeddedAssets>::new(GolemEmbeddedAssets::KEY);
         locker.add(Arc::new(backend))?;
     }
     // Load all the asset directories into the locker

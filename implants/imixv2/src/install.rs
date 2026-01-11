@@ -16,7 +16,7 @@ pub async fn install() -> Result<()> {
             log::info!("loading tome {}", embedded_file_path);
 
             let content = match crate::assets::Asset::get(&embedded_file_path) {
-                Some(f) => String::from_utf8_lossy(&f.data).to_string(),
+                Some(f) => String::from_utf8_lossy(&f).to_string(),
                 None => {
                     #[cfg(debug_assertions)]
                     log::error!("failed to load install asset: {}", embedded_file_path);

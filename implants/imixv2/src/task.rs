@@ -208,7 +208,7 @@ fn setup_interpreter(
     // Remote asset filenames
     let remote_assets = tome.file_names.clone();
     // Support embedded assets behind remote asset filenames
-    let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
+    let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new(crate::assets::Asset::KEY));
     // Register Task Context (Agent, Report, Assets)
     interp = interp.with_task_context(agent, task_id, remote_assets, backend);
 

@@ -8,8 +8,10 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true }
 pb = { workspace = true }
-anyhow = { version = "1.0" }
-rust-embed = { version = "8.0" }
+anyhow = { workspace = true }
+rust-embed = { workspace = true }
+chacha20poly1305 = { workspace = true }
+flate2 = { workspace = true }
 
 [features]
 default = ["std", "stdlib"]
@@ -18,4 +20,10 @@ fake_bindings = []
 stdlib = []
 
 [dev-dependencies]
-tempfile = "3.3"
+tempfile = { workspace = true }
+once_cell = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+sha2 = { workspace = true }
+
+
