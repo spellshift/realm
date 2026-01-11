@@ -112,8 +112,10 @@ mod tests {
         }
     }
 
+    #[cfg(not(debug_assertions))]
     struct MockEmbedNoCompress;
 
+    #[cfg(not(debug_assertions))]
     impl Embedable for MockEmbedNoCompress {
         fn get(file_path: &str) -> Option<Cow<'static, [u8]>> {
             let assets = MOCK_ASSETS.lock().unwrap();
