@@ -36,7 +36,10 @@ mod tests;
 /// #[prefix = "static/"]
 /// pub struct MyAssets;
 /// ```
-#[proc_macro_derive(EncryptedEmbed, attributes(folder, key, prefix))]
+#[proc_macro_derive(
+    EncryptedEmbed,
+    attributes(folder, key, prefix, no_compress, hidden_key)
+)]
 pub fn derive_encrypted_embed(item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as syn::DeriveInput);
     match encrypted_embed::expand_encrypted_embed(input) {
