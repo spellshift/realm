@@ -1,21 +1,21 @@
+use chacha20poly1305::{
+    XChaCha20Poly1305,
+    aead::{Aead, KeyInit, generic_array::GenericArray},
+};
+use flate2::Compression;
+use flate2::write::GzEncoder;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::DeriveInput;
-use std::path::PathBuf;
-use walkdir::WalkDir;
-use chacha20poly1305::{
-    aead::{Aead, KeyInit, generic_array::GenericArray},
-    XChaCha20Poly1305,
-};
 use rand::RngCore;
 use std::fs;
-use flate2::write::GzEncoder;
-use flate2::Compression;
 use std::io::Write;
+use std::path::PathBuf;
+use syn::DeriveInput;
+use walkdir::WalkDir;
 
 pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
     let ident = input.ident;
-    
+
     let mut folder: Option<String> = None;
     let mut key_hex: Option<String> = None;
     let mut prefix: Option<String> = None;
@@ -32,50 +32,59 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
                             folder = Some(lit.value());
                         }
                     } else if meta.path.is_ident("key") {
-                         if let syn::Lit::Str(lit) = meta.lit {
+                        if let syn::Lit::Str(lit) = meta.lit {
                             key_hex = Some(lit.value());
                         }
                     } else if meta.path.is_ident("prefix") {
-                         if let syn::Lit::Str(lit) = meta.lit {
+                        if let syn::Lit::Str(lit) = meta.lit {
                             prefix = Some(lit.value());
                         }
                     }
-                },
+                }
                 syn::Meta::Path(path) => {
                     if path.is_ident("hidden_key") {
                         hidden_key = true;
                     } else if path.is_ident("no_compress") {
                         no_compress = true;
                     }
-                },
+                }
                 _ => {}
             }
         }
     }
 
     if hidden_key && key_hex.is_none() {
-        return Err(syn::Error::new_spanned(&ident, "Cannot use #[hidden_key] without an explicit #[key = \"...\"] attribute. A random key would be lost."));
+        return Err(syn::Error::new_spanned(
+            &ident,
+            "Cannot use #[hidden_key] without an explicit #[key = \"...\"] attribute. A random key would be lost.",
+        ));
     }
 
-    let folder_path = folder.ok_or_else(|| syn::Error::new_spanned(&ident, "Missing #[folder = \"...\"] attribute"))?;
+    let folder_path = folder
+        .ok_or_else(|| syn::Error::new_spanned(&ident, "Missing #[folder = \"...\"] attribute"))?;
     // Resolve folder path relative to CARGO_MANIFEST_DIR
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").map_err(|_| syn::Error::new_spanned(&ident, "CARGO_MANIFEST_DIR not set"))?;
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+        .map_err(|_| syn::Error::new_spanned(&ident, "CARGO_MANIFEST_DIR not set"))?;
     let root = PathBuf::from(manifest_dir).join(&folder_path);
 
     if !root.exists() {
-         return Err(syn::Error::new_spanned(&ident, format!("Folder does not exist: {:?}", root)));
+        return Err(syn::Error::new_spanned(
+            &ident,
+            format!("Folder does not exist: {:?}", root),
+        ));
     }
 
     let mut rng = rand::thread_rng();
-    
+
     // Determine key mode
     let key_option: Option<[u8; 32]> = match key_hex {
         Some(s) if s.is_empty() => None, // Explicitly no encryption
         Some(s) => {
             let mut key = [0u8; 32];
-            hex::decode_to_slice(&s, &mut key).map_err(|e| syn::Error::new_spanned(&ident, format!("Invalid hex key: {}", e)))?;
+            hex::decode_to_slice(&s, &mut key)
+                .map_err(|e| syn::Error::new_spanned(&ident, format!("Invalid hex key: {}", e)))?;
             Some(key)
-        },
+        }
         None => {
             let mut key = [0u8; 32];
             rng.fill_bytes(&mut key);
@@ -94,7 +103,9 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
     let mut dependency_paths = Vec::new();
 
     for entry in WalkDir::new(&root) {
-        let entry = entry.map_err(|e| syn::Error::new_spanned(&ident, format!("Error walking directory: {}", e)))?;
+        let entry = entry.map_err(|e| {
+            syn::Error::new_spanned(&ident, format!("Error walking directory: {}", e))
+        })?;
         if entry.file_type().is_dir() {
             continue;
         }
@@ -103,23 +114,29 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
         dependency_paths.push(path.to_string_lossy().into_owned());
         let relative_path = path.strip_prefix(&root).unwrap();
         let relative_path_str = relative_path.to_string_lossy().into_owned();
-        
+
         // Handle prefix
         let asset_path = if let Some(p) = &prefix {
-             format!("{}{}", p, relative_path_str)
+            format!("{}{}", p, relative_path_str)
         } else {
             relative_path_str
         };
         // Ensure forward slashes
         let asset_path = asset_path.replace("\\", "/");
 
-        let content = fs::read(path).map_err(|e| syn::Error::new_spanned(&ident, format!("Error reading file {:?}: {}", path, e)))?;
-        
+        let content = fs::read(path).map_err(|e| {
+            syn::Error::new_spanned(&ident, format!("Error reading file {:?}: {}", path, e))
+        })?;
+
         // Compress (unless no_compress)
         let processed_content = if !no_compress {
             let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-            encoder.write_all(&content).map_err(|e| syn::Error::new_spanned(&ident, format!("Compression failed: {}", e)))?;
-            encoder.finish().map_err(|e| syn::Error::new_spanned(&ident, format!("Compression finish failed: {}", e)))?
+            encoder.write_all(&content).map_err(|e| {
+                syn::Error::new_spanned(&ident, format!("Compression failed: {}", e))
+            })?;
+            encoder.finish().map_err(|e| {
+                syn::Error::new_spanned(&ident, format!("Compression finish failed: {}", e))
+            })?
         } else {
             content
         };
@@ -129,9 +146,12 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
             let mut nonce_bytes = [0u8; 24];
             rng.fill_bytes(&mut nonce_bytes);
             let nonce = GenericArray::from_slice(&nonce_bytes);
-            
-            let ciphertext = cipher_instance.encrypt(nonce, processed_content.as_ref())
-                .map_err(|e| syn::Error::new_spanned(&ident, format!("Encryption failed: {}", e)))?;
+
+            let ciphertext = cipher_instance
+                .encrypt(nonce, processed_content.as_ref())
+                .map_err(|e| {
+                    syn::Error::new_spanned(&ident, format!("Encryption failed: {}", e))
+                })?;
 
             // Combine nonce + ciphertext
             let mut encrypted_data = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
@@ -150,7 +170,7 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
         });
         asset_keys.push(asset_path);
     }
-    
+
     // Generate include_bytes! calls to force Cargo to track file changes
     let dependencies = dependency_paths.iter().map(|path| {
         quote! {
@@ -168,7 +188,7 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
     } else {
         quote! { None }
     };
-    
+
     let is_encrypted = key_option.is_some();
     let is_compressed_const = !no_compress;
 
@@ -188,7 +208,7 @@ pub fn expand_encrypted_embed(input: DeriveInput) -> syn::Result<TokenStream> {
                     let manifest_dir = env!("CARGO_MANIFEST_DIR");
                     // Assuming #folder_path is relative to manifest dir
                     let root = PathBuf::from(manifest_dir).join(#folder_path);
-                    
+
                     // Sanitize/normalize path logic could go here, but for simple concatenation:
                     // Note: file_path comes from the app, usually relative.
                     // We need to ensure it matches the structure expected.

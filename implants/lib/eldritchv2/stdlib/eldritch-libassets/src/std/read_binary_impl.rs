@@ -22,17 +22,17 @@ impl StdAssetsLibrary {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::std::Embedable;
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
     use alloc::collections::BTreeMap;
     use alloc::string::String;
     use alloc::string::ToString;
     use alloc::vec::Vec;
     use eldritch_agent::Agent;
+    use eldritch_macros::EncryptedEmbed;
     use pb::c2;
     use std::collections::BTreeSet;
     use std::sync::{Arc, Mutex};
-    use eldritch_macros::EncryptedEmbed;
-    use crate::std::Embedable;
 
     #[derive(EncryptedEmbed)]
     #[folder = "../../../../../bin/embedded_files_test"]

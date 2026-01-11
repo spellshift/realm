@@ -2,8 +2,8 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 
-mod impls;
 mod encrypted_embed;
+mod impls;
 #[cfg(test)]
 mod tests;
 
@@ -38,8 +38,8 @@ mod tests;
 /// ```
 #[proc_macro_derive(EncryptedEmbed, attributes(folder, key, prefix))]
 pub fn derive_encrypted_embed(item: TokenStream) -> TokenStream {
-     let input = syn::parse_macro_input!(item as syn::DeriveInput);
-     match encrypted_embed::expand_encrypted_embed(input) {
+    let input = syn::parse_macro_input!(item as syn::DeriveInput);
+    match encrypted_embed::expand_encrypted_embed(input) {
         Ok(tokens) => tokens.into(),
         Err(err) => err.to_compile_error().into(),
     }

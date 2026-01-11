@@ -3,13 +3,13 @@ extern crate alloc;
 
 use clap::{Arg, ArgAction, Command};
 use eldritch_libagent::fake::AgentFake;
+use eldritch_macros::EncryptedEmbed;
 use eldritchv2::assets::{
     AssetsLibrary,
-    std::{EmbeddedAssets, StdAssetsLibrary, Embedable},
+    std::{Embedable, EmbeddedAssets, StdAssetsLibrary},
 };
 use eldritchv2::conversion::ToValue;
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
-use eldritch_macros::EncryptedEmbed;
 use std::collections::BTreeMap;
 use std::fs;
 use std::process::exit;
@@ -31,7 +31,6 @@ pub struct GolemEmbeddedAssets;
 #[derive(Debug, EncryptedEmbed)]
 #[folder = "../../bin/embedded_files_test"]
 pub struct GolemEmbeddedAssets;
-
 
 pub struct ParsedTome {
     pub name: String,

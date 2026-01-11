@@ -2,12 +2,12 @@ use super::AssetBackend;
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use anyhow::Result;
-use core::marker::PhantomData;
 #[allow(unused_imports)]
 use chacha20poly1305::{
-    aead::{Aead, KeyInit, generic_array::GenericArray},
     XChaCha20Poly1305,
+    aead::{Aead, KeyInit, generic_array::GenericArray},
 };
+use core::marker::PhantomData;
 #[cfg(not(debug_assertions))]
 use flate2::read::GzDecoder;
 #[cfg(not(debug_assertions))]
@@ -64,11 +64,13 @@ impl<T: Embedable + Send + Sync + 'static> AssetBackend for EmbeddedAssets<T> {
                 // No key, assume just payload
                 data.into_owned()
             };
-            
+
             if T::is_compressed() {
                 let mut decoder = GzDecoder::new(&maybe_compressed_data[..]);
                 let mut decompressed = Vec::new();
-                decoder.read_to_end(&mut decompressed).map_err(|e| anyhow::anyhow!("Decompression failed: {}", e))?;
+                decoder
+                    .read_to_end(&mut decompressed)
+                    .map_err(|e| anyhow::anyhow!("Decompression failed: {}", e))?;
                 Ok(decompressed)
             } else {
                 Ok(maybe_compressed_data)
@@ -84,24 +86,21 @@ impl<T: Embedable + Send + Sync + 'static> AssetBackend for EmbeddedAssets<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use once_cell::sync::Lazy;
     use std::collections::HashMap;
     use std::sync::Mutex;
-    use once_cell::sync::Lazy;
 
     // Mock Embed implementation
     struct MockEmbed;
 
     // Static storage for mock assets
-    static MOCK_ASSETS: Lazy<Mutex<HashMap<String, Vec<u8>>>> = Lazy::new(|| {
-        Mutex::new(HashMap::new())
-    });
+    static MOCK_ASSETS: Lazy<Mutex<HashMap<String, Vec<u8>>>> =
+        Lazy::new(|| Mutex::new(HashMap::new()));
 
     impl Embedable for MockEmbed {
         fn get(file_path: &str) -> Option<Cow<'static, [u8]>> {
             let assets = MOCK_ASSETS.lock().unwrap();
-            assets.get(file_path).map(|data| {
-                 Cow::Owned(data.clone())
-            })
+            assets.get(file_path).map(|data| Cow::Owned(data.clone()))
         }
 
         fn iter() -> alloc::boxed::Box<dyn Iterator<Item = std::borrow::Cow<'static, str>>> {
@@ -113,15 +112,12 @@ mod tests {
         }
     }
 
-
     struct MockEmbedNoCompress;
 
     impl Embedable for MockEmbedNoCompress {
         fn get(file_path: &str) -> Option<Cow<'static, [u8]>> {
             let assets = MOCK_ASSETS.lock().unwrap();
-            assets.get(file_path).map(|data| {
-                 Cow::Owned(data.clone())
-            })
+            assets.get(file_path).map(|data| Cow::Owned(data.clone()))
         }
 
         fn iter() -> alloc::boxed::Box<dyn Iterator<Item = std::borrow::Cow<'static, str>>> {
@@ -133,23 +129,22 @@ mod tests {
         }
     }
 
-
     #[test]
     #[cfg(not(debug_assertions))]
     fn test_no_compression_flag() {
+        use chacha20poly1305::{
+            XChaCha20Poly1305,
+            aead::{Aead, KeyInit, generic_array::GenericArray},
+        };
         use rand::{RngCore, SeedableRng};
         use rand_chacha::ChaCha20Rng;
-        use chacha20poly1305::{
-            aead::{Aead, KeyInit, generic_array::GenericArray},
-            XChaCha20Poly1305,
-        };
 
         let mut rng = ChaCha20Rng::from_entropy();
         let mut key = [0u8; 32];
         rng.fill_bytes(&mut key);
 
         let plaintext = b"Hello, world! This is UNCOMPRESSED but ENCRYPTED.";
-        
+
         // NO Compress step!
 
         // Encrypt manually
@@ -159,33 +154,43 @@ mod tests {
         let nonce = GenericArray::from_slice(&nonce_bytes);
 
         // Encrypt the PLAINTEXT directly
-        let ciphertext = cipher.encrypt(nonce, plaintext.as_ref()).expect("Encryption failed");
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext.as_ref())
+            .expect("Encryption failed");
 
         let mut encrypted_asset = Vec::new();
         encrypted_asset.extend_from_slice(&nonce_bytes);
         encrypted_asset.extend_from_slice(&ciphertext);
 
         // Store
-        MOCK_ASSETS.lock().unwrap().insert("test_no_compress_flag.txt".to_string(), encrypted_asset);
+        MOCK_ASSETS
+            .lock()
+            .unwrap()
+            .insert("test_no_compress_flag.txt".to_string(), encrypted_asset);
 
         // Test retrieval via EmbeddedAssets with MockEmbedNoCompress
         let assets = EmbeddedAssets::<MockEmbedNoCompress>::new(Some(key));
-        let retrieved = assets.get("test_no_compress_flag.txt").expect("Retrieval failed");
+        let retrieved = assets
+            .get("test_no_compress_flag.txt")
+            .expect("Retrieval failed");
 
-        assert_eq!(retrieved, plaintext, "Data mismatch: Expected uncompressed plaintext");
+        assert_eq!(
+            retrieved, plaintext,
+            "Data mismatch: Expected uncompressed plaintext"
+        );
     }
 
     #[test]
     #[cfg(not(debug_assertions))] // This test only makes sense when decryption is active
     fn test_encryption_roundtrip() {
+        use chacha20poly1305::{
+            XChaCha20Poly1305,
+            aead::{Aead, KeyInit, generic_array::GenericArray},
+        };
+        use flate2::Compression;
+        use flate2::write::GzEncoder;
         use rand::{RngCore, SeedableRng};
         use rand_chacha::ChaCha20Rng;
-        use chacha20poly1305::{
-            aead::{Aead, KeyInit, generic_array::GenericArray},
-            XChaCha20Poly1305,
-        };
-        use flate2::write::GzEncoder;
-        use flate2::Compression;
         use std::io::Write;
 
         let mut rng = ChaCha20Rng::from_entropy();
@@ -193,7 +198,7 @@ mod tests {
         rng.fill_bytes(&mut key);
 
         let plaintext = b"Hello, world! This is a test asset.";
-        
+
         // Compress
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(plaintext).expect("Compression failed");
@@ -205,44 +210,62 @@ mod tests {
         rng.fill_bytes(&mut nonce_bytes);
         let nonce = GenericArray::from_slice(&nonce_bytes);
 
-        let ciphertext = cipher.encrypt(nonce, compressed_plaintext.as_ref()).expect("Encryption failed");
+        let ciphertext = cipher
+            .encrypt(nonce, compressed_plaintext.as_ref())
+            .expect("Encryption failed");
 
         let mut encrypted_asset = Vec::new();
         encrypted_asset.extend_from_slice(&nonce_bytes);
         encrypted_asset.extend_from_slice(&ciphertext);
 
         // Store in mock assets
-        MOCK_ASSETS.lock().unwrap().insert("test_asset.txt".to_string(), encrypted_asset);
+        MOCK_ASSETS
+            .lock()
+            .unwrap()
+            .insert("test_asset.txt".to_string(), encrypted_asset);
 
         // Test decryption via EmbeddedAssets
         let assets = EmbeddedAssets::<MockEmbed>::new(Some(key));
-        let decrypted = assets.get("test_asset.txt").expect("Decryption via asset backend failed");
+        let decrypted = assets
+            .get("test_asset.txt")
+            .expect("Decryption via asset backend failed");
 
-        assert_eq!(decrypted, plaintext, "Decrypted data does not match original plaintext");
+        assert_eq!(
+            decrypted, plaintext,
+            "Decrypted data does not match original plaintext"
+        );
     }
 
     #[test]
     #[cfg(not(debug_assertions))]
     fn test_no_encryption_roundtrip() {
-        use flate2::write::GzEncoder;
         use flate2::Compression;
+        use flate2::write::GzEncoder;
         use std::io::Write;
 
         let plaintext = b"Hello, world! This is an UNENCRYPTED test asset.";
-        
+
         // Compress
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(plaintext).expect("Compression failed");
         let compressed_plaintext = encoder.finish().expect("Compression finish failed");
 
         // Store directly (Compressed only)
-        MOCK_ASSETS.lock().unwrap().insert("test_unencrypted.txt".to_string(), compressed_plaintext);
+        MOCK_ASSETS
+            .lock()
+            .unwrap()
+            .insert("test_unencrypted.txt".to_string(), compressed_plaintext);
 
         // Test retrieval via EmbeddedAssets with NO key
         let assets = EmbeddedAssets::<MockEmbed>::new(None);
-        let decompressed = assets.get("test_unencrypted.txt").expect("Retrieval via asset backend failed");
+        let decompressed = assets
+            .get("test_unencrypted.txt")
+            .expect("Retrieval via asset backend failed");
 
-        assert_eq!(decompressed, plaintext, "Decompressed data does not match original plaintext");
+        assert_eq!(
+            decompressed, plaintext,
+            "Decompressed data does not match original plaintext"
+        );
     }
 
     #[test]
@@ -250,31 +273,37 @@ mod tests {
     fn test_debug_passthrough() {
         let plaintext = b"Hello, world! This is a debug test.";
         // Key doesn't matter in debug
-        
+
         // Store plaintext in mock assets
-        MOCK_ASSETS.lock().unwrap().insert("debug_asset.txt".to_string(), plaintext.to_vec());
+        MOCK_ASSETS
+            .lock()
+            .unwrap()
+            .insert("debug_asset.txt".to_string(), plaintext.to_vec());
 
         // Test passthrough
         let assets = EmbeddedAssets::<MockEmbed>::new(None);
         let retrieved = assets.get("debug_asset.txt").expect("Retrieval failed");
 
-        assert_eq!(retrieved, plaintext, "Data should be passed through in debug mode");
+        assert_eq!(
+            retrieved, plaintext,
+            "Data should be passed through in debug mode"
+        );
     }
 
     #[test]
     #[cfg(not(debug_assertions))]
     fn test_random_strings_integrity() {
-        use sha2::{Sha256, Digest};
+        use chacha20poly1305::{
+            XChaCha20Poly1305,
+            aead::{Aead, KeyInit, generic_array::GenericArray},
+        };
+        use flate2::Compression;
+        use flate2::write::GzEncoder;
         use rand::distributions::Alphanumeric;
         use rand::{Rng, thread_rng};
         use rand::{RngCore, SeedableRng};
         use rand_chacha::ChaCha20Rng;
-        use chacha20poly1305::{
-            aead::{Aead, KeyInit, generic_array::GenericArray},
-            XChaCha20Poly1305,
-        };
-        use flate2::write::GzEncoder;
-        use flate2::Compression;
+        use sha2::{Digest, Sha256};
         use std::io::Write;
 
         let mut chacha_rng = ChaCha20Rng::from_entropy();
@@ -307,7 +336,9 @@ mod tests {
             let mut nonce_bytes = [0u8; 24];
             chacha_rng.fill_bytes(&mut nonce_bytes);
             let nonce = GenericArray::from_slice(&nonce_bytes);
-            let ciphertext = cipher.encrypt(nonce, compressed_plaintext.as_ref()).expect("Encryption failed");
+            let ciphertext = cipher
+                .encrypt(nonce, compressed_plaintext.as_ref())
+                .expect("Encryption failed");
 
             // Pack (nonce + ciphertext)
             let mut encrypted_asset = Vec::new();
@@ -316,10 +347,15 @@ mod tests {
 
             // Store in Mock
             let asset_name = format!("random_asset_{}.txt", i);
-            MOCK_ASSETS.lock().unwrap().insert(asset_name.clone(), encrypted_asset);
+            MOCK_ASSETS
+                .lock()
+                .unwrap()
+                .insert(asset_name.clone(), encrypted_asset);
 
             // Retrieve and Decrypt
-            let decrypted = assets_backend.get(&asset_name).expect("Failed to retrieve asset");
+            let decrypted = assets_backend
+                .get(&asset_name)
+                .expect("Failed to retrieve asset");
 
             // Calculate Hash of decrypted
             let mut hasher = Sha256::new();
@@ -328,7 +364,11 @@ mod tests {
 
             // Verify
             assert_eq!(decrypted, plaintext, "Content mismatch for asset {}", i);
-            assert_eq!(decrypted_hash, original_hash, "Hash mismatch for asset {}", i);
+            assert_eq!(
+                decrypted_hash, original_hash,
+                "Hash mismatch for asset {}",
+                i
+            );
         }
     }
 }

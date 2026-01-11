@@ -4,23 +4,23 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
+#[allow(unused_imports)]
+use chacha20poly1305::{
+    XChaCha20Poly1305,
+    aead::{Aead, KeyInit, generic_array::GenericArray},
+};
 use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use std::collections::HashSet;
-#[allow(unused_imports)]
-use chacha20poly1305::{
-    aead::{Aead, KeyInit, generic_array::GenericArray},
-    XChaCha20Poly1305,
-};
 
 pub mod copy_impl;
+pub mod encrypted_assets;
 pub mod list_impl;
 pub mod read_binary_impl;
 pub mod read_impl;
-pub mod encrypted_assets;
 
-pub use encrypted_assets::{EmbeddedAssets, Embedable};
+pub use encrypted_assets::{Embedable, EmbeddedAssets};
 
 // Trait for arbitrary backends to get and list assets.
 pub trait AssetBackend: Send + Sync + 'static {
