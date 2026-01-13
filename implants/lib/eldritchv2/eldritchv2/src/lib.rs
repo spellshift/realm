@@ -5,7 +5,6 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-
 // Re-exports from eldritch-stdlib
 pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;

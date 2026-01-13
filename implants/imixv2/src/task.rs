@@ -294,11 +294,7 @@ fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, err: String) {
     }
 }
 
-fn report_result(
-    task_id: i64,
-    result: Result<Value, String>,
-    agent: &Arc<dyn Agent>,
-) {
+fn report_result(task_id: i64, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
     match result {
         Ok(v) => {
             #[cfg(debug_assertions)]
