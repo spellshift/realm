@@ -19,49 +19,6 @@ pub(crate) fn apply_arithmetic_op(
         (Value::Int(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
         (Value::Int(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
         (Value::Int(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
-        (Value::Int(a), TokenKind::StarStar, Value::Int(b)) => {
-            if *b < 0 {
-                #[cfg(feature = "std")]
-                {
-                    Ok(Value::Float((*a as f64).powf(*b as f64)))
-                }
-                #[cfg(not(feature = "std"))]
-                {
-                    Ok(Value::Float(libm::pow(*a as f64, *b as f64)))
-                }
-            } else {
-                // Check for potential overflow or excessively large exponent
-                if *b > u32::MAX as i64 {
-                    return interp.error(
-                        EldritchErrorKind::OverflowError,
-                        "exponent too large",
-                        span,
-                    );
-                }
-                // We use check_pow to avoid panic, but it's experimental? No, checked_pow is stable.
-                if let Some(res) = a.checked_pow(*b as u32) {
-                    Ok(Value::Int(res))
-                } else {
-                    // Python promotes to BigInt, but we don't have that.
-                    // We could promote to Float?
-                    // For now, let's error on overflow or return float?
-                    // Returning float might lose precision but is safer than panic/wrap.
-                    // However, standard Rust behavior for overflow is panic in debug, wrap in release.
-                    // Let's match typical Eldritch arithmetic which seems to rely on native operator (wrapping/panicking).
-                    // But `pow` panic is annoying.
-                    // Let's use wrapping_pow or return float on overflow?
-                    // Returning Float on overflow is a reasonable fallback for a dynamic language without BigInt.
-                    #[cfg(feature = "std")]
-                    {
-                        Ok(Value::Float((*a as f64).powf(*b as f64)))
-                    }
-                    #[cfg(not(feature = "std"))]
-                    {
-                        Ok(Value::Float(libm::pow(*a as f64, *b as f64)))
-                    }
-                }
-            }
-        }
         (Value::Int(a), TokenKind::Slash, Value::Int(b)) => {
             if *b == 0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
@@ -72,16 +29,6 @@ pub(crate) fn apply_arithmetic_op(
         (Value::Float(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float(a + b)),
         (Value::Float(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float(a - b)),
         (Value::Float(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float(a * b)),
-        (Value::Float(a), TokenKind::StarStar, Value::Float(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float(a.powf(*b)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(Value::Float(libm::pow(*a, *b)))
-            }
-        }
         (Value::Float(a), TokenKind::Slash, Value::Float(b)) => {
             if *b == 0.0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
@@ -93,16 +40,6 @@ pub(crate) fn apply_arithmetic_op(
         (Value::Int(a), TokenKind::Plus, Value::Float(b)) => Ok(Value::Float((*a as f64) + b)),
         (Value::Int(a), TokenKind::Minus, Value::Float(b)) => Ok(Value::Float((*a as f64) - b)),
         (Value::Int(a), TokenKind::Star, Value::Float(b)) => Ok(Value::Float((*a as f64) * b)),
-        (Value::Int(a), TokenKind::StarStar, Value::Float(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float((*a as f64).powf(*b)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(Value::Float(libm::pow(*a as f64, *b)))
-            }
-        }
         (Value::Int(a), TokenKind::Slash, Value::Float(b)) => {
             if *b == 0.0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
@@ -113,16 +50,6 @@ pub(crate) fn apply_arithmetic_op(
         (Value::Float(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Float(a + (*b as f64))),
         (Value::Float(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Float(a - (*b as f64))),
         (Value::Float(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Float(a * (*b as f64))),
-        (Value::Float(a), TokenKind::StarStar, Value::Int(b)) => {
-            #[cfg(feature = "std")]
-            {
-                Ok(Value::Float(a.powf(*b as f64)))
-            }
-            #[cfg(not(feature = "std"))]
-            {
-                Ok(Value::Float(libm::pow(*a, *b as f64)))
-            }
-        }
         (Value::Float(a), TokenKind::Slash, Value::Int(b)) => {
             if *b == 0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);

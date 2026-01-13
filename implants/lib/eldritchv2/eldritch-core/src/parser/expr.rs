@@ -381,23 +381,7 @@ impl Parser {
                 end,
             ));
         }
-        self.power()
-    }
-
-    fn power(&mut self) -> Result<Expr, EldritchError> {
-        let mut expr = self.call()?;
-        if self.match_token(&[TokenKind::StarStar]) {
-            let operator = self.tokens[self.current - 1].clone();
-            let right = self.unary_expr()?;
-            let start = expr.span;
-            let end = right.span;
-            expr = self.make_expr(
-                ExprKind::BinaryOp(Box::new(expr), operator.kind, Box::new(right)),
-                start,
-                end,
-            );
-        }
-        Ok(expr)
+        self.call()
     }
 
     fn call(&mut self) -> Result<Expr, EldritchError> {

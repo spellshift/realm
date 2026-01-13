@@ -18,7 +18,6 @@ pub enum EldritchErrorKind {
     ZeroDivisionError,
     ImportError,
     AssertionError,
-    OverflowError,
 }
 
 impl fmt::Display for EldritchErrorKind {
@@ -36,7 +35,6 @@ impl fmt::Display for EldritchErrorKind {
             EldritchErrorKind::ZeroDivisionError => write!(f, "ZeroDivisionError"),
             EldritchErrorKind::ImportError => write!(f, "ImportError"),
             EldritchErrorKind::AssertionError => write!(f, "AssertionError"),
-            EldritchErrorKind::OverflowError => write!(f, "OverflowError"),
         }
     }
 }
