@@ -36,6 +36,8 @@ pub use crate::assets::std::AgentAssets;
 #[cfg(feature = "stdlib")]
 pub use crate::assets::std::AssetBackend;
 #[cfg(feature = "stdlib")]
+pub use crate::assets::std::Embedable;
+#[cfg(feature = "stdlib")]
 pub use crate::assets::std::EmbeddedAssets;
 #[cfg(feature = "stdlib")]
 pub use crate::assets::std::EmptyAssets;

@@ -9,6 +9,13 @@ edition = "2024"
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0", features = ["full", "extra-traits"] }
-quote = "1.0"
-proc-macro2 = "1.0"
+syn = { workspace = true }
+quote = { workspace = true }
+proc-macro2 = { workspace = true }
+chacha20poly1305 = { workspace = true }
+walkdir = { workspace = true }
+mime_guess = { workspace = true }
+hex = { workspace = true }
+rand = { workspace = true }
+anyhow = { workspace = true }
+flate2 = { workspace = true }

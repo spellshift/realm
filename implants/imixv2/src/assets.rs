@@ -1,5 +1,6 @@
-use rust_embed::RustEmbed;
+use eldritch_macros::EncryptedEmbed;
+use eldritchv2::assets::std::Embedable;
 
-#[derive(RustEmbed)]
+#[derive(EncryptedEmbed)]
 #[folder = "../imix/install_scripts"]
 pub struct Asset;

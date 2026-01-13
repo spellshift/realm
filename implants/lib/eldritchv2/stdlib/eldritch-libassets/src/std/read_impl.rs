@@ -23,7 +23,7 @@ mod tests {
             agent,
             vec!["remote_file.txt".to_string()],
         )))?;
-        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new(None)))?;
         let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
         assert_eq!(
