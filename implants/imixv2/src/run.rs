@@ -9,6 +9,8 @@ use crate::version::VERSION;
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
+use crate::event;
+
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
 pub async fn run_agent() -> Result<()> {
@@ -39,6 +41,10 @@ pub async fn run_agent() -> Result<()> {
     #[cfg(debug_assertions)]
     log::info!("Agent initialized");
 
+    // Run the onstart event script
+    #[cfg(feature = "events")]
+    event::onevent("on_start");
+
     while !SHUTDOWN.load(Ordering::Relaxed) {
         let start = Instant::now();
         let agent_ref = agent.clone();
@@ -64,6 +70,10 @@ pub async fn run_agent() -> Result<()> {
             tokio::time::sleep(Duration::from_secs(last_interval)).await;
         }
     }
+
+    // Run the on_exit event script
+    #[cfg(feature = "events")]
+    event::onevent("on_exit");
 
     #[cfg(debug_assertions)]
     log::info!("Agent shutting down");

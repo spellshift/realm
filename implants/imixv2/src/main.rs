@@ -29,6 +29,7 @@ mod task;
 #[cfg(test)]
 mod tests;
 mod version;
+mod event;
 
 #[tokio::main]
 async fn main() -> Result<()> {
