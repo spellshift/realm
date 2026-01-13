@@ -7,10 +7,11 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1", "dns"]
+default = ["install", "grpc", "http1", "dns", "doh"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
+doh = ["transport/doh"]
 win_service = []
 install = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
