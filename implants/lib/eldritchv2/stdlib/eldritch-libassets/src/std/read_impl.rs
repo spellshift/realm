@@ -1,32 +1,35 @@
-use crate::RustEmbed;
+use crate::std::StdAssetsLibrary;
 use alloc::string::String;
-use alloc::sync::Arc;
-use eldritch_agent::Agent;
 
-use super::read_binary_impl;
-
-pub fn read<A: RustEmbed>(
-    agent: Arc<dyn Agent>,
-    remote_assets: &[String],
-    name: String,
-) -> Result<String, String> {
-    let bytes = read_binary_impl::read_binary::<A>(agent, remote_assets, name)?;
-    String::from_utf8(bytes).map_err(|e| e.to_string())
+impl StdAssetsLibrary {
+    pub fn read_impl(&self, name: String) -> Result<String, String> {
+        let bytes = self.read_binary_impl(&name).map_err(|e| e.to_string())?;
+        String::from_utf8(bytes).map_err(|e| e.to_string())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::std::read_binary_impl::tests::{MockAgent, TestAsset};
+    use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
+    use std::sync::Arc;
 
     #[test]
-    fn test_read_embedded_success() {
-        use read_binary_impl::tests::{MockAgent, TestAsset};
+    fn test_read_embedded_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
-        let content = read::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string());
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            vec!["remote_file.txt".to_string()],
+        )))?;
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        let content = lib.read("print/main.eldritch".to_string());
         assert!(content.is_ok());
         assert_eq!(
             content.unwrap().trim(),
             "print(\"This script just prints\")"
         );
+        Ok(())
     }
 }

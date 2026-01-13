@@ -1,57 +1,41 @@
-use crate::RustEmbed;
-use alloc::string::String;
-use alloc::sync::Arc;
+use crate::std::StdAssetsLibrary;
 use alloc::vec::Vec;
 use anyhow::Result;
-use eldritch_agent::Agent;
-use pb::c2::FetchAssetRequest;
 
-pub fn read_binary_embedded<A: RustEmbed>(src: &str) -> Result<Vec<u8>> {
-    if let Some(file) = A::get(src) {
-        Ok(file.data.to_vec())
-    } else {
-        Err(anyhow::anyhow!("Embedded file {src} not found."))
+impl StdAssetsLibrary {
+    pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
+        // We have a hashmap of all the names, might as well use it
+        if !self.asset_names.contains(name) {
+            return Err(anyhow::anyhow!("asset not found: {}", name));
+        };
+        // Iterate through the boxed trait objects (maintaining precedence order)
+        for backend in &self.backends {
+            if let Ok(file) = backend.get(&name) {
+                // Return immediately upon the first match
+                return Ok(file);
+            }
+        }
+        Err(anyhow::anyhow!("asset not found: {}", name))
     }
-}
-
-pub fn read_binary<A: RustEmbed>(
-    agent: Arc<dyn Agent>,
-    remote_assets: &[String],
-    name: String,
-) -> Result<Vec<u8>, String> {
-    if remote_assets.iter().any(|s| s == &name) {
-        let req = FetchAssetRequest { name };
-        return agent.fetch_asset(req);
-    }
-    read_binary_embedded::<A>(&name).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
     use alloc::collections::BTreeMap;
+    use alloc::string::String;
     use alloc::string::ToString;
+    use alloc::vec::Vec;
+    use eldritch_agent::Agent;
     use pb::c2;
-    use std::borrow::Cow;
     use std::collections::BTreeSet;
-    use std::sync::Mutex;
-
-    use crate::RustEmbed as LocalRustEmbed;
-    use rust_embed::RustEmbed as CrateRustEmbed;
+    use std::sync::{Arc, Mutex};
 
     #[cfg(debug_assertions)]
-    #[derive(CrateRustEmbed)]
+    #[derive(rust_embed::Embed)]
     #[folder = "../../../../../bin/embedded_files_test"]
     pub struct TestAsset;
-
-    impl LocalRustEmbed for TestAsset {
-        fn get(file_path: &str) -> Option<rust_embed::EmbeddedFile> {
-            <TestAsset as CrateRustEmbed>::get(file_path)
-        }
-        fn iter() -> impl Iterator<Item = Cow<'static, str>> {
-            <TestAsset as CrateRustEmbed>::iter()
-        }
-    }
 
     pub struct MockAgent {
         assets: Mutex<BTreeMap<String, Vec<u8>>>,
@@ -173,16 +157,16 @@ pub mod tests {
             Ok(())
         }
 
-        fn create_portal(&self, task_id: i64) -> std::result::Result<(), String> {
+        fn create_portal(&self, _: i64) -> std::result::Result<(), String> {
             Ok(())
         }
     }
 
     #[test]
-    fn test_read_binary_embedded_success() {
-        let agent = Arc::new(MockAgent::new());
-        let content =
-            read_binary::<TestAsset>(agent, &Vec::new(), "print/main.eldritch".to_string());
+    fn test_read_binary_embedded_success() -> anyhow::Result<()> {
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
         assert!(!content.is_empty());
@@ -190,36 +174,41 @@ pub mod tests {
             std::str::from_utf8(&content).unwrap().trim(),
             "print(\"This script just prints\")"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_read_binary_embedded_fail() {
-        let agent = Arc::new(MockAgent::new());
-        assert!(
-            read_binary::<TestAsset>(agent, &Vec::new(), "nonexistent_file".to_string()).is_err()
-        );
+    fn test_read_binary_embedded_fail() -> anyhow::Result<()> {
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
+        assert!(lib.read_binary("nonexistent_file".to_string()).is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_read_binary_remote_success() {
+    fn test_read_binary_remote_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new().with_asset("remote_file.txt", b"remote content"));
-        let content = read_binary::<TestAsset>(
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(
             agent,
-            &vec!["remote_file.txt".to_string()],
-            "remote_file.txt".to_string(),
-        );
+            vec!["remote_file.txt".to_string()],
+        )))?;
+        let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
         assert_eq!(content.unwrap(), b"remote content");
+        Ok(())
     }
 
     #[test]
-    fn test_read_binary_remote_fail() {
+    fn test_read_binary_remote_fail() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new().should_fail());
-        let result = read_binary::<TestAsset>(
+        let mut lib = StdAssetsLibrary::new();
+        lib.add(Arc::new(AgentAssets::new(
             agent,
-            &vec!["remote_file.txt".to_string()],
-            "remote_file.txt".to_string(),
-        );
+            vec!["remote_file.txt".to_string()],
+        )))?;
+        let result = lib.read_binary("remote_file.txt".to_string());
         assert!(result.is_err());
+        Ok(())
     }
 }

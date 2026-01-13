@@ -35,5 +35,16 @@ pub fn get_id_with_selectors(selectors: Vec<Box<dyn HostIDSelector>>) -> Uuid {
 // List is evaluated in order and will take the first successful
 // result.
 pub fn defaults() -> Vec<Box<dyn HostIDSelector>> {
-    vec![Box::<Env>::default(), Box::<File>::default()]
+    vec![
+        Box::<Env>::default(),
+        Box::<File>::default(),
+        // Fallback for unix systems / legacy implementation
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "netbsd"
+        ))]
+        Box::new(File::new_with_file("/etc/system-id")),
+    ]
 }

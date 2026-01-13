@@ -4,7 +4,7 @@ use std::thread;
 use std::time::SystemTime;
 
 use eldritch_libagent::agent::Agent;
-use eldritchv2::{Interpreter, Printer, Span, conversion::ToValue};
+use eldritchv2::{Interpreter, Printer, Span, assets::std::EmbeddedAssets, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
@@ -205,9 +205,12 @@ fn setup_interpreter(
 ) -> Interpreter {
     let mut interp = Interpreter::new_with_printer(printer).with_default_libs();
 
-    // Register Task Context (Agent, Report, Assets)
+    // Remote asset filenames
     let remote_assets = tome.file_names.clone();
-    interp = interp.with_task_context::<crate::assets::Asset>(agent, task_id, remote_assets);
+    // Support embedded assets behind remote asset filenames
+    let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
+    // Register Task Context (Agent, Report, Assets)
+    interp = interp.with_task_context(agent, task_id, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
