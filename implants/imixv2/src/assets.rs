@@ -1,5 +1,5 @@
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
-#[folder = "../imix/install_scripts"]
+#[folder = "./embedded"]
 pub struct Asset;

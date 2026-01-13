@@ -21,6 +21,8 @@ pub use transport::{ActiveTransport, Transport};
 
 mod agent;
 mod assets;
+#[cfg(feature = "events")]
+mod event;
 mod install;
 mod portal;
 mod run;
@@ -29,7 +31,6 @@ mod task;
 #[cfg(test)]
 mod tests;
 mod version;
-mod event;
 
 #[tokio::main]
 async fn main() -> Result<()> {

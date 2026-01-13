@@ -1,0 +1,5 @@
+HANDLED_EVENTS = set(["on_callback_fail", "on_sigint"])
+
+evt = input_params.get("event", "???")
+if evt in HANDLED_EVENTS:
+    print(f"[EVENT] {evt} called:", input_params.get("args", {}))

