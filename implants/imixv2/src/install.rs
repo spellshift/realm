@@ -2,11 +2,14 @@
 use anyhow::Result;
 #[cfg(feature = "install")]
 use eldritchv2::Interpreter;
+use eldritchv2::assets::std::{EmbeddedAssets, StdAssetsLibrary};
+use std::sync::Arc;
 
 #[cfg(feature = "install")]
 pub async fn install() -> Result<()> {
     #[cfg(debug_assertions)]
     log::info!("starting installation");
+    let asset_backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
 
     // Iterate through all embedded files using the Asset struct from assets.rs
     for embedded_file_path in crate::assets::Asset::iter() {
@@ -28,8 +31,11 @@ pub async fn install() -> Result<()> {
             log::info!("running tome {}", embedded_file_path);
 
             // Execute using Eldritch V2 Interpreter
+            let mut locker = StdAssetsLibrary::new();
+            let _ = locker.add(asset_backend.clone());
             let mut interpreter = Interpreter::new().with_default_libs();
-
+            interpreter.register_lib(locker);
+            
             match interpreter.interpret(&content) {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
