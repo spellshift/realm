@@ -35,7 +35,7 @@ pub async fn install() -> Result<()> {
             let _ = locker.add(asset_backend.clone());
             let mut interpreter = Interpreter::new().with_default_libs();
             interpreter.register_lib(locker);
-            
+
             match interpreter.interpret(&content) {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
