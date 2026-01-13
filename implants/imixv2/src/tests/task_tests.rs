@@ -1,6 +1,6 @@
 use super::super::task::TaskRegistry;
 use alloc::collections::{BTreeMap, BTreeSet};
-use eldritch_libagent::agent::Agent;
+use eldritchv2::agent::agent::Agent;
 use pb::c2;
 use pb::eldritch::Tome;
 use std::sync::Arc;

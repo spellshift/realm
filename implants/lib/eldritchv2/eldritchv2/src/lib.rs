@@ -5,6 +5,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+
 // Re-exports from eldritch-stdlib
 pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;
@@ -18,19 +19,21 @@ pub use eldritch_libregex as regex;
 pub use eldritch_libreport as report;
 pub use eldritch_libsys as sys;
 pub use eldritch_libtime as time;
+pub use eldritch_repl as repl;
 
 // Re-export core types
 pub use eldritch_core::{
     BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer, Span,
     StdoutPrinter, TokenKind, Value, conversion,
 };
+pub use eldritch_macros as macros;
 
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 #[cfg(feature = "stdlib")]
-use crate::agent::{agent::Agent, std::StdAgentLibrary};
+pub use crate::agent::{agent::Agent, std::StdAgentLibrary};
 #[cfg(feature = "stdlib")]
 pub use crate::assets::std::AgentAssets;
 #[cfg(feature = "stdlib")]
