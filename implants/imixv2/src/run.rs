@@ -50,9 +50,10 @@ pub async fn run_agent() -> Result<()> {
     // Run the onstart event script
     #[cfg(feature = "events")]
     {
-        event::load_event_script();
-        tokio::spawn(crate::event::catch_signals());
-        tokio::spawn(event::on_event("on_start", BTreeMap::new()));
+        if event::load_event_script() {
+            tokio::spawn(crate::event::catch_signals());
+            tokio::spawn(event::on_event("on_start", BTreeMap::new()));
+        }
     }
 
     while !SHUTDOWN.load(Ordering::Relaxed) {
@@ -110,9 +111,34 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     // Create new active transport
     let config = agent.get_transport_config().await;
 
+    // See if we want to do anything before the callback
+    #[cfg(feature = "events")]
+    {
+        // Get the current URL
+        let mut uri = String::new();
+        if let Some(info) = &config.info {
+            if let Some(available_transports) = &info.available_transports {
+                let num_transports = available_transports.transports.len();
+                if num_transports > 0 {
+                    let t = &available_transports.transports
+                        [available_transports.active_index as usize];
+                    uri = t.uri.clone();
+                }
+            }
+        }
+        let mut args = BTreeMap::new();
+        args.insert("uri".to_string(), uri.to_value());
+        event::on_event("on_callback_start", args).await;
+    }
     let transport = match ActiveTransport::new(config) {
         Ok(t) => t,
         Err(_e) => {
+            #[cfg(feature = "events")]
+            {
+                let mut map = BTreeMap::new();
+                map.insert("error".to_string(), _e.root_cause().to_string().to_value());
+                tokio::spawn(event::on_event("on_callback_fail", map));
+            }
             #[cfg(debug_assertions)]
             log::error!("Failed to create transport: {_e:#}");
             agent.rotate_callback_uri().await;
@@ -122,19 +148,6 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
 
     // Set transport
     agent.update_transport(transport).await;
-
-    // See if we want to do anything before the callback
-    #[cfg(feature = "events")]
-    {
-        let mut args = BTreeMap::new();
-        args.insert(
-            "uri".to_string(),
-            agent
-                .get_next_callback_uri()
-                .map_or("".to_string().to_value(), |s| s.to_value()),
-        );
-        event::on_event("on_callback_start", args).await;
-    }
 
     // Claim Tasks
     process_tasks(&agent, &registry).await;
@@ -155,15 +168,15 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegis
             #[cfg(feature = "events")]
             tokio::spawn(event::on_event("on_callback_success", BTreeMap::new()));
         }
-        Err(e) => {
+        Err(_e) => {
             #[cfg(debug_assertions)]
-            log::error!("Callback failed: {e:#}");
+            log::error!("Callback failed: {_e:#}");
             agent.rotate_callback_uri().await;
 
             #[cfg(feature = "events")]
             {
                 let mut map = BTreeMap::new();
-                map.insert("error".to_string(), e.root_cause().to_string().to_value());
+                map.insert("error".to_string(), _e.root_cause().to_string().to_value());
                 tokio::spawn(event::on_event("on_callback_fail", map));
             }
         }

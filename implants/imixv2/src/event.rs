@@ -183,11 +183,12 @@ fn get_pid_info(pid: i32, max_rec: u32) -> Option<Sender> {
 }
 
 #[cfg(feature = "events")]
-pub fn load_event_script() {
+pub fn load_event_script() -> bool {
     EVENT_SCRIPT.get_or_init(|| {
         let path = "on_event.eldritch";
         crate::assets::Asset::get(path).map(|f| String::from_utf8_lossy(&f.data).into_owned())
     });
+    return EVENT_SCRIPT.get().is_some();
 }
 
 #[cfg(feature = "events")]
