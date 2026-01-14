@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use eldritch_agent::Agent;
+use eldritchv2::agent::agent::Agent;
 use pb::c2::host::Platform;
 use pb::c2::transport::Type::{self, *};
 use pb::c2::{self, ClaimTasksRequest};

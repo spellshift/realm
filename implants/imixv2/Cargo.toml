@@ -33,12 +33,7 @@ prost = { workspace = true }
 crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
-eldritch-core = { workspace = true }
 eldritchv2 = { workspace = true, features = ["std", "stdlib"] }
-eldritch-repl = { workspace = true }
-eldritch-agent = { workspace = true }
-eldritch-libagent = { workspace = true, features = ["stdlib"] }
-eldritch-libassets = { workspace = true, features = ["stdlib"] }
 transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }

@@ -3,8 +3,9 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::SystemTime;
 
-use eldritch_libagent::agent::Agent;
-use eldritchv2::{Interpreter, Printer, Span, assets::std::EmbeddedAssets, conversion::ToValue};
+use eldritchv2::agent::agent::Agent;
+use eldritchv2::assets::std::EmbeddedAssets;
+use eldritchv2::{Interpreter, Printer, Span, Value, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
@@ -293,11 +294,7 @@ fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, err: String) {
     }
 }
 
-fn report_result(
-    task_id: i64,
-    result: Result<eldritch_core::Value, String>,
-    agent: &Arc<dyn Agent>,
-) {
+fn report_result(task_id: i64, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
     match result {
         Ok(v) => {
             #[cfg(debug_assertions)]
