@@ -1,10 +1,9 @@
 use anyhow::Result;
 use crossterm::{QueueableCommand, cursor, terminal};
-use eldritch_core::Value;
-use eldritch_libagent::agent::Agent;
-use eldritch_libassets::std::EmptyAssets;
-use eldritch_repl::{Repl, ReplAction};
-use eldritchv2::{Interpreter, Printer, Span};
+use eldritchv2::agent::agent::Agent;
+use eldritchv2::assets::std::EmptyAssets;
+use eldritchv2::repl::{Repl, ReplAction};
+use eldritchv2::{Interpreter, Printer, Span, Value};
 use pb::c2::{
     ReportTaskOutputRequest, ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse,
     TaskError, TaskOutput,
