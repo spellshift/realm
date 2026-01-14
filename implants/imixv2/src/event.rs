@@ -5,6 +5,7 @@
 use eldritchv2::{
     Interpreter, Value,
     assets::std::{EmbeddedAssets, StdAssetsLibrary},
+    conversion::ToValue,
 };
 #[cfg(feature = "events")]
 use std::{
@@ -15,7 +16,7 @@ use std::{
 #[cfg(feature = "events")]
 static EVENT_SCRIPT: OnceLock<Option<String>> = OnceLock::new();
 
-#[cfg(feature = "events")]
+#[cfg(all(feature = "events", target_os = "linux"))]
 #[derive(Debug, Clone)]
 struct Sender {
     pid: i32,
@@ -25,7 +26,7 @@ struct Sender {
     parent: Option<Box<Sender>>,
 }
 
-#[cfg(feature = "events")]
+#[cfg(all(feature = "events", target_os = "linux"))]
 pub async fn catch_signals() {
     use signal_hook::consts::{
         SIGCHLD, SIGHUP, SIGINT, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2, SIGWINCH,
@@ -55,10 +56,7 @@ pub async fn catch_signals() {
             let mut sender = None;
             // Attempt to read process info immediately to avoid race conditions
             if let Some(p) = info.process {
-                #[cfg(target_os = "linux")]
-                {
-                    sender = get_pid_info(p.pid, 15);
-                }
+                sender = get_pid_info(p.pid, 15);
             }
 
             if tx.blocking_send((info, sender)).is_err() {
@@ -70,7 +68,7 @@ pub async fn catch_signals() {
     while let Some((info, sender)) = rx.recv().await {
         let sig = info.signal as i32;
 
-        let event_name = match sig {
+        let sig_name = match sig {
             SIGINT => "sigint",
             SIGTERM => "sigterm",
             SIGHUP => "sighup",
@@ -83,20 +81,23 @@ pub async fn catch_signals() {
         };
 
         // Args that can passed to the event callback. "sender"
-        let mut args = BTreeMap::new();
+        let mut args: BTreeMap<String, Value> = BTreeMap::new();
+        args.insert("signal".into(), sig_name.to_string().to_value());
         if let Some(s) = sender {
-            args.insert("sender".to_string(), sender_to_value(&s));
+            args.insert("sender".into(), sender_to_value(&s));
         }
 
         // Actually spawn the event
         tokio::spawn(async move {
-            let event = "on_".to_owned() + event_name;
-            on_event(&event, args).await;
+            on_event("on_signal", args).await;
         });
     }
 }
 
-#[cfg(feature = "events")]
+#[cfg(all(feature = "events", not(target_os = "linux")))]
+pub async fn catch_signals() {}
+
+#[cfg(all(feature = "events", target_os = "linux"))]
 fn sender_to_value(sender: &Sender) -> Value {
     use eldritchv2::conversion::ToValue;
     let mut map = BTreeMap::new();
@@ -184,11 +185,11 @@ fn get_pid_info(pid: i32, max_rec: u32) -> Option<Sender> {
 
 #[cfg(feature = "events")]
 pub fn load_event_script() -> bool {
-    EVENT_SCRIPT.get_or_init(|| {
+    let script = EVENT_SCRIPT.get_or_init(|| {
         let path = "on_event.eldritch";
         crate::assets::Asset::get(path).map(|f| String::from_utf8_lossy(&f.data).into_owned())
     });
-    return EVENT_SCRIPT.get().is_some();
+    script.is_some()
 }
 
 #[cfg(feature = "events")]

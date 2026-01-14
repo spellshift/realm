@@ -47,9 +47,11 @@ pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
-signal-hook = { version = "0.3", features = ["extended-siginfo"] }
 libc = { workspace = true }
 nix = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+signal-hook = { version = "0.3", features = ["extended-siginfo"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }

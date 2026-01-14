@@ -1,5 +1,4 @@
 use anyhow::Result;
-use eldritch_agent::Agent;
 #[cfg(feature = "events")]
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -10,7 +9,7 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
 #[cfg(feature = "events")]
-use eldritchv2::{Value, conversion::ToValue};
+use eldritchv2::conversion::ToValue;
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
