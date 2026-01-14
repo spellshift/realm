@@ -67,3 +67,29 @@ func (s *payloadSequencer) NewUDPMote(data []byte, dstAddr string, dstPort uint3
 		},
 	}
 }
+
+// NewShellMote creates a new Mote with a ShellPayload.
+func (s *payloadSequencer) NewShellMote(data []byte) *portalpb.Mote {
+	return &portalpb.Mote{
+		StreamId: s.streamID,
+		SeqId:    s.newSeqID(),
+		Payload: &portalpb.Mote_Shell{
+			Shell: &portalpb.ShellPayload{
+				Data: data,
+			},
+		},
+	}
+}
+
+// NewReplMote creates a new Mote with a ReplPayload.
+func (s *payloadSequencer) NewReplMote(data []byte) *portalpb.Mote {
+	return &portalpb.Mote{
+		StreamId: s.streamID,
+		SeqId:    s.newSeqID(),
+		Payload: &portalpb.Mote_Repl{
+			Repl: &portalpb.REPLPayload{
+				Data: data,
+			},
+		},
+	}
+}
