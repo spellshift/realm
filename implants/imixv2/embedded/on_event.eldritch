@@ -1,5 +1,30 @@
-HANDLED_EVENTS = set(["on_callback_fail", "on_sigint"])
-
+HANDLED_EVENTS = set(["on_callback_fail"])
 evt = input_params.get("event", "???")
-if evt in HANDLED_EVENTS:
-    print(f"[EVENT] {evt} called:", input_params.get("args", {}))
+
+def dump_process_tree(proc: dict):
+    lines = []
+
+    cp = proc
+    for i in range(100):
+        if not cp:
+            break
+        cmd = " ".join(cp.get("args", ""))
+        if not cmd:
+            cmd = cp.get("command")
+        lines = [(cp.get("pid", 0), cmd, cp.get("tty", ""))] + lines
+        cp = cp.get("parent", None)
+    
+    i = 0
+    for p, c, t in lines:
+        if t:
+            t = f" ({t}"
+        print(" "*i + f"↳ [{p}] {c}{t}")
+        i += 2
+
+if evt not in HANDLED_EVENTS:
+    args = input_params.get("args", {})
+    if "sender" in args:
+        dump_process_tree(args["sender"])
+    else:
+        print(f"[EVENT] {evt} called:", input_params)
+

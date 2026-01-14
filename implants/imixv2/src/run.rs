@@ -1,15 +1,16 @@
 use anyhow::Result;
+use eldritch_agent::Agent;
 #[cfg(feature = "events")]
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-#[cfg(feature = "events")]
-use eldritchv2::conversion::ToValue;
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
+#[cfg(feature = "events")]
+use eldritchv2::{Value, conversion::ToValue};
 use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
@@ -122,6 +123,19 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     // Set transport
     agent.update_transport(transport).await;
 
+    // See if we want to do anything before the callback
+    #[cfg(feature = "events")]
+    {
+        let mut args = BTreeMap::new();
+        args.insert(
+            "uri".to_string(),
+            agent
+                .get_next_callback_uri()
+                .map_or("".to_string().to_value(), |s| s.to_value()),
+        );
+        event::on_event("on_callback_start", args).await;
+    }
+
     // Claim Tasks
     process_tasks(&agent, &registry).await;
 
@@ -147,9 +161,11 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegis
             agent.rotate_callback_uri().await;
 
             #[cfg(feature = "events")]
-            let mut map = BTreeMap::new();
-            map.insert("error".to_string(), e.root_cause().to_string().to_value());
-            tokio::spawn(event::on_event("on_callback_fail", map));
+            {
+                let mut map = BTreeMap::new();
+                map.insert("error".to_string(), e.root_cause().to_string().to_value());
+                tokio::spawn(event::on_event("on_callback_fail", map));
+            }
         }
     }
 }
