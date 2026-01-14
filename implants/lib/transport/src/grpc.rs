@@ -7,8 +7,11 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
 
-#[cfg(feature = "doh")]
-use crate::dns_resolver::doh::DohProvider;
+#[cfg(feature = "grpc-doh")]
+use hyper::client::HttpConnector;
+
+#[cfg(feature = "grpc-doh")]
+use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
 
 use crate::Transport;
 
@@ -41,22 +44,19 @@ impl Transport for GRPC {
 
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        #[cfg(feature = "doh")]
-        let doh: Option<&String> = extra_map.get("doh");
+        #[cfg(feature = "grpc-doh")]
+        let doh: Option<&String> = extra_map.get("DOH");
 
-        #[cfg(feature = "doh")]
+        #[cfg(feature = "grpc-doh")]
         let mut http = match doh {
-            // TODO: Add provider selection based on the provider string
+            // TODO: Add provider selection
             Some(_provider) => {
                 crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
             }
-            None => {
-                // Use system DNS when DOH not explicitly requested
-                crate::dns_resolver::doh::create_doh_connector(DohProvider::System)?
-            }
+            None => hyper::client::HttpConnector::new(),
         };
 
-        #[cfg(not(feature = "doh"))]
+        #[cfg(not(feature = "grpc-doh"))]
         let mut http = hyper::client::HttpConnector::new();
 
         let proxy_uri = extra_map.get("http_proxy");

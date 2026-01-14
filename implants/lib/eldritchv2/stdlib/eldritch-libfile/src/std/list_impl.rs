@@ -68,7 +68,7 @@ fn list_impl(path: String) -> AnyhowResult<Vec<BTreeMap<String, Value>>> {
 
 #[cfg(feature = "stdlib")]
 fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
-    use super::metadata_impl::get_file_info;
+    use super::file_metadata::get_file_info;
 
     let info = get_file_info(path)?;
     let mut dict = BTreeMap::new();

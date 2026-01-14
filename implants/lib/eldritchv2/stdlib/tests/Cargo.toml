@@ -9,6 +9,6 @@ eldritch-core = { workspace = true, default-features = false }
 anyhow = { workspace = true }
 glob = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_yaml = {workspace = true}
+serde_yaml = "0.9"
 spin = { version = "0.10.0", features = ["rwlock"] }
 log = { workspace = true }

@@ -1,15 +1,29 @@
 {
 	"name": "Realm",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	// "build": {
-	// 	"dockerfile": "Dockerfile",
-	// 	"args": {}
-	// },
-	"image": "spellshift/devcontainer:latest",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {}
+	},
 	"hostRequirements": {
 		"cpus": 4
 	},
 	"features": {
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.24.3"
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"installTools": true,
+			"version": "3.12"
+		},
+		"ghcr.io/devcontainers/features/rust:1": {
+			"version": "1.91.1",
+			"profile": "minimal",
+			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,x86_64-pc-windows-msvc,aarch64-apple-darwin,x86_64-apple-darwin"
+		},
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "lts"
+		},
 	},
 	"customizations": {
 		"vscode": {
@@ -50,4 +64,5 @@
 	// "mounts": [
 	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
 	// ],
+	"postAttachCommand": "cargo install cargo-zigbuild && cargo +1.89.0 install xwin --locked"
 }

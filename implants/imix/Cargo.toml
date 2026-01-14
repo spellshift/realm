@@ -12,7 +12,7 @@ win_service = []
 default = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
-transport-doh = ["transport/doh"]
+transport-grpc-doh = ["transport/grpc-doh"]
 
 [dependencies]
 eldritch = { workspace = true, features = ["imix"] }

@@ -4,7 +4,7 @@ use eldritch_agent::Agent;
 use pb::{c2, eldritch};
 
 #[cfg(feature = "stdlib")]
-use eldritch_libfile::std::metadata_impl::get_file_info;
+use eldritch_libfile::std::file_metadata::get_file_info;
 
 pub fn file(agent: Arc<dyn Agent>, task_id: i64, path: String) -> Result<(), String> {
     let content = std::fs::read(&path).map_err(|e| e.to_string())?;

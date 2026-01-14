@@ -17,14 +17,6 @@ pub struct File {
 
 impl File {
     /*
-     * Allow creation of a new file with a custom path
-     */
-    pub fn new_with_file(path: &str) -> Self {
-        Self {
-            path_override: Some(path.to_string()),
-        }
-    }
-    /*
      * Returns a predefined path to the host id file based on the current platform.
      */
     fn get_host_id_path(&self) -> String {
@@ -35,16 +27,14 @@ impl File {
         #[cfg(target_os = "windows")]
         return String::from("C:\\ProgramData\\system-id");
 
-        #[cfg(any(
-            target_os = "linux",
-            target_os = "freebsd",
-            target_os = "openbsd",
-            target_os = "netbsd"
-        ))]
-        return String::from("/var/tmp/system-id");
+        #[cfg(target_os = "linux")]
+        return String::from("/etc/system-id");
 
         #[cfg(target_os = "macos")]
         return String::from("/Users/Shared/system-id");
+
+        #[cfg(target_os = "freebsd")]
+        return String::from("/etc/systemd-id");
     }
 }
 

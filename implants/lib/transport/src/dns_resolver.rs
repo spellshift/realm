@@ -1,9 +1,9 @@
 //! DNS resolution module for gRPC transport
 //!
 //! This module provides DNS-over-HTTPS (DoH) support for gRPC connections
-//! when the `doh` feature is enabled.
+//! when the `grpc-doh` feature is enabled.
 
-#[cfg(feature = "doh")]
+#[cfg(feature = "grpc-doh")]
 pub mod doh {
     use hickory_resolver::config::{ResolverConfig, ResolverOpts};
     use hickory_resolver::TokioAsyncResolver;
@@ -21,21 +21,14 @@ pub mod doh {
         Cloudflare,
         Google,
         Quad9,
-        System, // Use system DNS configuration
     }
 
     impl DohProvider {
-        fn resolver_config(&self) -> Result<ResolverConfig, anyhow::Error> {
+        fn resolver_config(&self) -> ResolverConfig {
             match self {
-                DohProvider::Cloudflare => Ok(ResolverConfig::cloudflare_https()),
-                DohProvider::Google => Ok(ResolverConfig::google_https()),
-                DohProvider::Quad9 => Ok(ResolverConfig::quad9_https()),
-                DohProvider::System => {
-                    // Read system DNS configuration
-                    let (config, _opts) = hickory_resolver::system_conf::read_system_conf()
-                        .map_err(|e| anyhow::anyhow!("Failed to read system DNS config: {}", e))?;
-                    Ok(config)
-                }
+                DohProvider::Cloudflare => ResolverConfig::cloudflare_https(),
+                DohProvider::Google => ResolverConfig::google_https(),
+                DohProvider::Quad9 => ResolverConfig::quad9_https(),
             }
         }
     }
@@ -48,9 +41,9 @@ pub mod doh {
     }
 
     impl HickoryResolverService {
-        /// Create a new resolver service with the specified provider (DOH or system DNS)
+        /// Create a new resolver service with the specified DoH provider
         pub fn new(provider: DohProvider) -> Result<Self, anyhow::Error> {
-            let config = provider.resolver_config()?;
+            let config = provider.resolver_config();
             let opts = ResolverOpts::default();
 
             let resolver = TokioAsyncResolver::tokio(config, opts);
@@ -114,24 +107,24 @@ pub mod doh {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "doh")]
+    #[cfg(feature = "grpc-doh")]
     use super::doh::*;
 
-    #[cfg(feature = "doh")]
+    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_resolver_creation() {
         let result = HickoryResolverService::new(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH resolver");
     }
 
-    #[cfg(feature = "doh")]
+    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_doh_connector_creation() {
         let result = create_doh_connector(DohProvider::Cloudflare);
         assert!(result.is_ok(), "Failed to create DoH connector");
     }
 
-    #[cfg(feature = "doh")]
+    #[cfg(feature = "grpc-doh")]
     #[tokio::test]
     async fn test_dns_resolution() {
         use hyper::client::connect::dns::Name;
