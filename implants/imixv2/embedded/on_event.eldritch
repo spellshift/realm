@@ -1,0 +1,8 @@
+def on_callback_fail(args={}):
+    print("[on_callback_fail]", args)
+
+def on_callback_success(args={}):
+    print("[on_callback_success]", args)
+
+def on_start(args={}):
+    print("started")

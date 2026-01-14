@@ -22,7 +22,7 @@ pub use eldritch_libtime as time;
 // Re-export core types
 pub use eldritch_core::{
     BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer, Span,
-    StdoutPrinter, TokenKind, Value, conversion,
+    StdoutPrinter, TokenKind, Value, conversion, Parser
 };
 
 use alloc::string::String;

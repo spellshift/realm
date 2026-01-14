@@ -9,12 +9,14 @@ use eldritchv2::{
 };
 #[cfg(feature = "events")]
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap,BTreeSet},
     sync::{Arc, OnceLock},
 };
 
 #[cfg(feature = "events")]
 static EVENT_SCRIPT: OnceLock<Option<String>> = OnceLock::new();
+#[cfg(feature = "events")]
+static EVENT_CALLBACKS: OnceLock<BTreeSet<String>> = OnceLock::new();
 
 #[cfg(all(feature = "events", target_os = "linux"))]
 #[derive(Debug, Clone)]
@@ -99,7 +101,6 @@ pub async fn catch_signals() {}
 
 #[cfg(all(feature = "events", target_os = "linux"))]
 fn sender_to_value(sender: &Sender) -> Value {
-    use eldritchv2::conversion::ToValue;
     let mut map = BTreeMap::new();
     map.insert("pid".to_string(), (sender.pid as i64).to_value());
     map.insert("command".to_string(), sender.command.clone().to_value());
@@ -189,19 +190,61 @@ pub fn load_event_script() -> bool {
         let path = "on_event.eldritch";
         crate::assets::Asset::get(path).map(|f| String::from_utf8_lossy(&f.data).into_owned())
     });
-    script.is_some()
+
+    // Use the lexer to get all the function definitions. This allows us
+    // to only load the interpreter if the callback is supported
+    if let Some(content) = script {
+        use eldritch_core::{
+            Lexer,
+            TokenKind,
+        };
+
+        let mut lexer = Lexer::new(content.to_string());
+        let tokens = lexer.scan_tokens();
+        let mut is_func = false;
+        EVENT_CALLBACKS.get_or_init(|| {
+            let mut set = BTreeSet::new();
+            for t in tokens {
+                if is_func && let TokenKind::Identifier(name) = &t.kind {
+                    // Add this callback to to the set. It will be called later
+                    if name.starts_with("on_") && name.len() > 3 {
+                        set.insert(name.to_string());
+                    }
+                    continue;
+                };
+                // Track if the previous token was a func def
+                if let TokenKind::Def = &t.kind {
+                    is_func = true;
+                } else {
+                    is_func = false
+                }
+            }
+            #[cfg(debug_assertions)]
+            log::info!("loaded events from '{}': {:?}", "on_event.eldritch", set);
+            set
+        });
+        return true;
+    };
+    return false;
 }
 
 #[cfg(feature = "events")]
 pub async fn on_event(name: &str, args: BTreeMap<String, Value>) {
-    // See if the event script exists
-
     use eldritchv2::conversion::ToValue;
+
+    // Dont run if there isnt a function for this callback
+    if let Some(callbacks) = EVENT_CALLBACKS.get() {
+        if !callbacks.contains(name) {
+            #[cfg(debug_assertions)]
+            log::info!("no callback registered for '{}'. Skipping", name);
+            return;
+        }
+    }
 
     // Check for the universal event script
     let script_content = EVENT_SCRIPT.get().cloned().flatten();
 
-    let content = match script_content {
+    let mut content = match script_content {
         Some(s) => s,
         None => return,
     };
@@ -225,6 +268,7 @@ pub async fn on_event(name: &str, args: BTreeMap<String, Value>) {
     interpreter.register_lib(locker);
     interpreter.define_variable("input_params", input_params.to_value());
 
+    content = content + "\n" + name + "(input_params['args']);";
     match interpreter.interpret(&content) {
         Ok(_) => {}
         Err(_e) => {
