@@ -10,9 +10,8 @@ pb = { workspace = true }
 crossterm = { workspace = true }
 walkdir = {workspace = true}
 rust-embed = { workspace = true }
-eldritchv2 = { workspace = true, features = ["std", "stdlib"] }
+eldritchv2 = { workspace = true, features = ["std", "stdlib", "fake_bindings"] }
 # Need fake here so we import this on its own
-eldritch-libagent = { workspace = true, features = ["fake_bindings"] }
 tokio.workspace = true
 futures.workspace = true
 

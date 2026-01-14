@@ -2,7 +2,7 @@
 extern crate alloc;
 
 use clap::{Arg, ArgAction, Command};
-use eldritchv2::agent::fake::AgentFake;
+use eldritchv2::agent::{fake::AgentFake, std::StdAgentLibrary};
 use eldritchv2::assets::{
     AssetsLibrary,
     std::{EmbeddedAssets, StdAssetsLibrary},
@@ -41,7 +41,7 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     // Register the libraries that we need. Basically the same as interp.with_task_context but
     // with our custom assets library
     let agent = Arc::new(AgentFake {});
-    let agent_lib = eldritch_libagent::std::StdAgentLibrary::new(agent.clone(), 0);
+    let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
     interp.register_lib(agent_lib);
     let report_lib = eldritchv2::report::std::StdReportLibrary::new(agent.clone(), 0);
     interp.register_lib(report_lib);
