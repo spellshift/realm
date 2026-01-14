@@ -10,6 +10,7 @@ pub mod compress_impl;
 pub mod copy_impl;
 pub mod decompress_impl;
 pub mod exists_impl;
+pub mod file_metadata;
 pub mod find_impl;
 pub mod follow_impl;
 pub mod is_dir_impl;
