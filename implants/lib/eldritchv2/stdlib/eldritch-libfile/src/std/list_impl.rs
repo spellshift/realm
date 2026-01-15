@@ -10,8 +10,6 @@ use alloc::vec::Vec;
 use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
-#[cfg(unix)]
-use nix::unistd::{Gid, Group, Uid, User};
 #[cfg(feature = "stdlib")]
 use std::fs;
 #[cfg(feature = "stdlib")]
@@ -71,8 +69,7 @@ fn list_impl(path: String) -> AnyhowResult<Vec<BTreeMap<String, Value>>> {
 
 #[cfg(feature = "stdlib")]
 fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
-    use alloc::format;
-
+    use super::metadata;
     let metadata = fs::metadata(path)?;
     let mut dict = BTreeMap::new();
 
@@ -92,43 +89,10 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
 
     dict.insert("size".to_string(), Value::Int(metadata.len() as i64));
 
-    // Permissions (simplified)
-    #[cfg(unix)]
-    use ::std::os::unix::fs::PermissionsExt;
-    #[cfg(unix)]
-    let perms = format!("{:o}", metadata.permissions().mode());
-    #[cfg(not(unix))]
-    let perms = if metadata.permissions().readonly() {
-        "r"
-    } else {
-        "rw"
-    }
-    .to_string();
-
-    dict.insert("permissions".to_string(), Value::String(perms));
-
-    // Owner and Group
-    #[cfg(unix)]
-    {
-        use ::std::os::unix::fs::MetadataExt;
-        let uid = metadata.uid();
-        let gid = metadata.gid();
-
-        let user = User::from_uid(Uid::from_raw(uid)).ok().flatten();
-        let group = Group::from_gid(Gid::from_raw(gid)).ok().flatten();
-
-        let owner_name = user.map(|u| u.name).unwrap_or_else(|| uid.to_string());
-        let group_name = group.map(|g| g.name).unwrap_or_else(|| gid.to_string());
-
-        dict.insert("owner".to_string(), Value::String(owner_name));
-        dict.insert("group".to_string(), Value::String(group_name));
-    }
-    #[cfg(not(unix))]
-    {
-        // Fallback for Windows or others
-        dict.insert("owner".to_string(), Value::String("".to_string()));
-        dict.insert("group".to_string(), Value::String("".to_string()));
-    }
+    let meta = metadata::get_metadata(path)?;
+    dict.insert("permissions".to_string(), Value::String(meta.permissions));
+    dict.insert("owner".to_string(), Value::String(meta.owner));
+    dict.insert("group".to_string(), Value::String(meta.group));
 
     // Absolute Path
     let abs_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
