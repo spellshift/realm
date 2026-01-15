@@ -1,7 +1,7 @@
 use super::{AsyncDispatcher, Transport};
 use anyhow::{anyhow, Result};
 use pb::{
-    c2::ReportFileRequest,
+    c2::{ReportFileRequest, TaskContext},
     config::Config,
     eldritch::{File, FileMetadata},
 };
@@ -64,7 +64,10 @@ impl AsyncDispatcher for ReportFileMessage {
                     // Send chunk to the transport stream this will block until
                     // the transport stream is able to flush the data to the network
                     tx.send(ReportFileRequest {
-                        task_id,
+                        context: Some(TaskContext {
+                            task_id,
+                            jwt: "no_jwt".to_string(),
+                        }),
                         chunk: Some(File {
                             metadata: Some(FileMetadata {
                                 path: path.clone(),

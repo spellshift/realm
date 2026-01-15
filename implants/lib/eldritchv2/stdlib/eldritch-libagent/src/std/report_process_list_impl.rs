@@ -2,6 +2,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 
 use crate::ProcessListWrapper;
+use pb::c2::TaskContext;
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
@@ -10,11 +11,11 @@ use pb::c2;
 
 pub fn report_process_list(
     agent: Arc<dyn Agent>,
-    task_id: i64,
+    task_context: TaskContext,
     list: ProcessListWrapper,
 ) -> Result<(), String> {
     let req = c2::ReportProcessListRequest {
-        task_id,
+        context: Some(task_context.into()),
         list: Some(list.0),
     };
     agent.report_process_list(req).map(|_| ())

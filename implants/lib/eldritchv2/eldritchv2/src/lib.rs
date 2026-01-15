@@ -30,6 +30,8 @@ pub use eldritch_macros as macros;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+#[cfg(feature = "stdlib")]
+use pb::c2::TaskContext;
 
 #[cfg(feature = "stdlib")]
 pub use crate::agent::{agent::Agent, std::StdAgentLibrary};
@@ -146,18 +148,25 @@ impl Interpreter {
     pub fn with_agent(mut self, agent: Arc<dyn Agent>) -> Self {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
-        let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
+
+        use pb::c2::TaskContext;
+        let task_context = TaskContext {
+            task_id: 0,
+            jwt: String::new(),
+        };
+        let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), 0);
+        let report_lib = StdReportLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), 0);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(pivot_lib);
 
         // Assets library
         let backend = Arc::new(crate::assets::std::AgentAssets::new(
             agent.clone(),
+            task_context,
             Vec::new(),
         ));
         let mut assets_lib = StdAssetsLibrary::new();
@@ -180,23 +189,24 @@ impl Interpreter {
     pub fn with_task_context(
         mut self,
         agent: Arc<dyn Agent>,
-        task_id: i64,
+        task_context: TaskContext,
         remote_assets: Vec<String>,
         backend: Arc<dyn assets::std::AssetBackend>,
     ) -> Self {
-        let agent_lib = StdAgentLibrary::new(agent.clone(), task_id);
+        let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(agent_lib);
 
-        let report_lib = StdReportLibrary::new(agent.clone(), task_id);
+        let report_lib = StdReportLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(report_lib);
 
-        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_id);
+        let pivot_lib = StdPivotLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(pivot_lib);
 
         let mut assets_lib = StdAssetsLibrary::new();
         // As with previously, remote assets can shadow the Embedded Assets
         let agent_backend = Arc::new(crate::assets::std::AgentAssets::new(
             agent.clone(),
+            task_context,
             remote_assets.clone(),
         ));
         assets_lib.add_shadow(agent_backend.clone());

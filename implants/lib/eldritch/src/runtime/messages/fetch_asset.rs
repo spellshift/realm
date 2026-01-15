@@ -1,6 +1,6 @@
 use super::AsyncDispatcher;
 use anyhow::Result;
-use pb::c2::{FetchAssetRequest, FetchAssetResponse};
+use pb::c2::{FetchAssetRequest, FetchAssetResponse, TaskContext};
 pub use pb::config::Config;
 use std::sync::mpsc::Sender;
 use transport::Transport;
@@ -19,7 +19,16 @@ pub struct FetchAssetMessage {
 impl AsyncDispatcher for FetchAssetMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
-            .fetch_asset(FetchAssetRequest { name: self.name }, self.tx)
+            .fetch_asset(
+                FetchAssetRequest {
+                    name: self.name,
+                    context: Some(TaskContext {
+                        task_id: 0,
+                        jwt: "no_jwt".to_string(),
+                    }),
+                },
+                self.tx,
+            )
             .await?;
         Ok(())
     }

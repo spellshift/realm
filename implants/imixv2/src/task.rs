@@ -6,7 +6,7 @@ use std::time::SystemTime;
 use eldritchv2::agent::agent::Agent;
 use eldritchv2::assets::std::EmbeddedAssets;
 use eldritchv2::{Interpreter, Printer, Span, Value, conversion::ToValue};
-use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
+use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
 
@@ -62,9 +62,13 @@ impl TaskRegistry {
     }
 
     pub fn spawn(&self, task: Task, agent: Arc<dyn Agent>) {
-        let task_id = task.id;
+        let task_context = TaskContext {
+            task_id: task.clone().id,
+            jwt: task.clone().jwt,
+        };
 
         // 1. Register logic
+        // TODO: Should de-dupe Taks and TaskContext?
         if !self.register_task(&task) {
             return;
         }
@@ -75,19 +79,21 @@ impl TaskRegistry {
 
         // 2. Spawn thread
         #[cfg(debug_assertions)]
-        log::info!("Spawning Task: {task_id}");
+        log::info!("Spawning Task: {0}", task_context.clone().task_id);
 
         thread::spawn(move || {
             if let Some(tome) = task.tome {
-                execute_task(task_id, tome, agent, runtime_handle);
+                execute_task(task_context.clone(), tome, agent, runtime_handle);
             } else {
-                log::warn!("Task {task_id} has no tome");
+                #[cfg(debug_assertions)]
+                log::warn!("Task {0} has no tome", task_context.clone().task_id);
             }
 
             // Cleanup
-            log::info!("Completed Task: {task_id}");
+            #[cfg(debug_assertions)]
+            log::info!("Completed Task: {0}", task_context.clone().task_id);
             let mut tasks = tasks_registry.lock().unwrap();
-            tasks.remove(&task_id);
+            tasks.remove(&task_context.task_id);
         });
     }
 
@@ -135,6 +141,7 @@ impl TaskRegistry {
                 id: *id,
                 tome: None,
                 quest_name: handle.quest.clone(),
+                jwt: String::new(),
             })
             .collect()
     }
@@ -154,7 +161,7 @@ impl TaskRegistry {
 }
 
 fn execute_task(
-    task_id: i64,
+    task_context: TaskContext,
     tome: pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
@@ -162,14 +169,18 @@ fn execute_task(
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx));
-    let mut interp = setup_interpreter(task_id, &tome, agent.clone(), printer.clone());
+    let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
 
     // Report Start
-    report_start(task_id, &agent);
+    report_start(task_context.clone(), &agent);
 
     // Spawn output consumer task
-    let consumer_join_handle =
-        spawn_output_consumer(task_id, agent.clone(), runtime_handle.clone(), rx);
+    let consumer_join_handle = spawn_output_consumer(
+        task_context.clone(),
+        agent.clone(),
+        runtime_handle.clone(),
+        rx,
+    );
 
     // Run Interpreter with panic protection
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -185,21 +196,24 @@ fn execute_task(
         Ok(_) => {}
         Err(_e) => {
             #[cfg(debug_assertions)]
-            log::error!("task={task_id} failed to wait for output consumer to join: {_e}");
+            log::error!(
+                "task={0} failed to wait for output consumer to join: {_e}",
+                task_context.clone().task_id
+            );
         }
     }
 
     // Handle result
     match result {
-        Ok(exec_result) => report_result(task_id, exec_result, &agent),
+        Ok(exec_result) => report_result(task_context, exec_result, &agent),
         Err(e) => {
-            report_panic(task_id, &agent, format!("panic: {e:?}"));
+            report_panic(task_context, &agent, format!("panic: {e:?}"));
         }
     }
 }
 
 fn setup_interpreter(
-    task_id: i64,
+    task_context: TaskContext,
     tome: &pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     printer: Arc<StreamPrinter>,
@@ -211,7 +225,7 @@ fn setup_interpreter(
     // Support embedded assets behind remote asset filenames
     let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
     // Register Task Context (Agent, Report, Assets)
-    interp = interp.with_task_context(agent, task_id, remote_assets, backend);
+    interp = interp.with_task_context(agent, task_context, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
@@ -225,7 +239,8 @@ fn setup_interpreter(
     interp
 }
 
-fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
+fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
+    let task_id = task_context.task_id;
     #[cfg(debug_assertions)]
     log::info!("task={task_id} Started execution");
 
@@ -237,6 +252,7 @@ fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
             exec_started_at: Some(Timestamp::from(SystemTime::now())),
             exec_finished_at: None,
         }),
+        context: Some(task_context.into()),
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -247,15 +263,15 @@ fn report_start(task_id: i64, agent: &Arc<dyn Agent>) {
 }
 
 fn spawn_output_consumer(
-    task_id: i64,
+    task_context: TaskContext,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
     mut rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
         #[cfg(debug_assertions)]
-        log::info!("task={task_id} Started output stream");
-
+        log::info!("task={} Started output stream", task_context.task_id);
+        let task_id = task_context.task_id;
         while let Some(msg) = rx.recv().await {
             match agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
@@ -265,6 +281,7 @@ fn spawn_output_consumer(
                     exec_started_at: None,
                     exec_finished_at: None,
                 }),
+                context: Some(task_context.clone().into()),
             }) {
                 Ok(_) => {}
                 Err(_e) => {
@@ -276,7 +293,8 @@ fn spawn_output_consumer(
     })
 }
 
-fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, err: String) {
+fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) {
+    let task_id = task_context.task_id;
     match agent.report_task_output(ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
@@ -285,6 +303,7 @@ fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, err: String) {
             exec_started_at: None,
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
+        context: Some(task_context.into()),
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -294,7 +313,8 @@ fn report_panic(task_id: i64, agent: &Arc<dyn Agent>, err: String) {
     }
 }
 
-fn report_result(task_id: i64, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
+fn report_result(task_context: TaskContext, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
+    let task_id = task_context.task_id;
     match result {
         Ok(v) => {
             #[cfg(debug_assertions)]
@@ -308,6 +328,7 @@ fn report_result(task_id: i64, result: Result<Value, String>, agent: &Arc<dyn Ag
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
+                context: Some(task_context.into()),
             });
         }
         Err(e) => {
@@ -322,6 +343,7 @@ fn report_result(task_id: i64, result: Result<Value, String>, agent: &Arc<dyn Ag
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
+                context: Some(task_context.into()),
             }) {
                 Ok(_) => {}
                 Err(_e) => {

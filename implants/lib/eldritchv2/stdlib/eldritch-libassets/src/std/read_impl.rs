@@ -13,6 +13,7 @@ mod tests {
     use super::*;
     use crate::std::read_binary_impl::tests::{MockAgent, TestAsset};
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
+    use pb::c2::TaskContext;
     use std::sync::Arc;
 
     #[test]
@@ -21,6 +22,10 @@ mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
             vec!["remote_file.txt".to_string()],
         )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;

@@ -1,7 +1,7 @@
 use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
 use pb::{
-    c2::{ReportTaskOutputRequest, TaskError, TaskOutput},
+    c2::{ReportTaskOutputRequest, TaskContext, TaskError, TaskOutput},
     config::Config,
 };
 use prost_types::Timestamp;
@@ -32,6 +32,10 @@ impl AsyncDispatcher for ReportAggOutputMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_task_output(ReportTaskOutputRequest {
+                context: Some(TaskContext {
+                    task_id: self.id,
+                    jwt: "no_jwt".to_string(),
+                }),
                 output: Some(TaskOutput {
                     id: self.id,
                     output: self.text,

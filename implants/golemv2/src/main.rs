@@ -9,6 +9,7 @@ use eldritchv2::assets::{
 };
 use eldritchv2::conversion::ToValue;
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
+use pb::c2::TaskContext;
 use std::collections::BTreeMap;
 use std::fs;
 use std::process::exit;
@@ -41,11 +42,17 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     // Register the libraries that we need. Basically the same as interp.with_task_context but
     // with our custom assets library
     let agent = Arc::new(AgentFake {});
-    let agent_lib = StdAgentLibrary::new(agent.clone(), 0);
+    let task_context = TaskContext {
+        task_id: 0,
+        jwt: String::new(),
+    };
+    let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(agent_lib);
-    let report_lib = eldritchv2::report::std::StdReportLibrary::new(agent.clone(), 0);
+    let report_lib =
+        eldritchv2::report::std::StdReportLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(report_lib);
-    let pivot_lib = eldritchv2::pivot::std::StdPivotLibrary::new(agent.clone(), 0);
+    let pivot_lib =
+        eldritchv2::pivot::std::StdPivotLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(pivot_lib);
     interp.register_lib(assetlib);
     interp

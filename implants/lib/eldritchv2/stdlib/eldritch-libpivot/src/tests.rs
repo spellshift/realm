@@ -46,8 +46,15 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse {})
     }
-    fn start_reverse_shell(&self, task_id: i64, cmd: Option<String>) -> Result<(), String> {
-        self.start_calls.lock().unwrap().push((task_id, cmd));
+    fn start_reverse_shell(
+        &self,
+        task_context: pb::c2::TaskContext,
+        cmd: Option<String>,
+    ) -> Result<(), String> {
+        self.start_calls
+            .lock()
+            .unwrap()
+            .push((task_context.task_id, cmd));
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
@@ -78,8 +85,8 @@ impl Agent for MockAgent {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
-    fn start_repl_reverse_shell(&self, task_id: i64) -> Result<(), String> {
-        self.repl_calls.lock().unwrap().push(task_id);
+    fn start_repl_reverse_shell(&self, task_context: pb::c2::TaskContext) -> Result<(), String> {
+        self.repl_calls.lock().unwrap().push(task_context.task_id);
         Ok(())
     }
     fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
@@ -101,7 +108,7 @@ impl Agent for MockAgent {
         Ok(())
     }
 
-    fn create_portal(&self, _task_id: i64) -> Result<(), String> {
+    fn create_portal(&self, _task_context: pb::c2::TaskContext) -> Result<(), String> {
         Ok(())
     }
 }
@@ -110,7 +117,7 @@ impl Agent for MockAgent {
 fn test_reverse_shell_pty_delegation() {
     let agent = Arc::new(MockAgent::new());
     let task_id = 999;
-    let lib = StdPivotLibrary::new(agent.clone(), task_id);
+    let lib = StdPivotLibrary::new(agent.clone(), pb::c2::TaskContext{ task_id, jwt:  "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJiZWFjb25faWQiOjQyOTQ5Njc0OTUsImV4cCI6MTc2Nzc1MTI3MSwiaWF0IjoxNzY3NzQ3NjcxfQ.wVFQemOmhdjCSGdb_ap_DkA9GcGqDHt3UOn2w9fE0nc7nGLbAWqQkkOwuMqlsC9FXZoYglOz11eTUt9UyrmiBQ".to_string()});
 
     // Test with command
     lib.reverse_shell_pty(Some("bash".to_string())).unwrap();
@@ -133,7 +140,7 @@ fn test_reverse_shell_pty_no_agent() {
 fn test_reverse_shell_repl_delegation() {
     let agent = Arc::new(MockAgent::new());
     let task_id = 123;
-    let lib = StdPivotLibrary::new(agent.clone(), task_id);
+    let lib = StdPivotLibrary::new(agent.clone(), pb::c2::TaskContext{ task_id, jwt: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJiZWFjb25faWQiOjQyOTQ5Njc0OTUsImV4cCI6MTc2Nzc1MTI3MSwiaWF0IjoxNzY3NzQ3NjcxfQ.wVFQemOmhdjCSGdb_ap_DkA9GcGqDHt3UOn2w9fE0nc7nGLbAWqQkkOwuMqlsC9FXZoYglOz11eTUt9UyrmiBQ".to_string()});
 
     lib.reverse_shell_repl().unwrap();
 

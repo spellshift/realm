@@ -44,7 +44,7 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				TaskId: int64(existingTask.ID),
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root", Status: epb.Process_STATUS_RUN},
@@ -63,7 +63,7 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				TaskId: int64(existingTask.ID),
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root"},
@@ -96,7 +96,7 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				TaskId: int64(existingTask.ID),
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
 				List: &epb.ProcessList{
 					List: []*epb.Process{},
 				},
@@ -107,7 +107,7 @@ func TestReportProcessList(t *testing.T) {
 		{
 			name: "Not_Found",
 			req: &c2pb.ReportProcessListRequest{
-				TaskId: 99888777776666,
+				Context: &c2pb.TaskContext{TaskId: 99888777776666},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root"},
