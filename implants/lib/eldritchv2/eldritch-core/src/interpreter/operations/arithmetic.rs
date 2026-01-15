@@ -180,3 +180,223 @@ pub(crate) fn apply_arithmetic_op(
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::interpreter::core::Interpreter;
+    use crate::token::{Span, TokenKind};
+
+    fn dummy_span() -> Span {
+        Span::new(0, 0, 1)
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_int_basics() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        let a = Value::Int(10);
+        let b = Value::Int(3);
+
+        // +
+        assert_eq!(
+            apply_arithmetic_op(&interp, &a, &TokenKind::Plus, &b, span).unwrap(),
+            Value::Int(13)
+        );
+        // -
+        assert_eq!(
+            apply_arithmetic_op(&interp, &a, &TokenKind::Minus, &b, span).unwrap(),
+            Value::Int(7)
+        );
+        // *
+        assert_eq!(
+            apply_arithmetic_op(&interp, &a, &TokenKind::Star, &b, span).unwrap(),
+            Value::Int(30)
+        );
+        // / -> Float
+        assert!(matches!(
+            apply_arithmetic_op(&interp, &a, &TokenKind::Slash, &b, span).unwrap(),
+            Value::Float(v) if (v - 3.3333333333).abs() < 1e-9
+        ));
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_int_div_zero() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        let a = Value::Int(10);
+        let b = Value::Int(0);
+
+        let res = apply_arithmetic_op(&interp, &a, &TokenKind::Slash, &b, span);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().kind, EldritchErrorKind::ZeroDivisionError);
+
+        let res = apply_arithmetic_op(&interp, &a, &TokenKind::SlashSlash, &b, span);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().kind, EldritchErrorKind::ZeroDivisionError);
+
+        let res = apply_arithmetic_op(&interp, &a, &TokenKind::Percent, &b, span);
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().kind, EldritchErrorKind::ZeroDivisionError);
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_floor_div_python_semantics() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        // 10 // 3 = 3
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(10),
+                &TokenKind::SlashSlash,
+                &Value::Int(3),
+                span
+            )
+            .unwrap(),
+            Value::Int(3)
+        );
+        // -10 // 3 = -4
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(-10),
+                &TokenKind::SlashSlash,
+                &Value::Int(3),
+                span
+            )
+            .unwrap(),
+            Value::Int(-4)
+        );
+        // 10 // -3 = -4
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(10),
+                &TokenKind::SlashSlash,
+                &Value::Int(-3),
+                span
+            )
+            .unwrap(),
+            Value::Int(-4)
+        );
+        // -10 // -3 = 3
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(-10),
+                &TokenKind::SlashSlash,
+                &Value::Int(-3),
+                span
+            )
+            .unwrap(),
+            Value::Int(3)
+        );
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_modulo_python_semantics() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        // 10 % 3 = 1
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(10),
+                &TokenKind::Percent,
+                &Value::Int(3),
+                span
+            )
+            .unwrap(),
+            Value::Int(1)
+        );
+        // -10 % 3 = 2  (Python: -10 % 3 = 2, Rust: -10 % 3 = -1)
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(-10),
+                &TokenKind::Percent,
+                &Value::Int(3),
+                span
+            )
+            .unwrap(),
+            Value::Int(2)
+        );
+        // 10 % -3 = -2 (Python: 10 % -3 = -2)
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(10),
+                &TokenKind::Percent,
+                &Value::Int(-3),
+                span
+            )
+            .unwrap(),
+            Value::Int(-2)
+        );
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_mixed_types() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        // Int + Float
+        match apply_arithmetic_op(
+            &interp,
+            &Value::Int(1),
+            &TokenKind::Plus,
+            &Value::Float(2.5),
+            span,
+        )
+        .unwrap()
+        {
+            Value::Float(v) => assert!((v - 3.5).abs() < f64::EPSILON),
+            _ => panic!("Expected Float"),
+        }
+
+        // Float + Int
+        match apply_arithmetic_op(
+            &interp,
+            &Value::Float(2.5),
+            &TokenKind::Plus,
+            &Value::Int(1),
+            span,
+        )
+        .unwrap()
+        {
+            Value::Float(v) => assert!((v - 3.5).abs() < f64::EPSILON),
+            _ => panic!("Expected Float"),
+        }
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_mixed_div_zero() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        // Int / Float(0.0)
+        let res = apply_arithmetic_op(
+            &interp,
+            &Value::Int(1),
+            &TokenKind::Slash,
+            &Value::Float(0.0),
+            span,
+        );
+        assert!(res.is_err());
+
+        // Float / Int(0)
+        let res = apply_arithmetic_op(
+            &interp,
+            &Value::Float(1.0),
+            &TokenKind::Slash,
+            &Value::Int(0),
+            span,
+        );
+        assert!(res.is_err());
+    }
+}
