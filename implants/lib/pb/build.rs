@@ -22,11 +22,22 @@ struct YamlConfig {
     server_pubkey: Option<String>,
 }
 
-fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
+/// Result of parsing YAML config, containing values needed by other build steps
+struct YamlConfigResult {
+    /// The first transport URI (used for fetching pubkey)
+    upstream_uri: Option<String>,
+    /// Server public key if specified in config
+    server_pubkey: Option<String>,
+}
+
+fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::Error>> {
     // Check if IMIX_CONFIG is set
     let config_yaml = match std::env::var("IMIX_CONFIG") {
         Ok(yaml_content) => yaml_content,
-        Err(_) => return Ok(false), // No config set, return false
+        Err(_) => {
+            println!("cargo:warning=IMIX_CONFIG not set, skipping YAML config parsing");
+            return Ok(None);
+        }
     };
 
     // Check that other configuration options are not set
@@ -98,23 +109,25 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
             return Err(format!("URI '{}' already contains query parameters. Query parameters should not be present in the URI field.", transport.uri).into());
         }
 
-        // Map transport type to appropriate schema
-        let schema = match transport_type_lower.as_str() {
-            "grpc" => "grpc",
-            "http1" => "http",
-            "dns" => "dns",
-            _ => unreachable!(), // Already validated above
-        };
+        // // Map transport type to appropriate schema
+        // let schema = match transport_type_lower.as_str() {
+        //     "grpc" => "https",
+        //     "http1" => "http",
+        //     "https1" =>
+        //     "dns" => "dns",
+        //     _ => unreachable!(), // Already validated above
+        // };
 
-        // Strip any existing schema from the URI and replace with the correct one
-        let uri_without_schema = transport
-            .uri
-            .split_once("://")
-            .map(|(_, rest)| rest)
-            .unwrap_or(&transport.uri);
+        // // Strip any existing schema from the URI and replace with the correct one
+        // let uri_without_schema = transport
+        //     .uri
+        //     .split_once("://")
+        //     .map(|(_, rest)| rest)
+        //     .unwrap_or(&transport.uri);
 
         // Build DSN part with correct schema and query parameters
-        let mut dsn_part = format!("{}://{}", schema, uri_without_schema);
+        // let mut dsn_part = format!("{}://{}", schema, uri_without_schema);
+        let mut dsn_part = transport.uri.clone();
 
         // Add query parameters
         dsn_part.push('?');
@@ -158,19 +171,36 @@ fn parse_yaml_config() -> Result<bool, Box<dyn std::error::Error>> {
         config.transports.len()
     );
 
-    Ok(true)
+    // Extract the first transport URI for pubkey fetching
+    let upstream_uri = config.transports.first().map(|t| t.uri.clone());
+
+    Ok(Some(YamlConfigResult {
+        upstream_uri,
+        server_pubkey: config.server_pubkey,
+    }))
 }
 
-fn get_pub_key() {
-    // Check if IMIX_SERVER_PUBKEY is already set
+fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
+    // Check if server pubkey was provided via YAML config
+    if let Some(ref config) = yaml_config {
+        if config.server_pubkey.is_some() {
+            // Already emitted in parse_yaml_config, no need to fetch
+            println!("cargo:warning=Server pubkey provided via YAML config, skipping fetch");
+            return;
+        }
+    }
+
+    // Check if IMIX_SERVER_PUBKEY is already set via env var
     if std::env::var("IMIX_SERVER_PUBKEY").is_ok() {
         println!("cargo:warning=IMIX_SERVER_PUBKEY already set, skipping fetch");
         return;
     }
 
-    // Get the callback URI from environment variable, default to http://127.0.0.1:8000
-    let callback_uri =
-        std::env::var("IMIX_CALLBACK_URI").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
+    // Get the callback URI: prefer YAML config upstream, then env var, then default
+    let callback_uri = yaml_config
+        .and_then(|c| c.upstream_uri)
+        .or_else(|| std::env::var("IMIX_CALLBACK_URI").ok())
+        .unwrap_or_else(|| "http://127.0.0.1:8000".to_string());
 
     // Extract the first URI from semicolon-separated list and strip query parameters
     let base_uri = callback_uri
@@ -291,12 +321,12 @@ fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
-    parse_yaml_config()?;
+    let yaml_config = parse_yaml_config()?;
 
     // Validate DSN config (skips if YAML config was used)
     validate_dsn_config()?;
 
-    get_pub_key();
+    get_pub_key(yaml_config);
     build_extra_vars()?;
 
     // Skip if no `protoc` can be found
