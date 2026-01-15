@@ -39,3 +39,15 @@ func (w *OrderedWriter) WriteUDP(data []byte, dstAddr string, dstPort uint32) er
 	mote := w.sequencer.NewUDPMote(data, dstAddr, dstPort)
 	return w.sender(mote)
 }
+
+// WriteShell creates and writes a ShellMote.
+func (w *OrderedWriter) WriteShell(data []byte) error {
+	mote := w.sequencer.NewShellMote(data)
+	return w.sender(mote)
+}
+
+// WriteRepl creates and writes a ReplMote.
+func (w *OrderedWriter) WriteRepl(data []byte) error {
+	mote := w.sequencer.NewReplMote(data)
+	return w.sender(mote)
+}

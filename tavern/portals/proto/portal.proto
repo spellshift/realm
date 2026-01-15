@@ -28,6 +28,14 @@ message UDPPayload {
     uint32 dst_port = 3;
 }
 
+message ShellPayload {
+    bytes data = 1;
+}
+
+message REPLPayload {
+    bytes data = 1;
+}
+
 message Mote {
     // Unique identifier used to route reply traffic back to original port
     string stream_id = 1;
@@ -40,6 +48,8 @@ message Mote {
         UDPPayload udp = 3;
         TCPPayload tcp = 4;
         BytesPayload bytes = 5;
+        ShellPayload shell = 6;
+        REPLPayload repl = 7;
     }
 }
 

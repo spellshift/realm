@@ -228,19 +228,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 
-	// Configure Shell Muxes
-	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
-	go func() {
-		if err := wsShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "websocket shell mux stopped", "err", err)
-		}
-	}()
-	go func() {
-		if err := grpcShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "grpc shell mux stopped", "err", err)
-		}
-	}()
-
 	// Configure Portal Mux
 	portalMux := cfg.NewPortalMux(ctx)
 
@@ -275,7 +262,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
+			Handler:              newGRPCHandler(client, portalMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -294,10 +281,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: cdn.NewUploadHandler(client),
 		},
 		"/shell/ws": tavernhttp.Endpoint{
-			Handler: stream.NewShellHandler(client, wsShellMux),
+			Handler: stream.NewShellHandler(client, portalMux),
 		},
 		"/shell/ping": tavernhttp.Endpoint{
-			Handler: stream.NewPingHandler(client, wsShellMux),
+			Handler: stream.NewPingHandler(client, portalMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
@@ -523,14 +510,14 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
+func newGRPCHandler(client *ent.Client, portalMux *mux.Mux) http.Handler {
 	pub, priv, err := getKeyPair()
 	if err != nil {
 		panic(err)
 	}
 	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
-	c2srv := c2.New(client, grpcShellMux, portalMux)
+	c2srv := c2.New(client, portalMux)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
