@@ -638,18 +638,22 @@ impl Parser {
             // If first expression is valid, check for comprehension
             if let Ok(first_expr) = first_expr_res {
                 if self.match_token(&[TokenKind::For]) {
-                    let (var, _) = {
+                    let mut vars = Vec::new();
+                    loop {
                         let t = self.consume(
                             |t| matches!(t, TokenKind::Identifier(_)),
                             "Expected iteration variable.",
                         )?;
-                        let v = if let TokenKind::Identifier(s) = &t.kind {
-                            s.clone()
+                        if let TokenKind::Identifier(s) = &t.kind {
+                            vars.push(s.clone());
                         } else {
                             unreachable!()
-                        };
-                        (v, t.span)
-                    };
+                        }
+
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
+                    }
 
                     self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
                     let iterable = self.logic_or()?;
@@ -663,7 +667,7 @@ impl Parser {
                     return Ok(self.make_expr(
                         ExprKind::ListComp {
                             body: Box::new(first_expr),
-                            var,
+                            vars,
                             iterable: Box::new(iterable),
                             cond,
                         },
@@ -775,18 +779,22 @@ impl Parser {
                 let val_expr = self.expression()?;
 
                 if self.match_token(&[TokenKind::For]) {
-                    let (var, _) = {
+                    let mut vars = Vec::new();
+                    loop {
                         let t = self.consume(
                             |t| matches!(t, TokenKind::Identifier(_)),
                             "Expected iteration variable.",
                         )?;
-                        let v = if let TokenKind::Identifier(s) = &t.kind {
-                            s.clone()
+                        if let TokenKind::Identifier(s) = &t.kind {
+                            vars.push(s.clone());
                         } else {
                             unreachable!()
-                        };
-                        (v, t.span)
-                    };
+                        }
+
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
+                    }
 
                     self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
                     // Use logic_or to avoid consuming the 'if' of the comprehension
@@ -802,7 +810,7 @@ impl Parser {
                         ExprKind::DictComp {
                             key: Box::new(first_expr),
                             value: Box::new(val_expr),
-                            var,
+                            vars,
                             iterable: Box::new(iterable),
                             cond,
                         },
@@ -836,18 +844,22 @@ impl Parser {
             } else {
                 // Set or SetComp
                 if self.match_token(&[TokenKind::For]) {
-                    let (var, _) = {
+                    let mut vars = Vec::new();
+                    loop {
                         let t = self.consume(
                             |t| matches!(t, TokenKind::Identifier(_)),
                             "Expected iteration variable.",
                         )?;
-                        let v = if let TokenKind::Identifier(s) = &t.kind {
-                            s.clone()
+                        if let TokenKind::Identifier(s) = &t.kind {
+                            vars.push(s.clone());
                         } else {
                             unreachable!()
-                        };
-                        (v, t.span)
-                    };
+                        }
+
+                        if !self.match_token(&[TokenKind::Comma]) {
+                            break;
+                        }
+                    }
 
                     self.consume(|t| matches!(t, TokenKind::In), "Expected 'in'.")?;
                     let iterable = self.logic_or()?;
@@ -861,7 +873,7 @@ impl Parser {
                     return Ok(self.make_expr(
                         ExprKind::SetComp {
                             body: Box::new(first_expr),
-                            var,
+                            vars,
                             iterable: Box::new(iterable),
                             cond,
                         },

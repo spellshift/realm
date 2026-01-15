@@ -12,12 +12,12 @@ use spin::RwLock;
 pub(crate) fn evaluate_list_comp(
     interp: &mut Interpreter,
     body: &Expr,
-    var: &str,
+    vars: &[alloc::string::String],
     iterable: &Expr,
     cond: &Option<Box<Expr>>,
 ) -> Result<Value, EldritchError> {
     let mut results = Vec::new();
-    evaluate_comprehension_generic(interp, var, iterable, cond, |i| {
+    evaluate_comprehension_generic(interp, vars, iterable, cond, |i| {
         results.push(evaluate(i, body)?);
         Ok(())
     })?;
@@ -28,12 +28,12 @@ pub(crate) fn evaluate_dict_comp(
     interp: &mut Interpreter,
     key_expr: &Expr,
     val_expr: &Expr,
-    var: &str,
+    vars: &[alloc::string::String],
     iterable: &Expr,
     cond: &Option<Box<Expr>>,
 ) -> Result<Value, EldritchError> {
     let mut results = BTreeMap::new();
-    evaluate_comprehension_generic(interp, var, iterable, cond, |i| {
+    evaluate_comprehension_generic(interp, vars, iterable, cond, |i| {
         let k = evaluate(i, key_expr)?;
         let v = evaluate(i, val_expr)?;
         results.insert(k, v);
@@ -45,13 +45,13 @@ pub(crate) fn evaluate_dict_comp(
 pub(crate) fn evaluate_set_comp(
     interp: &mut Interpreter,
     body: &Expr,
-    var: &str,
+    vars: &[alloc::string::String],
     iterable: &Expr,
     cond: &Option<Box<Expr>>,
 ) -> Result<Value, EldritchError> {
     #[allow(clippy::mutable_key_type)]
     let mut results = BTreeSet::new();
-    evaluate_comprehension_generic(interp, var, iterable, cond, |i| {
+    evaluate_comprehension_generic(interp, vars, iterable, cond, |i| {
         results.insert(evaluate(i, body)?);
         Ok(())
     })?;
