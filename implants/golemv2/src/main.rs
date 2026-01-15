@@ -46,14 +46,13 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
         task_id: 0,
         jwt: String::new(),
     };
-    let agent_lib =
-        eldritch_libagent::std::StdAgentLibrary::new(agent.clone(), task_context.clone());
+    let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(agent_lib);
     let report_lib =
-        eldritch_libreport::std::StdReportLibrary::new(agent.clone(), task_context.clone());
+        eldritchv2::report::std::StdReportLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(report_lib);
     let pivot_lib =
-        eldritch_libpivot::std::StdPivotLibrary::new(agent.clone(), task_context.clone());
+        eldritchv2::pivot::std::StdPivotLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(pivot_lib);
     interp.register_lib(assetlib);
     interp
