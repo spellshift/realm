@@ -17,10 +17,11 @@ use crate::agent::ImixAgent;
 use crate::shell::parser::InputParser;
 use crate::shell::terminal::{VtWriter, render};
 
-pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
+// Updated signature to allow Transport and Agent to have different Transport types.
+pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static, A: Transport + Send + Sync + 'static>(
     task_id: i64,
     mut transport: T,
-    agent: ImixAgent<T>,
+    agent: ImixAgent<A>,
 ) -> Result<()> {
     // Channels to manage gRPC stream
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);
@@ -50,11 +51,11 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     Ok(())
 }
 
-async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
+async fn run_repl_loop<A: Transport + Send + Sync + 'static>(
     task_id: i64,
     mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
-    agent: ImixAgent<T>,
+    agent: ImixAgent<A>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
         let printer = Arc::new(ShellPrinter {
@@ -177,13 +178,13 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     .await;
 }
 
-struct ShellPrinter<T: Transport> {
+struct ShellPrinter<A: Transport> {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     task_id: i64,
-    agent: ImixAgent<T>,
+    agent: ImixAgent<A>,
 }
 
-impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
+impl<A: Transport + Send + Sync> fmt::Debug for ShellPrinter<A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ShellPrinter")
             .field("task_id", &self.task_id)
@@ -191,7 +192,7 @@ impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
     }
 }
 
-impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
+impl<A: Transport + Send + Sync + 'static> Printer for ShellPrinter<A> {
     fn print_out(&self, _span: &Span, s: &str) {
         // Send to REPL
         let s_crlf = s.replace('\n', "\r\n");

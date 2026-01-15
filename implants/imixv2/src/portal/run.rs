@@ -5,9 +5,11 @@ use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
 use prost::Message;
 use std::collections::HashMap;
+use std::future::Future;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
-use transport::Transport;
+use transport::{Transport, UnsafeTransport};
 
 use super::{bytes, repl, shell, tcp, udp};
 use crate::agent::ImixAgent;
@@ -234,22 +236,6 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 let (shell_output_tx, mut shell_output_rx) = mpsc::channel::<Vec<u8>>(100);
 
                 // Spawn the Shell Logic
-                // We need to implement a "Transport" that talks to our channels?
-                // Or modify run_reverse_shell_pty to accept channels?
-                // run_reverse_shell_pty takes a Transport.
-                // We can create a "PortalTransport" or similar adapter.
-                // OR we can refactor run_reverse_shell_pty.
-
-                // Let's refactor run_reverse_shell_pty to be more flexible, or just use an adapter here.
-                // Adapter is cleaner to avoid touching pty.rs too much.
-
-                // Wait, run_reverse_shell_pty expects `transport.reverse_shell(output_rx, input_tx)`.
-                // It sends to output_tx (ReverseShellRequest) and reads from input_rx (ReverseShellResponse).
-
-                // So we need to bridge:
-                // Mote(ShellPayload) -> shell_input_tx -> ReverseShellResponse -> pty
-                // pty -> ReverseShellRequest -> shell_output_tx -> Mote(ShellPayload) -> out_tx
-
                 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
 
                 let (pty_req_tx, mut pty_req_rx) = mpsc::channel::<ReverseShellRequest>(100);
@@ -257,6 +243,7 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
 
                 // Adapter logic for PTY OUTPUT (PTY -> Mote)
                 let out_tx_clone = out_tx.clone();
+                // PayloadSequencer is Clone
                 let sequencer_clone = sequencer.clone();
                 tokio::spawn(async move {
                     while let Some(req) = pty_req_rx.recv().await {
@@ -297,33 +284,38 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                     }
                 });
 
-                // We also need to handle Pings coming from Mote -> PTY (handled in handle_shell via direct echo, or passing to pty?)
-                // handle_shell logic:
-                // BytesPayload(Ping) -> Echo immediately (doesn't reach shell_input_tx).
-                // ShellPayload -> shell_input_tx.
-
-                // Wait, pty.rs sends Pings. And expects Pings back?
-                // run_reverse_shell_pty sends initial Ping.
-                // It also sends Pings to flush.
-                // It handles Input Pings by Echoing them.
-
-                // If handle_shell echoes Pings, then PTY doesn't see them.
-                // But PTY logic expects to see them if it uses them for keepalives?
-                // run_reverse_shell_pty logic:
-                // Input loop: if msg.kind == Ping { output_tx.send(Ping) }
-                // So if we echo at Mote level, PTY doesn't see it, so it doesn't echo it.
-                // This is fine, as long as the other side gets the echo.
-
-                // BUT, run_reverse_shell_pty uses `transport.reverse_shell` which bridges to gRPC.
-                // We need to mock the transport to hook up the channels.
-
+                // Mock Transport
+                #[derive(Clone)]
                 struct ChannelTransport {
                     req_tx: mpsc::Sender<ReverseShellRequest>,
-                    resp_rx: tokio::sync::Mutex<mpsc::Receiver<ReverseShellResponse>>,
+                    resp_rx: Arc<tokio::sync::Mutex<mpsc::Receiver<ReverseShellResponse>>>,
                 }
 
-                #[async_trait::async_trait]
                 impl Transport for ChannelTransport {
+                    fn init() -> Self {
+                        todo!()
+                    }
+                    fn new(_: pb::config::Config) -> Result<Self, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn claim_tasks(&mut self, _: pb::c2::ClaimTasksRequest) -> Result<pb::c2::ClaimTasksResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn fetch_asset(&mut self, _: pb::c2::FetchAssetRequest, _: std::sync::mpsc::Sender<pb::c2::FetchAssetResponse>) -> Result<(), anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_credential(&mut self, _: pb::c2::ReportCredentialRequest) -> Result<pb::c2::ReportCredentialResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_file(&mut self, _: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>) -> Result<pb::c2::ReportFileResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_process_list(&mut self, _: pb::c2::ReportProcessListRequest) -> Result<pb::c2::ReportProcessListResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_task_output(&mut self, _: pb::c2::ReportTaskOutputRequest) -> Result<pb::c2::ReportTaskOutputResponse, anyhow::Error> {
+                        todo!()
+                    }
                     async fn reverse_shell(
                         &mut self,
                         mut output_rx: mpsc::Receiver<ReverseShellRequest>,
@@ -348,51 +340,30 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                         }
                         Ok(())
                     }
-                    // Implement other methods as todo!()
-                    async fn check_in(
-                        &self,
-                        _: pb::c2::CheckInRequest,
-                    ) -> Result<pb::c2::CheckInResponse> {
-                        todo!()
-                    }
-                    async fn get_task(
-                        &self,
-                        _: pb::c2::GetTaskRequest,
-                    ) -> Result<pb::c2::GetTaskResponse> {
-                        todo!()
-                    }
-                    async fn report_task_output(
-                        &self,
-                        _: pb::c2::ReportTaskOutputRequest,
-                    ) -> Result<pb::c2::ReportTaskOutputResponse> {
-                        todo!()
-                    }
-                    async fn download_file(
-                        &self,
-                        _: pb::c2::DownloadFileRequest,
-                    ) -> Result<Box<dyn std::io::Read + Send + Sync + 'static>>
-                    {
-                        todo!()
-                    }
-                    async fn upload_file(
-                        &self,
-                        _: String,
-                        _: Box<dyn std::io::Read + Send + Sync + 'static>,
-                    ) -> Result<()> {
-                        todo!()
-                    }
                     async fn create_portal(
-                        &self,
+                        &mut self,
                         _: mpsc::Receiver<CreatePortalRequest>,
                         _: mpsc::Sender<CreatePortalResponse>,
                     ) -> Result<()> {
+                        todo!()
+                    }
+                    fn get_type(&mut self) -> pb::c2::transport::Type {
+                        todo!()
+                    }
+                    fn is_active(&self) -> bool {
+                        todo!()
+                    }
+                    fn name(&self) -> &'static str {
+                        todo!()
+                    }
+                    fn list_available(&self) -> Vec<std::string::String> {
                         todo!()
                     }
                 }
 
                 let transport_mock = ChannelTransport {
                     req_tx: pty_req_tx,
-                    resp_rx: tokio::sync::Mutex::new(pty_resp_rx),
+                    resp_rx: Arc::new(tokio::sync::Mutex::new(pty_resp_rx)),
                 };
 
                 // Spawn PTY
@@ -452,25 +423,37 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 });
 
                 // Mock Transport
+                #[derive(Clone)]
                 struct ChannelTransport {
                     req_tx: mpsc::Sender<pb::c2::ReverseShellRequest>,
-                    resp_rx: tokio::sync::Mutex<mpsc::Receiver<pb::c2::ReverseShellResponse>>,
-                    // Need real transport for report_task_output?
-                    // run_repl_reverse_shell calls agent.report_task_output.
-                    // Agent uses the transport stored in it.
-                    // But here we pass a transport to run_repl_reverse_shell.
-                    // The Agent inside run_repl_reverse_shell is passed as argument.
-                    // That agent has the REAL transport.
-                    // Wait, run_repl_reverse_shell signature:
-                    // run_repl_reverse_shell(task_id, transport, agent)
-                    // It calls transport.reverse_shell().
-                    // And it calls agent.report_task_output().
-                    // So we need to pass our mock transport as `transport`.
-                    // The `agent` passed should be the REAL agent (so it can report output via real C2).
+                    resp_rx: Arc<tokio::sync::Mutex<mpsc::Receiver<pb::c2::ReverseShellResponse>>>,
                 }
 
-                #[async_trait::async_trait]
                 impl Transport for ChannelTransport {
+                    fn init() -> Self {
+                        todo!()
+                    }
+                    fn new(_: pb::config::Config) -> Result<Self, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn claim_tasks(&mut self, _: pb::c2::ClaimTasksRequest) -> Result<pb::c2::ClaimTasksResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn fetch_asset(&mut self, _: pb::c2::FetchAssetRequest, _: std::sync::mpsc::Sender<pb::c2::FetchAssetResponse>) -> Result<(), anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_credential(&mut self, _: pb::c2::ReportCredentialRequest) -> Result<pb::c2::ReportCredentialResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_file(&mut self, _: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>) -> Result<pb::c2::ReportFileResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_process_list(&mut self, _: pb::c2::ReportProcessListRequest) -> Result<pb::c2::ReportProcessListResponse, anyhow::Error> {
+                        todo!()
+                    }
+                    async fn report_task_output(&mut self, _: pb::c2::ReportTaskOutputRequest) -> Result<pb::c2::ReportTaskOutputResponse, anyhow::Error> {
+                        todo!()
+                    }
                     async fn reverse_shell(
                         &mut self,
                         mut output_rx: mpsc::Receiver<pb::c2::ReverseShellRequest>,
@@ -493,51 +476,30 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                         }
                         Ok(())
                     }
-                    // Implement other methods as todo!() - REPL only uses reverse_shell on this transport arg
-                    async fn check_in(
-                        &self,
-                        _: pb::c2::CheckInRequest,
-                    ) -> Result<pb::c2::CheckInResponse> {
-                        todo!()
-                    }
-                    async fn get_task(
-                        &self,
-                        _: pb::c2::GetTaskRequest,
-                    ) -> Result<pb::c2::GetTaskResponse> {
-                        todo!()
-                    }
-                    async fn report_task_output(
-                        &self,
-                        _: pb::c2::ReportTaskOutputRequest,
-                    ) -> Result<pb::c2::ReportTaskOutputResponse> {
-                        todo!()
-                    }
-                    async fn download_file(
-                        &self,
-                        _: pb::c2::DownloadFileRequest,
-                    ) -> Result<Box<dyn std::io::Read + Send + Sync + 'static>>
-                    {
-                        todo!()
-                    }
-                    async fn upload_file(
-                        &self,
-                        _: String,
-                        _: Box<dyn std::io::Read + Send + Sync + 'static>,
-                    ) -> Result<()> {
-                        todo!()
-                    }
                     async fn create_portal(
-                        &self,
+                        &mut self,
                         _: mpsc::Receiver<CreatePortalRequest>,
                         _: mpsc::Sender<CreatePortalResponse>,
                     ) -> Result<()> {
+                        todo!()
+                    }
+                    fn get_type(&mut self) -> pb::c2::transport::Type {
+                        todo!()
+                    }
+                    fn is_active(&self) -> bool {
+                        todo!()
+                    }
+                    fn name(&self) -> &'static str {
+                        todo!()
+                    }
+                    fn list_available(&self) -> Vec<std::string::String> {
                         todo!()
                     }
                 }
 
                 let transport_mock = ChannelTransport {
                     req_tx: repl_req_tx,
-                    resp_rx: tokio::sync::Mutex::new(repl_resp_rx),
+                    resp_rx: Arc::new(tokio::sync::Mutex::new(repl_resp_rx)),
                 };
 
                 // Spawn REPL
