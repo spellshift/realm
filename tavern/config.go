@@ -18,16 +18,13 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/tomes"
 )
 
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
-var GlobalInstanceID = fmt.Sprintf("tavern-%s", 1) // Using 1 or similar, namegen usage removed to avoid import if not needed, or keep it.
-// The original file used namegen.New(). I should check imports.
-// I kept imports but removed `stream` import if it was used for `stream.PreventPubSubColdStarts`.
-// `stream` was imported as `realm.pub/tavern/internal/http/stream`.
-// I should remove that import if I remove `NewShellMuxes`.
+var GlobalInstanceID = fmt.Sprintf("tavern-%s", namegen.New())
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
