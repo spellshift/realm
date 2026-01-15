@@ -39,7 +39,7 @@ async fn test_start_reverse_shell() {
     let result = std::thread::spawn(move || {
         agent_clone.start_reverse_shell(
             pb::c2::TaskContext {
-                task_id: 1234,
+                task_id: 12345,
                 jwt: "some jwt".to_string(),
             },
             Some("echo test".to_string()),
