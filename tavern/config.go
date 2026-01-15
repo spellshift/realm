@@ -12,7 +12,7 @@ import (
 	gcppubsub "cloud.google.com/go/pubsub"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
-	"gocloud.dev/pubsub"
+	// "gocloud.dev/pubsub" // Removed unused import
 	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/oauth2"

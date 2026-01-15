@@ -293,8 +293,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn create_portal(&self, task_id: i64) -> Result<(), String> {
+        let agent = self.clone();
         self.spawn_subtask(task_id, move |transport| async move {
-            run_create_portal(task_id, transport).await
+            run_create_portal(task_id, transport, agent).await
         })
     }
 

@@ -9,10 +9,11 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
-use transport::{Transport, UnsafeTransport};
+use transport::Transport;
 
 use super::{bytes, repl, shell, tcp, udp};
 use crate::agent::ImixAgent;
+use pb::c2::ReverseShellMessageKind;
 
 /// Context for a single stream ID
 struct StreamContext {
@@ -236,14 +237,13 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 let (shell_output_tx, mut shell_output_rx) = mpsc::channel::<Vec<u8>>(100);
 
                 // Spawn the Shell Logic
-                use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
+                use pb::c2::{ReverseShellRequest, ReverseShellResponse};
 
                 let (pty_req_tx, mut pty_req_rx) = mpsc::channel::<ReverseShellRequest>(100);
                 let (pty_resp_tx, pty_resp_rx) = mpsc::channel::<ReverseShellResponse>(100);
 
                 // Adapter logic for PTY OUTPUT (PTY -> Mote)
                 let out_tx_clone = out_tx.clone();
-                // PayloadSequencer is Clone
                 let sequencer_clone = sequencer.clone();
                 tokio::spawn(async move {
                     while let Some(req) = pty_req_rx.recv().await {
@@ -298,22 +298,44 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                     fn new(_: pb::config::Config) -> Result<Self, anyhow::Error> {
                         todo!()
                     }
-                    async fn claim_tasks(&mut self, _: pb::c2::ClaimTasksRequest) -> Result<pb::c2::ClaimTasksResponse, anyhow::Error> {
+                    async fn claim_tasks(
+                        &mut self,
+                        _: pb::c2::ClaimTasksRequest,
+                    ) -> Result<pb::c2::ClaimTasksResponse, anyhow::Error> {
                         todo!()
                     }
-                    async fn fetch_asset(&mut self, _: pb::c2::FetchAssetRequest, _: std::sync::mpsc::Sender<pb::c2::FetchAssetResponse>) -> Result<(), anyhow::Error> {
+                    async fn fetch_asset(
+                        &mut self,
+                        _: pb::c2::FetchAssetRequest,
+                        _: std::sync::mpsc::Sender<pb::c2::FetchAssetResponse>,
+                    ) -> Result<(), anyhow::Error> {
                         todo!()
                     }
-                    async fn report_credential(&mut self, _: pb::c2::ReportCredentialRequest) -> Result<pb::c2::ReportCredentialResponse, anyhow::Error> {
+                    async fn report_credential(
+                        &mut self,
+                        _: pb::c2::ReportCredentialRequest,
+                    ) -> Result<pb::c2::ReportCredentialResponse, anyhow::Error>
+                    {
                         todo!()
                     }
-                    async fn report_file(&mut self, _: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>) -> Result<pb::c2::ReportFileResponse, anyhow::Error> {
+                    async fn report_file(
+                        &mut self,
+                        _: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>,
+                    ) -> Result<pb::c2::ReportFileResponse, anyhow::Error> {
                         todo!()
                     }
-                    async fn report_process_list(&mut self, _: pb::c2::ReportProcessListRequest) -> Result<pb::c2::ReportProcessListResponse, anyhow::Error> {
+                    async fn report_process_list(
+                        &mut self,
+                        _: pb::c2::ReportProcessListRequest,
+                    ) -> Result<pb::c2::ReportProcessListResponse, anyhow::Error>
+                    {
                         todo!()
                     }
-                    async fn report_task_output(&mut self, _: pb::c2::ReportTaskOutputRequest) -> Result<pb::c2::ReportTaskOutputResponse, anyhow::Error> {
+                    async fn report_task_output(
+                        &mut self,
+                        _: pb::c2::ReportTaskOutputRequest,
+                    ) -> Result<pb::c2::ReportTaskOutputResponse, anyhow::Error>
+                    {
                         todo!()
                     }
                     async fn reverse_shell(
@@ -424,35 +446,58 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
 
                 // Mock Transport
                 #[derive(Clone)]
-                struct ChannelTransport {
+                struct ChannelTransport<T: Transport> {
                     req_tx: mpsc::Sender<pb::c2::ReverseShellRequest>,
                     resp_rx: Arc<tokio::sync::Mutex<mpsc::Receiver<pb::c2::ReverseShellResponse>>>,
+                    inner: T,
                 }
 
-                impl Transport for ChannelTransport {
+                impl<T: Transport> Transport for ChannelTransport<T> {
                     fn init() -> Self {
                         todo!()
                     }
                     fn new(_: pb::config::Config) -> Result<Self, anyhow::Error> {
                         todo!()
                     }
-                    async fn claim_tasks(&mut self, _: pb::c2::ClaimTasksRequest) -> Result<pb::c2::ClaimTasksResponse, anyhow::Error> {
-                        todo!()
+                    async fn claim_tasks(
+                        &mut self,
+                        req: pb::c2::ClaimTasksRequest,
+                    ) -> Result<pb::c2::ClaimTasksResponse, anyhow::Error> {
+                        self.inner.claim_tasks(req).await
                     }
-                    async fn fetch_asset(&mut self, _: pb::c2::FetchAssetRequest, _: std::sync::mpsc::Sender<pb::c2::FetchAssetResponse>) -> Result<(), anyhow::Error> {
-                        todo!()
+                    async fn fetch_asset(
+                        &mut self,
+                        req: pb::c2::FetchAssetRequest,
+                        sender: std::sync::mpsc::Sender<pb::c2::FetchAssetResponse>,
+                    ) -> Result<(), anyhow::Error> {
+                        self.inner.fetch_asset(req, sender).await
                     }
-                    async fn report_credential(&mut self, _: pb::c2::ReportCredentialRequest) -> Result<pb::c2::ReportCredentialResponse, anyhow::Error> {
-                        todo!()
+                    async fn report_credential(
+                        &mut self,
+                        req: pb::c2::ReportCredentialRequest,
+                    ) -> Result<pb::c2::ReportCredentialResponse, anyhow::Error>
+                    {
+                        self.inner.report_credential(req).await
                     }
-                    async fn report_file(&mut self, _: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>) -> Result<pb::c2::ReportFileResponse, anyhow::Error> {
-                        todo!()
+                    async fn report_file(
+                        &mut self,
+                        req: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>,
+                    ) -> Result<pb::c2::ReportFileResponse, anyhow::Error> {
+                        self.inner.report_file(req).await
                     }
-                    async fn report_process_list(&mut self, _: pb::c2::ReportProcessListRequest) -> Result<pb::c2::ReportProcessListResponse, anyhow::Error> {
-                        todo!()
+                    async fn report_process_list(
+                        &mut self,
+                        req: pb::c2::ReportProcessListRequest,
+                    ) -> Result<pb::c2::ReportProcessListResponse, anyhow::Error>
+                    {
+                        self.inner.report_process_list(req).await
                     }
-                    async fn report_task_output(&mut self, _: pb::c2::ReportTaskOutputRequest) -> Result<pb::c2::ReportTaskOutputResponse, anyhow::Error> {
-                        todo!()
+                    async fn report_task_output(
+                        &mut self,
+                        req: pb::c2::ReportTaskOutputRequest,
+                    ) -> Result<pb::c2::ReportTaskOutputResponse, anyhow::Error>
+                    {
+                        self.inner.report_task_output(req).await
                     }
                     async fn reverse_shell(
                         &mut self,
@@ -484,22 +529,23 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                         todo!()
                     }
                     fn get_type(&mut self) -> pb::c2::transport::Type {
-                        todo!()
+                        self.inner.get_type()
                     }
                     fn is_active(&self) -> bool {
-                        todo!()
+                        self.inner.is_active()
                     }
                     fn name(&self) -> &'static str {
-                        todo!()
+                        self.inner.name()
                     }
                     fn list_available(&self) -> Vec<std::string::String> {
-                        todo!()
+                        self.inner.list_available()
                     }
                 }
 
                 let transport_mock = ChannelTransport {
                     req_tx: repl_req_tx,
                     resp_rx: Arc::new(tokio::sync::Mutex::new(repl_resp_rx)),
+                    inner: transport.clone(),
                 };
 
                 // Spawn REPL

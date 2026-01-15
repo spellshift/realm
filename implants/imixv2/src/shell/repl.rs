@@ -18,7 +18,10 @@ use crate::shell::parser::InputParser;
 use crate::shell::terminal::{VtWriter, render};
 
 // Updated signature to allow Transport and Agent to have different Transport types.
-pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static, A: Transport + Send + Sync + 'static>(
+pub async fn run_repl_reverse_shell<
+    T: Transport + Send + Sync + 'static,
+    A: Transport + Send + Sync + 'static,
+>(
     task_id: i64,
     mut transport: T,
     agent: ImixAgent<A>,
