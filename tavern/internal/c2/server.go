@@ -5,12 +5,17 @@ import (
 	"log/slog"
 	"net"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/portals/mux"
+)
+
+const (
+	keepAlivePingInterval = 5 * time.Second
 )
 
 type Server struct {
