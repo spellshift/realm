@@ -75,6 +75,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
                 Value::Bytes(b) => b.iter().map(|&byte| Value::Int(byte as i64)).collect(),
                 Value::Dictionary(d) => d.read().keys().cloned().collect(),
+                Value::Set(s) => s.read().iter().cloned().collect(),
                 _ => return interp.error(
                     EldritchErrorKind::TypeError,
                     &format!(
