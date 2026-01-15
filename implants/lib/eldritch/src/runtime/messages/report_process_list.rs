@@ -1,6 +1,10 @@
 use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
-use pb::{c2::{ReportProcessListRequest, TaskContext}, config::Config, eldritch::ProcessList};
+use pb::{
+    c2::{ReportProcessListRequest, TaskContext},
+    config::Config,
+    eldritch::ProcessList,
+};
 
 /*
  * ReportProcessListMessage reports a process list snapshot captured by this tome's evaluation.

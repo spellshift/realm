@@ -1,6 +1,10 @@
 use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
-use pb::{c2::{ReportCredentialRequest, TaskContext}, config::Config, eldritch::Credential};
+use pb::{
+    c2::{ReportCredentialRequest, TaskContext},
+    config::Config,
+    eldritch::Credential,
+};
 
 /*
  * ReportCredentialMessage reports a credential captured by this tome's evaluation.

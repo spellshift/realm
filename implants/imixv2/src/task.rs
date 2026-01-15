@@ -313,11 +313,7 @@ fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) 
     }
 }
 
-fn report_result(
-    task_context: TaskContext,
-    result: Result<Value, String>,
-    agent: &Arc<dyn Agent>,
-) {
+fn report_result(task_context: TaskContext, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
     let task_id = task_context.task_id;
     match result {
         Ok(v) => {
