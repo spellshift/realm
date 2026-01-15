@@ -2,7 +2,7 @@
 extern crate alloc;
 
 use clap::{Arg, ArgAction, Command};
-use eldritch_libagent::fake::AgentFake;
+use eldritchv2::agent::{fake::AgentFake, std::StdAgentLibrary};
 use eldritchv2::assets::{
     AssetsLibrary,
     std::{EmbeddedAssets, StdAssetsLibrary},

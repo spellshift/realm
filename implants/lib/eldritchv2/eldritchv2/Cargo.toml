@@ -4,8 +4,10 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-eldritch-core = { workspace = true, default-features = false }
 spin = "0.10"
+
+eldritch-core = { workspace = true, default-features = false }
+eldritch-macros = { workspace = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }
@@ -21,6 +23,7 @@ eldritch-libreport = { workspace = true, default-features = false }
 eldritch-libsys = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
 pb = { workspace = true }
+eldritch-repl = { workspace = true, default-features = false }
 
 [features]
 default = ["std", "stdlib"]

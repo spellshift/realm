@@ -1,4 +1,4 @@
-use eldritch_repl::Input;
+use eldritchv2::repl::Input;
 
 /// A robust VT100/ANSI input parser that logs incoming bytes and swallows unknown sequences.
 pub struct InputParser {

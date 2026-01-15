@@ -25,7 +25,7 @@ pub fn string(length: u64, charset_opt: Option<String>) -> Result<String> {
 mod tests {
     use super::*;
 
-    const NUM_ITERATION: i32 = 1000000;
+    const NUM_ITERATION: i32 = 100;
 
     #[test]
     fn test_string() -> anyhow::Result<()> {

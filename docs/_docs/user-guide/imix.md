@@ -35,6 +35,47 @@ Imix has run-time configuration, that may be specified using environment variabl
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
 | IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
 
+## Advanced Configuration (IMIX_CONFIG)
+
+For more complex setups, such as configuring multiple transports or specifying detailed transport options, you can use the `IMIX_CONFIG` environment variable. This variable accepts a YAML-formatted string.
+
+**Note:** When `IMIX_CONFIG` is set, you cannot use `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, or `IMIX_TRANSPORT_EXTRA_*`. All configuration must be provided within the YAML structure.
+
+### YAML Structure
+
+```yaml
+transports:
+  - URI: <string>
+    type: <grpc|http1|dns>
+    interval: <integer> # optional, seconds
+    extra: <json_string> # required (use "" if none)
+server_pubkey: <string> # optional
+```
+
+### Example: Multiple Transports
+
+This example configures Imix to use two transports:
+1.  A gRPC transport over HTTP.
+2.  A DNS transport as a fallback or alternative.
+
+```bash
+export IMIX_CONFIG='
+transports:
+  - URI: "http://127.0.0.1:8000"
+    type: "grpc"
+    interval: 5
+    extra: ""
+  - URI: "dns://8.8.8.8:53"
+    type: "dns"
+    interval: 10
+    extra: "{\"domain\": \"c2.example.com\", \"type\": \"txt\"}"
+server_pubkey: "YOUR_SERVER_PUBKEY_HERE"
+'
+
+# Build with the configuration
+cargo build --release --bin imix
+```
+
 ## DNS Transport Configuration
 
 The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either specific DNS servers or the system's default resolver with automatic fallback.
@@ -148,14 +189,6 @@ Building in the dev container limits variables that might cause issues and is th
 
 **Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
-## Optional build flags
-
-These flags are passed to cargo build Eg.:
-`cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
-
-- `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
-- `--features http1 --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
-- `--features dns --no-default-features` - Changes the default grpc transport to use DNS. Requires running the dns redirector. See the [DNS Transport Configuration](#dns-transport-configuration) section for more information on how to configure the DNS transport URI.
 
 ## Setting encryption key
 

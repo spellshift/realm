@@ -3,7 +3,7 @@ use crossterm::{
     style::{Color, SetForegroundColor},
     terminal,
 };
-use eldritch_repl::Repl;
+use eldritchv2::repl::Repl;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, TaskContext};
 
 pub struct VtWriter {
@@ -186,7 +186,7 @@ pub fn render<W: std::io::Write>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eldritch_repl::{Input, Repl};
+    use eldritchv2::repl::{Input, Repl};
 
     #[test]
     fn test_render_multi_line_history() {
