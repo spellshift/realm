@@ -6,8 +6,6 @@ import (
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
