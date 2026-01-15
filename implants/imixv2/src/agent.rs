@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use eldritchv2::agent::agent::Agent;
 use pb::c2::host::Platform;
-use pb::c2::transport::Type::{self, *};
+use pb::c2::transport::Type;
 use pb::c2::{self, ClaimTasksRequest};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
