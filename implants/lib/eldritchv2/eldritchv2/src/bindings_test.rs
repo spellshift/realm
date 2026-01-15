@@ -9,14 +9,17 @@ fn create_interp() -> Interpreter {
     #[cfg(feature = "stdlib")]
     {
         use eldritch_libassets::std::EmptyAssets;
+        use pb::c2::TaskContext;
 
         let agent_mock = Arc::new(AgentFake);
-        let task_id = 123;
+        let task_context = TaskContext {
+            task_id: 123,
+            jwt: "a test jwt".to_string(),
+        };
         let backend = Arc::new(EmptyAssets {});
         Interpreter::new().with_default_libs().with_task_context(
             agent_mock,
-            task_id,
-            "some jwt".to_string(),
+            task_context,
             vec![],
             backend,
         )

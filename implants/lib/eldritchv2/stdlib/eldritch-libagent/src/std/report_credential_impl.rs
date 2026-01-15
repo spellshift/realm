@@ -1,8 +1,8 @@
 use alloc::string::String;
 use alloc::sync::Arc;
 
-use super::TaskContext;
 use crate::CredentialWrapper;
+use pb::c2::TaskContext;
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;

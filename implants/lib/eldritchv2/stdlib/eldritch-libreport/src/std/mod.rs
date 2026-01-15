@@ -3,9 +3,10 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use eldritch_agent::{Agent, TaskContext};
+use eldritch_agent::Agent;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
+use pb::c2::TaskContext;
 
 pub mod file_impl;
 pub mod process_list_impl;
@@ -45,12 +46,7 @@ impl ReportLibrary for StdReportLibrary {
     }
 
     fn ssh_key(&self, username: String, key: String) -> Result<(), String> {
-        ssh_key_impl::ssh_key(
-            self.agent.clone(),
-            self.task_context.clone(),
-            username,
-            key,
-        )
+        ssh_key_impl::ssh_key(self.agent.clone(), self.task_context.clone(), username, key)
     }
 
     fn user_password(&self, username: String, password: String) -> Result<(), String> {

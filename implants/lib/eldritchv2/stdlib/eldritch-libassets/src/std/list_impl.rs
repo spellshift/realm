@@ -12,7 +12,7 @@ mod tests {
     use super::*;
     use crate::std::read_binary_impl::tests::{MockAgent, TestAsset};
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
-    use eldritch_agent::TaskContext;
+    use pb::c2::TaskContext;
     use std::sync::Arc;
 
     #[test]
@@ -22,7 +22,10 @@ mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext::new(0, String::new()),
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
             remote_files.clone(),
         )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;

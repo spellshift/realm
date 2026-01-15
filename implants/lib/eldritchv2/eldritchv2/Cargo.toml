@@ -20,6 +20,7 @@ eldritch-libregex = { workspace = true, default-features = false }
 eldritch-libreport = { workspace = true, default-features = false }
 eldritch-libsys = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
+pb = { workspace = true }
 
 [features]
 default = ["std", "stdlib"]

@@ -4,29 +4,7 @@ extern crate alloc;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::string::String;
 use alloc::vec::Vec;
-use pb::c2;
-
-/// Context containing task-specific information needed for C2 operations
-#[derive(Clone, Debug)]
-pub struct TaskContext {
-    pub task_id: i64,
-    pub jwt: String,
-}
-
-impl TaskContext {
-    pub fn new(task_id: i64, jwt: String) -> Self {
-        Self { task_id, jwt }
-    }
-}
-
-impl From<TaskContext> for c2::TaskContext {
-    fn from(ctx: TaskContext) -> Self {
-        c2::TaskContext {
-            task_id: ctx.task_id,
-            jwt: ctx.jwt,
-        }
-    }
-}
+use pb::c2::{self, TaskContext};
 
 pub trait Agent: Send + Sync {
     // Interactivity

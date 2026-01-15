@@ -5,9 +5,10 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
 use core::marker::PhantomData;
-use eldritch_agent::{Agent, TaskContext};
+use eldritch_agent::Agent;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
+use pb::c2::TaskContext;
 use rust_embed;
 use std::collections::HashSet;
 
@@ -70,7 +71,11 @@ pub struct AgentAssets {
 }
 
 impl AgentAssets {
-    pub fn new(agent: Arc<dyn Agent>, task_context: TaskContext, remote_assets: Vec<String>) -> Self {
+    pub fn new(
+        agent: Arc<dyn Agent>,
+        task_context: TaskContext,
+        remote_assets: Vec<String>,
+    ) -> Self {
         Self {
             agent,
             task_context,

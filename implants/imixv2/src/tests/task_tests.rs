@@ -2,6 +2,7 @@ use super::super::task::TaskRegistry;
 use alloc::collections::{BTreeMap, BTreeSet};
 use eldritch_libagent::agent::Agent;
 use pb::c2;
+use pb::c2::TaskContext;
 use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -46,17 +47,17 @@ impl Agent for MockAgent {
         self.output_reports.lock().unwrap().push(req);
         Ok(c2::ReportTaskOutputResponse {})
     }
-    fn create_portal(&self, _task_context: eldritch_agent::TaskContext) -> Result<(), String> {
+    fn create_portal(&self, _task_context: TaskContext) -> Result<(), String> {
         Ok(())
     }
     fn start_reverse_shell(
         &self,
-        _task_context: eldritch_agent::TaskContext,
+        _task_context: TaskContext,
         _cmd: Option<String>,
     ) -> Result<(), String> {
         Ok(())
     }
-    fn start_repl_reverse_shell(&self, _task_context: eldritch_agent::TaskContext) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {

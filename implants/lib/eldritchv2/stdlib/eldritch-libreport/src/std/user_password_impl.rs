@@ -1,6 +1,7 @@
 use alloc::string::String;
 use alloc::sync::Arc;
-use eldritch_agent::{Agent, TaskContext};
+use eldritch_agent::Agent;
+use pb::c2::TaskContext;
 use pb::{c2, eldritch};
 
 pub fn user_password(
@@ -15,7 +16,7 @@ pub fn user_password(
         kind: 1, // KIND_PASSWORD
     };
     let req = c2::ReportCredentialRequest {
-        context: Some(task_context.into()),
+        context: Some(task_context),
         credential: Some(cred),
     };
     agent.report_credential(req).map(|_| ())

@@ -4,6 +4,7 @@ use crate::std::StdAgentLibrary;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::sync::Arc;
 use eldritch_core::Value;
+use pb::c2::TaskContext;
 use std::sync::RwLock;
 use std::thread;
 
@@ -62,13 +63,17 @@ impl Agent for MockAgent {
     ) -> Result<pb::c2::ReportTaskOutputResponse, String> {
         Err("".into())
     }
-    fn create_portal(&self, _task_context: eldritch_agent::TaskContext) -> Result<(), String> {
+    fn create_portal(&self, _task_context: TaskContext) -> Result<(), String> {
         Err("".into())
     }
-    fn start_reverse_shell(&self, _task_context: eldritch_agent::TaskContext, _: Option<String>) -> Result<(), String> {
+    fn start_reverse_shell(
+        &self,
+        _task_context: TaskContext,
+        _: Option<String>,
+    ) -> Result<(), String> {
         Err("".into())
     }
-    fn start_repl_reverse_shell(&self, _task_context: eldritch_agent::TaskContext) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
         Err("".into())
     }
     fn claim_tasks(
@@ -118,7 +123,13 @@ impl Agent for MockAgent {
 #[test]
 fn test_get_config() {
     let agent = Arc::new(MockAgent::new());
-    let lib = StdAgentLibrary::new(agent, eldritch_agent::TaskContext::new(1, "testjwt".to_string()));
+    let lib = StdAgentLibrary::new(
+        agent,
+        pb::c2::TaskContext {
+            task_id: 1,
+            jwt: "testjwt".to_string(),
+        },
+    );
 
     let config = lib.get_config().unwrap();
     assert_eq!(config.get("key"), Some(&Value::String("value".to_string())));
@@ -128,7 +139,13 @@ fn test_get_config() {
 #[test]
 fn test_concurrent_access() {
     let agent = Arc::new(MockAgent::new());
-    let lib = StdAgentLibrary::new(agent.clone(), eldritch_agent::TaskContext::new(1, "testjwt".to_string()));
+    let lib = StdAgentLibrary::new(
+        agent.clone(),
+        pb::c2::TaskContext {
+            task_id: 1,
+            jwt: "testjwt".to_string(),
+        },
+    );
     let lib = Arc::new(lib);
 
     let mut handles = vec![];

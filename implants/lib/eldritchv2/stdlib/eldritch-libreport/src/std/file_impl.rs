@@ -1,6 +1,7 @@
 use alloc::string::String;
 use alloc::sync::Arc;
-use eldritch_agent::{Agent, TaskContext};
+use eldritch_agent::Agent;
+use pb::c2::TaskContext;
 use pb::{c2, eldritch};
 
 pub fn file(agent: Arc<dyn Agent>, task_context: TaskContext, path: String) -> Result<(), String> {
@@ -17,7 +18,7 @@ pub fn file(agent: Arc<dyn Agent>, task_context: TaskContext, path: String) -> R
 
     println!("reporting file chunk with JWT: {}", task_context.jwt);
     let req = c2::ReportFileRequest {
-        context: Some(task_context.into()),
+        context: Some(task_context),
         chunk: Some(file_msg),
     };
 

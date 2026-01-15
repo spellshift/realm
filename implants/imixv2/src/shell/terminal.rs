@@ -4,22 +4,18 @@ use crossterm::{
     terminal,
 };
 use eldritch_repl::Repl;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, TaskContext};
 
 pub struct VtWriter {
     pub tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
-    pub task_id: i64,
-    pub jwt: String,
+    pub task_context: TaskContext,
 }
 
 impl std::io::Write for VtWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let data = buf.to_vec();
         match self.tx.blocking_send(ReverseShellRequest {
-            context: Some(pb::c2::TaskContext {
-                task_id: self.task_id,
-                jwt: self.jwt.clone(),
-            }),
+            context: Some(self.task_context.clone()),
             kind: ReverseShellMessageKind::Data.into(),
             data,
         }) {
@@ -30,10 +26,7 @@ impl std::io::Write for VtWriter {
 
     fn flush(&mut self) -> std::io::Result<()> {
         match self.tx.blocking_send(ReverseShellRequest {
-            context: Some(pb::c2::TaskContext {
-                task_id: self.task_id,
-                jwt: self.jwt.clone(),
-            }),
+            context: Some(self.task_context.clone()),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         }) {

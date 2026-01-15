@@ -7,7 +7,7 @@ use eldritch_repl::{Repl, ReplAction};
 use eldritchv2::{Interpreter, Printer, Span};
 use pb::c2::{
     ReportTaskOutputRequest, ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse,
-    TaskError, TaskOutput,
+    TaskContext, TaskError, TaskOutput,
 };
 use std::fmt;
 use std::io::{BufWriter, Write};
@@ -19,8 +19,7 @@ use crate::shell::parser::InputParser;
 use crate::shell::terminal::{VtWriter, render};
 
 pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     mut transport: T,
     agent: ImixAgent<T>,
 ) -> Result<()> {
@@ -29,15 +28,15 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     let (input_tx, input_rx) = tokio::sync::mpsc::channel(1);
 
     #[cfg(debug_assertions)]
-    log::info!("starting repl_reverse_shell (task_id={task_id})");
+    log::info!(
+        "starting repl_reverse_shell (task_id={0})",
+        task_context.task_id
+    );
 
     // Initial Registration
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
-            context: Some(pb::c2::TaskContext {
-                task_id,
-                jwt: jwt.clone(),
-            }),
+            context: Some(task_context.clone()),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         })
@@ -51,36 +50,32 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     transport.reverse_shell(output_rx, input_tx).await?;
 
     // Move logic to blocking thread
-    run_repl_loop(task_id, jwt, input_rx, output_tx, agent).await;
+    run_repl_loop(task_context, input_rx, output_tx, agent).await;
     Ok(())
 }
 
 async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     mut input_rx: tokio::sync::mpsc::Receiver<ReverseShellResponse>,
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     agent: ImixAgent<T>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
-        let jwt_clone = jwt.clone();
         let printer = Arc::new(ShellPrinter {
             tx: output_tx.clone(),
-            task_id,
             agent: agent.clone(),
-            jwt: jwt.clone(),
+            task_context: task_context.clone(),
         });
 
         let backend = Arc::new(EmptyAssets {});
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_task_context(Arc::new(agent), task_id, jwt, Vec::new(), backend);
+            .with_task_context(Arc::new(agent), task_context.clone(), Vec::new(), backend);
 
         let mut repl = Repl::new();
         let stdout = VtWriter {
             tx: output_tx.clone(),
-            task_id,
-            jwt: jwt_clone.clone(),
+            task_context: task_context.clone(),
         };
         let mut stdout = BufWriter::new(stdout);
 
@@ -93,10 +88,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         while let Some(msg) = input_rx.blocking_recv() {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
                 let _ = output_tx.blocking_send(ReverseShellRequest {
-                    context: Some(pb::c2::TaskContext {
-                        task_id,
-                        jwt: jwt_clone.clone(),
-                    }),
+                    context: Some(task_context.clone()),
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: msg.data,
                 });
@@ -192,15 +184,14 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
 
 struct ShellPrinter<T: Transport> {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
-    task_id: i64,
+    task_context: TaskContext,
     agent: ImixAgent<T>,
-    jwt: String,
 }
 
 impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ShellPrinter")
-            .field("task_id", &self.task_id)
+            .field("task_id", &self.task_context.task_id)
             .finish()
     }
 }
@@ -211,10 +202,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         let s_crlf = s.replace('\n', "\r\n");
         let display_s = format!("{s_crlf}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
-            context: Some(pb::c2::TaskContext {
-                task_id: self.task_id,
-                jwt: self.jwt.clone(),
-            }),
+            context: Some(self.task_context.clone()),
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
         });
@@ -222,16 +210,13 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         // Report Task Output
         let req = ReportTaskOutputRequest {
             output: Some(TaskOutput {
-                id: self.task_id,
+                id: self.task_context.clone().task_id,
                 output: format!("{s}\n"),
                 error: None,
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
-            context: Some(pb::c2::TaskContext {
-                task_id: self.task_id,
-                jwt: self.jwt.clone(),
-            }),
+            context: Some(self.task_context.clone()),
         };
         let _ = self.agent.report_task_output(req);
     }
@@ -240,17 +225,14 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         let s_crlf = s.replace('\n', "\r\n");
         let display_s = format!("{s_crlf}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
-            context: Some(pb::c2::TaskContext {
-                task_id: self.task_id,
-                jwt: self.jwt.clone(),
-            }),
+            context: Some(self.task_context.clone()),
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
         });
 
         let req = ReportTaskOutputRequest {
             output: Some(TaskOutput {
-                id: self.task_id,
+                id: self.task_context.clone().task_id,
                 output: String::new(),
                 error: Some(TaskError {
                     msg: format!("{s}\n"),
@@ -258,10 +240,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
-            context: Some(pb::c2::TaskContext {
-                task_id: self.task_id,
-                jwt: self.jwt.clone(),
-            }),
+            context: Some(self.task_context.clone()),
         };
         let _ = self.agent.report_task_output(req);
     }

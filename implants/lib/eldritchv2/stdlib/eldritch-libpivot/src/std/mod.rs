@@ -22,7 +22,8 @@ use russh_sftp::client::SftpSession;
 use std::sync::Arc;
 
 // Deps for Agent
-use eldritch_agent::{Agent, TaskContext};
+use eldritch_agent::Agent;
+use pb::c2::TaskContext;
 
 #[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]

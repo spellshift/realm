@@ -1,4 +1,5 @@
 use anyhow::Result;
+use pb::c2::TaskContext;
 use transport::Transport;
 
 pub mod bytes;
@@ -7,9 +8,8 @@ pub mod tcp;
 pub mod udp;
 
 pub async fn run_create_portal<T: Transport + Send + Sync + 'static>(
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     transport: T,
 ) -> Result<()> {
-    run::run(task_id, jwt, transport).await
+    run::run(task_context, transport).await
 }

@@ -27,8 +27,9 @@ pub mod tests {
     use alloc::string::String;
     use alloc::string::ToString;
     use alloc::vec::Vec;
-    use eldritch_agent::{Agent, TaskContext};
+    use eldritch_agent::Agent;
     use pb::c2;
+    use pb::c2::TaskContext;
     use std::collections::BTreeSet;
     use std::sync::{Arc, Mutex};
 
@@ -195,7 +196,10 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext::new(0, String::new()),
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
             vec!["remote_file.txt".to_string()],
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
@@ -210,7 +214,10 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext::new(0, String::new()),
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
             vec!["remote_file.txt".to_string()],
         )))?;
         let result = lib.read_binary("remote_file.txt".to_string());

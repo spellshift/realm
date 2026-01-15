@@ -28,9 +28,11 @@ pub use eldritch_core::{
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+#[cfg(feature = "stdlib")]
+use pb::c2::TaskContext;
 
 #[cfg(feature = "stdlib")]
-use crate::agent::{agent::Agent, std::StdAgentLibrary, std::TaskContext};
+use crate::agent::{agent::Agent, std::StdAgentLibrary};
 #[cfg(feature = "stdlib")]
 pub use crate::assets::std::AgentAssets;
 #[cfg(feature = "stdlib")]
@@ -144,7 +146,12 @@ impl Interpreter {
     pub fn with_agent(mut self, agent: Arc<dyn Agent>) -> Self {
         // Agent library needs a task_id. For general usage (outside of imix tasks),
         // we can use 0 or a placeholder.
-        let task_context = TaskContext::new(0, String::new());
+
+        use pb::c2::TaskContext;
+        let task_context = TaskContext {
+            task_id: 0,
+            jwt: String::new(),
+        };
         let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(agent_lib);
 
@@ -180,12 +187,10 @@ impl Interpreter {
     pub fn with_task_context(
         mut self,
         agent: Arc<dyn Agent>,
-        task_id: i64,
-        jwt: String,
+        task_context: TaskContext,
         remote_assets: Vec<String>,
         backend: Arc<dyn assets::std::AssetBackend>,
     ) -> Self {
-        let task_context = TaskContext::new(task_id, jwt);
         let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
         self.inner.register_lib(agent_lib);
 

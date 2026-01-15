@@ -5,14 +5,12 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
+use pb::c2::TaskContext;
 
 use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
-
-// Re-export TaskContext from eldritch_agent
-pub use eldritch_agent::TaskContext;
 
 pub mod claim_tasks_impl;
 pub mod fetch_asset_impl;
