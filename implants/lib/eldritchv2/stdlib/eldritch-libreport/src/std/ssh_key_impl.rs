@@ -1,12 +1,11 @@
 use alloc::string::String;
 use alloc::sync::Arc;
-use eldritch_agent::Agent;
+use eldritch_agent::{Agent, TaskContext};
 use pb::{c2, eldritch};
 
 pub fn ssh_key(
     agent: Arc<dyn Agent>,
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     username: String,
     key: String,
 ) -> Result<(), String> {
@@ -16,9 +15,8 @@ pub fn ssh_key(
         kind: 2, // KIND_SSH_KEY
     };
     let req = c2::ReportCredentialRequest {
-        task_id,
+        context: Some(task_context.into()),
         credential: Some(cred),
-        jwt,
     };
     agent.report_credential(req).map(|_| ())
 }

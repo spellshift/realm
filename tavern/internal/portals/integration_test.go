@@ -194,7 +194,7 @@ func TestPortalIntegration(t *testing.T) {
 
 	// Send initial registration message
 	err = c2Stream.Send(&c2pb.CreatePortalRequest{
-		TaskId: int64(taskID),
+		Context: &c2pb.TaskContext{TaskId: int64(taskID)},
 	})
 	require.NoError(t, err)
 

@@ -19,6 +19,7 @@ struct StreamContext {
 
 pub async fn run<T: Transport + Send + Sync + 'static>(
     task_id: i64,
+    jwt: String,
     mut transport: T,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);
@@ -46,7 +47,10 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Send initial registration message
     if req_tx
         .send(CreatePortalRequest {
-            task_id,
+            context: Some(pb::c2::TaskContext {
+                task_id,
+                jwt: jwt.clone(),
+            }),
             mote: None,
         })
         .await
@@ -83,7 +87,10 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                 match msg {
                     Some(mote) => {
                         let req = CreatePortalRequest {
-                            task_id,
+                            context: Some(pb::c2::TaskContext {
+                                task_id,
+                                jwt: jwt.clone(),
+                            }),
                             mote: Some(mote),
                         };
                         if req_tx.send(req).await.is_err() {

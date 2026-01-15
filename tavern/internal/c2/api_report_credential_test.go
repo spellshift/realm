@@ -51,7 +51,7 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				TaskId: int64(existingTask.ID),
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
 				Credential: &epb.Credential{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
@@ -78,7 +78,7 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				TaskId: int64(existingTask.ID),
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "changeme123",
@@ -125,7 +125,7 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				TaskId: int64(existingTask.ID),
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
 			},
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
@@ -133,7 +133,7 @@ func TestReportCredential(t *testing.T) {
 		{
 			name: "NotFound",
 			req: &c2pb.ReportCredentialRequest{
-				TaskId: 99888777776666,
+				Context: &c2pb.TaskContext{TaskId: 99888777776666},
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "oopsies",

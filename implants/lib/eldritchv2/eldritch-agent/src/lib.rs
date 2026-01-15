@@ -6,6 +6,28 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use pb::c2;
 
+/// Context containing task-specific information needed for C2 operations
+#[derive(Clone, Debug)]
+pub struct TaskContext {
+    pub task_id: i64,
+    pub jwt: String,
+}
+
+impl TaskContext {
+    pub fn new(task_id: i64, jwt: String) -> Self {
+        Self { task_id, jwt }
+    }
+}
+
+impl From<TaskContext> for c2::TaskContext {
+    fn from(ctx: TaskContext) -> Self {
+        c2::TaskContext {
+            task_id: ctx.task_id,
+            jwt: ctx.jwt,
+        }
+    }
+}
+
 pub trait Agent: Send + Sync {
     // Interactivity
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String>;
@@ -24,12 +46,11 @@ pub trait Agent: Send + Sync {
     ) -> Result<c2::ReportTaskOutputResponse, String>;
     fn start_reverse_shell(
         &self,
-        task_id: i64,
-        jwt: String,
+        task_context: TaskContext,
         cmd: Option<String>,
     ) -> Result<(), String>;
-    fn create_portal(&self, task_id: i64, jwt: String) -> Result<(), String>;
-    fn start_repl_reverse_shell(&self, task_id: i64, jwt: String) -> Result<(), String>;
+    fn create_portal(&self, task_context: TaskContext) -> Result<(), String>;
+    fn start_repl_reverse_shell(&self, task_context: TaskContext) -> Result<(), String>;
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String>;
 
     // Agent Configuration

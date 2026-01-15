@@ -1,12 +1,11 @@
 use alloc::string::String;
 use alloc::sync::Arc;
-use eldritch_agent::Agent;
+use eldritch_agent::{Agent, TaskContext};
 use pb::{c2, eldritch};
 
 pub fn user_password(
     agent: Arc<dyn Agent>,
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     username: String,
     password: String,
 ) -> Result<(), String> {
@@ -16,9 +15,8 @@ pub fn user_password(
         kind: 1, // KIND_PASSWORD
     };
     let req = c2::ReportCredentialRequest {
-        task_id,
+        context: Some(task_context.into()),
         credential: Some(cred),
-        jwt,
     };
     agent.report_credential(req).map(|_| ())
 }

@@ -4,8 +4,9 @@ use std::thread;
 use std::time::SystemTime;
 
 use eldritch_libagent::agent::Agent;
+use eldritch_agent::TaskContext;
 use eldritchv2::{Interpreter, Printer, Span, assets::std::EmbeddedAssets, conversion::ToValue};
-use pb::c2::{ReportTaskOutputRequest, Task, TaskError, TaskOutput};
+use pb::c2::{self, ReportTaskOutputRequest, Task, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
 
@@ -167,12 +168,11 @@ fn execute_task(
     let mut interp = setup_interpreter(task_id, jwt.clone(), &tome, agent.clone(), printer.clone());
 
     // Report Start
-    report_start(task_id, jwt.clone(), &agent);
+    report_start(TaskContext::new(task_id, jwt.clone()), &agent);
 
     // Spawn output consumer task
     let consumer_join_handle = spawn_output_consumer(
-        task_id,
-        jwt.clone(),
+        TaskContext::new(task_id, jwt.clone()),
         agent.clone(),
         runtime_handle.clone(),
         rx,
@@ -198,9 +198,9 @@ fn execute_task(
 
     // Handle result
     match result {
-        Ok(exec_result) => report_result(task_id, jwt.clone(), exec_result, &agent),
+        Ok(exec_result) => report_result(TaskContext::new(task_id, jwt.clone()), exec_result, &agent),
         Err(e) => {
-            report_panic(task_id, jwt, &agent, format!("panic: {e:?}"));
+            report_panic(TaskContext::new(task_id, jwt), &agent, format!("panic: {e:?}"));
         }
     }
 }
@@ -233,7 +233,8 @@ fn setup_interpreter(
     interp
 }
 
-fn report_start(task_id: i64, jwt: String, agent: &Arc<dyn Agent>) {
+fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
+    let task_id = task_context.task_id;
     #[cfg(debug_assertions)]
     log::info!("task={task_id} Started execution");
 
@@ -245,7 +246,7 @@ fn report_start(task_id: i64, jwt: String, agent: &Arc<dyn Agent>) {
             exec_started_at: Some(Timestamp::from(SystemTime::now())),
             exec_finished_at: None,
         }),
-        jwt,
+        context: Some(task_context.into()),
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -256,16 +257,15 @@ fn report_start(task_id: i64, jwt: String, agent: &Arc<dyn Agent>) {
 }
 
 fn spawn_output_consumer(
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
     mut rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
         #[cfg(debug_assertions)]
-        log::info!("task={task_id} Started output stream");
-        let localjwt = jwt;
+        log::info!("task={} Started output stream", task_context.task_id);
+        let task_id = task_context.task_id;
         while let Some(msg) = rx.recv().await {
             match agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
@@ -275,7 +275,7 @@ fn spawn_output_consumer(
                     exec_started_at: None,
                     exec_finished_at: None,
                 }),
-                jwt: localjwt.clone(),
+                context: Some(task_context.clone().into()),
             }) {
                 Ok(_) => {}
                 Err(_e) => {
@@ -287,7 +287,8 @@ fn spawn_output_consumer(
     })
 }
 
-fn report_panic(task_id: i64, jwt: String, agent: &Arc<dyn Agent>, err: String) {
+fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) {
+    let task_id = task_context.task_id;
     match agent.report_task_output(ReportTaskOutputRequest {
         output: Some(TaskOutput {
             id: task_id,
@@ -296,7 +297,7 @@ fn report_panic(task_id: i64, jwt: String, agent: &Arc<dyn Agent>, err: String) 
             exec_started_at: None,
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
-        jwt,
+        context: Some(task_context.into()),
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -307,11 +308,11 @@ fn report_panic(task_id: i64, jwt: String, agent: &Arc<dyn Agent>, err: String) 
 }
 
 fn report_result(
-    task_id: i64,
-    jwt: String,
+    task_context: TaskContext,
     result: Result<eldritch_core::Value, String>,
     agent: &Arc<dyn Agent>,
 ) {
+    let task_id = task_context.task_id;
     match result {
         Ok(v) => {
             #[cfg(debug_assertions)]
@@ -325,7 +326,7 @@ fn report_result(
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
-                jwt,
+                context: Some(task_context.into()),
             });
         }
         Err(e) => {
@@ -340,7 +341,7 @@ fn report_result(
                     exec_started_at: None,
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
-                jwt,
+                context: Some(task_context.into()),
             }) {
                 Ok(_) => {}
                 Err(_e) => {

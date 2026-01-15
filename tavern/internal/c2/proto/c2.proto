@@ -91,6 +91,12 @@ message TaskOutput {
     google.protobuf.Timestamp exec_finished_at = 5;
 }
 
+// TaskContext contains task-specific information needed for C2 operations.
+message TaskContext {
+    int64 task_id = 1;
+    string jwt = 2;
+}
+
 
 /*
  * RPC Messages
@@ -104,36 +110,33 @@ message ClaimTasksResponse {
 
 message FetchAssetRequest {
     string name = 1;
-    string jwt = 2;
+    TaskContext context = 2;
 }
 message FetchAssetResponse {
     bytes chunk = 1;
 }
 
 message ReportCredentialRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     eldritch.Credential credential = 2;
-    string jwt = 3;
 }
 message ReportCredentialResponse {}
 
 message ReportFileRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     eldritch.File chunk = 2;
-    string jwt = 3;
 }
 message ReportFileResponse {}
 
 message ReportProcessListRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     eldritch.ProcessList list = 2;
-    string jwt = 3;
 }
 message ReportProcessListResponse {}
 
 message ReportTaskOutputRequest {
     TaskOutput output = 1;
-    string jwt = 3;
+    TaskContext context = 2;
 }
 
 message ReportTaskOutputResponse {}
@@ -147,7 +150,7 @@ enum ReverseShellMessageKind {
 message ReverseShellRequest{
     ReverseShellMessageKind kind = 1;
     bytes data = 2;
-    int64 task_id = 3;
+    TaskContext context = 3;
 }
 message ReverseShellResponse{
     ReverseShellMessageKind kind = 1;
@@ -155,7 +158,7 @@ message ReverseShellResponse{
 }
 
 message CreatePortalRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     portal.Mote mote = 2;
 }
 message CreatePortalResponse {

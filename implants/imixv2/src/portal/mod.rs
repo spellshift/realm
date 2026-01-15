@@ -11,5 +11,5 @@ pub async fn run_create_portal<T: Transport + Send + Sync + 'static>(
     jwt: String,
     transport: T,
 ) -> Result<()> {
-    run::run(task_id, transport).await
+    run::run(task_id, jwt, transport).await
 }

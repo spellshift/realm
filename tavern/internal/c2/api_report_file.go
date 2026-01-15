@@ -41,10 +41,10 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			continue
 		}
 		if taskID == 0 {
-			taskID = req.GetTaskId()
+			taskID = req.GetContext().GetTaskId()
 		}
 		if jwtToken == "" {
-			jwtToken = req.GetJwt()
+			jwtToken = req.GetContext().GetJwt()
 		}
 		if path == "" && req.Chunk.Metadata != nil {
 			path = req.Chunk.Metadata.GetPath()

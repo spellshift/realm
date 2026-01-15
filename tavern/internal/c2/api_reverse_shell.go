@@ -33,29 +33,30 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	}
 
 	// Load Relevant Ents
-	task, err := srv.graph.Task.Get(ctx, int(registerMsg.TaskId))
+	taskID := registerMsg.GetContext().GetTaskId()
+	task, err := srv.graph.Task.Get(ctx, int(taskID))
 	if err != nil {
 		if ent.IsNotFound(err) {
-			slog.ErrorContext(ctx, "reverse shell failed: associated task does not exist", "task_id", registerMsg.TaskId, "error", err)
-			return status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", registerMsg.TaskId)
+			slog.ErrorContext(ctx, "reverse shell failed: associated task does not exist", "task_id", taskID, "error", err)
+			return status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", taskID)
 		}
-		slog.ErrorContext(ctx, "reverse shell failed: could not load associated task", "task_id", registerMsg.TaskId, "error", err)
-		return status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", registerMsg.TaskId, err)
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated task", "task_id", taskID, "error", err)
+		return status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", taskID, err)
 	}
 	beacon, err := task.Beacon(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "reverse shell failed: could not load associated beacon", "task_id", registerMsg.TaskId, "error", err)
-		return status.Errorf(codes.Internal, "failed to load beacon ent (task_id=%d): %v", registerMsg.TaskId, err)
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated beacon", "task_id", taskID, "error", err)
+		return status.Errorf(codes.Internal, "failed to load beacon ent (task_id=%d): %v", taskID, err)
 	}
 	quest, err := task.Quest(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "reverse shell failed: could not load associated quest", "task_id", registerMsg.TaskId, "error", err)
-		return status.Errorf(codes.Internal, "failed to load quest ent (task_id=%d): %v", registerMsg.TaskId, err)
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated quest", "task_id", taskID, "error", err)
+		return status.Errorf(codes.Internal, "failed to load quest ent (task_id=%d): %v", taskID, err)
 	}
 	creator, err := quest.Creator(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "reverse shell failed: could not load associated quest creator", "task_id", registerMsg.TaskId, "error", err)
-		return status.Errorf(codes.Internal, "failed to load quest creator (task_id=%d): %v", registerMsg.TaskId, err)
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated quest creator", "task_id", taskID, "error", err)
+		return status.Errorf(codes.Internal, "failed to load quest creator (task_id=%d): %v", taskID, err)
 	}
 
 	// Create the Shell Entity
@@ -66,7 +67,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 		SetData([]byte{}).
 		Save(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "reverse shell failed: could not create shell entity", "task_id", registerMsg.TaskId, "error", err)
+		slog.ErrorContext(ctx, "reverse shell failed: could not create shell entity", "task_id", taskID, "error", err)
 		return status.Errorf(codes.Internal, "failed to create shell: %v", err)
 	}
 	shellID := shell.ID
@@ -74,7 +75,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	// Log Shell Session
 	slog.InfoContext(ctx, "started gRPC reverse shell",
 		"shell_id", shellID,
-		"task_id", registerMsg.TaskId,
+		"task_id", taskID,
 		"creator_id", creator.ID,
 	)
 	defer func(start time.Time) {
@@ -83,7 +84,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 			"ended_at", time.Now().String(),
 			"duration", time.Since(start).String(),
 			"shell_id", shellID,
-			"task_id", registerMsg.TaskId,
+			"task_id", taskID,
 			"creator_id", creator.ID,
 		)
 	}(time.Now())

@@ -112,18 +112,17 @@ impl Agent for AgentFake {
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         Ok(c2::ReportTaskOutputResponse::default())
     }
-    fn create_portal(&self, _task_id: i64, _jwt: String) -> Result<(), String> {
+    fn create_portal(&self, _task_context: eldritch_agent::TaskContext) -> Result<(), String> {
         Ok(())
     }
     fn start_reverse_shell(
         &self,
-        _task_id: i64,
-        _jwt: String,
+        _task_context: eldritch_agent::TaskContext,
         _cmd: Option<String>,
     ) -> Result<(), String> {
         Ok(())
     }
-    fn start_repl_reverse_shell(&self, _task_id: i64, _jwt: String) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _task_context: eldritch_agent::TaskContext) -> Result<(), String> {
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {

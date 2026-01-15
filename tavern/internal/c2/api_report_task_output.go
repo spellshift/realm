@@ -16,7 +16,7 @@ func (srv *Server) ReportTaskOutput(ctx context.Context, req *c2pb.ReportTaskOut
 	if req.Output == nil || req.Output.Id == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
-	err := srv.ValidateJWT(req.Jwt)
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
 	if err != nil {
 		return nil, err
 	}

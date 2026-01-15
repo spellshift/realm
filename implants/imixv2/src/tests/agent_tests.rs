@@ -38,8 +38,7 @@ async fn test_start_reverse_shell() {
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
         agent_clone.start_reverse_shell(
-            12345,
-            "some jwt".to_string(),
+            eldritch_agent::TaskContext::new(12345, "some jwt".to_string()),
             Some("echo test".to_string()),
         )
     })

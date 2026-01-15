@@ -11,20 +11,20 @@ import (
 
 func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredentialRequest) (*c2pb.ReportCredentialResponse, error) {
 	// Validate Arguments
-	if req.TaskId == 0 {
+	if req.GetContext().GetTaskId() == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
 	if req.Credential == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide credential")
 	}
-	err := srv.ValidateJWT(req.Jwt)
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
 	if err != nil {
 		return nil, err
 	}
 
 
 	// Load Task
-	task, err := srv.graph.Task.Get(ctx, int(req.TaskId))
+	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
 	if ent.IsNotFound(err) {
 		return nil, status.Errorf(codes.NotFound, "no task found")
 	}

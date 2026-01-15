@@ -11,6 +11,9 @@ use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
 
+// Re-export TaskContext from eldritch_agent
+pub use eldritch_agent::TaskContext;
+
 pub mod claim_tasks_impl;
 pub mod fetch_asset_impl;
 pub mod get_callback_interval_impl;
@@ -31,24 +34,22 @@ pub mod terminate_impl;
 #[eldritch_library_impl(AgentLibrary)]
 pub struct StdAgentLibrary {
     pub agent: Arc<dyn Agent>,
-    pub task_id: i64,
-    pub jwt: String,
+    pub task_context: TaskContext,
 }
 
 impl core::fmt::Debug for StdAgentLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAgentLibrary")
-            .field("task_id", &self.task_id)
+            .field("task_context", &self.task_context)
             .finish()
     }
 }
 
 impl StdAgentLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64, jwt: String) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, task_context: TaskContext) -> Self {
         Self {
             agent,
-            task_id,
-            jwt,
+            task_context,
         }
     }
 }
@@ -68,27 +69,25 @@ impl AgentLibrary for StdAgentLibrary {
 
     // Interactivity
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String> {
-        fetch_asset_impl::fetch_asset(self.agent.clone(), self.jwt.clone(), name)
+        fetch_asset_impl::fetch_asset(self.agent.clone(), self.task_context.clone(), name)
     }
 
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String> {
         report_credential_impl::report_credential(
             self.agent.clone(),
-            self.task_id,
-            self.jwt.clone(),
+            self.task_context.clone(),
             credential,
         )
     }
 
     fn report_file(&self, file: FileWrapper) -> Result<(), String> {
-        report_file_impl::report_file(self.agent.clone(), self.task_id, self.jwt.clone(), file)
+        report_file_impl::report_file(self.agent.clone(), self.task_context.clone(), file)
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {
         report_process_list_impl::report_process_list(
             self.agent.clone(),
-            self.task_id,
-            self.jwt.clone(),
+            self.task_context.clone(),
             list,
         )
     }
@@ -96,8 +95,7 @@ impl AgentLibrary for StdAgentLibrary {
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String> {
         report_task_output_impl::report_task_output(
             self.agent.clone(),
-            self.task_id,
-            self.jwt.clone(),
+            self.task_context.clone(),
             output,
             error,
         )

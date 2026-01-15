@@ -1,6 +1,6 @@
 use super::{AsyncDispatcher, Transport};
 use anyhow::Result;
-use pb::{c2::ReportProcessListRequest, config::Config, eldritch::ProcessList};
+use pb::{c2::{ReportProcessListRequest, TaskContext}, config::Config, eldritch::ProcessList};
 
 /*
  * ReportProcessListMessage reports a process list snapshot captured by this tome's evaluation.
@@ -17,9 +17,11 @@ impl AsyncDispatcher for ReportProcessListMessage {
     async fn dispatch(self, transport: &mut impl Transport, _cfg: Config) -> Result<()> {
         transport
             .report_process_list(ReportProcessListRequest {
-                task_id: self.id,
+                context: Some(TaskContext {
+                    task_id: self.id,
+                    jwt: "no_jwt".to_string(),
+                }),
                 list: Some(self.list),
-                jwt: "no_jwt".to_string(),
             })
             .await?;
         Ok(())

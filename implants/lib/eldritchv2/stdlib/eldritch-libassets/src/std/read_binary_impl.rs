@@ -27,7 +27,7 @@ pub mod tests {
     use alloc::string::String;
     use alloc::string::ToString;
     use alloc::vec::Vec;
-    use eldritch_agent::Agent;
+    use eldritch_agent::{Agent, TaskContext};
     use pb::c2;
     use std::collections::BTreeSet;
     use std::sync::{Arc, Mutex};
@@ -102,13 +102,12 @@ pub mod tests {
         }
         fn start_reverse_shell(
             &self,
-            _task_id: i64,
-            _jwt: String,
+            _task_context: TaskContext,
             _cmd: Option<String>,
         ) -> Result<(), String> {
             Ok(())
         }
-        fn start_repl_reverse_shell(&self, _task_id: i64, _jwt: String) -> Result<(), String> {
+        fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
             Ok(())
         }
         fn claim_tasks(
@@ -162,7 +161,7 @@ pub mod tests {
             Ok(())
         }
 
-        fn create_portal(&self, _task_id: i64, _jwt: String) -> std::result::Result<(), String> {
+        fn create_portal(&self, _task_context: TaskContext) -> std::result::Result<(), String> {
             Ok(())
         }
     }
@@ -196,7 +195,7 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            String::new(),
+            TaskContext::new(0, String::new()),
             vec!["remote_file.txt".to_string()],
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
@@ -211,7 +210,7 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            String::new(),
+            TaskContext::new(0, String::new()),
             vec!["remote_file.txt".to_string()],
         )))?;
         let result = lib.read_binary("remote_file.txt".to_string());

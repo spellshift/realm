@@ -140,7 +140,7 @@ func BenchmarkPortalThroughput(b *testing.B) {
 
 	// Send initial request with TaskID
 	err = agentStream.Send(&c2pb.CreatePortalRequest{
-		TaskId: int64(taskEnt.ID),
+		Context: &c2pb.TaskContext{TaskId: int64(taskEnt.ID)},
 	})
 	require.NoError(b, err)
 

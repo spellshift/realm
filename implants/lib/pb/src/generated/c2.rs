@@ -184,6 +184,15 @@ pub struct TaskOutput {
     #[prost(message, optional, tag = "5")]
     pub exec_finished_at: ::core::option::Option<::prost_types::Timestamp>,
 }
+/// TaskContext contains task-specific information needed for C2 operations.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TaskContext {
+    #[prost(int64, tag = "1")]
+    pub task_id: i64,
+    #[prost(string, tag = "2")]
+    pub jwt: ::prost::alloc::string::String,
+}
 ///
 /// RPC Messages
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -203,8 +212,8 @@ pub struct ClaimTasksResponse {
 pub struct FetchAssetRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub jwt: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub context: ::core::option::Option<TaskContext>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -215,12 +224,10 @@ pub struct FetchAssetResponse {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportCredentialRequest {
-    #[prost(int64, tag = "1")]
-    pub task_id: i64,
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
     #[prost(message, optional, tag = "2")]
     pub credential: ::core::option::Option<crate::eldritch::Credential>,
-    #[prost(string, tag = "3")]
-    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -228,12 +235,10 @@ pub struct ReportCredentialResponse {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportFileRequest {
-    #[prost(int64, tag = "1")]
-    pub task_id: i64,
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
     #[prost(message, optional, tag = "2")]
     pub chunk: ::core::option::Option<crate::eldritch::File>,
-    #[prost(string, tag = "3")]
-    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -241,12 +246,10 @@ pub struct ReportFileResponse {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportProcessListRequest {
-    #[prost(int64, tag = "1")]
-    pub task_id: i64,
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
     #[prost(message, optional, tag = "2")]
     pub list: ::core::option::Option<crate::eldritch::ProcessList>,
-    #[prost(string, tag = "3")]
-    pub jwt: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -256,8 +259,8 @@ pub struct ReportProcessListResponse {}
 pub struct ReportTaskOutputRequest {
     #[prost(message, optional, tag = "1")]
     pub output: ::core::option::Option<TaskOutput>,
-    #[prost(string, tag = "3")]
-    pub jwt: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub context: ::core::option::Option<TaskContext>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -269,8 +272,8 @@ pub struct ReverseShellRequest {
     pub kind: i32,
     #[prost(bytes = "vec", tag = "2")]
     pub data: ::prost::alloc::vec::Vec<u8>,
-    #[prost(int64, tag = "3")]
-    pub task_id: i64,
+    #[prost(message, optional, tag = "3")]
+    pub context: ::core::option::Option<TaskContext>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -283,8 +286,8 @@ pub struct ReverseShellResponse {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreatePortalRequest {
-    #[prost(int64, tag = "1")]
-    pub task_id: i64,
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
     #[prost(message, optional, tag = "2")]
     pub mote: ::core::option::Option<super::portal::Mote>,
 }

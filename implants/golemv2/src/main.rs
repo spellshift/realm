@@ -2,6 +2,7 @@
 extern crate alloc;
 
 use clap::{Arg, ArgAction, Command};
+use eldritch_agent::TaskContext;
 use eldritch_libagent::fake::AgentFake;
 use eldritchv2::assets::{
     AssetsLibrary,
@@ -41,12 +42,13 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     // Register the libraries that we need. Basically the same as interp.with_task_context but
     // with our custom assets library
     let agent = Arc::new(AgentFake {});
-    let agent_lib = eldritch_libagent::std::StdAgentLibrary::new(agent.clone(), 0, String::new());
+    let task_context = TaskContext::new(0, String::new());
+    let agent_lib = eldritch_libagent::std::StdAgentLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(agent_lib);
     let report_lib =
-        eldritch_libreport::std::StdReportLibrary::new(agent.clone(), 0, String::new());
+        eldritch_libreport::std::StdReportLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(report_lib);
-    let pivot_lib = eldritch_libpivot::std::StdPivotLibrary::new(agent.clone(), 0, String::new());
+    let pivot_lib = eldritch_libpivot::std::StdPivotLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(pivot_lib);
     interp.register_lib(assetlib);
     interp
