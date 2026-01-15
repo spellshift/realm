@@ -97,6 +97,22 @@ pub fn expand_eldritch_library(
         }
     });
 
+    let has_get_attr = trait_def.items.iter().any(|item| {
+        if let TraitItem::Method(m) = item {
+            m.sig.ident == "_eldritch_get_attr"
+        } else {
+            false
+        }
+    });
+
+    if !has_get_attr {
+        trait_def.items.push(parse_quote! {
+            fn _eldritch_get_attr(&self, _name: &str) -> Option<eldritch_core::Value> {
+                None
+            }
+        });
+    }
+
     trait_def.items.push(parse_quote! {
         fn _eldritch_call_method(
             &self,
@@ -157,6 +173,10 @@ pub fn expand_eldritch_library_impl(
                 kwargs: &alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>,
             ) -> Result<eldritch_core::Value, alloc::string::String> {
                 <Self as #trait_ident>::_eldritch_call_method(self, interp, name, args, kwargs)
+            }
+
+            fn get_attr(&self, name: &str) -> Option<eldritch_core::Value> {
+                <Self as #trait_ident>::_eldritch_get_attr(self, name)
             }
         }
     })

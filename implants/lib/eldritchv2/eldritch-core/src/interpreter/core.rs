@@ -1,4 +1,4 @@
-use super::super::ast::{BuiltinFn, Environment, Value};
+use super::super::ast::{Argument, BuiltinFn, Environment, Expr, ExprKind, Value};
 use super::super::lexer::Lexer;
 use super::super::parser::Parser;
 use super::super::token::{Span, TokenKind};
@@ -298,6 +298,39 @@ impl Interpreter {
 
     pub fn define_variable(&mut self, name: &str, value: Value) {
         self.env.write().values.insert(name.to_string(), value);
+    }
+
+    pub fn call_value(
+        &mut self,
+        func: &Value,
+        args: &[Value],
+        kwargs: &BTreeMap<String, Value>,
+    ) -> Result<Value, String> {
+        // We use Argument::Positional for everything for now to simplify
+        let mut expr_args = Vec::new();
+        for arg in args {
+            expr_args.push(Argument::Positional(Expr {
+                kind: ExprKind::Literal(arg.clone()),
+                span: Span::new(0, 0, 0),
+            }));
+        }
+        for (name, val) in kwargs {
+            expr_args.push(Argument::Keyword(
+                name.clone(),
+                Expr {
+                    kind: ExprKind::Literal(val.clone()),
+                    span: Span::new(0, 0, 0),
+                },
+            ));
+        }
+
+        let callee = Expr {
+            kind: ExprKind::Literal(func.clone()),
+            span: Span::new(0, 0, 0),
+        };
+
+        eval::functions::call_function(self, &callee, &expr_args, Span::new(0, 0, 0))
+            .map_err(|e| e.to_string())
     }
 
     pub fn lookup_variable(&self, name: &str, span: Span) -> Result<Value, EldritchError> {

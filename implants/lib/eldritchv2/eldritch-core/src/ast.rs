@@ -66,6 +66,9 @@ pub trait ForeignValue: fmt::Debug + Send + Sync {
         args: &[Value],
         kwargs: &BTreeMap<String, Value>,
     ) -> Result<Value, String>;
+    fn get_attr(&self, _name: &str) -> Option<Value> {
+        None
+    }
 }
 
 #[derive(Clone)]

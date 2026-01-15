@@ -18,6 +18,7 @@ pub use eldritch_libregex as regex;
 pub use eldritch_libreport as report;
 pub use eldritch_libsys as sys;
 pub use eldritch_libtime as time;
+pub use eldritch_libevents as events;
 
 // Re-export core types
 pub use eldritch_core::{
@@ -61,6 +62,8 @@ use crate::report::std::StdReportLibrary;
 use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
+#[cfg(feature = "stdlib")]
+use crate::events::std::StdEventsLibrary;
 
 #[cfg(feature = "fake_bindings")]
 use crate::agent::fake::AgentLibraryFake;
@@ -86,6 +89,8 @@ use crate::report::fake::ReportLibraryFake;
 use crate::sys::fake::SysLibraryFake;
 #[cfg(feature = "fake_bindings")]
 use crate::time::fake::TimeLibraryFake;
+#[cfg(feature = "fake_bindings")]
+use crate::events::fake::EventsLibraryFake;
 
 pub struct Interpreter {
     inner: CoreInterpreter,
@@ -122,19 +127,24 @@ impl Interpreter {
             self.inner.register_lib(StdRegexLibrary);
             self.inner.register_lib(StdSysLibrary);
             self.inner.register_lib(StdTimeLibrary);
+            self.inner.register_lib(StdEventsLibrary::new());
         }
 
         #[cfg(feature = "fake_bindings")]
         {
-            self.inner.register_lib(CryptoLibraryFake);
-            self.inner.register_lib(FileLibraryFake::default());
-            self.inner.register_lib(HttpLibraryFake);
-            self.inner.register_lib(PivotLibraryFake);
-            self.inner.register_lib(ProcessLibraryFake);
-            self.inner.register_lib(RandomLibraryFake);
-            self.inner.register_lib(RegexLibraryFake);
-            self.inner.register_lib(SysLibraryFake);
-            self.inner.register_lib(TimeLibraryFake);
+            #[cfg(not(feature = "stdlib"))]
+            {
+                self.inner.register_lib(CryptoLibraryFake);
+                self.inner.register_lib(FileLibraryFake::default());
+                self.inner.register_lib(HttpLibraryFake);
+                self.inner.register_lib(PivotLibraryFake);
+                self.inner.register_lib(ProcessLibraryFake);
+                self.inner.register_lib(RandomLibraryFake);
+                self.inner.register_lib(RegexLibraryFake);
+                self.inner.register_lib(SysLibraryFake);
+                self.inner.register_lib(TimeLibraryFake);
+                self.inner.register_lib(EventsLibraryFake);
+            }
         }
 
         self
@@ -237,3 +247,6 @@ mod bindings_test;
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod input_params_test;
+
+#[cfg(all(test, feature = "stdlib"))]
+mod events_test;

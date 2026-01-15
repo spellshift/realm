@@ -273,7 +273,10 @@ pub(crate) fn evaluate_getattr(
     }
 
     // Support Foreign Objects
-    if let Value::Foreign(_) = &obj_val {
+    if let Value::Foreign(f) = &obj_val {
+        if let Some(val) = f.get_attr(&name) {
+            return Ok(val);
+        }
         // Return a bound method where the receiver is the foreign object
         return Ok(Value::BoundMethod(Box::new(obj_val), name));
     }
