@@ -1,6 +1,6 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
-use eldritch_libagent::agent::Agent;
+use eldritchv2::agent::agent::Agent;
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
@@ -37,7 +37,13 @@ async fn test_start_reverse_shell() {
     // Execution must happen in a separate thread to allow block_on
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
-        agent_clone.start_reverse_shell(12345, Some("echo test".to_string()))
+        agent_clone.start_reverse_shell(
+            pb::c2::TaskContext {
+                task_id: 12345,
+                jwt: "some jwt".to_string(),
+            },
+            Some("echo test".to_string()),
+        )
     })
     .join()
     .unwrap();

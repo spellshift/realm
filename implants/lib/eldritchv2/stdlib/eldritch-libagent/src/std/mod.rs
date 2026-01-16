@@ -5,6 +5,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
+use pb::c2::TaskContext;
 
 use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 
@@ -31,20 +32,23 @@ pub mod terminate_impl;
 #[eldritch_library_impl(AgentLibrary)]
 pub struct StdAgentLibrary {
     pub agent: Arc<dyn Agent>,
-    pub task_id: i64,
+    pub task_context: TaskContext,
 }
 
 impl core::fmt::Debug for StdAgentLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAgentLibrary")
-            .field("task_id", &self.task_id)
+            .field("task_context", &self.task_context)
             .finish()
     }
 }
 
 impl StdAgentLibrary {
-    pub fn new(agent: Arc<dyn Agent>, task_id: i64) -> Self {
-        Self { agent, task_id }
+    pub fn new(agent: Arc<dyn Agent>, task_context: TaskContext) -> Self {
+        Self {
+            agent,
+            task_context,
+        }
     }
 }
 
@@ -63,23 +67,36 @@ impl AgentLibrary for StdAgentLibrary {
 
     // Interactivity
     fn fetch_asset(&self, name: String) -> Result<Vec<u8>, String> {
-        fetch_asset_impl::fetch_asset(self.agent.clone(), name)
+        fetch_asset_impl::fetch_asset(self.agent.clone(), self.task_context.clone(), name)
     }
 
     fn report_credential(&self, credential: CredentialWrapper) -> Result<(), String> {
-        report_credential_impl::report_credential(self.agent.clone(), self.task_id, credential)
+        report_credential_impl::report_credential(
+            self.agent.clone(),
+            self.task_context.clone(),
+            credential,
+        )
     }
 
     fn report_file(&self, file: FileWrapper) -> Result<(), String> {
-        report_file_impl::report_file(self.agent.clone(), self.task_id, file)
+        report_file_impl::report_file(self.agent.clone(), self.task_context.clone(), file)
     }
 
     fn report_process_list(&self, list: ProcessListWrapper) -> Result<(), String> {
-        report_process_list_impl::report_process_list(self.agent.clone(), self.task_id, list)
+        report_process_list_impl::report_process_list(
+            self.agent.clone(),
+            self.task_context.clone(),
+            list,
+        )
     }
 
     fn report_task_output(&self, output: String, error: Option<String>) -> Result<(), String> {
-        report_task_output_impl::report_task_output(self.agent.clone(), self.task_id, output, error)
+        report_task_output_impl::report_task_output(
+            self.agent.clone(),
+            self.task_context.clone(),
+            output,
+            error,
+        )
     }
 
     fn claim_tasks(&self) -> Result<Vec<TaskWrapper>, String> {

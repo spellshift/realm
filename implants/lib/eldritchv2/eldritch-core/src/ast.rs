@@ -612,20 +612,20 @@ pub enum ExprKind {
     FString(Vec<FStringSegment>),
     ListComp {
         body: Box<Expr>,
-        var: String,
+        vars: Vec<String>,
         iterable: Box<Expr>,
         cond: Option<Box<Expr>>,
     },
     DictComp {
         key: Box<Expr>,
         value: Box<Expr>,
-        var: String,
+        vars: Vec<String>,
         iterable: Box<Expr>,
         cond: Option<Box<Expr>>,
     },
     SetComp {
         body: Box<Expr>,
-        var: String,
+        vars: Vec<String>,
         iterable: Box<Expr>,
         cond: Option<Box<Expr>>,
     },

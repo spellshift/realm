@@ -17,13 +17,21 @@ mod tests {
     use super::*;
     use crate::std::read_binary_impl::tests::{MockAgent, TestAsset};
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
+    use pb::c2::TaskContext;
     use std::sync::Arc;
 
     #[test]
     fn test_copy_success() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
+            Vec::new(),
+        )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("copied_main.eldritch");
@@ -39,7 +47,14 @@ mod tests {
     fn test_copy_fail_read() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
+            Vec::new(),
+        )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let dest_path = temp_dir.path().join("should_not_exist");
@@ -55,7 +70,14 @@ mod tests {
     fn test_copy_fail_write() -> anyhow::Result<()> {
         let agent = Arc::new(MockAgent::new());
         let mut lib = StdAssetsLibrary::new();
-        lib.add(Arc::new(AgentAssets::new(agent, Vec::new())))?;
+        lib.add(Arc::new(AgentAssets::new(
+            agent,
+            TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            },
+            Vec::new(),
+        )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
         let temp_dir = tempfile::tempdir().unwrap();
         let _dest_str = temp_dir.path().to_str().unwrap().to_string();

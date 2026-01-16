@@ -3,7 +3,7 @@ use eldritch::runtime::{
     messages::{AsyncDispatcher, AsyncMessage, ReportErrorMessage, SyncDispatcher},
     Message,
 };
-use pb::c2::{ReportTaskOutputRequest, TaskError, TaskOutput};
+use pb::c2::{ReportTaskOutputRequest, TaskContext, TaskError, TaskOutput};
 use transport::Transport;
 
 use crate::run::Config;
@@ -128,6 +128,10 @@ impl TaskHandle {
                                 // still report errors.
                                 match t
                                     .report_task_output(ReportTaskOutputRequest {
+                                        context: Some(TaskContext {
+                                            task_id: id,
+                                            jwt: "no_jwt".to_string(),
+                                        }),
                                         output: Some(TaskOutput {
                                             id,
                                             output: String::new(),

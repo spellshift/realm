@@ -25,10 +25,11 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		return status.Errorf(codes.Internal, "failed to receive registration message: %v", err)
 	}
 
-	taskID := int(registerMsg.GetTaskId())
+	taskID := int(registerMsg.GetContext().GetTaskId())
 	if taskID <= 0 {
 		return status.Errorf(codes.InvalidArgument, "invalid task ID: %d", taskID)
 	}
+
 
 	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID)
 	if err != nil {

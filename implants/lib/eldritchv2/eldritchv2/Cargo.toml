@@ -4,8 +4,10 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-eldritch-core = { workspace = true, default-features = false }
 spin = "0.10"
+
+eldritch-core = { workspace = true, default-features = false }
+eldritch-macros = { workspace = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }
@@ -21,25 +23,38 @@ eldritch-libreport = { workspace = true, default-features = false }
 eldritch-libsys = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
 eldritch-libevents = { workspace = true, default-features = false }
+pb = { workspace = true }
+eldritch-repl = { workspace = true, default-features = false }
 
 [features]
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = [
-    "eldritch-libagent/fake_bindings",
-    "eldritch-libassets/fake_bindings",
-    "eldritch-libcrypto/fake_bindings",
-    "eldritch-libfile/fake_bindings",
-    "eldritch-libhttp/fake_bindings",
-    "eldritch-libpivot/fake_bindings",
-    "eldritch-libprocess/fake_bindings",
-    "eldritch-librandom/fake_bindings",
-    "eldritch-libregex/fake_bindings",
-    "eldritch-libreport/fake_bindings",
-    "eldritch-libsys/fake_bindings",
-    "eldritch-libtime/fake_bindings",
-    "eldritch-libevents/fake_bindings",
+    "fake_agent",
+    "fake_assets",
+    "fake_crypto",
+    "fake_file",
+    "fake_http",
+    "fake_pivot",
+    "fake_process",
+    "fake_random",
+    "fake_regex",
+    "fake_report",
+    "fake_sys",
+    "fake_time",
 ]
+fake_agent = ["eldritch-libagent/fake_bindings"]
+fake_assets = ["eldritch-libassets/fake_bindings"]
+fake_crypto = ["eldritch-libcrypto/fake_bindings"]
+fake_file = ["eldritch-libfile/fake_bindings"]
+fake_http = ["eldritch-libhttp/fake_bindings"]
+fake_pivot = ["eldritch-libpivot/fake_bindings"]
+fake_process = ["eldritch-libprocess/fake_bindings"]
+fake_random = ["eldritch-librandom/fake_bindings"]
+fake_regex = ["eldritch-libregex/fake_bindings"]
+fake_report = ["eldritch-libreport/fake_bindings"]
+fake_sys = ["eldritch-libsys/fake_bindings"]
+fake_time = ["eldritch-libtime/fake_bindings"]
 stdlib = [
     "eldritch-libagent/stdlib",
     "eldritch-libassets/stdlib",

@@ -2,6 +2,8 @@ package c2_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"net"
 	"net/http/httptest"
 	"strconv"
@@ -62,10 +64,14 @@ func TestReverseShell_E2E(t *testing.T) {
 	grpcMux := stream.NewMux(pubOutput, subInput)
 	portalMux := mux.New(mux.WithInMemoryDriver())
 
+	// Generate test ED25519 key for JWT signing
+	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
 	go wsMux.Start(ctx)
 	go grpcMux.Start(ctx)
 
-	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux))
+	c2pb.RegisterC2Server(s, c2.New(graph, grpcMux, portalMux, testPubKey, testPrivKey))
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			t.Logf("Server exited with error: %v", err)
@@ -106,7 +112,7 @@ func TestReverseShell_E2E(t *testing.T) {
 
 	// Register gRPC stream with task ID
 	err = gRPCStream.Send(&c2pb.ReverseShellRequest{
-		TaskId: int64(task.ID),
+		Context: &c2pb.TaskContext{TaskId: int64(task.ID)},
 	})
 	require.NoError(t, err)
 

@@ -4,9 +4,8 @@ use crossterm::{
     style::Stylize,
     terminal::{self, ClearType},
 };
-use eldritch_core::Value;
-use eldritch_repl::{Input, Repl, ReplAction};
-use eldritchv2::Interpreter;
+use eldritchv2::repl::{Input, Repl, ReplAction};
+use eldritchv2::{Interpreter, Value};
 use std::io::{self, Write};
 use std::time::Duration;
 

@@ -4,11 +4,12 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_agent::Agent;
 use eldritch_core::Value;
+use pb::c2::TaskContext;
 use pb::{c2, eldritch};
 
 pub fn process_list(
     agent: Arc<dyn Agent>,
-    task_id: i64,
+    task_context: TaskContext,
     list: Vec<BTreeMap<String, Value>>,
 ) -> Result<(), String> {
     let mut processes = Vec::new();
@@ -61,7 +62,7 @@ pub fn process_list(
     }
 
     let req = c2::ReportProcessListRequest {
-        task_id,
+        context: Some(task_context),
         list: Some(eldritch::ProcessList { list: processes }),
     };
     agent.report_process_list(req).map(|_| ())

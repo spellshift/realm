@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pb::c2::{CreatePortalRequest, CreatePortalResponse};
+use pb::c2::{CreatePortalRequest, CreatePortalResponse, TaskContext};
 use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
 use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
@@ -18,7 +18,7 @@ struct StreamContext {
 }
 
 pub async fn run<T: Transport + Send + Sync + 'static>(
-    task_id: i64,
+    task_context: TaskContext,
     mut transport: T,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);
@@ -46,7 +46,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Send initial registration message
     if req_tx
         .send(CreatePortalRequest {
-            task_id,
+            context: Some(task_context.clone()),
             mote: None,
         })
         .await
@@ -83,7 +83,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                 match msg {
                     Some(mote) => {
                         let req = CreatePortalRequest {
-                            task_id,
+                            context: Some(task_context.clone()),
                             mote: Some(mote),
                         };
                         if req_tx.send(req).await.is_err() {
