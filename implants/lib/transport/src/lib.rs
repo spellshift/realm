@@ -280,8 +280,8 @@ mod tests {
     use super::*;
     use pb::c2::{AvailableTransports, Beacon};
 
-    // Helper to create a test config with a specific URI and transport type
-    fn create_test_config(uri: &str, transport_type: i32) -> Config {
+    // Helper to create a test config with a specific URI, transport type, and extra params
+    fn create_test_config(uri: &str, transport_type: i32, extra: &str) -> Config {
         Config {
             info: Some(Beacon {
                 available_transports: Some(AvailableTransports {
@@ -289,7 +289,7 @@ mod tests {
                         uri: uri.to_string(),
                         interval: 5,
                         r#type: transport_type,
-                        extra: "{}".to_string(),
+                        extra: extra.to_string(),
                     }],
                     active_index: 0,
                 }),
@@ -313,7 +313,7 @@ mod tests {
         ];
 
         for uri in inputs {
-            let config = create_test_config(uri, TransportType::TransportGrpc as i32);
+            let config = create_test_config(uri, TransportType::TransportGrpc as i32, "{}");
             let result = ActiveTransport::new(config);
 
             // 1. Assert strictly on the Variant type
@@ -332,7 +332,7 @@ mod tests {
         let inputs = vec!["http1://127.0.0.1:8080", "https1://127.0.0.1:8080"];
 
         for uri in inputs {
-            let config = create_test_config(uri, TransportType::TransportHttp1 as i32);
+            let config = create_test_config(uri, TransportType::TransportHttp1 as i32, "{}");
             let result = ActiveTransport::new(config);
 
             assert!(
@@ -346,21 +346,22 @@ mod tests {
     #[tokio::test]
     #[cfg(feature = "dns")]
     async fn test_routes_to_dns_transport() {
-        // DNS URIs should result in the Dns variant
+        // DNS uses URI for server address, extra field for domain and type
         let inputs = vec![
-            "dns://8.8.8.8:53?domain=example.com",
-            "dns://*?domain=example.com&type=txt",
-            "dns://1.1.1.1?domain=test.com&type=a",
+            ("8.8.8.8:53", r#"{"domain": "example.com"}"#),
+            ("1.1.1.1:53", r#"{"domain": "example.com", "type": "txt"}"#),
+            ("8.8.4.4:53", r#"{"domain": "test.com", "type": "a"}"#),
         ];
 
-        for uri in inputs {
-            let config = create_test_config(uri, TransportType::TransportDns as i32);
+        for (uri, extra) in inputs {
+            let config = create_test_config(uri, TransportType::TransportDns as i32, extra);
             let result = ActiveTransport::new(config);
 
             assert!(
                 matches!(result, Ok(ActiveTransport::Dns(_))),
-                "URI '{}' did not resolve to ActiveTransport::Dns",
-                uri
+                "URI '{}' with extra '{}' did not resolve to ActiveTransport::Dns",
+                uri,
+                extra
             );
         }
     }
@@ -371,7 +372,7 @@ mod tests {
         // If the feature is off, these should error out
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
         for uri in inputs {
-            let config = create_test_config(uri, TransportType::TransportGrpc as i32);
+            let config = create_test_config(uri, TransportType::TransportGrpc as i32, "{}");
             let result = ActiveTransport::new(config);
             assert!(
                 result.is_err(),
@@ -387,6 +388,7 @@ mod tests {
         let config = create_test_config(
             "ftp://example.com",
             TransportType::TransportUnspecified as i32,
+            "{}",
         );
         let result = ActiveTransport::new(config);
         assert!(result.is_err(), "Expected error for unknown transport type");
