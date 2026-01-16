@@ -39,10 +39,17 @@ impl Transport for GRPC {
         let callback = crate::transport::extract_uri_from_config(&config)?;
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+        let mut endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
         #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("doh");
+
+        if let Some(insecure) = extra_map.get("insecure") {
+            if insecure == "true" {
+                let tls = tonic::transport::ClientTlsConfig::new().danger_accept_invalid_certs(true);
+                endpoint = endpoint.tls_config(tls)?;
+            }
+        }
 
         #[cfg(feature = "doh")]
         let mut http = match doh {

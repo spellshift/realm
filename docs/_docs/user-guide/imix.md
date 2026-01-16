@@ -35,6 +35,31 @@ Imix has run-time configuration, that may be specified using environment variabl
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
 | IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
 
+## Transport Configuration
+
+### Callback URI Parameters
+
+The `IMIX_CALLBACK_URI` supports query parameters to configure the connection directly in the URI string.
+
+| Parameter | Description | Default | Example |
+|-----------|-------------|---------|---------|
+| `interval`| Callback interval in seconds. Overrides `IMIX_CALLBACK_INTERVAL`. | `5` | `?interval=10` |
+| `extra`   | JSON string for advanced transport config. | `""` | `?extra=%7B%22http_proxy%22%3A%22...%22%7D` |
+
+### Advanced Transport Options (Extra)
+
+The `extra` configuration allows for transport-specific settings. This can be passed via:
+1. The `extra` query parameter in `IMIX_CALLBACK_URI` (must be URL-encoded JSON).
+2. `IMIX_TRANSPORT_EXTRA_*` environment variables (e.g., `IMIX_TRANSPORT_EXTRA_http_proxy`).
+
+#### gRPC & HTTP Transports
+
+| Key | Value | Description |
+|-----|-------|-------------|
+| `http_proxy` | URI string | Proxy URI (e.g., `http://proxy.local:8080`). |
+| `doh` | string (ignored) | Presence of this key enables DNS over HTTPS (DoH). |
+| `insecure` | "true" | Disables TLS verification (gRPC and HTTP). Automatically set if `?insecure=true` is used in URI. |
+
 ## Advanced Configuration (IMIX_CONFIG)
 
 For more complex setups, such as configuring multiple transports or specifying detailed transport options, you can use the `IMIX_CONFIG` environment variable. This variable accepts a YAML-formatted string.

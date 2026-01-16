@@ -128,6 +128,7 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
 
     let mut interval = DEFAULT_INTERVAL_SECONDS;
     let mut extra = DEFAULT_EXTRA_CONFIG.to_string();
+    let mut insecure = false;
 
     // Parse query parameters
     for (key, value) in parsed_url.query_pairs() {
@@ -140,11 +141,27 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
             "extra" => {
                 extra = value.to_lowercase();
             }
+            "insecure" => {
+                insecure = value.parse::<bool>().unwrap_or(false);
+            }
             _ => {
                 #[cfg(debug_assertions)]
                 log::debug!("Ignoring unknown query parameter: {}", key);
             }
         }
+    }
+
+    if insecure {
+        let mut extra_json: serde_json::Value = if extra.is_empty() {
+            serde_json::json!({})
+        } else {
+            serde_json::from_str(&extra).unwrap_or(serde_json::json!({}))
+        };
+
+        if let Some(obj) = extra_json.as_object_mut() {
+            obj.insert("insecure".to_string(), serde_json::Value::String("true".to_string()));
+        }
+        extra = extra_json.to_string();
     }
 
     // Reconstruct the base URI without query parameters
