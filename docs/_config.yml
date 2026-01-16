@@ -39,7 +39,7 @@ github_branch: "main"
 # Optional
 twitter: Realm_C2
 linkedin: kcarretto
-dockerhub: kcarretto
+dockerhub: spellshift
 
 # Should there be feedback buttons at the bottom of pages?
 feedback: true
