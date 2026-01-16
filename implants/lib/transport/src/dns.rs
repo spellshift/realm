@@ -1199,7 +1199,7 @@ mod tests {
 
     #[test]
     fn test_new_missing_domain() {
-        let config = create_dns_test_config("8.8.8.8:53", "{}");
+        let config = create_dns_test_config("dns://8.8.8.8:53", "{}");
         let result = DNS::new(config);
         assert!(result.is_err());
         assert!(result
