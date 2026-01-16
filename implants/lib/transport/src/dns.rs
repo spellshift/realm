@@ -873,8 +873,6 @@ impl Transport for DNS {
         };
         let extra = crate::transport::extract_extra_from_config(&config);
 
-        log::info!("dns_server: {dns_server}");
-
         // Extract base_domain from extra field (required)
         let base_domain = extra
             .get("domain")
