@@ -109,22 +109,6 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
             return Err(format!("URI '{}' already contains query parameters. Query parameters should not be present in the URI field.", transport.uri).into());
         }
 
-        // // Map transport type to appropriate schema
-        // let schema = match transport_type_lower.as_str() {
-        //     "grpc" => "https",
-        //     "http1" => "http",
-        //     "https1" =>
-        //     "dns" => "dns",
-        //     _ => unreachable!(), // Already validated above
-        // };
-
-        // // Strip any existing schema from the URI and replace with the correct one
-        // let uri_without_schema = transport
-        //     .uri
-        //     .split_once("://")
-        //     .map(|(_, rest)| rest)
-        //     .unwrap_or(&transport.uri);
-
         // Build DSN part with correct schema and query parameters
         // let mut dsn_part = format!("{}://{}", schema, uri_without_schema);
         let mut dsn_part = transport.uri.clone();
