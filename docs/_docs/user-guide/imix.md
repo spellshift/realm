@@ -145,9 +145,49 @@ The install subcommand executes embedded tomes similar to golem.
 It will loop through all embedded files looking for main.eldritch.
 Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
 
-Installation scripts are specified in the `realm/implants/imix/install_scripts` directory.
+Installation scripts are specified in the `realm/implants/imixv2/embedded` directory.
 
 This feature is currently under active development, and may change. We'll do our best to keep these docs updates in the meantime.
+
+## Events
+
+Imix supports an event system that allows executing Eldritch scripts when specific internal events occur. This feature is enabled by compiling with the `events` feature flag (enabled by default).
+
+The system looks for a universal event script at `on_event.eldritch` within the embedded assets. If found, this script is executed for every triggered event.
+
+The script receives a global variable `input_params` containing:
+- `event`: The name of the event (e.g., "on_start", "on_callback_fail").
+- `args`: A dictionary of event-specific arguments.
+
+### Supported Events
+
+| Event Name | Description | Arguments |
+|String | String | Map<String, Value> |
+|---|---|---|
+| `on_start` | Triggered when the agent initializes. | None |
+| `on_exit` | Triggered when the agent shuts down. | None |
+| `on_callback_success` | Triggered after a successful callback to the C2 server. | None |
+| `on_callback_fail` | Triggered when a callback fails. | `error`: The error message. |
+| `on_sigint` | Triggered on SIGINT (Ctrl+C). | None |
+| `on_sigterm` | Triggered on SIGTERM. | None |
+| `on_sighup` | Triggered on SIGHUP. | None |
+| `on_sigquit` | Triggered on SIGQUIT. | None |
+| `on_sigusr1` | Triggered on SIGUSR1. | None |
+| `on_sigusr2` | Triggered on SIGUSR2. | None |
+| `on_sigchild` | Triggered on SIGCHLD. | None |
+
+### Example Script
+
+Create `realm/implants/imixv2/embedded/on_event.eldritch`:
+
+```python
+HANDLED_EVENTS = set(["on_callback_fail", "on_sigint"])
+
+evt = input_params.get("event", "???")
+if evt in HANDLED_EVENTS:
+    print(f"[EVENT] {evt} called:", input_params.get("args", {}))
+```
+
 
 ## Functionality
 

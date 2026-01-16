@@ -28,7 +28,7 @@ members = [
     "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/stdlib/migration",
     "lib/eldritchv2/eldritchv2",
-    "lib/portals/portal-stream",
+    "lib/portals/portal-stream", "lib/eldritchv2/stdlib/eldritch-libevents",
 ]
 resolver = "2"
 
@@ -57,6 +57,7 @@ eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-fe
 eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
 eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
 eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
+eldritch-libevents = {path = "lib/eldritchv2/stdlib/eldritch-libevents", default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
 
 aes = "0.8.3"

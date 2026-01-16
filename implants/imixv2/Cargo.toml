@@ -7,13 +7,14 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1", "dns", "doh"]
+default = ["install", "grpc", "http1", "dns", "doh", "events"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 doh = ["transport/doh"]
 win_service = []
 install = []
+events = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [dependencies]
@@ -25,6 +26,7 @@ tokio = { workspace = true, features = [
     "net",
     "io-util",
     "tracing",
+    "signal",
 ] }
 portal-stream = { workspace = true }
 anyhow = { workspace = true }
@@ -40,6 +42,11 @@ pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
+libc = { workspace = true }
+nix = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+signal-hook = { version = "0.3", features = ["extended-siginfo"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }

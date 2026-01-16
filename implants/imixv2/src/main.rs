@@ -21,6 +21,8 @@ pub use transport::{ActiveTransport, Transport};
 
 mod agent;
 mod assets;
+#[cfg(feature = "events")]
+mod event;
 mod install;
 mod portal;
 mod run;
