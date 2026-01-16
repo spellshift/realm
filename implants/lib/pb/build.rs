@@ -110,7 +110,6 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
         }
 
         // Build DSN part with correct schema and query parameters
-        // let mut dsn_part = format!("{}://{}", schema, uri_without_schema);
         let mut dsn_part = transport.uri.clone();
 
         // Add query parameters
