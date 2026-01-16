@@ -1166,7 +1166,7 @@ mod tests {
         let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
-        assert_eq!(dns.dns_server, "dns://8.8.8.8:53");
+        assert_eq!(dns.dns_server, "8.8.8.8:53");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
