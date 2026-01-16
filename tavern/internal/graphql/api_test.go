@@ -140,6 +140,83 @@ func TestAPI(t *testing.T) {
 	runTestsInDir(t, "testdata")
 }
 
+func TestCreateLinkWithDownloadsRemaining(t *testing.T) {
+	// TestDB Config
+	var (
+		driverName     = "sqlite3"
+		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
+	)
+
+	// Ent Client
+	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
+	defer graph.Close()
+
+	// Initial DB State
+	ctx := context.Background()
+	user, err := graph.User.Create().
+		SetName("test").
+		SetOauthID("testid").
+		SetPhotoURL("http://example.com/photo.png").
+		SetSessionToken("testtoken").
+		SetIsActivated(true).
+		Save(ctx)
+	require.NoError(t, err)
+	asset, err := graph.Asset.Create().
+		SetName("test_asset").
+		SetHash("testhash").
+		SetContent([]byte("test content")).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Server
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, importerFake{graph})),
+		},
+		tavernhttp.WithAuthentication(graph),
+	)
+	gqlClient := client.New(srv, client.Path("/graphql"))
+
+	// Make Request
+	resp := new(map[string]any)
+
+	query := `
+	mutation CreateLink($input: CreateLinkInput!) {
+		createLink(input: $input) {
+			expiresAt
+		}
+	}`
+
+	vars := map[string]interface{}{
+		"input": map[string]interface{}{
+			"assetID":            asset.ID,
+			"downloadsRemaining": 10,
+		},
+	}
+
+	opts := []client.Option{
+		client.Var("input", vars["input"]),
+		client.AddCookie(&http.Cookie{
+			Name:    auth.SessionCookieName,
+			Value:   user.SessionToken,
+			Expires: time.Now().Add(24 * time.Hour),
+		}),
+	}
+
+	err = gqlClient.Post(query, resp, opts...)
+	require.NoError(t, err)
+
+	createLinkData, ok := (*resp)["createLink"].(map[string]any)
+	require.True(t, ok)
+	expiresAtStr, ok := createLinkData["expiresAt"].(string)
+	require.True(t, ok)
+
+	parsedTime, err := time.Parse(time.RFC3339, expiresAtStr)
+	require.NoError(t, err)
+
+	assert.NotEqual(t, time.Unix(0, 0).UTC(), parsedTime.UTC(), "expiresAt should not be the epoch")
+}
+
 func runTestsInDir(t *testing.T, root string) {
 	t.Helper()
 

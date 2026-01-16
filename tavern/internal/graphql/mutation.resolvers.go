@@ -259,6 +259,12 @@ func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.Creat
 
 // CreateLink is the resolver for the createLink field.
 func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error) {
+	// If downloads remaining is set, but no expiry, default to 100 years in the future
+	if input.DownloadsRemaining != nil && input.ExpiresAt == nil {
+		now := time.Now()
+		future := now.AddDate(100, 0, 0)
+		input.ExpiresAt = &future
+	}
 	return r.client.Link.Create().SetInput(input).Save(ctx)
 }
 
