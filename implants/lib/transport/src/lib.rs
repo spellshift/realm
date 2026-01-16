@@ -348,9 +348,12 @@ mod tests {
     async fn test_routes_to_dns_transport() {
         // DNS uses URI for server address, extra field for domain and type
         let inputs = vec![
-            ("8.8.8.8:53", r#"{"domain": "example.com"}"#),
-            ("1.1.1.1:53", r#"{"domain": "example.com", "type": "txt"}"#),
-            ("8.8.4.4:53", r#"{"domain": "test.com", "type": "a"}"#),
+            ("dns://8.8.8.8:53", r#"{"domain": "example.com"}"#),
+            (
+                "dns://1.1.1.1:53",
+                r#"{"domain": "example.com", "type": "txt"}"#,
+            ),
+            ("dns://8.8.4.4:53", r#"{"domain": "test.com", "type": "a"}"#),
         ];
 
         for (uri, extra) in inputs {

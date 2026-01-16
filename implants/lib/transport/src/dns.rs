@@ -1162,18 +1162,18 @@ mod tests {
 
     #[test]
     fn test_new_single_server() {
-        let config = create_dns_test_config("8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
+        let config = create_dns_test_config("dns://8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
         let dns = DNS::new(config).expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
-        assert_eq!(dns.dns_server, "8.8.8.8:53");
+        assert_eq!(dns.dns_server, "dns://8.8.8.8:53");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
     fn test_new_record_type_a() {
         let config = create_dns_test_config(
-            "8.8.8.8:53",
+            "dns://8.8.8.8:53",
             r#"{"domain": "dnsc2.realm.pub", "type": "a"}"#,
         );
         let dns = DNS::new(config).expect("should parse");
@@ -1183,7 +1183,7 @@ mod tests {
     #[test]
     fn test_new_record_type_aaaa() {
         let config = create_dns_test_config(
-            "8.8.8.8:53",
+            "dns://8.8.8.8:53",
             r#"{"domain": "dnsc2.realm.pub", "type": "aaaa"}"#,
         );
         let dns = DNS::new(config).expect("should parse");
@@ -1192,7 +1192,7 @@ mod tests {
 
     #[test]
     fn test_new_record_type_txt_default() {
-        let config = create_dns_test_config("8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
+        let config = create_dns_test_config("dns://8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
         let dns = DNS::new(config).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
@@ -1216,7 +1216,7 @@ mod tests {
     fn test_build_subdomain_simple() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_server: "8.8.8.8:53".to_string(),
+            dns_server: "dns://8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1253,7 +1253,7 @@ mod tests {
     fn test_build_subdomain_label_splitting() {
         let dns = DNS {
             base_domain: "x.com".to_string(),
-            dns_server: "8.8.8.8:53".to_string(),
+            dns_server: "dns://8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1439,7 +1439,7 @@ mod tests {
     fn test_is_active_with_config() {
         let dns = DNS {
             base_domain: "dnsc2.realm.pub".to_string(),
-            dns_server: "8.8.8.8:53".to_string(),
+            dns_server: "dns://8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
@@ -1450,7 +1450,7 @@ mod tests {
     fn test_is_active_empty_domain() {
         let dns = DNS {
             base_domain: String::new(),
-            dns_server: "8.8.8.8:53".to_string(),
+            dns_server: "dns://8.8.8.8:53".to_string(),
             record_type: DnsRecordType::TXT,
         };
 
