@@ -106,7 +106,9 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
     ];
 
     return (
-        <Table columns={columns} data={hostActivity} onRowClick={handleOnClick} />
+        <div className="w-full">
+            <Table columns={columns} data={hostActivity} onRowClick={handleOnClick} />
+        </div>
     )
 }
 export default AccessHostActivityTable;
