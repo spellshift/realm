@@ -39,6 +39,50 @@ mod tests {
         interp.register_lib(eldritchv2::random::std::StdRandomLibrary);
         interp.register_lib(eldritchv2::regex::std::StdRegexLibrary);
         interp.register_lib(eldritchv2::time::std::StdTimeLibrary);
+        interp.register_lib(eldritchv2::cache::std::StdCacheLibrary);
+    }
+
+    #[test]
+    fn test_cache_library() -> Result<()> {
+        let mut interp1 = Interpreter::new();
+        interp1.register_lib(eldritchv2::cache::std::StdCacheLibrary);
+
+        let code1 = r#"
+cache.set("foo", "bar")
+return cache.get("foo")
+"#;
+
+        let res1 = interp1.interpret(code1).map_err(|e| anyhow::anyhow!(e))?;
+        if let Value::String(s) = res1 {
+            assert_eq!(s, "bar");
+        } else {
+            panic!("Expected string 'bar', got {:?}", res1);
+        }
+
+        // Test shared state across interpreters
+        let mut interp2 = Interpreter::new();
+        interp2.register_lib(eldritchv2::cache::std::StdCacheLibrary);
+
+        let code2 = r#"
+return cache.get("foo")
+"#;
+
+        let res2 = interp2.interpret(code2).map_err(|e| anyhow::anyhow!(e))?;
+        if let Value::String(s) = res2 {
+            assert_eq!(s, "bar");
+        } else {
+            panic!("Expected string 'bar' in interp2, got {:?}", res2);
+        }
+
+        // Test delete
+        let code3 = r#"
+cache.delete("foo")
+return cache.get("foo")
+"#;
+        let res3 = interp2.interpret(code3).map_err(|e| anyhow::anyhow!(e))?;
+        assert!(matches!(res3, Value::None));
+
+        Ok(())
     }
 
     #[test]

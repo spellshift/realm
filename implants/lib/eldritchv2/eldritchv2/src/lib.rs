@@ -18,6 +18,7 @@ pub use eldritch_libregex as regex;
 pub use eldritch_libreport as report;
 pub use eldritch_libsys as sys;
 pub use eldritch_libtime as time;
+pub use eldritch_libcache as cache;
 pub use eldritch_repl as repl;
 
 // Re-export core types
@@ -45,6 +46,8 @@ pub use crate::assets::std::EmbeddedAssets;
 pub use crate::assets::std::EmptyAssets;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
+#[cfg(feature = "stdlib")]
+use crate::cache::std::StdCacheLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
 #[cfg(feature = "stdlib")]
@@ -117,6 +120,7 @@ impl Interpreter {
     pub fn with_default_libs(mut self) -> Self {
         #[cfg(feature = "stdlib")]
         {
+            self.inner.register_lib(StdCacheLibrary);
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
             self.inner.register_lib(StdHttpLibrary);
