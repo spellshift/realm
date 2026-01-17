@@ -120,7 +120,7 @@ impl Interpreter {
     pub fn with_default_libs(mut self) -> Self {
         #[cfg(feature = "stdlib")]
         {
-            self.inner.register_lib(StdCacheLibrary);
+            self.inner.register_lib(StdCacheLibrary::new());
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
             self.inner.register_lib(StdHttpLibrary);

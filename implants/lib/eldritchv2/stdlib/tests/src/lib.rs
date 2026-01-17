@@ -39,13 +39,17 @@ mod tests {
         interp.register_lib(eldritchv2::random::std::StdRandomLibrary);
         interp.register_lib(eldritchv2::regex::std::StdRegexLibrary);
         interp.register_lib(eldritchv2::time::std::StdTimeLibrary);
-        interp.register_lib(eldritchv2::cache::std::StdCacheLibrary);
+        interp.register_lib(eldritchv2::cache::std::StdCacheLibrary::new());
     }
 
     #[test]
     fn test_cache_library() -> Result<()> {
+        // Create a shared cache library instance
+        let cache_lib = eldritchv2::cache::std::StdCacheLibrary::new();
+
         let mut interp1 = Interpreter::new();
-        interp1.register_lib(eldritchv2::cache::std::StdCacheLibrary);
+        // Register the shared instance (assuming StdCacheLibrary is Clone and shares state internally via Arc)
+        interp1.register_lib(cache_lib.clone());
 
         let code1 = r#"
 cache.set("foo", "bar")
@@ -61,7 +65,8 @@ return cache.get("foo")
 
         // Test shared state across interpreters
         let mut interp2 = Interpreter::new();
-        interp2.register_lib(eldritchv2::cache::std::StdCacheLibrary);
+        // Register the SAME cache instance
+        interp2.register_lib(cache_lib);
 
         let code2 = r#"
 return cache.get("foo")
