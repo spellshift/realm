@@ -151,7 +151,7 @@ export function constructQuestFilterQuery(filter: Filters) {
   const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
   const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
 
-  if (!filter.questName && !filter.tomeMultiSearch) {
+  if (!filter.questName && !tomeFieldsFilterQuery && !questParamFilterQuery) {
     return null;
   }
 
