@@ -91,6 +91,32 @@ return cache.get("foo")
     }
 
     #[test]
+    fn test_cache_sharing_random() -> Result<()> {
+        let cache_lib = eldritchv2::cache::std::StdCacheLibrary::new();
+        let random_val = uuid::Uuid::new_v4().to_string();
+
+        let mut interp1 = Interpreter::new();
+        interp1.register_lib(cache_lib.clone());
+
+        let code1 = format!("cache.set('key', '{}')", random_val);
+        interp1.interpret(&code1).map_err(|e| anyhow::anyhow!(e))?;
+
+        let mut interp2 = Interpreter::new();
+        interp2.register_lib(cache_lib);
+
+        let code2 = "return cache.get('key')";
+        let res = interp2.interpret(code2).map_err(|e| anyhow::anyhow!(e))?;
+
+        if let Value::String(s) = res {
+            assert_eq!(s, random_val);
+        } else {
+            panic!("Expected string {}, got {:?}", random_val, res);
+        }
+
+        Ok(())
+    }
+
+    #[test]
     fn test_all_tomes() -> Result<()> {
         let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let root_dir = PathBuf::from(manifest_dir).join("../../../../../tavern/tomes");

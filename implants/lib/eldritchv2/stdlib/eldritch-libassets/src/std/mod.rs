@@ -104,6 +104,7 @@ impl AssetBackend for AgentAssets {
     }
 }
 
+#[derive(Clone)]
 #[eldritch_library_impl(AssetsLibrary)]
 pub struct StdAssetsLibrary {
     // Stores a vector of boxed trait objects for runtime polymorphism.
