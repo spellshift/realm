@@ -52,7 +52,6 @@ jobs:
           file: ./.devcontainer/Dockerfile
           context: ./.devcontainer
           push: true
-          target: production
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
