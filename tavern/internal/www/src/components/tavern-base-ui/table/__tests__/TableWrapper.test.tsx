@@ -63,8 +63,8 @@ describe('TableWrapper', () => {
       expect(screen.queryByTestId('mock-pagination')).not.toBeInTheDocument();
     });
 
-    it('should render loading EmptyState when totalItems is null', () => {
-      render(<TableWrapper {...defaultProps} totalItems={null} loading={false} />);
+    it('should render loading EmptyState when totalItems is undefined', () => {
+      render(<TableWrapper {...defaultProps} totalItems={undefined} loading={false} />);
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();

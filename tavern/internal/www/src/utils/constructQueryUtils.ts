@@ -185,7 +185,7 @@ export function constructBeaconStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{nextSeenAtGTE: add(currentTimestamp, {seconds: 15}).toISOString()}] : [],
+    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{nextSeenAtGTE: sub(currentTimestamp, {seconds: 15}).toISOString()}] : [],
     ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(currentTimestamp)] : [],
   ]
 
