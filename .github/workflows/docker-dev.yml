@@ -75,7 +75,6 @@ jobs:
           file: ./.devcontainer/Dockerfile
           context: ./.devcontainer
           push: true
-          target: production
           tags: ${{ steps.meta_ghcr.outputs.tags }}
           labels: ${{ steps.meta_ghcr.outputs.labels }}
 
