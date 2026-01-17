@@ -22,7 +22,7 @@ const Quests = () => {
             <QuestHeader />
             <TableWrapper
                 title="Quests"
-                totalItems={data?.quests?.totalCount || null}
+                totalItems={data?.quests?.totalCount}
                 loading={loading}
                 error={error}
                 filterControls={<FilterControls type={FilterPageType.QUEST} />}

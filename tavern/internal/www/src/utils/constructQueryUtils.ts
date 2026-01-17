@@ -1,4 +1,4 @@
-import { sub } from "date-fns";
+import { add, sub } from "date-fns";
 import { Filters } from "../context/FilterContext";
 import { FilterBarOption } from "./interfacesUI";
 import { getBeaconFilterNameByTypes, getTomeFilterNameByTypes } from "./utils";
@@ -171,10 +171,10 @@ export function constructHostTaskFilterQuery(
 
 };
 
-const createRecentlyLostQuery = (start: Date, end: Date) => ({
+const createRecentlyLostQuery = (currentTimestamp: Date) => ({
   and: [
-    { nextSeenAtGTE: start.toISOString() },
-    { nextSeenAtLT: end.toISOString() }
+    { nextSeenAtGTE: sub(currentTimestamp, { minutes: 5 }).toISOString() },
+    { nextSeenAtLT: sub(currentTimestamp, { seconds: 15 }).toISOString() }
   ]
 });
 
@@ -185,8 +185,8 @@ export function constructBeaconStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{nextSeenAtGTE: currentTimestamp.toISOString()}] : [],
-    ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(sub(currentTimestamp, { minutes: 5 }), currentTimestamp)] : [],
+    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{nextSeenAtGTE: add(currentTimestamp, {seconds: 15}).toISOString()}] : [],
+    ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(currentTimestamp)] : [],
   ]
 
   if (conditions.length === 0) return null;
@@ -201,8 +201,8 @@ export function constructHostStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OfflineHost) ? [{nextSeenAtLT: currentTimestamp.toISOString()}] : [],
-    ...status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(sub(currentTimestamp, { minutes: 5 }), currentTimestamp)] : [],
+    ...status.includes(OnlineOfflineFilterType.OfflineHost) ? [{nextSeenAtLT: sub(currentTimestamp, {seconds: 15}).toISOString()}] : [],
+    ...status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(currentTimestamp)] : [],
   ]
 
   if (conditions.length === 0) return null;

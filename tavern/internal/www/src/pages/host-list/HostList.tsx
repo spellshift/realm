@@ -21,7 +21,7 @@ const HostList: React.FC = () => {
             />
             <TableWrapper
                 title="Hosts"
-                totalItems={data?.hosts?.totalCount || null}
+                totalItems={data?.hosts?.totalCount}
                 loading={loading}
                 error={error}
                 filterControls={<FilterControls type={FilterPageType.HOST} />}
