@@ -69,10 +69,15 @@ query questOutput($ids: [ID!]!) {
     "list_tomes": """
 query listtomes{
     tomes {
-        id
-        name
-        tactic
-        description
+      edges {
+        node {
+          id
+          name
+          tactic
+          description
+          paramDefs
+        }
+      }
     }
 }
 """,
@@ -100,14 +105,47 @@ query gethosts {
         lastSeenAt
         externalIP
         tags {
-          id
-          name
-          kind
+          edges {
+            node {
+              id
+              name
+              kind
+            }
+          }
         }
         beacons {
-          id
-          name
-          principal
+          edges {
+            node {
+              id
+              name
+              principal
+            }
+          }
+        }
+      }
+    }
+  }
+}
+""",
+    "quest_tasks_status": """
+query questTasksStatus($id: ID!) {
+  quests(where: {id: $id}) {
+    edges {
+      node {
+        id
+        name
+        tasks {
+          edges {
+            node {
+              id
+              execFinishedAt
+              error
+              beacon {
+                id
+                name
+              }
+            }
+          }
         }
       }
     }
@@ -130,7 +168,7 @@ def make_graphql_request(api_url, query, variables):
         }
     )
     if response.status_code == 200:
-        return str(response.json())
+        return response.json()
     else:
         return f"Error {response.status_code}: {response.text}"
 
@@ -178,7 +216,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="list_tomes",
-            description="List all available tomes in Tavern",
+            description="List all available tomes in Tavern and their required parameters.",
             inputSchema={
                 "type": "object",
                 "properties": {}
@@ -209,8 +247,21 @@ async def list_tools() -> list[Tool]:
                 "properties": {}
             }
         ),
+        Tool(
+            name="wait_for_quest",
+            description="Wait for all tasks in a quest to finish. Polls every 5 seconds for up to 10 minutes.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "quest_id": {
+                        "type": "string",
+                        "description": "The ID of the quest to wait for"
+                    }
+                },
+                "required": ["quest_id"]
+            }
+        ),
     ]
-
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
@@ -238,7 +289,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             }
         )
 
-        return [TextContent(type="text", text=result)]
+        return [TextContent(type="text", text=str(result))]
 
     elif name == "list_quests":
         # TODO: Implement actual Tavern API call
@@ -248,7 +299,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             {}
         )
 
-        return [TextContent(type="text", text=result)]
+        return [TextContent(type="text", text=str(result))]
 
     elif name == "quest_output":
         quest_ids = arguments.get("ids", [])
@@ -258,7 +309,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             {"ids": quest_ids}
         )
 
-        return [TextContent(type="text", text=result)]
+        return [TextContent(type="text", text=str(result))]
 
     elif name == "list_tomes":
         # TODO: Implement actual Tavern API call
@@ -267,7 +318,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             QUERIES["list_tomes"],
             {}
         )
-        return [TextContent(type="text", text=result)]
+        return [TextContent(type="text", text=str(result))]
 
     elif name == "list_hosts":
         result = make_graphql_request(
@@ -275,7 +326,73 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             QUERIES["list_hosts"],
             {}
         )
-        return [TextContent(type="text", text=result)]
+        return [TextContent(type="text", text=str(result))]
+
+    elif name == "wait_for_quest":
+        import json
+
+        quest_id = arguments.get("quest_id")
+        poll_interval = 5  # seconds
+        timeout = 600  # 10 minutes in seconds
+        elapsed = 0
+        pending_count = 0
+
+        while elapsed < timeout:
+            response = make_graphql_request(
+                f"{ENV['TAVERN_URL']}/graphql",
+                QUERIES["quest_tasks_status"],
+                {"id": quest_id}
+            )
+
+            if isinstance(response, str):
+                return [TextContent(type="text", text=response)]
+
+            quests = response.get("data", {}).get("quests", {}).get("edges", [])
+
+            if not quests:
+                return [TextContent(type="text", text=f"Quest with ID {quest_id} not found")]
+
+            quest = quests[0]["node"]
+            tasks = quest.get("tasks", {}).get("edges", [])
+
+            if not tasks:
+                return [TextContent(type="text", text=f"Quest {quest_id} has no tasks")]
+
+            all_finished = all(
+                task["node"].get("execFinishedAt") is not None
+                for task in tasks
+            )
+
+            if all_finished:
+                finished_tasks = []
+                for task in tasks:
+                    node = task["node"]
+                    finished_tasks.append({
+                        "task_id": node.get("id"),
+                        "beacon_id": node.get("beacon", {}).get("id"),
+                        "beacon_name": node.get("beacon", {}).get("name"),
+                        "finished_at": node.get("execFinishedAt"),
+                        "error": node.get("error")
+                    })
+
+                return [TextContent(
+                    type="text",
+                    text=f"All {len(tasks)} tasks in quest '{quest.get('name')}' have finished.\n\nTask details:\n{json.dumps(finished_tasks, indent=2)}"
+                )]
+
+            # Not all tasks finished, wait and poll again
+            pending_count = sum(
+                1 for task in tasks
+                if task["node"].get("execFinishedAt") is None
+            )
+            await asyncio.sleep(poll_interval)
+            elapsed += poll_interval
+
+        # Timeout reached
+        return [TextContent(
+            type="text",
+            text=f"Timeout: Not all tasks in quest {quest_id} finished within 10 minutes. {pending_count} tasks still pending."
+        )]
 
     else:
         return [TextContent(type="text", text=f"Unknown tool: {name}")]
