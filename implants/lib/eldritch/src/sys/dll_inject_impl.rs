@@ -96,8 +96,15 @@ mod tests {
 
         // Get the path to our test dll file.
         let cargo_root = env!("CARGO_MANIFEST_DIR");
+
+        #[cfg(host_family = "windows")]
         let relative_path_to_test_dll =
-            "..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll";
+            "..\\..\\..\\bin\\create_file_dll\\target\\x86_64-pc-windows-msvc\\debug\\create_file_dll.dll";
+
+        #[cfg(host_family = "unix")]
+        let relative_path_to_test_dll =
+            "../../../../../bin/create_file_dll/target/x86_64-pc-windows-gnu/debug/create_file_dll.dll";
+
         let test_dll_path = Path::new(cargo_root).join(relative_path_to_test_dll);
         assert!(test_dll_path.is_file());
 

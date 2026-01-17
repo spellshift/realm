@@ -1,11 +1,34 @@
 [workspace]
 members = [
     "imix",
+    "imixv2",
     "golem",
+    "golemv2",
     "lib/eldritch",
     "lib/transport",
     "lib/pb",
     "lib/host_unique",
+    "lib/netstat",
+    "lib/eldritchv2/eldritch-core",
+    "lib/eldritchv2/eldritch-macros",
+    "lib/eldritchv2/eldritch-repl",
+    "lib/eldritchv2/eldritch-agent",
+    "lib/eldritchv2/stdlib/eldritch-libagent",
+    "lib/eldritchv2/stdlib/eldritch-libassets",
+    "lib/eldritchv2/stdlib/eldritch-libcrypto",
+    "lib/eldritchv2/stdlib/eldritch-libfile",
+    "lib/eldritchv2/stdlib/eldritch-libhttp",
+    "lib/eldritchv2/stdlib/eldritch-libpivot",
+    "lib/eldritchv2/stdlib/eldritch-libprocess",
+    "lib/eldritchv2/stdlib/eldritch-librandom",
+    "lib/eldritchv2/stdlib/eldritch-libregex",
+    "lib/eldritchv2/stdlib/eldritch-libreport",
+    "lib/eldritchv2/stdlib/eldritch-libsys",
+    "lib/eldritchv2/stdlib/eldritch-libtime",
+    "lib/eldritchv2/stdlib/tests",
+    "lib/eldritchv2/stdlib/migration",
+    "lib/eldritchv2/eldritchv2",
+    "lib/portals/portal-stream",
 ]
 resolver = "2"
 
@@ -14,6 +37,27 @@ transport = { path = "./lib/transport" }
 eldritch = { path = "./lib/eldritch" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
+netstat = { path = "./lib/netstat" }
+
+# Eldritch V2
+eldritch-core = {path = "lib/eldritchv2/eldritch-core", default-features = false }
+eldritch-macros = {path = "lib/eldritchv2/eldritch-macros", default-features = false}
+eldritch-repl = {path = "lib/eldritchv2/eldritch-repl", default-features = false}
+eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
+eldritch-agent = {path = "lib/eldritchv2/eldritch-agent"}
+eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
+eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
+eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
+eldritch-libfile = {path = "lib/eldritchv2/stdlib/eldritch-libfile",default-features = false }
+eldritch-libhttp = {path = "lib/eldritchv2/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libpivot = {path = "lib/eldritchv2/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libprocess = {path = "lib/eldritchv2/stdlib/eldritch-libprocess",default-features = false }
+eldritch-librandom = {path = "lib/eldritchv2/stdlib/eldritch-librandom", default-features = false }
+eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-features = false }
+eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
+eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
+portal-stream = { path = "lib/portals/portal-stream" }
 
 aes = "0.8.3"
 allocative = "0.3.2"
@@ -22,13 +66,17 @@ anyhow = "1.0.65"
 assert_cmd = "2.0.6"
 async-recursion = "1.0.0"
 async-trait = "0.1.68"
+base32 = "0.5"
 base64 = "0.21.4"
+byteorder = "1.5"
 chrono = "0.4.34"
 const-decoder = "0.3.0"
 clap = "3.2.23"
+criterion = "0.5"
 netdev = "0.33.0"
 derive_more = "=0.99.17"
 eval = "0.4.3"
+walkdir = "2.5.0"
 flate2 = { version = "1.0.24", default-features = false }
 gazebo = "0.8.1"
 glob = "0.3.1"
@@ -39,6 +87,8 @@ httptest = "0.15.4"
 hyper = { version = "1", features = ["full"] }
 ipnetwork = "0.20.0"
 itertools = "0.10"
+libc = "0.2"
+libm = "0.2.15"
 listeners = "0.2"
 lsp-types = "0.93.0"
 log = "0.4.20"
@@ -64,9 +114,11 @@ russh-keys = "0.37.1"
 rust-embed = "8.5.0"
 serde = "1.0"
 serde_json = "1.0.87"
+serde_yaml = "0.9"
 sha1 = "0.10.5"
 sha2 = "0.10.7"
 sha256 = { version = "1.0.3", default-features = false }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex", "rwlock"] }
 starlark = "0.12.0"
 starlark_derive = "0.12.0"
 structopt = "0.3.23"
@@ -75,7 +127,7 @@ tar = { version = "0.4.38", default-features = false }
 tempfile = "3.20.0"
 tera = { version = "1.17.1", default-features = false }
 thiserror = "1.0.30"
-tokio = "1.19.1"
+tokio = "1.49.0"
 tokio-stream = { version = "0.1.9", default-features = false }
 tokio-test = "*"
 tokio-util = { version = "0.7.10", features = ["io"] }
@@ -83,17 +135,21 @@ tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
 tonic-build = { git = "https://github.com/hyperium/tonic.git", rev = "c783652" } # Needed git for `.codec_path` in build.rs - previous version of codec setting is really gross. https://github.com/hyperium/tonic/blob/ea8cd3f384e953e177f20a62aa156a75676853f4/examples/build.rs#L44
 trait-variant = "0.1.1"
 uuid = "1.5.0"
+urlencoding = "2.1.3"
 static_vcruntime = "2.0"
+url = "2.5"
 which = "4.4.2"
 whoami = { version = "1.5.1", default-features = false }
 windows-service = "0.6.0"
-windows-sys = "0.45.0"
+windows-sys = "0.61.2"
 winreg = "0.51.0"
 chacha20poly1305 = "0.10.1"
 bytes = "1.6.0"
 x25519-dalek = "2.0.1"
 lru = "0.16.0"
-
+crossterm = "0.27"
+futures = "0.3"
+console-subscriber = "0.5.0"
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.

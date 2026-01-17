@@ -9,6 +9,22 @@ import (
 )
 
 var (
+	// AssetsColumns holds the columns for the "assets" table.
+	AssetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "size", Type: field.TypeInt, Default: 0},
+		{Name: "hash", Type: field.TypeString, Size: 100},
+		{Name: "content", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+	}
+	// AssetsTable holds the schema information for the "assets" table.
+	AssetsTable = &schema.Table{
+		Name:       "assets",
+		Columns:    AssetsColumns,
+		PrimaryKey: []*schema.Column{AssetsColumns[0]},
+	}
 	// BeaconsColumns holds the columns for the "beacons" table.
 	BeaconsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -19,7 +35,9 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "agent_identifier", Type: field.TypeString, Nullable: true},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
+		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED"}},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
@@ -30,27 +48,11 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "beacons_hosts_host",
-				Columns:    []*schema.Column{BeaconsColumns[9]},
+				Columns:    []*schema.Column{BeaconsColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
-	}
-	// FilesColumns holds the columns for the "files" table.
-	FilesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "last_modified_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "size", Type: field.TypeInt, Default: 0},
-		{Name: "hash", Type: field.TypeString, Size: 100},
-		{Name: "content", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
-	}
-	// FilesTable holds the schema information for the "files" table.
-	FilesTable = &schema.Table{
-		Name:       "files",
-		Columns:    FilesColumns,
-		PrimaryKey: []*schema.Column{FilesColumns[0]},
 	}
 	// HostsColumns holds the columns for the "hosts" table.
 	HostsColumns = []*schema.Column{
@@ -63,12 +65,22 @@ var (
 		{Name: "external_ip", Type: field.TypeString, Nullable: true},
 		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tome_scheduled_hosts", Type: field.TypeInt, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
 	HostsTable = &schema.Table{
 		Name:       "hosts",
 		Columns:    HostsColumns,
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "hosts_tomes_scheduled_hosts",
+				Columns:    []*schema.Column{HostsColumns[10]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// HostCredentialsColumns holds the columns for the "host_credentials" table.
 	HostCredentialsColumns = []*schema.Column{
@@ -187,6 +199,66 @@ var (
 			},
 		},
 	}
+	// LinksColumns holds the columns for the "links" table.
+	LinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "path", Type: field.TypeString, Unique: true},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "downloads_remaining", Type: field.TypeInt, Default: 0},
+		{Name: "link_asset", Type: field.TypeInt},
+	}
+	// LinksTable holds the schema information for the "links" table.
+	LinksTable = &schema.Table{
+		Name:       "links",
+		Columns:    LinksColumns,
+		PrimaryKey: []*schema.Column{LinksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "links_assets_asset",
+				Columns:    []*schema.Column{LinksColumns[6]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// PortalsColumns holds the columns for the "portals" table.
+	PortalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "portal_task", Type: field.TypeInt},
+		{Name: "portal_beacon", Type: field.TypeInt},
+		{Name: "portal_owner", Type: field.TypeInt},
+	}
+	// PortalsTable holds the schema information for the "portals" table.
+	PortalsTable = &schema.Table{
+		Name:       "portals",
+		Columns:    PortalsColumns,
+		PrimaryKey: []*schema.Column{PortalsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "portals_tasks_task",
+				Columns:    []*schema.Column{PortalsColumns[4]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "portals_beacons_beacon",
+				Columns:    []*schema.Column{PortalsColumns[5]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "portals_users_owner",
+				Columns:    []*schema.Column{PortalsColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// QuestsColumns holds the columns for the "quests" table.
 	QuestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -213,9 +285,9 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "quests_files_bundle",
+				Symbol:     "quests_assets_bundle",
 				Columns:    []*schema.Column{QuestsColumns[8]},
-				RefColumns: []*schema.Column{FilesColumns[0]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
@@ -344,6 +416,9 @@ var (
 		{Name: "author", Type: field.TypeString},
 		{Name: "support_model", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "FIRST_PARTY", "COMMUNITY"}, Default: "UNSPECIFIED"},
 		{Name: "tactic", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "RECON", "RESOURCE_DEVELOPMENT", "INITIAL_ACCESS", "EXECUTION", "PERSISTENCE", "PRIVILEGE_ESCALATION", "DEFENSE_EVASION", "CREDENTIAL_ACCESS", "DISCOVERY", "LATERAL_MOVEMENT", "COLLECTION", "COMMAND_AND_CONTROL", "EXFILTRATION", "IMPACT"}, Default: "UNSPECIFIED"},
+		{Name: "run_on_new_beacon_callback", Type: field.TypeBool, Default: false},
+		{Name: "run_on_first_host_callback", Type: field.TypeBool, Default: false},
+		{Name: "run_on_schedule", Type: field.TypeString, Default: ""},
 		{Name: "param_defs", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
@@ -358,13 +433,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tomes_users_uploader",
-				Columns:    []*schema.Column{TomesColumns[11]},
+				Columns:    []*schema.Column{TomesColumns[14]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "tomes_repositories_repository",
-				Columns:    []*schema.Column{TomesColumns[12]},
+				Columns:    []*schema.Column{TomesColumns[15]},
 				RefColumns: []*schema.Column{RepositoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -380,12 +455,21 @@ var (
 		{Name: "access_token", Type: field.TypeString, Size: 200},
 		{Name: "is_activated", Type: field.TypeBool, Default: false},
 		{Name: "is_admin", Type: field.TypeBool, Default: false},
+		{Name: "portal_active_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_portals_active_users",
+				Columns:    []*schema.Column{UsersColumns[8]},
+				RefColumns: []*schema.Column{PortalsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// HostTagsColumns holds the columns for the "host_tags" table.
 	HostTagsColumns = []*schema.Column{
@@ -437,39 +521,41 @@ var (
 			},
 		},
 	}
-	// TomeFilesColumns holds the columns for the "tome_files" table.
-	TomeFilesColumns = []*schema.Column{
+	// TomeAssetsColumns holds the columns for the "tome_assets" table.
+	TomeAssetsColumns = []*schema.Column{
 		{Name: "tome_id", Type: field.TypeInt},
-		{Name: "file_id", Type: field.TypeInt},
+		{Name: "asset_id", Type: field.TypeInt},
 	}
-	// TomeFilesTable holds the schema information for the "tome_files" table.
-	TomeFilesTable = &schema.Table{
-		Name:       "tome_files",
-		Columns:    TomeFilesColumns,
-		PrimaryKey: []*schema.Column{TomeFilesColumns[0], TomeFilesColumns[1]},
+	// TomeAssetsTable holds the schema information for the "tome_assets" table.
+	TomeAssetsTable = &schema.Table{
+		Name:       "tome_assets",
+		Columns:    TomeAssetsColumns,
+		PrimaryKey: []*schema.Column{TomeAssetsColumns[0], TomeAssetsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "tome_files_tome_id",
-				Columns:    []*schema.Column{TomeFilesColumns[0]},
+				Symbol:     "tome_assets_tome_id",
+				Columns:    []*schema.Column{TomeAssetsColumns[0]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "tome_files_file_id",
-				Columns:    []*schema.Column{TomeFilesColumns[1]},
-				RefColumns: []*schema.Column{FilesColumns[0]},
+				Symbol:     "tome_assets_asset_id",
+				Columns:    []*schema.Column{TomeAssetsColumns[1]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AssetsTable,
 		BeaconsTable,
-		FilesTable,
 		HostsTable,
 		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
+		LinksTable,
+		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
 		ShellsTable,
@@ -479,18 +565,19 @@ var (
 		UsersTable,
 		HostTagsTable,
 		ShellActiveUsersTable,
-		TomeFilesTable,
+		TomeAssetsTable,
 	}
 )
 
 func init() {
+	AssetsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
 	BeaconsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
-	FilesTable.Annotation = &entsql.Annotation{
-		Collation: "utf8mb4_general_ci",
-	}
+	HostsTable.ForeignKeys[0].RefTable = TomesTable
 	HostsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -511,8 +598,18 @@ func init() {
 	HostProcessesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	LinksTable.ForeignKeys[0].RefTable = AssetsTable
+	LinksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	PortalsTable.ForeignKeys[0].RefTable = TasksTable
+	PortalsTable.ForeignKeys[1].RefTable = BeaconsTable
+	PortalsTable.ForeignKeys[2].RefTable = UsersTable
+	PortalsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
-	QuestsTable.ForeignKeys[1].RefTable = FilesTable
+	QuestsTable.ForeignKeys[1].RefTable = AssetsTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
 	QuestsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
@@ -541,6 +638,7 @@ func init() {
 	TomesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	UsersTable.ForeignKeys[0].RefTable = PortalsTable
 	UsersTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -548,6 +646,6 @@ func init() {
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
-	TomeFilesTable.ForeignKeys[0].RefTable = TomesTable
-	TomeFilesTable.ForeignKeys[1].RefTable = FilesTable
+	TomeAssetsTable.ForeignKeys[0].RefTable = TomesTable
+	TomeAssetsTable.ForeignKeys[1].RefTable = AssetsTable
 }

@@ -1,5 +1,5 @@
 import { ReactElement, useState } from "react";
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { PageNavItem } from "../../utils/enums";
 
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";

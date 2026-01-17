@@ -33,6 +33,12 @@ type Tome struct {
 	SupportModel tome.SupportModel `json:"support_model,omitempty"`
 	// MITRE ATT&CK tactic provided by the tome.
 	Tactic tome.Tactic `json:"tactic,omitempty"`
+	// If true, this tome will automatically be queued for all new Beacon callbacks.
+	RunOnNewBeaconCallback bool `json:"run_on_new_beacon_callback,omitempty"`
+	// If true, this tome will automatically be queued for the first new callback on a Host.
+	RunOnFirstHostCallback bool `json:"run_on_first_host_callback,omitempty"`
+	// Cron-like schedule for this tome to be automatically queued.
+	RunOnSchedule string `json:"run_on_schedule,omitempty"`
 	// JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
 	ParamDefs string `json:"param_defs,omitempty"`
 	// A SHA3 digest of the eldritch field
@@ -49,28 +55,31 @@ type Tome struct {
 
 // TomeEdges holds the relations/edges for other nodes in the graph.
 type TomeEdges struct {
-	// Any files required for tome execution that will be bundled and provided to the agent for download
-	Files []*File `json:"files,omitempty"`
+	// Any assets required for tome execution that will be bundled and provided to the agent for download
+	Assets []*Asset `json:"assets,omitempty"`
 	// User who uploaded the tome (may be null).
 	Uploader *User `json:"uploader,omitempty"`
 	// Repository from which this Tome was imported (may be null).
 	Repository *Repository `json:"repository,omitempty"`
+	// If a schedule is configured for this tome, you may limit which hosts it runs on using this field. If a schedule is configured but no hosts are set, the tome will run on all hosts.
+	ScheduledHosts []*Host `json:"scheduled_hosts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
-	namedFiles map[string][]*File
+	namedAssets         map[string][]*Asset
+	namedScheduledHosts map[string][]*Host
 }
 
-// FilesOrErr returns the Files value or an error if the edge
+// AssetsOrErr returns the Assets value or an error if the edge
 // was not loaded in eager-loading.
-func (e TomeEdges) FilesOrErr() ([]*File, error) {
+func (e TomeEdges) AssetsOrErr() ([]*Asset, error) {
 	if e.loadedTypes[0] {
-		return e.Files, nil
+		return e.Assets, nil
 	}
-	return nil, &NotLoadedError{edge: "files"}
+	return nil, &NotLoadedError{edge: "assets"}
 }
 
 // UploaderOrErr returns the Uploader value or an error if the edge
@@ -95,14 +104,25 @@ func (e TomeEdges) RepositoryOrErr() (*Repository, error) {
 	return nil, &NotLoadedError{edge: "repository"}
 }
 
+// ScheduledHostsOrErr returns the ScheduledHosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e TomeEdges) ScheduledHostsOrErr() ([]*Host, error) {
+	if e.loadedTypes[3] {
+		return e.ScheduledHosts, nil
+	}
+	return nil, &NotLoadedError{edge: "scheduled_hosts"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Tome) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case tome.FieldRunOnNewBeaconCallback, tome.FieldRunOnFirstHostCallback:
+			values[i] = new(sql.NullBool)
 		case tome.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tome.FieldName, tome.FieldDescription, tome.FieldAuthor, tome.FieldSupportModel, tome.FieldTactic, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
+		case tome.FieldName, tome.FieldDescription, tome.FieldAuthor, tome.FieldSupportModel, tome.FieldTactic, tome.FieldRunOnSchedule, tome.FieldParamDefs, tome.FieldHash, tome.FieldEldritch:
 			values[i] = new(sql.NullString)
 		case tome.FieldCreatedAt, tome.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -173,6 +193,24 @@ func (t *Tome) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				t.Tactic = tome.Tactic(value.String)
 			}
+		case tome.FieldRunOnNewBeaconCallback:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field run_on_new_beacon_callback", values[i])
+			} else if value.Valid {
+				t.RunOnNewBeaconCallback = value.Bool
+			}
+		case tome.FieldRunOnFirstHostCallback:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field run_on_first_host_callback", values[i])
+			} else if value.Valid {
+				t.RunOnFirstHostCallback = value.Bool
+			}
+		case tome.FieldRunOnSchedule:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field run_on_schedule", values[i])
+			} else if value.Valid {
+				t.RunOnSchedule = value.String
+			}
 		case tome.FieldParamDefs:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field param_defs", values[i])
@@ -218,9 +256,9 @@ func (t *Tome) Value(name string) (ent.Value, error) {
 	return t.selectValues.Get(name)
 }
 
-// QueryFiles queries the "files" edge of the Tome entity.
-func (t *Tome) QueryFiles() *FileQuery {
-	return NewTomeClient(t.config).QueryFiles(t)
+// QueryAssets queries the "assets" edge of the Tome entity.
+func (t *Tome) QueryAssets() *AssetQuery {
+	return NewTomeClient(t.config).QueryAssets(t)
 }
 
 // QueryUploader queries the "uploader" edge of the Tome entity.
@@ -231,6 +269,11 @@ func (t *Tome) QueryUploader() *UserQuery {
 // QueryRepository queries the "repository" edge of the Tome entity.
 func (t *Tome) QueryRepository() *RepositoryQuery {
 	return NewTomeClient(t.config).QueryRepository(t)
+}
+
+// QueryScheduledHosts queries the "scheduled_hosts" edge of the Tome entity.
+func (t *Tome) QueryScheduledHosts() *HostQuery {
+	return NewTomeClient(t.config).QueryScheduledHosts(t)
 }
 
 // Update returns a builder for updating this Tome.
@@ -277,6 +320,15 @@ func (t *Tome) String() string {
 	builder.WriteString("tactic=")
 	builder.WriteString(fmt.Sprintf("%v", t.Tactic))
 	builder.WriteString(", ")
+	builder.WriteString("run_on_new_beacon_callback=")
+	builder.WriteString(fmt.Sprintf("%v", t.RunOnNewBeaconCallback))
+	builder.WriteString(", ")
+	builder.WriteString("run_on_first_host_callback=")
+	builder.WriteString(fmt.Sprintf("%v", t.RunOnFirstHostCallback))
+	builder.WriteString(", ")
+	builder.WriteString("run_on_schedule=")
+	builder.WriteString(t.RunOnSchedule)
+	builder.WriteString(", ")
 	builder.WriteString("param_defs=")
 	builder.WriteString(t.ParamDefs)
 	builder.WriteString(", ")
@@ -289,27 +341,51 @@ func (t *Tome) String() string {
 	return builder.String()
 }
 
-// NamedFiles returns the Files named value or an error if the edge was not
+// NamedAssets returns the Assets named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (t *Tome) NamedFiles(name string) ([]*File, error) {
-	if t.Edges.namedFiles == nil {
+func (t *Tome) NamedAssets(name string) ([]*Asset, error) {
+	if t.Edges.namedAssets == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := t.Edges.namedFiles[name]
+	nodes, ok := t.Edges.namedAssets[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (t *Tome) appendNamedFiles(name string, edges ...*File) {
-	if t.Edges.namedFiles == nil {
-		t.Edges.namedFiles = make(map[string][]*File)
+func (t *Tome) appendNamedAssets(name string, edges ...*Asset) {
+	if t.Edges.namedAssets == nil {
+		t.Edges.namedAssets = make(map[string][]*Asset)
 	}
 	if len(edges) == 0 {
-		t.Edges.namedFiles[name] = []*File{}
+		t.Edges.namedAssets[name] = []*Asset{}
 	} else {
-		t.Edges.namedFiles[name] = append(t.Edges.namedFiles[name], edges...)
+		t.Edges.namedAssets[name] = append(t.Edges.namedAssets[name], edges...)
+	}
+}
+
+// NamedScheduledHosts returns the ScheduledHosts named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Tome) NamedScheduledHosts(name string) ([]*Host, error) {
+	if t.Edges.namedScheduledHosts == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedScheduledHosts[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Tome) appendNamedScheduledHosts(name string, edges ...*Host) {
+	if t.Edges.namedScheduledHosts == nil {
+		t.Edges.namedScheduledHosts = make(map[string][]*Host)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedScheduledHosts[name] = []*Host{}
+	} else {
+		t.Edges.namedScheduledHosts[name] = append(t.Edges.namedScheduledHosts[name], edges...)
 	}
 }
 

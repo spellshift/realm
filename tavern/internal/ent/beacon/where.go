@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -88,6 +89,11 @@ func AgentIdentifier(v string) predicate.Beacon {
 // LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldLastSeenAt, v))
+}
+
+// NextSeenAt applies equality check predicate on the "next_seen_at" field. It's identical to NextSeenAtEQ.
+func NextSeenAt(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldNextSeenAt, v))
 }
 
 // Interval applies equality check predicate on the "interval" field. It's identical to IntervalEQ.
@@ -505,6 +511,56 @@ func LastSeenAtNotNil() predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotNull(FieldLastSeenAt))
 }
 
+// NextSeenAtEQ applies the EQ predicate on the "next_seen_at" field.
+func NextSeenAtEQ(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldNextSeenAt, v))
+}
+
+// NextSeenAtNEQ applies the NEQ predicate on the "next_seen_at" field.
+func NextSeenAtNEQ(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldNextSeenAt, v))
+}
+
+// NextSeenAtIn applies the In predicate on the "next_seen_at" field.
+func NextSeenAtIn(vs ...time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldNextSeenAt, vs...))
+}
+
+// NextSeenAtNotIn applies the NotIn predicate on the "next_seen_at" field.
+func NextSeenAtNotIn(vs ...time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldNextSeenAt, vs...))
+}
+
+// NextSeenAtGT applies the GT predicate on the "next_seen_at" field.
+func NextSeenAtGT(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGT(FieldNextSeenAt, v))
+}
+
+// NextSeenAtGTE applies the GTE predicate on the "next_seen_at" field.
+func NextSeenAtGTE(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldGTE(FieldNextSeenAt, v))
+}
+
+// NextSeenAtLT applies the LT predicate on the "next_seen_at" field.
+func NextSeenAtLT(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLT(FieldNextSeenAt, v))
+}
+
+// NextSeenAtLTE applies the LTE predicate on the "next_seen_at" field.
+func NextSeenAtLTE(v time.Time) predicate.Beacon {
+	return predicate.Beacon(sql.FieldLTE(FieldNextSeenAt, v))
+}
+
+// NextSeenAtIsNil applies the IsNil predicate on the "next_seen_at" field.
+func NextSeenAtIsNil() predicate.Beacon {
+	return predicate.Beacon(sql.FieldIsNull(FieldNextSeenAt))
+}
+
+// NextSeenAtNotNil applies the NotNil predicate on the "next_seen_at" field.
+func NextSeenAtNotNil() predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotNull(FieldNextSeenAt))
+}
+
 // IntervalEQ applies the EQ predicate on the "interval" field.
 func IntervalEQ(v uint64) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldInterval, v))
@@ -553,6 +609,26 @@ func IntervalIsNil() predicate.Beacon {
 // IntervalNotNil applies the NotNil predicate on the "interval" field.
 func IntervalNotNil() predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotNull(FieldInterval))
+}
+
+// TransportEQ applies the EQ predicate on the "transport" field.
+func TransportEQ(v c2pb.Transport_Type) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldTransport, v))
+}
+
+// TransportNEQ applies the NEQ predicate on the "transport" field.
+func TransportNEQ(v c2pb.Transport_Type) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldTransport, v))
+}
+
+// TransportIn applies the In predicate on the "transport" field.
+func TransportIn(vs ...c2pb.Transport_Type) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldTransport, vs...))
+}
+
+// TransportNotIn applies the NotIn predicate on the "transport" field.
+func TransportNotIn(vs ...c2pb.Transport_Type) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldTransport, vs...))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.

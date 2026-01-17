@@ -1,6 +1,75 @@
 use anyhow::Result;
-use pb::c2::*;
+use pb::{c2::*, config::Config};
+use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
+
+/// Helper function to extract the active URI from config.
+/// Strips query parameters from the URI.
+pub fn extract_uri_from_config(config: &Config) -> Result<String> {
+    if let Some(info) = &config.info {
+        if let Some(available_transports) = &info.available_transports {
+            let active_idx = available_transports.active_index as usize;
+            let transport = available_transports
+                .transports
+                .get(active_idx)
+                .or_else(|| available_transports.transports.first())
+                .ok_or_else(|| anyhow::anyhow!("No transports configured"))?;
+
+            let uri = transport
+                .uri
+                .split('?')
+                .next()
+                .unwrap_or(&transport.uri)
+                .to_string();
+            Ok(uri)
+        } else {
+            Err(anyhow::anyhow!("No available_transports in config"))
+        }
+    } else {
+        Err(anyhow::anyhow!("No beacon info in config"))
+    }
+}
+
+/// Helper function to extract the full URI from config (with query parameters).
+/// Used by DNS transport which needs the query parameters.
+/// TODO: Remove this DNS should pass config through extra field
+pub fn extract_full_uri_from_config(config: &Config) -> Result<String> {
+    if let Some(info) = &config.info {
+        if let Some(available_transports) = &info.available_transports {
+            let active_idx = available_transports.active_index as usize;
+            let transport = available_transports
+                .transports
+                .get(active_idx)
+                .or_else(|| available_transports.transports.first())
+                .ok_or_else(|| anyhow::anyhow!("No transports configured"))?;
+
+            Ok(transport.uri.clone())
+        } else {
+            Err(anyhow::anyhow!("No available_transports in config"))
+        }
+    } else {
+        Err(anyhow::anyhow!("No beacon info in config"))
+    }
+}
+
+/// Helper function to extract the extra configuration as a HashMap from config.
+/// Returns an empty HashMap if parsing fails or no extra is configured.
+pub fn extract_extra_from_config(config: &Config) -> HashMap<String, String> {
+    if let Some(info) = &config.info {
+        if let Some(available_transports) = &info.available_transports {
+            let active_idx = available_transports.active_index as usize;
+            if let Some(transport) = available_transports
+                .transports
+                .get(active_idx)
+                .or_else(|| available_transports.transports.first())
+            {
+                return serde_json::from_str::<HashMap<String, String>>(&transport.extra)
+                    .unwrap_or_else(|_| HashMap::new());
+            }
+        }
+    }
+    HashMap::new()
+}
 
 #[trait_variant::make(Transport: Send)]
 pub trait UnsafeTransport: Clone + Send {
@@ -8,9 +77,10 @@ pub trait UnsafeTransport: Clone + Send {
     #[allow(dead_code)]
     fn init() -> Self;
 
-    // New will create a new instance of the transport using the provided URI.
+    // New will create a new instance of the transport using the Config.
+    // The URI is extracted from config.info.available_transports at the active_index.
     #[allow(dead_code)]
-    fn new(uri: String, proxy_uri: Option<String>) -> Result<Self>;
+    fn new(config: Config) -> Result<Self>;
 
     ///
     /// Contact the server for new tasks to execute.
@@ -78,4 +148,27 @@ pub trait UnsafeTransport: Clone + Send {
         rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()>;
+
+    ///
+    /// Create a portal via the transport.
+    #[allow(dead_code)]
+    async fn create_portal(
+        &mut self,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()>;
+
+    #[allow(dead_code)]
+    fn get_type(&mut self) -> pb::c2::transport::Type;
+    /// Returns true if the transport is fully initialized and active
+    #[allow(dead_code)]
+    fn is_active(&self) -> bool;
+
+    /// Returns the name of the transport protocol (e.g., "grpc", "http")
+    #[allow(dead_code)]
+    fn name(&self) -> &'static str;
+
+    /// Returns a list of available transports that this instance can switch to or supports.
+    #[allow(dead_code)]
+    fn list_available(&self) -> Vec<String>;
 }

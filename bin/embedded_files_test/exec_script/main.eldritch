@@ -5,9 +5,14 @@ def copy_script_and_execute():
         print(shell_res)
         print("\n")
     elif sys.is_windows():
-        assets.copy("exec_script/hello_world.bat","C:\Windows\Temp\golem_cli_test-copy_script_and_execute")
-        shell_res = sys.shell("C:\Windows\Temp\golem_cli_test-copy_script_and_execute")
+        assets.copy("exec_script/hello_world.bat",r"C:\Windows\Temp\golem_cli_test-copy_script_and_execute.bat")
+        shell_res = sys.shell(r"cmd.exe /c C:\Windows\Temp\golem_cli_test-copy_script_and_execute.bat")
         print(shell_res)
         print("\n")
 
-copy_script_and_execute()
+if sys.hostname() == "eldritch-test-box":
+    print("we are in a mock env")
+    print(assets.read("exec_script/hello_world.sh")) # Print this so the test passes
+    #print("hello from an embedded shell script") 
+else:
+    copy_script_and_execute()

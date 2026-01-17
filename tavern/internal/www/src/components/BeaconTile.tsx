@@ -1,40 +1,55 @@
-import { checkIfBeaconOffline } from "../utils/utils";
+import { BugAntIcon } from "@heroicons/react/24/outline";
+import { BeaconNode, TagEdge } from "../utils/interfacesQuery";
+import { checkIfBeaconOffline, getEnumKey } from "../utils/utils";
 import Badge from "./tavern-base-ui/badge/Badge";
+import { Globe, Network } from "lucide-react";
+import { SupportedPlatforms, SupportedTransports } from "../utils/enums";
+
 
 type Props = {
-    beaconData: {
-        name: string;
-        lastSeenAt: string;
-        interval: number;
-        principal?: string;
-        host: {
-            id: string;
-            tags?: Array<any>;
-            name: string;
-            primaryIP?: string;
-            platform?: string;
-        }
-    }
+    beacon: BeaconNode;
+    isBeaconIconVisible?: boolean;
 }
 const BeaconTile = (props: Props) => {
-    const { beaconData } = props;
-    const beaconOffline = checkIfBeaconOffline(beaconData);
+    const { beacon, isBeaconIconVisible } = props;
+    const {
+        host,
+        principal,
+        name,
+        transport
+    } = beacon;
+    const beaconOffline = checkIfBeaconOffline(beacon);
+
     return (
-        <div className="flex flex-col gap-1">
-            <div className="flex flex-row gap-4">{beaconData.name}</div>
-            <div className="flex flex-row flex-wrap gap-1">
-                {(beaconData.principal && beaconData.principal !== "") &&
-                    <Badge>{beaconData.principal}</Badge>
-                }
-                <Badge>{beaconData?.host?.name}</Badge>
-                <Badge>{beaconData?.host?.primaryIP}</Badge>
-                <Badge>{beaconData?.host?.platform}</Badge>
-                {beaconData?.host?.tags && beaconData?.host?.tags.map((tag: any) => {
-                    return <Badge key={tag.id}>{tag.name}</Badge>
-                })}
-                {beaconOffline && <Badge>Offline</Badge>}
+        <div className=" flex flex-row gap-4">
+            {isBeaconIconVisible && <BugAntIcon className="h-5 w-5 mt-2" />}
+            <div className="flex flex-col gap-1 ">
+                <div className="text-gray-600">
+                    {name}@{host?.name}
+                </div>
+                <div className="flex flex-row gap-2 flex-wrap">
+                    {(principal && principal !== "") &&
+                        <Badge>{principal}</Badge>
+                    }
+                    {transport &&
+                        <Badge>{getEnumKey(SupportedTransports, transport)}</Badge>
+                    }
+                    {host?.primaryIP && (
+                        <Badge leftIcon={<Network className="h-3 w-3" />}>{host?.primaryIP}</Badge>
+                    )}
+                    {host?.externalIP && (
+                        <Badge leftIcon={<Globe className="h-3 w-3" />}>{host?.externalIP}</Badge>
+                    )}
+                    {host?.platform &&
+                        <Badge>{getEnumKey(SupportedPlatforms, host?.platform)}</Badge>
+                    }
+                    {host?.tags && host?.tags?.edges?.map((tag: TagEdge) => {
+                        return <Badge key={tag.node.id}>{tag.node.name}</Badge>
+                    })}
+                    {beaconOffline && <Badge>Offline</Badge>}
+                </div>
             </div>
         </div>
     );
-}
+};
 export default BeaconTile;

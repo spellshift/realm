@@ -1,0 +1,16 @@
+[package]
+name = "eldritch-librandom"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:rand", "dep:rand_chacha", "dep:uuid"]
+fake_bindings = []

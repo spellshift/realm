@@ -1,0 +1,15 @@
+def download_stuff_test():
+    content = http.get("https://raw.githubusercontent.com/spellshift/realm/refs/heads/main/README.md")
+    # Allow this to work in both v1 and v2
+    if type(content) != "string":
+        content = str(content["body"])
+
+    # Mock is needed for tests    
+    if not "# Realm" in content and not "Mock GET" in content:
+        print("failed to download readme")
+        return -1
+
+    print("OKAY!")
+    return 0
+
+download_stuff_test()

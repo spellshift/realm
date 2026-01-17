@@ -63,16 +63,17 @@ func (Quest) Edges() []ent.Edge {
 			Comment("Tome that this quest will be executing").
 			Required().
 			Unique(),
-		edge.To("bundle", File.Type).
+		edge.To("bundle", Asset.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
-			Comment("Bundle file that the executing tome depends on (if any)").
+			Comment("Bundle asset that the executing tome depends on (if any)").
 			Unique(),
 		edge.To("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput),
 				entgql.RelayConnection(),
+				entgql.MultiOrder(),
 			).
 			Comment("Tasks tracking the status and output of individual tome execution on targets"),
 		edge.To("creator", User.Type).

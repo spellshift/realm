@@ -68,13 +68,49 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			hostName := fmt.Sprintf("Group %d - %s", groupNum, svcTag.Name)
 			hostID := newRandomIdentifier()
 			hostIP := newRandomIP()
-			testHost := client.Host.Create().
-				SetName(hostName).
-				SetIdentifier(hostID).
-				SetPrimaryIP(hostIP).
-				SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
-				AddTags(svcTag, gTag).
-				SaveX(ctx)
+
+			var testHost *ent.Host;
+			if i == 4 && groupNum == 5 {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			} else if i == 3 {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			} else if groupNum == 1 {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			} else {
+				testHost = client.Host.Create().
+					SetName(hostName).
+					SetIdentifier(hostID).
+					SetPrimaryIP(hostIP).
+					SetPlatform(c2pb.Host_Platform(i%len(c2pb.Host_Platform_value))).
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
+					AddTags(svcTag, gTag).
+					SaveX(ctx)
+			}
 
 			client.HostCredential.Create().
 				SetHost(testHost).
@@ -83,50 +119,122 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
 
-			testBeacons = append(testBeacons,
-				client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetIdentifier(newRandomIdentifier()).
-					SetAgentIdentifier("test-data").
-					SetHost(testHost).
-					SetInterval(600000).
-					SetPrincipal("root").
-					SaveX(ctx),
-			)
-			if groupNum == 1 {
+			// Cycle through transports: HTTP1, GRPC, DNS
+			getTransport := func(idx int) c2pb.Transport_Type {
+				transports := []c2pb.Transport_Type{
+					c2pb.Transport_TRANSPORT_HTTP1,
+					c2pb.Transport_TRANSPORT_GRPC,
+					c2pb.Transport_TRANSPORT_DNS,
+				}
+				return transports[idx%3]
+			}
+
+			if i == 4 && groupNum == 5 {
+				// Host with dead beacons Group 5 - Service 5
 				testBeacons = append(testBeacons,
 					client.Beacon.Create().
 						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(60).
+						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
+						SaveX(ctx),
+				)
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-2*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-2*time.Minute).Add(60*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(60).
+						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
+						SaveX(ctx),
+				)
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(60*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(60).
+						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
+						SaveX(ctx),
+				)
+			} else {
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
 						SetIdentifier(newRandomIdentifier()).
 						SetAgentIdentifier("test-data").
 						SetHost(testHost).
 						SetInterval(600000).
-						SetPrincipal("jane").
+						SetPrincipal("root").
+						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
+						SaveX(ctx),
+				)
+				if i == 3 {
+					testBeacons = append(testBeacons,
+						client.Beacon.Create().
+							SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+							SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600*time.Second)).
+							SetIdentifier(newRandomIdentifier()).
+							SetAgentIdentifier("test-data").
+							SetHost(testHost).
+							SetInterval(600).
+							SetPrincipal("janet").
+						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
+						SaveX(ctx),
+					)
+				}
+				if groupNum == 1 {
+					testBeacons = append(testBeacons,
+						client.Beacon.Create().
+							SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+							SetNextSeenAt(time.Now().Add(-30*time.Second).Add(600000*time.Second)).
+							SetIdentifier(newRandomIdentifier()).
+							SetAgentIdentifier("test-data").
+							SetHost(testHost).
+							SetInterval(600000).
+							SetPrincipal("jane").
+						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
+						SaveX(ctx),
+					)
+				}
+
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-10*time.Minute)).
+						SetNextSeenAt(time.Now().Add(-10*time.Second).Add(1000*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(1000).
+						SetPrincipal("admin").
+						SetTransport(getTransport(groupNum*100 + i*10 + 3)).
+						SaveX(ctx),
+				)
+
+				testBeacons = append(testBeacons,
+					client.Beacon.Create().
+						SetLastSeenAt(time.Now().Add(-1*time.Hour)).
+						SetNextSeenAt(time.Now().Add(-1*time.Hour).Add(4*time.Second)).
+						SetIdentifier(newRandomIdentifier()).
+						SetAgentIdentifier("test-data").
+						SetHost(testHost).
+						SetInterval(4).
+						SetPrincipal("Administrator").
+						SetTransport(getTransport(groupNum*100 + i*10 + 4)).
 						SaveX(ctx),
 				)
 			}
-
-			testBeacons = append(testBeacons,
-				client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-10*time.Minute)).
-					SetIdentifier(newRandomIdentifier()).
-					SetAgentIdentifier("test-data").
-					SetHost(testHost).
-					SetInterval(1000).
-					SetPrincipal("admin").
-					SaveX(ctx),
-			)
-
-			testBeacons = append(testBeacons,
-				client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-1*time.Hour)).
-					SetIdentifier(newRandomIdentifier()).
-					SetAgentIdentifier("test-data").
-					SetHost(testHost).
-					SetInterval(4).
-					SetPrincipal("Administrator").
-					SaveX(ctx),
-			)
 		}
 	}
 

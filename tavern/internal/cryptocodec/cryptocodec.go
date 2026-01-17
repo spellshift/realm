@@ -196,10 +196,9 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	var id int
 	var client_pub_key_bytes []byte
 	ok := false
-	for idx, id := range []int{ids.Id, ids.ParentId} {
+	for _, id := range []int{ids.Id, ids.ParentId} {
 		client_pub_key_bytes, ok = session_pub_keys.Load(id)
 		if ok {
-			slog.Info(fmt.Sprintf("found public key for id: %d idx: %d", id, idx))
 			break
 		}
 	}

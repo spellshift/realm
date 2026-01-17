@@ -1,4 +1,4 @@
-import { PageWrapper } from "../../features/page-wrapper";
+import { PageWrapper } from "../../components/page-wrapper";
 import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
@@ -15,13 +15,15 @@ const Shell = () => {
     const toast = useToast();
 
     const [wsIsOpen, setWsIsOpen] = useState(false);
+    const [latency, setLatency] = useState<number | null>(null);
     const ws = useRef<WebSocket | null>(null);
+    const pingWs = useRef<WebSocket | null>(null);
     const termRef = useRef<Terminal | null>(null);
     if (termRef.current === null) {
         termRef.current = new Terminal();
     }
 
-    // Setup WebSocket
+    // Setup Shell WebSocket
     useEffect(() => {
         if (!ws.current) {
             const scheme = window.location.protocol === "https:" ? 'wss' : 'ws';
@@ -49,6 +51,7 @@ const Shell = () => {
                 })
             }
             socket.onclose = (e) => {
+                setWsIsOpen(false);
                 toast({
                     title: 'Shell Closed',
                     description: `Your shell connection has been closed, however the shell may still be available (${e.type})`,
@@ -57,12 +60,66 @@ const Shell = () => {
                     isClosable: true,
                 })
             }
-            ws.current = socket;
 
-            socket.onclose = (e) => {
-                setWsIsOpen(false);
+            ws.current = socket;
+        }
+
+        // Cleanup
+        return () => {
+            if (ws.current) {
+                ws.current.close();
+                ws.current = null;
             }
         }
+    }, [shellId]);
+
+    // Setup Ping WebSocket and Loop
+    useEffect(() => {
+        if (!pingWs.current) {
+            const scheme = window.location.protocol === "https:" ? 'wss' : 'ws';
+            const socket = new WebSocket(`${scheme}://${window.location.host}/shell/ping?shell_id=${shellId}`);
+            socket.binaryType = 'arraybuffer';
+
+            socket.onmessage = (ev) => {
+                // We expect the payload to be the timestamp we sent
+                // It comes back as binary (ArrayBuffer) because the backend writes BinaryMessage
+                try {
+                    const dec = new TextDecoder("utf-8");
+                    let sentAtStr = "";
+                    if (ev.data instanceof ArrayBuffer) {
+                        sentAtStr = dec.decode(ev.data);
+                    } else if (typeof ev.data === "string") {
+                        sentAtStr = ev.data;
+                    }
+
+                    const sentAt = parseInt(sentAtStr);
+                    if (!isNaN(sentAt)) {
+                        const now = Date.now();
+                        setLatency(now - sentAt);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse ping response", e);
+                }
+            };
+
+            pingWs.current = socket;
+        }
+
+        const timer = setInterval(() => {
+            if (pingWs.current && pingWs.current.readyState === WebSocket.OPEN) {
+                // Send current timestamp as string/bytes
+                const now = Date.now().toString();
+                pingWs.current.send(now);
+            }
+        }, 2000);
+
+        return () => {
+            clearInterval(timer);
+            if (pingWs.current) {
+                pingWs.current.close();
+                pingWs.current = null;
+            }
+        };
     }, [shellId]);
 
     const renderTerminal = (div: HTMLDivElement) => { if (div) { termRef.current?.open(div); } };
@@ -79,6 +136,11 @@ const Shell = () => {
                     <div className="flex flex-row gap-4 items-center">
                         <h3 className="text-xl font-semibold leading-6 text-gray-900">Shell for id:{shellId}</h3>
                         <Badge badgeStyle={{ color: "purple" }} >BETA FEATURE</Badge>
+                        {latency !== null && (
+                            <Badge badgeStyle={{ color: latency < 200 ? "green" : "red" }}>
+                                {latency}ms
+                            </Badge>
+                        )}
                     </div>
                     <p className="max-w-2xl text-sm">Start by clicking inside the terminal, you may need to enter a newline to see the terminal prompt.</p>
                 </div>

@@ -3,10 +3,13 @@
 package beacon
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 const (
@@ -28,8 +31,12 @@ const (
 	FieldAgentIdentifier = "agent_identifier"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
+	// FieldNextSeenAt holds the string denoting the next_seen_at field in the database.
+	FieldNextSeenAt = "next_seen_at"
 	// FieldInterval holds the string denoting the interval field in the database.
 	FieldInterval = "interval"
+	// FieldTransport holds the string denoting the transport field in the database.
+	FieldTransport = "transport"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
@@ -71,7 +78,9 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldAgentIdentifier,
 	FieldLastSeenAt,
+	FieldNextSeenAt,
 	FieldInterval,
+	FieldTransport,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "beacons"
@@ -116,6 +125,16 @@ var (
 	AgentIdentifierValidator func(string) error
 )
 
+// TransportValidator is a validator for the "transport" field enum values. It is called by the builders before save.
+func TransportValidator(t c2pb.Transport_Type) error {
+	switch t.String() {
+	case "TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED":
+		return nil
+	default:
+		return fmt.Errorf("beacon: invalid enum value for transport field: %q", t)
+	}
+}
+
 // OrderOption defines the ordering options for the Beacon queries.
 type OrderOption func(*sql.Selector)
 
@@ -159,9 +178,19 @@ func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
 }
 
+// ByNextSeenAt orders the results by the next_seen_at field.
+func ByNextSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextSeenAt, opts...).ToFunc()
+}
+
 // ByInterval orders the results by the interval field.
 func ByInterval(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInterval, opts...).ToFunc()
+}
+
+// ByTransport orders the results by the transport field.
+func ByTransport(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransport, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.
@@ -219,3 +248,10 @@ func newShellsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
 	)
 }
+
+var (
+	// c2pb.Transport_Type must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*c2pb.Transport_Type)(nil)
+	// c2pb.Transport_Type must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*c2pb.Transport_Type)(nil)
+)

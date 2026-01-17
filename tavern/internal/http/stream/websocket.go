@@ -27,13 +27,14 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 256 * 1024 // 256KB
 )
 
 type connector struct {
 	*Stream
-	mux *Mux
-	ws  *websocket.Conn
+	mux  *Mux
+	ws   *websocket.Conn
+	kind string
 }
 
 // WriteToWebsocket will read messages from the Mux and write them to the underlying websocket.
@@ -73,6 +74,15 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				return
 			}
 
+			// Filter by kind
+			kind := message.Metadata[MetadataMsgKind]
+			if kind == "" {
+				kind = "data"
+			}
+			if kind != c.kind {
+				continue
+			}
+
 			w, err := c.ws.NextWriter(websocket.BinaryMessage)
 			if err != nil {
 				return
@@ -89,6 +99,16 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			n := len(c.Messages())
 			for i := 0; i < n; i++ {
 				additionalMsg := <-c.Messages()
+
+				// Filter additional messages too
+				kind := additionalMsg.Metadata[MetadataMsgKind]
+				if kind == "" {
+					kind = "data"
+				}
+				if kind != c.kind {
+					continue
+				}
+
 				if _, err := w.Write(additionalMsg.Body); err != nil {
 					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
 						"stream_id", c.Stream.id,
@@ -138,11 +158,13 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 				}
 				return
 			}
+
 			msgLen := len(message)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
-					metadataID: c.id,
+					metadataID:      c.id,
+					MetadataMsgKind: c.kind,
 				},
 			}, c.mux); err != nil {
 				slog.ErrorContext(ctx, "websocket failed to publish message",
@@ -294,6 +316,7 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			Stream: stream,
 			mux:    mux,
 			ws:     ws,
+			kind:   "data",
 		}
 
 		// Read & Write
@@ -311,5 +334,63 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		wg.Wait()
 		activeUserDoneCh <- struct{}{}
 		activeUserWG.Wait()
+	})
+}
+
+// NewPingHandler provides an HTTP handler which handles a websocket for latency pings.
+// It requires a query param "shell_id" be specified (must be an integer).
+func NewPingHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Parse Shell ID
+		shellIDStr := r.URL.Query().Get("shell_id")
+		if shellIDStr == "" {
+			http.Error(w, "must provide integer value for 'shell_id'", http.StatusBadRequest)
+			return
+		}
+		shellID, err := strconv.Atoi(shellIDStr)
+		if err != nil {
+			http.Error(w, "invalid 'shell_id' provided, must be integer", http.StatusBadRequest)
+			return
+		}
+
+		// Check if shell exists (optional, but good for consistency)
+		exists, err := graph.Shell.Query().Where(shell.ID(shellID)).Exist(ctx)
+		if err != nil || !exists {
+			http.Error(w, "shell not found", http.StatusNotFound)
+			return
+		}
+
+		// Start Websocket
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+
+		// Initialize Stream
+		stream := New(shellIDStr)
+
+		// Create Connector
+		conn := &connector{
+			Stream: stream,
+			mux:    mux,
+			ws:     ws,
+			kind:   "ping",
+		}
+
+		// Read & Write
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			conn.ReadFromWebsocket(ctx)
+		}()
+		go func() {
+			defer wg.Done()
+			conn.WriteToWebsocket(ctx)
+		}()
+
+		wg.Wait()
 	})
 }

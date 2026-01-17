@@ -1,19 +1,19 @@
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
-import { AuthorizationContext } from "../../context/AuthorizationContext";
-import { ReactNode, useContext } from "react";
+import { useAuthorization } from "../../context/AuthorizationContext";
+import { ReactNode } from "react";
 
 type Props = {
     children: ReactNode;
 }
 export const AccessGate = ({ children }: Props) => {
-    const { data, isLoading, error } = useContext(AuthorizationContext);
+    const { data, isLoading, error } = useAuthorization();
     const userData = data?.me || null;
 
 
     if (isLoading) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Loading authroization state" type={EmptyStateType.loading} />
+                <EmptyState label="Loading authorization state" type={EmptyStateType.loading} />
             </div>
         );
     }
@@ -21,7 +21,7 @@ export const AccessGate = ({ children }: Props) => {
     if (error) {
         return (
             <div className="flex flex-row w-sceen h-screen justify-center items-center">
-                <EmptyState label="Error fetching authroization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue." />
+                <EmptyState label="Error fetching authorization state" type={EmptyStateType.error} details="Please contact your admin to diagnose the issue." />
             </div>
         );
     }

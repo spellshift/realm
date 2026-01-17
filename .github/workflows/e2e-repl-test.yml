@@ -1,0 +1,93 @@
+name: E2E REPL Test 🧪
+
+on:
+  workflow_dispatch: ~
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+
+jobs:
+  e2e_repl_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5
+    - name: ⚡ Setup Golang
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: '1.91.1'
+        default: true
+        profile: minimal
+        components: rustfmt, clippy
+
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: tavern/internal/www/package-lock.json
+
+    - name: 📦 Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler libssl-dev
+    - name: 🔨 Build Tavern
+      run: |
+        go mod download
+        go build -v -o tavern_bin ./tavern
+    - name: 🚀 Run Tavern
+      env:
+        HTTP_LISTEN_ADDR: ":8000"
+      run: |
+        ./tavern_bin &
+        echo "Waiting for Tavern to start..."
+        # Wait for port 8000
+        timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 8000
+    - name: 🤖 Run Agent
+      working-directory: implants/imixv2
+      env:
+        IMIX_CALLBACK_URI: "http://localhost:8000"
+        IMIX_CALLBACK_INTERVAL: 1
+      run: |
+        # Fetch the pubkey and verify it's not empty
+        PUBKEY=$(curl -s http://localhost:8000/status | jq -r .Pubkey)
+        if [ -z "$PUBKEY" ] || [ "$PUBKEY" == "null" ]; then
+          echo "Error: Could not fetch Pubkey from Tavern"
+          exit 1
+        fi
+        export IMIX_SERVER_PUBKEY=$PUBKEY
+        echo "Got pubkey: $IMIX_SERVER_PUBKEY"
+
+        echo "Building imixv2..."
+        cargo build --bin imixv2 --target-dir ./build
+        # Run agent and pipe logs to a file
+        ./build/debug/imixv2 > agent.log 2>&1 &
+
+        # Give the agent a moment to perform the initial handshake
+        echo "Agent started. Waiting for initial callback..."
+        sleep 5
+    - name: 🎭 Install Playwright
+      working-directory: tests/e2e
+      run: |
+        npm ci
+        npx playwright install --with-deps chromium
+    - name: 🧪 Run E2E Tests
+      working-directory: tests/e2e
+      run: |
+        npx playwright test tests/repl.spec.ts
+    - name: 📂 Upload Service Logs
+      if: always() # Runs even if tests fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-logs
+        path: |
+          tavern.log
+          implants/imixv2/agent.log

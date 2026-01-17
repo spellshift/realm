@@ -37,9 +37,14 @@ class TagBuilder:
         graphql_query = """
 query getHosts($where:HostWhereInput){
     hosts(where:$where) {
-        id
-        primaryIP
-        name
+        edges {
+            node {
+                id
+                primaryIP
+                externalIP
+                name
+            }
+        }
     }
 }    """
 
@@ -54,7 +59,11 @@ query getHosts($where:HostWhereInput){
         graphql_query = """
 query getTag($input:TagWhereInput){
     tags(where:$input) {
-        id
+        edges {
+            node {
+                id
+            }
+        }
     }
 }    """
 
@@ -63,8 +72,8 @@ query getTag($input:TagWhereInput){
         if 'errors' in res:
             return -1
         else:
-            if len(res['data']['tags']) > 0:
-                return res['data']['tags'][0]['id']
+            if len(res['data']['tags']['edges']) > 0:
+                return res['data']['tags']['edges'][0]['node']['id']
             else:
                 return -1
 
@@ -142,12 +151,16 @@ mutation updateTag($input:UpdateTagInput!, $tagid:ID!){
                 "id": tag_id,
             }
 
-        for row in data["data"]["hosts"]:
+        for row in data["data"]["hosts"]["edges"]:
+            row = row["node"]
             for tag_profile in tag_profiles:
                 re_match = None
                 if 'ip_regex' in tag_profile:
                     re_match = re.search(
                         tag_profile["ip_regex"], row["primaryIP"])
+                if 'ip_regex' in tag_profile and re_match is None:
+                    re_match = re.search(
+                        tag_profile["ip_regex"], row["externalIP"])
                 if 'hostname_regex' in tag_profile:
                     re_match = re.search(
                         tag_profile["hostname_regex"], row["name"])

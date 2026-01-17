@@ -1,5 +1,5 @@
 use crate::task::TaskHandle;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use pb::{c2::ClaimTasksRequest, config::Config};
 use std::time::{Duration, Instant};
 use transport::Transport;
@@ -88,7 +88,7 @@ impl<T: Transport + 'static> Agent<T> {
      * Callback once using the configured client to claim new tasks and report available output.
      */
     pub async fn callback(&mut self) -> Result<()> {
-        self.t = T::new(self.cfg.callback_uri.clone(), self.cfg.proxy_uri.clone())?;
+        self.t = T::new(self.cfg.clone())?;
         self.claim_tasks(self.t.clone()).await?;
         self.report(self.t.clone()).await?;
         self.t = T::init(); // re-init to make sure no active connections during sleep
@@ -120,10 +120,23 @@ impl<T: Transport + 'static> Agent<T> {
                 return Ok(());
             }
 
-            let interval = match self.cfg.info.clone() {
-                Some(b) => Ok(b.interval),
-                None => Err(anyhow::anyhow!("beacon info is missing from agent")),
-            }?;
+            let interval = self
+                .cfg
+                .info
+                .clone()
+                .context("beacon info is missing from agent")
+                .and_then(|b| {
+                    b.available_transports
+                        .context("failed to get available transports")
+                })
+                .and_then(|available_transports| {
+                    available_transports
+                        .transports
+                        .get(available_transports.active_index as usize)
+                        .cloned()
+                        .context("active transport index out of bounds")
+                })
+                .map(|active_transport| active_transport.interval)?;
             let delay = match interval.checked_sub(start.elapsed().as_secs()) {
                 Some(secs) => Duration::from_secs(secs),
                 None => Duration::from_secs(0),

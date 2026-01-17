@@ -44,6 +44,28 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Asset struct {
+		CreatedAt      func(childComplexity int) int
+		Hash           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Links          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.LinkOrder, where *ent.LinkWhereInput) int
+		Name           func(childComplexity int) int
+		Size           func(childComplexity int) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+	}
+
+	AssetConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	AssetEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Beacon struct {
 		AgentIdentifier func(childComplexity int) int
 		CreatedAt       func(childComplexity int) int
@@ -54,36 +76,40 @@ type ComplexityRoot struct {
 		LastModifiedAt  func(childComplexity int) int
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
+		NextSeenAt      func(childComplexity int) int
 		Principal       func(childComplexity int) int
 		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tasks           func(childComplexity int) int
+		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Transport       func(childComplexity int) int
 	}
 
-	File struct {
-		CreatedAt      func(childComplexity int) int
-		Hash           func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		Size           func(childComplexity int) int
-		Tomes          func(childComplexity int) int
+	BeaconConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	BeaconEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Host struct {
-		Beacons        func(childComplexity int) int
+		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
-		Credentials    func(childComplexity int) int
+		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ExternalIP     func(childComplexity int) int
-		Files          func(childComplexity int) int
+		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		LastSeenAt     func(childComplexity int) int
 		Name           func(childComplexity int) int
+		NextSeenAt     func(childComplexity int) int
 		Platform       func(childComplexity int) int
 		PrimaryIP      func(childComplexity int) int
-		Processes      func(childComplexity int) int
-		Tags           func(childComplexity int) int
+		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
 
 	HostConnection struct {
@@ -101,6 +127,17 @@ type ComplexityRoot struct {
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
 		Task           func(childComplexity int) int
+	}
+
+	HostCredentialConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostCredentialEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	HostEdge struct {
@@ -122,6 +159,17 @@ type ComplexityRoot struct {
 		Task           func(childComplexity int) int
 	}
 
+	HostFileConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostFileEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	HostProcess struct {
 		Cmd            func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -139,17 +187,52 @@ type ComplexityRoot struct {
 		Task           func(childComplexity int) int
 	}
 
+	HostProcessConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostProcessEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	Link struct {
+		Asset              func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		DownloadsRemaining func(childComplexity int) int
+		ExpiresAt          func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		LastModifiedAt     func(childComplexity int) int
+		Path               func(childComplexity int) int
+	}
+
+	LinkConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	LinkEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateCredential func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink       func(childComplexity int, input ent.CreateLinkInput) int
 		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
 		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteTome       func(childComplexity int, tomeID int) int
+		DisableLink      func(childComplexity int, linkID int) int
 		DropAllData      func(childComplexity int) int
 		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
 		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
 		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
 		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
@@ -162,20 +245,43 @@ type ComplexityRoot struct {
 		StartCursor     func(childComplexity int) int
 	}
 
+	Portal struct {
+		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		Beacon         func(childComplexity int) int
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		Task           func(childComplexity int) int
+	}
+
+	PortalConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	PortalEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Query struct {
-		Beacons      func(childComplexity int, where *ent.BeaconWhereInput) int
-		Files        func(childComplexity int, where *ent.FileWhereInput) int
+		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
 		Nodes        func(childComplexity int, ids []int) int
+		Portals      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, where *ent.TagWhereInput) int
+		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, where *ent.UserWhereInput) int
+		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -210,7 +316,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
 		PublicKey      func(childComplexity int) int
-		Tomes          func(childComplexity int) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 		URL            func(childComplexity int) int
 	}
 
@@ -226,7 +332,7 @@ type ComplexityRoot struct {
 	}
 
 	Shell struct {
-		ActiveUsers    func(childComplexity int) int
+		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Beacon         func(childComplexity int) int
 		ClosedAt       func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -248,10 +354,21 @@ type ComplexityRoot struct {
 	}
 
 	Tag struct {
-		Hosts func(childComplexity int) int
+		Hosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		ID    func(childComplexity int) int
 		Kind  func(childComplexity int) int
 		Name  func(childComplexity int) int
+	}
+
+	TagConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TagEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Task struct {
@@ -266,10 +383,10 @@ type ComplexityRoot struct {
 		Output              func(childComplexity int) int
 		OutputSize          func(childComplexity int) int
 		Quest               func(childComplexity int) int
-		ReportedCredentials func(childComplexity int) int
-		ReportedFiles       func(childComplexity int) int
-		ReportedProcesses   func(childComplexity int) int
-		Shells              func(childComplexity int) int
+		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
+		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		Shells              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 	}
 
 	TaskConnection struct {
@@ -284,29 +401,55 @@ type ComplexityRoot struct {
 	}
 
 	Tome struct {
-		Author         func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Description    func(childComplexity int) int
-		Eldritch       func(childComplexity int) int
-		Files          func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Name           func(childComplexity int) int
-		ParamDefs      func(childComplexity int) int
-		Repository     func(childComplexity int) int
-		SupportModel   func(childComplexity int) int
-		Tactic         func(childComplexity int) int
-		Uploader       func(childComplexity int) int
+		Assets                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Author                 func(childComplexity int) int
+		CreatedAt              func(childComplexity int) int
+		Description            func(childComplexity int) int
+		Eldritch               func(childComplexity int) int
+		ID                     func(childComplexity int) int
+		LastModifiedAt         func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		ParamDefs              func(childComplexity int) int
+		Repository             func(childComplexity int) int
+		RunOnFirstHostCallback func(childComplexity int) int
+		RunOnNewBeaconCallback func(childComplexity int) int
+		RunOnSchedule          func(childComplexity int) int
+		ScheduledHosts         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		SupportModel           func(childComplexity int) int
+		Tactic                 func(childComplexity int) int
+		Uploader               func(childComplexity int) int
+	}
+
+	TomeConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TomeEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	User struct {
-		ActiveShells func(childComplexity int) int
+		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		ID           func(childComplexity int) int
 		IsActivated  func(childComplexity int) int
 		IsAdmin      func(childComplexity int) int
 		Name         func(childComplexity int) int
 		PhotoURL     func(childComplexity int) int
-		Tomes        func(childComplexity int) int
+		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+	}
+
+	UserConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	UserEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 }
 
@@ -328,6 +471,107 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Asset.createdAt":
+		if e.complexity.Asset.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Asset.CreatedAt(childComplexity), true
+
+	case "Asset.hash":
+		if e.complexity.Asset.Hash == nil {
+			break
+		}
+
+		return e.complexity.Asset.Hash(childComplexity), true
+
+	case "Asset.id":
+		if e.complexity.Asset.ID == nil {
+			break
+		}
+
+		return e.complexity.Asset.ID(childComplexity), true
+
+	case "Asset.lastModifiedAt":
+		if e.complexity.Asset.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Asset.LastModifiedAt(childComplexity), true
+
+	case "Asset.links":
+		if e.complexity.Asset.Links == nil {
+			break
+		}
+
+		args, err := ec.field_Asset_links_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Asset.Links(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.LinkOrder), args["where"].(*ent.LinkWhereInput)), true
+
+	case "Asset.name":
+		if e.complexity.Asset.Name == nil {
+			break
+		}
+
+		return e.complexity.Asset.Name(childComplexity), true
+
+	case "Asset.size":
+		if e.complexity.Asset.Size == nil {
+			break
+		}
+
+		return e.complexity.Asset.Size(childComplexity), true
+
+	case "Asset.tomes":
+		if e.complexity.Asset.Tomes == nil {
+			break
+		}
+
+		args, err := ec.field_Asset_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Asset.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
+
+	case "AssetConnection.edges":
+		if e.complexity.AssetConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.AssetConnection.Edges(childComplexity), true
+
+	case "AssetConnection.pageInfo":
+		if e.complexity.AssetConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.AssetConnection.PageInfo(childComplexity), true
+
+	case "AssetConnection.totalCount":
+		if e.complexity.AssetConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.AssetConnection.TotalCount(childComplexity), true
+
+	case "AssetEdge.cursor":
+		if e.complexity.AssetEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.AssetEdge.Cursor(childComplexity), true
+
+	case "AssetEdge.node":
+		if e.complexity.AssetEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.AssetEdge.Node(childComplexity), true
 
 	case "Beacon.agentIdentifier":
 		if e.complexity.Beacon.AgentIdentifier == nil {
@@ -392,6 +636,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Beacon.Name(childComplexity), true
 
+	case "Beacon.nextSeenAt":
+		if e.complexity.Beacon.NextSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Beacon.NextSeenAt(childComplexity), true
+
 	case "Beacon.principal":
 		if e.complexity.Beacon.Principal == nil {
 			break
@@ -416,63 +667,66 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Beacon.Tasks(childComplexity), true
+		args, err := ec.field_Beacon_tasks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
 
-	case "File.createdAt":
-		if e.complexity.File.CreatedAt == nil {
+		return e.complexity.Beacon.Tasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TaskOrder), args["where"].(*ent.TaskWhereInput)), true
+
+	case "Beacon.transport":
+		if e.complexity.Beacon.Transport == nil {
 			break
 		}
 
-		return e.complexity.File.CreatedAt(childComplexity), true
+		return e.complexity.Beacon.Transport(childComplexity), true
 
-	case "File.hash":
-		if e.complexity.File.Hash == nil {
+	case "BeaconConnection.edges":
+		if e.complexity.BeaconConnection.Edges == nil {
 			break
 		}
 
-		return e.complexity.File.Hash(childComplexity), true
+		return e.complexity.BeaconConnection.Edges(childComplexity), true
 
-	case "File.id":
-		if e.complexity.File.ID == nil {
+	case "BeaconConnection.pageInfo":
+		if e.complexity.BeaconConnection.PageInfo == nil {
 			break
 		}
 
-		return e.complexity.File.ID(childComplexity), true
+		return e.complexity.BeaconConnection.PageInfo(childComplexity), true
 
-	case "File.lastModifiedAt":
-		if e.complexity.File.LastModifiedAt == nil {
+	case "BeaconConnection.totalCount":
+		if e.complexity.BeaconConnection.TotalCount == nil {
 			break
 		}
 
-		return e.complexity.File.LastModifiedAt(childComplexity), true
+		return e.complexity.BeaconConnection.TotalCount(childComplexity), true
 
-	case "File.name":
-		if e.complexity.File.Name == nil {
+	case "BeaconEdge.cursor":
+		if e.complexity.BeaconEdge.Cursor == nil {
 			break
 		}
 
-		return e.complexity.File.Name(childComplexity), true
+		return e.complexity.BeaconEdge.Cursor(childComplexity), true
 
-	case "File.size":
-		if e.complexity.File.Size == nil {
+	case "BeaconEdge.node":
+		if e.complexity.BeaconEdge.Node == nil {
 			break
 		}
 
-		return e.complexity.File.Size(childComplexity), true
-
-	case "File.tomes":
-		if e.complexity.File.Tomes == nil {
-			break
-		}
-
-		return e.complexity.File.Tomes(childComplexity), true
+		return e.complexity.BeaconEdge.Node(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
 			break
 		}
 
-		return e.complexity.Host.Beacons(childComplexity), true
+		args, err := ec.field_Host_beacons_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
 
 	case "Host.createdAt":
 		if e.complexity.Host.CreatedAt == nil {
@@ -486,7 +740,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Host.Credentials(childComplexity), true
+		args, err := ec.field_Host_credentials_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Credentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
 
 	case "Host.externalIP":
 		if e.complexity.Host.ExternalIP == nil {
@@ -500,7 +759,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Host.Files(childComplexity), true
+		args, err := ec.field_Host_files_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Files(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFileOrder), args["where"].(*ent.HostFileWhereInput)), true
 
 	case "Host.id":
 		if e.complexity.Host.ID == nil {
@@ -537,6 +801,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.Name(childComplexity), true
 
+	case "Host.nextSeenAt":
+		if e.complexity.Host.NextSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Host.NextSeenAt(childComplexity), true
+
 	case "Host.platform":
 		if e.complexity.Host.Platform == nil {
 			break
@@ -556,14 +827,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Host.Processes(childComplexity), true
+		args, err := ec.field_Host_processes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Processes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
 
 	case "Host.tags":
 		if e.complexity.Host.Tags == nil {
 			break
 		}
 
-		return e.complexity.Host.Tags(childComplexity), true
+		args, err := ec.field_Host_tags_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Tags(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TagOrder), args["where"].(*ent.TagWhereInput)), true
 
 	case "HostConnection.edges":
 		if e.complexity.HostConnection.Edges == nil {
@@ -641,6 +922,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostCredential.Task(childComplexity), true
+
+	case "HostCredentialConnection.edges":
+		if e.complexity.HostCredentialConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialConnection.Edges(childComplexity), true
+
+	case "HostCredentialConnection.pageInfo":
+		if e.complexity.HostCredentialConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialConnection.PageInfo(childComplexity), true
+
+	case "HostCredentialConnection.totalCount":
+		if e.complexity.HostCredentialConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialConnection.TotalCount(childComplexity), true
+
+	case "HostCredentialEdge.cursor":
+		if e.complexity.HostCredentialEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialEdge.Cursor(childComplexity), true
+
+	case "HostCredentialEdge.node":
+		if e.complexity.HostCredentialEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostCredentialEdge.Node(childComplexity), true
 
 	case "HostEdge.cursor":
 		if e.complexity.HostEdge.Cursor == nil {
@@ -732,6 +1048,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostFile.Task(childComplexity), true
+
+	case "HostFileConnection.edges":
+		if e.complexity.HostFileConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostFileConnection.Edges(childComplexity), true
+
+	case "HostFileConnection.pageInfo":
+		if e.complexity.HostFileConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostFileConnection.PageInfo(childComplexity), true
+
+	case "HostFileConnection.totalCount":
+		if e.complexity.HostFileConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostFileConnection.TotalCount(childComplexity), true
+
+	case "HostFileEdge.cursor":
+		if e.complexity.HostFileEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostFileEdge.Cursor(childComplexity), true
+
+	case "HostFileEdge.node":
+		if e.complexity.HostFileEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostFileEdge.Node(childComplexity), true
 
 	case "HostProcess.cmd":
 		if e.complexity.HostProcess.Cmd == nil {
@@ -831,6 +1182,125 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HostProcess.Task(childComplexity), true
 
+	case "HostProcessConnection.edges":
+		if e.complexity.HostProcessConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostProcessConnection.Edges(childComplexity), true
+
+	case "HostProcessConnection.pageInfo":
+		if e.complexity.HostProcessConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostProcessConnection.PageInfo(childComplexity), true
+
+	case "HostProcessConnection.totalCount":
+		if e.complexity.HostProcessConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostProcessConnection.TotalCount(childComplexity), true
+
+	case "HostProcessEdge.cursor":
+		if e.complexity.HostProcessEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostProcessEdge.Cursor(childComplexity), true
+
+	case "HostProcessEdge.node":
+		if e.complexity.HostProcessEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostProcessEdge.Node(childComplexity), true
+
+	case "Link.asset":
+		if e.complexity.Link.Asset == nil {
+			break
+		}
+
+		return e.complexity.Link.Asset(childComplexity), true
+
+	case "Link.createdAt":
+		if e.complexity.Link.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Link.CreatedAt(childComplexity), true
+
+	case "Link.downloadsRemaining":
+		if e.complexity.Link.DownloadsRemaining == nil {
+			break
+		}
+
+		return e.complexity.Link.DownloadsRemaining(childComplexity), true
+
+	case "Link.expiresAt":
+		if e.complexity.Link.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.Link.ExpiresAt(childComplexity), true
+
+	case "Link.id":
+		if e.complexity.Link.ID == nil {
+			break
+		}
+
+		return e.complexity.Link.ID(childComplexity), true
+
+	case "Link.lastModifiedAt":
+		if e.complexity.Link.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Link.LastModifiedAt(childComplexity), true
+
+	case "Link.path":
+		if e.complexity.Link.Path == nil {
+			break
+		}
+
+		return e.complexity.Link.Path(childComplexity), true
+
+	case "LinkConnection.edges":
+		if e.complexity.LinkConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.LinkConnection.Edges(childComplexity), true
+
+	case "LinkConnection.pageInfo":
+		if e.complexity.LinkConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.LinkConnection.PageInfo(childComplexity), true
+
+	case "LinkConnection.totalCount":
+		if e.complexity.LinkConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.LinkConnection.TotalCount(childComplexity), true
+
+	case "LinkEdge.cursor":
+		if e.complexity.LinkEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.LinkEdge.Cursor(childComplexity), true
+
+	case "LinkEdge.node":
+		if e.complexity.LinkEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.LinkEdge.Node(childComplexity), true
+
 	case "Mutation.createCredential":
 		if e.complexity.Mutation.CreateCredential == nil {
 			break
@@ -842,6 +1312,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateCredential(childComplexity, args["input"].(ent.CreateHostCredentialInput)), true
+
+	case "Mutation.createLink":
+		if e.complexity.Mutation.CreateLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateLink(childComplexity, args["input"].(ent.CreateLinkInput)), true
 
 	case "Mutation.createQuest":
 		if e.complexity.Mutation.CreateQuest == nil {
@@ -903,6 +1385,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteTome(childComplexity, args["tomeID"].(int)), true
 
+	case "Mutation.disableLink":
+		if e.complexity.Mutation.DisableLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_disableLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DisableLink(childComplexity, args["linkID"].(int)), true
+
 	case "Mutation.dropAllData":
 		if e.complexity.Mutation.DropAllData == nil {
 			break
@@ -945,6 +1439,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateHost(childComplexity, args["hostID"].(int), args["input"].(ent.UpdateHostInput)), true
+
+	case "Mutation.updateLink":
+		if e.complexity.Mutation.UpdateLink == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateLink_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateLink(childComplexity, args["linkID"].(int), args["input"].(ent.UpdateLinkInput)), true
 
 	case "Mutation.updateTag":
 		if e.complexity.Mutation.UpdateTag == nil {
@@ -1010,6 +1516,114 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Portal.activeUsers":
+		if e.complexity.Portal.ActiveUsers == nil {
+			break
+		}
+
+		args, err := ec.field_Portal_activeUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Portal.ActiveUsers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
+
+	case "Portal.beacon":
+		if e.complexity.Portal.Beacon == nil {
+			break
+		}
+
+		return e.complexity.Portal.Beacon(childComplexity), true
+
+	case "Portal.closedAt":
+		if e.complexity.Portal.ClosedAt == nil {
+			break
+		}
+
+		return e.complexity.Portal.ClosedAt(childComplexity), true
+
+	case "Portal.createdAt":
+		if e.complexity.Portal.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Portal.CreatedAt(childComplexity), true
+
+	case "Portal.id":
+		if e.complexity.Portal.ID == nil {
+			break
+		}
+
+		return e.complexity.Portal.ID(childComplexity), true
+
+	case "Portal.lastModifiedAt":
+		if e.complexity.Portal.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Portal.LastModifiedAt(childComplexity), true
+
+	case "Portal.owner":
+		if e.complexity.Portal.Owner == nil {
+			break
+		}
+
+		return e.complexity.Portal.Owner(childComplexity), true
+
+	case "Portal.task":
+		if e.complexity.Portal.Task == nil {
+			break
+		}
+
+		return e.complexity.Portal.Task(childComplexity), true
+
+	case "PortalConnection.edges":
+		if e.complexity.PortalConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.PortalConnection.Edges(childComplexity), true
+
+	case "PortalConnection.pageInfo":
+		if e.complexity.PortalConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.PortalConnection.PageInfo(childComplexity), true
+
+	case "PortalConnection.totalCount":
+		if e.complexity.PortalConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.PortalConnection.TotalCount(childComplexity), true
+
+	case "PortalEdge.cursor":
+		if e.complexity.PortalEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.PortalEdge.Cursor(childComplexity), true
+
+	case "PortalEdge.node":
+		if e.complexity.PortalEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.PortalEdge.Node(childComplexity), true
+
+	case "Query.assets":
+		if e.complexity.Query.Assets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_assets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Assets(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.AssetOrder), args["where"].(*ent.AssetWhereInput)), true
+
 	case "Query.beacons":
 		if e.complexity.Query.Beacons == nil {
 			break
@@ -1020,19 +1634,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Beacons(childComplexity, args["where"].(*ent.BeaconWhereInput)), true
-
-	case "Query.files":
-		if e.complexity.Query.Files == nil {
-			break
-		}
-
-		args, err := ec.field_Query_files_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Files(childComplexity, args["where"].(*ent.FileWhereInput)), true
+		return e.complexity.Query.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
 
 	case "Query.hosts":
 		if e.complexity.Query.Hosts == nil {
@@ -1076,6 +1678,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Nodes(childComplexity, args["ids"].([]int)), true
+
+	case "Query.portals":
+		if e.complexity.Query.Portals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_portals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Portals(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.PortalOrder), args["where"].(*ent.PortalWhereInput)), true
 
 	case "Query.quests":
 		if e.complexity.Query.Quests == nil {
@@ -1123,7 +1737,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tags(childComplexity, args["where"].(*ent.TagWhereInput)), true
+		return e.complexity.Query.Tags(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TagOrder), args["where"].(*ent.TagWhereInput)), true
 
 	case "Query.tasks":
 		if e.complexity.Query.Tasks == nil {
@@ -1147,7 +1761,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tomes(childComplexity, args["where"].(*ent.TomeWhereInput)), true
+		return e.complexity.Query.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -1159,7 +1773,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["where"].(*ent.UserWhereInput)), true
+		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Quest.bundle":
 		if e.complexity.Quest.Bundle == nil {
@@ -1325,7 +1939,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Repository.Tomes(childComplexity), true
+		args, err := ec.field_Repository_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Repository.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
 
 	case "Repository.url":
 		if e.complexity.Repository.URL == nil {
@@ -1374,7 +1993,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Shell.ActiveUsers(childComplexity), true
+		args, err := ec.field_Shell_activeUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ActiveUsers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Shell.beacon":
 		if e.complexity.Shell.Beacon == nil {
@@ -1465,7 +2089,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Tag.Hosts(childComplexity), true
+		args, err := ec.field_Tag_hosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tag.Hosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
 
 	case "Tag.id":
 		if e.complexity.Tag.ID == nil {
@@ -1487,6 +2116,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tag.Name(childComplexity), true
+
+	case "TagConnection.edges":
+		if e.complexity.TagConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.Edges(childComplexity), true
+
+	case "TagConnection.pageInfo":
+		if e.complexity.TagConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.PageInfo(childComplexity), true
+
+	case "TagConnection.totalCount":
+		if e.complexity.TagConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.TotalCount(childComplexity), true
+
+	case "TagEdge.cursor":
+		if e.complexity.TagEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TagEdge.Cursor(childComplexity), true
+
+	case "TagEdge.node":
+		if e.complexity.TagEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TagEdge.Node(childComplexity), true
 
 	case "Task.beacon":
 		if e.complexity.Task.Beacon == nil {
@@ -1570,28 +2234,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Task.ReportedCredentials(childComplexity), true
+		args, err := ec.field_Task_reportedCredentials_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedCredentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
 
 	case "Task.reportedFiles":
 		if e.complexity.Task.ReportedFiles == nil {
 			break
 		}
 
-		return e.complexity.Task.ReportedFiles(childComplexity), true
+		args, err := ec.field_Task_reportedFiles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedFiles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFileOrder), args["where"].(*ent.HostFileWhereInput)), true
 
 	case "Task.reportedProcesses":
 		if e.complexity.Task.ReportedProcesses == nil {
 			break
 		}
 
-		return e.complexity.Task.ReportedProcesses(childComplexity), true
+		args, err := ec.field_Task_reportedProcesses_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedProcesses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
 
 	case "Task.shells":
 		if e.complexity.Task.Shells == nil {
 			break
 		}
 
-		return e.complexity.Task.Shells(childComplexity), true
+		args, err := ec.field_Task_shells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "TaskConnection.edges":
 		if e.complexity.TaskConnection.Edges == nil {
@@ -1628,6 +2312,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TaskEdge.Node(childComplexity), true
 
+	case "Tome.assets":
+		if e.complexity.Tome.Assets == nil {
+			break
+		}
+
+		args, err := ec.field_Tome_assets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tome.Assets(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.AssetOrder), args["where"].(*ent.AssetWhereInput)), true
+
 	case "Tome.author":
 		if e.complexity.Tome.Author == nil {
 			break
@@ -1655,13 +2351,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tome.Eldritch(childComplexity), true
-
-	case "Tome.files":
-		if e.complexity.Tome.Files == nil {
-			break
-		}
-
-		return e.complexity.Tome.Files(childComplexity), true
 
 	case "Tome.id":
 		if e.complexity.Tome.ID == nil {
@@ -1698,6 +2387,39 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Repository(childComplexity), true
 
+	case "Tome.runOnFirstHostCallback":
+		if e.complexity.Tome.RunOnFirstHostCallback == nil {
+			break
+		}
+
+		return e.complexity.Tome.RunOnFirstHostCallback(childComplexity), true
+
+	case "Tome.runOnNewBeaconCallback":
+		if e.complexity.Tome.RunOnNewBeaconCallback == nil {
+			break
+		}
+
+		return e.complexity.Tome.RunOnNewBeaconCallback(childComplexity), true
+
+	case "Tome.runOnSchedule":
+		if e.complexity.Tome.RunOnSchedule == nil {
+			break
+		}
+
+		return e.complexity.Tome.RunOnSchedule(childComplexity), true
+
+	case "Tome.scheduledHosts":
+		if e.complexity.Tome.ScheduledHosts == nil {
+			break
+		}
+
+		args, err := ec.field_Tome_scheduledHosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tome.ScheduledHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
+
 	case "Tome.supportModel":
 		if e.complexity.Tome.SupportModel == nil {
 			break
@@ -1719,12 +2441,52 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tome.Uploader(childComplexity), true
 
+	case "TomeConnection.edges":
+		if e.complexity.TomeConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TomeConnection.Edges(childComplexity), true
+
+	case "TomeConnection.pageInfo":
+		if e.complexity.TomeConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TomeConnection.PageInfo(childComplexity), true
+
+	case "TomeConnection.totalCount":
+		if e.complexity.TomeConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.TomeConnection.TotalCount(childComplexity), true
+
+	case "TomeEdge.cursor":
+		if e.complexity.TomeEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TomeEdge.Cursor(childComplexity), true
+
+	case "TomeEdge.node":
+		if e.complexity.TomeEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TomeEdge.Node(childComplexity), true
+
 	case "User.activeShells":
 		if e.complexity.User.ActiveShells == nil {
 			break
 		}
 
-		return e.complexity.User.ActiveShells(childComplexity), true
+		args, err := ec.field_User_activeShells_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.ActiveShells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -1766,7 +2528,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.User.Tomes(childComplexity), true
+		args, err := ec.field_User_tomes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Tomes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TomeOrder), args["where"].(*ent.TomeWhereInput)), true
+
+	case "UserConnection.edges":
+		if e.complexity.UserConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.UserConnection.Edges(childComplexity), true
+
+	case "UserConnection.pageInfo":
+		if e.complexity.UserConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.UserConnection.PageInfo(childComplexity), true
+
+	case "UserConnection.totalCount":
+		if e.complexity.UserConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.UserConnection.TotalCount(childComplexity), true
+
+	case "UserEdge.cursor":
+		if e.complexity.UserEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.UserEdge.Cursor(childComplexity), true
+
+	case "UserEdge.node":
+		if e.complexity.UserEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.UserEdge.Node(childComplexity), true
 
 	}
 	return 0, false
@@ -1776,16 +2578,17 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputAssetOrder,
+		ec.unmarshalInputAssetWhereInput,
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateHostCredentialInput,
+		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
-		ec.unmarshalInputFileOrder,
-		ec.unmarshalInputFileWhereInput,
 		ec.unmarshalInputHostCredentialOrder,
 		ec.unmarshalInputHostCredentialWhereInput,
 		ec.unmarshalInputHostFileOrder,
@@ -1795,6 +2598,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHostProcessWhereInput,
 		ec.unmarshalInputHostWhereInput,
 		ec.unmarshalInputImportRepositoryInput,
+		ec.unmarshalInputLinkOrder,
+		ec.unmarshalInputLinkWhereInput,
+		ec.unmarshalInputPortalOrder,
+		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputRepositoryOrder,
@@ -1810,9 +2617,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTomeWhereInput,
 		ec.unmarshalInputUpdateBeaconInput,
 		ec.unmarshalInputUpdateHostInput,
+		ec.unmarshalInputUpdateLinkInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
+		ec.unmarshalInputUserOrder,
 		ec.unmarshalInputUserWhereInput,
 	)
 	first := true
@@ -1919,6 +2728,238 @@ enum Role {
 }`, BuiltIn: false},
 	{Name: "../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String, omittable: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!], forceGenerate: Boolean) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+type Asset implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  The name of the asset, used to reference it for downloads
+  """
+  name: String!
+  """
+  The size of the asset in bytes
+  """
+  size: Int!
+  """
+  A SHA3-256 digest of the content field
+  """
+  hash: String!
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
+  links(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Links returned from the connection.
+    """
+    orderBy: [LinkOrder!]
+
+    """
+    Filtering options for Links returned from the connection.
+    """
+    where: LinkWhereInput
+  ): LinkConnection!
+}
+"""
+A connection to a list of items.
+"""
+type AssetConnection {
+  """
+  A list of edges.
+  """
+  edges: [AssetEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type AssetEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Asset
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Asset connections
+"""
+input AssetOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Assets.
+  """
+  field: AssetOrderField!
+}
+"""
+Properties by which Asset connections can be ordered.
+"""
+enum AssetOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+  SIZE
+}
+"""
+AssetWhereInput is used for filtering Asset objects.
+Input was generated by ent.
+"""
+input AssetWhereInput {
+  not: AssetWhereInput
+  and: [AssetWhereInput!]
+  or: [AssetWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  size field predicates
+  """
+  size: Int
+  sizeNEQ: Int
+  sizeIn: [Int!]
+  sizeNotIn: [Int!]
+  sizeGT: Int
+  sizeGTE: Int
+  sizeLT: Int
+  sizeLTE: Int
+  """
+  hash field predicates
+  """
+  hash: String
+  hashNEQ: String
+  hashIn: [String!]
+  hashNotIn: [String!]
+  hashGT: String
+  hashGTE: String
+  hashLT: String
+  hashLTE: String
+  hashContains: String
+  hashHasPrefix: String
+  hashHasSuffix: String
+  hashEqualFold: String
+  hashContainsFold: String
+  """
+  tomes edge predicates
+  """
+  hasTomes: Boolean
+  hasTomesWith: [TomeWhereInput!]
+  """
+  links edge predicates
+  """
+  hasLinks: Boolean
+  hasLinksWith: [LinkWhereInput!]
+}
 type Beacon implements Node {
   id: ID!
   """
@@ -1950,17 +2991,52 @@ type Beacon implements Node {
   """
   lastSeenAt: Time
   """
+  Timestamp of when a beacon is expected to check for tasks next.
+  """
+  nextSeenAt: Time
+  """
   Duration until next callback, in seconds.
   """
   interval: Uint64
   """
+  Beacon's current transport.
+  """
+  transport: BeaconTransport_Type!
+  """
   Host this beacon is running on.
   """
   host: Host!
-  """
-  Tasks that have been assigned to the beacon.
-  """
-  tasks: [Task!]
+  tasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tasks returned from the connection.
+    """
+    orderBy: [TaskOrder!]
+
+    """
+    Filtering options for Tasks returned from the connection.
+    """
+    where: TaskWhereInput
+  ): TaskConnection!
   shells(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -1994,6 +3070,36 @@ type Beacon implements Node {
   ): ShellConnection!
 }
 """
+A connection to a list of items.
+"""
+type BeaconConnection {
+  """
+  A list of edges.
+  """
+  edges: [BeaconEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BeaconEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Beacon
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
 Ordering options for Beacon connections
 """
 input BeaconOrder {
@@ -2013,7 +3119,17 @@ enum BeaconOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
   INTERVAL
+}
+"""
+BeaconTransport_Type is enum for the field transport
+"""
+enum BeaconTransport_Type @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Transport_Type") {
+  TRANSPORT_DNS
+  TRANSPORT_GRPC
+  TRANSPORT_HTTP1
+  TRANSPORT_UNSPECIFIED
 }
 """
 BeaconWhereInput is used for filtering Beacon objects.
@@ -2138,6 +3254,19 @@ input BeaconWhereInput {
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
   """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
+  """
   interval field predicates
   """
   interval: Uint64
@@ -2150,6 +3279,13 @@ input BeaconWhereInput {
   intervalLTE: Uint64
   intervalIsNil: Boolean
   intervalNotNil: Boolean
+  """
+  transport field predicates
+  """
+  transport: BeaconTransport_Type
+  transportNEQ: BeaconTransport_Type
+  transportIn: [BeaconTransport_Type!]
+  transportNotIn: [BeaconTransport_Type!]
   """
   host edge predicates
   """
@@ -2185,6 +3321,25 @@ input CreateHostCredentialInput {
   kind: HostCredentialKind!
   hostID: ID!
   taskID: ID
+}
+"""
+CreateLinkInput is used for create Link object.
+Input was generated by ent.
+"""
+input CreateLinkInput {
+  """
+  Unique path for accessing the asset via the CDN
+  """
+  path: String
+  """
+  Timestamp before which the link is active. Default is epoch 0
+  """
+  expiresAt: Time
+  """
+  Number of times this link can be clicked before it becomes inactive
+  """
+  downloadsRemaining: Int
+  assetID: ID!
 }
 """
 CreateQuestInput is used for create Quest object.
@@ -2252,6 +3407,18 @@ input CreateTomeInput {
   """
   tactic: TomeTactic
   """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -2259,149 +3426,14 @@ input CreateTomeInput {
   Eldritch script that will be executed when the tome is run
   """
   eldritch: String!
-  fileIDs: [ID!]
+  assetIDs: [ID!]
+  scheduledHostIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
 https://relay.dev/graphql/connections.htm#sec-Cursor
 """
 scalar Cursor
-type File implements Node {
-  id: ID!
-  """
-  Timestamp of when this ent was created
-  """
-  createdAt: Time!
-  """
-  Timestamp of when this ent was last updated
-  """
-  lastModifiedAt: Time!
-  """
-  The name of the file, used to reference it for downloads
-  """
-  name: String!
-  """
-  The size of the file in bytes
-  """
-  size: Int!
-  """
-  A SHA3-256 digest of the content field
-  """
-  hash: String!
-  tomes: [Tome!]
-}
-"""
-Ordering options for File connections
-"""
-input FileOrder {
-  """
-  The ordering direction.
-  """
-  direction: OrderDirection! = ASC
-  """
-  The field by which to order Files.
-  """
-  field: FileOrderField!
-}
-"""
-Properties by which File connections can be ordered.
-"""
-enum FileOrderField {
-  CREATED_AT
-  LAST_MODIFIED_AT
-  NAME
-  SIZE
-}
-"""
-FileWhereInput is used for filtering File objects.
-Input was generated by ent.
-"""
-input FileWhereInput {
-  not: FileWhereInput
-  and: [FileWhereInput!]
-  or: [FileWhereInput!]
-  """
-  id field predicates
-  """
-  id: ID
-  idNEQ: ID
-  idIn: [ID!]
-  idNotIn: [ID!]
-  idGT: ID
-  idGTE: ID
-  idLT: ID
-  idLTE: ID
-  """
-  created_at field predicates
-  """
-  createdAt: Time
-  createdAtNEQ: Time
-  createdAtIn: [Time!]
-  createdAtNotIn: [Time!]
-  createdAtGT: Time
-  createdAtGTE: Time
-  createdAtLT: Time
-  createdAtLTE: Time
-  """
-  last_modified_at field predicates
-  """
-  lastModifiedAt: Time
-  lastModifiedAtNEQ: Time
-  lastModifiedAtIn: [Time!]
-  lastModifiedAtNotIn: [Time!]
-  lastModifiedAtGT: Time
-  lastModifiedAtGTE: Time
-  lastModifiedAtLT: Time
-  lastModifiedAtLTE: Time
-  """
-  name field predicates
-  """
-  name: String
-  nameNEQ: String
-  nameIn: [String!]
-  nameNotIn: [String!]
-  nameGT: String
-  nameGTE: String
-  nameLT: String
-  nameLTE: String
-  nameContains: String
-  nameHasPrefix: String
-  nameHasSuffix: String
-  nameEqualFold: String
-  nameContainsFold: String
-  """
-  size field predicates
-  """
-  size: Int
-  sizeNEQ: Int
-  sizeIn: [Int!]
-  sizeNotIn: [Int!]
-  sizeGT: Int
-  sizeGTE: Int
-  sizeLT: Int
-  sizeLTE: Int
-  """
-  hash field predicates
-  """
-  hash: String
-  hashNEQ: String
-  hashIn: [String!]
-  hashNotIn: [String!]
-  hashGT: String
-  hashGTE: String
-  hashLT: String
-  hashLTE: String
-  hashContains: String
-  hashHasPrefix: String
-  hashHasSuffix: String
-  hashEqualFold: String
-  hashContainsFold: String
-  """
-  tomes edge predicates
-  """
-  hasTomes: Boolean
-  hasTomesWith: [TomeWhereInput!]
-}
 type Host implements Node {
   id: ID!
   """
@@ -2437,25 +3469,164 @@ type Host implements Node {
   """
   lastSeenAt: Time
   """
-  Tags used to group this host with other hosts.
+  Timestamp of when a task is next expected to be claimed or updated for the host.
   """
-  tags: [Tag!]
-  """
-  Beacons that are present on this host system.
-  """
-  beacons: [Beacon!]
-  """
-  Files reported on this host system.
-  """
-  files: [HostFile!]
-  """
-  Processes reported as running on this host system.
-  """
-  processes: [HostProcess!]
-  """
-  Credentials reported from this host system.
-  """
-  credentials: [HostCredential!]
+  nextSeenAt: Time
+  tags(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tags returned from the connection.
+    """
+    orderBy: [TagOrder!]
+
+    """
+    Filtering options for Tags returned from the connection.
+    """
+    where: TagWhereInput
+  ): TagConnection!
+  beacons(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Beacons returned from the connection.
+    """
+    orderBy: [BeaconOrder!]
+
+    """
+    Filtering options for Beacons returned from the connection.
+    """
+    where: BeaconWhereInput
+  ): BeaconConnection!
+  files(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  processes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  credentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
 }
 """
 A connection to a list of items.
@@ -2504,6 +3675,36 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+}
+"""
+A connection to a list of items.
+"""
+type HostCredentialConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostCredentialEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostCredentialEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostCredential
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 HostCredentialKind is enum for the field kind
@@ -2680,6 +3881,36 @@ type HostFile implements Node {
   Task that reported this file.
   """
   task: Task!
+}
+"""
+A connection to a list of items.
+"""
+type HostFileConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostFileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostFileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostFile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for HostFile connections
@@ -2874,6 +4105,7 @@ enum HostOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   LAST_SEEN_AT
+  NEXT_SEEN_AT
 }
 """
 HostPlatform is enum for the field platform
@@ -2939,6 +4171,36 @@ type HostProcess implements Node {
   Task that reported this process.
   """
   task: Task!
+}
+"""
+A connection to a list of items.
+"""
+type HostProcessConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostProcessEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostProcessEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostProcess
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for HostProcess connections
@@ -3299,6 +4561,19 @@ input HostWhereInput {
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
   """
+  next_seen_at field predicates
+  """
+  nextSeenAt: Time
+  nextSeenAtNEQ: Time
+  nextSeenAtIn: [Time!]
+  nextSeenAtNotIn: [Time!]
+  nextSeenAtGT: Time
+  nextSeenAtGTE: Time
+  nextSeenAtLT: Time
+  nextSeenAtLTE: Time
+  nextSeenAtIsNil: Boolean
+  nextSeenAtNotNil: Boolean
+  """
   tags edge predicates
   """
   hasTags: Boolean
@@ -3323,6 +4598,171 @@ input HostWhereInput {
   """
   hasCredentials: Boolean
   hasCredentialsWith: [HostCredentialWhereInput!]
+}
+type Link implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Unique path for accessing the asset via the CDN
+  """
+  path: String!
+  """
+  Timestamp before which the link is active. Default is epoch 0
+  """
+  expiresAt: Time!
+  """
+  Number of times this link can be clicked before it becomes inactive
+  """
+  downloadsRemaining: Int!
+  """
+  The asset that this link points to
+  """
+  asset: Asset!
+}
+"""
+A connection to a list of items.
+"""
+type LinkConnection {
+  """
+  A list of edges.
+  """
+  edges: [LinkEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type LinkEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Link
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Link connections
+"""
+input LinkOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Links.
+  """
+  field: LinkOrderField!
+}
+"""
+Properties by which Link connections can be ordered.
+"""
+enum LinkOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  PATH
+  EXPIRES_AT
+  DOWNLOADS_REMAINING
+}
+"""
+LinkWhereInput is used for filtering Link objects.
+Input was generated by ent.
+"""
+input LinkWhereInput {
+  not: LinkWhereInput
+  and: [LinkWhereInput!]
+  or: [LinkWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  path field predicates
+  """
+  path: String
+  pathNEQ: String
+  pathIn: [String!]
+  pathNotIn: [String!]
+  pathGT: String
+  pathGTE: String
+  pathLT: String
+  pathLTE: String
+  pathContains: String
+  pathHasPrefix: String
+  pathHasSuffix: String
+  pathEqualFold: String
+  pathContainsFold: String
+  """
+  expires_at field predicates
+  """
+  expiresAt: Time
+  expiresAtNEQ: Time
+  expiresAtIn: [Time!]
+  expiresAtNotIn: [Time!]
+  expiresAtGT: Time
+  expiresAtGTE: Time
+  expiresAtLT: Time
+  expiresAtLTE: Time
+  """
+  downloads_remaining field predicates
+  """
+  downloadsRemaining: Int
+  downloadsRemainingNEQ: Int
+  downloadsRemainingIn: [Int!]
+  downloadsRemainingNotIn: [Int!]
+  downloadsRemainingGT: Int
+  downloadsRemainingGTE: Int
+  downloadsRemainingLT: Int
+  downloadsRemainingLTE: Int
+  """
+  asset edge predicates
+  """
+  hasAsset: Boolean
+  hasAssetWith: [AssetWhereInput!]
 }
 """
 An object with an ID.
@@ -3368,6 +4808,190 @@ type PageInfo {
   When paginating forwards, the cursor to continue.
   """
   endCursor: Cursor
+}
+type Portal implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Timestamp of when this portal was closed
+  """
+  closedAt: Time
+  """
+  Task that created the portal
+  """
+  task: Task!
+  """
+  Beacon that created the portal
+  """
+  beacon: Beacon!
+  """
+  User that created the portal
+  """
+  owner: User!
+  activeUsers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
+}
+"""
+A connection to a list of items.
+"""
+type PortalConnection {
+  """
+  A list of edges.
+  """
+  edges: [PortalEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type PortalEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Portal
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Portal connections
+"""
+input PortalOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Portals.
+  """
+  field: PortalOrderField!
+}
+"""
+Properties by which Portal connections can be ordered.
+"""
+enum PortalOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLOSED_AT
+}
+"""
+PortalWhereInput is used for filtering Portal objects.
+Input was generated by ent.
+"""
+input PortalWhereInput {
+  not: PortalWhereInput
+  and: [PortalWhereInput!]
+  or: [PortalWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  closed_at field predicates
+  """
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
+  """
+  task edge predicates
+  """
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """
+  owner edge predicates
+  """
+  hasOwner: Boolean
+  hasOwnerWith: [UserWhereInput!]
+  """
+  active_users edge predicates
+  """
+  hasActiveUsers: Boolean
+  hasActiveUsersWith: [UserWhereInput!]
 }
 type Query {
   """
@@ -3420,9 +5044,9 @@ type Quest implements Node {
   """
   tome: Tome!
   """
-  Bundle file that the executing tome depends on (if any)
+  Bundle asset that the executing tome depends on (if any)
   """
-  bundle: File
+  bundle: Asset
   tasks(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -3630,7 +5254,7 @@ input QuestWhereInput {
   bundle edge predicates
   """
   hasBundle: Boolean
-  hasBundleWith: [FileWhereInput!]
+  hasBundleWith: [AssetWhereInput!]
   """
   tasks edge predicates
   """
@@ -3664,10 +5288,37 @@ type Repository implements Node {
   Timestamp of when this repo was last imported
   """
   lastImportedAt: Time
-  """
-  Tomes imported using this repository.
-  """
-  tomes: [Tome!]
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
   """
   User that created this repository.
   """
@@ -3847,10 +5498,37 @@ type Shell implements Node {
   User that created the shell
   """
   owner: User!
-  """
-  Users that are currently using the shell
-  """
-  activeUsers: [User!]
+  activeUsers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
 }
 """
 A connection to a list of items.
@@ -3988,7 +5666,67 @@ type Tag implements Node {
   Describes the type of tag this is
   """
   kind: TagKind!
-  hosts: [Host!]
+  hosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
+}
+"""
+A connection to a list of items.
+"""
+type TagConnection {
+  """
+  A list of edges.
+  """
+  edges: [TagEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TagEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Tag
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 TagKind is enum for the field kind
@@ -4100,22 +5838,130 @@ type Task implements Node {
   error: String
   quest: Quest!
   beacon: Beacon!
-  """
-  Files that have been reported by this task.
-  """
-  reportedFiles: [HostFile!]
-  """
-  Processes that have been reported by this task.
-  """
-  reportedProcesses: [HostProcess!]
-  """
-  Credentials that have been reported by this task.
-  """
-  reportedCredentials: [HostCredential!]
-  """
-  Shells that were created by this task
-  """
-  shells: [Shell!]
+  reportedFiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  reportedProcesses(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  reportedCredentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
+  shells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
 }
 """
 A connection to a list of items.
@@ -4360,6 +6206,18 @@ type Tome implements Node {
   """
   tactic: TomeTactic!
   """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean!
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean!
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String!
+  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -4367,10 +6225,37 @@ type Tome implements Node {
   Eldritch script that will be executed when the tome is run
   """
   eldritch: String!
-  """
-  Any files required for tome execution that will be bundled and provided to the agent for download
-  """
-  files: [File!]
+  assets(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Assets returned from the connection.
+    """
+    orderBy: [AssetOrder!]
+
+    """
+    Filtering options for Assets returned from the connection.
+    """
+    where: AssetWhereInput
+  ): AssetConnection!
   """
   User who uploaded the tome (may be null).
   """
@@ -4379,6 +6264,67 @@ type Tome implements Node {
   Repository from which this Tome was imported (may be null).
   """
   repository: Repository
+  scheduledHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
+}
+"""
+A connection to a list of items.
+"""
+type TomeConnection {
+  """
+  A list of edges.
+  """
+  edges: [TomeEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TomeEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Tome
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 Ordering options for Tome connections
@@ -4533,6 +6479,32 @@ input TomeWhereInput {
   tacticIn: [TomeTactic!]
   tacticNotIn: [TomeTactic!]
   """
+  run_on_new_beacon_callback field predicates
+  """
+  runOnNewBeaconCallback: Boolean
+  runOnNewBeaconCallbackNEQ: Boolean
+  """
+  run_on_first_host_callback field predicates
+  """
+  runOnFirstHostCallback: Boolean
+  runOnFirstHostCallbackNEQ: Boolean
+  """
+  run_on_schedule field predicates
+  """
+  runOnSchedule: String
+  runOnScheduleNEQ: String
+  runOnScheduleIn: [String!]
+  runOnScheduleNotIn: [String!]
+  runOnScheduleGT: String
+  runOnScheduleGTE: String
+  runOnScheduleLT: String
+  runOnScheduleLTE: String
+  runOnScheduleContains: String
+  runOnScheduleHasPrefix: String
+  runOnScheduleHasSuffix: String
+  runOnScheduleEqualFold: String
+  runOnScheduleContainsFold: String
+  """
   param_defs field predicates
   """
   paramDefs: String
@@ -4567,10 +6539,10 @@ input TomeWhereInput {
   eldritchEqualFold: String
   eldritchContainsFold: String
   """
-  files edge predicates
+  assets edge predicates
   """
-  hasFiles: Boolean
-  hasFilesWith: [FileWhereInput!]
+  hasAssets: Boolean
+  hasAssetsWith: [AssetWhereInput!]
   """
   uploader edge predicates
   """
@@ -4581,6 +6553,11 @@ input TomeWhereInput {
   """
   hasRepository: Boolean
   hasRepositoryWith: [RepositoryWhereInput!]
+  """
+  scheduled_hosts edge predicates
+  """
+  hasScheduledHosts: Boolean
+  hasScheduledHostsWith: [HostWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -4622,6 +6599,28 @@ input UpdateHostInput {
   addCredentialIDs: [ID!]
   removeCredentialIDs: [ID!]
   clearCredentials: Boolean
+}
+"""
+UpdateLinkInput is used for update Link object.
+Input was generated by ent.
+"""
+input UpdateLinkInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Unique path for accessing the asset via the CDN
+  """
+  path: String
+  """
+  Timestamp before which the link is active. Default is epoch 0
+  """
+  expiresAt: Time
+  """
+  Number of times this link can be clicked before it becomes inactive
+  """
+  downloadsRemaining: Int
 }
 """
 UpdateTagInput is used for update Tag object.
@@ -4670,6 +6669,18 @@ input UpdateTomeInput {
   """
   tactic: TomeTactic
   """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -4678,9 +6689,12 @@ input UpdateTomeInput {
   Eldritch script that will be executed when the tome is run
   """
   eldritch: String
-  addFileIDs: [ID!]
-  removeFileIDs: [ID!]
-  clearFiles: Boolean
+  addAssetIDs: [ID!]
+  removeAssetIDs: [ID!]
+  clearAssets: Boolean
+  addScheduledHostIDs: [ID!]
+  removeScheduledHostIDs: [ID!]
+  clearScheduledHosts: Boolean
 }
 """
 UpdateUserInput is used for update User object.
@@ -4728,14 +6742,117 @@ type User implements Node {
   True if the user is an Admin
   """
   isAdmin: Boolean!
+  tomes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Tomes returned from the connection.
+    """
+    orderBy: [TomeOrder!]
+
+    """
+    Filtering options for Tomes returned from the connection.
+    """
+    where: TomeWhereInput
+  ): TomeConnection!
+  activeShells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
+}
+"""
+A connection to a list of items.
+"""
+type UserConnection {
   """
-  Tomes uploaded by the user.
+  A list of edges.
   """
-  tomes: [Tome!]
+  edges: [UserEdge]
   """
-  Shells actively used by the user
+  Information to aid in pagination.
   """
-  activeShells: [Shell!]
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type UserEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: User
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for User connections
+"""
+input UserOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Users.
+  """
+  field: UserOrderField!
+}
+"""
+Properties by which User connections can be ordered.
+"""
+enum UserOrderField {
+  NAME
 }
 """
 UserWhereInput is used for filtering User objects.
@@ -4814,7 +6931,25 @@ input UserWhereInput {
 scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
-  files(where: FileWhereInput): [File!]! @requireRole(role: USER)
+  assets(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Assets returned from the connection."""
+    orderBy: [AssetOrder!]
+
+    """Filtering options for Assets returned from the connection."""
+    where: AssetWhereInput
+  ): AssetConnection! @requireRole(role: USER)
   quests(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -4872,7 +7007,25 @@ scalar Uint64
     """Filtering options for Repositories returned from the connection."""
     where: RepositoryWhereInput
   ): RepositoryConnection! @requireRole(role: USER)
-  beacons(where: BeaconWhereInput): [Beacon!]! @requireRole(role: USER)
+  beacons(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Beacons returned from the connection."""
+    orderBy: [BeaconOrder!]
+
+    """Filtering options for Beacons returned from the connection."""
+    where: BeaconWhereInput
+  ): BeaconConnection! @requireRole(role: USER)
   hosts(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -4892,9 +7045,83 @@ scalar Uint64
     """Filtering options for Hosts returned from the connection."""
     where: HostWhereInput
   ): HostConnection! @requireRole(role: USER)
-  tags(where: TagWhereInput): [Tag!]! @requireRole(role: USER)
-  tomes(where: TomeWhereInput): [Tome!]! @requireRole(role: USER)
-  users(where: UserWhereInput): [User!]! @requireRole(role: USER)
+  tags(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Repositories returned from the connection."""
+    orderBy: [TagOrder!]
+
+    """Filtering options for Repositories returned from the connection."""
+    where: TagWhereInput
+  ): TagConnection! @requireRole(role: USER)
+  tomes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Tomes returned from the connection."""
+    orderBy: [TomeOrder!]
+
+    """Filtering options for Tomes returned from the connection."""
+    where: TomeWhereInput
+  ): TomeConnection! @requireRole(role: USER)
+  users(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Users returned from the connection."""
+    orderBy: [UserOrder!]
+
+    """Filtering options for Users returned from the connection."""
+    where: UserWhereInput
+  ): UserConnection! @requireRole(role: USER)
+
+  portals(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Portals returned from the connection."""
+    orderBy: [PortalOrder!]
+
+    """Filtering options for Portals returned from the connection."""
+    where: PortalWhereInput): PortalConnection! @requireRole(role: USER)
+
   shells(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -4965,6 +7192,13 @@ scalar Uint64
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # Link
+    ###
+    createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
+    updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
+    disableLink(linkID: ID!): Link! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

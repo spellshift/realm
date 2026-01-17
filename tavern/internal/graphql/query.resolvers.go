@@ -13,9 +13,9 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
-// Files is the resolver for the files field.
-func (r *queryResolver) Files(ctx context.Context, where *ent.FileWhereInput) ([]*ent.File, error) {
-	query, err := r.client.File.Query().CollectFields(ctx)
+// Assets is the resolver for the assets field.
+func (r *queryResolver) Assets(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) (*ent.AssetConnection, error) {
+	query, err := r.client.Asset.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
 	}
@@ -24,9 +24,9 @@ func (r *queryResolver) Files(ctx context.Context, where *ent.FileWhereInput) ([
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithAssetOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithAssetOrder(orderBy))
 }
 
 // Quests is the resolver for the quests field.
@@ -78,7 +78,7 @@ func (r *queryResolver) Repositories(ctx context.Context, after *entgql.Cursor[i
 }
 
 // Beacons is the resolver for the beacons field.
-func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput) ([]*ent.Beacon, error) {
+func (r *queryResolver) Beacons(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) (*ent.BeaconConnection, error) {
 	query, err := r.client.Beacon.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -88,9 +88,9 @@ func (r *queryResolver) Beacons(ctx context.Context, where *ent.BeaconWhereInput
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithBeaconOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithBeaconOrder(orderBy))
 }
 
 // Hosts is the resolver for the hosts field.
@@ -110,7 +110,7 @@ func (r *queryResolver) Hosts(ctx context.Context, after *entgql.Cursor[int], fi
 }
 
 // Tags is the resolver for the tags field.
-func (r *queryResolver) Tags(ctx context.Context, where *ent.TagWhereInput) ([]*ent.Tag, error) {
+func (r *queryResolver) Tags(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) (*ent.TagConnection, error) {
 	query, err := r.client.Tag.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -120,13 +120,13 @@ func (r *queryResolver) Tags(ctx context.Context, where *ent.TagWhereInput) ([]*
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithTagOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithTagOrder(orderBy))
 }
 
 // Tomes is the resolver for the tomes field.
-func (r *queryResolver) Tomes(ctx context.Context, where *ent.TomeWhereInput) ([]*ent.Tome, error) {
+func (r *queryResolver) Tomes(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) (*ent.TomeConnection, error) {
 	query, err := r.client.Tome.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -136,13 +136,13 @@ func (r *queryResolver) Tomes(ctx context.Context, where *ent.TomeWhereInput) ([
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithTomeOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithTomeOrder(orderBy))
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([]*ent.User, error) {
+func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error) {
 	query, err := r.client.User.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
@@ -152,9 +152,25 @@ func (r *queryResolver) Users(ctx context.Context, where *ent.UserWhereInput) ([
 		if err != nil {
 			return nil, fmt.Errorf("failed to apply filter: %w", err)
 		}
-		return query.All(ctx)
+		return query.Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy))
 	}
-	return query.All(ctx)
+	return query.Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy))
+}
+
+// Portals is the resolver for the portals field.
+func (r *queryResolver) Portals(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) (*ent.PortalConnection, error) {
+	query, err := r.client.Portal.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithPortalOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithPortalOrder(orderBy))
 }
 
 // Shells is the resolver for the shells field.

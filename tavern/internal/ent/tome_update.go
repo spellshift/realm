@@ -11,7 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
@@ -107,6 +108,48 @@ func (tu *TomeUpdate) SetNillableTactic(t *tome.Tactic) *TomeUpdate {
 	return tu
 }
 
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (tu *TomeUpdate) SetRunOnNewBeaconCallback(b bool) *TomeUpdate {
+	tu.mutation.SetRunOnNewBeaconCallback(b)
+	return tu
+}
+
+// SetNillableRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableRunOnNewBeaconCallback(b *bool) *TomeUpdate {
+	if b != nil {
+		tu.SetRunOnNewBeaconCallback(*b)
+	}
+	return tu
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (tu *TomeUpdate) SetRunOnFirstHostCallback(b bool) *TomeUpdate {
+	tu.mutation.SetRunOnFirstHostCallback(b)
+	return tu
+}
+
+// SetNillableRunOnFirstHostCallback sets the "run_on_first_host_callback" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableRunOnFirstHostCallback(b *bool) *TomeUpdate {
+	if b != nil {
+		tu.SetRunOnFirstHostCallback(*b)
+	}
+	return tu
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (tu *TomeUpdate) SetRunOnSchedule(s string) *TomeUpdate {
+	tu.mutation.SetRunOnSchedule(s)
+	return tu
+}
+
+// SetNillableRunOnSchedule sets the "run_on_schedule" field if the given value is not nil.
+func (tu *TomeUpdate) SetNillableRunOnSchedule(s *string) *TomeUpdate {
+	if s != nil {
+		tu.SetRunOnSchedule(*s)
+	}
+	return tu
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (tu *TomeUpdate) SetParamDefs(s string) *TomeUpdate {
 	tu.mutation.SetParamDefs(s)
@@ -155,19 +198,19 @@ func (tu *TomeUpdate) SetNillableEldritch(s *string) *TomeUpdate {
 	return tu
 }
 
-// AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tu *TomeUpdate) AddFileIDs(ids ...int) *TomeUpdate {
-	tu.mutation.AddFileIDs(ids...)
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (tu *TomeUpdate) AddAssetIDs(ids ...int) *TomeUpdate {
+	tu.mutation.AddAssetIDs(ids...)
 	return tu
 }
 
-// AddFiles adds the "files" edges to the File entity.
-func (tu *TomeUpdate) AddFiles(f ...*File) *TomeUpdate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// AddAssets adds the "assets" edges to the Asset entity.
+func (tu *TomeUpdate) AddAssets(a ...*Asset) *TomeUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tu.AddFileIDs(ids...)
+	return tu.AddAssetIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
@@ -208,30 +251,45 @@ func (tu *TomeUpdate) SetRepository(r *Repository) *TomeUpdate {
 	return tu.SetRepositoryID(r.ID)
 }
 
+// AddScheduledHostIDs adds the "scheduled_hosts" edge to the Host entity by IDs.
+func (tu *TomeUpdate) AddScheduledHostIDs(ids ...int) *TomeUpdate {
+	tu.mutation.AddScheduledHostIDs(ids...)
+	return tu
+}
+
+// AddScheduledHosts adds the "scheduled_hosts" edges to the Host entity.
+func (tu *TomeUpdate) AddScheduledHosts(h ...*Host) *TomeUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tu.AddScheduledHostIDs(ids...)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tu *TomeUpdate) Mutation() *TomeMutation {
 	return tu.mutation
 }
 
-// ClearFiles clears all "files" edges to the File entity.
-func (tu *TomeUpdate) ClearFiles() *TomeUpdate {
-	tu.mutation.ClearFiles()
+// ClearAssets clears all "assets" edges to the Asset entity.
+func (tu *TomeUpdate) ClearAssets() *TomeUpdate {
+	tu.mutation.ClearAssets()
 	return tu
 }
 
-// RemoveFileIDs removes the "files" edge to File entities by IDs.
-func (tu *TomeUpdate) RemoveFileIDs(ids ...int) *TomeUpdate {
-	tu.mutation.RemoveFileIDs(ids...)
+// RemoveAssetIDs removes the "assets" edge to Asset entities by IDs.
+func (tu *TomeUpdate) RemoveAssetIDs(ids ...int) *TomeUpdate {
+	tu.mutation.RemoveAssetIDs(ids...)
 	return tu
 }
 
-// RemoveFiles removes "files" edges to File entities.
-func (tu *TomeUpdate) RemoveFiles(f ...*File) *TomeUpdate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// RemoveAssets removes "assets" edges to Asset entities.
+func (tu *TomeUpdate) RemoveAssets(a ...*Asset) *TomeUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tu.RemoveFileIDs(ids...)
+	return tu.RemoveAssetIDs(ids...)
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
@@ -244,6 +302,27 @@ func (tu *TomeUpdate) ClearUploader() *TomeUpdate {
 func (tu *TomeUpdate) ClearRepository() *TomeUpdate {
 	tu.mutation.ClearRepository()
 	return tu
+}
+
+// ClearScheduledHosts clears all "scheduled_hosts" edges to the Host entity.
+func (tu *TomeUpdate) ClearScheduledHosts() *TomeUpdate {
+	tu.mutation.ClearScheduledHosts()
+	return tu
+}
+
+// RemoveScheduledHostIDs removes the "scheduled_hosts" edge to Host entities by IDs.
+func (tu *TomeUpdate) RemoveScheduledHostIDs(ids ...int) *TomeUpdate {
+	tu.mutation.RemoveScheduledHostIDs(ids...)
+	return tu
+}
+
+// RemoveScheduledHosts removes "scheduled_hosts" edges to Host entities.
+func (tu *TomeUpdate) RemoveScheduledHosts(h ...*Host) *TomeUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tu.RemoveScheduledHostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -348,6 +427,15 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Tactic(); ok {
 		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
+	if value, ok := tu.mutation.RunOnNewBeaconCallback(); ok {
+		_spec.SetField(tome.FieldRunOnNewBeaconCallback, field.TypeBool, value)
+	}
+	if value, ok := tu.mutation.RunOnFirstHostCallback(); ok {
+		_spec.SetField(tome.FieldRunOnFirstHostCallback, field.TypeBool, value)
+	}
+	if value, ok := tu.mutation.RunOnSchedule(); ok {
+		_spec.SetField(tome.FieldRunOnSchedule, field.TypeString, value)
+	}
 	if value, ok := tu.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
@@ -360,28 +448,28 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if tu.mutation.FilesCleared() {
+	if tu.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tu.mutation.FilesCleared() {
+	if nodes := tu.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !tu.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -389,15 +477,15 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.AssetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -456,6 +544,51 @@ func (tu *TomeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.ScheduledHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedScheduledHostsIDs(); len(nodes) > 0 && !tu.mutation.ScheduledHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ScheduledHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -559,6 +692,48 @@ func (tuo *TomeUpdateOne) SetNillableTactic(t *tome.Tactic) *TomeUpdateOne {
 	return tuo
 }
 
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (tuo *TomeUpdateOne) SetRunOnNewBeaconCallback(b bool) *TomeUpdateOne {
+	tuo.mutation.SetRunOnNewBeaconCallback(b)
+	return tuo
+}
+
+// SetNillableRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableRunOnNewBeaconCallback(b *bool) *TomeUpdateOne {
+	if b != nil {
+		tuo.SetRunOnNewBeaconCallback(*b)
+	}
+	return tuo
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (tuo *TomeUpdateOne) SetRunOnFirstHostCallback(b bool) *TomeUpdateOne {
+	tuo.mutation.SetRunOnFirstHostCallback(b)
+	return tuo
+}
+
+// SetNillableRunOnFirstHostCallback sets the "run_on_first_host_callback" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableRunOnFirstHostCallback(b *bool) *TomeUpdateOne {
+	if b != nil {
+		tuo.SetRunOnFirstHostCallback(*b)
+	}
+	return tuo
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (tuo *TomeUpdateOne) SetRunOnSchedule(s string) *TomeUpdateOne {
+	tuo.mutation.SetRunOnSchedule(s)
+	return tuo
+}
+
+// SetNillableRunOnSchedule sets the "run_on_schedule" field if the given value is not nil.
+func (tuo *TomeUpdateOne) SetNillableRunOnSchedule(s *string) *TomeUpdateOne {
+	if s != nil {
+		tuo.SetRunOnSchedule(*s)
+	}
+	return tuo
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (tuo *TomeUpdateOne) SetParamDefs(s string) *TomeUpdateOne {
 	tuo.mutation.SetParamDefs(s)
@@ -607,19 +782,19 @@ func (tuo *TomeUpdateOne) SetNillableEldritch(s *string) *TomeUpdateOne {
 	return tuo
 }
 
-// AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tuo *TomeUpdateOne) AddFileIDs(ids ...int) *TomeUpdateOne {
-	tuo.mutation.AddFileIDs(ids...)
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (tuo *TomeUpdateOne) AddAssetIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.AddAssetIDs(ids...)
 	return tuo
 }
 
-// AddFiles adds the "files" edges to the File entity.
-func (tuo *TomeUpdateOne) AddFiles(f ...*File) *TomeUpdateOne {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// AddAssets adds the "assets" edges to the Asset entity.
+func (tuo *TomeUpdateOne) AddAssets(a ...*Asset) *TomeUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tuo.AddFileIDs(ids...)
+	return tuo.AddAssetIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
@@ -660,30 +835,45 @@ func (tuo *TomeUpdateOne) SetRepository(r *Repository) *TomeUpdateOne {
 	return tuo.SetRepositoryID(r.ID)
 }
 
+// AddScheduledHostIDs adds the "scheduled_hosts" edge to the Host entity by IDs.
+func (tuo *TomeUpdateOne) AddScheduledHostIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.AddScheduledHostIDs(ids...)
+	return tuo
+}
+
+// AddScheduledHosts adds the "scheduled_hosts" edges to the Host entity.
+func (tuo *TomeUpdateOne) AddScheduledHosts(h ...*Host) *TomeUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tuo.AddScheduledHostIDs(ids...)
+}
+
 // Mutation returns the TomeMutation object of the builder.
 func (tuo *TomeUpdateOne) Mutation() *TomeMutation {
 	return tuo.mutation
 }
 
-// ClearFiles clears all "files" edges to the File entity.
-func (tuo *TomeUpdateOne) ClearFiles() *TomeUpdateOne {
-	tuo.mutation.ClearFiles()
+// ClearAssets clears all "assets" edges to the Asset entity.
+func (tuo *TomeUpdateOne) ClearAssets() *TomeUpdateOne {
+	tuo.mutation.ClearAssets()
 	return tuo
 }
 
-// RemoveFileIDs removes the "files" edge to File entities by IDs.
-func (tuo *TomeUpdateOne) RemoveFileIDs(ids ...int) *TomeUpdateOne {
-	tuo.mutation.RemoveFileIDs(ids...)
+// RemoveAssetIDs removes the "assets" edge to Asset entities by IDs.
+func (tuo *TomeUpdateOne) RemoveAssetIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.RemoveAssetIDs(ids...)
 	return tuo
 }
 
-// RemoveFiles removes "files" edges to File entities.
-func (tuo *TomeUpdateOne) RemoveFiles(f ...*File) *TomeUpdateOne {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// RemoveAssets removes "assets" edges to Asset entities.
+func (tuo *TomeUpdateOne) RemoveAssets(a ...*Asset) *TomeUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tuo.RemoveFileIDs(ids...)
+	return tuo.RemoveAssetIDs(ids...)
 }
 
 // ClearUploader clears the "uploader" edge to the User entity.
@@ -696,6 +886,27 @@ func (tuo *TomeUpdateOne) ClearUploader() *TomeUpdateOne {
 func (tuo *TomeUpdateOne) ClearRepository() *TomeUpdateOne {
 	tuo.mutation.ClearRepository()
 	return tuo
+}
+
+// ClearScheduledHosts clears all "scheduled_hosts" edges to the Host entity.
+func (tuo *TomeUpdateOne) ClearScheduledHosts() *TomeUpdateOne {
+	tuo.mutation.ClearScheduledHosts()
+	return tuo
+}
+
+// RemoveScheduledHostIDs removes the "scheduled_hosts" edge to Host entities by IDs.
+func (tuo *TomeUpdateOne) RemoveScheduledHostIDs(ids ...int) *TomeUpdateOne {
+	tuo.mutation.RemoveScheduledHostIDs(ids...)
+	return tuo
+}
+
+// RemoveScheduledHosts removes "scheduled_hosts" edges to Host entities.
+func (tuo *TomeUpdateOne) RemoveScheduledHosts(h ...*Host) *TomeUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tuo.RemoveScheduledHostIDs(ids...)
 }
 
 // Where appends a list predicates to the TomeUpdate builder.
@@ -830,6 +1041,15 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Tactic(); ok {
 		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 	}
+	if value, ok := tuo.mutation.RunOnNewBeaconCallback(); ok {
+		_spec.SetField(tome.FieldRunOnNewBeaconCallback, field.TypeBool, value)
+	}
+	if value, ok := tuo.mutation.RunOnFirstHostCallback(); ok {
+		_spec.SetField(tome.FieldRunOnFirstHostCallback, field.TypeBool, value)
+	}
+	if value, ok := tuo.mutation.RunOnSchedule(); ok {
+		_spec.SetField(tome.FieldRunOnSchedule, field.TypeString, value)
+	}
 	if value, ok := tuo.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 	}
@@ -842,28 +1062,28 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 	if value, ok := tuo.mutation.Eldritch(); ok {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 	}
-	if tuo.mutation.FilesCleared() {
+	if tuo.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.RemovedFilesIDs(); len(nodes) > 0 && !tuo.mutation.FilesCleared() {
+	if nodes := tuo.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !tuo.mutation.AssetsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -871,15 +1091,15 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.AssetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -938,6 +1158,51 @@ func (tuo *TomeUpdateOne) sqlSave(ctx context.Context) (_node *Tome, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(repository.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ScheduledHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedScheduledHostsIDs(); len(nodes) > 0 && !tuo.mutation.ScheduledHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ScheduledHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

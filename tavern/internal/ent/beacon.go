@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 )
@@ -32,8 +33,12 @@ type Beacon struct {
 	AgentIdentifier string `json:"agent_identifier,omitempty"`
 	// Timestamp of when a task was last claimed or updated for the beacon.
 	LastSeenAt time.Time `json:"last_seen_at,omitempty"`
+	// Timestamp of when a beacon is expected to check for tasks next.
+	NextSeenAt time.Time `json:"next_seen_at,omitempty"`
 	// Duration until next callback, in seconds.
 	Interval uint64 `json:"interval,omitempty"`
+	// Beacon's current transport.
+	Transport c2pb.Transport_Type `json:"transport,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BeaconQuery when eager-loading is set.
 	Edges        BeaconEdges `json:"edges"`
@@ -93,11 +98,13 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case beacon.FieldTransport:
+			values[i] = new(c2pb.Transport_Type)
 		case beacon.FieldID, beacon.FieldInterval:
 			values[i] = new(sql.NullInt64)
 		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
 			values[i] = new(sql.NullString)
-		case beacon.FieldCreatedAt, beacon.FieldLastModifiedAt, beacon.FieldLastSeenAt:
+		case beacon.FieldCreatedAt, beacon.FieldLastModifiedAt, beacon.FieldLastSeenAt, beacon.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
 		case beacon.ForeignKeys[0]: // beacon_host
 			values[i] = new(sql.NullInt64)
@@ -164,11 +171,23 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.LastSeenAt = value.Time
 			}
+		case beacon.FieldNextSeenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_seen_at", values[i])
+			} else if value.Valid {
+				b.NextSeenAt = value.Time
+			}
 		case beacon.FieldInterval:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field interval", values[i])
 			} else if value.Valid {
 				b.Interval = uint64(value.Int64)
+			}
+		case beacon.FieldTransport:
+			if value, ok := values[i].(*c2pb.Transport_Type); !ok {
+				return fmt.Errorf("unexpected type %T for field transport", values[i])
+			} else if value != nil {
+				b.Transport = *value
 			}
 		case beacon.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -249,8 +268,14 @@ func (b *Beacon) String() string {
 	builder.WriteString("last_seen_at=")
 	builder.WriteString(b.LastSeenAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("next_seen_at=")
+	builder.WriteString(b.NextSeenAt.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("interval=")
 	builder.WriteString(fmt.Sprintf("%v", b.Interval))
+	builder.WriteString(", ")
+	builder.WriteString("transport=")
+	builder.WriteString(fmt.Sprintf("%v", b.Transport))
 	builder.WriteByte(')')
 	return builder.String()
 }

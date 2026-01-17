@@ -1,5 +1,7 @@
 import { add } from "date-fns";
-import { BeaconType, FilterBarOption, QuestParam, TomeParams, TomeTag } from "./consts";
+import { BeaconEdge, BeaconNode } from "./interfacesQuery";
+import { OnlineOfflineFilterType, PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
+import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')
@@ -7,9 +9,6 @@ export function classNames(...classes: string[]) {
 
 export const convertArrayToObject = (array: Array<any>) =>
     array.reduce((acc, curr) => (acc[curr] = curr, acc), {});
-
-export const convertArrayOfObjectsToObject = (array: Array<any>, key: string) =>
-    array.reduce((acc, curr) => (acc[curr[key]] = curr, acc), {});
 
 export const safelyJsonParse = (value: string) => {
     let error = false;
@@ -25,12 +24,16 @@ export const safelyJsonParse = (value: string) => {
     return { error, params };
 };
 
-export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
+export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
     "beacon": Array<string>,
     "service":  Array<string>,
     "group":  Array<string>,
     "host":  Array<string>,
-    "platform": Array<string>
+    "platform": Array<string>,
+    "principal": Array<string>,
+    "primaryIP": Array<string>,
+    "transport": Array<string>,
+    "onlineOfflineStatus": Array<string>
 } {
     return typeFilters.reduce((accumulator: any, currentValue: any) => {
         if (currentValue.kind === "beacon") {
@@ -48,6 +51,18 @@ export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
         else if (currentValue.kind === "host") {
             accumulator.host.push(currentValue.name);
         }
+        else if (currentValue.kind === "principal"){
+            accumulator.principal.push(currentValue.name);
+        }
+        else if (currentValue.kind === "primaryIP"){
+            accumulator.primaryIP.push(currentValue.name);
+        }
+        else if (currentValue.kind === "transport"){
+            accumulator.transport.push(currentValue.name);
+        }
+        else if (currentValue.kind === "onlineOfflineStatus"){
+            accumulator.onlineOfflineStatus.push(currentValue.value);
+        }
         return accumulator;
     },
         {
@@ -55,14 +70,50 @@ export function getFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
             "service": [],
             "group": [],
             "host": [],
-            "platform": []
+            "platform": [],
+            "principal": [],
+            "primaryIP": [],
+            "transport": [],
+            "onlineOfflineStatus": []
         });
 };
 
-export const getOfflineOnlineStatus = (beacons: any) : {online: number, offline: number} => {
+export function getTomeFilterNameByTypes(typeFilters: Array<FilterBarOption>): TomeFiltersByType {
+    return typeFilters.reduce((accumulator: any, currentValue: any) => {
+        if (currentValue.kind === TomeFilterFieldKind.SupportModel) {
+            accumulator[TomeFilterFieldKind.SupportModel].push(currentValue.value);
+        }
+        else if (currentValue.kind === TomeFilterFieldKind.Tactic) {
+            accumulator[TomeFilterFieldKind.Tactic].push(currentValue.value);
+        }
+        return accumulator;
+    },
+        {
+            [TomeFilterFieldKind.SupportModel]: [],
+            [TomeFilterFieldKind.Tactic]: []
+        });
+};
+
+export const getFormatForPrincipal = (beacons: BeaconEdge[]) => {
+    const uniqueListOFPrincipals = beacons.reduce((acc: any, curr: BeaconEdge) => (acc[curr.node["principal"]] = curr, acc), {});
+    const princialUserList = Object.values(PrincipalAdminTypes) as Array<string>;
+    const finalList = [] as Array<string>;
+    for (const property in uniqueListOFPrincipals) {
+        if(princialUserList.indexOf(property) !== -1){
+            finalList.unshift(property);
+        }
+        else{
+            finalList.push(property);
+        }
+    }
+    return finalList;
+};
+
+
+export const getOfflineOnlineStatus = (beacons: BeaconEdge[]) : OnlineOfflineStatus => {
     return beacons.reduce(
-        (accumulator: any, currentValue: any) => {
-            const beaconOffline = checkIfBeaconOffline(currentValue);
+        (accumulator: OnlineOfflineStatus, currentValue: BeaconEdge) => {
+            const beaconOffline = checkIfBeaconOffline(currentValue.node);
             if (beaconOffline) {
                 accumulator.offline += 1;
             }
@@ -78,9 +129,9 @@ export const getOfflineOnlineStatus = (beacons: any) : {online: number, offline:
     );
 };
 
-export function getOnlineBeacons(beacons: Array<BeaconType>): Array<BeaconType> {
+export function getOnlineBeacons(beacons: Array<BeaconNode>): Array<BeaconNode> {
     const currentDate = new Date();
-    return beacons.filter((beacon: BeaconType) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
+    return beacons.filter((beacon: BeaconNode) => add(new Date(beacon.lastSeenAt), { seconds: beacon.interval, minutes: 1 }) >= currentDate);
 }
 export function checkIfBeaconOffline(beacon: { lastSeenAt: string, interval: number }): boolean {
     const currentDate = new Date();
@@ -129,7 +180,7 @@ export function getTacticColor(tactic: string) {
             return "#4b5563";
     }
 }
-export function constructTomeParams(questParamamters?: string, tomeParameters?: string): Array<QuestParam> {
+export function constructTomeParams(questParamamters?: string | null, tomeParameters?: string | null): Array<FieldInputParams> {
     if (!questParamamters || !tomeParameters) {
         return [];
     }
@@ -137,7 +188,7 @@ export function constructTomeParams(questParamamters?: string, tomeParameters?: 
     const paramValues = JSON.parse(questParamamters) || {};
     const paramFields = JSON.parse(tomeParameters || "") || [];
 
-    const fieldWithValue = paramFields.map((field: TomeParams) => {
+    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
@@ -146,8 +197,8 @@ export function constructTomeParams(questParamamters?: string, tomeParameters?: 
 
     return fieldWithValue;
 }
-export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<TomeParams>): Array<QuestParam> {
-    const fieldWithValue = paramFields.map((field: TomeParams) => {
+export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<FieldInputParams>): Array<FieldInputParams> {
+    const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
             value: paramValues[field.name] || ""
@@ -168,3 +219,56 @@ export function groupBy<T>(collection: T[], key: keyof T): { [key: string]: T[] 
     }, {} as any);
     return groupedResult
 }
+
+export const mapEnumToUIOptionField = (enumObj: Record<string, string>, kind: string) => {
+    return Object.entries(enumObj).map(([key, value]) => ({
+        id: key,
+        name: value,
+        value: key,
+        label: value,
+        kind: kind
+    }));
+};
+
+export function getEnumKey<T extends Record<string, string>>(
+    enumObj: T,
+    value: string | undefined | null
+): string {
+    if (!value) {
+        return "";
+    }
+
+    const key = Object.keys(enumObj).find(k => enumObj[k] === value);
+    return key || value;
+}
+
+export const OnlineOfflineOptions = [
+    {
+        id: OnlineOfflineFilterType.OnlineBeacons,
+        name: "Online beacons",
+        value: OnlineOfflineFilterType.OnlineBeacons,
+        label: "Online beacons",
+        kind: "onlineOfflineStatus"
+    },
+    {
+        id: OnlineOfflineFilterType.OfflineHost,
+        name: "Offline hosts",
+        value:  OnlineOfflineFilterType.OfflineHost,
+        label: "Offline hosts",
+        kind: "onlineOfflineStatus"
+    },
+    {
+        id: OnlineOfflineFilterType.RecentlyLostHost,
+        name: "Recently lost hosts",
+        value: OnlineOfflineFilterType.RecentlyLostHost,
+        label: "Recently lost hosts",
+        kind: "onlineOfflineStatus"
+    },
+    {
+        id: OnlineOfflineFilterType.RecentlyLostBeacons,
+        name: "Recently lost beacons",
+        value: OnlineOfflineFilterType.RecentlyLostBeacons,
+        label: "Recently lost beacons",
+        kind: "onlineOfflineStatus"
+    },
+] as FilterBarOption[];

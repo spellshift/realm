@@ -61,8 +61,8 @@ func TestFetchAsset(t *testing.T) {
 		_, err := rand.Read(data)
 		require.NoError(t, err)
 
-		// Create File
-		f := graph.File.Create().
+		// Create Asset
+		a := graph.Asset.Create().
 			SetName(tc.fileName).
 			SetContent(data).
 			SaveX(ctx)
@@ -93,15 +93,15 @@ func TestFetchAsset(t *testing.T) {
 		}
 
 		// Assert Content
-		assert.Equal(t, f.Content, buf.Bytes())
+		assert.Equal(t, a.Content, buf.Bytes())
 
 		// Assert Headers
 		metadata, err := fileClient.Header()
 		require.NoError(t, err)
 		require.Len(t, metadata.Get("sha3-256-checksum"), 1)
-		assert.Equal(t, f.Hash, metadata.Get("sha3-256-checksum")[0])
+		assert.Equal(t, a.Hash, metadata.Get("sha3-256-checksum")[0])
 		require.Len(t, metadata.Get("file-size"), 1)
-		assert.Equal(t, fmt.Sprintf("%d", f.Size), metadata.Get("file-size")[0])
+		assert.Equal(t, fmt.Sprintf("%d", a.Size), metadata.Get("file-size")[0])
 	}
 
 	// Run Tests

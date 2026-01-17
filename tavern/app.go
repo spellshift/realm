@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"crypto/ecdh"
-	"crypto/ed25519"
-	"crypto/rand"
-	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -28,17 +25,22 @@ import (
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
+	"realm.pub/tavern/internal/crypto"
 	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/portals"
+	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
+	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/tomes"
 
+	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 )
@@ -172,10 +174,10 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
-	// Generate server key pair
-	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	// Get server key pair from secrets manager (for OAuth)
+	pubKey, privKey, err := getKeyPairEd25519()
 	if err != nil {
-		log.Fatalf("[FATAL] failed to generate ed25519 keypair: %v", err)
+		log.Fatalf("[FATAL] failed to get ed25519 key pair: %v", err)
 	}
 	// Initialize Config
 	cfg := &Config{}
@@ -237,6 +239,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		}
 	}()
 
+	// Configure Portal Mux
+	portalMux := cfg.NewPortalMux(ctx)
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -268,12 +273,15 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
+		"/portal.Portal/": tavernhttp.Endpoint{
+			Handler: newPortalGRPCHandler(client, portalMux),
+		},
 		"/cdn/": tavernhttp.Endpoint{
-			Handler:              cdn.NewDownloadHandler(client, "/cdn/"),
+			Handler:              cdn.NewLinkDownloadHandler(client, "/cdn/"),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -285,6 +293,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/shell/ws": tavernhttp.Endpoint{
 			Handler: stream.NewShellHandler(client, wsShellMux),
+		},
+		"/shell/ping": tavernhttp.Endpoint{
+			Handler: stream.NewPingHandler(client, wsShellMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
@@ -409,29 +420,6 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) ht
 	})
 }
 
-func generateKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
-	curve := ecdh.X25519()
-	privateKey, err := curve.GenerateKey(rand.Reader)
-	if err != nil {
-		slog.Error(fmt.Sprintf("failed to generate private key: %v\n", err))
-		return nil, nil, err
-	}
-	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
-	if err != nil {
-		slog.Error(fmt.Sprintf("failed to generate public key: %v\n", err))
-		return nil, nil, err
-	}
-
-	return publicKey, privateKey, nil
-}
-
-func GetPubKey() (*ecdh.PublicKey, error) {
-	pub, _, err := getKeyPair()
-	if err != nil {
-		return nil, err
-	}
-	return pub, nil
-}
 
 func newSecretsManager() (secrets.SecretsManager, error) {
 	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
@@ -445,57 +433,87 @@ func newSecretsManager() (secrets.SecretsManager, error) {
 	return secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
 }
 
-func getKeyPair() (*ecdh.PublicKey, *ecdh.PrivateKey, error) {
-	curve := ecdh.X25519()
-
-	secretsManager, err := newSecretsManager()
-	if err != nil || secretsManager == nil {
-		return nil, nil, fmt.Errorf("failed to configure secret manager: %w", err)
-	}
-
-	// Check if we already have a key
-	privateKeyString, err := secretsManager.GetValue("tavern_encryption_private_key")
-	if err != nil {
-		// Generate a new one if it doesn't exist
-		pubKey, privateKey, err := generateKeyPair()
-		if err != nil {
-			return nil, nil, fmt.Errorf("key generation failed: %v", err)
-		}
-
-		privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to marshal private key: %v", err)
-		}
-		_, err = secretsManager.SetValue("tavern_encryption_private_key", privateKeyBytes)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to set 'tavern_encryption_private_key' using secrets manager: %v", err)
-		}
-		return pubKey, privateKey, nil
-	}
-
-	// Parse private key bytes
-	tmp, err := x509.ParsePKCS8PrivateKey(privateKeyString)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to parse private key: %v", err)
-	}
-	privateKey := tmp.(*ecdh.PrivateKey)
-
-	publicKey, err := curve.NewPublicKey(privateKey.PublicKey().Bytes())
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate public key: %v", err)
-	}
-
-	return publicKey, privateKey, nil
+func GetPubKey() (*ecdh.PublicKey, error) {
+	pub, _, err := getKeyPairX25519()
+	return pub, err
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux) http.Handler {
-	pub, priv, err := getKeyPair()
+// getKeyPairX25519 returns the server's X25519 key pair (derived from ED25519)
+func getKeyPairX25519() (pubKey *ecdh.PublicKey, privKey *ecdh.PrivateKey, err error) {
+	secretsManager, err := newSecretsManager()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pubKey, err = crypto.GetPubKeyX25519(secretsManager)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	privKey, err = crypto.GetPrivKeyX25519(secretsManager)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pubKey, privKey, nil
+}
+
+// getKeyPairEd25519 returns the server's ED25519 key pair
+func getKeyPairEd25519() (pubKey []byte, privKey []byte, err error) {
+	secretsManager, err := newSecretsManager()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pubKey, err = crypto.GetPubKeyED25519(secretsManager)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	privKey, err = crypto.GetPrivKeyED25519(secretsManager)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pubKey, privKey, nil
+}
+
+func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
+	portalSrv := portals.New(graph, portalMux)
+	grpcSrv := grpc.NewServer(
+		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
+		grpc.StreamInterceptor(grpcWithStreamMetrics),
+	)
+	portalpb.RegisterPortalServer(grpcSrv, portalSrv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
+		}
+
+		grpcSrv.ServeHTTP(w, r)
+	})
+}
+
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
+	pub, priv, err := getKeyPairX25519()
 	if err != nil {
 		panic(err)
 	}
 	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
 
-	c2srv := c2.New(client, grpcShellMux)
+	// Get ED25519 private key for JWT signing
+	ed25519PubKey, ed25519PrivKey, err := getKeyPairEd25519()
+	if err != nil {
+		panic(err)
+	}
+
+	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}

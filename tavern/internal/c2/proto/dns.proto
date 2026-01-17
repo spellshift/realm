@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package dns;
+
+option go_package = "realm.pub/tavern/internal/c2/dnspb";
+
+// PacketType defines the type of DNS packet in the conversation
+enum PacketType {
+    PACKET_TYPE_UNSPECIFIED = 0;
+    PACKET_TYPE_INIT = 1;   // Establish conversation
+    PACKET_TYPE_DATA = 2;   // Send data chunk
+    PACKET_TYPE_FETCH = 3;  // Retrieve response chunk
+    PACKET_TYPE_STATUS = 4; // Server status response with ACKs/NACKs
+}
+
+// DNSPacket is the main message format for DNS C2 communication
+// It is serialized to protobuf, then encoded (Base64/Base58/Base32), and sent as DNS subdomain
+message DNSPacket {
+    PacketType type = 1;           // Packet type
+    uint32 sequence = 2;            // Chunk sequence number (0-Based for INIT, 1-based for DATA)
+    string conversation_id = 3;     // 8-character random conversation ID
+    bytes data = 4;                 // Chunk payload (or InitPayload for INIT packets)
+    uint32 crc32 = 5;               // Optional CRC32 for validation
+
+    // Async protocol fields for windowed transmission
+    uint32 window_size = 6;         // Number of packets client has in-flight
+    repeated AckRange acks = 7;     // Ranges of successfully received chunks (SACK)
+    repeated uint32 nacks = 8;      // Specific sequence numbers to retransmit
+}
+
+// AckRange represents a contiguous range of acknowledged sequence numbers
+message AckRange {
+    uint32 start_seq = 1;  // Inclusive start of range
+    uint32 end_seq = 2;    // Inclusive end of range
+}
+
+// InitPayload is the payload for INIT packets
+// It contains metadata about the upcoming data transmission
+message InitPayload {
+    string method_code = 1;         // 2-character gRPC method code (e.g., "ct", "fa")
+    uint32 total_chunks = 2;        // Total number of data chunks to expect
+    uint32 data_crc32 = 3;          // CRC32 checksum of complete request data
+    uint32 file_size = 4;           // Total size of the file/data in bytes
+}
+
+// FetchPayload is the payload for FETCH packets
+// It specifies which response chunk to retrieve
+message FetchPayload {
+    uint32 chunk_index = 1;         // Which chunk to fetch (1-based)
+}
+
+// ResponseMetadata indicates the response is chunked and must be fetched
+message ResponseMetadata {
+    uint32 total_chunks = 1;        // Total number of response chunks
+    uint32 data_crc32 = 2;          // CRC32 checksum of complete response data
+    uint32 chunk_size = 3;          // Size of each chunk (last may be smaller)
+}

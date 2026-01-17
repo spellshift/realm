@@ -14,7 +14,7 @@ const CredentialTab = () => {
     const searchPlaceholder = "Search by Principal";
 
     return (
-        <div className="flex flex-col gap-2 mt-4">
+        <div className="flex flex-col gap-2 mt-4 px-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="col-span-1 md:col-span-2">
                     <FreeTextSearch placeholder={searchPlaceholder} setSearch={setSearch} />
@@ -30,7 +30,7 @@ const CredentialTab = () => {
                 {(loading) ? (
                     <EmptyState type={EmptyStateType.loading} label="Loading credentials..." />
                 ) : error ? (
-                    <EmptyState type={EmptyStateType.error} label="Error credentials..." />
+                    <EmptyState type={EmptyStateType.error} label="Error loading credentials..." />
                 ) : (creds.length > 0) ? (
                     <div className="mt-2 flex flex-col gap-1 w-full">
                         {groupByPrincipal ? <CredentialTableGrouped data={creds} /> : <CredentialTable data={creds} />}

@@ -7,6 +7,7 @@ option go_package = "realm.pub/tavern/internal/c2/c2pb";
 
 import "google/protobuf/timestamp.proto";
 import "eldritch.proto";
+import "portal.proto";
 
 /*
  * Messages
@@ -17,13 +18,33 @@ message Agent {
     string identifier = 1;
 }
 
+message Transport {
+    string uri = 1;
+    uint64 interval = 2;
+
+    enum Type {
+        TRANSPORT_UNSPECIFIED = 0;
+        TRANSPORT_GRPC = 1;
+        TRANSPORT_HTTP1 = 2;
+        TRANSPORT_DNS = 3;
+    }
+
+    Type type = 3;
+    string extra = 4;
+}
+
+message AvailableTransports {
+    repeated Transport transports = 1;
+    uint32 active_index = 2;
+}
+
 // Beacon information that is unique to the current running beacon.
 message Beacon {
     string identifier = 1;
     string principal = 2;
     Host host = 3;
     Agent agent = 4;
-    uint64 interval = 5; // Duration until next callback, in seconds.
+    AvailableTransports available_transports = 5;
 }
 
  // Host information for the system a beacon is running on.
@@ -49,6 +70,7 @@ message Task {
     int64 id = 1;
     eldritch.Tome tome = 2;
     string quest_name = 3;
+    string jwt = 4;
 }
 
 // TaskError provides information when task execution fails.
@@ -69,6 +91,12 @@ message TaskOutput {
     google.protobuf.Timestamp exec_finished_at = 5;
 }
 
+// TaskContext contains task-specific information needed for C2 operations.
+message TaskContext {
+    int64 task_id = 1;
+    string jwt = 2;
+}
+
 
 /*
  * RPC Messages
@@ -82,32 +110,33 @@ message ClaimTasksResponse {
 
 message FetchAssetRequest {
     string name = 1;
+    TaskContext context = 2;
 }
 message FetchAssetResponse {
     bytes chunk = 1;
 }
 
 message ReportCredentialRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     eldritch.Credential credential = 2;
 }
 message ReportCredentialResponse {}
 
 message ReportFileRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     eldritch.File chunk = 2;
-
 }
 message ReportFileResponse {}
 
 message ReportProcessListRequest {
-    int64 task_id = 1;
+    TaskContext context = 1;
     eldritch.ProcessList list = 2;
 }
 message ReportProcessListResponse {}
 
 message ReportTaskOutputRequest {
     TaskOutput output = 1;
+    TaskContext context = 2;
 }
 
 message ReportTaskOutputResponse {}
@@ -121,11 +150,19 @@ enum ReverseShellMessageKind {
 message ReverseShellRequest{
     ReverseShellMessageKind kind = 1;
     bytes data = 2;
-    int64 task_id = 3;
+    TaskContext context = 3;
 }
 message ReverseShellResponse{
     ReverseShellMessageKind kind = 1;
     bytes data = 2;
+}
+
+message CreatePortalRequest {
+    TaskContext context = 1;
+    portal.Mote mote = 2;
+}
+message CreatePortalResponse {
+    portal.Mote mote = 2;
 }
 
 /*
@@ -180,4 +217,9 @@ service C2 {
      * Open a reverse shell bi-directional stream.
      */
     rpc ReverseShell(stream ReverseShellRequest) returns (stream ReverseShellResponse) {}
+
+    /*
+     * Open a portal bi-directional stream.
+     */
+    rpc CreatePortal(stream CreatePortalRequest) returns (stream CreatePortalResponse) {}
 }

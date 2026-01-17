@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/shell"
@@ -123,6 +124,20 @@ func (bc *BeaconCreate) SetNillableLastSeenAt(t *time.Time) *BeaconCreate {
 	return bc
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (bc *BeaconCreate) SetNextSeenAt(t time.Time) *BeaconCreate {
+	bc.mutation.SetNextSeenAt(t)
+	return bc
+}
+
+// SetNillableNextSeenAt sets the "next_seen_at" field if the given value is not nil.
+func (bc *BeaconCreate) SetNillableNextSeenAt(t *time.Time) *BeaconCreate {
+	if t != nil {
+		bc.SetNextSeenAt(*t)
+	}
+	return bc
+}
+
 // SetInterval sets the "interval" field.
 func (bc *BeaconCreate) SetInterval(u uint64) *BeaconCreate {
 	bc.mutation.SetInterval(u)
@@ -134,6 +149,12 @@ func (bc *BeaconCreate) SetNillableInterval(u *uint64) *BeaconCreate {
 	if u != nil {
 		bc.SetInterval(*u)
 	}
+	return bc
+}
+
+// SetTransport sets the "transport" field.
+func (bc *BeaconCreate) SetTransport(ct c2pb.Transport_Type) *BeaconCreate {
+	bc.mutation.SetTransport(ct)
 	return bc
 }
 
@@ -265,6 +286,14 @@ func (bc *BeaconCreate) check() error {
 			return &ValidationError{Name: "agent_identifier", err: fmt.Errorf(`ent: validator failed for field "Beacon.agent_identifier": %w`, err)}
 		}
 	}
+	if _, ok := bc.mutation.Transport(); !ok {
+		return &ValidationError{Name: "transport", err: errors.New(`ent: missing required field "Beacon.transport"`)}
+	}
+	if v, ok := bc.mutation.Transport(); ok {
+		if err := beacon.TransportValidator(v); err != nil {
+			return &ValidationError{Name: "transport", err: fmt.Errorf(`ent: validator failed for field "Beacon.transport": %w`, err)}
+		}
+	}
 	if len(bc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Beacon.host"`)}
 	}
@@ -323,9 +352,17 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 		_spec.SetField(beacon.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = value
 	}
+	if value, ok := bc.mutation.NextSeenAt(); ok {
+		_spec.SetField(beacon.FieldNextSeenAt, field.TypeTime, value)
+		_node.NextSeenAt = value
+	}
 	if value, ok := bc.mutation.Interval(); ok {
 		_spec.SetField(beacon.FieldInterval, field.TypeUint64, value)
 		_node.Interval = value
+	}
+	if value, ok := bc.mutation.Transport(); ok {
+		_spec.SetField(beacon.FieldTransport, field.TypeEnum, value)
+		_node.Transport = value
 	}
 	if nodes := bc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -506,6 +543,24 @@ func (u *BeaconUpsert) ClearLastSeenAt() *BeaconUpsert {
 	return u
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *BeaconUpsert) SetNextSeenAt(v time.Time) *BeaconUpsert {
+	u.Set(beacon.FieldNextSeenAt, v)
+	return u
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateNextSeenAt() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldNextSeenAt)
+	return u
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *BeaconUpsert) ClearNextSeenAt() *BeaconUpsert {
+	u.SetNull(beacon.FieldNextSeenAt)
+	return u
+}
+
 // SetInterval sets the "interval" field.
 func (u *BeaconUpsert) SetInterval(v uint64) *BeaconUpsert {
 	u.Set(beacon.FieldInterval, v)
@@ -527,6 +582,18 @@ func (u *BeaconUpsert) AddInterval(v uint64) *BeaconUpsert {
 // ClearInterval clears the value of the "interval" field.
 func (u *BeaconUpsert) ClearInterval() *BeaconUpsert {
 	u.SetNull(beacon.FieldInterval)
+	return u
+}
+
+// SetTransport sets the "transport" field.
+func (u *BeaconUpsert) SetTransport(v c2pb.Transport_Type) *BeaconUpsert {
+	u.Set(beacon.FieldTransport, v)
+	return u
+}
+
+// UpdateTransport sets the "transport" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateTransport() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldTransport)
 	return u
 }
 
@@ -669,6 +736,27 @@ func (u *BeaconUpsertOne) ClearLastSeenAt() *BeaconUpsertOne {
 	})
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *BeaconUpsertOne) SetNextSeenAt(v time.Time) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateNextSeenAt() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *BeaconUpsertOne) ClearNextSeenAt() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearNextSeenAt()
+	})
+}
+
 // SetInterval sets the "interval" field.
 func (u *BeaconUpsertOne) SetInterval(v uint64) *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
@@ -694,6 +782,20 @@ func (u *BeaconUpsertOne) UpdateInterval() *BeaconUpsertOne {
 func (u *BeaconUpsertOne) ClearInterval() *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearInterval()
+	})
+}
+
+// SetTransport sets the "transport" field.
+func (u *BeaconUpsertOne) SetTransport(v c2pb.Transport_Type) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetTransport(v)
+	})
+}
+
+// UpdateTransport sets the "transport" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateTransport() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateTransport()
 	})
 }
 
@@ -1002,6 +1104,27 @@ func (u *BeaconUpsertBulk) ClearLastSeenAt() *BeaconUpsertBulk {
 	})
 }
 
+// SetNextSeenAt sets the "next_seen_at" field.
+func (u *BeaconUpsertBulk) SetNextSeenAt(v time.Time) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetNextSeenAt(v)
+	})
+}
+
+// UpdateNextSeenAt sets the "next_seen_at" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateNextSeenAt() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateNextSeenAt()
+	})
+}
+
+// ClearNextSeenAt clears the value of the "next_seen_at" field.
+func (u *BeaconUpsertBulk) ClearNextSeenAt() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearNextSeenAt()
+	})
+}
+
 // SetInterval sets the "interval" field.
 func (u *BeaconUpsertBulk) SetInterval(v uint64) *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
@@ -1027,6 +1150,20 @@ func (u *BeaconUpsertBulk) UpdateInterval() *BeaconUpsertBulk {
 func (u *BeaconUpsertBulk) ClearInterval() *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.ClearInterval()
+	})
+}
+
+// SetTransport sets the "transport" field.
+func (u *BeaconUpsertBulk) SetTransport(v c2pb.Transport_Type) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetTransport(v)
+	})
+}
+
+// UpdateTransport sets the "transport" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateTransport() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateTransport()
 	})
 }
 

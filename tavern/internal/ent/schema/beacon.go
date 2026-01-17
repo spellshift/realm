@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/namegen"
 )
 
@@ -58,6 +59,13 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Timestamp of when a task was last claimed or updated for the beacon."),
+		field.Time("next_seen_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("NEXT_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Timestamp of when a beacon is expected to check for tasks next."),
 		field.Uint64("interval").
 			Optional().
 			Annotations(
@@ -66,6 +74,12 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Duration until next callback, in seconds."),
+		field.Enum("transport").
+			GoType(c2pb.Transport_Type(0)).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Beacon's current transport."),
 	}
 }
 
@@ -82,6 +96,8 @@ func (Beacon) Edges() []ent.Edge {
 		edge.From("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
 			).
 			Ref("beacon").
 			Comment("Tasks that have been assigned to the beacon."),
@@ -99,6 +115,8 @@ func (Beacon) Edges() []ent.Edge {
 // Annotations describes additional information for the ent.
 func (Beacon) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationUpdate(),
 		),

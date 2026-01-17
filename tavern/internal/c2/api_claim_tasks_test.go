@@ -56,7 +56,16 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(60),
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(60),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
+					},
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{},
@@ -81,7 +90,16 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(100),
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(100),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
+					},
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{},
@@ -106,7 +124,16 @@ func TestClaimTasks(t *testing.T) {
 						Platform:   c2pb.Host_PLATFORM_LINUX,
 						PrimaryIp:  "127.0.0.1",
 					},
-					Interval: uint64(100),
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(100),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
+					},
 				},
 			},
 			wantResp: &c2pb.ClaimTasksResponse{
@@ -136,9 +163,14 @@ func TestClaimTasks(t *testing.T) {
 				return
 			}
 
-			// Assert Response
-			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform()); diff != "" {
+			// Assert Response (ignore JWT field as it contains timestamps and will be different each time)
+			if diff := cmp.Diff(tc.wantResp, resp, protocmp.Transform(), protocmp.IgnoreFields(&c2pb.Task{}, "jwt")); diff != "" {
 				t.Errorf("invalid response (-want +got): %v", diff)
+			}
+
+			// Verify JWT is present and non-empty for each task
+			for _, task := range resp.Tasks {
+				assert.NotEmpty(t, task.Jwt, "JWT should be present in task")
 			}
 
 			// Load Beacon

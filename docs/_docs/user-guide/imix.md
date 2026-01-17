@@ -13,15 +13,20 @@ Imix is an offensive security implant designed for stealthy communication and ad
 
 Imix has compile-time configuration, that may be specified using environment variables during `cargo build`.
 
+**We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
+Building in the dev container limits variables that might cause issues and is the most tested way to compile.
+
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
-| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://`) | `http://127.0.0.1:8000` | No |
-| IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | - | Yes |
+| IMIX_CALLBACK_URI | URI for initial callbacks (must specify a scheme, e.g. `http://` or `dns://`) | `http://127.0.0.1:8000` | No |
+| IMIX_SERVER_PUBKEY | The public key for the tavern server (obtain from server using `curl $IMIX_CALLBACK_URI/status`). | automatic | Yes |
 | IMIX_CALLBACK_INTERVAL | Duration between callbacks, in seconds. | `5` | No |
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
-| IMIX_PROXY_URI | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
 | IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
+| IMIX_TRANSPORT_EXTRA_HTTP_PROXY | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
+| IMIX_TRANSPORT_EXTRA_DOH | Enable DoH, eventually specify which DoH service to use. Requires the grpc-doh flag. | No DoH. | No |
+
 
 Imix has run-time configuration, that may be specified using environment variables during execution.
 
@@ -29,6 +34,106 @@ Imix has run-time configuration, that may be specified using environment variabl
 | ------- | ----------- | ------- | -------- |
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
 | IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
+
+## Advanced Configuration (IMIX_CONFIG)
+
+For more complex setups, such as configuring multiple transports or specifying detailed transport options, you can use the `IMIX_CONFIG` environment variable. This variable accepts a YAML-formatted string.
+
+**Note:** When `IMIX_CONFIG` is set, you cannot use `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, or `IMIX_TRANSPORT_EXTRA_*`. All configuration must be provided within the YAML structure.
+
+### YAML Structure
+
+```yaml
+transports:
+  - URI: <string>
+    type: <grpc|http1|dns>
+    interval: <integer> # optional, seconds
+    extra: <json_string> # required (use "" if none)
+server_pubkey: <string> # optional
+```
+
+### Example: Multiple Transports
+
+This example configures Imix to use two transports:
+1.  A gRPC transport over HTTP.
+2.  A DNS transport as a fallback or alternative.
+
+```bash
+export IMIX_CONFIG='
+transports:
+  - URI: "http://127.0.0.1:8000"
+    type: "grpc"
+    interval: 5
+    extra: ""
+  - URI: "dns://8.8.8.8:53"
+    type: "dns"
+    interval: 10
+    extra: "{\"domain\": \"c2.example.com\", \"type\": \"txt\"}"
+server_pubkey: "YOUR_SERVER_PUBKEY_HERE"
+'
+
+# Build with the configuration
+cargo build --release --bin imix
+```
+
+## DNS Transport Configuration
+
+The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either specific DNS servers or the system's default resolver with automatic fallback.
+
+### DNS URI Format
+
+When using the DNS transport, configure `IMIX_CALLBACK_URI` with the following format:
+
+```
+dns://<server>?domain=<DOMAIN>[&type=<TYPE>]
+```
+
+**Parameters:**
+- `<server>` - DNS server address(es), `*` to use system resolver, or comma-separated list (e.g., `8.8.8.8:53,1.1.1.1:53`)
+- `domain` - Base domain for DNS queries (e.g., `c2.example.com`)
+- `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
+
+**Examples:**
+
+```bash
+# Use specific DNS server with TXT records (default)
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com"
+
+# Use system resolver with fallbacks
+export IMIX_CALLBACK_URI="dns://*?domain=c2.example.com"
+
+# Use multiple DNS servers with A records
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a"
+
+# Use AAAA records
+export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com&type=aaaa"
+```
+
+### DNS Resolver Fallback
+
+When using `*` as the server, the agent uses system DNS servers followed by public resolvers (1.1.1.1, 8.8.8.8) as fallbacks. If system configuration cannot be read, only the public resolvers are used. When multiple servers are configured, the agent tries each server in order on every failed request until one succeeds, then uses the working server for subsequent requests.
+
+### Record Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| TXT | Text records (default) | Best throughput, data encoded in TXT RDATA |
+| A | IPv4 address records | Lower profile, data encoded across multiple A records |
+| AAAA | IPv6 address records | Medium profile, more data per record than A |
+
+### Protocol Details
+
+The DNS transport uses an async windowed protocol to handle UDP unreliability:
+
+- **Chunked transmission**: Large requests are split into chunks that fit within DNS query limits (253 bytes total domain length)
+- **Windowed sending**: Up to 10 packets are sent concurrently
+- **ACK/NACK protocol**: The server responds with acknowledgments for received chunks and requests retransmission of missing chunks
+- **Automatic retries**: Failed chunks are retried up to 3 times before the request fails
+- **CRC32 verification**: Data integrity is verified using CRC32 checksums
+
+**Limits:**
+- Maximum data size: 50MB per request
+- Maximum concurrent conversations on server: 10,000
 
 ## Logging
 
@@ -56,13 +161,7 @@ Every callback interval imix will query each active thread for new output and re
 
 ## Proxy support
 
-Imix's default `grpc` transport supports http and https proxies for outbound communication.
-By default imix will try to determine the systems proxy settings:
-
-- On Linux reading the environment variables `http_proxy` and then `https_proxy`
-- On Windows - we cannot automatically determine the default proxy
-- On MacOS - we cannot automatically determine the default proxy
-- On FreeBSD - we cannot automatically determine the default proxy
+Imix's default `grpc` transport supports http and https proxies for outbound communication. These must be set at compile time.
 
 ## Identifying unique hosts
 
@@ -90,13 +189,15 @@ Building in the dev container limits variables that might cause issues and is th
 
 **Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
-## Optional build flags
 
-These flags are passed to cargo build Eg.:
-`cargo build --release --bin imix  --bin imix --target=x86_64-unknown-linux-musl --features foo-bar`
+## Setting encryption key
 
-- `--features grpc-doh` - Enable DNS over HTTP using cloudflare DNS for the grpc transport
-- `--features http1 --no-default-features` - Changes the default grpc transport to use HTTP/1.1. Requires running the http redirector.
+By default imix will automatically collect the IMIX_CALLBACK_URI server's public key during the build process. This can be overridden by manually setinng the `IMIX_SERVER_PUBKEY` environment variable but should only be necesarry when using redirectors. Redirectors have no visibliity into the realm encryption by design, this means that agents must be compiled with the upstream tavern instance's public key.
+
+A server's public key can be found using:
+```bash
+export IMIX_SERVER_PUBKEY="$(curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey')"
+```
 
 ### Linux
 
@@ -107,9 +208,6 @@ sudo apt update
 sudo apt install musl-tools
 cd realm/implants/imix/
 export IMIX_CALLBACK_URI="http://localhost"
-# To get a servers pubkey:
-# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
-export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
@@ -143,10 +241,8 @@ Modify .devcontainer/devcontainer.json by uncommenting the MacOSX.sdk mount. Thi
 ```bash
 cd realm/implants/imix/
 # Tell the linker to use the MacOSX.sdk
-export RUSTFLAGS="-Clink-arg=-isysroot -Clink-arg=/MacOSX.sdk -Clink-arg=-F/MacOSX.sdk/System/Library/Frameworks -Clink-arg=-L/MacOSX.sdk/usr/lib -Clink-arg=-lresolv"
-export IMIX_CALLBACK_URI="http://localhost"
-# To get a servers pubkey:
-# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
+export SDKROOT="/MacOSX.sdk/"; export RUSTFLAGS="-Clink-arg=-isysroot -Clink-arg=/MacOSX.sdk -Clink-arg=-F/MacOSX.sdk/System/Library/Frameworks -Clink-arg=-L/MacOSX.sdk/usr/lib -Clink-arg=-lresolv"
+
 export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 cargo zigbuild  --release --target aarch64-apple-darwin
@@ -160,9 +256,6 @@ cargo zigbuild  --release --target aarch64-apple-darwin
 cd realm/implants/imix/
 
 export IMIX_CALLBACK_URI="http://localhost"
-# To get a servers pubkey:
-# curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey'
-export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 
 # Build imix.exe
  cargo build --release --target=x86_64-pc-windows-gnu

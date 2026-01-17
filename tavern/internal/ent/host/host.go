@@ -33,6 +33,8 @@ const (
 	FieldPlatform = "platform"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
+	// FieldNextSeenAt holds the string denoting the next_seen_at field in the database.
+	FieldNextSeenAt = "next_seen_at"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
@@ -91,6 +93,13 @@ var Columns = []string{
 	FieldExternalIP,
 	FieldPlatform,
 	FieldLastSeenAt,
+	FieldNextSeenAt,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "hosts"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"tome_scheduled_hosts",
 }
 
 var (
@@ -103,6 +112,11 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -178,6 +192,11 @@ func ByPlatform(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSeenAt orders the results by the last_seen_at field.
 func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByNextSeenAt orders the results by the next_seen_at field.
+func ByNextSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextSeenAt, opts...).ToFunc()
 }
 
 // ByTagsCount orders the results by tags count.

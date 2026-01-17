@@ -8,6 +8,8 @@ pub use pb::config::Config;
 
 use transport::{ActiveTransport, Transport};
 
+const DEFAULT_RETRY_INTERVAL: u64 = 5;
+
 pub async fn handle_main() {
     if let Some(("install", _)) = Command::new("imix")
         .subcommand(Command::new("install").about("Install imix"))
@@ -19,8 +21,15 @@ pub async fn handle_main() {
     }
 
     loop {
-        let cfg = Config::default_with_imix_verison(VERSION);
-        let retry_interval = cfg.retry_interval;
+        let cfg = Config::default_with_imix_version(VERSION);
+        let retry_interval = cfg
+            .info
+            .as_ref()
+            .and_then(|beacon| beacon.available_transports.as_ref())
+            .and_then(|available| available.transports.get(available.active_index as usize))
+            .map(|transport| transport.interval)
+            .unwrap_or(DEFAULT_RETRY_INTERVAL);
+
         #[cfg(debug_assertions)]
         log::info!("agent config initialized {:#?}", cfg.clone());
 

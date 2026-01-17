@@ -6,11 +6,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Asset is the predicate function for asset builders.
+type Asset func(*sql.Selector)
+
 // Beacon is the predicate function for beacon builders.
 type Beacon func(*sql.Selector)
-
-// File is the predicate function for file builders.
-type File func(*sql.Selector)
 
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
@@ -23,6 +23,12 @@ type HostFile func(*sql.Selector)
 
 // HostProcess is the predicate function for hostprocess builders.
 type HostProcess func(*sql.Selector)
+
+// Link is the predicate function for link builders.
+type Link func(*sql.Selector)
+
+// Portal is the predicate function for portal builders.
+type Portal func(*sql.Selector)
 
 // Quest is the predicate function for quest builders.
 type Quest func(*sql.Selector)

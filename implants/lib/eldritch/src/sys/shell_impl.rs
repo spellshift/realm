@@ -12,13 +12,12 @@ use {
     std::os::windows::ffi::{OsStrExt, OsStringExt},
     std::path::Path,
     std::{slice, str},
-    windows_sys::Win32::System::Memory::LocalFree,
     windows_sys::Win32::UI::Shell::CommandLineToArgvW,
 };
 
 use super::CommandOutput;
 
-pub fn shell(starlark_heap: &Heap, cmd: String) -> Result<Dict> {
+pub fn shell(starlark_heap: &'_ Heap, cmd: String) -> Result<Dict<'_>> {
     let cmd_res = handle_shell(cmd)?;
 
     let res = SmallMap::new();
@@ -61,7 +60,8 @@ pub fn to_argv(command_line: &str) -> Vec<OsString> {
             argv.push(os_string_from_wide_ptr(*args.offset(i as isize)));
         }
 
-        LocalFree(args as isize);
+        // LocalFree shouldn't be needed this should get dropped
+        // LocalFree(args as *const c_void);
     }
     argv
 }
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_sys_shell_current_user() -> anyhow::Result<()> {
-        let expected = whoami::username();
+        let expected = whoami::username().to_lowercase();
         let res = handle_shell(String::from("whoami"))?.stdout;
         assert!(res.contains(&expected));
         Ok(())
@@ -205,8 +205,7 @@ func_shell("whoami")
         };
 
         #[starlark_module]
-        #[allow(clippy::needless_lifetimes)]
-        fn func_shell(builder: &mut GlobalsBuilder) {
+        fn func_shell(_builder: &mut GlobalsBuilder) {
             fn func_shell<'v>(starlark_heap: &'v Heap, cmd: String) -> anyhow::Result<Dict<'v>> {
                 shell(starlark_heap, cmd)
             }
@@ -218,7 +217,7 @@ func_shell("whoami")
         let mut eval: Evaluator = Evaluator::new(&module);
         let res: Value = eval.eval_module(ast, &globals).unwrap();
         let res_string = res.to_str();
-        let expected = whoami::username();
+        let expected = whoami::username().to_lowercase();
         assert!(res_string.contains(&expected));
         Ok(())
     }

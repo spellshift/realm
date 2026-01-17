@@ -11,18 +11,18 @@ use std::process::Command;
 
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
-    nix::sys::wait::wait,
+    nix::sys::wait::waitpid,
     nix::unistd::{fork, setsid, ForkResult},
     std::process::{exit, Stdio},
 };
 
 pub fn exec(
-    starlark_heap: &Heap,
+    starlark_heap: &'_ Heap,
     path: String,
     args: Vec<String>,
     disown: Option<bool>,
     env_vars: Option<SmallMap<String, String>>,
-) -> Result<Dict> {
+) -> Result<Dict<'_>> {
     let mut env_vars_map = HashMap::new();
     if let Some(e) = env_vars {
         for (k, v) in e {
@@ -84,7 +84,7 @@ fn handle_exec(
                     return Err(anyhow::anyhow!("Pid was negative. ERR".to_string()));
                 }
 
-                let _ = wait();
+                let _ = waitpid(child, None);
 
                 Ok(CommandOutput {
                     stdout: "".to_string(),
@@ -177,16 +177,13 @@ mod tests {
         {
             let res = handle_exec(
                 String::from("/bin/sh"),
-                vec![String::from("-c"), String::from("id -u")],
+                vec![String::from("-c"), String::from("id")],
                 HashMap::new(),
                 false,
             )?
             .stdout;
-            let mut bool_res = false;
-            if res == "1001\n" || res == "0\n" {
-                bool_res = true;
-            }
-            assert!(bool_res);
+            let expected = whoami::username().to_lowercase();
+            assert!(res.contains(&expected));
         } else if cfg!(target_os = "macos") {
             let res = handle_exec(
                 String::from("/bin/echo"),
@@ -205,12 +202,8 @@ mod tests {
             )?
             .stdout
             .to_lowercase();
-            let mut bool_res = false;
-            if res.contains("runneradmin") || res.contains("administrator") || res.contains("user")
-            {
-                bool_res = true;
-            }
-            assert!(bool_res);
+            let expected = whoami::username().to_lowercase();
+            assert!(res.contains(&expected));
         }
         Ok(())
     }

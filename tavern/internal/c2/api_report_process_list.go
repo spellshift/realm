@@ -12,15 +12,20 @@ import (
 
 func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProcessListRequest) (*c2pb.ReportProcessListResponse, error) {
 	// Validate Arguments
-	if req.TaskId == 0 {
+	if req.GetContext().GetTaskId() == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
 	if req.List == nil || len(req.List.List) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
 	}
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	if err != nil {
+		return nil, err
+	}
+
 
 	// Load Task
-	task, err := srv.graph.Task.Get(ctx, int(req.TaskId))
+	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
 	if ent.IsNotFound(err) {
 		return nil, status.Errorf(codes.NotFound, "no task found")
 	}

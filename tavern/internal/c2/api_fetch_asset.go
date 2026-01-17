@@ -9,32 +9,37 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
 )
 
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
-	// Load File
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	if err != nil {
+		return err
+	}
+
+	// Load Asset
 	name := req.GetName()
-	f, err := srv.graph.File.Query().
-		Where(file.Name(name)).
+	a, err := srv.graph.Asset.Query().
+		Where(asset.Name(name)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return status.Errorf(codes.NotFound, "%v", err)
 	}
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to query file (%q): %v", name, err)
+		return status.Errorf(codes.Internal, "failed to query asset (%q): %v", name, err)
 	}
 
 	// Set Header Metadata
 	stream.SetHeader(metadata.Pairs(
-		"sha3-256-checksum", f.Hash,
-		"file-size", fmt.Sprintf("%d", f.Size),
+		"sha3-256-checksum", a.Hash,
+		"file-size", fmt.Sprintf("%d", a.Size),
 	))
 
 	// Send Asset Chunks
-	buf := bytes.NewBuffer(f.Content)
+	buf := bytes.NewBuffer(a.Content)
 	for {
 		// Check Empty Buffer
 		if buf.Len() < 1 {

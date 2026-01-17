@@ -1,30 +1,15 @@
 {
 	"name": "Realm",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-		}
-	},
+	// "build": {
+	// 	"dockerfile": "Dockerfile",
+	// 	"args": {}
+	// },
+	"image": "spellshift/devcontainer:main",
 	"hostRequirements": {
 		"cpus": 4
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.23"
-		},
-		"ghcr.io/devcontainers/features/python:1": {
-			"installTools": true,
-			"version": "3.12"
-		},
-		"ghcr.io/devcontainers/features/rust:1": {
-			"version": "1.87",
-			"profile": "minimal",
-			"targets": "aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,x86_64-pc-windows-gnu,aarch64-apple-darwin,x86_64-apple-darwin"
-		},
-		"ghcr.io/devcontainers/features/node:1": {
-			"version": "lts"
-		},
 	},
 	"customizations": {
 		"vscode": {
@@ -65,5 +50,4 @@
 	// "mounts": [
 	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
 	// ],
-	"postAttachCommand": "cargo install cargo-zigbuild"
 }

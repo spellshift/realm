@@ -11,7 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/file"
+	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -99,6 +100,48 @@ func (tc *TomeCreate) SetNillableTactic(t *tome.Tactic) *TomeCreate {
 	return tc
 }
 
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (tc *TomeCreate) SetRunOnNewBeaconCallback(b bool) *TomeCreate {
+	tc.mutation.SetRunOnNewBeaconCallback(b)
+	return tc
+}
+
+// SetNillableRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableRunOnNewBeaconCallback(b *bool) *TomeCreate {
+	if b != nil {
+		tc.SetRunOnNewBeaconCallback(*b)
+	}
+	return tc
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (tc *TomeCreate) SetRunOnFirstHostCallback(b bool) *TomeCreate {
+	tc.mutation.SetRunOnFirstHostCallback(b)
+	return tc
+}
+
+// SetNillableRunOnFirstHostCallback sets the "run_on_first_host_callback" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableRunOnFirstHostCallback(b *bool) *TomeCreate {
+	if b != nil {
+		tc.SetRunOnFirstHostCallback(*b)
+	}
+	return tc
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (tc *TomeCreate) SetRunOnSchedule(s string) *TomeCreate {
+	tc.mutation.SetRunOnSchedule(s)
+	return tc
+}
+
+// SetNillableRunOnSchedule sets the "run_on_schedule" field if the given value is not nil.
+func (tc *TomeCreate) SetNillableRunOnSchedule(s *string) *TomeCreate {
+	if s != nil {
+		tc.SetRunOnSchedule(*s)
+	}
+	return tc
+}
+
 // SetParamDefs sets the "param_defs" field.
 func (tc *TomeCreate) SetParamDefs(s string) *TomeCreate {
 	tc.mutation.SetParamDefs(s)
@@ -125,19 +168,19 @@ func (tc *TomeCreate) SetEldritch(s string) *TomeCreate {
 	return tc
 }
 
-// AddFileIDs adds the "files" edge to the File entity by IDs.
-func (tc *TomeCreate) AddFileIDs(ids ...int) *TomeCreate {
-	tc.mutation.AddFileIDs(ids...)
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (tc *TomeCreate) AddAssetIDs(ids ...int) *TomeCreate {
+	tc.mutation.AddAssetIDs(ids...)
 	return tc
 }
 
-// AddFiles adds the "files" edges to the File entity.
-func (tc *TomeCreate) AddFiles(f ...*File) *TomeCreate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
+// AddAssets adds the "assets" edges to the Asset entity.
+func (tc *TomeCreate) AddAssets(a ...*Asset) *TomeCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return tc.AddFileIDs(ids...)
+	return tc.AddAssetIDs(ids...)
 }
 
 // SetUploaderID sets the "uploader" edge to the User entity by ID.
@@ -176,6 +219,21 @@ func (tc *TomeCreate) SetNillableRepositoryID(id *int) *TomeCreate {
 // SetRepository sets the "repository" edge to the Repository entity.
 func (tc *TomeCreate) SetRepository(r *Repository) *TomeCreate {
 	return tc.SetRepositoryID(r.ID)
+}
+
+// AddScheduledHostIDs adds the "scheduled_hosts" edge to the Host entity by IDs.
+func (tc *TomeCreate) AddScheduledHostIDs(ids ...int) *TomeCreate {
+	tc.mutation.AddScheduledHostIDs(ids...)
+	return tc
+}
+
+// AddScheduledHosts adds the "scheduled_hosts" edges to the Host entity.
+func (tc *TomeCreate) AddScheduledHosts(h ...*Host) *TomeCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tc.AddScheduledHostIDs(ids...)
 }
 
 // Mutation returns the TomeMutation object of the builder.
@@ -237,6 +295,18 @@ func (tc *TomeCreate) defaults() error {
 		v := tome.DefaultTactic
 		tc.mutation.SetTactic(v)
 	}
+	if _, ok := tc.mutation.RunOnNewBeaconCallback(); !ok {
+		v := tome.DefaultRunOnNewBeaconCallback
+		tc.mutation.SetRunOnNewBeaconCallback(v)
+	}
+	if _, ok := tc.mutation.RunOnFirstHostCallback(); !ok {
+		v := tome.DefaultRunOnFirstHostCallback
+		tc.mutation.SetRunOnFirstHostCallback(v)
+	}
+	if _, ok := tc.mutation.RunOnSchedule(); !ok {
+		v := tome.DefaultRunOnSchedule
+		tc.mutation.SetRunOnSchedule(v)
+	}
 	return nil
 }
 
@@ -277,6 +347,15 @@ func (tc *TomeCreate) check() error {
 		if err := tome.TacticValidator(v); err != nil {
 			return &ValidationError{Name: "tactic", err: fmt.Errorf(`ent: validator failed for field "Tome.tactic": %w`, err)}
 		}
+	}
+	if _, ok := tc.mutation.RunOnNewBeaconCallback(); !ok {
+		return &ValidationError{Name: "run_on_new_beacon_callback", err: errors.New(`ent: missing required field "Tome.run_on_new_beacon_callback"`)}
+	}
+	if _, ok := tc.mutation.RunOnFirstHostCallback(); !ok {
+		return &ValidationError{Name: "run_on_first_host_callback", err: errors.New(`ent: missing required field "Tome.run_on_first_host_callback"`)}
+	}
+	if _, ok := tc.mutation.RunOnSchedule(); !ok {
+		return &ValidationError{Name: "run_on_schedule", err: errors.New(`ent: missing required field "Tome.run_on_schedule"`)}
 	}
 	if v, ok := tc.mutation.ParamDefs(); ok {
 		if err := tome.ParamDefsValidator(v); err != nil {
@@ -349,6 +428,18 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldTactic, field.TypeEnum, value)
 		_node.Tactic = value
 	}
+	if value, ok := tc.mutation.RunOnNewBeaconCallback(); ok {
+		_spec.SetField(tome.FieldRunOnNewBeaconCallback, field.TypeBool, value)
+		_node.RunOnNewBeaconCallback = value
+	}
+	if value, ok := tc.mutation.RunOnFirstHostCallback(); ok {
+		_spec.SetField(tome.FieldRunOnFirstHostCallback, field.TypeBool, value)
+		_node.RunOnFirstHostCallback = value
+	}
+	if value, ok := tc.mutation.RunOnSchedule(); ok {
+		_spec.SetField(tome.FieldRunOnSchedule, field.TypeString, value)
+		_node.RunOnSchedule = value
+	}
 	if value, ok := tc.mutation.ParamDefs(); ok {
 		_spec.SetField(tome.FieldParamDefs, field.TypeString, value)
 		_node.ParamDefs = value
@@ -361,15 +452,15 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 		_spec.SetField(tome.FieldEldritch, field.TypeString, value)
 		_node.Eldritch = value
 	}
-	if nodes := tc.mutation.FilesIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.AssetsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   tome.FilesTable,
-			Columns: tome.FilesPrimaryKey,
+			Table:   tome.AssetsTable,
+			Columns: tome.AssetsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(file.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -409,6 +500,22 @@ func (tc *TomeCreate) createSpec() (*Tome, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.tome_repository = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ScheduledHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tome.ScheduledHostsTable,
+			Columns: []string{tome.ScheduledHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -532,6 +639,42 @@ func (u *TomeUpsert) SetTactic(v tome.Tactic) *TomeUpsert {
 // UpdateTactic sets the "tactic" field to the value that was provided on create.
 func (u *TomeUpsert) UpdateTactic() *TomeUpsert {
 	u.SetExcluded(tome.FieldTactic)
+	return u
+}
+
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (u *TomeUpsert) SetRunOnNewBeaconCallback(v bool) *TomeUpsert {
+	u.Set(tome.FieldRunOnNewBeaconCallback, v)
+	return u
+}
+
+// UpdateRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateRunOnNewBeaconCallback() *TomeUpsert {
+	u.SetExcluded(tome.FieldRunOnNewBeaconCallback)
+	return u
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (u *TomeUpsert) SetRunOnFirstHostCallback(v bool) *TomeUpsert {
+	u.Set(tome.FieldRunOnFirstHostCallback, v)
+	return u
+}
+
+// UpdateRunOnFirstHostCallback sets the "run_on_first_host_callback" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateRunOnFirstHostCallback() *TomeUpsert {
+	u.SetExcluded(tome.FieldRunOnFirstHostCallback)
+	return u
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (u *TomeUpsert) SetRunOnSchedule(v string) *TomeUpsert {
+	u.Set(tome.FieldRunOnSchedule, v)
+	return u
+}
+
+// UpdateRunOnSchedule sets the "run_on_schedule" field to the value that was provided on create.
+func (u *TomeUpsert) UpdateRunOnSchedule() *TomeUpsert {
+	u.SetExcluded(tome.FieldRunOnSchedule)
 	return u
 }
 
@@ -703,6 +846,48 @@ func (u *TomeUpsertOne) SetTactic(v tome.Tactic) *TomeUpsertOne {
 func (u *TomeUpsertOne) UpdateTactic() *TomeUpsertOne {
 	return u.Update(func(s *TomeUpsert) {
 		s.UpdateTactic()
+	})
+}
+
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (u *TomeUpsertOne) SetRunOnNewBeaconCallback(v bool) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetRunOnNewBeaconCallback(v)
+	})
+}
+
+// UpdateRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateRunOnNewBeaconCallback() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateRunOnNewBeaconCallback()
+	})
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (u *TomeUpsertOne) SetRunOnFirstHostCallback(v bool) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetRunOnFirstHostCallback(v)
+	})
+}
+
+// UpdateRunOnFirstHostCallback sets the "run_on_first_host_callback" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateRunOnFirstHostCallback() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateRunOnFirstHostCallback()
+	})
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (u *TomeUpsertOne) SetRunOnSchedule(v string) *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetRunOnSchedule(v)
+	})
+}
+
+// UpdateRunOnSchedule sets the "run_on_schedule" field to the value that was provided on create.
+func (u *TomeUpsertOne) UpdateRunOnSchedule() *TomeUpsertOne {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateRunOnSchedule()
 	})
 }
 
@@ -1047,6 +1232,48 @@ func (u *TomeUpsertBulk) SetTactic(v tome.Tactic) *TomeUpsertBulk {
 func (u *TomeUpsertBulk) UpdateTactic() *TomeUpsertBulk {
 	return u.Update(func(s *TomeUpsert) {
 		s.UpdateTactic()
+	})
+}
+
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (u *TomeUpsertBulk) SetRunOnNewBeaconCallback(v bool) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetRunOnNewBeaconCallback(v)
+	})
+}
+
+// UpdateRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateRunOnNewBeaconCallback() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateRunOnNewBeaconCallback()
+	})
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (u *TomeUpsertBulk) SetRunOnFirstHostCallback(v bool) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetRunOnFirstHostCallback(v)
+	})
+}
+
+// UpdateRunOnFirstHostCallback sets the "run_on_first_host_callback" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateRunOnFirstHostCallback() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateRunOnFirstHostCallback()
+	})
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (u *TomeUpsertBulk) SetRunOnSchedule(v string) *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.SetRunOnSchedule(v)
+	})
+}
+
+// UpdateRunOnSchedule sets the "run_on_schedule" field to the value that was provided on create.
+func (u *TomeUpsertBulk) UpdateRunOnSchedule() *TomeUpsertBulk {
+	return u.Update(func(s *TomeUpsert) {
+		s.UpdateRunOnSchedule()
 	})
 }
 

@@ -1,16 +1,20 @@
-import React, { useContext, useState } from "react";
+import { useState } from "react";
 import { ComputerDesktopIcon, MapPinIcon, TagIcon } from "@heroicons/react/20/solid";
-import { HostContext } from "../../../context/HostContext";
+import { useHost } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
 import TagModal from "./TagModal";
 import EditableTag from "./editable-tag/EditableTag";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import { Globe, Network } from "lucide-react";
+import { getEnumKey } from "../../../utils/utils";
+import { SupportedPlatforms } from "../../../utils/enums";
 
 const HostDetailsSection = () => {
     const [isOpen, setOpen] = useState(false);
-    const { data: host } = useContext(HostContext);
+    const { data: host } = useHost();
 
-    const serviceTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "service")];
-    const groupTag = host?.tags && host.tags[host.tags.findIndex((tomeTag) => tomeTag.kind === "group")];
+    const serviceTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "service")]?.node;
+    const groupTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "group")]?.node;
 
     return (
         <div className="flex flex-col gap-4">
@@ -21,13 +25,16 @@ const HostDetailsSection = () => {
                         <div className="flex flex-row gap-2 items-center">
                             <MapPinIcon className="w-4 text-gray-700" />
                             <h4 className="text-gray-700">
-                                IP Address
+                                IP Addresses
                             </h4>
                         </div>
-                        <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center">
-                            <div>
-                                {(host && host?.primaryIP) ? host?.primaryIP : '-'}
-                            </div>
+                        <div className="text-gray-600 text-sm ml-6 min-h-[38px] flex flex-col justify-center gap-1">
+                            {host?.primaryIP && (
+                                <Badge leftIcon={<Network className="h-3 w-3" />}>{host?.primaryIP}</Badge>
+                            )}
+                            {host?.externalIP && (
+                                <Badge leftIcon={<Globe className="h-3 w-3" />}>{host?.externalIP}</Badge>
+                            )}
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">
@@ -38,9 +45,9 @@ const HostDetailsSection = () => {
                             </h4>
                         </div>
                         <div className="text-gray-600 text-sm ml-6  min-h-[38px] flex flex-col justify-center">
-                            <div>
-                                {(host && host?.platform ? host?.platform : '-')}
-                            </div>
+                            {host?.platform && (
+                                <Badge>{getEnumKey(SupportedPlatforms, host?.platform)}</Badge>
+                            )}
                         </div>
                     </div>
                     <div className="flex flex-col justify-between">

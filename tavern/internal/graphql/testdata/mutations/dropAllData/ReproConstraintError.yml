@@ -1,0 +1,16 @@
+state: |
+  INSERT INTO users (id, name, session_token, is_admin, oauth_id, photo_url, access_token, is_activated) VALUES (1, 'Test User', 'test-token', 1, 'oidc-1', '', 'access-token', 1);
+  INSERT INTO hosts (id, identifier, platform, created_at, last_modified_at) VALUES (1, 'host-1', 'linux', datetime('now'), datetime('now'));
+  INSERT INTO beacons (id, identifier, name, created_at, last_modified_at, beacon_host, transport) VALUES (1, 'beacon-1', 'Test Beacon', datetime('now'), datetime('now'), 1, 'TRANSPORT_UNSPECIFIED');
+  INSERT INTO tomes (id, name, created_at, last_modified_at, eldritch, hash, description, author, support_model, tactic) VALUES (1, 'Tome 1', datetime('now'), datetime('now'), 'print("hello")', 'hash', 'desc', 'author', 'UNSPECIFIED', 'UNSPECIFIED');
+  INSERT INTO quests (id, name, created_at, last_modified_at, quest_tome) VALUES (1, 'Quest 1', datetime('now'), datetime('now'), 1);
+  INSERT INTO tasks (id, created_at, last_modified_at, quest_tasks, task_beacon) VALUES (1, datetime('now'), datetime('now'), 1, 1);
+  INSERT INTO shells (id, created_at, last_modified_at, shell_task, shell_beacon, shell_owner, data) VALUES (1, datetime('now'), datetime('now'), 1, 1, 1, '');
+requestor:
+  session_token: "test-token"
+query: |
+  mutation reset {
+    dropAllData
+  }
+expected:
+  dropAllData: true

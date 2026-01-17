@@ -99,7 +99,7 @@ func TestReportFile(t *testing.T) {
 			name: "MissingPath",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					TaskId: 1234,
+					Context: &c2pb.TaskContext{TaskId: 1234},
 				},
 			},
 			wantCode: codes.InvalidArgument,
@@ -108,7 +108,7 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_Single",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					TaskId: int64(existingTasks[2].ID),
+					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID)},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path:         "/new/file",
@@ -142,7 +142,7 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_MultiChunk",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					TaskId: int64(existingTasks[2].ID),
+					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID)},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -174,7 +174,7 @@ func TestReportFile(t *testing.T) {
 			name: "Replace_File",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					TaskId: int64(existingTasks[2].ID),
+					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID)},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -201,7 +201,7 @@ func TestReportFile(t *testing.T) {
 			name: "No_Prexisting_Files",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					TaskId: int64(existingTasks[3].ID),
+					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID)},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/no/other/files",

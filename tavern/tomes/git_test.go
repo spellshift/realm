@@ -86,8 +86,8 @@ func TestImportFromRepo(t *testing.T) {
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))
 	assert.Equal(t, `An example tome!`, testTome.Description)
 	assert.Equal(t, `[{"name":"msg","label":"Message","type":"string","placeholder":"Something to print"}]`, testTome.ParamDefs)
-	testTomeFiles, err := testTome.Files(ctx)
+	testTomeAssets, err := testTome.QueryAssets().All(ctx)
 	assert.NoError(t, err)
-	assert.Len(t, testTomeFiles, 1)
-	assert.Equal(t, []byte("This file exists"), testTomeFiles[0].Content)
+	assert.Len(t, testTomeAssets, 1)
+	assert.Equal(t, []byte("This file exists"), testTomeAssets[0].Content)
 }

@@ -19,9 +19,7 @@ type Secret struct {
 	Value string
 }
 
-
 type Secrets []Secret
-
 
 type DebugFileSecrets struct {
 	Name string

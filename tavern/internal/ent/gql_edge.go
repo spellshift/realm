@@ -8,6 +8,48 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (a *Asset) Tomes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
+) (*TomeConnection, error) {
+	opts := []TomePaginateOption{
+		WithTomeOrder(orderBy),
+		WithTomeFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := a.Edges.totalCount[0][alias]
+	if nodes, err := a.NamedTomes(alias); err == nil || hasTotalCount {
+		pager, err := newTomePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &TomeConnection{Edges: []*TomeEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return a.QueryTomes().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (a *Asset) Links(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*LinkOrder, where *LinkWhereInput,
+) (*LinkConnection, error) {
+	opts := []LinkPaginateOption{
+		WithLinkOrder(orderBy),
+		WithLinkFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := a.Edges.totalCount[1][alias]
+	if nodes, err := a.NamedLinks(alias); err == nil || hasTotalCount {
+		pager, err := newLinkPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &LinkConnection{Edges: []*LinkEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return a.QueryLinks().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (b *Beacon) Host(ctx context.Context) (*Host, error) {
 	result, err := b.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -16,16 +58,25 @@ func (b *Beacon) Host(ctx context.Context) (*Host, error) {
 	return result, err
 }
 
-func (b *Beacon) Tasks(ctx context.Context) (result []*Task, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = b.NamedTasks(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = b.Edges.TasksOrErr()
+func (b *Beacon) Tasks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TaskOrder, where *TaskWhereInput,
+) (*TaskConnection, error) {
+	opts := []TaskPaginateOption{
+		WithTaskOrder(orderBy),
+		WithTaskFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = b.QueryTasks().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := b.Edges.totalCount[1][alias]
+	if nodes, err := b.NamedTasks(alias); err == nil || hasTotalCount {
+		pager, err := newTaskPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &TaskConnection{Edges: []*TaskEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return b.QueryTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (b *Beacon) Shells(
@@ -49,76 +100,109 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (f *File) Tomes(ctx context.Context) (result []*Tome, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = f.NamedTomes(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = f.Edges.TomesOrErr()
+func (h *Host) Tags(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TagOrder, where *TagWhereInput,
+) (*TagConnection, error) {
+	opts := []TagPaginateOption{
+		WithTagOrder(orderBy),
+		WithTagFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = f.QueryTomes().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[0][alias]
+	if nodes, err := h.NamedTags(alias); err == nil || hasTotalCount {
+		pager, err := newTagPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &TagConnection{Edges: []*TagEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return h.QueryTags().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (h *Host) Tags(ctx context.Context) (result []*Tag, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = h.NamedTags(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = h.Edges.TagsOrErr()
+func (h *Host) Beacons(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BeaconOrder, where *BeaconWhereInput,
+) (*BeaconConnection, error) {
+	opts := []BeaconPaginateOption{
+		WithBeaconOrder(orderBy),
+		WithBeaconFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = h.QueryTags().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[1][alias]
+	if nodes, err := h.NamedBeacons(alias); err == nil || hasTotalCount {
+		pager, err := newBeaconPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &BeaconConnection{Edges: []*BeaconEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return h.QueryBeacons().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (h *Host) Beacons(ctx context.Context) (result []*Beacon, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = h.NamedBeacons(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = h.Edges.BeaconsOrErr()
+func (h *Host) Files(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostFileOrder, where *HostFileWhereInput,
+) (*HostFileConnection, error) {
+	opts := []HostFilePaginateOption{
+		WithHostFileOrder(orderBy),
+		WithHostFileFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = h.QueryBeacons().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[2][alias]
+	if nodes, err := h.NamedFiles(alias); err == nil || hasTotalCount {
+		pager, err := newHostFilePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostFileConnection{Edges: []*HostFileEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return h.QueryFiles().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (h *Host) Files(ctx context.Context) (result []*HostFile, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = h.NamedFiles(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = h.Edges.FilesOrErr()
+func (h *Host) Processes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostProcessOrder, where *HostProcessWhereInput,
+) (*HostProcessConnection, error) {
+	opts := []HostProcessPaginateOption{
+		WithHostProcessOrder(orderBy),
+		WithHostProcessFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = h.QueryFiles().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[3][alias]
+	if nodes, err := h.NamedProcesses(alias); err == nil || hasTotalCount {
+		pager, err := newHostProcessPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostProcessConnection{Edges: []*HostProcessEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return h.QueryProcesses().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (h *Host) Processes(ctx context.Context) (result []*HostProcess, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = h.NamedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = h.Edges.ProcessesOrErr()
+func (h *Host) Credentials(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostCredentialOrder, where *HostCredentialWhereInput,
+) (*HostCredentialConnection, error) {
+	opts := []HostCredentialPaginateOption{
+		WithHostCredentialOrder(orderBy),
+		WithHostCredentialFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = h.QueryProcesses().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[4][alias]
+	if nodes, err := h.NamedCredentials(alias); err == nil || hasTotalCount {
+		pager, err := newHostCredentialPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
-}
-
-func (h *Host) Credentials(ctx context.Context) (result []*HostCredential, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = h.NamedCredentials(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = h.Edges.CredentialsOrErr()
-	}
-	if IsNotLoaded(err) {
-		result, err = h.QueryCredentials().All(ctx)
-	}
-	return result, err
+	return h.QueryCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
@@ -169,6 +253,59 @@ func (hp *HostProcess) Task(ctx context.Context) (*Task, error) {
 	return result, err
 }
 
+func (l *Link) Asset(ctx context.Context) (*Asset, error) {
+	result, err := l.Edges.AssetOrErr()
+	if IsNotLoaded(err) {
+		result, err = l.QueryAsset().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) Task(ctx context.Context) (*Task, error) {
+	result, err := po.Edges.TaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryTask().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := po.Edges.BeaconOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryBeacon().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) Owner(ctx context.Context) (*User, error) {
+	result, err := po.Edges.OwnerOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryOwner().Only(ctx)
+	}
+	return result, err
+}
+
+func (po *Portal) ActiveUsers(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*UserOrder, where *UserWhereInput,
+) (*UserConnection, error) {
+	opts := []UserPaginateOption{
+		WithUserOrder(orderBy),
+		WithUserFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := po.Edges.totalCount[3][alias]
+	if nodes, err := po.NamedActiveUsers(alias); err == nil || hasTotalCount {
+		pager, err := newUserPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &UserConnection{Edges: []*UserEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return po.QueryActiveUsers().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (q *Quest) Tome(ctx context.Context) (*Tome, error) {
 	result, err := q.Edges.TomeOrErr()
 	if IsNotLoaded(err) {
@@ -177,7 +314,7 @@ func (q *Quest) Tome(ctx context.Context) (*Tome, error) {
 	return result, err
 }
 
-func (q *Quest) Bundle(ctx context.Context) (*File, error) {
+func (q *Quest) Bundle(ctx context.Context) (*Asset, error) {
 	result, err := q.Edges.BundleOrErr()
 	if IsNotLoaded(err) {
 		result, err = q.QueryBundle().Only(ctx)
@@ -214,16 +351,25 @@ func (q *Quest) Creator(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
-func (r *Repository) Tomes(ctx context.Context) (result []*Tome, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = r.NamedTomes(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = r.Edges.TomesOrErr()
+func (r *Repository) Tomes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
+) (*TomeConnection, error) {
+	opts := []TomePaginateOption{
+		WithTomeOrder(orderBy),
+		WithTomeFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = r.QueryTomes().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := r.Edges.totalCount[0][alias]
+	if nodes, err := r.NamedTomes(alias); err == nil || hasTotalCount {
+		pager, err := newTomePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &TomeConnection{Edges: []*TomeEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return r.QueryTomes().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (r *Repository) Owner(ctx context.Context) (*User, error) {
@@ -258,28 +404,46 @@ func (s *Shell) Owner(ctx context.Context) (*User, error) {
 	return result, err
 }
 
-func (s *Shell) ActiveUsers(ctx context.Context) (result []*User, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedActiveUsers(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = s.Edges.ActiveUsersOrErr()
+func (s *Shell) ActiveUsers(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*UserOrder, where *UserWhereInput,
+) (*UserConnection, error) {
+	opts := []UserPaginateOption{
+		WithUserOrder(orderBy),
+		WithUserFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = s.QueryActiveUsers().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[3][alias]
+	if nodes, err := s.NamedActiveUsers(alias); err == nil || hasTotalCount {
+		pager, err := newUserPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &UserConnection{Edges: []*UserEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return s.QueryActiveUsers().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Tag) Hosts(ctx context.Context) (result []*Host, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedHosts(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.HostsOrErr()
+func (t *Tag) Hosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
+) (*HostConnection, error) {
+	opts := []HostPaginateOption{
+		WithHostOrder(orderBy),
+		WithHostFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = t.QueryHosts().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[0][alias]
+	if nodes, err := t.NamedHosts(alias); err == nil || hasTotalCount {
+		pager, err := newHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostConnection{Edges: []*HostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryHosts().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (t *Task) Quest(ctx context.Context) (*Quest, error) {
@@ -298,64 +462,109 @@ func (t *Task) Beacon(ctx context.Context) (*Beacon, error) {
 	return result, err
 }
 
-func (t *Task) ReportedFiles(ctx context.Context) (result []*HostFile, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedReportedFiles(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.ReportedFilesOrErr()
+func (t *Task) ReportedFiles(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostFileOrder, where *HostFileWhereInput,
+) (*HostFileConnection, error) {
+	opts := []HostFilePaginateOption{
+		WithHostFileOrder(orderBy),
+		WithHostFileFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = t.QueryReportedFiles().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[2][alias]
+	if nodes, err := t.NamedReportedFiles(alias); err == nil || hasTotalCount {
+		pager, err := newHostFilePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostFileConnection{Edges: []*HostFileEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryReportedFiles().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Task) ReportedProcesses(ctx context.Context) (result []*HostProcess, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedReportedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.ReportedProcessesOrErr()
+func (t *Task) ReportedProcesses(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostProcessOrder, where *HostProcessWhereInput,
+) (*HostProcessConnection, error) {
+	opts := []HostProcessPaginateOption{
+		WithHostProcessOrder(orderBy),
+		WithHostProcessFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = t.QueryReportedProcesses().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[3][alias]
+	if nodes, err := t.NamedReportedProcesses(alias); err == nil || hasTotalCount {
+		pager, err := newHostProcessPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostProcessConnection{Edges: []*HostProcessEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryReportedProcesses().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Task) ReportedCredentials(ctx context.Context) (result []*HostCredential, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedReportedCredentials(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.ReportedCredentialsOrErr()
+func (t *Task) ReportedCredentials(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostCredentialOrder, where *HostCredentialWhereInput,
+) (*HostCredentialConnection, error) {
+	opts := []HostCredentialPaginateOption{
+		WithHostCredentialOrder(orderBy),
+		WithHostCredentialFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = t.QueryReportedCredentials().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[4][alias]
+	if nodes, err := t.NamedReportedCredentials(alias); err == nil || hasTotalCount {
+		pager, err := newHostCredentialPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryReportedCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Task) Shells(ctx context.Context) (result []*Shell, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedShells(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.ShellsOrErr()
+func (t *Task) Shells(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
+) (*ShellConnection, error) {
+	opts := []ShellPaginateOption{
+		WithShellOrder(orderBy),
+		WithShellFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = t.QueryShells().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[5][alias]
+	if nodes, err := t.NamedShells(alias); err == nil || hasTotalCount {
+		pager, err := newShellPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ShellConnection{Edges: []*ShellEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (t *Tome) Files(ctx context.Context) (result []*File, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = t.NamedFiles(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = t.Edges.FilesOrErr()
+func (t *Tome) Assets(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*AssetOrder, where *AssetWhereInput,
+) (*AssetConnection, error) {
+	opts := []AssetPaginateOption{
+		WithAssetOrder(orderBy),
+		WithAssetFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = t.QueryFiles().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[0][alias]
+	if nodes, err := t.NamedAssets(alias); err == nil || hasTotalCount {
+		pager, err := newAssetPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &AssetConnection{Edges: []*AssetEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryAssets().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (t *Tome) Uploader(ctx context.Context) (*User, error) {
@@ -374,26 +583,65 @@ func (t *Tome) Repository(ctx context.Context) (*Repository, error) {
 	return result, MaskNotFound(err)
 }
 
-func (u *User) Tomes(ctx context.Context) (result []*Tome, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = u.NamedTomes(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = u.Edges.TomesOrErr()
+func (t *Tome) ScheduledHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
+) (*HostConnection, error) {
+	opts := []HostPaginateOption{
+		WithHostOrder(orderBy),
+		WithHostFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = u.QueryTomes().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[3][alias]
+	if nodes, err := t.NamedScheduledHosts(alias); err == nil || hasTotalCount {
+		pager, err := newHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostConnection{Edges: []*HostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return t.QueryScheduledHosts().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (u *User) ActiveShells(ctx context.Context) (result []*Shell, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = u.NamedActiveShells(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = u.Edges.ActiveShellsOrErr()
+func (u *User) Tomes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
+) (*TomeConnection, error) {
+	opts := []TomePaginateOption{
+		WithTomeOrder(orderBy),
+		WithTomeFilter(where.Filter),
 	}
-	if IsNotLoaded(err) {
-		result, err = u.QueryActiveShells().All(ctx)
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[0][alias]
+	if nodes, err := u.NamedTomes(alias); err == nil || hasTotalCount {
+		pager, err := newTomePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &TomeConnection{Edges: []*TomeEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
 	}
-	return result, err
+	return u.QueryTomes().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) ActiveShells(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
+) (*ShellConnection, error) {
+	opts := []ShellPaginateOption{
+		WithShellOrder(orderBy),
+		WithShellFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[1][alias]
+	if nodes, err := u.NamedActiveShells(alias); err == nil || hasTotalCount {
+		pager, err := newShellPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ShellConnection{Edges: []*ShellEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryActiveShells().Paginate(ctx, after, first, before, last, opts...)
 }

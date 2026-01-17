@@ -1,13 +1,12 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
-import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import TablePagination from "../../../components/tavern-base-ui/TablePagination";
-import { DEFAULT_QUERY_TYPE, TableRowLimit } from "../../../utils/enums";
-import Button from "../../../components/tavern-base-ui/button/Button";
-import TaskCard from "../../../features/task-card/TaskCard";
-import { Task } from "../../../utils/consts";
-import FilterControls, { FilterPageType } from "../../../components/filter-controls";
-import { useTasks } from "../../../hooks/useTasks";
+import { TablePagination, TableWrapper } from "../../../components/tavern-base-ui/table";
+import { PageNavItem, TableRowLimit } from "../../../utils/enums";
+import TaskCard from "../../../components/task-card/TaskCard";
+import { FilterControls, FilterPageType } from "../../../context/FilterContext/index";
+import { TaskNode } from "../../../utils/interfacesQuery";
+import { SortingControls } from "../../../context/SortContext/index";
+import { useHostTasks } from "../useHostTasks";
 
 const HostTaskTab = () => {
     const { hostId } = useParams();
@@ -19,48 +18,38 @@ const HostTaskTab = () => {
         updateTaskList,
         page,
         setPage
-    } = useTasks(DEFAULT_QUERY_TYPE.hostIDQuery, hostId);
+    } = useHostTasks(hostId);
 
     return (
-        <div className="flex flex-col gap-2 mt-4">
-            <div className="flex flex-row justify-end">
-                {/* Sorting not added yet */}
-                {/* <Button leftIcon={<Bars3BottomLeftIcon className="w-4" />} buttonVariant="ghost" buttonStyle={{ color: 'gray', size: "md" }} onClick={() => console.log("hi")}>Sort</Button> */}
-                <FilterControls type={FilterPageType.HOST_TASK} />
-            </div>
-            {loading ? (
-                <EmptyState type={EmptyStateType.loading} label="Loading tasks..." />
-            ) : error ? (
-                <EmptyState type={EmptyStateType.error} label="Error loading tasks..." />
-            ) : (
-                <div>
-                    {data?.tasks?.edges.length > 0 ? (
-                        <>
-                            <div className=" w-full flex flex-col gap-2 my-4">
-                                {data.tasks.edges.map((task: { node: Task }) => {
-                                    return (
-                                        <TaskCard key={task.node.id} task={task.node} />
-                                    )
-                                })}
-                            </div>
-                            <TablePagination totalCount={data?.tasks?.totalCount} pageInfo={data?.tasks?.pageInfo} refetchTable={updateTaskList} page={page} setPage={setPage} rowLimit={TableRowLimit.TaskRowLimit} />
-                        </>
-                    )
-                        : (
-                            <EmptyState label="No data found" type={EmptyStateType.noData} details="Try creating a new quest or adjusting filters." >
-                                <Link to="/createQuest">
-                                    <Button
-                                        buttonStyle={{ color: "purple", "size": "md" }}
-                                        type="button"
-                                    >
-                                        Create new quest
-                                    </Button>
-                                </Link>
-                            </EmptyState>
-                        )}
+        <TableWrapper
+            title="Tasks"
+            totalItems={data?.tasks?.totalCount}
+            loading={loading}
+            error={error}
+            filterControls={<FilterControls type={FilterPageType.HOST_TASK} />}
+            sortingControls={<SortingControls type={PageNavItem.tasks} />}
+            table={
+                <div className="overflow-x-auto -mx-4 sm:-mx-6 xl:-mx-8">
+                    <div className="inline-block min-w-full align-middle flex flex-col gap-2 my-4">
+                        {data?.tasks?.edges.map((task: { node: TaskNode }) => {
+                            return (
+                                <TaskCard key={task.node.id} task={task.node} />
+                            )
+                        })}
+                    </div>
                 </div>
-            )}
-        </div>
+            }
+            pagination={
+                <TablePagination
+                    totalCount={data?.tasks?.totalCount || 0}
+                    pageInfo={data?.tasks?.pageInfo || { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }}
+                    refetchTable={updateTaskList}
+                    page={page}
+                    setPage={setPage}
+                    rowLimit={TableRowLimit.TaskRowLimit}
+                />
+            }
+        />
     );
 }
 export default HostTaskTab;

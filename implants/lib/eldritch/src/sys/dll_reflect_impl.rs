@@ -5,10 +5,11 @@ use {
     object::LittleEndian as LE,
     object::{Object, ObjectSection},
     std::{os::raw::c_void, ptr::null_mut},
+    windows_sys::core::BOOL,
     windows_sys::Win32::Security::SECURITY_ATTRIBUTES,
     windows_sys::Win32::System::Threading::CreateRemoteThread,
     windows_sys::Win32::{
-        Foundation::{GetLastError, BOOL, FALSE, HANDLE},
+        Foundation::{GetLastError, FALSE, HANDLE},
         System::{
             Diagnostics::Debug::WriteProcessMemory,
             Memory::{
@@ -19,19 +20,6 @@ use {
         },
     },
 };
-
-#[cfg(all(host_family = "windows", target_os = "windows"))]
-macro_rules! win_target {
-    () => {
-        r"x86_64-pc-windows-msvc"
-    };
-}
-#[cfg(all(host_family = "unix", target_os = "windows"))]
-macro_rules! win_target {
-    () => {
-        r"x86_64-pc-windows-gnu"
-    };
-}
 
 #[cfg(all(host_family = "unix", target_os = "windows"))]
 macro_rules! sep {
@@ -65,7 +53,7 @@ const LOADER_BYTES: &[u8] = include_bytes!(concat!(
     sep!(),
     "target",
     sep!(),
-    win_target!(),
+    "x86_64-pc-windows-msvc",
     sep!(),
     "release",
     sep!(),
@@ -104,7 +92,7 @@ fn open_process(
 ) -> anyhow::Result<HANDLE> {
     let process_handle: HANDLE =
         unsafe { OpenProcess(dwdesiredaccess, binherithandle, dwprocessid) };
-    if process_handle == 0 {
+    if process_handle == std::ptr::null_mut() {
         let error_code = unsafe { GetLastError() };
         if error_code != 0 {
             return Err(anyhow::anyhow!(
@@ -173,14 +161,14 @@ fn write_process_memory(
 #[cfg(target_os = "windows")]
 // fn CreateRemoteThread(hprocess: isize, lpthreadattributes: *const SECURITY_ATTRIBUTES, dwstacksize: usize, lpstartaddress: Option<fn(*mut c_void) -> u32>, lpparameter: *const c_void, dwcreationflags: u32, lpthreadid: *mut u32) -> isize
 fn create_remote_thread(
-    hprocess: isize,
+    hprocess: *mut c_void,
     lpthreadattributes: *const SECURITY_ATTRIBUTES,
     dwstacksize: usize,
     lpstartaddress: Option<*mut c_void>,
     lpparameter: *const c_void,
     dwcreationflags: u32,
     lpthreadid: *mut u32,
-) -> anyhow::Result<isize> {
+) -> anyhow::Result<*mut c_void> {
     let tmp_lpstartaddress: Option<unsafe extern "system" fn(_) -> _> = match lpstartaddress {
         Some(local_lpstartaddress) => Some(unsafe { std::mem::transmute(local_lpstartaddress) }),
         None => todo!(),
@@ -196,7 +184,7 @@ fn create_remote_thread(
             lpthreadid,
         )
     };
-    if res == 0 {
+    if res == std::ptr::null_mut() {
         let error_code = unsafe { GetLastError() };
         if error_code != 0 {
             return Err(anyhow::anyhow!(
@@ -413,9 +401,14 @@ mod tests {
     use sysinfo::{Pid, PidExt, ProcessExt, Signal, System, SystemExt};
     use tempfile::NamedTempFile;
 
-    #[cfg(target_os = "windows")]
+    #[cfg(host_family = "windows")]
     const TEST_DLL_BYTES: &[u8] = include_bytes!(
-        "..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\debug\\create_file_dll.dll"
+        "..\\..\\..\\..\\..\\bin\\create_file_dll\\target\\x86_64-pc-windows-msvc\\debug\\create_file_dll.dll"
+    );
+
+    #[cfg(host_family = "unix")]
+    const TEST_DLL_BYTES: &[u8] = include_bytes!(
+        "../../../../../bin/create_file_dll/target/x86_64-pc-windows-gnu/debug/create_file_dll.dll"
     );
 
     #[test]
