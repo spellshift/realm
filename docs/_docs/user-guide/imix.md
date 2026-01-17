@@ -35,152 +35,7 @@ Imix has run-time configuration, that may be specified using environment variabl
 | IMIX_BEACON_ID | The identifier to be used during callback (must be globally unique) | Random UUIDv4 | No |
 | IMIX_LOG | Log message level for debug builds. See below for more information. | INFO | No |
 
-## Advanced Configuration (IMIX_CONFIG)
 
-For more complex setups, such as configuring multiple transports or specifying detailed transport options, you can use the `IMIX_CONFIG` environment variable. This variable accepts a YAML-formatted string.
-
-**Note:** When `IMIX_CONFIG` is set, you cannot use `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, or `IMIX_TRANSPORT_EXTRA_*`. All configuration must be provided within the YAML structure.
-
-### YAML Structure
-
-```yaml
-transports:
-  - URI: <string>
-    type: <grpc|http1|dns>
-    interval: <integer> # optional, seconds
-    extra: <json_string> # required (use "" if none)
-server_pubkey: <string> # optional
-```
-
-### Example: Multiple Transports
-
-This example configures Imix to use two transports:
-1.  A gRPC transport over HTTP.
-2.  A DNS transport as a fallback or alternative.
-
-```bash
-export IMIX_CONFIG='
-transports:
-  - URI: "http://127.0.0.1:8000"
-    type: "grpc"
-    interval: 5
-    extra: ""
-  - URI: "dns://8.8.8.8:53"
-    type: "dns"
-    interval: 10
-    extra: "{\"domain\": \"c2.example.com\", \"type\": \"txt\"}"
-server_pubkey: "YOUR_SERVER_PUBKEY_HERE"
-'
-
-# Build with the configuration
-cargo build --release --bin imix
-```
-
-## DNS Transport Configuration
-
-The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA) and can use either specific DNS servers or the system's default resolver with automatic fallback.
-
-### DNS URI Format
-
-When using the DNS transport, configure `IMIX_CALLBACK_URI` with the following format:
-
-```
-dns://<server>?domain=<DOMAIN>[&type=<TYPE>]
-```
-
-**Parameters:**
-- `<server>` - DNS server address(es), `*` to use system resolver, or comma-separated list (e.g., `8.8.8.8:53,1.1.1.1:53`)
-- `domain` - Base domain for DNS queries (e.g., `c2.example.com`)
-- `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
-
-**Examples:**
-
-```bash
-# Use specific DNS server with TXT records (default)
-export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com"
-
-# Use system resolver with fallbacks
-export IMIX_CALLBACK_URI="dns://*?domain=c2.example.com"
-
-# Use multiple DNS servers with A records
-export IMIX_CALLBACK_URI="dns://8.8.8.8:53,1.1.1.1:53?domain=c2.example.com&type=a"
-
-# Use AAAA records
-export IMIX_CALLBACK_URI="dns://8.8.8.8:53?domain=c2.example.com&type=aaaa"
-```
-
-### DNS Resolver Fallback
-
-When using `*` as the server, the agent uses system DNS servers followed by public resolvers (1.1.1.1, 8.8.8.8) as fallbacks. If system configuration cannot be read, only the public resolvers are used. When multiple servers are configured, the agent tries each server in order on every failed request until one succeeds, then uses the working server for subsequent requests.
-
-### Record Types
-
-| Type | Description | Use Case |
-|------|-------------|----------|
-| TXT | Text records (default) | Best throughput, data encoded in TXT RDATA |
-| A | IPv4 address records | Lower profile, data encoded across multiple A records |
-| AAAA | IPv6 address records | Medium profile, more data per record than A |
-
-### Protocol Details
-
-The DNS transport uses an async windowed protocol to handle UDP unreliability:
-
-- **Chunked transmission**: Large requests are split into chunks that fit within DNS query limits (253 bytes total domain length)
-- **Windowed sending**: Up to 10 packets are sent concurrently
-- **ACK/NACK protocol**: The server responds with acknowledgments for received chunks and requests retransmission of missing chunks
-- **Automatic retries**: Failed chunks are retried up to 3 times before the request fails
-- **CRC32 verification**: Data integrity is verified using CRC32 checksums
-
-**Limits:**
-- Maximum data size: 50MB per request
-- Maximum concurrent conversations on server: 10,000
-
-## Logging
-
-At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. **When building a release version of imix, logging is disabled** and is not included in the released binary.
-
-## Installation
-
-The install subcommand executes embedded tomes similar to golem.
-It will loop through all embedded files looking for main.eldritch.
-Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
-
-Installation scripts are specified in the `realm/implants/imix/install_scripts` directory.
-
-This feature is currently under active development, and may change. We'll do our best to keep these docs updates in the meantime.
-
-## Functionality
-
-Imix derives all it's functionality from the eldritch language.
-See the [Eldritch User Guide](/user-guide/eldritch) for more information.
-
-## Task management
-
-Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
-Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
-
-## Proxy support
-
-Imix's default `grpc` transport supports http and https proxies for outbound communication. These must be set at compile time.
-
-## Identifying unique hosts
-
-Imix communicates which host it's on to Tavern enabling operators to reliably perform per host actions. The default way that imix does this is through a file on disk. We recognize that this may be un-ideal for many situations so we've also provided an environment override and made it easy for admins managing a realm deployment to change how the bot determines uniqueness.
-
-Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
-
-We recommend that you use the `File` for the most reliability:
-
-- Exists across reboots
-- Guaranteed to be unique per host (because the bot creates it)
-- Can be used by multiple instances of the beacon on the same host.
-
-If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
-
-For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
-
-If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
-This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.
 
 ## Static cross compilation
 
@@ -264,3 +119,135 @@ cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
 cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```
+
+
+## Advanced Configuration (IMIX_CONFIG)
+
+For more complex setups, such as configuring multiple transports or specifying detailed transport options, you can use the `IMIX_CONFIG` environment variable. This variable accepts a YAML-formatted string.
+
+**Note:** When `IMIX_CONFIG` is set, you cannot use `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, or `IMIX_TRANSPORT_EXTRA_*`. All configuration must be provided within the YAML structure.
+
+### YAML Structure
+
+```yaml
+transports:
+  - URI: <string>
+    type: <grpc|http1|dns>
+    interval: <integer> # optional, seconds
+    extra: <json_string> # required (use "" if none)
+server_pubkey: <string> # optional - defaults to checking the first transtport URI status page.
+```
+
+### Example: Multiple Transports
+
+This example configures Imix to use two transports:
+1.  A gRPC transport over HTTP.
+2.  A DNS transport as a fallback or alternative.
+
+```bash
+export IMIX_CONFIG='
+transports:
+  - URI: "http://127.0.0.1:8000"
+    type: "grpc"
+    interval: 5
+    extra: ""
+  - URI: "dns://*"
+    type: "dns"
+    interval: 10
+    extra: "{\"domain\": \"c2.example.com\", \"type\": \"txt\"}"
+server_pubkey: "YOUR_SERVER_PUBKEY_HERE"
+'
+
+# Build with the configuration
+cargo build --release --bin imix --target=x86_64-unknown-linux-musl
+```
+
+## Transport configuration
+
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1` and `dns`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
+
+### global configuration options
+- `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
+- `interval`: the number of seconds between callbacks.
+- `extra`: JSON dictionary for transport specific configuration. These are outlined below:
+
+### grpc
+
+The default GRPC transport uses GRPC over HTTP2 to communicate
+
+**Extra Keys Supported:**
+- `doh`: empty string or `cloudflare`
+- `http_proxy`: the full URI of the http_proxy that imix should connect through. Eg. `http://127.0.0.1:3128`
+
+This transport supports all eldritch functions.
+
+
+### http1
+
+The HTTP1 transport uses HTTP post requests to communicate to the redirector.
+
+**Extra Keys Supported:**
+- `doh`: empty string or `cloudflare`
+- `http_proxy`: the full URI of the http_proxy that imix should connect through. Eg. `http://127.0.0.1:3128`
+
+
+This transport dosent support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+
+### dns
+
+The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
+
+This transport dosent' support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+*Note*: the uri parameter here is the dns server to communicate with. If `dns://*` is specififed the transport will attempt to use the local systems default resolver. Custom ports can be specified with `dns://8.8.8.8:53`
+
+**Extra Keys Supported:**
+- `domain` - Base domain for DNS queries (e.g., `c2.example.com`)
+- `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
+
+*Note*: TXT records provide the best performance.
+
+## Logging
+
+At runtime, you may use the `IMIX_LOG` environment variable to control log levels and verbosity. See [these docs](https://docs.rs/pretty_env_logger/latest/pretty_env_logger/) for more information. **When building a release version of imix, logging is disabled** and is not included in the released binary.
+
+## Installation
+
+The install subcommand executes embedded tomes similar to golem.
+It will loop through all embedded files looking for main.eldritch.
+Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
+
+Installation scripts are specified in the `realm/implants/imix/install_scripts` directory.
+
+This feature is currently under active development, and may change. We'll do our best to keep these docs updates in the meantime.
+
+## Functionality
+
+Imix derives all it's functionality from the eldritch language.
+See the [Eldritch User Guide](/user-guide/eldritch) for more information.
+
+## Task management
+
+Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
+Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
+
+
+## Identifying unique hosts
+
+Imix communicates which host it's on to Tavern enabling operators to reliably perform per host actions. The default way that imix does this is through a file on disk. We recognize that this may be un-ideal for many situations so we've also provided an environment override and made it easy for admins managing a realm deployment to change how the bot determines uniqueness.
+
+Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
+
+We recommend that you use the `File` for the most reliability:
+
+- Exists across reboots
+- Guaranteed to be unique per host (because the bot creates it)
+- Can be used by multiple instances of the beacon on the same host.
+
+If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+
+For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
+
+If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
+This isn't ideal as in the UI each new beacon will appear as thought it were on a new host.
