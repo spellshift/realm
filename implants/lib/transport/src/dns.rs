@@ -177,17 +177,28 @@ impl DNS {
     async fn send_packet(&self, packet: DnsPacket) -> Result<Vec<u8>> {
         let subdomain = self.build_subdomain(&packet).map_err(|e| {
             #[cfg(debug_assertions)]
-            log::error!("DNS: Failed to build subdomain for packet type={}, seq={}: {}", packet.r#type, packet.sequence, e);
+            log::error!(
+                "DNS: Failed to build subdomain for packet type={}, seq={}: {}",
+                packet.r#type,
+                packet.sequence,
+                e
+            );
             e
         })?;
         let (query, txid) = self.build_dns_query(&subdomain)?;
 
         // Use the configured DNS server (agent handles retry logic at transport level)
-        self.try_dns_query(&self.dns_server, &query, txid).await
+        self.try_dns_query(&self.dns_server, &query, txid)
+            .await
             .map_err(|e| {
                 #[cfg(debug_assertions)]
-                log::error!("DNS: Query failed for packet type={}, seq={}, conv_id={}: {}", 
-                    packet.r#type, packet.sequence, packet.conversation_id, e);
+                log::error!(
+                    "DNS: Query failed for packet type={}, seq={}, conv_id={}: {}",
+                    packet.r#type,
+                    packet.sequence,
+                    packet.conversation_id,
+                    e
+                );
                 e
             })
     }
@@ -472,9 +483,12 @@ impl DNS {
             nacks: vec![],
         };
 
-        self.send_packet(init_packet)
-            .await
-            .with_context(|| format!("failed to send INIT packet for conv_id={}, method={}", conv_id, method_code))?;
+        self.send_packet(init_packet).await.with_context(|| {
+            format!(
+                "failed to send INIT packet for conv_id={}, method={}",
+                conv_id, method_code
+            )
+        })?;
 
         Ok(())
     }
@@ -657,7 +671,13 @@ impl DNS {
                 *retries += 1;
 
                 #[cfg(debug_assertions)]
-                log::debug!("DNS: Retrying chunk {} (attempt {}/{}) for conv_id={}", nack_seq, *retries, MAX_RETRIES_PER_CHUNK, conv_id);
+                log::debug!(
+                    "DNS: Retrying chunk {} (attempt {}/{}) for conv_id={}",
+                    nack_seq,
+                    *retries,
+                    MAX_RETRIES_PER_CHUNK,
+                    conv_id
+                );
 
                 // Skip if already acknowledged
                 if acknowledged.contains(&nack_seq) {
@@ -699,7 +719,12 @@ impl DNS {
                         }
                         Err(e) => {
                             #[cfg(debug_assertions)]
-                            log::debug!("DNS: Retry failed for chunk {} in conv_id={}: {}", nack_seq, conv_id, e);
+                            log::debug!(
+                                "DNS: Retry failed for chunk {} in conv_id={}: {}",
+                                nack_seq,
+                                conv_id,
+                                e
+                            );
                             // Retry failed - add back to NACK set
                             nack_set.insert(nack_seq);
                         }
@@ -753,10 +778,12 @@ impl DNS {
             nacks: vec![],
         };
 
-        let end_response = self
-            .send_packet(fetch_packet)
-            .await
-            .with_context(|| format!("failed to fetch response from server for conv_id={}", conv_id))?;
+        let end_response = self.send_packet(fetch_packet).await.with_context(|| {
+            format!(
+                "failed to fetch response from server for conv_id={}",
+                conv_id
+            )
+        })?;
 
         #[cfg(debug_assertions)]
         log::debug!(
@@ -796,7 +823,12 @@ impl DNS {
         let mut full_response = Vec::new();
 
         #[cfg(debug_assertions)]
-        log::debug!("DNS: Fetching chunked response - {} chunks, expected_crc={:#x}, conv_id={}", total_chunks, expected_crc, conv_id);
+        log::debug!(
+            "DNS: Fetching chunked response - {} chunks, expected_crc={:#x}, conv_id={}",
+            total_chunks,
+            expected_crc,
+            conv_id
+        );
 
         for chunk_idx in 1..=total_chunks {
             let fetch_payload = FetchPayload {
@@ -816,8 +848,12 @@ impl DNS {
                 nacks: vec![],
             };
 
-            let chunk_data = self.send_packet(fetch_packet).await
-                .with_context(|| format!("failed to fetch response chunk {}/{} for conv_id={}", chunk_idx, total_chunks, conv_id))?;
+            let chunk_data = self.send_packet(fetch_packet).await.with_context(|| {
+                format!(
+                    "failed to fetch response chunk {}/{} for conv_id={}",
+                    chunk_idx, total_chunks, conv_id
+                )
+            })?;
             full_response.extend_from_slice(&chunk_data);
         }
 
@@ -843,9 +879,11 @@ impl DNS {
         method_code: &str,
     ) -> Result<Vec<u8>> {
         // Validate and prepare chunks
-        let (chunk_size, total_chunks, data_crc) =
-            self.validate_and_prepare_chunks(&request_data)
-                .with_context(|| format!("failed to validate request data for method={}", method_code))?;
+        let (chunk_size, total_chunks, data_crc) = self
+            .validate_and_prepare_chunks(&request_data)
+            .with_context(|| {
+                format!("failed to validate request data for method={}", method_code)
+            })?;
 
         // Generate conversation ID
         let conv_id = Self::generate_conv_id();
@@ -870,12 +908,22 @@ impl DNS {
         let (mut acknowledged, nack_set) = self
             .send_data_chunks_concurrent(&chunks, &conv_id, total_chunks)
             .await
-            .with_context(|| format!("failed to send data chunks for conv_id={}, method={}", conv_id, method_code))?;
+            .with_context(|| {
+                format!(
+                    "failed to send data chunks for conv_id={}, method={}",
+                    conv_id, method_code
+                )
+            })?;
 
         // Retry NACKed chunks
         self.retry_nacked_chunks(&chunks, &conv_id, total_chunks, nack_set, &mut acknowledged)
             .await
-            .with_context(|| format!("failed to retry NACKed chunks for conv_id={}, method={}", conv_id, method_code))?;
+            .with_context(|| {
+                format!(
+                    "failed to retry NACKed chunks for conv_id={}, method={}",
+                    conv_id, method_code
+                )
+            })?;
 
         // Verify all chunks acknowledged
         if acknowledged.len() != total_chunks {
@@ -892,8 +940,14 @@ impl DNS {
         }
 
         // Fetch response from server
-        self.fetch_response(&conv_id, total_chunks).await
-            .with_context(|| format!("failed to fetch final response for conv_id={}, method={}", conv_id, method_code))
+        self.fetch_response(&conv_id, total_chunks)
+            .await
+            .with_context(|| {
+                format!(
+                    "failed to fetch final response for conv_id={}, method={}",
+                    conv_id, method_code
+                )
+            })
     }
 }
 
