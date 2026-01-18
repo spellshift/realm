@@ -13,7 +13,7 @@ const BeaconTab = () => {
         return <EmptyState type={EmptyStateType.error} label="Error loading beacons..." />
     }
     else if (host?.beacons?.edges && host?.beacons?.edges?.length > 0) {
-        return <div className="p-6"><BeaconTable beacons={host.beacons?.edges} /></div>
+        return <div className="my-2"><BeaconTable beacons={host.beacons?.edges} /></div>
     }
     else {
         return <div className="p-6"><EmptyStateNoBeacon /></div>

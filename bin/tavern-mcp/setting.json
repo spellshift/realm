@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "tavern": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/realm/bin/tavern-mcp",
+        "run",
+        "python",
+        "main.py"
+      ]
+    }
+  }
+}

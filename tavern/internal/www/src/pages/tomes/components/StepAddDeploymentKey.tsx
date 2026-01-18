@@ -1,6 +1,6 @@
 import { Heading } from "@chakra-ui/react";
 import { FC } from "react";
-import { CopyBlock, tomorrow } from "react-code-blocks";
+import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { RepositoryNode } from "../../../utils/interfacesQuery";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
@@ -36,15 +36,7 @@ const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newR
             )}
             <div className="flex flex-col gap-2">
                 <Heading size="sm">Copy public key</Heading>
-                <div className="bg-gray-200 rounded-md p-0.5">
-                    <CopyBlock
-                        text={newRepository?.publicKey}
-                        language={""}
-                        showLineNumbers={false}
-                        theme={tomorrow}
-                        codeBlock
-                    />
-                </div>
+                <CodeBlock code={newRepository?.publicKey || ""} showCopyButton />
             </div>
             <div className="flex flex-row gap-2">
                 <Button
