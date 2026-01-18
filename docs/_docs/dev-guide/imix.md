@@ -18,7 +18,7 @@ In order to keep these configuration options in sync realm uses protobuf and cod
 
 If you need to update these fields start with the `tavern/internal/c2/proto/c2.proto` file.
 
-Once you've finished making your changes apply these changes across the project using `cd /workspaces/realm/ && go generater ./tavern/...`
+Once you've finished making your changes apply these changes across the project using `cd /workspaces/realm/ && go generate ./tavern/...`
 
 To generate the associated agent proto's use cargo build in the `implants` direcotry. This will copy the necesarry protos from tavern and preform the code generation.
 
