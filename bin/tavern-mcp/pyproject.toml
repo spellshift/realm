@@ -1,15 +1,21 @@
 [project]
 name = "tavern-mcp"
 version = "0.1.0"
-description = "MCP server for Tavern c2 server API"
+description = "Model Context Protocol server for Tavern - provides tools for quest management and Eldritch script execution"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "httpx>=0.28.1",
-    "mcp-cli",
-    "mcp[cli]>=1.6.0",
-    "requests>=2.32.3",
+    "mcp>=0.9.0",
+    "mcp-cli>=0.11.1",
+    "requests>=2.32.5",
 ]
 
-[tool.uv.sources]
-mcp-cli = { git = "https://github.com/hulto/mcp-cli" }
+[project.scripts]
+tavern-mcp = "main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
