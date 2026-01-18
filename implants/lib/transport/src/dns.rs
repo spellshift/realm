@@ -13,6 +13,7 @@ const MAX_LABEL_LENGTH: usize = 63;
 const MAX_DNS_NAME_LENGTH: usize = 253;
 const CONV_ID_LENGTH: usize = 8;
 const DNS_RESPONSE_BUF_SIZE: usize = 4096;
+const DNS_QUERY_TIMEOUT_SECS: u64 = 5; // DNS query timeout in seconds
 
 // Async protocol configuration
 const SEND_WINDOW_SIZE: usize = 10; // Packets in flight
@@ -174,11 +175,21 @@ impl DNS {
 
     /// Send packet and get response
     async fn send_packet(&self, packet: DnsPacket) -> Result<Vec<u8>> {
-        let subdomain = self.build_subdomain(&packet)?;
+        let subdomain = self.build_subdomain(&packet).map_err(|e| {
+            #[cfg(debug_assertions)]
+            log::error!("DNS: Failed to build subdomain for packet type={}, seq={}: {}", packet.r#type, packet.sequence, e);
+            e
+        })?;
         let (query, txid) = self.build_dns_query(&subdomain)?;
 
         // Use the configured DNS server (agent handles retry logic at transport level)
         self.try_dns_query(&self.dns_server, &query, txid).await
+            .map_err(|e| {
+                #[cfg(debug_assertions)]
+                log::error!("DNS: Query failed for packet type={}, seq={}, conv_id={}: {}", 
+                    packet.r#type, packet.sequence, packet.conversation_id, e);
+                e
+            })
     }
 
     /// Try a single DNS query against a specific server
@@ -189,19 +200,28 @@ impl DNS {
         expected_txid: u16,
     ) -> Result<Vec<u8>> {
         // Create UDP socket with timeout
-        let socket = UdpSocket::bind("0.0.0.0:0").await?;
-        socket.connect(server).await?;
+        let socket = UdpSocket::bind("0.0.0.0:0")
+            .await
+            .context("failed to bind UDP socket")?;
+
+        socket
+            .connect(server)
+            .await
+            .with_context(|| format!("failed to connect to DNS server {}", server))?;
 
         // Send query
-        socket.send(query).await?;
+        socket
+            .send(query)
+            .await
+            .context("failed to send DNS query")?;
 
         // Receive response with timeout
         let mut buf = vec![0u8; DNS_RESPONSE_BUF_SIZE];
-        let timeout_duration = std::time::Duration::from_secs(5);
+        let timeout_duration = std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS);
         let len = tokio::time::timeout(timeout_duration, socket.recv(&mut buf))
             .await
-            .map_err(|_| anyhow::anyhow!("timeout"))
-            .context("DNS query timeout")??;
+            .map_err(|_| anyhow::anyhow!("DNS query timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+            .context("failed to receive DNS response")?;
         buf.truncate(len);
 
         // Parse and validate response
@@ -454,10 +474,7 @@ impl DNS {
 
         self.send_packet(init_packet)
             .await
-            .context("failed to send INIT packet")?;
-
-        #[cfg(debug_assertions)]
-        log::debug!("DNS: INIT sent for conv_id={}", conv_id);
+            .with_context(|| format!("failed to send INIT packet for conv_id={}, method={}", conv_id, method_code))?;
 
         Ok(())
     }
@@ -639,6 +656,9 @@ impl DNS {
                 }
                 *retries += 1;
 
+                #[cfg(debug_assertions)]
+                log::debug!("DNS: Retrying chunk {} (attempt {}/{}) for conv_id={}", nack_seq, *retries, MAX_RETRIES_PER_CHUNK, conv_id);
+
                 // Skip if already acknowledged
                 if acknowledged.contains(&nack_seq) {
                     continue;
@@ -677,7 +697,9 @@ impl DNS {
                                 }
                             }
                         }
-                        Err(_) => {
+                        Err(e) => {
+                            #[cfg(debug_assertions)]
+                            log::debug!("DNS: Retry failed for chunk {} in conv_id={}: {}", nack_seq, conv_id, e);
                             // Retry failed - add back to NACK set
                             nack_set.insert(nack_seq);
                         }
@@ -707,10 +729,7 @@ impl DNS {
 
         self.send_packet(complete_packet)
             .await
-            .context("failed to send COMPLETE packet")?;
-
-        #[cfg(debug_assertions)]
-        log::debug!("DNS: COMPLETE packet sent for conv_id={}", conv_id);
+            .with_context(|| format!("failed to send COMPLETE packet for conv_id={}", conv_id))?;
 
         Ok(())
     }
@@ -737,7 +756,7 @@ impl DNS {
         let end_response = self
             .send_packet(fetch_packet)
             .await
-            .context("failed to fetch response from server")?;
+            .with_context(|| format!("failed to fetch response from server for conv_id={}", conv_id))?;
 
         #[cfg(debug_assertions)]
         log::debug!(
@@ -776,6 +795,9 @@ impl DNS {
         let expected_crc = metadata.data_crc32;
         let mut full_response = Vec::new();
 
+        #[cfg(debug_assertions)]
+        log::debug!("DNS: Fetching chunked response - {} chunks, expected_crc={:#x}, conv_id={}", total_chunks, expected_crc, conv_id);
+
         for chunk_idx in 1..=total_chunks {
             let fetch_payload = FetchPayload {
                 chunk_index: chunk_idx as u32,
@@ -794,14 +816,16 @@ impl DNS {
                 nacks: vec![],
             };
 
-            let chunk_data = self.send_packet(fetch_packet).await?;
+            let chunk_data = self.send_packet(fetch_packet).await
+                .with_context(|| format!("failed to fetch response chunk {}/{} for conv_id={}", chunk_idx, total_chunks, conv_id))?;
             full_response.extend_from_slice(&chunk_data);
         }
 
         let actual_crc = Self::calculate_crc32(&full_response);
         if actual_crc != expected_crc {
             return Err(anyhow::anyhow!(
-                "Response CRC mismatch: expected {}, got {}",
+                "Response CRC mismatch for conv_id={}: expected {:#x}, got {:#x}",
+                conv_id,
                 expected_crc,
                 actual_crc
             ));
@@ -820,7 +844,8 @@ impl DNS {
     ) -> Result<Vec<u8>> {
         // Validate and prepare chunks
         let (chunk_size, total_chunks, data_crc) =
-            self.validate_and_prepare_chunks(&request_data)?;
+            self.validate_and_prepare_chunks(&request_data)
+                .with_context(|| format!("failed to validate request data for method={}", method_code))?;
 
         // Generate conversation ID
         let conv_id = Self::generate_conv_id();
@@ -844,16 +869,20 @@ impl DNS {
         // Send all chunks using concurrent windowed transmission
         let (mut acknowledged, nack_set) = self
             .send_data_chunks_concurrent(&chunks, &conv_id, total_chunks)
-            .await?;
+            .await
+            .with_context(|| format!("failed to send data chunks for conv_id={}, method={}", conv_id, method_code))?;
 
         // Retry NACKed chunks
         self.retry_nacked_chunks(&chunks, &conv_id, total_chunks, nack_set, &mut acknowledged)
-            .await?;
+            .await
+            .with_context(|| format!("failed to retry NACKed chunks for conv_id={}, method={}", conv_id, method_code))?;
 
         // Verify all chunks acknowledged
         if acknowledged.len() != total_chunks {
             return Err(anyhow::anyhow!(
-                "Not all chunks acknowledged after max retries: {}/{} chunks. Missing: {:?}",
+                "Not all chunks acknowledged after max retries for conv_id={}, method={}: {}/{} chunks. Missing: {:?}",
+                conv_id,
+                method_code,
                 acknowledged.len(),
                 total_chunks,
                 (1..=total_chunks as u32)
@@ -864,6 +893,7 @@ impl DNS {
 
         // Fetch response from server
         self.fetch_response(&conv_id, total_chunks).await
+            .with_context(|| format!("failed to fetch final response for conv_id={}, method={}", conv_id, method_code))
     }
 }
 
@@ -884,10 +914,13 @@ impl Transport for DNS {
             // Use system DNS resolver
             let (sys_config, _opts) =
                 read_system_conf().context("failed to read system DNS configuration")?;
+
+            // Filter to only IPv4 addresses
             let server = sys_config
                 .name_servers()
-                .first()
-                .context("failed to get system DNS server")?;
+                .iter()
+                .find(|s| s.socket_addr.is_ipv4())
+                .context("no IPv4 DNS server found in system configuration")?;
             format!("{}:53", server.socket_addr.ip())
         } else {
             // Parse dns://host or dns://host:port
@@ -925,11 +958,21 @@ impl Transport for DNS {
             })
             .unwrap_or(DnsRecordType::TXT);
 
-        Ok(DNS {
-            base_domain,
-            dns_server,
+        let dns = DNS {
+            base_domain: base_domain.clone(),
+            dns_server: dns_server.clone(),
             record_type,
-        })
+        };
+
+        #[cfg(debug_assertions)]
+        log::info!(
+            "DNS transport initialized - server={}, domain={}, record_type={:?}",
+            dns_server,
+            base_domain,
+            record_type
+        );
+
+        Ok(dns)
     }
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {

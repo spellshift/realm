@@ -202,8 +202,6 @@ func (r *Redirector) cleanupConversations(ctx context.Context) {
 				if now.Sub(conv.LastActivity) > r.conversationTimeout {
 					r.conversations.Delete(key)
 					atomic.AddInt32(&r.conversationCount, -1)
-					currentCount := atomic.LoadInt32(&r.conversationCount)
-					slog.Info("conversation timed out", "conv_id", conv.ID, "method", conv.MethodPath, "active_conversations", currentCount)
 				}
 				conv.mu.Unlock()
 				return true
@@ -405,9 +403,8 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 
 	r.conversations.Store(packet.ConversationId, conv)
 
-	currentCount := atomic.LoadInt32(&r.conversationCount)
-	slog.Info("conversation created", "conv_id", conv.ID, "method", conv.MethodPath,
-		"total_chunks", conv.TotalChunks, "data_size", initPayload.FileSize, "active_conversations", currentCount)
+	slog.Debug("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
+		"total_chunks", conv.TotalChunks, "data_size", initPayload.FileSize)
 
 	statusPacket := &dnspb.DNSPacket{
 		Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
@@ -674,12 +671,11 @@ func (r *Redirector) handleCompletePacket(packet *dnspb.DNSPacket) ([]byte, erro
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
+	slog.Debug("C2 conversation completed and confirmed by client", "conv_id", conv.ID, "method", conv.MethodPath)
+
 	// Delete conversation and decrement counter
 	r.conversations.Delete(packet.ConversationId)
 	atomic.AddInt32(&r.conversationCount, -1)
-	currentCount := atomic.LoadInt32(&r.conversationCount)
-
-	slog.Info("conversation closed", "conv_id", conv.ID, "method", conv.MethodPath, "active_conversations", currentCount)
 
 	// Return empty success status
 	statusPacket := &dnspb.DNSPacket{
