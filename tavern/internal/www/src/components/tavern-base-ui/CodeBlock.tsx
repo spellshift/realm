@@ -3,13 +3,64 @@ import { Highlight, themes } from "prism-react-renderer";
 import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import Button from "./button/Button";
 
+/**
+ * Languages supported by prism-react-renderer
+ */
+type CodeBlockLanguageSupport =
+    | "markup"
+    | "html"
+    | "xml"
+    | "svg"
+    | "mathml"
+    | "ssml"
+    | "atom"
+    | "rss"
+    | "css"
+    | "clike"
+    | "javascript"
+    | "js"
+    | "jsx"
+    | "typescript"
+    | "ts"
+    | "tsx"
+    | "coffeescript"
+    | "coffee"
+    | "actionscript"
+    | "c"
+    | "cpp"
+    | "objc"
+    | "objectivec"
+    | "kotlin"
+    | "kt"
+    | "kts"
+    | "swift"
+    | "go"
+    | "rust"
+    | "python"
+    | "py"
+    | "sql"
+    | "json"
+    | "yaml"
+    | "yml"
+    | "markdown"
+    | "md"
+    | "graphql"
+    | "regex"
+    | "reason"
+    | "flow"
+    | "n4js"
+    | "n4jsd"
+    | "jsdoc"
+    | "javadoclike"
+    | "webmanifest";
+
 type CodeBlockProps = {
     code: string;
-    language?: string;
+    language?: CodeBlockLanguageSupport;
     showCopyButton?: boolean;
 };
 
-const CodeBlock = ({ code, language = "", showCopyButton = false }: CodeBlockProps) => {
+const CodeBlock = ({ code, language = 'markdown', showCopyButton = false }: CodeBlockProps) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -38,7 +89,7 @@ const CodeBlock = ({ code, language = "", showCopyButton = false }: CodeBlockPro
                 />
             )}
 
-            <Highlight theme={themes.vsLight} code={code} language={language || "text"}>
+            <Highlight theme={themes.vsLight} code={code} language={language}>
                 {({ style, tokens, getLineProps, getTokenProps }) => (
                     <pre
                         style={{
