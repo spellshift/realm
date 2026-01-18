@@ -137,7 +137,7 @@ The DNS transport uses an async windowed protocol to handle UDP unreliability:
 
 **Limits:**
 - Maximum data size: 50MB per request
-- Maximum concurrent conversations on server: 10,000
+- Maximum concurrent conversations on server: 200,000
 
 
 ## Develop a New Transport
@@ -274,7 +274,7 @@ default = []
 grpc = []
 grpc-doh = ["grpc", "dep:hickory-resolver"]
 http1 = []
-dns = ["dep:data-encoding", "dep:rand"]
+dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 custom = ["dep:your-custom-dependency"] # <-- Add your feature here
 mock = ["dep:mockall"]
 
