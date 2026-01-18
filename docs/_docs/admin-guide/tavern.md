@@ -158,7 +158,7 @@ tavern redirector --transport dns --listen "0.0.0.0:53?domain=c2.example.com&dom
 **Server Behavior:**
 
 - **Benign responses**: Non-C2 queries to A records return `0.0.0.0` instead of NXDOMAIN to avoid breaking recursive DNS lookups (e.g., when using Cloudflare as an intermediary)
-- **Conversation tracking**: The server tracks up to 10,000 concurrent conversations
+- **Conversation tracking**: The server tracks up to 200,000 concurrent conversations
 - **Timeout management**: Conversations timeout after 15 minutes of inactivity (reduced to 5 minutes when at capacity)
 - **Maximum data size**: 50MB per request
 

@@ -737,6 +737,7 @@ func (x *TaskContext) GetJwt() string {
 	return ""
 }
 
+//
 // RPC Messages
 type ClaimTasksRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
