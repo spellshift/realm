@@ -1,77 +1,101 @@
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box } from "@chakra-ui/react";
-import { CodeBlock, tomorrow } from "react-code-blocks";
+import { ReactNode } from "react";
+import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel } from "@chakra-ui/react";
+import CodeBlock from "./tavern-base-ui/CodeBlock";
 import { TomeNode } from "../utils/interfacesQuery";
 import { FieldInputParams } from "../utils/interfacesUI";
 
 type Props = {
-    tome: TomeNode,
-    params: Array<FieldInputParams>,
-    noParamValues?: boolean
+    tome: TomeNode;
+    params: Array<FieldInputParams>;
+    showParamValues?: boolean;
+    isExpanded?: boolean;
+    onToggle?: (expandedIndex: number) => void;
+    leftContent?: ReactNode;
+    showDetailsButton?: boolean;
 }
+
+type ParamDisplayProps = {
+    params: Array<FieldInputParams>;
+};
+
+const ParamValuesDisplay = ({ params }: ParamDisplayProps) => (
+    <>
+        {params.map((paramDef: FieldInputParams) => {
+            if (!paramDef.value) return null;
+            return (
+                <div className="flex flex-row gap-1 text-sm text-gray-600" key={paramDef.name}>
+                    <div className="capitalize">{paramDef.name}:</div>
+                    <div className="break-all">{paramDef.value}</div>
+                </div>
+            );
+        })}
+    </>
+);
+
+const ParamLabelsDisplay = ({ params }: ParamDisplayProps) => (
+    <div className="flex flex-row flex-wrap gap-1 text-sm text-gray-600">
+        Parameters:
+        {params.map((element: FieldInputParams, index: number) => (
+            <div key={`${index}_${element.name}`}>
+                {element.label}{index < (params.length - 1) && ","}
+            </div>
+        ))}
+    </div>
+);
+
 const TomeAccordion = (props: Props) => {
-    const { tome, params } = props;
+    const {
+        tome,
+        params,
+        showParamValues = true,
+        isExpanded,
+        onToggle,
+        leftContent,
+        showDetailsButton = true,
+    } = props;
+
+    const isControlled = isExpanded !== undefined;
+    const accordionIndex = isControlled ? (isExpanded ? 0 : -1) : undefined;
+    const hasParams = params && params.length > 0;
+    const hasTactic = tome.tactic && tome.tactic !== "UNSPECIFIED";
+
     return (
-        <Accordion allowToggle className='w-full'>
-            <AccordionItem>
+        <Accordion
+            index={accordionIndex}
+            allowToggle
+            className="w-full"
+            onChange={onToggle ? (expandedIndex: number) => onToggle(expandedIndex) : undefined}
+        >
+            <AccordionItem border="none">
                 <h2>
                     <AccordionButton>
-                        <div className='flex flex-row gap-2 w-full items-center'>
-                            <Box as="div" flex='1' textAlign='left' className='flex flex-col w-full gap-1'>
-                                <div
-                                    className={`items-center font-semibold text-gray-900`}
-                                >
+                        <div className="flex flex-row gap-4 w-full justify-between items-center">
+                            {leftContent}
+                            <div className="flex-1 text-left flex flex-col w-full gap-1">
+                                <div className="text-gray-600 break-all">
                                     {tome.name}
                                 </div>
-                                <div
-                                    className={`flex flex-col w-full text-sm text-gray-600 gap-1`}
-                                >
-                                    <p>{tome.description}</p>
-                                    {params && params.length > 0 &&
-                                        <div className="flex flex-col md:flex-row gap-1">
-                                            Parameters:
-                                            {params && params.map((element: FieldInputParams, index: number) => {
-                                                return <div key={`${index}_${element.name}`}>{element.label}{index < (params.length - 1) && ","}</div>
-                                            })}
-                                        </div>
-                                    }
-                                    <div>
-                                        {tome.tactic && tome.tactic !== "UNSPECIFIED" && <div>Tactic: <span className="lowercase">{tome?.tactic}</span></div>}
+                                {showParamValues && hasParams && <ParamValuesDisplay params={params} />}
+                                {!showParamValues && hasParams && <ParamLabelsDisplay params={params} />}
+                                {hasTactic && (
+                                    <div className="text-sm text-gray-600 gap-2">
+                                        Tactic: <span className="lowercase">{tome.tactic}</span>
                                     </div>
-
-                                </div>
-                            </Box>
-                            <div className='text-sm  items-center'>
-                                Details
-                                <AccordionIcon />
+                                )}
                             </div>
+                            {showDetailsButton && (
+                                <div className="text-sm items-center px-2">
+                                    <AccordionIcon />
+                                </div>
+                            )}
                         </div>
                     </AccordionButton>
                 </h2>
-                {tome.eldritch &&
-                    <AccordionPanel pb={4} pl={4} className="flex flex-col gap-2">
-                        {params && params.length > 0 && (
-                            <div className="flex flex-row gap-8 flex-wrap">
-                                {params.map((paramDef: FieldInputParams) => {
-                                    if (paramDef.value) {
-                                        return (
-                                            <div className="flex flex-col gap-0 text-sm px-2" key={paramDef.name}>
-                                                <div className="font-semibold">{paramDef.name}</div>
-                                                <div>{paramDef.value}</div>
-                                            </div>
-                                        )
-                                    }
-                                    return null;
-                                })}
-                            </div>
-                        )}
-                        <CodeBlock
-                            text={tome.eldritch}
-                            language={"python"}
-                            showLineNumbers={false}
-                            theme={tomorrow}
-                        />
+                {tome.eldritch && (
+                    <AccordionPanel pb={2} pl={10} pr={4}>
+                        <CodeBlock code={tome.eldritch} language="python" />
                     </AccordionPanel>
-                }
+                )}
             </AccordionItem>
         </Accordion>
     );

@@ -53,7 +53,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
       {/* Controls Section */}
       {(filterControls || sortingControls) && (
         <div className={`
-          flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 pb-2
+          flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 py-2
           ${stickyControls ? 'sticky top-0 z-5 shadow-sm' : ''}
         `}>
           <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">{title}</h3>

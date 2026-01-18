@@ -1,14 +1,15 @@
 import { FC } from "react";
 import TaskTimeStamp from "./components/TaskTimeStamp";
-import TaskParameters from "./components/TaskParameters";
 import UserImageAndName from "../UserImageAndName";
 import TaskStatusBadge from "../TaskStatusBadge";
 import TaskShells from "./components/TaskShells";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon, CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import TaskResults from "./components/TaskResults";
 import { TaskNode } from "../../utils/interfacesQuery";
 import BeaconTile from "../BeaconTile";
+import TomeAccordion from "../TomeAccordion";
+import { constructTomeParams } from "../../utils/utils";
 
 interface TaskCardType {
     task: TaskNode
@@ -20,6 +21,8 @@ const TaskCard: FC<TaskCardType> = (
 
     // If Task has an error, start with error tab open
     const defaultOpenTabIndex = task?.error ? 1 : 0;
+    const tome = task?.quest?.tome;
+    const params = constructTomeParams(task?.quest?.parameters, tome?.paramDefs);
 
     return (
         <div className="rounded-lg shadow border-gray-200 border-2">
@@ -31,8 +34,8 @@ const TaskCard: FC<TaskCardType> = (
                 <div className="border-t-4 border-gray-100 flex flex-col gap-4 px-4 py-2 w-full">
                     <BeaconTile beacon={task.beacon} isBeaconIconVisible />
                     <TaskTimeStamp {...task} />
-                    <TaskParameters quest={task?.quest} />
                     <UserImageAndName userData={task?.quest?.creator} />
+                    {tome && <div className="-mx-4"><TomeAccordion tome={tome} params={params} leftContent={<BookOpenIcon className="h-5 w-5 mt-1 shrink-0 self-start" />} /></div>}
                 </div>
                 <TabGroup className="border-t-4 border-l-4 border-gray-100 rounded flex flex-col gap-1 -mt-10" defaultIndex={defaultOpenTabIndex}>
                     <TabList className="flex flex-row gap-2 text-gray-600 bg-gray-100">

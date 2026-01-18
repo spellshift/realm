@@ -29,14 +29,12 @@ const HostTaskTab = () => {
             filterControls={<FilterControls type={FilterPageType.HOST_TASK} />}
             sortingControls={<SortingControls type={PageNavItem.tasks} />}
             table={
-                <div className="overflow-x-auto -mx-4 sm:-mx-6 xl:-mx-8">
-                    <div className="inline-block min-w-full align-middle flex flex-col gap-2 my-4">
-                        {data?.tasks?.edges.map((task: { node: TaskNode }) => {
-                            return (
-                                <TaskCard key={task.node.id} task={task.node} />
-                            )
-                        })}
-                    </div>
+                <div className="w-full flex flex-col gap-4 my-4">
+                    {data?.tasks?.edges.map((task: { node: TaskNode }) => {
+                        return (
+                            <TaskCard key={task.node.id} task={task.node} />
+                        )
+                    })}
                 </div>
             }
             pagination={
