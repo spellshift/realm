@@ -66,29 +66,29 @@ use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
 
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_agent")]
 use crate::agent::fake::AgentLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_assets")]
 use crate::assets::fake::FakeAssetsLibrary;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_crypto")]
 use crate::crypto::fake::CryptoLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_file")]
 use crate::file::fake::FileLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_http")]
 use crate::http::fake::HttpLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_pivot")]
 use crate::pivot::fake::PivotLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_process")]
 use crate::process::fake::ProcessLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_random")]
 use crate::random::fake::RandomLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_regex")]
 use crate::regex::fake::RegexLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_report")]
 use crate::report::fake::ReportLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_sys")]
 use crate::sys::fake::SysLibraryFake;
-#[cfg(feature = "fake_bindings")]
+#[cfg(feature = "fake_time")]
 use crate::time::fake::TimeLibraryFake;
 
 pub struct Interpreter {
@@ -128,18 +128,24 @@ impl Interpreter {
             self.inner.register_lib(StdTimeLibrary);
         }
 
-        #[cfg(feature = "fake_bindings")]
-        {
-            self.inner.register_lib(CryptoLibraryFake);
-            self.inner.register_lib(FileLibraryFake::default());
-            self.inner.register_lib(HttpLibraryFake);
-            self.inner.register_lib(PivotLibraryFake);
-            self.inner.register_lib(ProcessLibraryFake);
-            self.inner.register_lib(RandomLibraryFake);
-            self.inner.register_lib(RegexLibraryFake);
-            self.inner.register_lib(SysLibraryFake);
-            self.inner.register_lib(TimeLibraryFake);
-        }
+        #[cfg(feature = "fake_crypto")]
+        self.inner.register_lib(CryptoLibraryFake);
+        #[cfg(feature = "fake_file")]
+        self.inner.register_lib(FileLibraryFake::default());
+        #[cfg(feature = "fake_http")]
+        self.inner.register_lib(HttpLibraryFake);
+        #[cfg(feature = "fake_pivot")]
+        self.inner.register_lib(PivotLibraryFake);
+        #[cfg(feature = "fake_process")]
+        self.inner.register_lib(ProcessLibraryFake);
+        #[cfg(feature = "fake_random")]
+        self.inner.register_lib(RandomLibraryFake);
+        #[cfg(feature = "fake_regex")]
+        self.inner.register_lib(RegexLibraryFake);
+        #[cfg(feature = "fake_sys")]
+        self.inner.register_lib(SysLibraryFake);
+        #[cfg(feature = "fake_time")]
+        self.inner.register_lib(TimeLibraryFake);
 
         self
     }
@@ -176,11 +182,14 @@ impl Interpreter {
         self
     }
 
-    #[cfg(feature = "fake_bindings")]
     pub fn with_fake_agent(mut self) -> Self {
+        #[cfg(feature = "fake_agent")]
         self.inner.register_lib(AgentLibraryFake);
+        #[cfg(feature = "fake_report")]
         self.inner.register_lib(ReportLibraryFake);
+        #[cfg(feature = "fake_pivot")]
         self.inner.register_lib(PivotLibraryFake);
+        #[cfg(feature = "fake_assets")]
         self.inner.register_lib(FakeAssetsLibrary);
         self
     }

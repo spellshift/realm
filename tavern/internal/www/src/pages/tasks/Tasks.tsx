@@ -25,7 +25,7 @@ const Tasks = () => {
             <EditablePageHeader />
             <TableWrapper
                 title="Tasks"
-                totalItems={data?.tasks?.totalCount || null}
+                totalItems={data?.tasks?.totalCount}
                 loading={loading}
                 error={error}
                 filterControls={<FilterControls type={FilterPageType.TASK} />}

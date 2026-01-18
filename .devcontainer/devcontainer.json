@@ -5,7 +5,7 @@
 	// 	"dockerfile": "Dockerfile",
 	// 	"args": {}
 	// },
-	"image": "spellshift/devcontainer:latest",
+	"image": "spellshift/devcontainer:main",
 	"hostRequirements": {
 		"cpus": 4
 	},

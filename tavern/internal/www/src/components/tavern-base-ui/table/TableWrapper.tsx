@@ -3,7 +3,7 @@ import { EmptyState, EmptyStateType } from '../EmptyState';
 import { ApolloError } from '@apollo/client';
 
 type TableWrapperProps = {
-  totalItems: null | number;
+  totalItems?: number;
   loading: boolean;
   error: ApolloError | undefined;
   title?: string;
@@ -30,7 +30,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
     if (error) {
       return <EmptyState type={EmptyStateType.error} label="Error loading data" />;
     }
-    else if (loading || totalItems === null) {
+    else if (loading || totalItems === undefined) {
       return <EmptyState type={EmptyStateType.loading} label="Loading data..." />;
     }
     else if (totalItems === 0) {
@@ -39,7 +39,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
     else {
       return (
         <>
-          <div className="px-4 sm:px-6 xl:px-8">
+          <div className="overflow-x-auto">
             {table}
           </div>
           {pagination}
@@ -49,24 +49,21 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
   }
 
   return (
-    <div className="flex flex-col justify-center items-center gap-6">
-      <div className="flex flex-col w-full -mx-4 sm:-mx-6 xl:-mx-8">
-        {/* Controls Section */}
-        {(filterControls || sortingControls) && (
-          <div className={`
-            flex flex-row justify-between items-center
-            px-4 sm:px-6 xl:px-8 py-2 border-b border-gray-200 bg-white gap-2
-            ${stickyControls ? 'sticky top-0 z-5 shadow-sm' : ''}
-          `}>
-            <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">{title}</h3>
-            <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
-              {sortingControls}
-              {filterControls}
-            </div>
+    <div className="flex flex-col w-full">
+      {/* Controls Section */}
+      {(filterControls || sortingControls) && (
+        <div className={`
+          flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 pb-2
+          ${stickyControls ? 'sticky top-0 z-5 shadow-sm' : ''}
+        `}>
+          <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">{title}</h3>
+          <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
+            {sortingControls}
+            {filterControls}
           </div>
-        )}
-        {renderTableContent()}
-      </div>
+        </div>
+      )}
+      {renderTableContent()}
     </div>
   );
 };

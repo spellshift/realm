@@ -50,82 +50,80 @@ export const Table = ({
   };
 
   return (
-    <div className="overflow-x-auto -mx-4 sm:-mx-6 xl:-mx-8">
-      <div className="inline-block min-w-full align-middle">
-        <table className="w-full divide-y divide-gray-200 table-fixed">
-          <thead className="bg-gray-50 sticky top-0 z-5">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
-                  return (
-                    <th
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      scope="col"
-                      className={`px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header.column.getCanSort() && "cursor-pointer"}`}
-                      onClick={header.column.getToggleSortingHandler()}
-                      style={{
-                        width: header.getSize() !== 0 ? header.getSize() : undefined,
-                      }}
-                    >
-                      {header.isPlaceholder ? null : (
-                        <div
-                          {...{
-                            className: header.column.getCanSort()
-                              ? 'cursor-pointer select-none'
-                              : '',
-                            onClick: header.column.getToggleSortingHandler(),
-                          }}
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {{
-                            asc: <TriangleUpIcon w={4} />,
-                            desc: <TriangleDownIcon w={4} />
-                          }[header.column.getIsSorted() as string] ?? null}
-                        </div>
-                      )}
-                    </th>
-                  )
-                })}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200" ref={tbodyRef}>
-            {table.getRowModel().rows.map(row => {
-              return (
-                <Fragment key={row.id}>
-                  <tr onClick={(event) => onRowClick && onRowClick(row, event)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)} className={onRowClick && `hover:cursor-pointer hover:bg-gray-100`}>
-                    {/* first row is a normal row */}
-                    {row.getVisibleCells().map(cell => {
-                      return (
-                        <td key={cell.id} className="px-4 sm:px-6 py-4" style={{
-                          width: cell.column.getSize(),
-                        }}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                  {row.getIsExpanded() && (
-                    <tr>
-                      {/* 2nd row is a custom 1 cell row */}
-                      <td colSpan={row.getVisibleCells().length}>
-                        {renderSubComponent && renderSubComponent({ row })}
+    <div className="inline-block min-w-full align-middle">
+      <table className="w-full divide-y divide-gray-200 table-fixed">
+        <thead className="bg-gray-50 sticky top-0 z-5">
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => {
+                return (
+                  <th
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    scope="col"
+                    className={`px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header.column.getCanSort() && "cursor-pointer"}`}
+                    onClick={header.column.getToggleSortingHandler()}
+                    style={{
+                      width: header.getSize() !== 0 ? header.getSize() : undefined,
+                    }}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? 'cursor-pointer select-none'
+                            : '',
+                          onClick: header.column.getToggleSortingHandler(),
+                        }}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: <TriangleUpIcon w={4} />,
+                          desc: <TriangleDownIcon w={4} />
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    )}
+                  </th>
+                )
+              })}
+            </tr>
+          ))}
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200" ref={tbodyRef}>
+          {table.getRowModel().rows.map(row => {
+            return (
+              <Fragment key={row.id}>
+                <tr onClick={(event) => onRowClick && onRowClick(row, event)} tabIndex={0} onKeyDown={(e) => handleKeyDown(e, row)} className={onRowClick && `hover:cursor-pointer hover:bg-gray-100`}>
+                  {/* first row is a normal row */}
+                  {row.getVisibleCells().map(cell => {
+                    return (
+                      <td key={cell.id} className="px-4 sm:px-6 py-4" style={{
+                        width: cell.column.getSize(),
+                      }}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </td>
-                    </tr>
-                  )}
-                </Fragment>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+                    )
+                  })}
+                </tr>
+                {row.getIsExpanded() && (
+                  <tr>
+                    {/* 2nd row is a custom 1 cell row */}
+                    <td colSpan={row.getVisibleCells().length}>
+                      {renderSubComponent && renderSubComponent({ row })}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

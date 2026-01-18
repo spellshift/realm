@@ -5,176 +5,188 @@ import { getBeaconFilterNameByTypes, getTomeFilterNameByTypes } from "./utils";
 import { OnlineOfflineFilterType } from "./enums";
 
 export function constructTagQueryFormat(
-    kind: string,
-    tags: Array<string>
-){
-    return {
-        "hasTagsWith": {
-            "kind": kind,
-            "nameIn":  tags
-        }
+  kind: string,
+  tags: Array<string>
+) {
+  return {
+    "hasTagsWith": {
+      "kind": kind,
+      "nameIn": tags
     }
+  }
 }
 
 export const constructTagFieldsQuery = function (
-    groups: Array<string>,
-    services: Array<string>
-    ){
+  groups: Array<string>,
+  services: Array<string>
+) {
 
-    if(groups.length < 1 && services.length < 1){
-      return null;
-    }
+  if (groups.length < 1 && services.length < 1) {
+    return null;
+  }
 
-    return [
-      ...(groups.length > 0) ? [constructTagQueryFormat('group', groups)] : [],
-      ...(services.length > 0) ? [constructTagQueryFormat('service', services)]  : [],
-    ]
+  return [
+    ...(groups.length > 0) ? [constructTagQueryFormat('group', groups)] : [],
+    ...(services.length > 0) ? [constructTagQueryFormat('service', services)] : [],
+  ]
 
 };
 
 export function constructHostFieldQuery(
-    groups: Array<string>,
-    services: Array<string>,
-    platforms: Array<string>,
-    hosts: Array<string>,
-    primaryIP: Array<string>,
-    onlineOfflineStatus: Array<string>,
-    currentTimestamp?: Date
-  ){
-    const tagQuery = constructTagFieldsQuery(groups, services);
+  groups: Array<string>,
+  services: Array<string>,
+  platforms: Array<string>,
+  hosts: Array<string>,
+  primaryIP: Array<string>,
+  onlineOfflineStatus: Array<string>,
+  currentTimestamp?: Date
+) {
+  const tagQuery = constructTagFieldsQuery(groups, services);
 
-    const hostStatusFilter = constructHostStatusFilter(onlineOfflineStatus, currentTimestamp);
+  const hostStatusFilter = constructHostStatusFilter(onlineOfflineStatus, currentTimestamp);
 
-    if(hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && !hostStatusFilter){
-      return null;
+  if (hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && !hostStatusFilter) {
+    return null;
+  }
+
+
+  return {
+    "hasHostWith": {
+      ...(tagQuery && { "and": constructTagFieldsQuery(groups, services) }),
+      ...(hosts.length > 0) && { "nameIn": hosts },
+      ...(platforms.length > 0) && { "platformIn": platforms },
+      ...(primaryIP.length > 0) && { "primaryIPIn": primaryIP },
+      ...(hostStatusFilter && hostStatusFilter)
     }
-
-    return {
-      "hasHostWith": {
-        ...(tagQuery && {"and": constructTagFieldsQuery(groups, services)}),
-        ...(hosts.length > 0) && {"nameIn": hosts},
-        ...(platforms.length > 0) && {"platformIn": platforms},
-        ...(primaryIP.length > 0) && {"primaryIPIn": primaryIP},
-        ...(hostStatusFilter && hostStatusFilter)
-      }
-    }
+  }
 };
 
 export function constructBeaconFilterQuery(
   beaconFields: Array<FilterBarOption>,
   currentTimestamp?: Date
-){
-    const {beacon: beacons, group: groups, service: services, platform: platforms, host:hosts, principal, primaryIP, transport, onlineOfflineStatus} = getBeaconFilterNameByTypes(beaconFields);
+) {
+  const { beacon: beacons, group: groups, service: services, platform: platforms, host: hosts, principal, primaryIP, transport, onlineOfflineStatus } = getBeaconFilterNameByTypes(beaconFields);
 
-    const beaconStatusFilter = constructBeaconStatusFilter(onlineOfflineStatus, currentTimestamp);
+  const beaconStatusFilter = constructBeaconStatusFilter(onlineOfflineStatus, currentTimestamp);
 
-    const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, onlineOfflineStatus, currentTimestamp);
+  const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, onlineOfflineStatus, currentTimestamp);
 
-    if(beacons.length < 1 && principal.length < 1 && transport.length < 1 && !beaconStatusFilter && !hostFiledQuery){
-      return null;
-    }
+  if (beacons.length < 1 && principal.length < 1 && transport.length < 1 && !beaconStatusFilter && !hostFiledQuery) {
+    return null;
+  }
 
-    const hasBeaconWith: any = {
-      ...(beacons.length > 0 && {"nameIn": beacons}),
-      ...(principal.length > 0 && {"principalIn": principal}),
-      ...(transport.length > 0 && {"transportIn": transport}),
-      ...hostFiledQuery
-    };
+  const hasBeaconWith: any = {
+    ...(beacons.length > 0 && { "nameIn": beacons }),
+    ...(principal.length > 0 && { "principalIn": principal }),
+    ...(transport.length > 0 && { "transportIn": transport }),
+    ...hostFiledQuery
+  };
 
-    if (beaconStatusFilter) {
-      Object.assign(hasBeaconWith, beaconStatusFilter);
-    }
+  if (beaconStatusFilter) {
+    Object.assign(hasBeaconWith, beaconStatusFilter);
+  }
 
-    return {
-      "hasBeaconWith": hasBeaconWith
-    };
-
-};
-
-export function constructTomeFilterQuery(filter: Filters){
-    const { Tactic, SupportModel } = getTomeFilterNameByTypes(filter.tomeFields);
-
-    if(filter.tomeMultiSearch === "" && Tactic.length < 1 && SupportModel.length < 1){
-      return null;
-    }
-
-    return {
-      "hasTomeWith": {
-        ...(filter.tomeMultiSearch && {
-          "or": [
-            {"paramDefsContains": filter.tomeMultiSearch},
-            {"nameContains": filter.tomeMultiSearch},
-            {"descriptionContains": filter.tomeMultiSearch}
-          ]
-        }),
-        ...(Tactic.length && {"tacticIn": Tactic}),
-        ...(SupportModel.length && {"supportModelIn": SupportModel})
-      }
-    };
+  return {
+    "hasBeaconWith": hasBeaconWith
+  };
 
 };
 
-export function constructTaskFilterQuery(
-  filter: Filters,
-  currentTimestamp?: Date
-){
-    const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
-    if(!filter.taskOutput && !beaconFilterQuery){
-      return null;
-    }
+export function constructTomeFieldsFilterQuery(filter: Filters) {
+  const { Tactic, SupportModel } = getTomeFilterNameByTypes(filter.tomeFields);
 
-    return {
-      "hasTasksWith": {
-        ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
-        ...(beaconFilterQuery && beaconFilterQuery),
-      }
-    };
-
-};
-
-export function constructQuestFilterQuery(filter: Filters){
-  const tomeFilterQuery = constructTomeFilterQuery(filter);
-
-  if(!filter.questName && !filter.tomeMultiSearch){
+  if (Tactic.length < 1 && SupportModel.length < 1) {
     return null;
   }
 
   return {
-      ...(filter.questName && {"nameContains": filter.questName}),
-      ...(tomeFilterQuery && {
-        "or": [
-          {"parametersContains": filter.tomeMultiSearch},
-          ...[tomeFilterQuery],
-        ]
-      })
+    "hasTomeWith": {
+      ...(Tactic.length && { "tacticIn": Tactic }),
+      ...(SupportModel.length && { "supportModelIn": SupportModel })
     }
+  };
+};
+
+export function constructTomeDefinitionAndValueFilterQuery(filter: Filters) {
+  if (!filter.tomeMultiSearch && filter.tomeMultiSearch === "") {
+    return null;
+  }
+
+  return {
+    "or": [
+      { "parametersContains": filter.tomeMultiSearch },
+      {
+        "hasTomeWith": {
+          "or": [
+            { "paramDefsContains": filter.tomeMultiSearch },
+            { "nameContains": filter.tomeMultiSearch },
+            { "descriptionContains": filter.tomeMultiSearch }
+          ]
+        }
+      }
+    ],
+  };
+};
+
+
+export function constructTaskFilterQuery(
+  filter: Filters,
+  currentTimestamp?: Date
+) {
+  const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
+  if (!filter.taskOutput && !beaconFilterQuery) {
+    return null;
+  }
+
+  return {
+    "hasTasksWith": {
+      ...(filter.taskOutput && { "outputContains": filter.taskOutput }),
+      ...(beaconFilterQuery && beaconFilterQuery),
+    }
+  };
+
+};
+
+export function constructQuestFilterQuery(filter: Filters) {
+  const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
+  const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
+
+  if (!filter.questName && !tomeFieldsFilterQuery && !questParamFilterQuery) {
+    return null;
+  }
+
+  return {
+    ...(filter.questName && { "nameContains": filter.questName }),
+    ...(tomeFieldsFilterQuery && tomeFieldsFilterQuery),
+    ...(questParamFilterQuery && questParamFilterQuery)
+  }
 }
 
 export function constructHostTaskFilterQuery(
   filter: Filters,
   currentTimestamp?: Date
-){
-    const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
-    const questFilterQuery = constructQuestFilterQuery(filter);
+) {
+  const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
+  const questFilterQuery = constructQuestFilterQuery(filter);
 
-    if(!filter.taskOutput && !beaconFilterQuery && !questFilterQuery){
-      return null;
+  if (!filter.taskOutput && !beaconFilterQuery && !questFilterQuery) {
+    return null;
+  }
+
+  return {
+    "hasTasksWith": {
+      ...(questFilterQuery && { "hasQuestWith": questFilterQuery }),
+      ...(filter.taskOutput && { "outputContains": filter.taskOutput }),
+      ...(beaconFilterQuery && beaconFilterQuery),
     }
-
-    return {
-      "hasTasksWith": {
-        ...(questFilterQuery && {"hasQuestWith": questFilterQuery}),
-        ...(filter.taskOutput && {"outputContains": filter.taskOutput}),
-        ...(beaconFilterQuery && beaconFilterQuery),
-      }
-    };
+  };
 
 };
 
-const createRecentlyLostQuery = (start: Date, end: Date) => ({
+const createRecentlyLostQuery = (currentTimestamp: Date) => ({
   and: [
-    { nextSeenAtGTE: start.toISOString() },
-    { nextSeenAtLT: end.toISOString() }
+    { nextSeenAtGTE: sub(currentTimestamp, { minutes: 5 }).toISOString() },
+    { nextSeenAtLT: sub(currentTimestamp, { seconds: 15 }).toISOString() }
   ]
 });
 
@@ -185,8 +197,8 @@ export function constructBeaconStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{nextSeenAtGTE: currentTimestamp.toISOString()}] : [],
-    ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(sub(currentTimestamp, { minutes: 5 }), currentTimestamp)] : [],
+    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{ nextSeenAtGTE: sub(currentTimestamp, { seconds: 15 }).toISOString() }] : [],
+    ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(currentTimestamp)] : [],
   ]
 
   if (conditions.length === 0) return null;
@@ -201,8 +213,8 @@ export function constructHostStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OfflineHost) ? [{nextSeenAtLT: currentTimestamp.toISOString()}] : [],
-    ...status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(sub(currentTimestamp, { minutes: 5 }), currentTimestamp)] : [],
+    ...status.includes(OnlineOfflineFilterType.OfflineHost) ? [{ nextSeenAtLT: sub(currentTimestamp, { seconds: 15 }).toISOString() }] : [],
+    ...status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(currentTimestamp)] : [],
   ]
 
   if (conditions.length === 0) return null;
