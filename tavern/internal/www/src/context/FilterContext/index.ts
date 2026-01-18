@@ -1,5 +1,5 @@
 // Re-export everything from FilterContext
-export { FilterProvider, useFilters } from './FilterContext'
+export { FilterProvider, useFilters, FilterContext } from './FilterContext'
 export type { Filters } from './FilterContext'
 
 // Re-export everything from FilterControls

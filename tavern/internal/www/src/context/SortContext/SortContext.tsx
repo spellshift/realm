@@ -80,7 +80,7 @@ type SortsContextType = {
     resetSorts: () => void
 }
 
-const SortsContext = createContext<SortsContextType | undefined>(undefined)
+export const SortsContext = createContext<SortsContextType | undefined>(undefined)
 
 export function SortsProvider({ children }: { children: React.ReactNode }) {
 

@@ -1,7 +1,7 @@
 import { useApolloClient } from "@apollo/client";
 import { createContext, useContext, useEffect, useState } from "react";
 
-const PollingContext = createContext<{ secondsUntilNextPoll: number } | undefined>(undefined);
+export const PollingContext = createContext<{ secondsUntilNextPoll: number } | undefined>(undefined);
 
 export const PollingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const apolloClient = useApolloClient();

@@ -1,0 +1,174 @@
+go: downloading cloud.google.com/go/pubsub v1.45.3
+go: downloading entgo.io/contrib v0.6.0
+go: downloading entgo.io/ent v0.14.1
+go: downloading github.com/99designs/gqlgen v0.17.62
+go: downloading cloud.google.com/go v0.116.0
+go: downloading github.com/go-sql-driver/mysql v1.8.1
+go: downloading github.com/mattn/go-sqlite3 v1.14.16
+go: downloading github.com/prometheus/client_golang v1.20.4
+go: downloading github.com/urfave/cli v1.22.5
+go: downloading gocloud.dev v0.37.0
+go: downloading golang.org/x/net v0.48.0
+go: downloading golang.org/x/oauth2 v0.26.0
+go: downloading google.golang.org/grpc v1.72.1
+go: downloading cloud.google.com/go/iam v1.2.2
+go: downloading github.com/google/uuid v1.6.0
+go: downloading github.com/googleapis/gax-go/v2 v2.14.0
+go: downloading go.opencensus.io v0.24.0
+go: downloading go.opentelemetry.io/otel v1.34.0
+go: downloading go.opentelemetry.io/otel/trace v1.34.0
+go: downloading golang.org/x/sync v0.19.0
+go: downloading google.golang.org/api v0.210.0
+go: downloading google.golang.org/protobuf v1.36.6
+go: downloading github.com/sosodev/duration v1.3.1
+go: downloading github.com/vektah/gqlparser/v2 v2.5.21
+go: downloading filippo.io/edwards25519 v1.1.0
+go: downloading github.com/beorn7/perks v1.0.1
+go: downloading github.com/cespare/xxhash/v2 v2.3.0
+go: downloading github.com/prometheus/client_model v0.6.1
+go: downloading github.com/prometheus/common v0.61.0
+go: downloading github.com/prometheus/procfs v0.15.1
+go: downloading github.com/klauspost/compress v1.17.11
+go: downloading github.com/cpuguy83/go-md2man/v2 v2.0.6
+go: downloading github.com/vmihailenco/msgpack/v5 v5.4.1
+go: downloading golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
+go: downloading github.com/google/wire v0.6.0
+go: downloading cloud.google.com/go/compute/metadata v0.6.0
+go: downloading github.com/golang-jwt/jwt v3.2.2+incompatible
+go: downloading github.com/robfig/cron/v3 v3.0.1
+go: downloading github.com/cloudflare/circl v1.5.0
+go: downloading github.com/hashicorp/golang-lru/v2 v2.0.7
+go: downloading golang.org/x/crypto v0.47.0
+go: downloading github.com/hashicorp/go-multierror v1.1.1
+go: downloading github.com/gorilla/websocket v1.5.3
+go: downloading cloud.google.com/go/secretmanager v1.14.2
+go: downloading gopkg.in/yaml.v3 v3.0.1
+go: downloading github.com/go-git/go-git/v5 v5.13.1
+go: downloading google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a
+go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237
+go: downloading github.com/go-logr/logr v1.4.2
+go: downloading go.opentelemetry.io/otel/metric v1.34.0
+go: downloading google.golang.org/genproto v0.0.0-20241118233622-e639e219e697
+go: downloading github.com/go-viper/mapstructure/v2 v2.2.1
+go: downloading github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
+go: downloading golang.org/x/sys v0.40.0
+go: downloading github.com/russross/blackfriday/v2 v2.1.0
+go: downloading golang.org/x/tools v0.40.0
+go: downloading ariga.io/atlas v0.25.1-0.20240717145915-af51d3945208
+go: downloading github.com/go-openapi/inflect v0.21.0
+go: downloading golang.org/x/text v0.33.0
+go: downloading github.com/vmihailenco/tagparser/v2 v2.0.0
+go: downloading golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
+go: downloading github.com/hashicorp/errwrap v1.1.0
+go: downloading cloud.google.com/go/auth v0.11.0
+go: downloading dario.cat/mergo v1.0.0
+go: downloading github.com/ProtonMail/go-crypto v1.1.3
+go: downloading github.com/go-git/go-billy/v5 v5.6.1
+go: downloading github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
+go: downloading github.com/kevinburke/ssh_config v1.2.0
+go: downloading github.com/skeema/knownhosts v1.3.0
+go: downloading github.com/xanzy/ssh-agent v0.3.3
+go: downloading github.com/emirpasic/gods v1.18.1
+go: downloading cloud.google.com/go/auth/oauth2adapt v0.2.6
+go: downloading go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0
+go: downloading golang.org/x/time v0.8.0
+go: downloading go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0
+go: downloading github.com/go-logr/stdr v1.2.2
+go: downloading go.opentelemetry.io/auto/sdk v1.1.0
+go: downloading github.com/agnivade/levenshtein v1.2.0
+go: downloading github.com/hashicorp/hcl/v2 v2.23.0
+go: downloading github.com/zclconf/go-cty v1.14.4
+go: downloading github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
+go: downloading github.com/google/s2a-go v0.1.8
+go: downloading github.com/cyphar/filepath-securejoin v0.3.6
+go: downloading github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376
+go: downloading github.com/pjbgf/sha1cd v0.3.1
+go: downloading github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99
+go: downloading github.com/felixge/httpsnoop v1.0.4
+go: downloading github.com/googleapis/enterprise-certificate-proxy v0.3.4
+go: downloading golang.org/x/mod v0.31.0
+go: downloading gopkg.in/warnings.v0 v0.1.2
+go: downloading github.com/agext/levenshtein v1.2.3
+go: downloading github.com/apparentlymart/go-textseg/v15 v15.0.0
+go: downloading github.com/mitchellh/go-wordwrap v1.0.1
+go: downloading github.com/google/go-cmp v0.6.0
+go: downloading github.com/mmcloughlin/avo v0.6.0
+2026/01/18 04:01:58 WARN missing configuration, using default value env_var=ENABLE_DEBUG_LOGGING type=bool default=false
+2026/01/18 04:01:58 WARN missing configuration, using default value env_var=ENABLE_JSON_LOGGING type=bool default=false
+2026/01/18 04:01:58 WARN missing configuration, using default value env_var=ENABLE_INSTANCE_ID_LOGGING type=bool default=false
+time=2026-01-18T04:01:58.288Z level=WARN msg="missing configuration, using default value" env_var=HTTP_LISTEN_ADDR type=string default=0.0.0.0:8000
+time=2026-01-18T04:01:58.288Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-01-18T04:01:58.288Z level=WARN msg="missing configuration, using default value" env_var=SECRETS_FILE_PATH type=string default=""
+time=2026-01-18T04:01:58.288Z level=ERROR msg="No configuration provided for secret manager path, using a potentially insecure default."
+time=2026-01-18T04:01:58.288Z level=ERROR msg="failed to open secrets file /tmp/tavern-secrets: open /tmp/tavern-secrets: no such file or directory"
+time=2026-01-18T04:01:58.288Z level=ERROR msg="failed to parse YAML file /tmp/tavern-secrets: open /tmp/tavern-secrets: no such file or directory"
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_ADDR type=string default=""
+time=2026-01-18T04:01:58.292Z level=WARN msg="mysql is not configured, using sqlite"
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_CLIENT_ID type=string default=""
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_CLIENT_SECRET type=string default=""
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_DOMAIN type=string default=""
+time=2026-01-18T04:01:58.292Z level=WARN msg="oauth is not configured, authentication disabled"
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=DB_MAX_IDLE_CONNS type=int default=10
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=DB_MAX_OPEN_CONNS type=int default=100
+time=2026-01-18T04:01:58.292Z level=WARN msg="missing configuration, using default value" env_var=DB_MAX_CONN_LIFETIME type=int default=3600
+time=2026-01-18T04:01:58.296Z level=WARN msg="missing configuration, using default value" env_var=DISABLE_DEFAULT_TOMES type=bool default=false
+time=2026-01-18T04:01:58.304Z level=WARN msg="test data is enabled"
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_TOPIC_SHELL_INPUT type=string default=mem://shell_input
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_TOPIC_SHELL_OUTPUT type=string default=mem://shell_output
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_SUBSCRIPTION_SHELL_INPUT type=string default=mem://shell_input
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_SUBSCRIPTION_SHELL_OUTPUT type=string default=mem://shell_output
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=ENABLE_GRAPHQL_RAW_QUERY_LOGGING type=bool default=false
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-01-18T04:01:58.725Z level=WARN msg="missing configuration, using default value" env_var=SECRETS_FILE_PATH type=string default=""
+time=2026-01-18T04:01:58.725Z level=ERROR msg="No configuration provided for secret manager path, using a potentially insecure default."
+time=2026-01-18T04:01:59.082Z level=INFO msg="public key: UAdn/R5p0l0HILe9qFM7fYqp+txi7Hw5f3oSCajR+kE="
+time=2026-01-18T04:01:59.082Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-01-18T04:01:59.082Z level=WARN msg="missing configuration, using default value" env_var=SECRETS_FILE_PATH type=string default=""
+time=2026-01-18T04:01:59.082Z level=ERROR msg="No configuration provided for secret manager path, using a potentially insecure default."
+time=2026-01-18T04:01:59.105Z level=WARN msg="missing configuration, using default value" env_var=ENABLE_PPROF type=bool default=false
+time=2026-01-18T04:01:59.105Z level=WARN msg="missing configuration, using default value" env_var=ENABLE_METRICS type=bool default=false
+time=2026-01-18T04:01:59.105Z level=WARN msg="missing configuration, using default value" env_var=ENABLE_TEST_RUN_AND_EXIT type=bool default=false
+time=2026-01-18T04:01:59.105Z level=INFO msg="http server started" http_addr=0.0.0.0:8000
+time=2026-01-18T04:05:19.904Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45186 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:05:19.905Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45190 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:05:19.905Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45188 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:05:19.907Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45186 http_method=POST http_url=/graphql
+time=2026-01-18T04:05:19.908Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetQuests variables="map[first:10 firstTask:1 orderBy:[map[direction:DESC field:CREATED_AT]] where:map[] whereErrorTask:map[errorNotNil:true] whereFinishedTask:map[execFinishedAtNotNil:true] whereOutputTask:map[outputSizeGT:0] whereTotalTask:map[]]"
+time=2026-01-18T04:05:19.909Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45190 http_method=POST http_url=/graphql
+time=2026-01-18T04:05:19.909Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetSearchFilters variables="map[groupTag:map[kind:group] serviceTag:map[kind:service]]"
+time=2026-01-18T04:05:19.910Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45188 http_method=POST http_url=/graphql
+time=2026-01-18T04:05:19.910Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetMe variables=map[]
+time=2026-01-18T04:05:21.230Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:45186 http_method=POST http_url=/graphql
+time=2026-01-18T04:05:21.231Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetQuests variables="map[first:10 firstTask:1 orderBy:[map[direction:DESC field:CREATED_AT]] where:map[] whereErrorTask:map[errorNotNil:true] whereFinishedTask:map[execFinishedAtNotNil:true] whereOutputTask:map[outputSizeGT:0] whereTotalTask:map[]]"
+time=2026-01-18T04:32:20.559Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:39684 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:32:20.572Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:39684 http_method=POST http_url=/graphql
+time=2026-01-18T04:32:20.572Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:39688 http_method=POST http_url=/graphql
+time=2026-01-18T04:32:20.572Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetSearchFilters variables="map[groupTag:map[kind:group] serviceTag:map[kind:service]]"
+time=2026-01-18T04:32:20.572Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetQuests variables="map[first:10 firstTask:1 orderBy:[map[direction:DESC field:CREATED_AT]] where:map[] whereErrorTask:map[errorNotNil:true] whereFinishedTask:map[execFinishedAtNotNil:true] whereOutputTask:map[outputSizeGT:0] whereTotalTask:map[]]"
+time=2026-01-18T04:32:20.594Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:39704 http_method=POST http_url=/graphql
+time=2026-01-18T04:32:20.595Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetMe variables=map[]
+time=2026-01-18T04:33:43.502Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:50700 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:33:43.503Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:50716 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:33:43.503Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:50706 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:33:43.505Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:50716 http_method=POST http_url=/graphql
+time=2026-01-18T04:33:43.506Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:50706 http_method=POST http_url=/graphql
+time=2026-01-18T04:33:43.507Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetMe variables=map[]
+time=2026-01-18T04:33:43.506Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:50700 http_method=POST http_url=/graphql
+time=2026-01-18T04:33:43.507Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetSearchFilters variables="map[groupTag:map[kind:group] serviceTag:map[kind:service]]"
+time=2026-01-18T04:33:43.508Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetQuests variables="map[first:10 firstTask:1 orderBy:[map[direction:DESC field:CREATED_AT]] where:map[] whereErrorTask:map[errorNotNil:true] whereFinishedTask:map[execFinishedAtNotNil:true] whereOutputTask:map[outputSizeGT:0] whereTotalTask:map[]]"
+time=2026-01-18T04:35:35.619Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:33200 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:35:35.621Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:33200 http_method=POST http_url=/graphql
+time=2026-01-18T04:35:35.622Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetQuests variables="map[first:10 firstTask:1 orderBy:[map[direction:DESC field:CREATED_AT]] where:map[] whereErrorTask:map[errorNotNil:true] whereFinishedTask:map[execFinishedAtNotNil:true] whereOutputTask:map[outputSizeGT:0] whereTotalTask:map[]]"
+time=2026-01-18T04:35:35.628Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:33222 http_method=POST http_url=/graphql
+time=2026-01-18T04:35:35.628Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetMe variables=map[]
+time=2026-01-18T04:35:35.631Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:33206 http_method=POST http_url=/graphql
+time=2026-01-18T04:35:35.632Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetSearchFilters variables="map[groupTag:map[kind:group] serviceTag:map[kind:service]]"
+time=2026-01-18T04:36:54.138Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:51158 http_method=OPTIONS http_url=/graphql
+time=2026-01-18T04:36:54.141Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:51158 http_method=POST http_url=/graphql
+time=2026-01-18T04:36:54.142Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetQuests variables="map[first:10 firstTask:1 orderBy:[map[direction:DESC field:CREATED_AT]] where:map[] whereErrorTask:map[errorNotNil:true] whereFinishedTask:map[execFinishedAtNotNil:true] whereOutputTask:map[outputSizeGT:0] whereTotalTask:map[]]"
+time=2026-01-18T04:36:54.143Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:51168 http_method=POST http_url=/graphql
+time=2026-01-18T04:36:54.143Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetSearchFilters variables="map[groupTag:map[kind:group] serviceTag:map[kind:service]]"
+time=2026-01-18T04:36:54.144Z level=INFO msg="tavern http request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true remote_addr=[::1]:51170 http_method=POST http_url=/graphql
+time=2026-01-18T04:36:54.145Z level=INFO msg="tavern graphql request" auth_generic_id=Admin auth_user_name=Admin auth_user_id=60129542145 is_admin=true is_activated=true is_authenticated=true operation=GetMe variables=map[]
