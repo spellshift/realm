@@ -125,6 +125,21 @@ pub use mac_address::MacAddress;
 
 - Update the `defaults()` function to include your implementation. N.B. The order from left to right is the order engines will be evaluated.
 
+## DNS protocol details
+
+The DNS transport uses an async windowed protocol to handle UDP unreliability:
+
+- **Chunked transmission**: Large requests are split into chunks that fit within DNS query limits (253 bytes total domain length)
+- **Windowed sending**: Up to 10 packets are sent concurrently
+- **ACK/NACK protocol**: The server responds with acknowledgments for received chunks and requests retransmission of missing chunks
+- **Automatic retries**: Failed chunks are retried up to 3 times before the request fails
+- **CRC32 verification**: Data integrity is verified using CRC32 checksums
+
+**Limits:**
+- Maximum data size: 50MB per request
+- Maximum concurrent conversations on server: 10,000
+
+
 ## Develop a New Transport
 
 We've tried to make Imix super extensible for transport development. In fact, all of the transport specific logic is completely abstracted from how Imix operates for callbacks/tome execution. For Imix all Transports live in the `realm/implants/lib/transport/src` directory.
