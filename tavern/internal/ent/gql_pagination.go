@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
@@ -1653,6 +1654,374 @@ func (hc *HostCredential) ToEdge(order *HostCredentialOrder) *HostCredentialEdge
 	return &HostCredentialEdge{
 		Node:   hc,
 		Cursor: order.Field.toCursor(hc),
+	}
+}
+
+// HostFactEdge is the edge representation of HostFact.
+type HostFactEdge struct {
+	Node   *HostFact `json:"node"`
+	Cursor Cursor    `json:"cursor"`
+}
+
+// HostFactConnection is the connection containing edges to HostFact.
+type HostFactConnection struct {
+	Edges      []*HostFactEdge `json:"edges"`
+	PageInfo   PageInfo        `json:"pageInfo"`
+	TotalCount int             `json:"totalCount"`
+}
+
+func (c *HostFactConnection) build(nodes []*HostFact, pager *hostfactPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *HostFact
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *HostFact {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *HostFact {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*HostFactEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &HostFactEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// HostFactPaginateOption enables pagination customization.
+type HostFactPaginateOption func(*hostfactPager) error
+
+// WithHostFactOrder configures pagination ordering.
+func WithHostFactOrder(order []*HostFactOrder) HostFactPaginateOption {
+	return func(pager *hostfactPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithHostFactFilter configures pagination filter.
+func WithHostFactFilter(filter func(*HostFactQuery) (*HostFactQuery, error)) HostFactPaginateOption {
+	return func(pager *hostfactPager) error {
+		if filter == nil {
+			return errors.New("HostFactQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type hostfactPager struct {
+	reverse bool
+	order   []*HostFactOrder
+	filter  func(*HostFactQuery) (*HostFactQuery, error)
+}
+
+func newHostFactPager(opts []HostFactPaginateOption, reverse bool) (*hostfactPager, error) {
+	pager := &hostfactPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *hostfactPager) applyFilter(query *HostFactQuery) (*HostFactQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *hostfactPager) toCursor(hf *HostFact) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(hf).Value)
+	}
+	return Cursor{ID: hf.ID, Value: cs_}
+}
+
+func (p *hostfactPager) applyCursors(query *HostFactQuery, after, before *Cursor) (*HostFactQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultHostFactOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *hostfactPager) applyOrder(query *HostFactQuery) *HostFactQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultHostFactOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultHostFactOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *hostfactPager) orderExpr(query *HostFactQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultHostFactOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to HostFact.
+func (hf *HostFactQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...HostFactPaginateOption,
+) (*HostFactConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newHostFactPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if hf, err = pager.applyFilter(hf); err != nil {
+		return nil, err
+	}
+	conn := &HostFactConnection{Edges: []*HostFactEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := hf.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if hf, err = pager.applyCursors(hf, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		hf.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := hf.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	hf = pager.applyOrder(hf)
+	nodes, err := hf.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// HostFactOrderFieldCreatedAt orders HostFact by created_at.
+	HostFactOrderFieldCreatedAt = &HostFactOrderField{
+		Value: func(hf *HostFact) (ent.Value, error) {
+			return hf.CreatedAt, nil
+		},
+		column: hostfact.FieldCreatedAt,
+		toTerm: hostfact.ByCreatedAt,
+		toCursor: func(hf *HostFact) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.CreatedAt,
+			}
+		},
+	}
+	// HostFactOrderFieldLastModifiedAt orders HostFact by last_modified_at.
+	HostFactOrderFieldLastModifiedAt = &HostFactOrderField{
+		Value: func(hf *HostFact) (ent.Value, error) {
+			return hf.LastModifiedAt, nil
+		},
+		column: hostfact.FieldLastModifiedAt,
+		toTerm: hostfact.ByLastModifiedAt,
+		toCursor: func(hf *HostFact) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.LastModifiedAt,
+			}
+		},
+	}
+	// HostFactOrderFieldName orders HostFact by name.
+	HostFactOrderFieldName = &HostFactOrderField{
+		Value: func(hf *HostFact) (ent.Value, error) {
+			return hf.Name, nil
+		},
+		column: hostfact.FieldName,
+		toTerm: hostfact.ByName,
+		toCursor: func(hf *HostFact) Cursor {
+			return Cursor{
+				ID:    hf.ID,
+				Value: hf.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f HostFactOrderField) String() string {
+	var str string
+	switch f.column {
+	case HostFactOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case HostFactOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case HostFactOrderFieldName.column:
+		str = "NAME"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f HostFactOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *HostFactOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("HostFactOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *HostFactOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *HostFactOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *HostFactOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid HostFactOrderField", str)
+	}
+	return nil
+}
+
+// HostFactOrderField defines the ordering field of HostFact.
+type HostFactOrderField struct {
+	// Value extracts the ordering value from the given HostFact.
+	Value    func(*HostFact) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) hostfact.OrderOption
+	toCursor func(*HostFact) Cursor
+}
+
+// HostFactOrder defines the ordering of HostFact.
+type HostFactOrder struct {
+	Direction OrderDirection      `json:"direction"`
+	Field     *HostFactOrderField `json:"field"`
+}
+
+// DefaultHostFactOrder is the default ordering of HostFact.
+var DefaultHostFactOrder = &HostFactOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &HostFactOrderField{
+		Value: func(hf *HostFact) (ent.Value, error) {
+			return hf.ID, nil
+		},
+		column: hostfact.FieldID,
+		toTerm: hostfact.ByID,
+		toCursor: func(hf *HostFact) Cursor {
+			return Cursor{ID: hf.ID}
+		},
+	},
+}
+
+// ToEdge converts HostFact into HostFactEdge.
+func (hf *HostFact) ToEdge(order *HostFactOrder) *HostFactEdge {
+	if order == nil {
+		order = DefaultHostFactOrder
+	}
+	return &HostFactEdge{
+		Node:   hf,
+		Cursor: order.Field.toCursor(hf),
 	}
 }
 

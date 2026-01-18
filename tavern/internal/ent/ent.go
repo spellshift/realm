@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
@@ -91,6 +92,7 @@ func checkColumn(table, column string) error {
 			beacon.Table:         beacon.ValidColumn,
 			host.Table:           host.ValidColumn,
 			hostcredential.Table: hostcredential.ValidColumn,
+			hostfact.Table:       hostfact.ValidColumn,
 			hostfile.Table:       hostfile.ValidColumn,
 			hostprocess.Table:    hostprocess.ValidColumn,
 			link.Table:           link.ValidColumn,

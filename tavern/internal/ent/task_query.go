@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -34,6 +35,7 @@ type TaskQuery struct {
 	withReportedFiles            *HostFileQuery
 	withReportedProcesses        *HostProcessQuery
 	withReportedCredentials      *HostCredentialQuery
+	withReportedFacts            *HostFactQuery
 	withShells                   *ShellQuery
 	withFKs                      bool
 	modifiers                    []func(*sql.Selector)
@@ -41,6 +43,7 @@ type TaskQuery struct {
 	withNamedReportedFiles       map[string]*HostFileQuery
 	withNamedReportedProcesses   map[string]*HostProcessQuery
 	withNamedReportedCredentials map[string]*HostCredentialQuery
+	withNamedReportedFacts       map[string]*HostFactQuery
 	withNamedShells              map[string]*ShellQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -181,6 +184,28 @@ func (tq *TaskQuery) QueryReportedCredentials() *HostCredentialQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedCredentialsTable, task.ReportedCredentialsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedFacts chains the current query on the "reported_facts" edge.
+func (tq *TaskQuery) QueryReportedFacts() *HostFactQuery {
+	query := (&HostFactClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(hostfact.Table, hostfact.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedFactsTable, task.ReportedFactsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -407,6 +432,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		withReportedFiles:       tq.withReportedFiles.Clone(),
 		withReportedProcesses:   tq.withReportedProcesses.Clone(),
 		withReportedCredentials: tq.withReportedCredentials.Clone(),
+		withReportedFacts:       tq.withReportedFacts.Clone(),
 		withShells:              tq.withShells.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
@@ -466,6 +492,17 @@ func (tq *TaskQuery) WithReportedCredentials(opts ...func(*HostCredentialQuery))
 		opt(query)
 	}
 	tq.withReportedCredentials = query
+	return tq
+}
+
+// WithReportedFacts tells the query-builder to eager-load the nodes that are connected to
+// the "reported_facts" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithReportedFacts(opts ...func(*HostFactQuery)) *TaskQuery {
+	query := (&HostFactClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withReportedFacts = query
 	return tq
 }
 
@@ -559,12 +596,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		nodes       = []*Task{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			tq.withQuest != nil,
 			tq.withBeacon != nil,
 			tq.withReportedFiles != nil,
 			tq.withReportedProcesses != nil,
 			tq.withReportedCredentials != nil,
+			tq.withReportedFacts != nil,
 			tq.withShells != nil,
 		}
 	)
@@ -628,6 +666,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
+	if query := tq.withReportedFacts; query != nil {
+		if err := tq.loadReportedFacts(ctx, query, nodes,
+			func(n *Task) { n.Edges.ReportedFacts = []*HostFact{} },
+			func(n *Task, e *HostFact) { n.Edges.ReportedFacts = append(n.Edges.ReportedFacts, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := tq.withShells; query != nil {
 		if err := tq.loadShells(ctx, query, nodes,
 			func(n *Task) { n.Edges.Shells = []*Shell{} },
@@ -653,6 +698,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		if err := tq.loadReportedCredentials(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedCredentials(name) },
 			func(n *Task, e *HostCredential) { n.appendNamedReportedCredentials(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedReportedFacts {
+		if err := tq.loadReportedFacts(ctx, query, nodes,
+			func(n *Task) { n.appendNamedReportedFacts(name) },
+			func(n *Task, e *HostFact) { n.appendNamedReportedFacts(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -828,6 +880,37 @@ func (tq *TaskQuery) loadReportedCredentials(ctx context.Context, query *HostCre
 	}
 	return nil
 }
+func (tq *TaskQuery) loadReportedFacts(ctx context.Context, query *HostFactQuery, nodes []*Task, init func(*Task), assign func(*Task, *HostFact)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostFact(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.ReportedFactsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.task_reported_facts
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "task_reported_facts" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "task_reported_facts" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (tq *TaskQuery) loadShells(ctx context.Context, query *ShellQuery, nodes []*Task, init func(*Task), assign func(*Task, *Shell)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Task)
@@ -983,6 +1066,20 @@ func (tq *TaskQuery) WithNamedReportedCredentials(name string, opts ...func(*Hos
 		tq.withNamedReportedCredentials = make(map[string]*HostCredentialQuery)
 	}
 	tq.withNamedReportedCredentials[name] = query
+	return tq
+}
+
+// WithNamedReportedFacts tells the query-builder to eager-load the nodes that are connected to the "reported_facts"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithNamedReportedFacts(name string, opts ...func(*HostFactQuery)) *TaskQuery {
+	query := (&HostFactClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedReportedFacts == nil {
+		tq.withNamedReportedFacts = make(map[string]*HostFactQuery)
+	}
+	tq.withNamedReportedFacts[name] = query
 	return tq
 }
 

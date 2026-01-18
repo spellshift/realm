@@ -9,6 +9,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
@@ -139,6 +140,29 @@ func init() {
 	hostcredentialDescSecret := hostcredentialFields[1].Descriptor()
 	// hostcredential.SecretValidator is a validator for the "secret" field. It is called by the builders before save.
 	hostcredential.SecretValidator = hostcredentialDescSecret.Validators[0].(func(string) error)
+	hostfactMixin := schema.HostFact{}.Mixin()
+	hostfactMixinFields0 := hostfactMixin[0].Fields()
+	_ = hostfactMixinFields0
+	hostfactFields := schema.HostFact{}.Fields()
+	_ = hostfactFields
+	// hostfactDescCreatedAt is the schema descriptor for created_at field.
+	hostfactDescCreatedAt := hostfactMixinFields0[0].Descriptor()
+	// hostfact.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hostfact.DefaultCreatedAt = hostfactDescCreatedAt.Default.(func() time.Time)
+	// hostfactDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	hostfactDescLastModifiedAt := hostfactMixinFields0[1].Descriptor()
+	// hostfact.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	hostfact.DefaultLastModifiedAt = hostfactDescLastModifiedAt.Default.(func() time.Time)
+	// hostfact.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	hostfact.UpdateDefaultLastModifiedAt = hostfactDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// hostfactDescName is the schema descriptor for name field.
+	hostfactDescName := hostfactFields[0].Descriptor()
+	// hostfact.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	hostfact.NameValidator = hostfactDescName.Validators[0].(func(string) error)
+	// hostfactDescValue is the schema descriptor for value field.
+	hostfactDescValue := hostfactFields[1].Descriptor()
+	// hostfact.ValueValidator is a validator for the "value" field. It is called by the builders before save.
+	hostfact.ValueValidator = hostfactDescValue.Validators[0].(func(string) error)
 	hostfileMixin := schema.HostFile{}.Mixin()
 	hostfileHooks := schema.HostFile{}.Hooks()
 	hostfile.Hooks[0] = hostfileHooks[0]

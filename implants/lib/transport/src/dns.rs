@@ -1013,6 +1013,10 @@ impl Transport for DNS {
         self.dns_exchange(request, "/c2.C2/ReportCredential").await
     }
 
+    async fn report_fact(&mut self, request: ReportFactRequest) -> Result<ReportFactResponse> {
+        self.dns_exchange(request, "/c2.C2/ReportFact").await
+    }
+
     async fn report_file(
         &mut self,
         request: Receiver<ReportFileRequest>,

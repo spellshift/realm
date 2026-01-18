@@ -58,6 +58,9 @@ type UpdateHostInput struct {
 	ClearCredentials    bool
 	AddCredentialIDs    []int
 	RemoveCredentialIDs []int
+	ClearFacts          bool
+	AddFactIDs          []int
+	RemoveFactIDs       []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -116,6 +119,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	if v := i.RemoveCredentialIDs; len(v) > 0 {
 		m.RemoveCredentialIDs(v...)
 	}
+	if i.ClearFacts {
+		m.ClearFacts()
+	}
+	if v := i.AddFactIDs; len(v) > 0 {
+		m.AddFactIDs(v...)
+	}
+	if v := i.RemoveFactIDs; len(v) > 0 {
+		m.RemoveFactIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the UpdateHostInput on the HostUpdate builder.
@@ -152,6 +164,30 @@ func (i *CreateHostCredentialInput) Mutate(m *HostCredentialMutation) {
 
 // SetInput applies the change-set in the CreateHostCredentialInput on the HostCredentialCreate builder.
 func (c *HostCredentialCreate) SetInput(i CreateHostCredentialInput) *HostCredentialCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateHostFactInput represents a mutation input for creating hostfacts.
+type CreateHostFactInput struct {
+	Name   string
+	Value  string
+	HostID int
+	TaskID *int
+}
+
+// Mutate applies the CreateHostFactInput on the HostFactMutation builder.
+func (i *CreateHostFactInput) Mutate(m *HostFactMutation) {
+	m.SetName(i.Name)
+	m.SetValue(i.Value)
+	m.SetHostID(i.HostID)
+	if v := i.TaskID; v != nil {
+		m.SetTaskID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateHostFactInput on the HostFactCreate builder.
+func (c *HostFactCreate) SetInput(i CreateHostFactInput) *HostFactCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

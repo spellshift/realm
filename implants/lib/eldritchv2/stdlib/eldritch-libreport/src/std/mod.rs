@@ -8,6 +8,7 @@ use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::TaskContext;
 
+pub mod fact_impl;
 pub mod file_impl;
 pub mod process_list_impl;
 pub mod ssh_key_impl;
@@ -39,6 +40,10 @@ impl StdReportLibrary {
 impl ReportLibrary for StdReportLibrary {
     fn file(&self, path: String) -> Result<(), String> {
         file_impl::file(self.agent.clone(), self.task_context.clone(), path)
+    }
+
+    fn fact(&self, name: String, fact: String) -> Result<(), String> {
+        fact_impl::fact(self.agent.clone(), self.task_context.clone(), name, fact)
     }
 
     fn process_list(&self, list: Vec<BTreeMap<String, Value>>) -> Result<(), String> {

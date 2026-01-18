@@ -27,6 +27,11 @@ mock! {
             request: ReportCredentialRequest,
         ) -> Result<ReportCredentialResponse>;
 
+        async fn report_fact(
+            &mut self,
+            request: ReportFactRequest,
+        ) -> Result<ReportFactResponse>;
+
         async fn report_file(
             &mut self,
             request: Receiver<ReportFileRequest>,

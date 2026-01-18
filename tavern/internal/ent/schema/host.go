@@ -99,6 +99,13 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Credentials reported from this host system."),
+		edge.From("facts", HostFact.Type).
+			Ref("host").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Facts reported from this host system."),
 	}
 }
 

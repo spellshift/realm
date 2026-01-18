@@ -205,6 +205,27 @@ func (h *Host) Credentials(
 	return h.QueryCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (h *Host) Facts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostFactOrder, where *HostFactWhereInput,
+) (*HostFactConnection, error) {
+	opts := []HostFactPaginateOption{
+		WithHostFactOrder(orderBy),
+		WithHostFactFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[5][alias]
+	if nodes, err := h.NamedFacts(alias); err == nil || hasTotalCount {
+		pager, err := newHostFactPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostFactConnection{Edges: []*HostFactEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryFacts().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
 	result, err := hc.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -217,6 +238,22 @@ func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
 	result, err := hc.Edges.TaskOrErr()
 	if IsNotLoaded(err) {
 		result, err = hc.QueryTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (hf *HostFact) Host(ctx context.Context) (*Host, error) {
+	result, err := hf.Edges.HostOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryHost().Only(ctx)
+	}
+	return result, err
+}
+
+func (hf *HostFact) Task(ctx context.Context) (*Task, error) {
+	result, err := hf.Edges.TaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryTask().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
@@ -525,6 +562,27 @@ func (t *Task) ReportedCredentials(
 	return t.QueryReportedCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (t *Task) ReportedFacts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostFactOrder, where *HostFactWhereInput,
+) (*HostFactConnection, error) {
+	opts := []HostFactPaginateOption{
+		WithHostFactOrder(orderBy),
+		WithHostFactFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[5][alias]
+	if nodes, err := t.NamedReportedFacts(alias); err == nil || hasTotalCount {
+		pager, err := newHostFactPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostFactConnection{Edges: []*HostFactEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return t.QueryReportedFacts().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (t *Task) Shells(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
 ) (*ShellConnection, error) {
@@ -533,7 +591,7 @@ func (t *Task) Shells(
 		WithShellFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := t.Edges.totalCount[5][alias]
+	totalCount, hasTotalCount := t.Edges.totalCount[6][alias]
 	if nodes, err := t.NamedShells(alias); err == nil || hasTotalCount {
 		pager, err := newShellPager(opts, last != nil)
 		if err != nil {

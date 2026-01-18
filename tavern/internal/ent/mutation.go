@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
@@ -44,6 +45,7 @@ const (
 	TypeBeacon         = "Beacon"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
+	TypeHostFact       = "HostFact"
 	TypeHostFile       = "HostFile"
 	TypeHostProcess    = "HostProcess"
 	TypeLink           = "Link"
@@ -2078,6 +2080,9 @@ type HostMutation struct {
 	credentials        map[int]struct{}
 	removedcredentials map[int]struct{}
 	clearedcredentials bool
+	facts              map[int]struct{}
+	removedfacts       map[int]struct{}
+	clearedfacts       bool
 	done               bool
 	oldValue           func(context.Context) (*Host, error)
 	predicates         []predicate.Host
@@ -2840,6 +2845,60 @@ func (m *HostMutation) ResetCredentials() {
 	m.removedcredentials = nil
 }
 
+// AddFactIDs adds the "facts" edge to the HostFact entity by ids.
+func (m *HostMutation) AddFactIDs(ids ...int) {
+	if m.facts == nil {
+		m.facts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.facts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFacts clears the "facts" edge to the HostFact entity.
+func (m *HostMutation) ClearFacts() {
+	m.clearedfacts = true
+}
+
+// FactsCleared reports if the "facts" edge to the HostFact entity was cleared.
+func (m *HostMutation) FactsCleared() bool {
+	return m.clearedfacts
+}
+
+// RemoveFactIDs removes the "facts" edge to the HostFact entity by IDs.
+func (m *HostMutation) RemoveFactIDs(ids ...int) {
+	if m.removedfacts == nil {
+		m.removedfacts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.facts, ids[i])
+		m.removedfacts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFacts returns the removed IDs of the "facts" edge to the HostFact entity.
+func (m *HostMutation) RemovedFactsIDs() (ids []int) {
+	for id := range m.removedfacts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FactsIDs returns the "facts" edge IDs in the mutation.
+func (m *HostMutation) FactsIDs() (ids []int) {
+	for id := range m.facts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFacts resets all changes to the "facts" edge.
+func (m *HostMutation) ResetFacts() {
+	m.facts = nil
+	m.clearedfacts = false
+	m.removedfacts = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -3142,7 +3201,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -3157,6 +3216,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.credentials != nil {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.facts != nil {
+		edges = append(edges, host.EdgeFacts)
 	}
 	return edges
 }
@@ -3195,13 +3257,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFacts:
+		ids := make([]ent.Value, 0, len(m.facts))
+		for id := range m.facts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -3216,6 +3284,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedcredentials != nil {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.removedfacts != nil {
+		edges = append(edges, host.EdgeFacts)
 	}
 	return edges
 }
@@ -3254,13 +3325,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFacts:
+		ids := make([]ent.Value, 0, len(m.removedfacts))
+		for id := range m.removedfacts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -3275,6 +3352,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	}
 	if m.clearedcredentials {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.clearedfacts {
+		edges = append(edges, host.EdgeFacts)
 	}
 	return edges
 }
@@ -3293,6 +3373,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedprocesses
 	case host.EdgeCredentials:
 		return m.clearedcredentials
+	case host.EdgeFacts:
+		return m.clearedfacts
 	}
 	return false
 }
@@ -3323,6 +3405,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeCredentials:
 		m.ResetCredentials()
+		return nil
+	case host.EdgeFacts:
+		m.ResetFacts()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
@@ -3994,6 +4079,620 @@ func (m *HostCredentialMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown HostCredential edge %s", name)
+}
+
+// HostFactMutation represents an operation that mutates the HostFact nodes in the graph.
+type HostFactMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	name             *string
+	value            *string
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostFact, error)
+	predicates       []predicate.HostFact
+}
+
+var _ ent.Mutation = (*HostFactMutation)(nil)
+
+// hostfactOption allows management of the mutation configuration using functional options.
+type hostfactOption func(*HostFactMutation)
+
+// newHostFactMutation creates new mutation for the HostFact entity.
+func newHostFactMutation(c config, op Op, opts ...hostfactOption) *HostFactMutation {
+	m := &HostFactMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeHostFact,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withHostFactID sets the ID field of the mutation.
+func withHostFactID(id int) hostfactOption {
+	return func(m *HostFactMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *HostFact
+		)
+		m.oldValue = func(ctx context.Context) (*HostFact, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().HostFact.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withHostFact sets the old HostFact of the mutation.
+func withHostFact(node *HostFact) hostfactOption {
+	return func(m *HostFactMutation) {
+		m.oldValue = func(context.Context) (*HostFact, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m HostFactMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m HostFactMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *HostFactMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *HostFactMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().HostFact.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *HostFactMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *HostFactMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the HostFact entity.
+// If the HostFact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFactMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *HostFactMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *HostFactMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *HostFactMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the HostFact entity.
+// If the HostFact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFactMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *HostFactMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *HostFactMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *HostFactMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the HostFact entity.
+// If the HostFact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFactMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *HostFactMutation) ResetName() {
+	m.name = nil
+}
+
+// SetValue sets the "value" field.
+func (m *HostFactMutation) SetValue(s string) {
+	m.value = &s
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *HostFactMutation) Value() (r string, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the HostFact entity.
+// If the HostFact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFactMutation) OldValue(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *HostFactMutation) ResetValue() {
+	m.value = nil
+}
+
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *HostFactMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *HostFactMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *HostFactMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *HostFactMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *HostFactMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *HostFactMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *HostFactMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *HostFactMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *HostFactMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *HostFactMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *HostFactMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *HostFactMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// Where appends a list predicates to the HostFactMutation builder.
+func (m *HostFactMutation) Where(ps ...predicate.HostFact) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the HostFactMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *HostFactMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.HostFact, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *HostFactMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *HostFactMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (HostFact).
+func (m *HostFactMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *HostFactMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, hostfact.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, hostfact.FieldLastModifiedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, hostfact.FieldName)
+	}
+	if m.value != nil {
+		fields = append(fields, hostfact.FieldValue)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *HostFactMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case hostfact.FieldCreatedAt:
+		return m.CreatedAt()
+	case hostfact.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case hostfact.FieldName:
+		return m.Name()
+	case hostfact.FieldValue:
+		return m.Value()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *HostFactMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case hostfact.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case hostfact.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case hostfact.FieldName:
+		return m.OldName(ctx)
+	case hostfact.FieldValue:
+		return m.OldValue(ctx)
+	}
+	return nil, fmt.Errorf("unknown HostFact field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostFactMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case hostfact.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case hostfact.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case hostfact.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case hostfact.FieldValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	}
+	return fmt.Errorf("unknown HostFact field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *HostFactMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *HostFactMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *HostFactMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown HostFact numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *HostFactMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *HostFactMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *HostFactMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown HostFact nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *HostFactMutation) ResetField(name string) error {
+	switch name {
+	case hostfact.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case hostfact.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case hostfact.FieldName:
+		m.ResetName()
+		return nil
+	case hostfact.FieldValue:
+		m.ResetValue()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFact field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *HostFactMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.host != nil {
+		edges = append(edges, hostfact.EdgeHost)
+	}
+	if m.task != nil {
+		edges = append(edges, hostfact.EdgeTask)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *HostFactMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case hostfact.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case hostfact.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *HostFactMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *HostFactMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *HostFactMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedhost {
+		edges = append(edges, hostfact.EdgeHost)
+	}
+	if m.clearedtask {
+		edges = append(edges, hostfact.EdgeTask)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *HostFactMutation) EdgeCleared(name string) bool {
+	switch name {
+	case hostfact.EdgeHost:
+		return m.clearedhost
+	case hostfact.EdgeTask:
+		return m.clearedtask
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *HostFactMutation) ClearEdge(name string) error {
+	switch name {
+	case hostfact.EdgeHost:
+		m.ClearHost()
+		return nil
+	case hostfact.EdgeTask:
+		m.ClearTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFact unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *HostFactMutation) ResetEdge(name string) error {
+	switch name {
+	case hostfact.EdgeHost:
+		m.ResetHost()
+		return nil
+	case hostfact.EdgeTask:
+		m.ResetTask()
+		return nil
+	}
+	return fmt.Errorf("unknown HostFact edge %s", name)
 }
 
 // HostFileMutation represents an operation that mutates the HostFile nodes in the graph.
@@ -10503,6 +11202,9 @@ type TaskMutation struct {
 	reported_credentials        map[int]struct{}
 	removedreported_credentials map[int]struct{}
 	clearedreported_credentials bool
+	reported_facts              map[int]struct{}
+	removedreported_facts       map[int]struct{}
+	clearedreported_facts       bool
 	shells                      map[int]struct{}
 	removedshells               map[int]struct{}
 	clearedshells               bool
@@ -11222,6 +11924,60 @@ func (m *TaskMutation) ResetReportedCredentials() {
 	m.removedreported_credentials = nil
 }
 
+// AddReportedFactIDs adds the "reported_facts" edge to the HostFact entity by ids.
+func (m *TaskMutation) AddReportedFactIDs(ids ...int) {
+	if m.reported_facts == nil {
+		m.reported_facts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_facts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedFacts clears the "reported_facts" edge to the HostFact entity.
+func (m *TaskMutation) ClearReportedFacts() {
+	m.clearedreported_facts = true
+}
+
+// ReportedFactsCleared reports if the "reported_facts" edge to the HostFact entity was cleared.
+func (m *TaskMutation) ReportedFactsCleared() bool {
+	return m.clearedreported_facts
+}
+
+// RemoveReportedFactIDs removes the "reported_facts" edge to the HostFact entity by IDs.
+func (m *TaskMutation) RemoveReportedFactIDs(ids ...int) {
+	if m.removedreported_facts == nil {
+		m.removedreported_facts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_facts, ids[i])
+		m.removedreported_facts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedFacts returns the removed IDs of the "reported_facts" edge to the HostFact entity.
+func (m *TaskMutation) RemovedReportedFactsIDs() (ids []int) {
+	for id := range m.removedreported_facts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedFactsIDs returns the "reported_facts" edge IDs in the mutation.
+func (m *TaskMutation) ReportedFactsIDs() (ids []int) {
+	for id := range m.reported_facts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedFacts resets all changes to the "reported_facts" edge.
+func (m *TaskMutation) ResetReportedFacts() {
+	m.reported_facts = nil
+	m.clearedreported_facts = false
+	m.removedreported_facts = nil
+}
+
 // AddShellIDs adds the "shells" edge to the Shell entity by ids.
 func (m *TaskMutation) AddShellIDs(ids ...int) {
 	if m.shells == nil {
@@ -11576,7 +12332,7 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.quest != nil {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -11591,6 +12347,9 @@ func (m *TaskMutation) AddedEdges() []string {
 	}
 	if m.reported_credentials != nil {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.reported_facts != nil {
+		edges = append(edges, task.EdgeReportedFacts)
 	}
 	if m.shells != nil {
 		edges = append(edges, task.EdgeShells)
@@ -11628,6 +12387,12 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeReportedFacts:
+		ids := make([]ent.Value, 0, len(m.reported_facts))
+		for id := range m.reported_facts {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeShells:
 		ids := make([]ent.Value, 0, len(m.shells))
 		for id := range m.shells {
@@ -11640,7 +12405,7 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedreported_files != nil {
 		edges = append(edges, task.EdgeReportedFiles)
 	}
@@ -11649,6 +12414,9 @@ func (m *TaskMutation) RemovedEdges() []string {
 	}
 	if m.removedreported_credentials != nil {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.removedreported_facts != nil {
+		edges = append(edges, task.EdgeReportedFacts)
 	}
 	if m.removedshells != nil {
 		edges = append(edges, task.EdgeShells)
@@ -11678,6 +12446,12 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeReportedFacts:
+		ids := make([]ent.Value, 0, len(m.removedreported_facts))
+		for id := range m.removedreported_facts {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeShells:
 		ids := make([]ent.Value, 0, len(m.removedshells))
 		for id := range m.removedshells {
@@ -11690,7 +12464,7 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedquest {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -11705,6 +12479,9 @@ func (m *TaskMutation) ClearedEdges() []string {
 	}
 	if m.clearedreported_credentials {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.clearedreported_facts {
+		edges = append(edges, task.EdgeReportedFacts)
 	}
 	if m.clearedshells {
 		edges = append(edges, task.EdgeShells)
@@ -11726,6 +12503,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedreported_processes
 	case task.EdgeReportedCredentials:
 		return m.clearedreported_credentials
+	case task.EdgeReportedFacts:
+		return m.clearedreported_facts
 	case task.EdgeShells:
 		return m.clearedshells
 	}
@@ -11764,6 +12543,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeReportedCredentials:
 		m.ResetReportedCredentials()
+		return nil
+	case task.EdgeReportedFacts:
+		m.ResetReportedFacts()
 		return nil
 	case task.EdgeShells:
 		m.ResetShells()

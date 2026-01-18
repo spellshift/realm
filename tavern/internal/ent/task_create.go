@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
@@ -205,6 +206,21 @@ func (tc *TaskCreate) AddReportedCredentials(h ...*HostCredential) *TaskCreate {
 		ids[i] = h[i].ID
 	}
 	return tc.AddReportedCredentialIDs(ids...)
+}
+
+// AddReportedFactIDs adds the "reported_facts" edge to the HostFact entity by IDs.
+func (tc *TaskCreate) AddReportedFactIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddReportedFactIDs(ids...)
+	return tc
+}
+
+// AddReportedFacts adds the "reported_facts" edges to the HostFact entity.
+func (tc *TaskCreate) AddReportedFacts(h ...*HostFact) *TaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return tc.AddReportedFactIDs(ids...)
 }
 
 // AddShellIDs adds the "shells" edge to the Shell entity by IDs.
@@ -436,6 +452,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ReportedFactsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedFactsTable,
+			Columns: []string{task.ReportedFactsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfact.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -76,3 +76,9 @@ message File {
     FileMetadata metadata = 1;
     bytes chunk = 2;
 }
+
+// Fact reported on the host system.
+message Fact {
+    string name = 1;
+    string value = 2;
+}

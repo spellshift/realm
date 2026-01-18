@@ -18,6 +18,9 @@ type Host func(*sql.Selector)
 // HostCredential is the predicate function for hostcredential builders.
 type HostCredential func(*sql.Selector)
 
+// HostFact is the predicate function for hostfact builders.
+type HostFact func(*sql.Selector)
+
 // HostFile is the predicate function for hostfile builders.
 type HostFile func(*sql.Selector)
 

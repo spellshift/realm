@@ -111,6 +111,11 @@ pub trait UnsafeTransport: Clone + Send {
     ) -> Result<ReportCredentialResponse>;
 
     ///
+    /// Report a fact to the server.
+    #[allow(dead_code)]
+    async fn report_fact(&mut self, request: ReportFactRequest) -> Result<ReportFactResponse>;
+
+    ///
     /// Report a file from the host to the server.
     /// Providing content of the file is optional. If content is provided:
     ///   - Hash will automatically be calculated and the provided hash will be ignored.

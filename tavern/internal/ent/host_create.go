@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/tag"
@@ -211,6 +212,21 @@ func (hc *HostCreate) AddCredentials(h ...*HostCredential) *HostCreate {
 		ids[i] = h[i].ID
 	}
 	return hc.AddCredentialIDs(ids...)
+}
+
+// AddFactIDs adds the "facts" edge to the HostFact entity by IDs.
+func (hc *HostCreate) AddFactIDs(ids ...int) *HostCreate {
+	hc.mutation.AddFactIDs(ids...)
+	return hc
+}
+
+// AddFacts adds the "facts" edges to the HostFact entity.
+func (hc *HostCreate) AddFacts(h ...*HostFact) *HostCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return hc.AddFactIDs(ids...)
 }
 
 // Mutation returns the HostMutation object of the builder.
@@ -423,6 +439,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.FactsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.FactsTable,
+			Columns: []string{host.FactsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfact.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

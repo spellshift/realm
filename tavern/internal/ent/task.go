@@ -55,17 +55,20 @@ type TaskEdges struct {
 	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// Credentials that have been reported by this task.
 	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
+	// Facts that have been reported by this task.
+	ReportedFacts []*HostFact `json:"reported_facts,omitempty"`
 	// Shells that were created by this task
 	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [7]map[string]int
 
 	namedReportedFiles       map[string][]*HostFile
 	namedReportedProcesses   map[string][]*HostProcess
 	namedReportedCredentials map[string][]*HostCredential
+	namedReportedFacts       map[string][]*HostFact
 	namedShells              map[string][]*Shell
 }
 
@@ -118,10 +121,19 @@ func (e TaskEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
 	return nil, &NotLoadedError{edge: "reported_credentials"}
 }
 
+// ReportedFactsOrErr returns the ReportedFacts value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ReportedFactsOrErr() ([]*HostFact, error) {
+	if e.loadedTypes[5] {
+		return e.ReportedFacts, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_facts"}
+}
+
 // ShellsOrErr returns the Shells value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) ShellsOrErr() ([]*Shell, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
@@ -263,6 +275,11 @@ func (t *Task) QueryReportedCredentials() *HostCredentialQuery {
 	return NewTaskClient(t.config).QueryReportedCredentials(t)
 }
 
+// QueryReportedFacts queries the "reported_facts" edge of the Task entity.
+func (t *Task) QueryReportedFacts() *HostFactQuery {
+	return NewTaskClient(t.config).QueryReportedFacts(t)
+}
+
 // QueryShells queries the "shells" edge of the Task entity.
 func (t *Task) QueryShells() *ShellQuery {
 	return NewTaskClient(t.config).QueryShells(t)
@@ -387,6 +404,30 @@ func (t *Task) appendNamedReportedCredentials(name string, edges ...*HostCredent
 		t.Edges.namedReportedCredentials[name] = []*HostCredential{}
 	} else {
 		t.Edges.namedReportedCredentials[name] = append(t.Edges.namedReportedCredentials[name], edges...)
+	}
+}
+
+// NamedReportedFacts returns the ReportedFacts named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Task) NamedReportedFacts(name string) ([]*HostFact, error) {
+	if t.Edges.namedReportedFacts == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedReportedFacts[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Task) appendNamedReportedFacts(name string, edges ...*HostFact) {
+	if t.Edges.namedReportedFacts == nil {
+		t.Edges.namedReportedFacts = make(map[string][]*HostFact)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedReportedFacts[name] = []*HostFact{}
+	} else {
+		t.Edges.namedReportedFacts[name] = append(t.Edges.namedReportedFacts[name], edges...)
 	}
 }
 

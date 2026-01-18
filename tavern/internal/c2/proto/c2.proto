@@ -122,6 +122,12 @@ message ReportCredentialRequest {
 }
 message ReportCredentialResponse {}
 
+message ReportFactRequest {
+    TaskContext context = 1;
+    eldritch.Fact fact = 2;
+}
+message ReportFactResponse {}
+
 message ReportFileRequest {
     TaskContext context = 1;
     eldritch.File chunk = 2;
@@ -190,6 +196,11 @@ service C2 {
      * Report a credential from the host to the server.
      */
      rpc ReportCredential(ReportCredentialRequest) returns (ReportCredentialResponse);
+
+    /*
+     * Report a fact from the host to the server.
+     */
+     rpc ReportFact(ReportFactRequest) returns (ReportFactResponse);
 
     /*
      * Report a file from the host to the server.

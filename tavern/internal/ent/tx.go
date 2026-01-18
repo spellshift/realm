@@ -20,6 +20,8 @@ type Tx struct {
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
 	HostCredential *HostCredentialClient
+	// HostFact is the client for interacting with the HostFact builders.
+	HostFact *HostFactClient
 	// HostFile is the client for interacting with the HostFile builders.
 	HostFile *HostFileClient
 	// HostProcess is the client for interacting with the HostProcess builders.
@@ -177,6 +179,7 @@ func (tx *Tx) init() {
 	tx.Beacon = NewBeaconClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
 	tx.HostCredential = NewHostCredentialClient(tx.config)
+	tx.HostFact = NewHostFactClient(tx.config)
 	tx.HostFile = NewHostFileClient(tx.config)
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Link = NewLinkClient(tx.config)

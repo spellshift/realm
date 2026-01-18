@@ -1034,6 +1034,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_processes(ctx, field)
 			case "credentials":
 				return ec.fieldContext_Host_credentials(ctx, field)
+			case "facts":
+				return ec.fieldContext_Host_facts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},

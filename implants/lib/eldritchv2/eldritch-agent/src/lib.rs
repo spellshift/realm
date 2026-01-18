@@ -13,6 +13,7 @@ pub trait Agent: Send + Sync {
         &self,
         req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String>;
+    fn report_fact(&self, req: c2::ReportFactRequest) -> Result<c2::ReportFactResponse, String>;
     fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(
         &self,

@@ -29,10 +29,18 @@ pub trait ReportLibrary {
     ///
     /// **Returns**
     /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the file cannot be read or queued for reporting.
     fn file(&self, path: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Reports a fact about the host.
+    ///
+    /// **Parameters**
+    /// - `name` (`str`): The name of the fact.
+    /// - `fact` (`str`): The value of the fact.
+    ///
+    /// **Returns**
+    /// - `None`
+    fn fact(&self, name: String, fact: String) -> Result<(), String>;
 
     #[eldritch_method]
     /// Reports a snapshot of running processes.

@@ -113,6 +113,36 @@ var (
 			},
 		},
 	}
+	// HostFactsColumns holds the columns for the "host_facts" table.
+	HostFactsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "value", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "host_fact_host", Type: field.TypeInt},
+		{Name: "task_reported_facts", Type: field.TypeInt, Nullable: true},
+	}
+	// HostFactsTable holds the schema information for the "host_facts" table.
+	HostFactsTable = &schema.Table{
+		Name:       "host_facts",
+		Columns:    HostFactsColumns,
+		PrimaryKey: []*schema.Column{HostFactsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "host_facts_hosts_host",
+				Columns:    []*schema.Column{HostFactsColumns[5]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "host_facts_tasks_reported_facts",
+				Columns:    []*schema.Column{HostFactsColumns[6]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// HostFilesColumns holds the columns for the "host_files" table.
 	HostFilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -552,6 +582,7 @@ var (
 		BeaconsTable,
 		HostsTable,
 		HostCredentialsTable,
+		HostFactsTable,
 		HostFilesTable,
 		HostProcessesTable,
 		LinksTable,
@@ -584,6 +615,11 @@ func init() {
 	HostCredentialsTable.ForeignKeys[0].RefTable = HostsTable
 	HostCredentialsTable.ForeignKeys[1].RefTable = TasksTable
 	HostCredentialsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	HostFactsTable.ForeignKeys[0].RefTable = HostsTable
+	HostFactsTable.ForeignKeys[1].RefTable = TasksTable
+	HostFactsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostFilesTable.ForeignKeys[0].RefTable = HostsTable

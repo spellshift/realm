@@ -131,6 +131,20 @@ impl Transport for ActiveTransport {
         }
     }
 
+    async fn report_fact(&mut self, request: ReportFactRequest) -> Result<ReportFactResponse> {
+        match self {
+            #[cfg(feature = "grpc")]
+            Self::Grpc(t) => t.report_fact(request).await,
+            #[cfg(feature = "http1")]
+            Self::Http(t) => t.report_fact(request).await,
+            #[cfg(feature = "dns")]
+            Self::Dns(t) => t.report_fact(request).await,
+            #[cfg(feature = "mock")]
+            Self::Mock(t) => t.report_fact(request).await,
+            Self::Empty => Err(anyhow!("Transport not initialized")),
+        }
+    }
+
     async fn report_file(
         &mut self,
         request: Receiver<ReportFileRequest>,

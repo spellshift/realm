@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfact"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
@@ -56,6 +57,11 @@ var hostcredentialImplementors = []string{"HostCredential", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*HostCredential) IsNode() {}
+
+var hostfactImplementors = []string{"HostFact", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*HostFact) IsNode() {}
 
 var hostfileImplementors = []string{"HostFile", "Node"}
 
@@ -202,6 +208,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(hostcredential.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostcredentialImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case hostfact.Table:
+		query := c.HostFact.Query().
+			Where(hostfact.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, hostfactImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -430,6 +445,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.HostCredential.Query().
 			Where(hostcredential.IDIn(ids...))
 		query, err := query.CollectFields(ctx, hostcredentialImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case hostfact.Table:
+		query := c.HostFact.Query().
+			Where(hostfact.IDIn(ids...))
+		query, err := query.CollectFields(ctx, hostfactImplementors...)
 		if err != nil {
 			return nil, err
 		}

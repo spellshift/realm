@@ -99,6 +99,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ExternalIP     func(childComplexity int) int
+		Facts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFactOrder, where *ent.HostFactWhereInput) int
 		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
@@ -141,6 +142,27 @@ type ComplexityRoot struct {
 	}
 
 	HostEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	HostFact struct {
+		CreatedAt      func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Task           func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	HostFactConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	HostFactEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -384,6 +406,7 @@ type ComplexityRoot struct {
 		OutputSize          func(childComplexity int) int
 		Quest               func(childComplexity int) int
 		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		ReportedFacts       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFactOrder, where *ent.HostFactWhereInput) int
 		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
 		Shells              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
@@ -754,6 +777,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Host.ExternalIP(childComplexity), true
 
+	case "Host.facts":
+		if e.complexity.Host.Facts == nil {
+			break
+		}
+
+		args, err := ec.field_Host_facts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Facts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFactOrder), args["where"].(*ent.HostFactWhereInput)), true
+
 	case "Host.files":
 		if e.complexity.Host.Files == nil {
 			break
@@ -971,6 +1006,90 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostEdge.Node(childComplexity), true
+
+	case "HostFact.createdAt":
+		if e.complexity.HostFact.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.HostFact.CreatedAt(childComplexity), true
+
+	case "HostFact.host":
+		if e.complexity.HostFact.Host == nil {
+			break
+		}
+
+		return e.complexity.HostFact.Host(childComplexity), true
+
+	case "HostFact.id":
+		if e.complexity.HostFact.ID == nil {
+			break
+		}
+
+		return e.complexity.HostFact.ID(childComplexity), true
+
+	case "HostFact.lastModifiedAt":
+		if e.complexity.HostFact.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.HostFact.LastModifiedAt(childComplexity), true
+
+	case "HostFact.name":
+		if e.complexity.HostFact.Name == nil {
+			break
+		}
+
+		return e.complexity.HostFact.Name(childComplexity), true
+
+	case "HostFact.task":
+		if e.complexity.HostFact.Task == nil {
+			break
+		}
+
+		return e.complexity.HostFact.Task(childComplexity), true
+
+	case "HostFact.value":
+		if e.complexity.HostFact.Value == nil {
+			break
+		}
+
+		return e.complexity.HostFact.Value(childComplexity), true
+
+	case "HostFactConnection.edges":
+		if e.complexity.HostFactConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.HostFactConnection.Edges(childComplexity), true
+
+	case "HostFactConnection.pageInfo":
+		if e.complexity.HostFactConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.HostFactConnection.PageInfo(childComplexity), true
+
+	case "HostFactConnection.totalCount":
+		if e.complexity.HostFactConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.HostFactConnection.TotalCount(childComplexity), true
+
+	case "HostFactEdge.cursor":
+		if e.complexity.HostFactEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.HostFactEdge.Cursor(childComplexity), true
+
+	case "HostFactEdge.node":
+		if e.complexity.HostFactEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.HostFactEdge.Node(childComplexity), true
 
 	case "HostFile.createdAt":
 		if e.complexity.HostFile.CreatedAt == nil {
@@ -2241,6 +2360,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.ReportedCredentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
 
+	case "Task.reportedFacts":
+		if e.complexity.Task.ReportedFacts == nil {
+			break
+		}
+
+		args, err := ec.field_Task_reportedFacts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedFacts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFactOrder), args["where"].(*ent.HostFactWhereInput)), true
+
 	case "Task.reportedFiles":
 		if e.complexity.Task.ReportedFiles == nil {
 			break
@@ -2584,6 +2715,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateHostCredentialInput,
+		ec.unmarshalInputCreateHostFactInput,
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
@@ -2591,6 +2723,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputHostCredentialOrder,
 		ec.unmarshalInputHostCredentialWhereInput,
+		ec.unmarshalInputHostFactOrder,
+		ec.unmarshalInputHostFactWhereInput,
 		ec.unmarshalInputHostFileOrder,
 		ec.unmarshalInputHostFileWhereInput,
 		ec.unmarshalInputHostOrder,
@@ -3323,6 +3457,22 @@ input CreateHostCredentialInput {
   taskID: ID
 }
 """
+CreateHostFactInput is used for create HostFact object.
+Input was generated by ent.
+"""
+input CreateHostFactInput {
+  """
+  Name of the fact.
+  """
+  name: String!
+  """
+  Value of the fact.
+  """
+  value: String!
+  hostID: ID!
+  taskID: ID
+}
+"""
 CreateLinkInput is used for create Link object.
 Input was generated by ent.
 """
@@ -3627,6 +3777,37 @@ type Host implements Node {
     """
     where: HostCredentialWhereInput
   ): HostCredentialConnection!
+  facts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFacts returned from the connection.
+    """
+    orderBy: [HostFactOrder!]
+
+    """
+    Filtering options for HostFacts returned from the connection.
+    """
+    where: HostFactWhereInput
+  ): HostFactConnection!
 }
 """
 A connection to a list of items.
@@ -3838,6 +4019,168 @@ type HostEdge {
   A cursor for use in pagination.
   """
   cursor: Cursor!
+}
+type HostFact implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Name of the fact.
+  """
+  name: String!
+  """
+  Value of the fact.
+  """
+  value: String!
+  """
+  Host the fact was reported on.
+  """
+  host: Host!
+  """
+  Task that reported this fact.
+  """
+  task: Task
+}
+"""
+A connection to a list of items.
+"""
+type HostFactConnection {
+  """
+  A list of edges.
+  """
+  edges: [HostFactEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type HostFactEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: HostFact
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for HostFact connections
+"""
+input HostFactOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order HostFacts.
+  """
+  field: HostFactOrderField!
+}
+"""
+Properties by which HostFact connections can be ordered.
+"""
+enum HostFactOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+}
+"""
+HostFactWhereInput is used for filtering HostFact objects.
+Input was generated by ent.
+"""
+input HostFactWhereInput {
+  not: HostFactWhereInput
+  and: [HostFactWhereInput!]
+  or: [HostFactWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  value field predicates
+  """
+  value: String
+  valueNEQ: String
+  valueIn: [String!]
+  valueNotIn: [String!]
+  valueGT: String
+  valueGTE: String
+  valueLT: String
+  valueLTE: String
+  valueContains: String
+  valueHasPrefix: String
+  valueHasSuffix: String
+  valueEqualFold: String
+  valueContainsFold: String
+  """
+  host edge predicates
+  """
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """
+  task edge predicates
+  """
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
 }
 type HostFile implements Node {
   id: ID!
@@ -4598,6 +4941,11 @@ input HostWhereInput {
   """
   hasCredentials: Boolean
   hasCredentialsWith: [HostCredentialWhereInput!]
+  """
+  facts edge predicates
+  """
+  hasFacts: Boolean
+  hasFactsWith: [HostFactWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -5931,6 +6279,37 @@ type Task implements Node {
     """
     where: HostCredentialWhereInput
   ): HostCredentialConnection!
+  reportedFacts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFacts returned from the connection.
+    """
+    orderBy: [HostFactOrder!]
+
+    """
+    Filtering options for HostFacts returned from the connection.
+    """
+    where: HostFactWhereInput
+  ): HostFactConnection!
   shells(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -6169,6 +6548,11 @@ input TaskWhereInput {
   """
   hasReportedCredentials: Boolean
   hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """
+  reported_facts edge predicates
+  """
+  hasReportedFacts: Boolean
+  hasReportedFactsWith: [HostFactWhereInput!]
   """
   shells edge predicates
   """
@@ -6599,6 +6983,9 @@ input UpdateHostInput {
   addCredentialIDs: [ID!]
   removeCredentialIDs: [ID!]
   clearCredentials: Boolean
+  addFactIDs: [ID!]
+  removeFactIDs: [ID!]
+  clearFacts: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.

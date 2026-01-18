@@ -86,6 +86,7 @@ mod grpc_frame {
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
+static REPORT_FACT_PATH: &str = "/c2.C2/ReportFact";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
@@ -464,6 +465,10 @@ impl Transport for HTTP {
         request: ReportCredentialRequest,
     ) -> Result<ReportCredentialResponse> {
         self.unary_rpc(request, REPORT_CREDENTIAL_PATH).await
+    }
+
+    async fn report_fact(&mut self, request: ReportFactRequest) -> Result<ReportFactResponse> {
+        self.unary_rpc(request, REPORT_FACT_PATH).await
     }
 
     async fn report_file(

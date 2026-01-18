@@ -234,6 +234,17 @@ pub struct ReportCredentialRequest {
 pub struct ReportCredentialResponse {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportFactRequest {
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "2")]
+    pub fact: ::core::option::Option<crate::eldritch::Fact>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReportFactResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportFileRequest {
     #[prost(message, optional, tag = "1")]
     pub context: ::core::option::Option<TaskContext>,
@@ -489,6 +500,30 @@ pub mod c2_client {
             let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportCredential");
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportCredential"));
+            self.inner.unary(req, path, codec).await
+        }
+        ///
+        /// Report a fact from the host to the server.
+        pub async fn report_fact(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReportFactRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ReportFactResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = crate::xchacha::ChachaCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportFact");
+            let mut req = request.into_request();
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportFact"));
             self.inner.unary(req, path, codec).await
         }
         ///
