@@ -14,7 +14,7 @@ const CredentialTab = () => {
     const searchPlaceholder = "Search by Principal";
 
     return (
-        <div className="flex flex-col gap-2 mt-4 px-6">
+        <div className="flex flex-col gap-2 my-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="col-span-1 md:col-span-2">
                     <FreeTextSearch placeholder={searchPlaceholder} setSearch={setSearch} />

@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Heading } from '@chakra-ui/react'
+import { Heading } from '@chakra-ui/react'
 import { safelyJsonParse } from '../../../utils/utils'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
-import { CodeBlock, tomorrow } from 'react-code-blocks'
 import { EmptyState, EmptyStateType } from '../../../components/tavern-base-ui/EmptyState'
 import FreeTextSearch from '../../../components/tavern-base-ui/FreeTextSearch'
-import { FieldInputParams } from '../../../utils/interfacesUI'
 import { TomeNode } from '../../../utils/interfacesQuery'
+import TomeAccordion from '../../../components/TomeAccordion'
 
 type TomeRadioGroupProps = {
     label: string;
@@ -48,82 +47,44 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
                             <RadioGroup.Option
                                 key={tome.name}
                                 value={tome}
-                                className={({ active, checked }) =>
-                                    `${active
+                                className={({ checked }) =>
+                                    `${checked
                                         ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-purple-800'
                                         : ''
                                     }
                                         bg-white relative flex cursor-pointer rounded-lg shadow-md focus:outline-none`
                                 }
                             >
-                                {({ active, checked }) => {
+                                {({ checked }) => {
                                     const isSavedInForm = selected?.id === tome?.id;
                                     const { params } = safelyJsonParse(tome?.paramDefs || "");
-                                    const handleAccordionClick = (expandedIndex: number, checked: boolean) => {
+                                    const handleAccordionClick = (expandedIndex: number) => {
                                         if (checked) {
                                             setIsExpanded(expandedIndex >= 0 ? true : false);
                                         }
                                     }
+
+                                    const selectionIndicator = (checked || isSavedInForm) ? (
+                                        <div className="shrink-0 text-purple-800">
+                                            <CheckCircleIcon className="w-6 h-6" />
+                                        </div>
+                                    ) : (
+                                        <span
+                                            aria-hidden="true"
+                                            className={`h-6 w-6 rounded-full border-2 border-black border-opacity-10 ${(checked || isSavedInForm) && 'bg-purple-800'}`}
+                                        />
+                                    );
+
                                     return (
-                                        <Accordion index={checked && isExpanded ? 0 : -1} allowToggle className='w-full' onChange={(expandedIndex: number) => handleAccordionClick(expandedIndex, checked)}>
-                                            <AccordionItem>
-                                                <h2>
-                                                    <AccordionButton>
-                                                        <div className='flex flex-row gap-4 w-full items-center'>
-                                                            {(checked || isSavedInForm) ? (
-                                                                <div className="shrink-0 text-purple-800">
-                                                                    <CheckCircleIcon className="w-6 h-6" />
-                                                                </div>
-                                                            ) : (
-                                                                <span
-                                                                    aria-hidden="true"
-                                                                    className={`h-6 w-6 rounded-full border-2 border-black border-opacity-10 ${(checked || isSavedInForm) && 'bg-purple-800'}`}
-                                                                />
-                                                            )}
-                                                            <Box as="div" flex='1' textAlign='left' className='flex flex-col w-full gap-1'>
-                                                                <RadioGroup.Label
-                                                                    as="div"
-                                                                    className={`flex flex-row gap-2 items-center`}
-                                                                >
-                                                                    <h4 className=' text-gray-900 font-semibold'>{tome.name}</h4>
-                                                                </RadioGroup.Label>
-                                                                <RadioGroup.Description
-                                                                    as="div"
-                                                                    className={`flex flex-col gap-1 w-full text-sm text-gray-600`}
-                                                                >
-                                                                    <p>{tome.description}</p>
-                                                                    {params &&
-                                                                        <div className="flex flex-row flex-wrap gap-1">
-                                                                            Parameters:
-                                                                            {params && params.map((element: FieldInputParams, index: number) => {
-                                                                                return <div key={`${index}_${element.name}`}>{element.label}{index < (params.length - 1) && ","}</div>
-                                                                            })}
-                                                                        </div>
-                                                                    }
-                                                                    {tome.tactic && tome.tactic !== "UNSPECIFIED" && <div>Tactic: <span className="lowercase">{tome?.tactic}</span></div>}
-                                                                </RadioGroup.Description>
-                                                            </Box>
-                                                            {checked &&
-                                                                <div className='text-sm  items-center'>
-                                                                    Details
-                                                                    <AccordionIcon />
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                    </AccordionButton>
-                                                </h2>
-                                                {tome.eldritch &&
-                                                    <AccordionPanel pb={4} pl={12}>
-                                                        <CodeBlock
-                                                            text={tome.eldritch}
-                                                            language={"python"}
-                                                            showLineNumbers={false}
-                                                            theme={tomorrow}
-                                                        />
-                                                    </AccordionPanel>
-                                                }
-                                            </AccordionItem>
-                                        </Accordion>
+                                        <TomeAccordion
+                                            tome={tome}
+                                            params={params || []}
+                                            showParamValues={false}
+                                            isExpanded={checked && isExpanded}
+                                            onToggle={handleAccordionClick}
+                                            leftContent={selectionIndicator}
+                                            showDetailsButton={checked}
+                                        />
                                     )
                                 }}
                             </RadioGroup.Option>
