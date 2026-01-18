@@ -92,7 +92,7 @@ const TomeAccordion = (props: Props) => {
                     </AccordionButton>
                 </h2>
                 {tome.eldritch && (
-                    <AccordionPanel pb={4}>
+                    <AccordionPanel pb={2} pl={10} pr={4}>
                         <CodeBlock code={tome.eldritch} language="python" />
                     </AccordionPanel>
                 )}
