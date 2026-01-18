@@ -58,7 +58,7 @@ A tome file structure should look like this:
 └── metadata.yml
 ```
 
-_If you have no files associated with your tome you can ommit the `files` dir_
+_If you have no files associated with your tome you can omit the `files` dir_
 
 - main.eldritch - Defines our actual Eldritch functionality and what will be executed on the agent.
 - metadata.yaml - Defines information that tavern will use to prepare your tome including prompting users for input.
@@ -93,7 +93,7 @@ def file_list(path):
     # make sure you proactively check the state of the system.
     # Users may pass bad data in or the system may be in an
     # unexpected state so always check if something is a dir
-    # before treatingi it like one.
+    # before treating it like one.
     if file.is_dir(path):
         files = file.list(path)
         for f in files:

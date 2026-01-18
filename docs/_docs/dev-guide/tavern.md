@@ -154,24 +154,26 @@ If you wish to develop an agent using a different transport method (e.g. DNS), y
 
 ## Transport Development
 
-The tavern transport recieves traffic from an agent over one of the defined protocols (GRPC, HTTP1, DNS) and translates / relays it to the upstream tavern server using grpc.
+The tavern transport receives traffic from an agent over one of the defined protocols (GRPC, HTTP1, DNS) and translates / relays it to the upstream tavern server using grpc.
 
-Add your redirector implementation to: `tavern/internal/redirectors/dns/dns.go`
+Add your redirector implementation to: `tavern/internal/redirectors/<transport>/<transport>.go`
 
-It should inculed the following:
+It should include the following:
 ```go
-package grpc
+package <transport>
 
 // Register the redirector in the global redirector map.
 func init() {
-	redirectors.Register("dns", &Redirect{})
+	redirectors.Register("<transport>", &Redirector{})
 }
 
-// Redirector is a gRPC redirector.
-type Redirect struct{}
+// Redirector handles your transport C2 communication
+type Redirector struct{
+    // Your state here
+}
 
 // Redirect implements the redirectors.Redirector interface.
-func (r *Redirect) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
+func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
     // Setup a connection to the upstream server using `upstream.NewStream()`
     // Use the `grpc.CallContentSubtype("raw")` option to create a grpc client that operates on raw bytes.
     // It's important that the grpc client use raw bytes since transports are unable to read the encrypted
