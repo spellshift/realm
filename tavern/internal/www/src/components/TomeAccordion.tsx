@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel } from "@chakra-ui/react";
-import { CodeBlock, tomorrow } from "react-code-blocks";
+import CodeBlock from "./tavern-base-ui/CodeBlock";
 import { TomeNode } from "../utils/interfacesQuery";
 import { FieldInputParams } from "../utils/interfacesUI";
 
@@ -93,12 +93,7 @@ const TomeAccordion = (props: Props) => {
                 </h2>
                 {tome.eldritch && (
                     <AccordionPanel pb={4}>
-                        <CodeBlock
-                            text={tome.eldritch}
-                            language="python"
-                            showLineNumbers={false}
-                            theme={tomorrow}
-                        />
+                        <CodeBlock code={tome.eldritch} language="python" />
                     </AccordionPanel>
                 )}
             </AccordionItem>
