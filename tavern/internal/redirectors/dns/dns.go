@@ -268,6 +268,19 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		return
 	}
 
+	// Validate packet type is within valid range (protobuf can unmarshal garbage data)
+	if packet.Type < dnspb.PacketType_PACKET_TYPE_INIT || packet.Type > dnspb.PacketType_PACKET_TYPE_COMPLETE {
+		slog.Debug("ignoring packet with invalid type", "type", packet.Type, "domain", domain)
+
+		if queryType == aRecordType {
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
+			return
+		}
+
+		r.sendErrorResponse(conn, addr, transactionID)
+		return
+	}
+
 	slog.Debug("parsed packet", "type", packet.Type, "seq", packet.Sequence, "conv_id", packet.ConversationId)
 
 	// Handle packet based on type
