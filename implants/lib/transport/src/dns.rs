@@ -689,6 +689,32 @@ impl DNS {
         Ok(())
     }
 
+    /// Send COMPLETE packet to server to confirm successful receipt and cleanup conversation
+    async fn send_complete_packet(&mut self, conv_id: &str) -> Result<()> {
+        #[cfg(debug_assertions)]
+        log::debug!("DNS: Sending COMPLETE packet for conv_id={}", conv_id);
+
+        let complete_packet = DnsPacket {
+            r#type: PacketType::Complete as i32,
+            sequence: 0,
+            conversation_id: conv_id.to_string(),
+            data: vec![],
+            crc32: 0,
+            window_size: 0,
+            acks: vec![],
+            nacks: vec![],
+        };
+
+        self.send_packet(complete_packet)
+            .await
+            .context("failed to send COMPLETE packet")?;
+
+        #[cfg(debug_assertions)]
+        log::debug!("DNS: COMPLETE packet sent for conv_id={}", conv_id);
+
+        Ok(())
+    }
+
     /// Fetch response from server, handling potentially chunked responses
     async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
         #[cfg(debug_assertions)]
@@ -732,6 +758,9 @@ impl DNS {
                     .await;
             }
         }
+
+        // Response successfully received, send COMPLETE packet
+        self.send_complete_packet(conv_id).await?;
 
         Ok(end_response)
     }
@@ -777,6 +806,9 @@ impl DNS {
                 actual_crc
             ));
         }
+
+        // Response successfully received and verified, send COMPLETE packet
+        self.send_complete_packet(conv_id).await?;
 
         Ok(full_response)
     }

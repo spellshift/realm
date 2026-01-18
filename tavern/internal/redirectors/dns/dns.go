@@ -50,7 +50,7 @@ const (
 	benignARecordIP = "0.0.0.0"
 
 	// Async protocol configuration
-	MaxActiveConversations     = 10000
+	MaxActiveConversations     = 200000
 	NormalConversationTimeout  = 15 * time.Minute
 	ReducedConversationTimeout = 5 * time.Minute
 	CapacityRecoveryThreshold  = 0.5 // 50%
@@ -279,6 +279,8 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		responseData, err = r.handleDataPacket(ctx, upstream, packet, queryType)
 	case dnspb.PacketType_PACKET_TYPE_FETCH:
 		responseData, err = r.handleFetchPacket(packet)
+	case dnspb.PacketType_PACKET_TYPE_COMPLETE:
+		responseData, err = r.handleCompletePacket(packet)
 	default:
 		err = fmt.Errorf("unknown packet type: %d", packet.Type)
 	}
@@ -643,6 +645,37 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 	slog.Debug("returning response", "conv_id", conv.ID, "size", len(conv.ResponseData))
 
 	return conv.ResponseData, nil
+}
+
+// handleCompletePacket processes COMPLETE packet and cleans up conversation
+func (r *Redirector) handleCompletePacket(packet *dnspb.DNSPacket) ([]byte, error) {
+	val, ok := r.conversations.Load(packet.ConversationId)
+	if !ok {
+		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
+	}
+
+	conv := val.(*Conversation)
+	conv.mu.Lock()
+	defer conv.mu.Unlock()
+
+	slog.Debug("C2 conversation completed and confirmed by client", "conv_id", conv.ID, "method", conv.MethodPath)
+
+	// Delete conversation and decrement counter
+	r.conversations.Delete(packet.ConversationId)
+	atomic.AddInt32(&r.conversationCount, -1)
+
+	// Return empty success status
+	statusPacket := &dnspb.DNSPacket{
+		Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
+		ConversationId: packet.ConversationId,
+		Acks:           []*dnspb.AckRange{},
+		Nacks:          []uint32{},
+	}
+	statusData, err := proto.Marshal(statusPacket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal complete status: %w", err)
+	}
+	return statusData, nil
 }
 
 // forwardToUpstream sends request to gRPC server and returns response
