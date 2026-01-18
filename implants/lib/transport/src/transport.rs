@@ -30,28 +30,6 @@ pub fn extract_uri_from_config(config: &Config) -> Result<String> {
     }
 }
 
-/// Helper function to extract the full URI from config (with query parameters).
-/// Used by DNS transport which needs the query parameters.
-/// TODO: Remove this DNS should pass config through extra field
-pub fn extract_full_uri_from_config(config: &Config) -> Result<String> {
-    if let Some(info) = &config.info {
-        if let Some(available_transports) = &info.available_transports {
-            let active_idx = available_transports.active_index as usize;
-            let transport = available_transports
-                .transports
-                .get(active_idx)
-                .or_else(|| available_transports.transports.first())
-                .ok_or_else(|| anyhow::anyhow!("No transports configured"))?;
-
-            Ok(transport.uri.clone())
-        } else {
-            Err(anyhow::anyhow!("No available_transports in config"))
-        }
-    } else {
-        Err(anyhow::anyhow!("No beacon info in config"))
-    }
-}
-
 /// Helper function to extract the extra configuration as a HashMap from config.
 /// Returns an empty HashMap if parsing fails or no extra is configured.
 pub fn extract_extra_from_config(config: &Config) -> HashMap<String, String> {
