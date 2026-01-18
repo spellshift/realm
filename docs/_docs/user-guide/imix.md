@@ -135,7 +135,7 @@ transports:
     type: <grpc|http1|dns>
     interval: <integer> # optional, seconds
     extra: <json_string> # required (use "" if none)
-server_pubkey: <string> # optional - defaults to checking the first transtport URI status page.
+server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
 ```
 
 ### Example: Multiple Transports
@@ -198,9 +198,9 @@ This transport dosent support eldritch functions that require bi-directional str
 
 The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
 
-This transport dosent' support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+This transport dosen't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
-*Note*: the uri parameter here is the dns server to communicate with. If `dns://*` is specififed the transport will attempt to use the local systems default resolver. Custom ports can be specified with `dns://8.8.8.8:53`
+*Note*: the uri parameter here is the dns server to communicate with. If `dns://*` is specififed the transport will attempt to use the local systems primary resolver. Custom ports can be specified with `dns://8.8.8.8:53`
 
 **Extra Keys Supported:**
 - `domain` - Base domain for DNS queries (e.g., `c2.example.com`)
