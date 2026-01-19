@@ -102,7 +102,6 @@ describe('FilterControls', () => {
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
-      expect(screen.queryByTestId('tome-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Quest name')).not.toBeInTheDocument();
     });
 

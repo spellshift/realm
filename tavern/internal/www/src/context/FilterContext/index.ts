@@ -3,5 +3,4 @@ export { FilterProvider, useFilters, FilterFieldType, calculateFilterCount, calc
 export type { Filters } from './FilterContext'
 
 // Re-export everything from FilterControls
-export type { FilterPageType } from './FilterControls'
 export { default as FilterControls } from './FilterControls'

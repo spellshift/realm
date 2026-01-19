@@ -8,36 +8,31 @@ import { LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { TomeFilterBar } from "../../components/TomeFilterBar";
 import { Tooltip } from "@chakra-ui/react";
 import { useLocation } from "react-router-dom";
-import { PageNavItem } from "../../utils/enums";
-import { getNavItemFromPath, isHostDetailPath } from "../../utils/utils";
 
-export type FilterPageType = PageNavItem.quests | PageNavItem.tasks | PageNavItem.hosts | 'HOST_TASK';
+function getFilterFields(pathname: string): FilterFieldType[] | null {
+    if (pathname.startsWith('/hosts/')) {
+        return [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
+    }
+    if (pathname === '/hosts') {
+        return [FilterFieldType.BEACON_FIELDS];
+    }
+    if (pathname === '/quests' || pathname.startsWith('/quests/')) {
+        return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
+    }
+    if (pathname === '/tasks' || pathname.startsWith('/tasks/')) {
+        return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
+    }
 
-const filterablePages = new Set<PageNavItem>([PageNavItem.quests, PageNavItem.tasks, PageNavItem.hosts]);
-
-function getFilterPageType(pathname: string): FilterPageType | null {
-    // Host detail pages show task filters
-    if (isHostDetailPath(pathname)) return 'HOST_TASK';
-
-    const navItem = getNavItemFromPath(pathname);
-    return filterablePages.has(navItem) ? navItem as FilterPageType : null;
+    return null;
 }
-
-const filterConfig: Record<FilterPageType, FilterFieldType[]> = {
-    [PageNavItem.quests]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
-    [PageNavItem.tasks]: [FilterFieldType.BEACON_FIELDS, FilterFieldType.TASK_OUTPUT],
-    'HOST_TASK': [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT],
-    [PageNavItem.hosts]: [FilterFieldType.BEACON_FIELDS],
-};
 
 export default function FilterControls() {
     const { pathname } = useLocation();
-    const type = getFilterPageType(pathname);
+    const fieldsToRender = getFilterFields(pathname);
+
     const { filters, updateFilters } = useFilters();
 
-    if (!type) return null;
-
-    const fieldsToRender = filterConfig[type];
+    if (!fieldsToRender) return null;
 
     const getLabel = (): string => {
         const count = calculateTotalFilterCount(filters, fieldsToRender);
