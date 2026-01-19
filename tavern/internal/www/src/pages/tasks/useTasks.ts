@@ -9,64 +9,64 @@ import { useSorts } from "../../context/SortContext";
 import { useTags } from "../../context/TagContext";
 
 export const useTasks = (id?: string) => {
-    const [page, setPage] = useState<number>(1);
-    const {filters} = useFilters();
-    const { sorts } = useSorts();
-    const {lastFetchedTimestamp} = useTags();
-    const taskSort = sorts[PageNavItem.tasks];
+  const [page, setPage] = useState<number>(1);
+  const { filters } = useFilters();
+  const { sorts } = useSorts();
+  const { lastFetchedTimestamp } = useTags();
+  const taskSort = sorts[PageNavItem.tasks];
 
-    const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-      const defaultRowLimit = TableRowLimit.TaskRowLimit;
-      const filterQueryFields = (filters && filters.filtersEnabled) && constructTaskFilterQuery(filters, lastFetchedTimestamp);
+  const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
+    const defaultRowLimit = TableRowLimit.TaskRowLimit;
+    const filterQueryFields = constructTaskFilterQuery(filters, lastFetchedTimestamp);
 
-      const query = {
-        "where": {
-          ...filterQueryFields && filterQueryFields.hasTasksWith,
-          "hasQuestWith": {"id": id},
-        },
-        "first": beforeCursor ? null : defaultRowLimit,
-        "last": beforeCursor ? defaultRowLimit : null,
-        "after": afterCursor ? afterCursor : null,
-        "before": beforeCursor ? beforeCursor : null,
-        ...(taskSort && {orderBy: [taskSort]})
-      } as any;
+    const query = {
+      "where": {
+        ...filterQueryFields && filterQueryFields.hasTasksWith,
+        "hasQuestWith": { "id": id },
+      },
+      "first": beforeCursor ? null : defaultRowLimit,
+      "last": beforeCursor ? defaultRowLimit : null,
+      "after": afterCursor ? afterCursor : null,
+      "before": beforeCursor ? beforeCursor : null,
+      ...(taskSort && { orderBy: [taskSort] })
+    } as any;
 
-      return query;
-    },[id, filters, taskSort, lastFetchedTimestamp]);
+    return query;
+  }, [id, filters, taskSort, lastFetchedTimestamp]);
 
 
-    const { loading, error, data, refetch} = useQuery(
-        GET_TASK_QUERY,
-        {
-            variables: constructDefaultQuery(),
-            notifyOnNetworkStatusChange: true,
-        }
-    );
-
-    const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-        const query = constructDefaultQuery(afterCursor, beforeCursor);
-        return refetch(query);
-    },[constructDefaultQuery, refetch]);
-
-    useEffect(()=> {
-        const abortController = new AbortController();
-        updateTaskList();
-
-        return () => {
-            abortController.abort();
-        };
-    },[updateTaskList]);
-
-    useEffect(()=>{
-      setPage(1);
-    },[filters, taskSort])
-
-    return {
-        data,
-        loading,
-        error,
-        page,
-        setPage,
-        updateTaskList
+  const { loading, error, data, refetch } = useQuery(
+    GET_TASK_QUERY,
+    {
+      variables: constructDefaultQuery(),
+      notifyOnNetworkStatusChange: true,
     }
+  );
+
+  const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
+    const query = constructDefaultQuery(afterCursor, beforeCursor);
+    return refetch(query);
+  }, [constructDefaultQuery, refetch]);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    updateTaskList();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [updateTaskList]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters, taskSort])
+
+  return {
+    data,
+    loading,
+    error,
+    page,
+    setPage,
+    updateTaskList
+  }
 };

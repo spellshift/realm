@@ -1,18 +1,15 @@
 import React from "react";
-import { PageWrapper } from "../../components/page-wrapper";
-import { PageNavItem, TableRowLimit } from "../../utils/enums";
+import { TableRowLimit } from "../../utils/enums";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useHosts } from "./useHosts";
-import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
 import HostTable from "./HostTable";
 import { TablePagination, TableWrapper } from "../../components/tavern-base-ui/table";
-import { SortingControls } from "../../context/SortContext/index";
 
 const HostList: React.FC = () => {
     const { loading, error, data, updateHosts, page, setPage } = useHosts(true);
 
     return (
-        <PageWrapper currNavItem={PageNavItem.hosts}>
+        <>
             <Breadcrumbs
                 pages={[{
                     label: "Hosts",
@@ -24,8 +21,6 @@ const HostList: React.FC = () => {
                 totalItems={data?.hosts?.totalCount}
                 loading={loading}
                 error={error}
-                filterControls={<FilterControls type={FilterPageType.HOST} />}
-                sortingControls={<SortingControls type={PageNavItem.hosts} />}
                 table={<HostTable data={data?.hosts?.edges || []} />}
                 pagination={
                     <TablePagination
@@ -38,7 +33,7 @@ const HostList: React.FC = () => {
                     />
                 }
             />
-        </PageWrapper>
+        </>
     );
 };
 

@@ -1,4 +1,3 @@
-import { PageWrapper } from "../../components/page-wrapper";
 import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
@@ -126,7 +125,7 @@ const Shell = () => {
 
     //TODO: Expand to fetch active users for this page
     return (
-        <PageWrapper>
+        <>
             <Breadcrumbs pages={[{
                 label: "Shell",
                 link: "/shell"
@@ -156,7 +155,7 @@ const Shell = () => {
                     <div id="terminal" className="w-full bg-gray-500 h-96" ref={renderTerminal} /> :
                     <EmptyState label="Connecting..." type={EmptyStateType.loading} />
             }
-        </PageWrapper >
+        </>
     );
 }
 export default Shell;

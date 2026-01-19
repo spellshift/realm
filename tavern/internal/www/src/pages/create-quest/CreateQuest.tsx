@@ -1,5 +1,3 @@
-import { PageWrapper } from "../../components/page-wrapper";
-import { PageNavItem } from "../../utils/enums";
 import { useTags } from "../../context/TagContext";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import QuestForm from "./components/QuestForm";
@@ -14,7 +12,7 @@ export const CreateQuest = () => {
     const hasBeacons = data.beacons && data.beacons.length > 0;
 
     return (
-        <PageWrapper currNavItem={PageNavItem.createQuest}>
+        <>
             <Breadcrumbs pages={[{
                 label: "Create new quest",
                 link: "/createQuest"
@@ -29,6 +27,6 @@ export const CreateQuest = () => {
             ) : (
                 <EmptyStateNoBeacon />
             )}
-        </PageWrapper>
+        </>
     );
 }

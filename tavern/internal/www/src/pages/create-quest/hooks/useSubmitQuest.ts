@@ -3,13 +3,11 @@ import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GET_QUEST_QUERY } from "../../../utils/queries";
-import { useFilters } from "../../../context/FilterContext";
 import { QuestFormValues } from "../types";
 
 export type CreateQuestProps = QuestFormValues;
 
 export const useSubmitQuest = () => {
-    const { updateFilters } = useFilters();
     const [error, setError] = useState(false);
     const navigate = useNavigate();
 
@@ -22,19 +20,20 @@ export const useSubmitQuest = () => {
     `;
 
     const handleError = (error: NetworkError | GraphQLErrors) => {
-        if(error){
+        if (error) {
             setError(true);
         }
     }
 
     const handleOnCompleted = (result: { createQuest: { id: string } }) => {
-        updateFilters({'filtersEnabled': false});
         navigate(`/tasks/${result.createQuest.id}`);
     }
 
-    const [createQuestMutation, {loading, reset}] = useMutation(CREATE_QUEST_MUTATION, {onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-        GET_QUEST_QUERY
-      ]});
+    const [createQuestMutation, { loading, reset }] = useMutation(CREATE_QUEST_MUTATION, {
+        onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
+            GET_QUEST_QUERY
+        ]
+    });
 
     const submitQuest = (props: CreateQuestProps) => {
         const param_obj = props.params.reduce((acc, param) => {
