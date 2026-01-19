@@ -7,16 +7,17 @@ option go_package = "realm.pub/tavern/internal/c2/dnspb";
 // PacketType defines the type of DNS packet in the conversation
 enum PacketType {
     PACKET_TYPE_UNSPECIFIED = 0;
-    PACKET_TYPE_INIT = 1;   // Establish conversation
-    PACKET_TYPE_DATA = 2;   // Send data chunk
-    PACKET_TYPE_FETCH = 3;  // Retrieve response chunk
-    PACKET_TYPE_STATUS = 4; // Server status response with ACKs/NACKs
+    PACKET_TYPE_INIT = 1;     // Establish conversation
+    PACKET_TYPE_DATA = 2;     // Send data chunk
+    PACKET_TYPE_FETCH = 3;    // Retrieve response chunk
+    PACKET_TYPE_STATUS = 4;   // Server status response with ACKs/NACKs
+    PACKET_TYPE_COMPLETE = 5; // Client confirms response received and verified
 }
 
 // DNSPacket is the main message format for DNS C2 communication
-// It is serialized to protobuf, then encoded (Base64/Base58/Base32), and sent as DNS subdomain
+// It is serialized to protobuf, then encoded Base32, and sent as DNS subdomain
 message DNSPacket {
-    PacketType type = 1;           // Packet type
+    PacketType type = 1;            // Packet type
     uint32 sequence = 2;            // Chunk sequence number (0-Based for INIT, 1-based for DATA)
     string conversation_id = 3;     // 8-character random conversation ID
     bytes data = 4;                 // Chunk payload (or InitPayload for INIT packets)
