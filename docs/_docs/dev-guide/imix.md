@@ -18,7 +18,7 @@ In order to keep these configuration options in sync realm uses protobuf and cod
 
 If you need to update these fields start with the `tavern/internal/c2/proto/c2.proto` file.
 
-Once you've finished making your changes apply these changes across the project using `cd /workspaces/realm/ && go generater ./tavern/...`
+Once you've finished making your changes apply these changes across the project using `cd /workspaces/realm/ && go generate ./tavern/...`
 
 To generate the associated agent proto's use cargo build in the `implants` direcotry. This will copy the necesarry protos from tavern and preform the code generation.
 
@@ -137,7 +137,7 @@ The DNS transport uses an async windowed protocol to handle UDP unreliability:
 
 **Limits:**
 - Maximum data size: 50MB per request
-- Maximum concurrent conversations on server: 10,000
+- Maximum concurrent conversations on server: 200,000
 
 
 ## Develop a New Transport
@@ -274,7 +274,7 @@ default = []
 grpc = []
 grpc-doh = ["grpc", "dep:hickory-resolver"]
 http1 = []
-dns = ["dep:data-encoding", "dep:rand"]
+dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 custom = ["dep:your-custom-dependency"] # <-- Add your feature here
 mock = ["dep:mockall"]
 
