@@ -327,6 +327,8 @@ impl Parser {
             TokenKind::SlashSlashAssign,
             TokenKind::PercentAssign,
         ]) {
+            self.validate_assignment_target(&expr)?;
+
             // Augmented assignment does not support tuple unpacking
             if let ExprKind::Tuple(_) = expr.kind {
                 return self.error("Augmented assignment does not support tuple unpacking");
