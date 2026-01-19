@@ -79,7 +79,7 @@ type FilterContextType = {
     resetFilters: () => void
 }
 
-const FilterContext = createContext<FilterContextType | undefined>(undefined)
+export const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
 

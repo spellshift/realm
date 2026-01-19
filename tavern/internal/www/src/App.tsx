@@ -14,7 +14,7 @@ import Tasks from "./pages/tasks/Tasks";
 import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
-import Quests from "./pages/quest-list/Quests";
+import JulesQuests from "./pages/quest-list/JulesQuests";
 import Shell from "./pages/shell/Shell";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { FilterProvider } from "./context/FilterContext";
@@ -43,7 +43,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/quests",
-    element: <Quests />,
+    element: <JulesQuests />,
   },
   {
     path: "/tasks/:questId",
