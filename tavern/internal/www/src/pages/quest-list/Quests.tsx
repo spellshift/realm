@@ -1,11 +1,8 @@
-import { PageWrapper } from "../../components/page-wrapper";
 import { TablePagination, TableWrapper } from "../../components/tavern-base-ui/table";
-import { PageNavItem, TableRowLimit } from "../../utils/enums";
+import { TableRowLimit } from "../../utils/enums";
 import QuestHeader from "./components/QuestHeader";
 import { QuestTable } from "./components/QuestTable";
 import { useQuests } from "./useQuests";
-import { FilterControls, FilterPageType } from "../../context/FilterContext/index";
-import { SortingControls } from "../../context/SortContext/index";
 
 const Quests = () => {
     const {
@@ -18,15 +15,13 @@ const Quests = () => {
     } = useQuests(true);
 
     return (
-        <PageWrapper currNavItem={PageNavItem.quests}>
+        <>
             <QuestHeader />
             <TableWrapper
                 title="Quests"
                 totalItems={data?.quests?.totalCount}
                 loading={loading}
                 error={error}
-                filterControls={<FilterControls type={FilterPageType.QUEST} />}
-                sortingControls={<SortingControls type={PageNavItem.quests} />}
                 table={<QuestTable quests={data?.quests?.edges || []} />}
                 pagination={
                     <TablePagination
@@ -39,7 +34,7 @@ const Quests = () => {
                     />
                 }
             />
-        </PageWrapper>
+        </>
     );
 }
 export default Quests;

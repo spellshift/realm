@@ -1,7 +1,5 @@
 import EmptyStateNoQuests from "../../components/empty-states/EmptyStateNoQuests";
-import { PageWrapper } from "../../components/page-wrapper"
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
-import { PageNavItem } from "../../utils/enums";
 import QuestCard from "./components/QuestCard";
 import AccessCard from "./components/AccessCard";
 import Breadcrumbs from "../../components/Breadcrumbs";
@@ -43,13 +41,13 @@ export const Dashboard = () => {
     }
 
     return (
-        <PageWrapper currNavItem={PageNavItem.dashboard}>
+        <>
             <Breadcrumbs pages={[{
                 label: "Dashboard",
                 link: "/dashboard"
             }]} />
             <PageHeader title="Dashboard" />
             {getOverviewWrapper()}
-        </PageWrapper>
+        </>
     );
 }

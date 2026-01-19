@@ -17,57 +17,62 @@ import { Dashboard } from "./pages/dashboard";
 import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
-import { FilterProvider } from "./context/FilterContext";
 import { Tomes } from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
-import { SortsProvider } from "./context/SortContext";
+import { PageWrapper } from "./components/page-wrapper";
 
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Dashboard />,
-  },
-  {
-    path: "/dashboard",
-    element: <Dashboard />,
-  },
-  {
-    path: "/hosts",
-    element: <HostList />,
-  },
-  {
-    path: "/hosts/:hostId",
-    element: <HostDetails />,
-  },
-  {
-    path: "/quests",
-    element: <Quests />,
-  },
-  {
-    path: "/tasks/:questId",
-    element: <Tasks />,
-  },
-  {
-    path: "/createQuest",
-    element: <CreateQuest />,
-  },
-  {
-    path: "/tasks",
-    element: <Tasks />,
-  },
-  {
-    path: "/tomes",
-    element: <Tomes />,
-  },
-  {
-    path: "/shells/:shellId",
-    element: <Shell />,
-  },
-  {
-    path: "/admin",
-    element: <AdminPortal />,
+    element: <PageWrapper />,
+    children: [
+      {
+        index: true,
+        element: <Dashboard />,
+      },
+      {
+        path: "dashboard",
+        element: <Dashboard />,
+      },
+      {
+        path: "hosts",
+        element: <HostList />,
+      },
+      {
+        path: "hosts/:hostId",
+        element: <HostDetails />,
+      },
+      {
+        path: "quests",
+        element: <Quests />,
+      },
+      {
+        path: "tasks/:questId",
+        element: <Tasks />,
+      },
+      {
+        path: "createQuest",
+        element: <CreateQuest />,
+      },
+      {
+        path: "tasks",
+        element: <Tasks />,
+      },
+      {
+        path: "tomes",
+        element: <Tomes />,
+      },
+      {
+        path: "shells/:shellId",
+        element: <Shell />,
+      },
+      {
+        path: "admin",
+        element: <AdminPortal />,
+      },
+    ]
   },
 ]);
 
@@ -79,11 +84,7 @@ export const App = () => {
         <PollingProvider>
           <TagContextProvider>
             <UserPreferencesContextProvider>
-              <FilterProvider>
-                <SortsProvider>
-                  <RouterProvider router={router} />
-                </SortsProvider>
-              </FilterProvider>
+              <RouterProvider router={router} />
             </UserPreferencesContextProvider>
           </TagContextProvider>
         </PollingProvider>

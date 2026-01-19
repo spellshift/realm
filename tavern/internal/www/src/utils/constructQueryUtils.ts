@@ -133,8 +133,10 @@ export function constructTaskFilterQuery(
   filter: Filters,
   currentTimestamp?: Date
 ) {
+  const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
+  const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
   const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
-  if (!filter.taskOutput && !beaconFilterQuery) {
+  if (!filter.taskOutput && !beaconFilterQuery && !tomeFieldsFilterQuery && !questParamFilterQuery) {
     return null;
   }
 
@@ -142,6 +144,13 @@ export function constructTaskFilterQuery(
     "hasTasksWith": {
       ...(filter.taskOutput && { "outputContains": filter.taskOutput }),
       ...(beaconFilterQuery && beaconFilterQuery),
+      ...((tomeFieldsFilterQuery || questParamFilterQuery) && {
+        "hasQuestWith": {
+          ...tomeFieldsFilterQuery && tomeFieldsFilterQuery,
+          ...questParamFilterQuery && questParamFilterQuery
+        }
+      })
+
     }
   };
 
