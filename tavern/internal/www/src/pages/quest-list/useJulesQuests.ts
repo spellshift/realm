@@ -55,7 +55,7 @@ export const useJulesQuests = () => {
       GET_QUEST_QUERY,
       {
         variables: queryVariables,
-        pollInterval: 1000, // Aggressive polling <1s
+        pollInterval: 1000,
         notifyOnNetworkStatusChange: true,
       }
     );
