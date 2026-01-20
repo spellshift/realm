@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/user"
@@ -79,7 +79,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		}
 
 		// Verify JWT in provided OAuth cookie
-		var claims jwt.StandardClaims
+		var claims jwt.RegisteredClaims
 		stateToken, err := jwt.ParseWithClaims(oauthCookie.Value, &claims, func(stateToken *jwt.Token) (interface{}, error) {
 			// Ensure ed25519 was used
 			if _, ok := stateToken.Method.(*jwt.SigningMethodEd25519); !ok {
@@ -94,7 +94,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		}
 
 		// Ensure presented OAuth state matches expected (stored in JWT)
-		if presentedState != claims.Id {
+		if presentedState != claims.ID {
 			http.Error(w, ErrOAuthInvalidState.Error(), http.StatusUnauthorized)
 			return
 		}
@@ -187,10 +187,10 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 
 func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie {
 	expiresAt := time.Now().Add(10 * time.Minute)
-	claims := jwt.StandardClaims{
-		Id:        state,
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: expiresAt.Unix(),
+	claims := jwt.RegisteredClaims{
+		ID:        state,
+		IssuedAt: jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
 	}
 	token := jwt.NewWithClaims(&jwt.SigningMethodEd25519{}, claims)
 	tokenStr, err := token.SignedString(privKey)
