@@ -24,7 +24,7 @@ type Link struct {
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Unique path for accessing the asset via the CDN
 	Path string `json:"path,omitempty"`
-	// Timestamp before which the link is active. Default is epoch 0
+	// Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// Number of times this link can be clicked before it becomes inactive
 	DownloadsRemaining int `json:"downloads_remaining,omitempty"`

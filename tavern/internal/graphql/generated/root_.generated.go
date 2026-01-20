@@ -3332,7 +3332,7 @@ input CreateLinkInput {
   """
   path: String
   """
-  Timestamp before which the link is active. Default is epoch 0
+  Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)
   """
   expiresAt: Time
   """
@@ -4614,7 +4614,7 @@ type Link implements Node {
   """
   path: String!
   """
-  Timestamp before which the link is active. Default is epoch 0
+  Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)
   """
   expiresAt: Time!
   """
@@ -6614,7 +6614,7 @@ input UpdateLinkInput {
   """
   path: String
   """
-  Timestamp before which the link is active. Default is epoch 0
+  Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)
   """
   expiresAt: Time
   """

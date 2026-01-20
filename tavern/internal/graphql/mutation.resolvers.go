@@ -270,7 +270,7 @@ func (r *mutationResolver) UpdateLink(ctx context.Context, linkID int, input ent
 // DisableLink is the resolver for the disableLink field.
 func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Link, error) {
 	return r.client.Link.UpdateOneID(linkID).
-		SetExpiresAt(time.Unix(0, 0)).
+		SetExpiresAt(time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC)).
 		SetDownloadsRemaining(0).
 		Save(ctx)
 }

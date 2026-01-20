@@ -39,11 +39,11 @@ func (Link) Fields() []ent.Field {
 			).
 			Comment("Unique path for accessing the asset via the CDN"),
 		field.Time("expires_at").
-			Default(time.Unix(0, 0)).
+			Default(time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC)).
 			Annotations(
 				entgql.OrderField("EXPIRES_AT"),
 			).
-			Comment("Timestamp before which the link is active. Default is epoch 0"),
+			Comment("Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)"),
 		field.Int("downloads_remaining").
 			Default(0).
 			Min(0).

@@ -1,0 +1,28 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `assets` (id, name, content, hash, size, created_at, last_modified_at)
+    VALUES (1001, "TestAsset", "test content", "abcdefg123", 12, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateLink($input: CreateLinkInput!) {
+    createLink(input: $input) {
+      id
+      downloadsRemaining
+      asset {
+        id
+      }
+    }
+  }
+variables:
+  input:
+    assetID: 1001
+    downloadsRemaining: 1
+expected:
+  createLink:
+    id: "1"
+    downloadsRemaining: 1
+    asset:
+      id: "1001"
