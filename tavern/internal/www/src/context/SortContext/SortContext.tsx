@@ -4,11 +4,9 @@ import { OrderByField } from '../../utils/interfacesQuery'
 
 const STORAGE_KEY = 'realm-sorting-v1.0'
 
-export type Sorts = {
-    [PageNavItem.hosts]: OrderByField,
-    [PageNavItem.quests]: OrderByField,
-    [PageNavItem.tasks]: OrderByField
-}
+type SortablePageNavItem = PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks;
+
+export type Sorts = Record<SortablePageNavItem, OrderByField>
 
 const defaultSorts: Sorts = {
     [PageNavItem.hosts]: {
@@ -42,14 +40,10 @@ function validateStoredSorts(data: any): Sorts {
         return defaultSorts
     }
 
-    const schema: Record<keyof Sorts, (value: any) => boolean> = {
-        [PageNavItem.hosts]: isValidOrderByField,
-        [PageNavItem.quests]: isValidOrderByField,
-        [PageNavItem.tasks]: isValidOrderByField,
-    }
+    const requiredKeys = [PageNavItem.hosts, PageNavItem.quests, PageNavItem.tasks]
 
-    for (const [key, validator] of Object.entries(schema)) {
-        if (!(key in data) || !validator(data[key])) {
+    for (const key of requiredKeys) {
+        if (!(key in data) || !isValidOrderByField(data[key])) {
             return defaultSorts
         }
     }
@@ -107,7 +101,11 @@ export function SortsProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const handleStorage = (event: StorageEvent) => {
             if (event.key === STORAGE_KEY && event.newValue) {
-                setSorts(JSON.parse(event.newValue))
+                try {
+                    setSorts(validateStoredSorts(JSON.parse(event.newValue)))
+                } catch {
+                    setSorts(defaultSorts)
+                }
             }
         }
         window.addEventListener('storage', handleStorage)

@@ -5,6 +5,8 @@ import '@testing-library/jest-dom/vitest';
 import SortingControls from '../SortingControls';
 import { SortsProvider, useSorts } from '../SortContext';
 import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../../utils/enums';
+import { MemoryRouter } from 'react-router-dom';
+import React from 'react';
 
 // Mock heroicons
 vi.mock('@heroicons/react/24/outline', () => ({
@@ -53,12 +55,14 @@ function SortsDisplay() {
   return <div data-testid="sorts-display">{JSON.stringify(sorts)}</div>;
 }
 
-function TestWrapper({ type, includeDisplay = false }: { type: PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks; includeDisplay?: boolean }) {
+function TestWrapper({ path, includeDisplay = false }: { path: string; includeDisplay?: boolean }) {
   return (
-    <SortsProvider>
-      <SortingControls type={type} />
-      {includeDisplay && <SortsDisplay />}
-    </SortsProvider>
+    <MemoryRouter initialEntries={[path]}>
+      <SortsProvider>
+        <SortingControls />
+        {includeDisplay && <SortsDisplay />}
+      </SortsProvider>
+    </MemoryRouter>
   );
 }
 
@@ -70,30 +74,43 @@ describe('SortingControls', () => {
 
   describe('Rendering for different page types', () => {
     it('should render with default host sort settings', () => {
-      render(<TestWrapper type={PageNavItem.hosts} />);
+      render(<TestWrapper path="/hosts" />);
 
       expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Created At)');
       expect(screen.getByTestId('icon-down')).toBeInTheDocument();
     });
 
     it('should render with default quest sort settings', () => {
-      render(<TestWrapper type={PageNavItem.quests} />);
+      render(<TestWrapper path="/quests" />);
 
       expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Created At)');
       expect(screen.getByTestId('icon-down')).toBeInTheDocument();
     });
 
     it('should render with default task sort settings', () => {
-      render(<TestWrapper type={PageNavItem.tasks} />);
+      render(<TestWrapper path="/tasks" />);
 
       expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Last Modified At)');
       expect(screen.getByTestId('icon-down')).toBeInTheDocument();
+    });
+
+    it('should render task sort settings for host detail page', () => {
+      render(<TestWrapper path="/hosts/123" />);
+
+      expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Last Modified At)');
+      expect(screen.getByTestId('icon-down')).toBeInTheDocument();
+    });
+
+    it('should not render on non-sortable pages', () => {
+      render(<TestWrapper path="/admin" />);
+
+      expect(screen.queryByTestId('button-dialog-popover')).not.toBeInTheDocument();
     });
   });
 
   describe('Sort field dropdown', () => {
     it('should display correct field options for hosts page', () => {
-      render(<TestWrapper type={PageNavItem.hosts} />);
+      render(<TestWrapper path="/hosts" />);
 
       const fieldSelect = screen.getByTestId('select-field');
       const options = Array.from(fieldSelect.querySelectorAll('option'));
@@ -104,7 +121,7 @@ describe('SortingControls', () => {
     });
 
     it('should display correct field options for quests page', () => {
-      render(<TestWrapper type={PageNavItem.quests} />);
+      render(<TestWrapper path="/quests" />);
 
       const fieldSelect = screen.getByTestId('select-field');
       const options = Array.from(fieldSelect.querySelectorAll('option'));
@@ -115,7 +132,7 @@ describe('SortingControls', () => {
     });
 
     it('should display correct field options for tasks page', () => {
-      render(<TestWrapper type={PageNavItem.tasks} />);
+      render(<TestWrapper path="/tasks" />);
 
       const fieldSelect = screen.getByTestId('select-field');
       const options = Array.from(fieldSelect.querySelectorAll('option'));
@@ -128,7 +145,7 @@ describe('SortingControls', () => {
 
   describe('Sort direction dropdown', () => {
     it('should display ascending and descending options', () => {
-      render(<TestWrapper type={PageNavItem.hosts} />);
+      render(<TestWrapper path="/hosts" />);
 
       const directionSelect = screen.getByTestId('select-direction');
       const options = Array.from(directionSelect.querySelectorAll('option'));
@@ -138,7 +155,7 @@ describe('SortingControls', () => {
     });
 
     it('should default to descending direction', () => {
-      render(<TestWrapper type={PageNavItem.hosts} />);
+      render(<TestWrapper path="/hosts" />);
 
       const directionSelect = screen.getByTestId('select-direction') as HTMLSelectElement;
       expect(directionSelect.value).toBe(OrderDirection.Desc);
@@ -148,7 +165,7 @@ describe('SortingControls', () => {
   describe('Updating sort settings', () => {
     it('should update sort field when field dropdown changes', async () => {
       const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.hosts} includeDisplay />);
+      render(<TestWrapper path="/hosts" includeDisplay />);
 
       const getSorts = () => JSON.parse(screen.getByTestId('sorts-display').textContent || '{}');
 
@@ -161,7 +178,7 @@ describe('SortingControls', () => {
 
     it('should update sort direction when direction dropdown changes', async () => {
       const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.hosts} includeDisplay />);
+      render(<TestWrapper path="/hosts" includeDisplay />);
 
       const getSorts = () => JSON.parse(screen.getByTestId('sorts-display').textContent || '{}');
 
@@ -174,7 +191,7 @@ describe('SortingControls', () => {
 
     it('should update label when field changes', async () => {
       const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.quests} />);
+      render(<TestWrapper path="/quests" />);
 
       const fieldSelect = screen.getByTestId('select-field');
       await user.selectOptions(fieldSelect, QuestOrderField.Name);
@@ -184,7 +201,7 @@ describe('SortingControls', () => {
 
     it('should update icon when direction changes to ascending', async () => {
       const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.hosts} />);
+      render(<TestWrapper path="/hosts" />);
 
       const directionSelect = screen.getByTestId('select-direction');
       await user.selectOptions(directionSelect, OrderDirection.Asc);
@@ -194,7 +211,7 @@ describe('SortingControls', () => {
 
     it('should only update sorts for the current page type', async () => {
       const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.hosts} includeDisplay />);
+      render(<TestWrapper path="/hosts" includeDisplay />);
 
       const getSorts = () => JSON.parse(screen.getByTestId('sorts-display').textContent || '{}');
 
@@ -207,25 +224,4 @@ describe('SortingControls', () => {
     });
   });
 
-  describe('Label formatting', () => {
-    it('should format enum values correctly', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.tasks} />);
-
-      const fieldSelect = screen.getByTestId('select-field');
-      await user.selectOptions(fieldSelect, TaskOrderField.LastModifiedAt);
-
-      expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Last Modified At)');
-    });
-
-    it('should handle single word enum values', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper type={PageNavItem.quests} />);
-
-      const fieldSelect = screen.getByTestId('select-field');
-      await user.selectOptions(fieldSelect, QuestOrderField.Name);
-
-      expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Name)');
-    });
-  });
 });

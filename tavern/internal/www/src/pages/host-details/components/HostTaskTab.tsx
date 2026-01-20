@@ -1,11 +1,9 @@
 import { useParams } from "react-router-dom";
 
 import { TablePagination, TableWrapper } from "../../../components/tavern-base-ui/table";
-import { PageNavItem, TableRowLimit } from "../../../utils/enums";
+import { TableRowLimit } from "../../../utils/enums";
 import TaskCard from "../../../components/task-card/TaskCard";
-import { FilterControls, FilterPageType } from "../../../context/FilterContext/index";
 import { TaskNode } from "../../../utils/interfacesQuery";
-import { SortingControls } from "../../../context/SortContext/index";
 import { useHostTasks } from "../useHostTasks";
 
 const HostTaskTab = () => {
@@ -26,8 +24,6 @@ const HostTaskTab = () => {
             totalItems={data?.tasks?.totalCount}
             loading={loading}
             error={error}
-            filterControls={<FilterControls type={FilterPageType.HOST_TASK} />}
-            sortingControls={<SortingControls type={PageNavItem.tasks} />}
             table={
                 <div className="w-full flex flex-col gap-4 my-4">
                     {data?.tasks?.edges.map((task: { node: TaskNode }) => {

@@ -1,7 +1,38 @@
 import { add } from "date-fns";
 import { BeaconEdge, BeaconNode } from "./interfacesQuery";
-import { OnlineOfflineFilterType, PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
+import { OnlineOfflineFilterType, PageNavItem, PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
 import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
+
+const pathToNavItem: Record<string, PageNavItem> = {
+    '/dashboard': PageNavItem.dashboard,
+    '/quests': PageNavItem.quests,
+    '/tasks': PageNavItem.tasks,
+    '/createQuest': PageNavItem.createQuest,
+    '/hosts': PageNavItem.hosts,
+    '/tomes': PageNavItem.tomes,
+    '/admin': PageNavItem.admin,
+};
+
+export function getNavItemFromPath(pathname: string): PageNavItem {
+    // Check for exact match first
+    if (pathToNavItem[pathname]) {
+        return pathToNavItem[pathname];
+    }
+    // Check for prefix matches (e.g., /hosts/:hostId -> hosts)
+    if (pathname.startsWith('/hosts/')) return PageNavItem.hosts;
+    if (pathname.startsWith('/tasks/')) return PageNavItem.tasks;
+    if (pathname.startsWith('/shells/')) return PageNavItem.hosts;
+
+    return PageNavItem.dashboard;
+}
+
+/**
+ * Returns true if we're on a host detail page (e.g., /hosts/:hostId)
+ * vs the host list page (/hosts)
+ */
+export function isHostDetailPath(pathname: string): boolean {
+    return pathname.startsWith('/hosts/');
+}
 
 export function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ')

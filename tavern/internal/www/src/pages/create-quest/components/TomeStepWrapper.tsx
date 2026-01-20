@@ -38,12 +38,14 @@ const TomeStepWrapper = (props: Props) => {
                 <Button
                     onClick={() => setCurrStep(0)}
                     buttonVariant="ghost"
+                    aria-label="back to beacons"
                 >
                     Back
                 </Button>
                 <Button
                     onClick={() => setCurrStep(2)}
                     disabled={isContinueDisabled}
+                    aria-label="continue tome step"
                 >
                     Continue
                 </Button>

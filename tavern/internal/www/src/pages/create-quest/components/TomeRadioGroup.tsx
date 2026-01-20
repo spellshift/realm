@@ -73,7 +73,7 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
         <div className="w-full">
             <div className="mx-auto w-full flex flex-col gap-2">
                 <FreeTextSearch placeholder="Search by tome definition" setSearch={handleSearch} />
-                <RadioGroup value={selected || undefined} onChange={setSelected} className="flex flex-col gap-3">
+                <RadioGroup value={selected || undefined} onChange={setSelected} className="flex flex-col gap-3" aria-label="tome selection">
                     <RadioGroup.Label className="sr-only">
                         <span className="text-sm font-semibold text-gray-900">{label}</span>
                     </RadioGroup.Label>

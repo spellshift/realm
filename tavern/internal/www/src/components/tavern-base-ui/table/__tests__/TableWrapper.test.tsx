@@ -2,26 +2,60 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TableWrapper } from '../TableWrapper';
 import { ApolloError } from '@apollo/client';
+import { MemoryRouter } from 'react-router-dom';
+import { FilterProvider } from '../../../../context/FilterContext';
+import { SortsProvider } from '../../../../context/SortContext';
+import React from 'react';
 
 // Mock EmptyState component
 vi.mock('../../EmptyState', () => ({
-  EmptyState: ({ type, label }: any) => (
+  EmptyState: ({ type, label, children }: any) => (
     <div data-testid="empty-state" data-type={type}>
       {label}
+      {children}
     </div>
   ),
   EmptyStateType: {
     error: 'error',
     loading: 'loading',
-    noData: 'noData'
+    noData: 'noData',
+    noMatches: 'noMatches'
   }
 }));
+
+// Mock FilterControls and SortingControls since they're rendered internally
+vi.mock('../../../../context/FilterContext/FilterControls', () => ({
+  default: () => <div data-testid="filter-controls">Filter Controls</div>,
+}));
+
+vi.mock('../../../../context/SortContext/SortingControls', () => ({
+  default: () => <div data-testid="sorting-controls">Sorting Controls</div>,
+}));
+
+// Mock Button component
+vi.mock('../../button/Button', () => ({
+  default: ({ children, onClick }: any) => (
+    <button data-testid="clear-filters-button" onClick={onClick}>
+      {children}
+    </button>
+  ),
+}));
+
+function TestWrapper({ children, path = '/hosts' }: { children: React.ReactNode; path?: string }) {
+  return (
+    <MemoryRouter initialEntries={[path]}>
+      <SortsProvider>
+        <FilterProvider>
+          {children}
+        </FilterProvider>
+      </SortsProvider>
+    </MemoryRouter>
+  );
+}
 
 describe('TableWrapper', () => {
   const mockTable = <div data-testid="mock-table">Table Content</div>;
   const mockPagination = <div data-testid="mock-pagination">Pagination</div>;
-  const mockFilterControls = <div data-testid="mock-filters">Filters</div>;
-  const mockSortingControls = <div data-testid="mock-sorting">Sorting</div>;
 
   const defaultProps = {
     totalItems: 50,
@@ -32,13 +66,18 @@ describe('TableWrapper', () => {
   };
 
   beforeEach(() => {
+    sessionStorage.clear();
     vi.clearAllMocks();
   });
 
   describe('Error state rendering', () => {
     it('should render error EmptyState and hide table/pagination', () => {
       const error = new ApolloError({ errorMessage: 'Test error' });
-      render(<TableWrapper {...defaultProps} error={error} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} error={error} />
+        </TestWrapper>
+      );
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();
@@ -52,7 +91,11 @@ describe('TableWrapper', () => {
 
   describe('Loading state rendering', () => {
     it('should render loading EmptyState when loading is true and hide table/pagination', () => {
-      render(<TableWrapper {...defaultProps} loading={true} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} loading={true} />
+        </TestWrapper>
+      );
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();
@@ -64,7 +107,11 @@ describe('TableWrapper', () => {
     });
 
     it('should render loading EmptyState when totalItems is undefined', () => {
-      render(<TableWrapper {...defaultProps} totalItems={undefined} loading={false} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} totalItems={undefined} loading={false} />
+        </TestWrapper>
+      );
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();
@@ -74,7 +121,11 @@ describe('TableWrapper', () => {
 
   describe('Empty state rendering', () => {
     it('should render noData EmptyState when totalItems is 0 and hide table/pagination', () => {
-      render(<TableWrapper {...defaultProps} totalItems={0} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} totalItems={0} />
+        </TestWrapper>
+      );
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();
@@ -88,7 +139,11 @@ describe('TableWrapper', () => {
 
   describe('Success state with data', () => {
     it('should render table and pagination when data exists', () => {
-      render(<TableWrapper {...defaultProps} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} />
+        </TestWrapper>
+      );
 
       expect(screen.getByTestId('mock-table')).toBeInTheDocument();
       expect(screen.getByTestId('mock-pagination')).toBeInTheDocument();
@@ -97,55 +152,46 @@ describe('TableWrapper', () => {
   });
 
   describe('Controls section rendering', () => {
-    it('should render filter and sorting controls when provided', () => {
+    it('should render filter and sorting controls', () => {
       render(
-        <TableWrapper
-          {...defaultProps}
-          filterControls={mockFilterControls}
-          sortingControls={mockSortingControls}
-        />
+        <TestWrapper>
+          <TableWrapper {...defaultProps} />
+        </TestWrapper>
       );
 
-      expect(screen.getByTestId('mock-filters')).toBeInTheDocument();
-      expect(screen.getByTestId('mock-sorting')).toBeInTheDocument();
-    });
-
-    it('should not render controls section when no controls provided', () => {
-      const { container } = render(<TableWrapper {...defaultProps} />);
-
-      const controlsDiv = container.querySelector('.flex.flex-row.justify-between.items-center');
-      expect(controlsDiv).not.toBeInTheDocument();
+      expect(screen.getByTestId('filter-controls')).toBeInTheDocument();
+      expect(screen.getByTestId('sorting-controls')).toBeInTheDocument();
     });
 
     it('should render custom title', () => {
-      render(<TableWrapper {...defaultProps} title="Custom Title" filterControls={mockFilterControls} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} title="Custom Title" />
+        </TestWrapper>
+      );
 
       expect(screen.getByText('Custom Title')).toBeInTheDocument();
     });
 
-    it('should apply sticky styles when stickyControls is true', () => {
-      const { container } = render(
-        <TableWrapper {...defaultProps} filterControls={mockFilterControls} stickyControls={true} />
+    it('should render default title when not provided', () => {
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} />
+        </TestWrapper>
       );
 
-      const controlsDiv = container.querySelector('.sticky.top-0.z-5.shadow-sm');
-      expect(controlsDiv).toBeInTheDocument();
-    });
-
-    it('should not apply sticky styles when stickyControls is false', () => {
-      const { container } = render(
-        <TableWrapper {...defaultProps} filterControls={mockFilterControls} stickyControls={false} />
-      );
-
-      const controlsDiv = container.querySelector('.sticky.top-0.z-5.shadow-sm');
-      expect(controlsDiv).not.toBeInTheDocument();
+      expect(screen.getByText('Table')).toBeInTheDocument();
     });
   });
 
   describe('State priority', () => {
     it('should prioritize error over loading', () => {
       const error = new ApolloError({ errorMessage: 'Test error' });
-      render(<TableWrapper {...defaultProps} error={error} loading={true} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} error={error} loading={true} />
+        </TestWrapper>
+      );
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toHaveAttribute('data-type', 'error');
@@ -153,7 +199,11 @@ describe('TableWrapper', () => {
     });
 
     it('should prioritize loading over empty', () => {
-      render(<TableWrapper {...defaultProps} loading={true} totalItems={0} />);
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} loading={true} totalItems={0} />
+        </TestWrapper>
+      );
 
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toHaveAttribute('data-type', 'loading');

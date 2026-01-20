@@ -4,6 +4,20 @@ import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrder
 import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
 import SingleDropdownSelector, { Option } from "../../components/tavern-base-ui/SingleDropdownSelector";
 import { ReactElement } from "react";
+import { useLocation } from "react-router-dom";
+import { getNavItemFromPath, isHostDetailPath } from "../../utils/utils";
+
+type SortPageType = PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks;
+
+const sortablePages = new Set<PageNavItem>([PageNavItem.quests, PageNavItem.tasks, PageNavItem.hosts]);
+
+function getSortPageType(pathname: string): SortPageType | null {
+    // Host detail pages sort by tasks
+    if (isHostDetailPath(pathname)) return PageNavItem.tasks;
+
+    const navItem = getNavItemFromPath(pathname);
+    return sortablePages.has(navItem) ? navItem as SortPageType : null;
+}
 
 const orderFieldOptionsMap = {
     [PageNavItem.hosts]: createOrderFieldOptions(HostOrderField),
@@ -55,8 +69,12 @@ function createOrderFieldOptions<T extends QuestOrderField | TaskOrderField | Ho
 }
 
 
-export default function SortingControls({ type }: { type: PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks }) {
+export default function SortingControls() {
+    const { pathname } = useLocation();
+    const type = getSortPageType(pathname);
     const { sorts, updateSorts } = useSorts();
+
+    if (!type) return null;
 
     const sortFieldsInUse = sorts[type];
 
