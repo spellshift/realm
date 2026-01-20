@@ -21,7 +21,7 @@ test('End-to-end portal provisioning test', async ({ page }) => {
 
   // Click Continue
   console.log('Clicking Continue (Beacon)');
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.locator('[aria-label="continue beacon step"]').click();
 
   // 3. Select the "SOCKS5 Relay" tome and click "continue"
   console.log('Selecting Tome');
@@ -31,18 +31,21 @@ test('End-to-end portal provisioning test', async ({ page }) => {
   await page.getByText('SOCKS5 Relay').click();
 
   console.log('Clicking Continue (Tome)');
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.locator('[aria-label="continue tome step"]').click();
 
   // 4. Select "Submit"
   console.log('Submitting Quest');
-  await page.getByRole('button', { name: 'Submit' }).click();
+  await page.locator('[aria-label="submit quest"]').click();
 
   // 5. Wait for execution.
   // We expect "Portal created" to appear in the output.
   console.log('Waiting for "Portal created" message');
   await page.waitForTimeout(12000);
-  page.reload({timeout: 30000})
-  await expect(page.getByText('Portal created')).toBeVisible({ timeout: 30000 });
+  await page.reload({timeout: 30000});
+
+  // Use aria-label to find the specific output panel and check for "Portal created" within it
+  const outputPanel = page.locator('[aria-label="task output"]');
+  await expect(outputPanel.getByText('Portal created')).toBeVisible({ timeout: 30000 });
 
   console.log('Portal created successfully');
 });

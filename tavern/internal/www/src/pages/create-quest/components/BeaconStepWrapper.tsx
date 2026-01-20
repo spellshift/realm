@@ -49,6 +49,7 @@ export const BeaconStepWrapper = (props: Props) => {
                     buttonStyle={{ color: "purple", size: "md" }}
                     onClick={handleClickContinue}
                     disabled={!hasBeaconSelected}
+                    aria-label="continue beacon step"
                 >
                     Continue
                 </Button>
