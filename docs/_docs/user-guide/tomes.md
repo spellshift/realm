@@ -36,6 +36,7 @@ The `metadata.yml` file specifies key information about a [Tome](/user-guide/ter
 Parameters are defined as a YAML list, but have their own additional properties:
 
 | Name | Description | Required |
+| ---- | ----------- | -------- |
 | `name` | Identifier used to access the parameter via the `input_params` global. | Yes |
 | `label` | Display name of the parameter for users of the [Tome](/user-guide/terminology#tome). | Yes |
 | `type` | Type of the parameter in [Eldritch](/user-guide/terminology#eldritch). Current values include: `string`. | Yes |
@@ -156,12 +157,12 @@ def pre_flight(dest_bin_path):
     ## Testing
 
     # Note that we're using multiple returns instead of
-    # nesting if statements. This style is to ensule 
+    # nesting if statements. This style is to ensure
     # line of sight readability when reviewing code.
     if not sys.is_linux():
       print("[error] tome only supports linux")
       return False
-    
+
     cur_user = sys.get_user()
     if cur_user['euid']['uid'] != 0:
       print(f"[error] tome must be run as root / uid 0 not {cur_user}")
@@ -189,12 +190,12 @@ def deploy_asset(asset_path, dest, asset_hash):
     if crypto.hash_file(asset_path, "SHA1") != asset_hash:
       print(f"{dest} file already exists and is good")
       return True
-  
+
   pdir = file.parent_dir(dest)
   if not file.is_dir(pdir):
       print(f"{pdir} isn't a dir aborting")
       return False
-  
+
   asset.copy(asset_path, dest)
   return True
 
@@ -208,15 +209,15 @@ def set_perms(dest, perms):
   res = sys.shell(f"chmod {perms} {dest}")
   print(f"modified perms of {dest}")
   pprint(res)
-  if res['status'] == 0
+  if res['status'] == 0:
     return True
-  
+
   print(f"failed to set perms {perms} on {dest}")
   return False
 
 def execute_once(dest):
   for p in process.list():
-    if p['path'] == dest
+    if p['path'] == dest:
       print(f"process {dest} is already running")
       pprint(p)
       return True
@@ -224,7 +225,7 @@ def execute_once(dest):
   res = sys.exec(dest, [], True)
 
   for p in process.list():
-    if p['path'] == dest
+    if p['path'] == dest:
       print(f"process {dest} is now running")
       pprint(p)
       return True
@@ -235,7 +236,7 @@ def cleanup(dest):
   if file.is_file(dest):
     print(f"cleaning up {dest}")
     file.remove(dest)
-  
+
 
 def main(dest_file_path):
   if not pre_flight():
@@ -272,7 +273,7 @@ This avoids artifacts being left on disk if something fails and also provides ve
 
 Common things to validate:
 - Operating systems - all tomes are cross platform so it's up to the tome developer to fail if run on an unsupported OS
-- Check parent directory exists using [`fileparent_dir`](/user-guide/eldritch#fileparent_dir) 
+- Check parent directory exists using [`file.parent_dir`](/user-guide/eldritch#fileparent_dir)
 - User permissions
 - Required dependencies or LOLBINs
 

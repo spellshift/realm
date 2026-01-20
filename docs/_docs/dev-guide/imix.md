@@ -12,7 +12,7 @@ Imix in the main bot for Realm.
 
 ## Agent protobuf
 
-In order to communicate agent state and configuration during the claimTask request the agent sends a protobuf containing various configuration options. If any are updated agent side they're now syncronsized with the server ensuring operators can track the state of their agents.
+In order to communicate agent state and configuration during the claimTask request the agent sends a protobuf containing various configuration options. If any are updated agent side they're now synchronized with the server ensuring operators can track the state of their agents.
 
 In order to keep these configuration options in sync realm uses protobuf and code generation to ensure agent and server agree.
 
@@ -20,7 +20,7 @@ If you need to update these fields start with the `tavern/internal/c2/proto/c2.p
 
 Once you've finished making your changes apply these changes across the project using `cd /workspaces/realm/ && go generate ./tavern/...`
 
-To generate the associated agent proto's use cargo build in the `implants` direcotry. This will copy the necesarry protos from tavern and preform the code generation.
+To generate the associated agent proto's use cargo build in the `implants` directory. This will copy the necessary protos from tavern and perform the code generation.
 
 ### Adding enums
 
@@ -48,7 +48,7 @@ And add a new enum definition to `tavern/internal/c2/c2pb/enum_<MESSAGE NAME>_<E
 
 ## Host Selector
 
-The host selector defined in `implants/lib/host_selector` allow imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.
+The host selector defined in `implants/lib/host_unique` allow imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.
 
 Out of the box realm comes with two options `File` and `Env` to determine what host it's on.
 
@@ -148,7 +148,7 @@ We've tried to make Imix super extensible for transport development. In fact, al
 
 Realm currently includes three transport implementations:
 
-- **`grpc`** - Default gRPC transport (with optional DoH support via `grpc-doh` feature)
+- **`grpc`** - Default gRPC transport (with optional DoH support via `doh` feature)
 - **`http1`** - HTTP/1.1 transport
 - **`dns`** - DNS-based covert channel transport
 
@@ -234,33 +234,37 @@ impl Transport for Custom {
 }
 ```
 
-NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/reciever while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currenlty it would just result in performance loss/less maintainable code.
+NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/receiver while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currently it would just result in performance loss/less maintainable code.
 
 After you implement all the functions and write descriptive error messages for operators to understand why function calls failed, you need to:
 
-#### 1. Add Compile-Time Exclusivity Checks
+#### 1. Add Your Transport to the ActiveTransport Enum
 
-In `realm/implants/lib/transport/src/lib.rs`, add compile-time checks to ensure your new transport cannot be compiled alongside others:
+In `realm/implants/lib/transport/src/lib.rs`, add your transport module and register it in the `ActiveTransport` enum:
 
 ```rust
-// Add your transport to the mutual exclusivity checks
-#[cfg(all(feature = "grpc", feature = "custom"))]
-compile_error!("only one transport may be selected");
-#[cfg(all(feature = "http1", feature = "custom"))]
-compile_error!("only one transport may be selected");
-#[cfg(all(feature = "dns", feature = "custom"))]
-compile_error!("only one transport may be selected");
-
-// ... existing checks above ...
-
-// Add your transport module and export
 #[cfg(feature = "custom")]
 mod custom;
-#[cfg(feature = "custom")]
-pub use custom::Custom as ActiveTransport;
+
+// ... other modules ...
+
+#[derive(Clone)]
+pub enum ActiveTransport {
+    #[cfg(feature = "grpc")]
+    Grpc(grpc::GRPC),
+    #[cfg(feature = "http1")]
+    Http(http::HTTP),
+    #[cfg(feature = "dns")]
+    Dns(dns::DNS),
+    #[cfg(feature = "custom")]
+    Custom(custom::Custom),  // <-- Add your transport here
+    #[cfg(feature = "mock")]
+    Mock(mock::MockTransport),
+    Empty,
+}
 ```
 
-**Important:** The transport is exported as `ActiveTransport`, not by its type name. This allows the imix agent code to remain transport-agnostic.
+**Note:** Multiple transport features can be enabled at compile time, and the enum will include all enabled variants. The actual transport used is determined at runtime based on the agent's configuration.
 
 #### 2. Update Transport Library Dependencies
 
@@ -272,7 +276,7 @@ Add your new feature and any required dependencies to `realm/implants/lib/transp
 [features]
 default = []
 grpc = []
-grpc-doh = ["grpc", "dep:hickory-resolver"]
+doh = ["dep:hickory-resolver"]
 http1 = []
 dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 custom = ["dep:your-custom-dependency"] # <-- Add your feature here
@@ -301,7 +305,7 @@ default = ["transport/grpc"]  # Default transport
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 custom = ["transport/custom"]  # <-- Add your feature here
-transport-grpc-doh = ["transport/grpc-doh"]
+transport-doh = ["transport/doh"]
 
 # more stuff below
 ```

@@ -24,8 +24,8 @@ Building in the dev container limits variables that might cause issues and is th
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
-| IMIX_TRANSPORT_EXTRA_HTTP_PROXY | Overide system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
-| IMIX_TRANSPORT_EXTRA_DOH | Enable DoH, eventually specify which DoH service to use. Requires the grpc-doh flag. | No DoH. | No |
+| IMIX_TRANSPORT_EXTRA_HTTP_PROXY | Override system settings for proxy URI over HTTP(S) (must specify a scheme, e.g. `https://`) | No proxy | No |
+| IMIX_TRANSPORT_EXTRA_DOH | Enable DoH, eventually specify which DoH service to use. Requires the transport-doh flag. | No DoH. | No |
 
 
 Imix has run-time configuration, that may be specified using environment variables during execution.
@@ -42,12 +42,12 @@ Imix has run-time configuration, that may be specified using environment variabl
 **We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
 Building in the dev container limits variables that might cause issues and is the most tested way to compile.
 
-**Imix requires a server public key so it can encrypt messsages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
+**Imix requires a server public key so it can encrypt messages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
 
 ## Setting encryption key
 
-By default imix will automatically collect the IMIX_CALLBACK_URI server's public key during the build process. This can be overridden by manually setinng the `IMIX_SERVER_PUBKEY` environment variable but should only be necesarry when using redirectors. Redirectors have no visibliity into the realm encryption by design, this means that agents must be compiled with the upstream tavern instance's public key.
+By default imix will automatically collect the IMIX_CALLBACK_URI server's public key during the build process. This can be overridden by manually setting the `IMIX_SERVER_PUBKEY` environment variable but should only be necessary when using redirectors. Redirectors have no visibility into the realm encryption by design, this means that agents must be compiled with the upstream tavern instance's public key.
 
 A server's public key can be found using:
 ```bash
@@ -191,14 +191,14 @@ The HTTP1 transport uses HTTP post requests to communicate to the redirector.
 - `http_proxy`: the full URI of the http_proxy that imix should connect through. Eg. `http://127.0.0.1:3128`
 
 
-This transport dosent support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
 
 ### dns
 
 The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
 
-This transport dosen't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
 *Note*: the uri parameter here is the dns server to communicate with. If `dns://*` is specififed the transport will attempt to use the local systems primary resolver. Custom ports can be specified with `dns://8.8.8.8:53`
 

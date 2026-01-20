@@ -191,7 +191,7 @@ By default, Tavern does not export metrics. You may use the below environment co
 ### Secrets
 
 By default, Tavern wants to use a GCP KMS for secrets management. The secrets engine is used to generate keypairs when communicating with agents.
-If you're running locally make suer to set the secrets manager to a local file path using:
+If you're running locally make sure to set the secrets manager to a local file path using:
 
 ```bash
 SECRETS_FILE_PATH="/tmp/secrets" go run ./tavern/
