@@ -69,6 +69,7 @@ const FinalizeStep = (props: Props) => {
                     buttonVariant="ghost"
                     onClick={() => setCurrStep(1)}
                     disabled={loading}
+                    aria-label="back button"
                 >
                     Back
                 </Button>
@@ -79,6 +80,7 @@ const FinalizeStep = (props: Props) => {
                     }}
                     disabled={isContinueDisabled}
                     type="submit"
+                    aria-label="submit quest"
                 >
                     {loading ? "Creating quest..." : "Submit"}
                 </Button>

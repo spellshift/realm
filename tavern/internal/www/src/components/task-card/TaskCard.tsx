@@ -44,14 +44,14 @@ const TaskCard: FC<TaskCardType> = (
                         {task?.shells?.edges.length > 0 && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><CommandLineIcon className="w-4" /> Shells</Tab>}
                     </TabList>
                     <TabPanels className="px-4">
-                        <TabPanel>
+                        <TabPanel aria-label="output panel">
                             <TaskResults result={task?.output} />
                         </TabPanel>
                         {task?.error &&
-                            <TabPanel>
+                            <TabPanel aria-label="error panel">
                                 <TaskResults result={task?.error} />
                             </TabPanel>}
-                        {task?.shells?.edges.length > 0 && <TabPanel>
+                        {task?.shells?.edges.length > 0 && <TabPanel aria-label="shells panel">
                             <TaskShells shells={task?.shells?.edges} />
                         </TabPanel>}
                     </TabPanels>
