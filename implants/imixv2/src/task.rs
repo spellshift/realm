@@ -5,6 +5,7 @@ use std::time::SystemTime;
 
 use eldritchv2::agent::agent::Agent;
 use eldritchv2::assets::std::EmbeddedAssets;
+use eldritchv2::cache::std::StdCacheLibrary;
 use eldritchv2::{Interpreter, Printer, Span, Value, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
@@ -46,6 +47,7 @@ struct TaskHandle {
 #[derive(Clone)]
 pub struct TaskRegistry {
     tasks: Arc<Mutex<BTreeMap<i64, TaskHandle>>>,
+    cache_lib: StdCacheLibrary,
 }
 
 impl Default for TaskRegistry {
@@ -58,6 +60,7 @@ impl TaskRegistry {
     pub fn new() -> Self {
         Self {
             tasks: Arc::new(Mutex::new(BTreeMap::new())),
+            cache_lib: StdCacheLibrary::new(),
         }
     }
 
@@ -74,6 +77,7 @@ impl TaskRegistry {
         }
 
         let tasks_registry = self.tasks.clone();
+        let cache_lib = self.cache_lib.clone();
         // Capture runtime handle to spawn streaming task
         let runtime_handle = tokio::runtime::Handle::current();
 
@@ -83,7 +87,7 @@ impl TaskRegistry {
 
         thread::spawn(move || {
             if let Some(tome) = task.tome {
-                execute_task(task_context.clone(), tome, agent, runtime_handle);
+                execute_task(task_context.clone(), tome, agent, runtime_handle, cache_lib);
             } else {
                 #[cfg(debug_assertions)]
                 log::warn!("Task {0} has no tome", task_context.clone().task_id);
@@ -165,11 +169,18 @@ fn execute_task(
     tome: pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
+    cache_lib: StdCacheLibrary,
 ) {
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx));
-    let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
+    let mut interp = setup_interpreter(
+        task_context.clone(),
+        &tome,
+        agent.clone(),
+        printer.clone(),
+        cache_lib,
+    );
 
     // Report Start
     report_start(task_context.clone(), &agent);
@@ -217,8 +228,10 @@ fn setup_interpreter(
     tome: &pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     printer: Arc<StreamPrinter>,
+    cache_lib: StdCacheLibrary,
 ) -> Interpreter {
     let mut interp = Interpreter::new_with_printer(printer).with_default_libs();
+    interp.register_lib(cache_lib);
 
     // Remote asset filenames
     let remote_assets = tome.file_names.clone();

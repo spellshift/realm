@@ -22,6 +22,7 @@ eldritch-libregex = { workspace = true, default-features = false }
 eldritch-libreport = { workspace = true, default-features = false }
 eldritch-libsys = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
+eldritch-libcache = { workspace = true, default-features = false }
 pb = { workspace = true }
 eldritch-repl = { workspace = true, default-features = false }
 
@@ -41,6 +42,7 @@ fake_bindings = [
     "fake_report",
     "fake_sys",
     "fake_time",
+    "fake_cache",
 ]
 fake_agent = ["eldritch-libagent/fake_bindings"]
 fake_assets = ["eldritch-libassets/fake_bindings"]
@@ -54,6 +56,7 @@ fake_regex = ["eldritch-libregex/fake_bindings"]
 fake_report = ["eldritch-libreport/fake_bindings"]
 fake_sys = ["eldritch-libsys/fake_bindings"]
 fake_time = ["eldritch-libtime/fake_bindings"]
+fake_cache = ["eldritch-libcache/fake_bindings"]
 stdlib = [
     "eldritch-libagent/stdlib",
     "eldritch-libassets/stdlib",
@@ -67,6 +70,7 @@ stdlib = [
     "eldritch-libreport/stdlib",
     "eldritch-libsys/stdlib",
     "eldritch-libtime/stdlib",
+    "eldritch-libcache/stdlib",
 ]
 
 [dev-dependencies]

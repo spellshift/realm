@@ -25,6 +25,7 @@ members = [
     "lib/eldritchv2/stdlib/eldritch-libreport",
     "lib/eldritchv2/stdlib/eldritch-libsys",
     "lib/eldritchv2/stdlib/eldritch-libtime",
+    "lib/eldritchv2/stdlib/eldritch-libcache",
     "lib/eldritchv2/stdlib/tests",
     "lib/eldritchv2/stdlib/migration",
     "lib/eldritchv2/eldritchv2",
@@ -47,6 +48,7 @@ eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
 eldritch-agent = {path = "lib/eldritchv2/eldritch-agent"}
 eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
 eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
+eldritch-libcache = {path = "lib/eldritchv2/stdlib/eldritch-libcache", default-features = false}
 eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
 eldritch-libfile = {path = "lib/eldritchv2/stdlib/eldritch-libfile",default-features = false }
 eldritch-libhttp = {path = "lib/eldritchv2/stdlib/eldritch-libhttp",default-features = false }

@@ -1,0 +1,14 @@
+[package]
+name = "eldritch-libcache"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+spin = { workspace = true, features = ["mutex"] }
+
+[features]
+default = ["stdlib"]
+stdlib = []
+fake_bindings = []

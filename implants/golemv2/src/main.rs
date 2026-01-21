@@ -7,6 +7,7 @@ use eldritchv2::assets::{
     AssetsLibrary,
     std::{EmbeddedAssets, StdAssetsLibrary},
 };
+use eldritchv2::cache::std::StdCacheLibrary;
 use eldritchv2::conversion::ToValue;
 use eldritchv2::{ForeignValue, Interpreter, StdoutPrinter};
 use pb::c2::TaskContext;
@@ -36,7 +37,7 @@ pub struct ParsedTome {
 }
 
 // Build a new runtime
-fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
+fn new_runtime(assetlib: impl ForeignValue + 'static, cache_lib: StdCacheLibrary) -> Interpreter {
     // Maybe change the printer here?
     let mut interp = Interpreter::new_with_printer(Arc::new(StdoutPrinter)).with_default_libs();
     // Register the libraries that we need. Basically the same as interp.with_task_context but
@@ -55,6 +56,7 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
         eldritchv2::pivot::std::StdPivotLibrary::new(agent.clone(), task_context.clone());
     interp.register_lib(pivot_lib);
     interp.register_lib(assetlib);
+    interp.register_lib(cache_lib);
     interp
 }
 
@@ -158,16 +160,17 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    // Setup the interpreter. This will need refactored when we do multi-threaded
-    let mut interp = new_runtime(locker);
+    let cache_lib = StdCacheLibrary::new();
 
     if matches.contains_id("interactive") {
+        let interp = new_runtime(locker.clone(), cache_lib);
         repl::repl(interp)?;
         return Ok(());
     }
 
     // Print a debug for the configured assets and tomes
     if matches.get_flag("dump") {
+        let mut interp = new_runtime(locker.clone(), cache_lib.clone());
         let tome_names: Vec<&str> = parsed_tomes.iter().map(|tome| tome.name.as_str()).collect();
         println!("tomes = {:?}", tome_names);
         match interp.interpret("print(\"assets =\", assets.list())") {
@@ -177,10 +180,12 @@ fn main() -> anyhow::Result<()> {
                 exit(127);
             }
         }
+        return Ok(());
     }
 
     // Time to run some commands
     for tome in parsed_tomes {
+        let mut interp = new_runtime(locker.clone(), cache_lib.clone());
         // In the future we would like to set input params here.
         // We could compile them in for the default dropper assets
         let params: BTreeMap<String, String> = BTreeMap::new();

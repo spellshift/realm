@@ -8,6 +8,7 @@ extern crate std;
 // Re-exports from eldritch-stdlib
 pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;
+pub use eldritch_libcache as cache;
 pub use eldritch_libcrypto as crypto;
 pub use eldritch_libfile as file;
 pub use eldritch_libhttp as http;
@@ -45,6 +46,8 @@ pub use crate::assets::std::EmbeddedAssets;
 pub use crate::assets::std::EmptyAssets;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
+#[cfg(feature = "stdlib")]
+use crate::cache::std::StdCacheLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
 #[cfg(feature = "stdlib")]
@@ -117,6 +120,7 @@ impl Interpreter {
     pub fn with_default_libs(mut self) -> Self {
         #[cfg(feature = "stdlib")]
         {
+            self.inner.register_lib(StdCacheLibrary::new());
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
             self.inner.register_lib(StdHttpLibrary);

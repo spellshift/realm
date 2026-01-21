@@ -12,3 +12,4 @@ serde = { workspace = true, features = ["derive"] }
 serde_yaml = {workspace = true}
 spin = { version = "0.10.0", features = ["rwlock"] }
 log = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
