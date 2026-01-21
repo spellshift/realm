@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -89,8 +89,8 @@ func GetClientIP(ctx context.Context) string {
 // generateTaskJWT creates a signed JWT token containing the beacon ID
 func (srv *Server) generateTaskJWT() (string, error) {
 	claims := jwt.MapClaims{
-		"iat":       time.Now().Unix(),
-		"exp":       time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		"iat": jwt.NewNumericDate(time.Now()),
+		"exp": jwt.NewNumericDate(time.Now().Add(1 * time.Hour)), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -103,16 +103,16 @@ func (srv *Server) generateTaskJWT() (string, error) {
 }
 
 func (srv *Server) ValidateJWT(jwttoken string) error {
-    token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (any, error) {
-        // 1. Verify the signing method is EdDSA
-        if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
+	token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (any, error) {
+		// 1. Verify the signing method is EdDSA
+		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
 			// TODO: Uncomment with imixv1 delete
-            // return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			// return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			slog.Warn(fmt.Sprintf("unexpected signing method: %v", token.Header["alg"]))
 		}
-        // 2. Return the PUBLIC key for verification
-        return srv.jwtPublicKey, nil
-    })
+		// 2. Return the PUBLIC key for verification
+		return srv.jwtPublicKey, nil
+	})
 
     if err != nil || !token.Valid {
 		// TODO: Uncomment with imixv1 delete
