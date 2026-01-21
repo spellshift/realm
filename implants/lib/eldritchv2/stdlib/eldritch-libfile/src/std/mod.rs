@@ -15,6 +15,7 @@ pub mod follow_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;
+pub mod metadata;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;

@@ -7,10 +7,11 @@ edition = "2024"
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
+eldritch-libfile = { workspace = true }
 pb = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "eldritch-libfile/stdlib"]
 fake_bindings = []
