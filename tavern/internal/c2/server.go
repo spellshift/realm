@@ -60,7 +60,7 @@ func GetClientIP(ctx context.Context) string {
 	if ok {
 		if redirectedFor, exists := md["x-redirected-for"]; exists && len(redirectedFor) > 0 {
 			clientIP := strings.TrimSpace(redirectedFor[0])
-			// Return NOOP directly if set by redirector (e.g., DNS)
+			// Return NOOP directly if set by redirector
 			if clientIP == redirectors.ExternalIPNoop {
 				return redirectors.ExternalIPNoop
 			}
@@ -88,7 +88,7 @@ func GetClientIP(ctx context.Context) string {
 	} else {
 		slog.Error("Bad remote IP", "ip", remoteIp)
 	}
-	return redirectors.ExternalIPNoop
+	return "unknown"
 }
 
 // generateTaskJWT creates a signed JWT token containing the beacon ID
