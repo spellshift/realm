@@ -696,6 +696,9 @@ func (r *Redirector) forwardToUpstream(ctx context.Context, upstream *grpc.Clien
 	md := metadata.New(map[string]string{})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
+	// DNS redirector cannot determine external IP, so set NOOP value
+	ctx = redirectors.SetRedirectedForHeader(ctx, redirectors.ExternalIPNoop)
+
 	isClientStreaming := methodPath == "/c2.C2/ReportFile"
 	isServerStreaming := methodPath == "/c2.C2/FetchAsset"
 
