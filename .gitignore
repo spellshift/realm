@@ -49,3 +49,4 @@ implants/golem/embed_files_golem_prod/*
 node_modules/
 
 .env
+.envrc
