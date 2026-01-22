@@ -109,7 +109,9 @@ RUN set -eux; \
 # Install node
 RUN bash /tmp/library-scripts/node-debian.sh
 
-RUN apt update && apt install -y direnv
+RUN apt update && apt install -y direnv && \
+	echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+
 # Install Python
 # https://github.com/docker-library/python/blob/master/3.12/slim-trixie/Dockerfile
 RUN apt update && apt install -y python3
