@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/redirectors"
 )
 
 type Server struct {
@@ -59,6 +60,10 @@ func GetClientIP(ctx context.Context) string {
 	if ok {
 		if redirectedFor, exists := md["x-redirected-for"]; exists && len(redirectedFor) > 0 {
 			clientIP := strings.TrimSpace(redirectedFor[0])
+			// Return NOOP directly if set by redirector (e.g., DNS)
+			if clientIP == redirectors.ExternalIPNoop {
+				return redirectors.ExternalIPNoop
+			}
 			if validateIP(clientIP) {
 				return clientIP
 			} else {
@@ -83,7 +88,7 @@ func GetClientIP(ctx context.Context) string {
 	} else {
 		slog.Error("Bad remote IP", "ip", remoteIp)
 	}
-	return "unknown"
+	return redirectors.ExternalIPNoop
 }
 
 // generateTaskJWT creates a signed JWT token containing the beacon ID

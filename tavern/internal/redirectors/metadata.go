@@ -24,6 +24,6 @@ func SetRedirectedForHeader(ctx context.Context, clientIP string) context.Contex
 		outMd = metadata.New(nil)
 	}
 	outMd.Set("x-redirected-for", clientIP)
-	slog.Info("Setting redirected-for header", "clientIP", clientIP)
+	slog.Debug("Setting redirected-for header", "clientIP", clientIP)
 	return metadata.NewOutgoingContext(ctx, outMd)
 }
