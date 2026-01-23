@@ -4,9 +4,9 @@ use crossterm::{
     style::Stylize,
     terminal::{self, ClearType},
 };
+use eldritch::Interpreter;
 use eldritch_core::Value;
 use eldritch_repl::{Input, Repl, ReplAction};
-use eldritch::Interpreter;
 use std::io::{self, Write};
 use std::time::Duration;
 
@@ -51,14 +51,14 @@ fn main() -> io::Result<()> {
             res
         }),
     );
-    // Note: register_function became register_module? No, eldritchv2 wrapped register_module but not register_function directly?
+    // Note: register_function became register_module? No, eldritch wrapped register_module but not register_function directly?
     // Let me check my implementation of eldritch::Interpreter.
     // I did NOT expose register_function. I exposed register_module.
     // But wait, `interpreter.inner.register_function` exists.
-    // In `eldritchv2/src/lib.rs`, I didn't verify if I exposed `register_function`.
+    // In `eldritch/src/lib.rs`, I didn't verify if I exposed `register_function`.
     // I checked: I implemented `register_module`. I did NOT implement `register_function`.
     // The previous code used `register_function` for "input".
-    // I should fix `eldritchv2/src/lib.rs` to expose `register_function` or use `register_module` with a dict or just native function value.
+    // I should fix `eldritch/src/lib.rs` to expose `register_function` or use `register_module` with a dict or just native function value.
     // `Interpreter::register_function` in core does: `self.env.write().values.insert(name, Value::NativeFunction(...))`.
     // `Interpreter::register_module` does: `self.env.write().values.insert(name, module)`.
     // So `register_module` can take a `Value::NativeFunction` and it works the same (inserts into env).

@@ -30,7 +30,7 @@ pub async fn install() -> Result<()> {
             #[cfg(debug_assertions)]
             log::info!("running tome {}", embedded_file_path);
 
-            // Execute using Eldritch V2 Interpreter
+            // Execute using Eldritch Interpreter
             let mut locker = StdAssetsLibrary::new();
             let _ = locker.add(asset_backend.clone());
             let mut interpreter = Interpreter::new().with_default_libs();

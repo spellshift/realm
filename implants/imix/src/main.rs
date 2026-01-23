@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
     }
 
     #[cfg(all(feature = "win_service", windows))]
-    match windows_service::service_dispatcher::start("imixv2", ffi_service_main) {
+    match windows_service::service_dispatcher::start("imix", ffi_service_main) {
         Ok(_) => {
             return Ok(());
         }

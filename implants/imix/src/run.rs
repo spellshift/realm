@@ -79,7 +79,7 @@ pub fn init_logger() {
             .filter_level(log::LevelFilter::Info)
             .parse_env("IMIX_LOG")
             .try_init();
-        log::info!("Starting imixv2 agent");
+        log::info!("Starting imix agent");
     }
 }
 

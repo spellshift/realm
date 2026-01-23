@@ -23,7 +23,7 @@ pub fn handle_service_main(_arguments: Vec<OsString>) {
     };
 
     // Register system service event handler
-    let status_handle = service_control_handler::register("imixv2", event_handler).unwrap();
+    let status_handle = service_control_handler::register("imix", event_handler).unwrap();
 
     let next_status = ServiceStatus {
         service_type: ServiceType::OWN_PROCESS,

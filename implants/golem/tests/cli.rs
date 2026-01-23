@@ -7,8 +7,8 @@ use std::str;
 const GOLEM_CLI_TEST_DIR: &str = "../../bin/golem_cli_test";
 // Test running `./golem ./nonexistentdir/run.tome`
 #[test]
-fn test_golemv2_main_file_not_found() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_file_not_found() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
     cmd.arg("nonexistentdir/run.eldritch");
     cmd.assert()
         .failure()
@@ -18,8 +18,8 @@ fn test_golemv2_main_file_not_found() -> anyhow::Result<()> {
 }
 // Test running `./golem ../../bin/golem_cli_test/syntax_fail.tome`
 #[test]
-fn test_golemv2_main_syntax_fail() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_syntax_fail() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!(
         "{GOLEM_CLI_TEST_DIR}_shadow/syntax_fail/main.eldritch"
@@ -32,8 +32,8 @@ fn test_golemv2_main_syntax_fail() -> anyhow::Result<()> {
 }
 // Test running `./golem ../../bin/golem_cli_test/valid_tome/main.eldritch`
 #[test]
-fn test_golemv2_main_basic_non_interactive() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}/valid_tome/main.eldritch"));
     cmd.assert()
@@ -46,8 +46,8 @@ fn test_golemv2_main_basic_non_interactive() -> anyhow::Result<()> {
 
 // Test running `./golem ../../bin/golem_cli_test/download_test/main.eldritch`
 #[test]
-fn test_golemv2_main_basic_async() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_basic_async() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.arg(format!("{GOLEM_CLI_TEST_DIR}/download_test/main.eldritch"));
     cmd.assert()
@@ -58,8 +58,8 @@ fn test_golemv2_main_basic_async() -> anyhow::Result<()> {
 
 // Test running `./golem -a ../../bin/golem_cli_test/`
 #[test]
-fn test_golemv2_main_loaded_files() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_loaded_files() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
     cmd.arg("-a");
     cmd.arg(GOLEM_CLI_TEST_DIR);
     cmd.assert()
@@ -72,8 +72,8 @@ fn test_golemv2_main_loaded_files() -> anyhow::Result<()> {
 // NOTE: Depending on how this test is run, the commands may not actually be run
 // therefor we only test the output of eldritch and not the stdlib
 #[test]
-fn test_golemv2_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
     cmd.arg("-e");
     cmd.arg("-a");
     cmd.arg(GOLEM_CLI_TEST_DIR);
@@ -88,8 +88,8 @@ fn test_golemv2_main_loaded_and_embdedded_files() -> anyhow::Result<()> {
 
 // Test running `./golem -a ./../bin/golem_cli_test/ -a ./../bin/golem_cli_test_shadow/`. Should fail
 #[test]
-fn test_golemv2_main_loaded_files_shadow() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_loaded_files_shadow() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
     cmd.arg("-a");
     cmd.arg(GOLEM_CLI_TEST_DIR);
     cmd.arg("-a");
@@ -102,8 +102,8 @@ fn test_golemv2_main_loaded_files_shadow() -> anyhow::Result<()> {
 
 // Test running `./golem` to execute embedded scripts.
 #[test]
-fn test_golemv2_main_embedded_files() -> anyhow::Result<()> {
-    let mut cmd = Command::new(cargo_bin!("golemv2"));
+fn test_golem_main_embedded_files() -> anyhow::Result<()> {
+    let mut cmd = Command::new(cargo_bin!("golem"));
 
     cmd.assert()
         .success()

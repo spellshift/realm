@@ -222,7 +222,7 @@ fn test_interplay() {
     l = list(t)
     assert_eq(l[0], 1)
 
-    # Dict keys from tuple (Not supported natively as map keys must be strings currently in EldritchV2?)
+    # Dict keys from tuple (Not supported natively as map keys must be strings currently in Eldritch?)
     # Wait, methods.rs: "Dict keys must be strings".
     # eval.rs: "Dictionary keys must be strings."
     # So {(1,2): 1} should FAIL.
@@ -251,7 +251,7 @@ fn test_interplay() {
 
 #[test]
 fn test_tuple_methods() {
-    // Tuples currently have no methods in EldritchV2 (unlike Python which has index, count)
+    // Tuples currently have no methods in Eldritch (unlike Python which has index, count)
     assert::fail("t=(1,); t.index(1)", "has no method 'index'");
     assert::fail("t=(1,); t.count(1)", "has no method 'count'");
 }
