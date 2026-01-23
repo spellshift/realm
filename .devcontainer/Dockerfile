@@ -69,6 +69,17 @@ RUN set -eux; \
 	mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 1777 "$GOPATH" && \
 	go version;
 
+# Install node
+RUN bash /tmp/library-scripts/node-debian.sh
+
+# Install Python
+# https://github.com/docker-library/python/blob/master/3.12/slim-trixie/Dockerfile
+RUN apt update && apt install -y python3
+
+RUN rm -rf /var/lib/apt/lists/* && rm -rf /tmp/*
+
+USER vscode
+
 # Install rust
 # https://github.com/rust-lang/docker-rust/blob/master/stable/trixie/Dockerfile
 RUN set -eux; \
@@ -106,14 +117,6 @@ RUN set -eux; \
 	cargo install cargo-zigbuild; \
 	cargo +1.89.0 install xwin --locked
 
-# Install node
-RUN bash /tmp/library-scripts/node-debian.sh
 
 RUN apt update && apt install -y direnv && \
 	echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
-
-# Install Python
-# https://github.com/docker-library/python/blob/master/3.12/slim-trixie/Dockerfile
-RUN apt update && apt install -y python3
-
-RUN rm -rf /var/lib/apt/lists/* && rm -rf /tmp/*
