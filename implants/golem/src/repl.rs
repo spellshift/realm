@@ -1,9 +1,8 @@
 use crossterm::{
-    cursor,
+    ExecutableCommand, QueueableCommand, cursor,
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     style::Stylize,
     terminal::{self, ClearType},
-    ExecutableCommand, QueueableCommand,
 };
 use eldritch::repl::{Input, Repl, ReplAction};
 use eldritch::{Interpreter, Value};

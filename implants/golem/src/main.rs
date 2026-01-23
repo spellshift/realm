@@ -4,8 +4,8 @@ extern crate alloc;
 use clap::{Arg, ArgAction, Command};
 use eldritch::agent::{fake::AgentFake, std::StdAgentLibrary};
 use eldritch::assets::{
-    std::{EmbeddedAssets, StdAssetsLibrary},
     AssetsLibrary,
+    std::{EmbeddedAssets, StdAssetsLibrary},
 };
 use eldritch::conversion::ToValue;
 use eldritch::{ForeignValue, Interpreter, StdoutPrinter};

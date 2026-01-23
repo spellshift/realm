@@ -1,8 +1,8 @@
 #[cfg(feature = "install")]
 use anyhow::Result;
-use eldritch::assets::std::{EmbeddedAssets, StdAssetsLibrary};
 #[cfg(feature = "install")]
 use eldritch::Interpreter;
+use eldritch::assets::std::{EmbeddedAssets, StdAssetsLibrary};
 use std::sync::Arc;
 
 #[cfg(feature = "install")]
