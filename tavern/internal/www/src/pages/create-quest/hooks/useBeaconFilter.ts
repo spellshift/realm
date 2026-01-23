@@ -130,13 +130,44 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             const principals = Object.values(PrincipalAdminTypes) as Array<string>;
             const hosts = {} as { [key: string]: BeaconNode };
 
+            // Transport priority: GRPC > HTTP1 > DNS
+            const getTransportPriority = (transport: string | undefined): number => {
+                if (!transport) return 0;
+                const lowerTransport = transport.toLowerCase();
+                if (lowerTransport.includes('grpc')) return 3;
+                if (lowerTransport.includes('http')) return 2;
+                if (lowerTransport.includes('dns')) return 1;
+                return 0;
+            };
+
+            const isAdmin = (principal: string) => principals.indexOf(principal) !== -1;
+
+            const shouldReplace = (current: BeaconNode, candidate: BeaconNode): boolean => {
+                const currentIsAdmin = isAdmin(current.principal);
+                const candidateIsAdmin = isAdmin(candidate.principal);
+
+                // If candidate is admin and current is not, replace
+                if (!currentIsAdmin && candidateIsAdmin) {
+                    return true;
+                }
+
+                // If both have same admin status, prefer better transport
+                if (currentIsAdmin === candidateIsAdmin) {
+                    const currentPriority = getTransportPriority(current.transport);
+                    const candidatePriority = getTransportPriority(candidate.transport);
+                    return candidatePriority > currentPriority;
+                }
+
+                return false;
+            };
+
             for (let beaconIndex in beacons) {
                 const hostId = beacons[beaconIndex]?.host?.id;
 
                 if (hostId && !(hostId in hosts)) {
                     hosts[hostId] = beacons[beaconIndex];
                 }
-                else if (hostId && (principals.indexOf(hosts[hostId].principal) === -1) && (principals.indexOf(beacons[beaconIndex].principal) !== -1)) {
+                else if (hostId && shouldReplace(hosts[hostId], beacons[beaconIndex])) {
                     hosts[hostId] = beacons[beaconIndex];
                 }
             }
