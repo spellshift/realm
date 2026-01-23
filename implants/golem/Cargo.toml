@@ -1,29 +1,26 @@
 [package]
-name = "golem"
-version = "0.3.1"
-edition = "2021"
+name = "golemv2"
+version = "0.1.0"
+edition = "2024"
 
 [dependencies]
-pb = { workspace = true }
-eldritch = { workspace = true, features = ["print_stdout"] }
-
-starlark_lsp = "0.12.0"
-tokio = { workspace = true, features = ["macros"] }
 clap = { workspace = true }
-starlark = { workspace = true }
 anyhow = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
-structopt = { workspace = true }
-itertools = { workspace = true }
-thiserror = { workspace = true }
-lsp-types = { workspace = true }
+pb = { workspace = true }
+crossterm = { workspace = true }
+walkdir = {workspace = true}
+rust-embed = { workspace = true }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch = { workspace = true, features = ["std", "stdlib", "fake_agent"] }
+# Need fake here so we import this on its own
+tokio.workspace = true
+futures.workspace = true
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
 predicates = { workspace = true }
 tempfile = { workspace = true }
-
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }

@@ -1,62 +1,58 @@
 [workspace]
 members = [
     "imix",
-    "imixv2",
     "golem",
-    "golemv2",
-    "lib/eldritch",
     "lib/transport",
     "lib/pb",
     "lib/host_unique",
     "lib/netstat",
-    "lib/eldritchv2/eldritch-core",
-    "lib/eldritchv2/eldritch-macros",
-    "lib/eldritchv2/eldritch-repl",
-    "lib/eldritchv2/eldritch-agent",
-    "lib/eldritchv2/stdlib/eldritch-libagent",
-    "lib/eldritchv2/stdlib/eldritch-libassets",
-    "lib/eldritchv2/stdlib/eldritch-libcrypto",
-    "lib/eldritchv2/stdlib/eldritch-libfile",
-    "lib/eldritchv2/stdlib/eldritch-libhttp",
-    "lib/eldritchv2/stdlib/eldritch-libpivot",
-    "lib/eldritchv2/stdlib/eldritch-libprocess",
-    "lib/eldritchv2/stdlib/eldritch-librandom",
-    "lib/eldritchv2/stdlib/eldritch-libregex",
-    "lib/eldritchv2/stdlib/eldritch-libreport",
-    "lib/eldritchv2/stdlib/eldritch-libsys",
-    "lib/eldritchv2/stdlib/eldritch-libtime",
-    "lib/eldritchv2/stdlib/tests",
-    "lib/eldritchv2/stdlib/migration",
-    "lib/eldritchv2/eldritchv2",
+    "lib/eldritch/eldritch-core",
+    "lib/eldritch/eldritch-macros",
+    "lib/eldritch/eldritch-repl",
+    "lib/eldritch/eldritch-agent",
+    "lib/eldritch/stdlib/eldritch-libagent",
+    "lib/eldritch/stdlib/eldritch-libassets",
+    "lib/eldritch/stdlib/eldritch-libcrypto",
+    "lib/eldritch/stdlib/eldritch-libfile",
+    "lib/eldritch/stdlib/eldritch-libhttp",
+    "lib/eldritch/stdlib/eldritch-libpivot",
+    "lib/eldritch/stdlib/eldritch-libprocess",
+    "lib/eldritch/stdlib/eldritch-librandom",
+    "lib/eldritch/stdlib/eldritch-libregex",
+    "lib/eldritch/stdlib/eldritch-libreport",
+    "lib/eldritch/stdlib/eldritch-libsys",
+    "lib/eldritch/stdlib/eldritch-libtime",
+    "lib/eldritch/stdlib/tests",
+    "lib/eldritch/stdlib/migration",
+    "lib/eldritch/eldritch",
     "lib/portals/portal-stream",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 transport = { path = "./lib/transport" }
-eldritch = { path = "./lib/eldritch" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
 netstat = { path = "./lib/netstat" }
 
 # Eldritch V2
-eldritch-core = {path = "lib/eldritchv2/eldritch-core", default-features = false }
-eldritch-macros = {path = "lib/eldritchv2/eldritch-macros", default-features = false}
-eldritch-repl = {path = "lib/eldritchv2/eldritch-repl", default-features = false}
-eldritchv2 = {path = "lib/eldritchv2/eldritchv2", default-features = false}
-eldritch-agent = {path = "lib/eldritchv2/eldritch-agent"}
-eldritch-libagent = {path = "lib/eldritchv2/stdlib/eldritch-libagent", default-features = false}
-eldritch-libassets = {path = "lib/eldritchv2/stdlib/eldritch-libassets", default-features = false}
-eldritch-libcrypto = {path = "lib/eldritchv2/stdlib/eldritch-libcrypto",default-features = false }
-eldritch-libfile = {path = "lib/eldritchv2/stdlib/eldritch-libfile",default-features = false }
-eldritch-libhttp = {path = "lib/eldritchv2/stdlib/eldritch-libhttp",default-features = false }
-eldritch-libpivot = {path = "lib/eldritchv2/stdlib/eldritch-libpivot",default-features = false }
-eldritch-libprocess = {path = "lib/eldritchv2/stdlib/eldritch-libprocess",default-features = false }
-eldritch-librandom = {path = "lib/eldritchv2/stdlib/eldritch-librandom", default-features = false }
-eldritch-libregex = {path = "lib/eldritchv2/stdlib/eldritch-libregex",default-features = false }
-eldritch-libreport = {path = "lib/eldritchv2/stdlib/eldritch-libreport",default-features = false }
-eldritch-libsys = {path = "lib/eldritchv2/stdlib/eldritch-libsys",default-features = false }
-eldritch-libtime = {path = "lib/eldritchv2/stdlib/eldritch-libtime",default-features = false }
+eldritch-core = {path = "lib/eldritch/eldritch-core", default-features = false }
+eldritch-macros = {path = "lib/eldritch/eldritch-macros", default-features = false}
+eldritch-repl = {path = "lib/eldritch/eldritch-repl", default-features = false}
+eldritch = {path = "lib/eldritch/eldritch", default-features = false}
+eldritch-agent = {path = "lib/eldritch/eldritch-agent"}
+eldritch-libagent = {path = "lib/eldritch/stdlib/eldritch-libagent", default-features = false}
+eldritch-libassets = {path = "lib/eldritch/stdlib/eldritch-libassets", default-features = false}
+eldritch-libcrypto = {path = "lib/eldritch/stdlib/eldritch-libcrypto",default-features = false }
+eldritch-libfile = {path = "lib/eldritch/stdlib/eldritch-libfile",default-features = false }
+eldritch-libhttp = {path = "lib/eldritch/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libpivot = {path = "lib/eldritch/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libprocess = {path = "lib/eldritch/stdlib/eldritch-libprocess",default-features = false }
+eldritch-librandom = {path = "lib/eldritch/stdlib/eldritch-librandom", default-features = false }
+eldritch-libregex = {path = "lib/eldritch/stdlib/eldritch-libregex",default-features = false }
+eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-features = false }
+eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
 
 aes = "0.8.3"

