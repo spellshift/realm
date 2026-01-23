@@ -21,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/namegen"
+	"realm.pub/tavern/internal/redirectors"
 )
 
 var (
@@ -209,15 +210,21 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 	isNewHost := !hostExists
 
-	// Upsert the host
-	hostID, err := srv.graph.Host.Create().
+	hostCreate := srv.graph.Host.Create().
 		SetIdentifier(req.Beacon.Host.Identifier).
 		SetName(req.Beacon.Host.Name).
 		SetPlatform(req.Beacon.Host.Platform).
 		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
-		SetExternalIP(clientIP).
 		SetLastSeenAt(now).
-		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second)).
+		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second))
+
+	// Only update external IP if it's not NOOP
+	if clientIP != redirectors.ExternalIPNoop {
+		hostCreate.SetExternalIP(clientIP)
+	}
+
+	// Upsert the host
+	hostID, err := hostCreate.
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)
