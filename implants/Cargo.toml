@@ -23,7 +23,6 @@ members = [
     "lib/eldritch/stdlib/eldritch-libsys",
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/stdlib/tests",
-    "lib/eldritch/stdlib/migration",
     "lib/eldritch/eldritch",
     "lib/portals/portal-stream",
 ]
