@@ -78,6 +78,8 @@ RUN mkdir -p /usr/local/share/nvm && \
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
     bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION"
 
+RUN echo 'source $NVM_DIR/nvm.sh' >> /etc/bash.bashrc
+
 # Install Python
 # https://github.com/docker-library/python/blob/master/3.12/slim-trixie/Dockerfile
 RUN apt update && apt install -y python3
