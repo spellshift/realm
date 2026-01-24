@@ -5,9 +5,13 @@ ARG ZIG_VERSION=0.16.0-dev.1859+212968c57
 ENV GOPATH=/go
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
+    NVM_DIR=/usr/local/share/nvm \
     PATH=$GOPATH/bin:/usr/local/bin:/usr/local/go/bin:/usr/local/cargo/bin:$PATH \
     RUST_VERSION=1.91.1 \
-    GOLANG_VERSION=1.24.3
+    GOLANG_VERSION=1.24.3 \
+    NODE_VERSION=20 \
+    PNPM_VERSION=latest \
+    NVM_VERSION=latest
 
 COPY library-scripts/*.sh library-scripts/*.env /tmp/library-scripts/
 
@@ -70,13 +74,22 @@ RUN set -eux; \
 	go version;
 
 # Install node
-RUN bash /tmp/library-scripts/node-debian.sh
+RUN mkdir -p /usr/local/share/nvm && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
+    bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION"
 
 # Install Python
 # https://github.com/docker-library/python/blob/master/3.12/slim-trixie/Dockerfile
 RUN apt update && apt install -y python3
 
 RUN rm -rf /var/lib/apt/lists/* && rm -rf /tmp/*
+
+
+RUN install -d -o vscode -g vscode -m 755 $RUSTUP_HOME && \
+    install -d -o vscode -g vscode -m 755 $CARGO_HOME
+
+RUN apt update && apt install -y direnv && \
+	echo 'eval "$(direnv hook bash)"' >> /etc/bash.bashrc
 
 USER vscode
 
@@ -101,11 +114,11 @@ RUN set -eux; \
     esac; \
     \
     url="https://static.rust-lang.org/rustup/archive/1.28.2/${rustArch}/rustup-init"; \
-    wget --progress=dot:giga "$url"; \
-    echo "${rustupSha256} *rustup-init" | sha256sum -c -; \
-    chmod +x rustup-init; \
-    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
-    rm rustup-init; \
+    wget -O /tmp/rustup-init --progress=dot:giga "$url"; \
+    echo "${rustupSha256} /tmp/rustup-init" | sha256sum -c -; \
+    chmod +x /tmp/rustup-init; \
+    /tmp/rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
+    rm /tmp/rustup-init; \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
     rustup --version; \
     cargo --version; \
@@ -115,8 +128,5 @@ RUN set -eux; \
 		x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin; \
     rustup component add rustfmt clippy; \
 	cargo install cargo-zigbuild; \
-	cargo +1.89.0 install xwin --locked
+	cargo +1.89.0 install cargo-xwin --locked
 
-
-RUN apt update && apt install -y direnv && \
-	echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
