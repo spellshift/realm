@@ -19,7 +19,7 @@ pub use ast::{
 };
 pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
-pub use token::{Span, TokenKind};
+pub use token::{Span, Token, TokenKind};
 
 // Public API exports
 pub mod conversion;
