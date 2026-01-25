@@ -1,4 +1,4 @@
-import { Heading, Text, Stack, StackItem, Box, FormLabel, Switch } from "@chakra-ui/react";
+import { Heading, Text, Stack, StackItem, Box, FormLabel, Switch, Tooltip } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { FC, useCallback } from "react";
 import {
@@ -106,12 +106,14 @@ const BeaconStep = (props: Props) => {
                                 </FormLabel>
                                 <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
                             </div>
-                            <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
-                                <FormLabel htmlFor='isOnePerHost' className="mt-1">
-                                    <Heading size="sm" >View one beacon per host</Heading>
-                                </FormLabel>
-                                <Switch id='isOnePerHost' className="pt-1" colorScheme="purple" onChange={() => setViewOnlyOnePerHost((value) => !value)} />
-                            </div>
+                            <Tooltip label="Shows only the best beacon per host, prioritizing admin privileges and better transports (GRPC > HTTP > DNS)" placement="top">
+                                <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                                    <FormLabel htmlFor='isOnePerHost' className="mt-1">
+                                        <Heading size="sm" >View one beacon per host</Heading>
+                                    </FormLabel>
+                                    <Switch id='isOnePerHost' className="pt-1" colorScheme="purple" onChange={() => setViewOnlyOnePerHost((value) => !value)} />
+                                </div>
+                            </Tooltip>
                         </div>
                     </div>
                 </StackItem>
