@@ -1,37 +1,51 @@
 [package]
 name = "imix"
-version = "0.3.1"
-edition = "2021"
+version = "0.3.0"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]
 
 [features]
-# Check if compiled by imix
-win_service = []
-default = ["transport/grpc"]
+default = ["install", "grpc", "http1", "dns", "doh"]
+grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
-transport-doh = ["transport/doh"]
+doh = ["transport/doh"]
+win_service = []
+install = []
+tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [dependencies]
-eldritch = { workspace = true, features = ["imix"] }
-
-pb = { workspace = true, features = ["imix"]}
-transport = { workspace = true }
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+    "net",
+    "io-util",
+    "tracing",
+] }
+portal-stream = { workspace = true }
 anyhow = { workspace = true }
-clap = { workspace = true }
 log = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
+futures = { workspace = true }
+prost = { workspace = true }
+crossterm = { workspace = true }
+prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
+eldritch = { workspace = true, features = ["std", "stdlib"] }
+transport = { workspace = true }
+pb = { workspace = true, features = ["imix"] }
+portable-pty = { workspace = true }
+rust-embed = { workspace = true }
+console-subscriber = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-service = "0.6.0"
+windows-service = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
 
 [dev-dependencies]
-httptest = { workspace = true }
-tempfile = { workspace = true }
-env_logger = "0.11.2"
+transport = { workspace = true, features = ["mock", "grpc"] }

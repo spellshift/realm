@@ -1,165 +1,356 @@
-use anyhow::Result;
-use eldritch::runtime::{
-    messages::{AsyncDispatcher, AsyncMessage, ReportErrorMessage, SyncDispatcher},
-    Message,
-};
-use pb::c2::{ReportTaskOutputRequest, TaskContext, TaskError, TaskOutput};
-use transport::Transport;
+use alloc::collections::BTreeMap;
+use std::sync::{Arc, Mutex, RwLock};
+use std::thread;
+use std::time::SystemTime;
 
-use crate::run::Config;
+use eldritch::agent::agent::Agent;
+use eldritch::assets::std::EmbeddedAssets;
+use eldritch::{Interpreter, Printer, Span, Value, conversion::ToValue};
+use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
+use prost_types::Timestamp;
+use tokio::sync::mpsc::{self, UnboundedSender};
 
-/*
- * Task handle is responsible for tracking a running task and reporting it's output.
- */
-pub struct TaskHandle {
-    id: i64,
-    runtime: eldritch::Runtime,
-    pool: tokio::task::JoinSet<()>,
+#[derive(Debug)]
+struct StreamPrinter {
+    tx: UnboundedSender<String>,
 }
 
-impl TaskHandle {
-    // Track a new task handle.
-    pub fn new(id: i64, runtime: eldritch::Runtime) -> TaskHandle {
-        TaskHandle {
-            id,
-            runtime,
-            pool: tokio::task::JoinSet::new(),
+impl StreamPrinter {
+    fn new(tx: UnboundedSender<String>) -> Self {
+        Self { tx }
+    }
+}
+
+impl Printer for StreamPrinter {
+    fn print_out(&self, _span: &Span, s: &str) {
+        // We format with newline to match BufferPrinter behavior which separates lines
+        let _ = self.tx.send(format!("{}\n", s));
+    }
+
+    fn print_err(&self, _span: &Span, s: &str) {
+        // We format with newline to match BufferPrinter behavior
+        let _ = self.tx.send(format!("{}\n", s));
+    }
+}
+
+struct SubtaskHandle {
+    name: String,
+    _handle: tokio::task::JoinHandle<()>,
+}
+
+struct TaskHandle {
+    quest: String,
+    subtasks: Arc<RwLock<Vec<SubtaskHandle>>>,
+}
+
+#[derive(Clone)]
+pub struct TaskRegistry {
+    tasks: Arc<Mutex<BTreeMap<i64, TaskHandle>>>,
+}
+
+impl Default for TaskRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TaskRegistry {
+    pub fn new() -> Self {
+        Self {
+            tasks: Arc::new(Mutex::new(BTreeMap::new())),
         }
     }
 
-    // Returns true if the task has been completed, false otherwise.
-    pub fn is_finished(&self) -> bool {
-        // Check Report Pool
-        if !self.pool.is_empty() {
+    pub fn spawn(&self, task: Task, agent: Arc<dyn Agent>) {
+        let task_context = TaskContext {
+            task_id: task.clone().id,
+            jwt: task.clone().jwt,
+        };
+
+        // 1. Register logic
+        // TODO: Should de-dupe Taks and TaskContext?
+        if !self.register_task(&task) {
+            return;
+        }
+
+        let tasks_registry = self.tasks.clone();
+        // Capture runtime handle to spawn streaming task
+        let runtime_handle = tokio::runtime::Handle::current();
+
+        // 2. Spawn thread
+        #[cfg(debug_assertions)]
+        log::info!("Spawning Task: {0}", task_context.clone().task_id);
+
+        thread::spawn(move || {
+            if let Some(tome) = task.tome {
+                execute_task(task_context.clone(), tome, agent, runtime_handle);
+            } else {
+                #[cfg(debug_assertions)]
+                log::warn!("Task {0} has no tome", task_context.clone().task_id);
+            }
+
+            // Cleanup
+            #[cfg(debug_assertions)]
+            log::info!("Completed Task: {0}", task_context.clone().task_id);
+            let mut tasks = tasks_registry.lock().unwrap();
+            tasks.remove(&task_context.task_id);
+        });
+    }
+
+    fn register_task(&self, task: &Task) -> bool {
+        let mut tasks = self.tasks.lock().unwrap();
+        if tasks.contains_key(&task.id) {
             return false;
         }
-
-        // Check Tome Evaluation
-        self.runtime.is_finished()
+        tasks.insert(
+            task.id,
+            TaskHandle {
+                quest: task.quest_name.clone(),
+                subtasks: Arc::new(RwLock::new(Vec::new())),
+            },
+        );
+        true
     }
 
-    // Report any available task output.
-    // Also responsible for downloading any files requested by the eldritch runtime.
-    pub async fn report(
-        &mut self,
-        tavern: &mut (impl Transport + 'static),
-        cfg: Config,
-    ) -> Result<Config> {
-        let mut messages = self.runtime.collect();
-        let mut ret_cfg = cfg.clone();
-        let mut idx = 0;
-        while idx < messages.len() {
-            let msg = messages[idx].clone();
-            // Copy values for logging
-            let id = self.id;
-            let msg_str = msg.to_string();
-
-            // Each message is dispatched in it's own tokio task, managed by this task handle's pool.
-            let mut t = tavern.clone();
-
-            // Handle SyncMessages and AsyncMessages differently.
-            match msg {
-                Message::Sync(sm) => {
-                    let sm_str = sm.to_string();
-                    ret_cfg = match sm.dispatch(&mut t, ret_cfg.clone()) {
-                        Ok(r) => {
-                            #[cfg(debug_assertions)]
-                            log::info!(
-                                "message success (task_id={},msg={}-{})",
-                                id,
-                                msg_str,
-                                sm_str
-                            );
-
-                            r
-                        }
-                        Err(err) => {
-                            #[cfg(debug_assertions)]
-                            log::error!(
-                                "message failed (task_id={},msg={}-{}): {}",
-                                id,
-                                msg_str.clone(),
-                                sm_str.clone(),
-                                err
-                            );
-
-                            // if an individual sync message errors then just add an
-                            // ReportErrorMessage to the queue and continue on.
-                            messages.push(
-                                AsyncMessage::from(ReportErrorMessage {
-                                    id,
-                                    error: format!(
-                                        "dispatch error ({}-{}): {:#?}",
-                                        msg_str, sm_str, err
-                                    ),
-                                })
-                                .into(),
-                            );
-                            ret_cfg
-                        }
-                    };
-                }
-                Message::Async(am) => {
-                    let am_str = am.to_string();
-                    let async_conf = ret_cfg.clone(); // needed due to the move
-                    self.pool.spawn(async move {
-                        match am.dispatch(&mut t, async_conf).await {
-                            Ok(_) => {
-                                #[cfg(debug_assertions)]
-                                log::info!(
-                                    "message success (task_id={},msg={}-{})",
-                                    id,
-                                    msg_str,
-                                    am_str
-                                );
-                            }
-                            Err(err) => {
-                                #[cfg(debug_assertions)]
-                                log::error!(
-                                    "message failed (task_id={},msg={}-{}): {}",
-                                    id,
-                                    msg_str.clone(),
-                                    am_str.clone(),
-                                    err
-                                );
-
-                                // Attempt to report this dispatch error to the server
-                                // This will help in cases where one transport method is failing but we can
-                                // still report errors.
-                                match t
-                                    .report_task_output(ReportTaskOutputRequest {
-                                        context: Some(TaskContext {
-                                            task_id: id,
-                                            jwt: "no_jwt".to_string(),
-                                        }),
-                                        output: Some(TaskOutput {
-                                            id,
-                                            output: String::new(),
-                                            error: Some(TaskError {
-                                                msg: format!(
-                                                    "dispatch error ({}-{}): {:#?}",
-                                                    msg_str, am_str, err
-                                                ),
-                                            }),
-                                            exec_started_at: None,
-                                            exec_finished_at: None,
-                                        }),
-                                    })
-                                    .await
-                                {
-                                    Ok(_) => {}
-                                    Err(_err) => {
-                                        #[cfg(debug_assertions)]
-                                        log::error!("failed to report dispatch error: {}", _err);
-                                    }
-                                };
-                            }
-                        }
-                    });
-                }
-            };
-            idx += 1;
+    pub fn register_subtask(
+        &self,
+        task_id: i64,
+        name: String,
+        handle: tokio::task::JoinHandle<()>,
+    ) {
+        let tasks = self.tasks.lock().unwrap();
+        if let Some(task) = tasks.get(&task_id) {
+            let mut subtasks = task.subtasks.write().unwrap();
+            subtasks.push(SubtaskHandle {
+                name,
+                _handle: handle,
+            });
+        } else {
+            // Task might have finished already, or this is an orphan subtask.
+            // In the future we might want to track these anyway.
+            #[cfg(debug_assertions)]
+            log::warn!("Attempted to register subtask '{name}' for non-existent task {task_id}");
         }
-        Ok(ret_cfg)
+    }
+
+    pub fn list(&self) -> Vec<Task> {
+        let tasks = self.tasks.lock().unwrap();
+        tasks
+            .iter()
+            .map(|(id, handle)| Task {
+                id: *id,
+                tome: None,
+                quest_name: handle.quest.clone(),
+                jwt: String::new(),
+            })
+            .collect()
+    }
+
+    pub fn stop(&self, task_id: i64) {
+        let mut tasks = self.tasks.lock().unwrap();
+        if let Some(handle) = tasks.remove(&task_id) {
+            #[cfg(debug_assertions)]
+            log::info!("Task {task_id} stop requested (thread may persist)");
+
+            let subtasks = handle.subtasks.read().unwrap();
+            for subtask in subtasks.iter() {
+                subtask._handle.abort();
+            }
+        }
+    }
+}
+
+fn execute_task(
+    task_context: TaskContext,
+    tome: pb::eldritch::Tome,
+    agent: Arc<dyn Agent>,
+    runtime_handle: tokio::runtime::Handle,
+) {
+    // Setup StreamPrinter and Interpreter
+    let (tx, rx) = mpsc::unbounded_channel();
+    let printer = Arc::new(StreamPrinter::new(tx));
+    let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
+
+    // Report Start
+    report_start(task_context.clone(), &agent);
+
+    // Spawn output consumer task
+    let consumer_join_handle = spawn_output_consumer(
+        task_context.clone(),
+        agent.clone(),
+        runtime_handle.clone(),
+        rx,
+    );
+
+    // Run Interpreter with panic protection
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        interp.interpret(&tome.eldritch)
+    }));
+
+    // Explicitly drop interp and printer to close channel
+    drop(printer);
+    drop(interp);
+
+    // Wait for consumer to finish processing all messages
+    match runtime_handle.block_on(consumer_join_handle) {
+        Ok(_) => {}
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!(
+                "task={0} failed to wait for output consumer to join: {_e}",
+                task_context.clone().task_id
+            );
+        }
+    }
+
+    // Handle result
+    match result {
+        Ok(exec_result) => report_result(task_context, exec_result, &agent),
+        Err(e) => {
+            report_panic(task_context, &agent, format!("panic: {e:?}"));
+        }
+    }
+}
+
+fn setup_interpreter(
+    task_context: TaskContext,
+    tome: &pb::eldritch::Tome,
+    agent: Arc<dyn Agent>,
+    printer: Arc<StreamPrinter>,
+) -> Interpreter {
+    let mut interp = Interpreter::new_with_printer(printer).with_default_libs();
+
+    // Remote asset filenames
+    let remote_assets = tome.file_names.clone();
+    // Support embedded assets behind remote asset filenames
+    let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
+    // Register Task Context (Agent, Report, Assets)
+    interp = interp.with_task_context(agent, task_context, remote_assets, backend);
+
+    // Inject input_params
+    let params_map: BTreeMap<String, String> = tome
+        .parameters
+        .iter()
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+    let params_val = params_map.to_value();
+    interp.define_variable("input_params", params_val);
+
+    interp
+}
+
+fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
+    let task_id = task_context.task_id;
+    #[cfg(debug_assertions)]
+    log::info!("task={task_id} Started execution");
+
+    match agent.report_task_output(ReportTaskOutputRequest {
+        output: Some(TaskOutput {
+            id: task_id,
+            output: String::new(),
+            error: None,
+            exec_started_at: Some(Timestamp::from(SystemTime::now())),
+            exec_finished_at: None,
+        }),
+        context: Some(task_context.into()),
+    }) {
+        Ok(_) => {}
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("task={task_id} failed to report task start: {_e}");
+        }
+    }
+}
+
+fn spawn_output_consumer(
+    task_context: TaskContext,
+    agent: Arc<dyn Agent>,
+    runtime_handle: tokio::runtime::Handle,
+    mut rx: mpsc::UnboundedReceiver<String>,
+) -> tokio::task::JoinHandle<()> {
+    runtime_handle.spawn(async move {
+        #[cfg(debug_assertions)]
+        log::info!("task={} Started output stream", task_context.task_id);
+        let task_id = task_context.task_id;
+        while let Some(msg) = rx.recv().await {
+            match agent.report_task_output(ReportTaskOutputRequest {
+                output: Some(TaskOutput {
+                    id: task_id,
+                    output: msg,
+                    error: None,
+                    exec_started_at: None,
+                    exec_finished_at: None,
+                }),
+                context: Some(task_context.clone().into()),
+            }) {
+                Ok(_) => {}
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("task={task_id} failed to report output: {_e}");
+                }
+            }
+        }
+    })
+}
+
+fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) {
+    let task_id = task_context.task_id;
+    match agent.report_task_output(ReportTaskOutputRequest {
+        output: Some(TaskOutput {
+            id: task_id,
+            output: String::new(),
+            error: Some(TaskError { msg: err }),
+            exec_started_at: None,
+            exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+        }),
+        context: Some(task_context.into()),
+    }) {
+        Ok(_) => {}
+        Err(_e) => {
+            #[cfg(debug_assertions)]
+            log::error!("task={task_id} failed to report error: {_e}");
+        }
+    }
+}
+
+fn report_result(task_context: TaskContext, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
+    let task_id = task_context.task_id;
+    match result {
+        Ok(v) => {
+            #[cfg(debug_assertions)]
+            log::info!("task={task_id} Success: {v}");
+
+            let _ = agent.report_task_output(ReportTaskOutputRequest {
+                output: Some(TaskOutput {
+                    id: task_id,
+                    output: String::new(),
+                    error: None,
+                    exec_started_at: None,
+                    exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+                }),
+                context: Some(task_context.into()),
+            });
+        }
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            log::info!("task={task_id} Error: {e}");
+
+            match agent.report_task_output(ReportTaskOutputRequest {
+                output: Some(TaskOutput {
+                    id: task_id,
+                    output: String::new(),
+                    error: Some(TaskError { msg: e }),
+                    exec_started_at: None,
+                    exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+                }),
+                context: Some(task_context.into()),
+            }) {
+                Ok(_) => {}
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("task={task_id} failed to report task error: {_e}");
+                }
+            }
+        }
     }
 }

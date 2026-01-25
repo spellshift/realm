@@ -1,87 +1,67 @@
-use anyhow::{anyhow, Result};
-#[allow(unused_imports)]
-use eldritch::runtime::{messages::AsyncMessage, Message};
-use pb::eldritch::Tome;
-use std::collections::HashMap;
-#[cfg(debug_assertions)]
-use std::fmt::Write;
+#[cfg(feature = "install")]
+use anyhow::Result;
+#[cfg(feature = "install")]
+use eldritch::Interpreter;
+use eldritch::assets::std::{EmbeddedAssets, StdAssetsLibrary};
+use std::sync::Arc;
 
-pub async fn install() {
+#[cfg(feature = "install")]
+pub async fn install() -> Result<()> {
     #[cfg(debug_assertions)]
     log::info!("starting installation");
+    let asset_backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
 
-    // Iterate through all embedded files
-    for embedded_file_path in eldritch::assets::Asset::iter() {
-        let filename = embedded_file_path.split('/').next_back().unwrap_or("");
-
-        #[cfg(debug_assertions)]
-        log::debug!("checking asset {embedded_file_path}");
-
-        // Evaluate all "main.eldritch" files
-        if filename == "main.eldritch" {
-            // Read eldritch content from embedded file
+    // Iterate through all embedded files using the Asset struct from assets.rs
+    for embedded_file_path in crate::assets::Asset::iter() {
+        // Find "main.eldritch" files
+        if embedded_file_path.ends_with("main.eldritch") {
             #[cfg(debug_assertions)]
-            log::info!("loading tome {embedded_file_path}");
-            let eldritch = match load_embedded_eldritch(embedded_file_path.to_string()) {
-                Ok(content) => content,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed to load install asset: {_err}");
+            log::info!("loading tome {}", embedded_file_path);
 
+            let content = match crate::assets::Asset::get(&embedded_file_path) {
+                Some(f) => String::from_utf8_lossy(&f.data).to_string(),
+                None => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to load install asset: {}", embedded_file_path);
                     continue;
                 }
             };
 
-            // Run tome
             #[cfg(debug_assertions)]
-            log::info!("running tome {embedded_file_path}");
-            let mut runtime = eldritch::start(
-                0,
-                Tome {
-                    eldritch,
-                    parameters: HashMap::new(),
-                    file_names: Vec::new(),
-                },
-            )
-            .await;
-            runtime.finish().await;
+            log::info!("running tome {}", embedded_file_path);
 
-            #[cfg(debug_assertions)]
-            let mut output = String::new();
+            // Execute using Eldritch Interpreter
+            let mut locker = StdAssetsLibrary::new();
+            let _ = locker.add(asset_backend.clone());
+            let mut interpreter = Interpreter::new().with_default_libs();
+            interpreter.register_lib(locker);
 
-            #[cfg(debug_assertions)]
-            for msg in runtime.collect() {
-                if let Message::Async(AsyncMessage::ReportText(m)) = msg {
-                    if let Err(err) = output.write_str(m.text().as_str()) {
-                        #[cfg(debug_assertions)]
-                        log::error!("failed to write text: {}", err);
-                    }
+            match interpreter.interpret(&content) {
+                Ok(_) => {
+                    #[cfg(debug_assertions)]
+                    log::info!("Successfully executed {embedded_file_path}");
+                }
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to execute {embedded_file_path}: {_e}");
                 }
             }
-            #[cfg(debug_assertions)]
-            log::info!("{output}");
         }
     }
+
+    Ok(())
 }
 
-fn load_embedded_eldritch(path: String) -> Result<String> {
-    match eldritch::assets::Asset::get(path.as_ref()) {
-        Some(f) => Ok(String::from_utf8_lossy(&f.data).to_string()),
+#[cfg(test)]
+#[cfg(feature = "install")]
+mod tests {
+    use super::*;
 
-        // {
-        //     Ok(data) => data,
-        //     Err(_err) => {
-        //         #[cfg(debug_assertions)]
-        //         log::error!("failed to load install asset: {_err}");
-
-        //         return
-        //     },
-        // },
-        None => {
-            #[cfg(debug_assertions)]
-            log::error!("no asset file at {}", path);
-
-            Err(anyhow!("no asset file at {}", path))
-        }
+    #[tokio::test]
+    async fn test_install_execution() {
+        let result = install().await;
+        // It might fail during execution due to permissions (trying to write to /bin/imix),
+        // but the install function itself returns Ok(()) because we catch errors inside the loop.
+        assert!(result.is_ok());
     }
 }

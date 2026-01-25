@@ -3,7 +3,7 @@
 # The reflective loader gets automatically compiled
 # By the eldritch `build.rs` file. There's some differences
 # in how to build the loader with `gnu` and `msvc`. If you're
-# curious chekc out `realm/implants/lib/eldritch/build.rs`
+# curious check out `realm/implants/lib/eldritch/build.rs`
 #
 
 [package]

@@ -124,38 +124,38 @@ for user_home_dir in file.list("/home/"):
 
 ## Agent
 
-### agent._terminate_this_process_clowntown (V2-Only)
+### agent._terminate_this_process_clowntown
 
 `agent._terminate_this_process_clowntown() -> None`
 
 > [!CAUTION]
 > **DANGER**: The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
-### agent.get_config (V2-Only)
+### agent.get_config
 
 `agent.get_config() -> Dict<str, Value>`
 
 The **agent.get_config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
 
-### agent.get_transport (V2-Only)
+### agent.get_transport
 
 `agent.get_transport() -> str`
 
 The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc").
 
-### agent.list_transports (V2-Only)
+### agent.list_transports
 
 `agent.list_transports() -> List<str>`
 
 The **agent.list_transports** method returns a list of available transport names supported by the agent.
 
-### agent.get_callback_interval (V2-Only)
+### agent.get_callback_interval
 
 `agent.get_callback_interval() -> int`
 
 The **agent.get_callback_interval** method returns the current callback interval in seconds.
 
-### agent.list_tasks (V2-Only)
+### agent.list_tasks
 
 `agent.list_tasks() -> List<Dict>`
 
@@ -166,7 +166,7 @@ The **agent.list_tasks** method returns a list of dictionaries representing the 
 [{"id": 42949672964, "quest_name": "The Nightmare of the Netherworld Nexus"}]
 ```
 
-### agent.stop_task (V2-Only)
+### agent.stop_task
 
 `agent.stop_task(task_id: int) -> None`
 
@@ -455,7 +455,7 @@ The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If 
 
 The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
 
-### file.pwd (V2-Only)
+### file.pwd
 
 `file.pwd() -> Option<str>`
 

@@ -1,15 +1,26 @@
-#![deny(warnings)]
+extern crate alloc;
 
 pub mod agent;
-mod install;
-mod run;
-mod task;
-mod version;
+pub mod assets;
+pub mod portal;
+pub mod run;
+pub mod shell;
+pub mod task;
+pub mod version;
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 128)]
-pub async fn lib_entry() {
+#[unsafe(no_mangle)]
+pub extern "C" fn lib_entry() {
     #[cfg(debug_assertions)]
-    run::init_logging();
+    run::init_logger();
 
-    run::handle_main().await
+    // Create a runtime and block on the async function
+    // We avoid #[tokio::main] on extern "C" function directly
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    rt.block_on(async {
+        let _ = run::run_agent().await;
+    });
 }
