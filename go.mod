@@ -13,7 +13,7 @@ require (
 	github.com/99designs/gqlgen v0.17.62
 	github.com/cloudflare/circl v1.5.0
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-sqlite3 v1.14.16
