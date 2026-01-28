@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,7 +63,7 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 	require.NotNil(t, oauthCookie)
 
 	// Parse JWT
-	var claims jwt.StandardClaims
+	var claims jwt.RegisteredClaims
 	token, err := jwt.ParseWithClaims(oauthCookie.Value, &claims, func(token *jwt.Token) (interface{}, error) {
 		assert.IsType(t, token.Method, &jwt.SigningMethodEd25519{})
 		return pubKey, nil
@@ -72,10 +72,10 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 	assert.True(t, token.Valid)
 
 	// JWT assertions
-	assert.Equal(t, state, claims.Id)
-	assert.GreaterOrEqual(t, claims.IssuedAt, time.Now().Add(-60*time.Second).Unix())
-	assert.Greater(t, claims.ExpiresAt, time.Now().Add(9*time.Minute).Unix())
-	assert.Less(t, claims.ExpiresAt, time.Now().Add(11*time.Minute).Unix())
+	assert.Equal(t, state, claims.ID)
+	assert.GreaterOrEqual(t, claims.IssuedAt.Unix(), time.Now().Add(-60*time.Second).Unix())
+	assert.Greater(t, claims.ExpiresAt.Unix(), time.Now().Add(9*time.Minute).Unix())
+	assert.Less(t, claims.ExpiresAt.Unix(), time.Now().Add(11*time.Minute).Unix())
 }
 
 // TestNewOAuthAuthorizationHandler ensures the OAuth Authorization Handler exhibits expected behaviour
@@ -192,18 +192,18 @@ func getSessionCookie(cookies []*http.Cookie) *http.Cookie {
 func getOAuthAuthorizationRequest(t *testing.T, privKey ed25519.PrivateKey, code string) *http.Request {
 	// Create a JWT
 	expiresAt := time.Now().Add(10 * time.Minute)
-	claims := jwt.StandardClaims{
-		Id:        "ABCDEFG",
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: expiresAt.Unix(),
+	claims := jwt.RegisteredClaims{
+		ID:        "ABCDEFG",
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
 	}
-	token := jwt.NewWithClaims(&jwt.SigningMethodEd25519{}, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tokenStr, err := token.SignedString(privKey)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/oauth/authorize", nil)
 	params := url.Values{
-		"state": []string{claims.Id},
+		"state": []string{claims.ID},
 		"code":  []string{code},
 	}
 	req.AddCookie(&http.Cookie{
