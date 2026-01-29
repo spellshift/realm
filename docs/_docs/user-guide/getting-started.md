@@ -79,7 +79,7 @@ Now from the left navigation menu, select "Create new quest".
 
 ![create-new-quest](/assets/img/user-guide/getting-started/create-new-quest.png)
 
-This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
+This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. You can use the "View one beacon per host" toggle to filter and display only the best beacon per host, which prioritizes beacons with admin privileges and better transport protocols (GRPC > HTTP > DNS). This is useful when you have multiple beacons on the same host and want to task only the most capable one. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
 
 #### Tome Selection
 
