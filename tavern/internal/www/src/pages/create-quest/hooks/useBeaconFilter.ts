@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { PrincipalAdminTypes } from "../../../utils/enums";
+import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { useFilters } from "../../../context/FilterContext";
 import { BeaconNode, TagEdge } from "../../../utils/interfacesQuery";
 import { SelectedBeacons } from "../../../utils/interfacesUI";
@@ -133,11 +133,16 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             // Transport priority: GRPC > HTTP1 > DNS
             const getTransportPriority = (transport: string | undefined): number => {
                 if (!transport) return 0;
-                const lowerTransport = transport.toLowerCase();
-                if (lowerTransport.includes('grpc')) return 3;
-                if (lowerTransport.includes('http')) return 2;
-                if (lowerTransport.includes('dns')) return 1;
-                return 0;
+                switch (transport) {
+                    case SupportedTransports.GRPC:
+                        return 3;
+                    case SupportedTransports.HTTP1:
+                        return 2;
+                    case SupportedTransports.DNS:
+                        return 1;
+                    default:
+                        return 0;
+                }
             };
 
             const isAdmin = (principal: string) => principals.indexOf(principal) !== -1;
