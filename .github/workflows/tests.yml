@@ -63,24 +63,17 @@ jobs:
         name: ctrf-tavern-${{ matrix.os }}
         path: ctrf-tavern-${{ matrix.os }}.json
 
-  implants:
-    runs-on: ${{ matrix.os }}
+  ####################################################################################
+  ###                           IMPLANTS - LINUX                                  ###
+  ####################################################################################
+  implants-linux:
+    name: Implants (Linux)
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - macOS-latest
-          - windows-latest
     steps:
     - uses: actions/checkout@v5
-    - if: matrix.os == 'windows-latest'
-      run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
-      name: 👾 Disable defender
-      shell: powershell
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -88,49 +81,32 @@ jobs:
         default: true
         profile: minimal
         components: rustfmt, clippy
-    - name: Setup Rust (Loader)
-      uses: dtolnay/rust-toolchain@master
-      if: matrix.os == 'windows-latest'
-      with:
-        toolchain: 'nightly-2025-11-27'
-        default: false
-        profile: minimal
-        components: rust-src, rustfmt
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: "./implants/ -> ../target"
-    - if: matrix.os == 'windows-latest'
-      shell: powershell
-      name: Build reflective loader
-      run: |
-        cd ./bin/reflective_loader/
-        cargo +nightly-2025-11-27 build --release -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
     - name: Install latest nextest & cargo-llvm-cov release
       uses: taiki-e/install-action@v2
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
-      # nextest configured via nextest.toml to output junit.xml
       run: |
         cd ./implants/ &&
         cargo fmt --check &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF
       if: always()
-      shell: bash # Explicitly use bash to support standard shell syntax on Windows
+      shell: bash
       run: |
         cd ./implants/
-        # Move junit report if it exists
         JUNIT_PATH=$(find . -name junit.xml | head -n 1)
         if [ -n "$JUNIT_PATH" ]; then
-          mv "$JUNIT_PATH" junit-implants-${{ matrix.os }}.xml
+          mv "$JUNIT_PATH" junit-implants-ubuntu-latest.xml
         else
           echo "No JUnit report generated"
         fi
-
-        if [ -f junit-implants-${{ matrix.os }}.xml ]; then
-          npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
+        if [ -f junit-implants-ubuntu-latest.xml ]; then
+          npx junit-to-ctrf junit-implants-ubuntu-latest.xml -o ctrf-implants-ubuntu-latest.json
         fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
@@ -138,13 +114,183 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./implants/lcov.info
         flags: implants
-        name: implants-coverage-${{ matrix.os }}
+        name: implants-coverage-ubuntu-latest
     - name: 📤 Upload CTRF Results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ctrf-implants-${{ matrix.os }}
-        path: implants/ctrf-implants-${{ matrix.os }}.json
+        name: ctrf-implants-ubuntu-latest
+        path: implants/ctrf-implants-ubuntu-latest.json
+
+  ####################################################################################
+  ###                           IMPLANTS - MACOS                                   ###
+  ####################################################################################
+  implants-macos:
+    name: Implants (macOS)
+    runs-on: macOS-latest
+    timeout-minutes: 60
+    env:
+      IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: '1.91.1'
+        default: true
+        profile: minimal
+        components: rustfmt, clippy
+    - name: rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./implants/ -> ../target"
+    - name: Install latest nextest & cargo-llvm-cov release
+      uses: taiki-e/install-action@v2
+      with:
+        tool: nextest,cargo-llvm-cov
+    - name: 🔎 Run tests
+      run: |
+        cd ./implants/ &&
+        cargo fmt --check &&
+        cargo llvm-cov nextest --lcov --output-path lcov.info
+    - name: 🔄 Convert to CTRF
+      if: always()
+      shell: bash
+      run: |
+        cd ./implants/
+        JUNIT_PATH=$(find . -name junit.xml | head -n 1)
+        if [ -n "$JUNIT_PATH" ]; then
+          mv "$JUNIT_PATH" junit-implants-macOS-latest.xml
+        else
+          echo "No JUnit report generated"
+        fi
+        if [ -f junit-implants-macOS-latest.xml ]; then
+          npx junit-to-ctrf junit-implants-macOS-latest.xml -o ctrf-implants-macOS-latest.json
+        fi
+    - name: 📶 Upload Coverage Results
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./implants/lcov.info
+        flags: implants
+        name: implants-coverage-macOS-latest
+    - name: 📤 Upload CTRF Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ctrf-implants-macOS-latest
+        path: implants/ctrf-implants-macOS-latest.json
+
+  ####################################################################################
+  ###                     IMPLANTS - WINDOWS (Build on Linux)                      ###
+  ####################################################################################
+  implants-build-windows:
+    name: Implants Build (Windows cross-compile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: '1.91.1'
+        default: true
+        profile: minimal
+        components: rustfmt, clippy
+        targets: x86_64-pc-windows-gnu
+    - name: Setup Rust (Loader)
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: 'nightly-2025-11-27'
+        default: false
+        profile: minimal
+        components: rust-src, rustfmt
+        targets: x86_64-pc-windows-gnu
+    - name: Install mingw-w64
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-mingw-w64
+    - name: rust-cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "./implants/ -> ../target"
+        shared-key: windows-cross-compile
+    - name: Build reflective loader
+      shell: bash
+      run: |
+        cd ./bin/reflective_loader/
+        cargo +nightly-2025-11-27 build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
+    - name: Install latest nextest release
+      uses: taiki-e/install-action@v2
+      with:
+        tool: nextest
+    - name: 🔨 Build tests (cross-compile for Windows)
+      run: |
+        cd ./implants/
+        cargo fmt --check
+        cargo test --no-run --target=x86_64-pc-windows-gnu --message-format=json > build-output.json || true
+    - name: 📦 Create nextest archive
+      run: |
+        cd ./implants/
+        cargo nextest archive --target=x86_64-pc-windows-gnu --archive-file nextest-archive-windows.tar.zst
+    - name: 📤 Upload test archive
+      uses: actions/upload-artifact@v4
+      with:
+        name: nextest-archive-windows
+        path: implants/nextest-archive-windows.tar.zst
+        retention-days: 1
+
+  ####################################################################################
+  ###                     IMPLANTS - WINDOWS (Test on Windows)                     ###
+  ####################################################################################
+  implants-test-windows:
+    name: Implants Test (Windows)
+    runs-on: windows-latest
+    needs: implants-build-windows
+    timeout-minutes: 60
+    env:
+      IMIX_SERVER_PUBKEY: "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU="
+    steps:
+    - uses: actions/checkout@v5
+    - name: 👾 Disable defender
+      run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
+      shell: powershell
+    - name: Install latest nextest release
+      uses: taiki-e/install-action@v2
+      with:
+        tool: nextest
+    - name: 📥 Download test archive
+      uses: actions/download-artifact@v4
+      with:
+        name: nextest-archive-windows
+        path: implants/
+    - name: 🔎 Run tests from archive
+      shell: bash
+      run: |
+        cd ./implants/
+        cargo nextest run --archive-file nextest-archive-windows.tar.zst
+    - name: 🔄 Convert to CTRF
+      if: always()
+      shell: bash
+      run: |
+        cd ./implants/
+        JUNIT_PATH=$(find . -name junit.xml | head -n 1)
+        if [ -n "$JUNIT_PATH" ]; then
+          mv "$JUNIT_PATH" junit-implants-windows-latest.xml
+        else
+          echo "No JUnit report generated"
+        fi
+        if [ -f junit-implants-windows-latest.xml ]; then
+          npx junit-to-ctrf junit-implants-windows-latest.xml -o ctrf-implants-windows-latest.json
+        fi
+    - name: 📤 Upload CTRF Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ctrf-implants-windows-latest
+        path: implants/ctrf-implants-windows-latest.json
 
   ui-tests:
     runs-on: ${{ matrix.os }}
