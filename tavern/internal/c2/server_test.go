@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -178,8 +178,8 @@ func TestJWTValidate(t *testing.T) {
 
 	claims := jwt.MapClaims{
 		"task_id": 1234,
-		"iat":       time.Now().Unix(),
-		"exp":       time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		"iat":       jwt.NewNumericDate(time.Now()),
+		"exp":       jwt.NewNumericDate(time.Now().Add(1 * time.Hour)), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)

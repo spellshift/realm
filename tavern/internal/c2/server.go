@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -94,8 +94,8 @@ func GetClientIP(ctx context.Context) string {
 // generateTaskJWT creates a signed JWT token containing the beacon ID
 func (srv *Server) generateTaskJWT() (string, error) {
 	claims := jwt.MapClaims{
-		"iat":       time.Now().Unix(),
-		"exp":       time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		"iat":       jwt.NewNumericDate(time.Now()),
+		"exp":       jwt.NewNumericDate(time.Now().Add(1 * time.Hour)), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
