@@ -196,16 +196,12 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: '1.91.1'
-        default: true
-        profile: minimal
         components: rustfmt, clippy
-        targets: x86_64-pc-windows-gnu
+        targets: x86_64-pc-windows-msvc
     - name: Setup Rust (Loader)
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: 'nightly-2025-11-27'
-        default: false
-        profile: minimal
         components: rust-src, rustfmt
         targets: x86_64-pc-windows-gnu
     - name: Install mingw-w64
@@ -222,19 +218,19 @@ jobs:
       run: |
         cd ./bin/reflective_loader/
         cargo +nightly-2025-11-27 build --release --target=x86_64-pc-windows-gnu -Z build-std=core,compiler_builtins -Z build-std-features=compiler-builtins-mem
-    - name: Install latest nextest release
+    - name: Install latest nextest and cargo-xwin release
       uses: taiki-e/install-action@v2
       with:
-        tool: nextest
+        tool: nextest,cargo-xwin
     - name: 🔨 Build tests (cross-compile for Windows)
       run: |
         cd ./implants/
         cargo fmt --check
-        cargo test --no-run --target=x86_64-pc-windows-gnu --message-format=json > build-output.json || true
+        cargo xwin test --no-run --target=x86_64-pc-windows-msvc
     - name: 📦 Create nextest archive
       run: |
         cd ./implants/
-        cargo nextest archive --target=x86_64-pc-windows-gnu --archive-file nextest-archive-windows.tar.zst
+        cargo nextest archive --target=x86_64-pc-windows-msvc --archive-file nextest-archive-windows.tar.zst
     - name: 📤 Upload test archive
       uses: actions/upload-artifact@v4
       with:
