@@ -68,7 +68,10 @@ fn test_strings() {
     let cases = vec![
         ("\"hello\"", TokenKind::String("hello".to_string())),
         ("'hello'", TokenKind::String("hello".to_string())),
-        ("r\"raw\\nstring\"", TokenKind::String("raw\\nstring".to_string())),
+        (
+            "r\"raw\\nstring\"",
+            TokenKind::String("raw\\nstring".to_string()),
+        ),
         ("b\"bytes\"", TokenKind::Bytes(b"bytes".to_vec())),
     ];
 
@@ -115,11 +118,19 @@ fn test_indentation_block() {
     // Then implicitly appends \n -> Newline.
     // Then EOF -> emits Dedent for remaining indent stack.
 
-    let relevant: Vec<TokenKind> = kinds.into_iter()
-        .filter(|k| matches!(k,
-            TokenKind::If | TokenKind::True | TokenKind::Colon |
-            TokenKind::Indent | TokenKind::Pass | TokenKind::Dedent
-        ))
+    let relevant: Vec<TokenKind> = kinds
+        .into_iter()
+        .filter(|k| {
+            matches!(
+                k,
+                TokenKind::If
+                    | TokenKind::True
+                    | TokenKind::Colon
+                    | TokenKind::Indent
+                    | TokenKind::Pass
+                    | TokenKind::Dedent
+            )
+        })
         .collect();
 
     let expected = vec![
@@ -140,7 +151,8 @@ fn test_comments() {
     let mut lexer = Lexer::new(code.to_string());
     let tokens = lexer.scan_tokens();
 
-    let kinds: Vec<TokenKind> = tokens.iter()
+    let kinds: Vec<TokenKind> = tokens
+        .iter()
         .map(|t| t.kind.clone())
         .filter(|k| !matches!(k, TokenKind::Newline | TokenKind::Eof))
         .collect();
