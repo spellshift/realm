@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -185,7 +185,7 @@ func TestJWTValidate(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tokenStr, err := token.SignedString(privKey)
 	if err != nil {
-		fmt.Errorf("failed to sign JWT: %w", err)
+		t.Fatalf("failed to sign JWT: %v", err)
 	}
 	// Verify
 	err = srv.ValidateJWT(tokenStr)
