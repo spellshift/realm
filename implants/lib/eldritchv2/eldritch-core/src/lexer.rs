@@ -372,8 +372,18 @@ impl Lexer {
             }
         }
 
-        while self.peek().is_whitespace() && self.peek() != '\n' {
-            self.advance();
+        loop {
+            while self.peek().is_whitespace() && self.peek() != '\n' {
+                self.advance();
+            }
+
+            if self.peek() == '\n' && self.nesting > 0 {
+                self.advance();
+                self.line += 1;
+                continue;
+            }
+
+            break;
         }
         self.start = self.current;
         if self.is_at_end() {
