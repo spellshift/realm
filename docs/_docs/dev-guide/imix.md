@@ -22,12 +22,15 @@ Once you've finished making your changes apply these changes across the project 
 
 To generate the associated agent proto's use cargo build in the `implants` directory. This will copy the necessary protos from tavern and perform the code generation.
 
+In addition to config syncronization claimTasks also authorizes the agent to access assets, and report data using a signed JWT per task. This prevents unauthorized users from reading tavern data, or spamming DB writes.
+
+
 ### Adding enums
 
 Add your enum type to the `*.proto` file under the message type that will use it.
 For example:
 ```
-message ActiveTransport {
+message Transport {
     string uri = 1;
     uint64 interval = 2;
 
@@ -148,11 +151,11 @@ We've tried to make Imix super extensible for transport development. In fact, al
 
 Realm currently includes three transport implementations:
 
-- **`grpc`** - Default gRPC transport (with optional DoH support via `doh` feature)
+- **`grpc`** - Default gRPC transport
 - **`http1`** - HTTP/1.1 transport
 - **`dns`** - DNS-based covert channel transport
 
-**Note:** Only one transport may be selected at compile time. The build will fail if multiple transport features are enabled simultaneously.
+_grpc & http1 both support doh and http proxy set through the extra argument_
 
 ### Creating a New Transport
 
@@ -256,15 +259,11 @@ pub enum ActiveTransport {
     Http(http::HTTP),
     #[cfg(feature = "dns")]
     Dns(dns::DNS),
-    #[cfg(feature = "custom")]
-    Custom(custom::Custom),  // <-- Add your transport here
     #[cfg(feature = "mock")]
     Mock(mock::MockTransport),
     Empty,
 }
 ```
-
-**Note:** Multiple transport features can be enabled at compile time, and the enum will include all enabled variants. The actual transport used is determined at runtime based on the agent's configuration.
 
 #### 2. Update Transport Library Dependencies
 
@@ -275,9 +274,9 @@ Add your new feature and any required dependencies to `realm/implants/lib/transp
 
 [features]
 default = []
-grpc = []
+grpc = ["pb/grpc"]
 doh = ["dep:hickory-resolver"]
-http1 = []
+http1 = ["pb/http1"]
 dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 custom = ["dep:your-custom-dependency"] # <-- Add your feature here
 mock = ["dep:mockall"]
@@ -286,48 +285,32 @@ mock = ["dep:mockall"]
 # ... existing dependencies ...
 
 # Add any dependencies needed by your transport
-your-custom-dependency = { version = "1.0", optional = true }
+your-custom-dependency = { workspace = true, optional = true }
 
 # more stuff below
 ```
+
 
 #### 3. Enable Your Transport in Imix
 
 To use your new transport, update the imix Cargo.toml at `realm/implants/imix/Cargo.toml`:
 
-```toml
-# more stuff above
+Add a proxy for your feature to `realm/implants/imix/Cargo.toml`
 
+```toml
 [features]
-# Check if compiled by imix
-win_service = []
-default = ["transport/grpc"]  # Default transport
+default = ["install", "grpc", "http1", "dns", "doh", "custom"]
+grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
-custom = ["transport/custom"]  # <-- Add your feature here
-transport-doh = ["transport/doh"]
-
-# more stuff below
+doh = ["transport/doh"]
+custom = ["transport/custom"]
 ```
 
-#### 4. Build Imix with Your Transport
+**Note:** By default all transports are enabled by default but for advanced use cases they can be disabled via feature flags
 
-Compile imix with your custom transport:
 
-```bash
-# From the repository root
-cd implants/imix
-
-# Build with your transport feature
-cargo build --release --features custom --no-default-features
-
-# Or for the default transport (grpc)
-cargo build --release
-```
-
-**Important:** Only specify one transport feature at a time. The build will fail if multiple transport features are enabled. Ensure you include `--no-default-features` when building with a non-default transport.
-
-#### 5. Set Up the Corresponding Redirector
+#### 4. Set Up the Corresponding Redirector
 
 For your agent to communicate, you'll need to implement a corresponding redirector in Tavern. See the redirector implementations in `tavern/internal/redirectors/` for examples:
 
@@ -337,4 +320,4 @@ For your agent to communicate, you'll need to implement a corresponding redirect
 
 Your redirector must implement the `Redirector` interface and register itself in the redirector registry. See `tavern/internal/redirectors/redirector.go` for the interface definition.
 
-And that's all that is needed for Imix to use a new Transport! The agent code automatically uses whichever transport is enabled at compile time via the `ActiveTransport` type alias.
+And that's all that is needed for Imix to use a new Transport!

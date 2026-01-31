@@ -1,0 +1,77 @@
+[package]
+name = "eldritch"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+spin = "0.10"
+
+eldritch-core = { workspace = true, default-features = false }
+eldritch-macros = { workspace = true }
+
+# Libs
+eldritch-libagent = { workspace = true, default-features = false }
+eldritch-libassets = { workspace = true, default-features = false }
+eldritch-libcrypto = { workspace = true, default-features = false }
+eldritch-libfile = { workspace = true, default-features = false }
+eldritch-libhttp = { workspace = true, default-features = false }
+eldritch-libpivot = { workspace = true, default-features = false }
+eldritch-libprocess = { workspace = true, default-features = false }
+eldritch-librandom = { workspace = true, default-features = false }
+eldritch-libregex = { workspace = true, default-features = false }
+eldritch-libreport = { workspace = true, default-features = false }
+eldritch-libsys = { workspace = true, default-features = false }
+eldritch-libtime = { workspace = true, default-features = false }
+pb = { workspace = true }
+eldritch-repl = { workspace = true, default-features = false }
+
+[features]
+default = ["std", "stdlib"]
+std = ["eldritch-core/std"]
+fake_bindings = [
+    "fake_agent",
+    "fake_assets",
+    "fake_crypto",
+    "fake_file",
+    "fake_http",
+    "fake_pivot",
+    "fake_process",
+    "fake_random",
+    "fake_regex",
+    "fake_report",
+    "fake_sys",
+    "fake_time",
+]
+fake_agent = ["eldritch-libagent/fake_bindings"]
+fake_assets = ["eldritch-libassets/fake_bindings"]
+fake_crypto = ["eldritch-libcrypto/fake_bindings"]
+fake_file = ["eldritch-libfile/fake_bindings"]
+fake_http = ["eldritch-libhttp/fake_bindings"]
+fake_pivot = ["eldritch-libpivot/fake_bindings"]
+fake_process = ["eldritch-libprocess/fake_bindings"]
+fake_random = ["eldritch-librandom/fake_bindings"]
+fake_regex = ["eldritch-libregex/fake_bindings"]
+fake_report = ["eldritch-libreport/fake_bindings"]
+fake_sys = ["eldritch-libsys/fake_bindings"]
+fake_time = ["eldritch-libtime/fake_bindings"]
+stdlib = [
+    "eldritch-libagent/stdlib",
+    "eldritch-libassets/stdlib",
+    "eldritch-libcrypto/stdlib",
+    "eldritch-libfile/stdlib",
+    "eldritch-libhttp/stdlib",
+    "eldritch-libpivot/stdlib",
+    "eldritch-libprocess/stdlib",
+    "eldritch-librandom/stdlib",
+    "eldritch-libregex/stdlib",
+    "eldritch-libreport/stdlib",
+    "eldritch-libsys/stdlib",
+    "eldritch-libtime/stdlib",
+]
+
+[dev-dependencies]
+httptest = "0.16"
+
+[build-dependencies]
+regex = "1.10"
+walkdir = "2.3"
