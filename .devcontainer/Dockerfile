@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/base:trixie
 
-ARG ZIG_VERSION=0.16.0-dev.1859+212968c57
+ARG ZIG_VERSION=0.16.0-dev.2349+204fa8959
 
 ENV GOPATH=/go
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -129,6 +129,7 @@ RUN set -eux; \
 		x86_64-unknown-linux-musl x86_64-pc-windows-gnu \
 		x86_64-pc-windows-msvc aarch64-apple-darwin x86_64-apple-darwin; \
     rustup component add rustfmt clippy; \
+	rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu; \
 	cargo install cargo-zigbuild; \
 	cargo +1.89.0 install cargo-xwin --locked
 
