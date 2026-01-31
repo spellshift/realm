@@ -78,7 +78,5 @@ fn test_weird_indentation() {
 #[test]
 fn test_whitespace_before_newline() {
     // Note the space after the comma
-    assert::pass(
-        "x = [1, \n2]\nassert_eq(len(x), 2)"
-    );
+    assert::pass("x = [1, \n2]\nassert_eq(len(x), 2)");
 }
