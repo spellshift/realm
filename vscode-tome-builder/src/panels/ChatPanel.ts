@@ -21,7 +21,10 @@ export class ChatPanel implements vscode.WebviewViewProvider {
         this._view = webviewView;
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this._extensionUri]
+            localResourceRoots: [
+                this._extensionUri,
+                vscode.Uri.joinPath(this._extensionUri, 'media')
+            ]
         };
 
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
@@ -55,7 +58,6 @@ export class ChatPanel implements vscode.WebviewViewProvider {
     private async _handleInit() {
          if (!this._view) return;
          try {
-             // Try to init service to get models
              const config = vscode.workspace.getConfiguration('tomeBuilder');
              const apiKey = config.get<string>('llm.apiKey');
              const savedModel = config.get<string>('llm.model') || 'gemini-2.0-flash-exp';
@@ -75,7 +77,6 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                 this._llmService = new LlmService(apiKey, client, savedModel);
              }
 
-             // Fetch models
              const models = await this._llmService.listAvailableModels();
              this._view.webview.postMessage({ type: 'setModels', models: models, current: savedModel });
 
@@ -87,7 +88,6 @@ export class ChatPanel implements vscode.WebviewViewProvider {
     private async _handleModelSelected(modelName: string) {
         if (this._llmService) {
             this._llmService.setModel(modelName);
-            // Optionally save to config
             await vscode.workspace.getConfiguration('tomeBuilder').update('llm.model', modelName, vscode.ConfigurationTarget.Global);
             if (this._view) {
                 this._view.webview.postMessage({ type: 'addMessage', role: 'system', content: `Switched to model: ${modelName}` });
@@ -121,7 +121,6 @@ export class ChatPanel implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('tomeBuilder');
             const apiKey = config.get<string>('llm.apiKey');
-            // We use the service's current model, no need to re-read config unless init failed.
 
             if (!apiKey) {
                 this._view.webview.postMessage({ type: 'addMessage', role: 'system', content: 'Please set your Gemini API Key in Settings (Tome Builder > Llm > Api Key).' });
@@ -157,12 +156,17 @@ export class ChatPanel implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'highlight.js'));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'highlight.css'));
+
         return `<!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Tome Builder</title>
+            <link rel="stylesheet" href="${styleUri}">
+            <script src="${scriptUri}"></script>
             <style>
                 body {
                     font-family: var(--vscode-font-family);
@@ -223,11 +227,11 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     color: var(--vscode-descriptionForeground);
                 }
                 .code-block {
-                    background-color: var(--vscode-textCodeBlock-background);
                     border: 1px solid var(--vscode-widget-border);
                     border-radius: 4px;
                     margin-top: 5px;
                     overflow: hidden;
+                    background-color: #1e1e1e; /* Ensure dark background for highlight.js vs2015 */
                 }
                 .code-header {
                     display: flex;
@@ -239,11 +243,13 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                 }
                 pre {
                     margin: 0;
-                    padding: 8px;
+                    padding: 0;
                     overflow-x: auto;
                 }
                 code {
                     font-family: var(--vscode-editor-font-family);
+                    padding: 8px !important; /* Override highlight.js padding */
+                    background-color: transparent !important; /* Let container handle bg */
                 }
                 #input-container {
                     display: flex;
@@ -271,6 +277,19 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                 button:disabled {
                     opacity: 0.5;
                 }
+                .loading-dots {
+                    display: inline-block;
+                }
+                .loading-dots:after {
+                    content: '.';
+                    animation: dots 1.5s steps(5, end) infinite;
+                }
+                @keyframes dots {
+                    0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+                    40% { color: var(--vscode-foreground); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+                    60% { text-shadow: .25em 0 0 var(--vscode-foreground), .5em 0 0 rgba(0,0,0,0);}
+                    80%, 100% { text-shadow: .25em 0 0 var(--vscode-foreground), .5em 0 0 var(--vscode-foreground);}
+                }
             </style>
         </head>
         <body>
@@ -297,12 +316,16 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     // Replace code blocks with custom HTML
                     return content.replace(/\\\`\\\`\\\`(\\w+)?\\n([\\s\\S]*?)\\\`\\\`\\\`/g, (match, lang, code) => {
                         const escapedCode = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        return \`<div class="code-block" data-lang="\${lang || ''}">
+                        const cleanLang = (lang || '').trim();
+                        // Map eldritch to python if needed, though usually LLM sends python
+                        const hljsLang = cleanLang === 'eldritch' ? 'python' : cleanLang;
+
+                        return \`<div class="code-block" data-lang="\${cleanLang}">
                             <div class="code-header">
-                                <span>\${lang || 'Code'}</span>
+                                <span>\${cleanLang || 'Code'}</span>
                                 <button onclick="saveCode(this)">Save</button>
                             </div>
-                            <pre><code>\${escapedCode}</code></pre>
+                            <pre><code class="language-\${hljsLang}">\${escapedCode}</code></pre>
                             <textarea style="display:none">\${code}</textarea>
                         </div>\`;
                     });
@@ -322,6 +345,12 @@ export class ChatPanel implements vscode.WebviewViewProvider {
 
                     if (role === 'assistant') {
                         div.innerHTML = formatContent(content);
+                        // Trigger highlighting for any new code blocks
+                        div.querySelectorAll('pre code').forEach((block) => {
+                            if (window.hljs) {
+                                window.hljs.highlightElement(block);
+                            }
+                        });
                     } else {
                         div.textContent = content;
                     }
@@ -354,9 +383,20 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                             if (message.value) {
                                 sendBtn.disabled = true;
                                 sendBtn.textContent = '...';
+                                // Add loading indicator
+                                const loader = document.createElement('div');
+                                loader.className = 'message assistant loading-indicator';
+                                loader.innerHTML = 'Thinking<span class="loading-dots"></span>';
+                                chatContainer.appendChild(loader);
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
                             } else {
                                 sendBtn.disabled = false;
                                 sendBtn.textContent = 'Send';
+                                // Remove loading indicator
+                                const loader = chatContainer.querySelector('.loading-indicator');
+                                if (loader) {
+                                    loader.remove();
+                                }
                             }
                             break;
                         case 'setModels':
