@@ -79,14 +79,14 @@ type gcpDriver struct {
 // ensuring that the topic is ready for publishing. If successful, it returns a Publisher for the topic.
 // If any step fails, it returns an error.
 func (drv *gcpDriver) EnsurePublisher(ctx context.Context, topic string) (Publisher, error) {
-	// Create the topic if it doesn't exist
+	topicPath := fmt.Sprintf("projects/%s/topics/%s", drv.GCP.Project(), topic)
 	_, err := drv.GCP.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
-		Name: topic,
+		Name: topicPath,
 	})
 	if err != nil && status.Code(err) != codes.AlreadyExists {
 		return nil, fmt.Errorf("failed to create topic: %w", err)
 	}
-	publisher := drv.GCP.Publisher(topic)
+	publisher := drv.GCP.Publisher(topicPath)
 	publisher.PublishSettings = drv.publishSettings
 
 	keepalive := &portalpb.Mote{
@@ -104,23 +104,24 @@ func (drv *gcpDriver) EnsurePublisher(ctx context.Context, topic string) (Publis
 	}
 
 	if err := gcpPublishAdapter.Publish(ctx, keepalive); err != nil {
-		return nil, fmt.Errorf("failed to publish keepalive message: %w", err)
+		return nil, fmt.Errorf("failed to publish keepalive message (topic=%q): %w", topic, err)
 	}
 	return gcpPublishAdapter, nil
 }
 
 // EnsureSubscriber creates the subscription if it doesn't exist and then returns a Subscriber for the topic.
 func (drv *gcpDriver) EnsureSubscriber(ctx context.Context, topic, subscription string) (Subscriber, error) {
+	subscriptionPath := fmt.Sprintf("projects/%s/subscriptions/%s", drv.GCP.Project(), subscription)
 	_, err := drv.GCP.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 		Name:             subscription,
 		Topic:            topic,
 		ExpirationPolicy: &drv.expirationPolicy,
 	})
 	if err != nil && status.Code(err) != codes.AlreadyExists {
-		return nil, fmt.Errorf("failed to create subscription: %w", err)
+		return nil, fmt.Errorf("failed to create subscription (sub=%q, topic=%q): %w", subscription, topic, err)
 	}
 
-	subscriber := drv.GCP.Subscriber(subscription)
+	subscriber := drv.GCP.Subscriber(subscriptionPath)
 	subscriber.ReceiveSettings = drv.receiveSettings
 	return &gcpSubscriber{
 		serverID:   drv.serverID,
