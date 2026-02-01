@@ -277,6 +277,19 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                 button:disabled {
                     opacity: 0.5;
                 }
+                .loading-dots {
+                    display: inline-block;
+                }
+                .loading-dots:after {
+                    content: '.';
+                    animation: dots 1.5s steps(5, end) infinite;
+                }
+                @keyframes dots {
+                    0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+                    40% { color: var(--vscode-foreground); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+                    60% { text-shadow: .25em 0 0 var(--vscode-foreground), .5em 0 0 rgba(0,0,0,0);}
+                    80%, 100% { text-shadow: .25em 0 0 var(--vscode-foreground), .5em 0 0 var(--vscode-foreground);}
+                }
             </style>
         </head>
         <body>
@@ -370,9 +383,20 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                             if (message.value) {
                                 sendBtn.disabled = true;
                                 sendBtn.textContent = '...';
+                                // Add loading indicator
+                                const loader = document.createElement('div');
+                                loader.className = 'message assistant loading-indicator';
+                                loader.innerHTML = 'Thinking<span class="loading-dots"></span>';
+                                chatContainer.appendChild(loader);
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
                             } else {
                                 sendBtn.disabled = false;
                                 sendBtn.textContent = 'Send';
+                                // Remove loading indicator
+                                const loader = chatContainer.querySelector('.loading-indicator');
+                                if (loader) {
+                                    loader.remove();
+                                }
                             }
                             break;
                         case 'setModels':
