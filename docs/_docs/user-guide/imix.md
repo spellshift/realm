@@ -42,8 +42,9 @@ Imix has run-time configuration, that may be specified using environment variabl
 **We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
 Building in the dev container limits variables that might cause issues and is the most tested way to compile.
 
-**Imix requires a server public key so it can encrypt messages to and from the server check the server log for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
+**Imix requires a server public key so it can encrypt messages to and from the server check the server stauts page `http://example.com/status` or logs for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
+**🚨 Note:** You must cd into the imx directory `implants/imix/` not `implants/` in order to build the agent.
 
 ## Setting encryption key
 
@@ -230,7 +231,7 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 ## Task management
 
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
-Every callback interval imix will query each active thread for new output and rely that back to the c2. This means even long running tasks will report their status as new data comes in.
+Every callback interval imix will query each active thread for new output and relay that back to the c2. This means even long running tasks will report their status as new data comes in.
 
 
 ## Identifying unique hosts
