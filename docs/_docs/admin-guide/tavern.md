@@ -92,6 +92,7 @@ After your certificate has successfully provisioned, it may still take a while (
 |oauth_domain|Only if OAuth is configured|The OAuth Domain that the IDP should redirect to e.g. tavern.mydomain.com (should be the domain you set a CNAME record for while configuring OAuth).|
 |min_scale|No|The minimum number of containers to run, if set to 0 you may see cold boot latency.|
 |max_scale|No|The maximum number of containers to run.|
+|tavern_container_image|No|Override the dafult tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.| 
 
 ### Manual Deployment Tips
 

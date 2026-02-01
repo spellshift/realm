@@ -45,13 +45,23 @@ cd realm && go run ./tavern
 
 The warnings you see here indicate that there are settings recommended for production environments that have not been configured. For now, it's safe to ignore these and continue on.
 
+### Tavern (Redirector)
+
+If your adventure requires you to roll for stealth Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including GRPC, HTTP1, and DNS. Out of the box tavern c2 only uses grpc but by adding a redirector you unlock any any supported protocol.
+
+```bash
+git clone https://github.com/spellshift/realm.git
+cd realm && go run ./tavern redirector --transport grpc http://127.0.0.1:8000
+```
+
+
 ### Imix (Agent / Beacon)
 
 [Imix](/user-guide/imix) is the supported [Agent](/user-guide/terminology#agent) for Realm. This fiery trickster resides within your target network, eagerly awaiting your commands whispered through magical [Eldritch](/user-guide/terminology#eldritch) [Tomes](/user-guide/terminology#tome). These [Tomes](/user-guide/terminology#tome), inspired by [MITRE ATT&CK tactics](https://attack.mitre.org/matrices/enterprise/), empower [Imix](/user-guide/imix) to scout, exploit weaknesses, and launch attacks against target systems.
 
 ```bash
-# Assumes you have already cloned the repository and are in the 'realm' directory
-cd ./implants/imix
+git clone https://github.com/spellshift/realm.git
+cd realm/implants/imix
 
 cargo run
 ```
@@ -62,7 +72,7 @@ Here we run the `imix` [Agent](/user-guide/terminology#agent), and with this deb
 
 You'll notice two key components of the configuration:
 
-* `callback_uri` - Defines the URI for Tavern, where this [Beacon](/user-guide/terminology#beacon) should callback to.
+* `uri` - Defines the URI for Tavern, where this [Beacon](/user-guide/terminology#beacon) should callback to.
 * `interval` - Defines how often this [Beacon](/user-guide/terminology#beacon) should perform callbacks (in seconds).
 
 These configurations can be controlled via Environment Variables at `imix` compile-time. See the [imix configuration docs](/user-guide/imix#configuration) for more information.
@@ -87,7 +97,7 @@ A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#
 
 ![select-tome](/assets/img/user-guide/getting-started/select-tome.png)
 
-Let's select "hostname", which will simply print the hostname of the [Host](/user-guide/terminology#host) `imix` is running on. You may filter [Tomes](/user-guide/terminology#tome) using the search bar above. Certain [Tomes](/user-guide/terminology#tome) will allow / require you to specify parameters to inform their execution, which will be displayed in this step (for relevant [Tomes](/user-guide/terminology#tome)). When you're ready, select "Continue".
+Let's select "System Info", which will print the OS, hostname, and IP of the [Host](/user-guide/terminology#host) `imix` is running on as well as the user the [Beacon](/user-guide/terminology#beacon) is running as. You may filter [Tomes](/user-guide/terminology#tome) using the search bar above. Certain [Tomes](/user-guide/terminology#tome) will allow / require you to specify parameters to inform their execution, which will be displayed in this step (for relevant [Tomes](/user-guide/terminology#tome)). When you're ready, select "Continue".
 
 #### Confirm and Submit
 
@@ -101,7 +111,7 @@ Now, in your `imix` logs you'll see that when it calls back, it will obtain the 
 
 ![imix-tome-eval](/assets/img/user-guide/getting-started/imix-tome-eval.png)
 
-By refreshing the UI (polling not yet supported), you should see the output is now available!
+Refresh the UI, you should see the output is now available!
 
 ![quest-result](/assets/img/user-guide/getting-started/quest-result.png)
 
