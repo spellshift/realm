@@ -20,6 +20,7 @@ type Subscriber interface {
 type Driver interface {
 	EnsurePublisher(ctx context.Context, topic string) (Publisher, error)
 	EnsureSubscriber(ctx context.Context, topic, subscription string) (Subscriber, error)
+	Close() error
 }
 
 type Option func(*Client)
@@ -36,4 +37,9 @@ func NewClient(options ...Option) *Client {
 		opt(c)
 	}
 	return c
+}
+
+// Close closes the underlying driver and releases any resources.
+func (c *Client) Close() error {
+	return c.Driver.Close()
 }

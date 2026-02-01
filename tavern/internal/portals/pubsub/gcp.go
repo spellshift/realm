@@ -90,6 +90,10 @@ func (drv *gcpDriver) EnsureSubscriber(ctx context.Context, topic, subscription 
 	return &gcpSubscriber{Subscriber: subscriber}, nil
 }
 
+func (drv *gcpDriver) Close() error {
+	return drv.GCP.Close()
+}
+
 type gcpPublisher struct {
 	serverID     string
 	readyTimeout time.Duration
