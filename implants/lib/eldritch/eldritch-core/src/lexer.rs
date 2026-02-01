@@ -329,7 +329,7 @@ impl Lexer {
             self.line += 1;
         }
 
-        if self.start > 0 && self.source[self.start - 1] == '\n' {
+        if self.nesting == 0 && self.start > 0 && self.source[self.start - 1] == '\n' {
             let mut indent_count = 0;
             while self.peek().is_whitespace() && self.peek() != '\n' {
                 self.advance();
@@ -520,6 +520,9 @@ impl Lexer {
             }
             '\n' => {
                 self.line += 1;
+                if self.nesting > 0 {
+                    return self.next_token();
+                }
                 self.add_token(TokenKind::Newline)
             }
             '"' | '\'' => self.string(c, false, false, false),
