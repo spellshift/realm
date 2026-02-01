@@ -4,11 +4,11 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
-eldritch = { workspace = true, features = ["fake_bindings", "stdlib"] }
-eldritch-core = { workspace = true, default-features = false }
-anyhow = { workspace = true }
-glob = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_yaml = {workspace = true}
+eldritch = { path = "../../eldritch", features = ["fake_bindings", "stdlib"] }
+eldritch-core = { path = "../../eldritch-core", default-features = false }
+anyhow = "1.0"
+glob = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
 spin = { version = "0.10.0", features = ["rwlock"] }
-log = { workspace = true }
+log = "0.4"

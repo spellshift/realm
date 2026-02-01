@@ -22,9 +22,11 @@ members = [
     "lib/eldritch/stdlib/eldritch-libreport",
     "lib/eldritch/stdlib/eldritch-libsys",
     "lib/eldritch/stdlib/eldritch-libtime",
-    "lib/eldritch/stdlib/tests",
     "lib/eldritch/eldritch",
     "lib/portals/portal-stream",
+]
+exclude = [
+    "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
 ]
 resolver = "2"
 
