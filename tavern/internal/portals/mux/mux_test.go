@@ -197,3 +197,72 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 	m := New(WithSubscriberBufferSize(expected))
 	assert.Equal(t, expected, m.subs.bufferSize)
 }
+
+func TestMux_CreatePortal_RefCounting(t *testing.T) {
+	// Setup DB
+	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	// Setup Mux
+	m := New(WithInMemoryDriver())
+	ctx := context.Background()
+
+	// Create User, Tome, Quest, Task
+	u := client.User.Create().SetName("testuser_rc").SetOauthID("oauth_rc").SetPhotoURL("photo_rc").SaveX(ctx)
+	tomeEnt := client.Tome.Create().SetName("testtome_rc").SetDescription("desc").SetEldritch("code").SetAuthor(u.Name).SetUploader(u).SetTactic(tome.TacticRECON).SaveX(ctx)
+	quest := client.Quest.Create().SetName("testquest_rc").SetParameters("{}").SetCreator(u).SetTome(tomeEnt).SaveX(ctx)
+	h := client.Host.Create().SetName("host_rc").SetIdentifier("ident_rc").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetName("beacon_rc").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
+	task := client.Task.Create().SetQuest(quest).SetBeacon(b).SaveX(ctx)
+
+	// 1. Create Portal
+	portalID, teardown, err := m.CreatePortal(ctx, client, task.ID)
+	require.NoError(t, err)
+	defer func() {
+		// Safety cleanup if test fails
+		if teardown != nil {
+			// mimic teardown call if needed, but we call it explicitly
+		}
+	}()
+
+	topicIn := m.TopicIn(portalID)
+	subName := m.SubName(topicIn)
+
+	m.subMgr.Lock()
+	// Check if refs initialized (should be 1)
+	refs, ok := m.subMgr.refs[subName]
+	m.subMgr.Unlock()
+
+	assert.True(t, ok, "refs should be initialized")
+	assert.Equal(t, 1, refs)
+
+	// Simulating a second user/process acquiring the same subscription
+	// (Since we can't easily trigger CreatePortal collision, we simulate the ref count increase manually
+	// to verify TEARDOWN respects it)
+	m.subMgr.Lock()
+	m.subMgr.refs[subName] = 2 // Manually bump to 2 (simulate another user)
+	m.subMgr.Unlock()
+
+	// 2. Teardown
+	teardown()
+
+	// 3. Verify
+	m.subMgr.Lock()
+	_, active := m.subMgr.active[subName]
+	currRefs := m.subMgr.refs[subName]
+	m.subMgr.Unlock()
+
+	// If teardown respects refs, sub should still be active, refs should be 1.
+	// If teardown is broken (current state), sub is gone.
+	assert.True(t, active, "Subscription should still be active due to ref count")
+	assert.Equal(t, 1, currRefs, "Ref count should be decremented to 1")
+
+	// Cleanup manual ref
+	m.subMgr.Lock()
+	if active {
+		delete(m.subMgr.active, subName)
+		delete(m.subMgr.refs, subName)
+		delete(m.subMgr.cancelFuncs, subName)
+	}
+	m.subMgr.Unlock()
+}
