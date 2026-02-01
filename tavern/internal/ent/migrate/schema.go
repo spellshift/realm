@@ -89,7 +89,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "principal", Type: field.TypeString},
 		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_NTLM_HASH", "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
 		{Name: "host_credential_host", Type: field.TypeInt},
 		{Name: "task_reported_credentials", Type: field.TypeInt, Nullable: true},
 	}

@@ -33,10 +33,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type C2Client interface {
-	//
 	// Contact the server for new tasks to execute.
 	ClaimTasks(ctx context.Context, in *ClaimTasksRequest, opts ...grpc.CallOption) (*ClaimTasksResponse, error)
-	//
 	// Fetch an asset from the server, returning one or more chunks of data.
 	// The maximum size of these chunks is determined by the server.
 	// The server should reply with two headers:
@@ -45,10 +43,8 @@ type C2Client interface {
 	//
 	// If no associated file can be found, a NotFound status error is returned.
 	FetchAsset(ctx context.Context, in *FetchAssetRequest, opts ...grpc.CallOption) (C2_FetchAssetClient, error)
-	//
 	// Report a credential from the host to the server.
 	ReportCredential(ctx context.Context, in *ReportCredentialRequest, opts ...grpc.CallOption) (*ReportCredentialResponse, error)
-	//
 	// Report a file from the host to the server.
 	// Providing content of the file is optional. If content is provided:
 	//   - Hash will automatically be calculated and the provided hash will be ignored.
@@ -57,17 +53,13 @@ type C2Client interface {
 	// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
 	// Any existing files at the provided path for the host are replaced.
 	ReportFile(ctx context.Context, opts ...grpc.CallOption) (C2_ReportFileClient, error)
-	//
 	// Report the active list of running processes. This list will replace any previously reported
 	// lists for the same host.
 	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
-	//
 	// Report execution output for a task.
 	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
-	//
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error)
-	//
 	// Open a portal bi-directional stream.
 	CreatePortal(ctx context.Context, opts ...grpc.CallOption) (C2_CreatePortalClient, error)
 }
@@ -256,10 +248,8 @@ func (x *c2CreatePortalClient) Recv() (*CreatePortalResponse, error) {
 // All implementations must embed UnimplementedC2Server
 // for forward compatibility
 type C2Server interface {
-	//
 	// Contact the server for new tasks to execute.
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
-	//
 	// Fetch an asset from the server, returning one or more chunks of data.
 	// The maximum size of these chunks is determined by the server.
 	// The server should reply with two headers:
@@ -268,10 +258,8 @@ type C2Server interface {
 	//
 	// If no associated file can be found, a NotFound status error is returned.
 	FetchAsset(*FetchAssetRequest, C2_FetchAssetServer) error
-	//
 	// Report a credential from the host to the server.
 	ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error)
-	//
 	// Report a file from the host to the server.
 	// Providing content of the file is optional. If content is provided:
 	//   - Hash will automatically be calculated and the provided hash will be ignored.
@@ -280,17 +268,13 @@ type C2Server interface {
 	// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
 	// Any existing files at the provided path for the host are replaced.
 	ReportFile(C2_ReportFileServer) error
-	//
 	// Report the active list of running processes. This list will replace any previously reported
 	// lists for the same host.
 	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
-	//
 	// Report execution output for a task.
 	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
-	//
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(C2_ReverseShellServer) error
-	//
 	// Open a portal bi-directional stream.
 	CreatePortal(C2_CreatePortalServer) error
 	mustEmbedUnimplementedC2Server()

@@ -982,6 +982,7 @@ type HostCredentialEdge {
 HostCredentialKind is enum for the field kind
 """
 enum HostCredentialKind @goModel(model: "realm.pub/tavern/internal/c2/epb.Credential_Kind") {
+  KIND_NTLM_HASH
   KIND_PASSWORD
   KIND_SSH_KEY
   KIND_UNSPECIFIED
