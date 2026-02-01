@@ -13,7 +13,7 @@ pub fn user_password(
     let cred = eldritch::Credential {
         principal: username,
         secret: password,
-        kind: 1, // KIND_PASSWORD
+        kind: eldritch::credential::Kind::Password as i32,
     };
     let req = c2::ReportCredentialRequest {
         context: Some(task_context),
