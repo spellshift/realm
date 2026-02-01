@@ -31,10 +31,16 @@ fn test_int_conversion_errors() {
     assert::fail("int('0a')", "invalid literal for int() with base 10: '0a'");
 
     // Invalid literal for explicit base
-    assert::fail("int('g', 16)", "invalid literal for int() with base 16: 'g'");
+    assert::fail(
+        "int('g', 16)",
+        "invalid literal for int() with base 16: 'g'",
+    );
 
     // Non-string with explicit base
-    assert::fail("int(5, 16)", "int() can't convert non-string with explicit base");
+    assert::fail(
+        "int(5, 16)",
+        "int() can't convert non-string with explicit base",
+    );
 
     // Base out of range (if we support 2-36)
     // Python raises ValueError: int() base must be >= 2 and <= 36, or 0

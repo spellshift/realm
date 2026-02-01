@@ -79,15 +79,16 @@ fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
         base as u32
     };
 
-    let clean_s_no_prefix = if radix == 16 && (clean_s.starts_with("0x") || clean_s.starts_with("0X")) {
-        &clean_s[2..]
-    } else if radix == 8 && (clean_s.starts_with("0o") || clean_s.starts_with("0O")) {
-        &clean_s[2..]
-    } else if radix == 2 && (clean_s.starts_with("0b") || clean_s.starts_with("0B")) {
-        &clean_s[2..]
-    } else {
-        clean_s
-    };
+    let clean_s_no_prefix =
+        if radix == 16 && (clean_s.starts_with("0x") || clean_s.starts_with("0X")) {
+            &clean_s[2..]
+        } else if radix == 8 && (clean_s.starts_with("0o") || clean_s.starts_with("0O")) {
+            &clean_s[2..]
+        } else if radix == 2 && (clean_s.starts_with("0b") || clean_s.starts_with("0B")) {
+            &clean_s[2..]
+        } else {
+            clean_s
+        };
 
     let to_parse = if is_neg {
         format!("-{}", clean_s_no_prefix)
