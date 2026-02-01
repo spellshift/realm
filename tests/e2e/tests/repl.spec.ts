@@ -63,8 +63,10 @@ test('End-to-end reverse shell repl test', async ({ page }) => {
 
   console.log('Sending command');
   // Type something.
-  await page.waitForTimeout(1000); // Wait a bit for connection to be fully established
-  await page.keyboard.type('print("Hello E2E")');
+  // Wait for the prompt to ensure the session is ready
+  await expect(page.locator('.xterm-rows')).toContainText('>>>', { timeout: 20000 });
+  await page.keyboard.type('print("Hello E2E")', { delay: 100 });
+  await page.waitForTimeout(100);
   await page.keyboard.press('Enter');
 
   // Verify output.
