@@ -46,7 +46,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	entClient := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 
 	// 2. Setup Portal Mux (In-Memory)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+	portalMux := mux.New()
 
 	// 3. Setup C2 Stream Mux (Dummy In-Memory)
 	topic, err := pubsub.OpenTopic(ctx, "mem://c2topic")

@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/portals/mux"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/tomes"
 )
 
@@ -89,6 +90,27 @@ var (
 	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
 
 	EnvPubSubSubscriberMaxMessagesBuffered = EnvInteger{"PUBSUB_SUBSCRIBER_MAX_MESSAGES_BUFFERED", 15625}
+
+	// PubSub Configuration Variables
+	EnvGCPPublishDelayThresholdMs                  = EnvInteger{"PUBSUB_GCP_PUBLISH_DELAY_THRESHOLD_MS", 10}
+	EnvGCPPublishCountThreshold                    = EnvInteger{"PUBSUB_GCP_PUBLISH_COUNT_THRESHOLD", 100}
+	EnvGCPPublishByteThreshold                     = EnvInteger{"PUBSUB_GCP_PUBLISH_BYTE_THRESHOLD", 1e6}
+	EnvGCPPublishNumGoroutines                     = EnvInteger{"PUBSUB_GCP_PUBLISH_NUM_GOROUTINES", 25}
+	EnvGCPPublishTimeoutMs                         = EnvInteger{"PUBSUB_GCP_PUBLISH_TIMEOUT_MS", 1000}
+	EnvGCPPublishFlowControlMaxOutstandingMessages = EnvInteger{"PUBSUB_GCP_PUBLISH_FLOW_CONTROL_MAX_OUTSTANDING_MESSAGES", 1000}
+	EnvGCPPublishFlowControlMaxOutstandingBytes    = EnvInteger{"PUBSUB_GCP_PUBLISH_FLOW_CONTROL_MAX_OUTSTANDING_BYTES", -1}
+	EnvGCPPublishFlowControlLimitExceededBehavior  = EnvString{"PUBSUB_GCP_PUBLISH_FLOW_CONTROL_LIMIT_EXCEEDED_BEHAVIOR", "ignore"}
+
+	EnvGCPReceiveMaxExtensionMs         = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_EXTENSION_MS", 0}
+	EnvGCPReceiveMaxExtensionPeriodMs   = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_EXTENSION_PERIOD_MS", 0}
+	EnvGCPReceiveMinExtensionPeriodMs   = EnvInteger{"PUBSUB_GCP_RECEIVE_MIN_EXTENSION_PERIOD_MS", 0}
+	EnvGCPReceiveMaxOutstandingMessages = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_MESSAGES", 1000}
+	EnvGCPReceiveMaxOutstandingBytes    = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_BYTES", -1}
+	EnvGCPReceiveNumGoroutines          = EnvInteger{"PUBSUB_GCP_RECEIVE_NUM_GOROUTINES", 10}
+	EnvGCPReceiveSynchronous            = EnvBool{"PUBSUB_GCP_RECEIVE_SYNCHRONOUS"}
+
+	EnvGCPSubscriptionTTLHours  = EnvInteger{"PUBSUB_GCP_SUBSCRIPTION_TTL_HOURS", 24}
+	EnvGCPPublishReadyTimeoutMs = EnvInteger{"PUBSUB_GCP_PUBLISH_READY_TIMEOUT_MS", 0}
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
@@ -158,14 +180,70 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 		projectID     = EnvGCPProjectID.String()
 		subBufferSize = EnvPubSubSubscriberMaxMessagesBuffered.Int()
 	)
+
+	// Prepare PubSub Settings
+	pubSettings := gcppubsub.PublishSettings{
+		DelayThreshold: time.Duration(EnvGCPPublishDelayThresholdMs.Int()) * time.Millisecond,
+		CountThreshold: EnvGCPPublishCountThreshold.Int(),
+		ByteThreshold:  EnvGCPPublishByteThreshold.Int(),
+		NumGoroutines:  EnvGCPPublishNumGoroutines.Int(),
+		Timeout:        time.Duration(EnvGCPPublishTimeoutMs.Int()) * time.Millisecond,
+		FlowControlSettings: gcppubsub.FlowControlSettings{
+			MaxOutstandingMessages: EnvGCPPublishFlowControlMaxOutstandingMessages.Int(),
+			MaxOutstandingBytes:    EnvGCPPublishFlowControlMaxOutstandingBytes.Int(),
+		},
+	}
+	switch strings.ToLower(EnvGCPPublishFlowControlLimitExceededBehavior.String()) {
+	case "block":
+		pubSettings.FlowControlSettings.LimitExceededBehavior = gcppubsub.FlowControlBlock
+	case "signalerror":
+		pubSettings.FlowControlSettings.LimitExceededBehavior = gcppubsub.FlowControlSignalError
+	default: // ignore
+		pubSettings.FlowControlSettings.LimitExceededBehavior = gcppubsub.FlowControlIgnore
+	}
+
+	recvSettings := gcppubsub.ReceiveSettings{
+		MaxExtension:           time.Duration(EnvGCPReceiveMaxExtensionMs.Int()) * time.Millisecond,
+		MaxExtensionPeriod:     time.Duration(EnvGCPReceiveMaxExtensionPeriodMs.Int()) * time.Millisecond,
+		MinExtensionPeriod:     time.Duration(EnvGCPReceiveMinExtensionPeriodMs.Int()) * time.Millisecond,
+		MaxOutstandingMessages: EnvGCPReceiveMaxOutstandingMessages.Int(),
+		MaxOutstandingBytes:    EnvGCPReceiveMaxOutstandingBytes.Int(),
+		NumGoroutines:          EnvGCPReceiveNumGoroutines.Int(),
+		Synchronous:            EnvGCPReceiveSynchronous.Bool(),
+	}
+
+	ttl := time.Duration(EnvGCPSubscriptionTTLHours.Int()) * time.Hour
+	readyTimeout := time.Duration(EnvGCPPublishReadyTimeoutMs.Int()) * time.Millisecond
+
+	var client *xpubsub.Client
+
 	if projectID == "" {
-		return mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(subBufferSize))
+		client = xpubsub.NewClient(
+			xpubsub.WithInMemoryDriver(
+				xpubsub.WithPublishSettings(pubSettings),
+				xpubsub.WithReceiveSettings(recvSettings),
+				xpubsub.WithExpirationPolicy(ttl),
+				xpubsub.WithPublishReadyTimeout(readyTimeout),
+			),
+		)
+	} else {
+		gcpClient, err := gcppubsub.NewClient(ctx, projectID)
+		if err != nil {
+			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
+		}
+		client = xpubsub.NewClient(
+			xpubsub.WithGCPDriver(
+				GlobalInstanceID,
+				gcpClient,
+				xpubsub.WithPublishSettings(pubSettings),
+				xpubsub.WithReceiveSettings(recvSettings),
+				xpubsub.WithExpirationPolicy(ttl),
+				xpubsub.WithPublishReadyTimeout(readyTimeout),
+			),
+		)
 	}
-	gcpClient, err := gcppubsub.NewClient(ctx, projectID)
-	if err != nil {
-		panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
-	}
-	return mux.New(mux.WithGCPDriver(projectID, gcpClient), mux.WithSubscriberBufferSize(subBufferSize))
+
+	return mux.New(mux.WithPubSubClient(client), mux.WithSubscriberBufferSize(subBufferSize))
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.
