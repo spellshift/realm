@@ -28,6 +28,10 @@ export class ChatPanel implements vscode.WebviewViewProvider {
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
+                case 'init': {
+                    await this._handleInit();
+                    break;
+                }
                 case 'userMessage': {
                     await this._handleUserMessage(data.value);
                     break;
@@ -36,12 +40,59 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     await this._handleSaveFile(data.content, data.language);
                     break;
                 }
+                case 'modelSelected': {
+                    await this._handleModelSelected(data.value);
+                    break;
+                }
                 case 'log': {
                     console.log(`Webview Log: ${data.value}`);
                     break;
                 }
             }
         });
+    }
+
+    private async _handleInit() {
+         if (!this._view) return;
+         try {
+             // Try to init service to get models
+             const config = vscode.workspace.getConfiguration('tomeBuilder');
+             const apiKey = config.get<string>('llm.apiKey');
+             const savedModel = config.get<string>('llm.model') || 'gemini-2.0-flash-exp';
+
+             if (!apiKey) {
+                 this._view.webview.postMessage({ type: 'addMessage', role: 'system', content: 'Please set your Gemini API Key in Settings (Tome Builder > Llm > Api Key).' });
+                 return;
+             }
+
+             const client = this._mcpService.getClient();
+             if (!client) {
+                 this._view.webview.postMessage({ type: 'addMessage', role: 'error', content: 'MCP Client not connected. Check extension logs.' });
+                 return;
+             }
+
+             if (!this._llmService) {
+                this._llmService = new LlmService(apiKey, client, savedModel);
+             }
+
+             // Fetch models
+             const models = await this._llmService.listAvailableModels();
+             this._view.webview.postMessage({ type: 'setModels', models: models, current: savedModel });
+
+         } catch (e: any) {
+             console.error("Init failed:", e);
+         }
+    }
+
+    private async _handleModelSelected(modelName: string) {
+        if (this._llmService) {
+            this._llmService.setModel(modelName);
+            // Optionally save to config
+            await vscode.workspace.getConfiguration('tomeBuilder').update('llm.model', modelName, vscode.ConfigurationTarget.Global);
+            if (this._view) {
+                this._view.webview.postMessage({ type: 'addMessage', role: 'system', content: `Switched to model: ${modelName}` });
+            }
+        }
     }
 
     private async _handleSaveFile(content: string, language: string) {
@@ -70,7 +121,7 @@ export class ChatPanel implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('tomeBuilder');
             const apiKey = config.get<string>('llm.apiKey');
-            const model = config.get<string>('llm.model') || 'gemini-2.0-flash-exp';
+            // We use the service's current model, no need to re-read config unless init failed.
 
             if (!apiKey) {
                 this._view.webview.postMessage({ type: 'addMessage', role: 'system', content: 'Please set your Gemini API Key in Settings (Tome Builder > Llm > Api Key).' });
@@ -83,6 +134,7 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                      this._view.webview.postMessage({ type: 'addMessage', role: 'error', content: 'MCP Client not connected. Check extension logs.' });
                      return;
                 }
+                const model = config.get<string>('llm.model') || 'gemini-2.0-flash-exp';
                 this._llmService = new LlmService(apiKey, client, model);
             }
 
@@ -94,7 +146,11 @@ export class ChatPanel implements vscode.WebviewViewProvider {
 
         } catch (e: any) {
             console.error(e);
-            this._view.webview.postMessage({ type: 'addMessage', role: 'error', content: `Error: ${e.message || e}` });
+            let errorMsg = `Error: ${e.message || e}`;
+            if (e.message && e.message.includes("404")) {
+                errorMsg += "\n\nThe selected model might not be available. Please try selecting a different model from the dropdown above.";
+            }
+            this._view.webview.postMessage({ type: 'addMessage', role: 'error', content: errorMsg });
         } finally {
             this._view.webview.postMessage({ type: 'setLoading', value: false });
         }
@@ -113,13 +169,34 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     padding: 10px;
                     color: var(--vscode-foreground);
                     background-color: var(--vscode-editor-background);
+                    display: flex;
+                    flex-direction: column;
+                    height: 100vh;
+                    box-sizing: border-box;
+                    margin: 0;
+                }
+                #header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                    padding-bottom: 5px;
+                    border-bottom: 1px solid var(--vscode-widget-border);
+                }
+                #model-select {
+                    background-color: var(--vscode-dropdown-background);
+                    color: var(--vscode-dropdown-foreground);
+                    border: 1px solid var(--vscode-dropdown-border);
+                    padding: 2px 4px;
                 }
                 #chat-container {
+                    flex-grow: 1;
+                    overflow-y: auto;
                     display: flex;
                     flex-direction: column;
                     gap: 10px;
-                    margin-bottom: 20px;
-                    min-height: 200px;
+                    margin-bottom: 10px;
+                    padding-right: 5px;
                 }
                 .message {
                     padding: 8px 12px;
@@ -171,10 +248,8 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                 #input-container {
                     display: flex;
                     gap: 5px;
-                    position: sticky;
-                    bottom: 0;
-                    background-color: var(--vscode-editor-background);
                     padding-top: 10px;
+                    border-top: 1px solid var(--vscode-widget-border);
                 }
                 textarea {
                     flex-grow: 1;
@@ -183,6 +258,7 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     border: 1px solid var(--vscode-input-border);
                     resize: vertical;
                     min-height: 40px;
+                    font-family: var(--vscode-font-family);
                 }
                 button {
                     background-color: var(--vscode-button-background);
@@ -198,7 +274,12 @@ export class ChatPanel implements vscode.WebviewViewProvider {
             </style>
         </head>
         <body>
-            <h3>Tome Builder</h3>
+            <div id="header">
+                <h3>Tome Builder</h3>
+                <select id="model-select">
+                    <option value="" disabled selected>Loading models...</option>
+                </select>
+            </div>
             <div id="chat-container"></div>
             <div id="input-container">
                 <textarea id="message-input" placeholder="Describe the Tome you want to create..."></textarea>
@@ -209,6 +290,7 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                 const chatContainer = document.getElementById('chat-container');
                 const messageInput = document.getElementById('message-input');
                 const sendBtn = document.getElementById('send-btn');
+                const modelSelect = document.getElementById('model-select');
 
                 function formatContent(content) {
                     if (!content) return '';
@@ -245,7 +327,7 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     }
 
                     chatContainer.appendChild(div);
-                    window.scrollTo(0, document.body.scrollHeight);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
 
                 sendBtn.addEventListener('click', () => {
@@ -255,6 +337,11 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                     addMessage('user', text);
                     vscode.postMessage({ type: 'userMessage', value: text });
                     messageInput.value = '';
+                });
+
+                modelSelect.addEventListener('change', (e) => {
+                    const model = e.target.value;
+                    vscode.postMessage({ type: 'modelSelected', value: model });
                 });
 
                 window.addEventListener('message', event => {
@@ -272,8 +359,23 @@ export class ChatPanel implements vscode.WebviewViewProvider {
                                 sendBtn.textContent = 'Send';
                             }
                             break;
+                        case 'setModels':
+                            modelSelect.innerHTML = '';
+                            message.models.forEach(model => {
+                                const option = document.createElement('option');
+                                option.value = model;
+                                option.textContent = model;
+                                if (model === message.current) {
+                                    option.selected = true;
+                                }
+                                modelSelect.appendChild(option);
+                            });
+                            break;
                     }
                 });
+
+                // Init
+                vscode.postMessage({ type: 'init' });
             </script>
         </body>
         </html>`;

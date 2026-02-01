@@ -23,6 +23,42 @@ export class LlmService {
         });
     }
 
+    setModel(modelName: string) {
+        this.modelName = modelName;
+        this.model = this.genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: "You are an expert Realm Tome developer. Your goal is to help users write 'Tomes' (Eldritch packages). " +
+                "You have access to tools to retrieve documentation about Tomes and the Eldritch language. " +
+                "ALWAYS check the documentation using 'get_documentation' if you are unsure about syntax or APIs. " +
+                "When asked to create a tome, generate the 'metadata.yml' and 'main.eldritch' files. " +
+                "Use the 'validate_tome_structure' tool to check your generated code if possible. " +
+                "Output the code in markdown blocks (```yaml and ```python or ```eldritch). " +
+                "For 'main.eldritch', use python syntax highlighting but remember it is Starlark-based Eldritch."
+        });
+        this.chatSession = undefined; // Reset session
+    }
+
+    async listAvailableModels(): Promise<string[]> {
+        try {
+            // The SDK doesn't export listModels directly on GoogleGenerativeAI, so we fetch manually.
+            // Documentation: https://ai.google.dev/api/rest/v1beta/models/list
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
+            if (!response.ok) {
+                console.error(`Failed to list models: ${response.statusText}`);
+                return ["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"];
+            }
+            const data = await response.json();
+            if (data && data.models) {
+                return data.models
+                    .map((m: any) => m.name.replace('models/', ''))
+                    .filter((name: string) => name.includes('gemini'));
+            }
+        } catch (e) {
+            console.error("Error listing models:", e);
+        }
+        return ["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"];
+    }
+
     async startSession() {
         if (!this.mcpClient) throw new Error("MCP Client not initialized");
 
