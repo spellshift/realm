@@ -191,6 +191,7 @@ fn add_trace_event(data: &mut Vec<u8>, kind: TraceEventKind) -> Result<()> {
     trace_data.events.push(TraceEvent {
         kind: kind as i32,
         timestamp_micros: timestamp,
+        server_id: "imix".to_string(),
     });
 
     let mut buf = Vec::new();

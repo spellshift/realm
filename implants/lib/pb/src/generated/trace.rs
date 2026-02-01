@@ -8,6 +8,8 @@ pub struct TraceEvent {
     /// Unix microsecond timestamp
     #[prost(int64, tag = "2")]
     pub timestamp_micros: i64,
+    #[prost(string, tag = "3")]
+    pub server_id: ::prost::alloc::string::String,
 }
 /// When BytesPayloadKind is TRACE, the `data` field of the mote
 /// should contain the serialized bytes of this message.
