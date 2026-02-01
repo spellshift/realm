@@ -607,7 +607,7 @@ impl Repl {
                     }
                 }
                 TokenKind::Error(ref msg) => {
-                    if msg.contains("Unterminated string literal") && !msg.contains("(newline)") {
+                    if msg.contains("Unterminated string literal") {
                         is_incomplete_string = true;
                     }
                 }
