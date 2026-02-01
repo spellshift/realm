@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -48,69 +49,33 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 	topicOut := m.TopicOut(portalID)
 	subName := m.SubName(topicIn)
 
-	// 2. Provisioning
-	// Ensure topics exist
-	if err := m.ensureTopic(ctx, topicIn); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure topic in: %w", err)
-	}
-	if err := m.ensureTopic(ctx, topicOut); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure topic out: %w", err)
-	}
-
-	// Ensure subscription exists
-	if err := m.ensureSub(ctx, topicIn, subName); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure subscription: %w", err)
-	}
-
-	// 3. Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicIn, subName)
-	sub, err := m.openSubscription(ctx, subURL)
-	if err != nil {
-		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
-	}
-
-	// Store in subMgr
-	m.subMgr.Lock()
-
-	// Check if existing sub
-	if existingSub, ok := m.subMgr.active[subName]; ok {
-		// Existing found. Shutdown new one and cleanup old one if needed.
-		if cancel, ok := m.subMgr.cancelFuncs[subName]; ok {
-			cancel()
+	provision := func() error {
+		// Ensure topics exist
+		if err := m.ensureTopic(ctx, topicIn); err != nil {
+			return fmt.Errorf("failed to ensure topic in: %w", err)
 		}
-		// We are overwriting, so we must assume the old one is invalid or we are restarting.
-		existingSub.Shutdown(context.Background())
+		if err := m.ensureTopic(ctx, topicOut); err != nil {
+			return fmt.Errorf("failed to ensure topic out: %w", err)
+		}
+
+		// Ensure subscription exists
+		if err := m.ensureSub(ctx, topicIn, subName); err != nil {
+			return fmt.Errorf("failed to ensure subscription: %w", err)
+		}
+		return nil
 	}
 
-	m.subMgr.active[subName] = sub
-
-	ctxLoop, cancelLoop := context.WithCancel(context.Background())
-	m.subMgr.cancelFuncs[subName] = cancelLoop
-	m.subMgr.Unlock()
-
-	// 4. Spawn
-	go func() {
+	startLoop := func(ctxLoop context.Context, sub *pubsub.Subscription) {
 		m.receiveLoop(ctxLoop, topicIn, sub)
-	}()
+	}
+
+	teardownSub, err := m.acquireSubscription(ctx, subName, topicIn, provision, startLoop)
+	if err != nil {
+		return portalID, nil, err
+	}
 
 	teardown := func() {
-		m.subMgr.Lock()
-		s, ok := m.subMgr.active[subName]
-		cancel := m.subMgr.cancelFuncs[subName]
-		if ok {
-			delete(m.subMgr.active, subName)
-			delete(m.subMgr.cancelFuncs, subName)
-		}
-		m.subMgr.Unlock()
-
-		if ok {
-			if cancel != nil {
-				cancel()
-			}
-			// Shutdown using Background context
-			s.Shutdown(context.Background())
-		}
+		teardownSub()
 
 		// Update DB to Closed using ID
 		client.Portal.UpdateOneID(p.ID).

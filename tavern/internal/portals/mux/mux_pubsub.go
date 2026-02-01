@@ -219,3 +219,95 @@ func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscri
 
 	return sub, nil
 }
+
+// acquireSubscription acquires a subscription, reusing an existing one if available.
+// It handles reference counting and race conditions.
+func (m *Mux) acquireSubscription(
+	ctx context.Context,
+	subName string,
+	topicID string,
+	provision func() error,
+	startLoop func(context.Context, *pubsub.Subscription),
+) (func(), error) {
+	m.subMgr.Lock()
+	// Check Cache
+	if _, ok := m.subMgr.active[subName]; ok {
+		m.subMgr.refs[subName]++
+		m.subMgr.Unlock()
+		return m.makeTeardown(subName), nil
+	}
+	m.subMgr.Unlock()
+
+	// Provisioning
+	if err := provision(); err != nil {
+		return nil, fmt.Errorf("failed to provision subscription: %w", err)
+	}
+
+	// Connect
+	subURL := m.SubURL(topicID, subName)
+	sub, err := m.openSubscription(ctx, subURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+	}
+
+	m.subMgr.Lock()
+	// RACE CONDITION CHECK:
+	// Re-check cache in case another goroutine created it while we were provisioning/connecting
+	if _, ok := m.subMgr.active[subName]; ok {
+		// Another routine won the race. Use theirs.
+		m.subMgr.refs[subName]++
+		m.subMgr.Unlock()
+
+		// Close our unused subscription immediately
+		sub.Shutdown(context.Background())
+
+		// Return teardown for the EXISTING subscription
+		return m.makeTeardown(subName), nil
+	}
+
+	// We won the race (or are the first).
+	m.subMgr.active[subName] = sub
+	m.subMgr.refs[subName] = 1
+
+	// Prepare Loop Context
+	ctxLoop, cancelLoop := context.WithCancel(context.Background())
+	m.subMgr.cancelFuncs[subName] = cancelLoop
+
+	m.subMgr.Unlock()
+
+	// Spawn
+	go startLoop(ctxLoop, sub)
+
+	return m.makeTeardown(subName), nil
+}
+
+// makeTeardown creates a teardown function for a specific subscription.
+func (m *Mux) makeTeardown(subName string) func() {
+	return func() {
+		m.subMgr.Lock()
+		m.subMgr.refs[subName]--
+		shouldShutdown := false
+		var s *pubsub.Subscription
+		var cancel context.CancelFunc
+		if m.subMgr.refs[subName] <= 0 {
+			if sub, ok := m.subMgr.active[subName]; ok {
+				s = sub
+				cancel = m.subMgr.cancelFuncs[subName]
+				delete(m.subMgr.active, subName)
+				delete(m.subMgr.refs, subName)
+				delete(m.subMgr.cancelFuncs, subName)
+				shouldShutdown = true
+			}
+		}
+		m.subMgr.Unlock()
+
+		if shouldShutdown {
+			if cancel != nil {
+				cancel()
+			}
+			if s != nil {
+				s.Shutdown(context.Background())
+			}
+		}
+	}
+}
