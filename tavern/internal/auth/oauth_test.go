@@ -216,3 +216,57 @@ func getOAuthAuthorizationRequest(t *testing.T, privKey ed25519.PrivateKey, code
 	req.URL.RawQuery = params.Encode()
 	return req
 }
+
+// TestNewOAuthAuthorizationHandler_DBError ensures the OAuth Authorization Handler handles DB errors gracefully
+func TestNewOAuthAuthorizationHandler_DBError(t *testing.T) {
+	var (
+		expectedClientID     = "12345"
+		expectedClientSecret = "SuperSecret"
+		expectedRedirect     = "REDIRECT_URL"
+		expectedCode         = `SuperSecretAuthorization`
+		expectedAccessToken  = `90d64460d14870c08c81352a05dedd3465940a7c`
+		profileResp          = []byte(`{"sub":"goofygoober","picture":"photos.com/goofygoober","email":"goofygoober@google.com","name":"Mr. Goober","email_verified":true}`)
+	)
+	// Setup Test DB
+	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	// We deliberately close the graph to trigger a DB error during query
+	graph.Close()
+
+	// Setup Mock IDP
+	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(fmt.Sprintf(`{"access_token": "%s", "scope": "user", "token_type": "bearer", "expires_in": 86400}`, expectedAccessToken)))
+	}))
+	defer idp.Close()
+
+	// Setup Mock Resource Server
+	rsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(profileResp)
+	}))
+	defer rsrv.Close()
+
+	// Generate keys for signing JWTs
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	// Configure OAuth
+	cfg := oauth2.Config{
+		ClientID:     expectedClientID,
+		ClientSecret: expectedClientSecret,
+		RedirectURL:  expectedRedirect,
+		Endpoint: oauth2.Endpoint{
+			TokenURL:  idp.URL,
+			AuthStyle: oauth2.AuthStyleInParams,
+		},
+	}
+
+	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL)
+	resp := httptest.NewRecorder()
+	req := getOAuthAuthorizationRequest(t, privKey, expectedCode)
+
+	handler.ServeHTTP(resp, req)
+
+	result := resp.Result()
+	// We expect 500 Internal Server Error, and no panic
+	assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
+}
