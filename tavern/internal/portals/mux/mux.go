@@ -6,9 +6,11 @@ import (
 	"sync"
 	"time"
 
-	gcppubsub "cloud.google.com/go/pubsub"
+	gcppubsub "cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
@@ -220,20 +222,22 @@ func (m *Mux) ensureTopic(ctx context.Context, topicID string) error {
 		return fmt.Errorf("gcp client is nil")
 	}
 
-	topic := m.gcpClient.Topic(topicID)
-	exists, err := topic.Exists(ctx)
-	if err != nil {
+	fullTopicName := fmt.Sprintf("projects/%s/topics/%s", m.projectID, topicID)
+	_, err := m.gcpClient.TopicAdminClient.GetTopic(ctx, &pubsubpb.GetTopicRequest{Topic: fullTopicName})
+	if err == nil {
+		return nil
+	}
+	if status.Code(err) != codes.NotFound {
 		return fmt.Errorf("failed to check topic existence: %w", err)
 	}
-	if !exists {
-		_, err = m.gcpClient.CreateTopic(ctx, topicID)
-		if err != nil {
-			// Check for AlreadyExists error to handle race conditions
-			if status.Code(err) == codes.AlreadyExists {
-				return nil
-			}
-			return fmt.Errorf("failed to create topic: %w", err)
+
+	_, err = m.gcpClient.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{Name: fullTopicName})
+	if err != nil {
+		// Check for AlreadyExists error to handle race conditions
+		if status.Code(err) == codes.AlreadyExists {
+			return nil
 		}
+		return fmt.Errorf("failed to create topic: %w", err)
 	}
 	return nil
 }
@@ -249,26 +253,29 @@ func (m *Mux) ensureSub(ctx context.Context, topicID, subID string) error {
 		return fmt.Errorf("gcp client is nil")
 	}
 
-	sub := m.gcpClient.Subscription(subID)
-	exists, err := sub.Exists(ctx)
-	if err != nil {
+	fullSubName := fmt.Sprintf("projects/%s/subscriptions/%s", m.projectID, subID)
+	_, err := m.gcpClient.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{Subscription: fullSubName})
+	if err == nil {
+		return nil
+	}
+	if status.Code(err) != codes.NotFound {
 		return fmt.Errorf("failed to check subscription existence: %w", err)
 	}
 
-	if !exists {
-		topic := m.gcpClient.Topic(topicID)
-		cfg := gcppubsub.SubscriptionConfig{
-			Topic:            topic,
-			ExpirationPolicy: 24 * time.Hour,
+	fullTopicName := fmt.Sprintf("projects/%s/topics/%s", m.projectID, topicID)
+	_, err = m.gcpClient.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+		Name:  fullSubName,
+		Topic: fullTopicName,
+		ExpirationPolicy: &pubsubpb.ExpirationPolicy{
+			Ttl: durationpb.New(24 * time.Hour),
+		},
+	})
+	if err != nil {
+		// Check for AlreadyExists error to handle race conditions
+		if status.Code(err) == codes.AlreadyExists {
+			return nil
 		}
-		_, err = m.gcpClient.CreateSubscription(ctx, subID, cfg)
-		if err != nil {
-			// Check for AlreadyExists error to handle race conditions
-			if status.Code(err) == codes.AlreadyExists {
-				return nil
-			}
-			return fmt.Errorf("failed to create subscription: %w", err)
-		}
+		return fmt.Errorf("failed to create subscription: %w", err)
 	}
 	return nil
 }

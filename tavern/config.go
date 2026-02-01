@@ -9,9 +9,11 @@ import (
 	"strings"
 	"time"
 
-	gcppubsub "cloud.google.com/go/pubsub"
+	gcppubsub "cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
@@ -191,40 +193,43 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		}
 		defer client.Close()
 
-		createGCPSubscription := func(ctx context.Context, topic *gcppubsub.Topic) string {
-			name := fmt.Sprintf("%s-sub_%s", topic.ID(), GlobalInstanceID)
+		createGCPSubscription := func(ctx context.Context, topicID string) string {
+			name := fmt.Sprintf("%s-sub_%s", topicID, GlobalInstanceID)
+			fullTopicName := fmt.Sprintf("projects/%s/topics/%s", projectID, topicID)
+			fullSubName := fmt.Sprintf("projects/%s/subscriptions/%s", projectID, name)
 
-			sub, err := client.CreateSubscription(ctx, name, gcppubsub.SubscriptionConfig{
-				Topic:            topic,
-				AckDeadline:      10 * time.Second,
-				ExpirationPolicy: 24 * time.Hour, // Automatically delete unused subscriptions after 1 day
+			_, err := client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+				Name:               fullSubName,
+				Topic:              fullTopicName,
+				AckDeadlineSeconds: 10,
+				ExpirationPolicy: &pubsubpb.ExpirationPolicy{
+					Ttl: durationpb.New(24 * time.Hour),
+				},
 			})
 			if err != nil {
 				panic(fmt.Errorf(
 					"failed to create gcppubsub subscription (topic=%q,subscription_name=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v",
-					topic.ID(),
+					topicID,
 					name,
 					EnvPubSubSubscriptionShellInput.Key,
 					err,
 				))
 			}
-			exists, err := sub.Exists(ctx)
+			// Verify existence via GetSubscription
+			_, err = client.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{Subscription: fullSubName})
 			if err != nil {
 				panic(fmt.Errorf("failed to check if gcppubsub subscription was successfully created: %w", err))
-			}
-			if !exists {
-				panic(fmt.Errorf("failed to create gcppubsub subscription, it does not exist! name=%q", name))
 			}
 			return name
 		}
 
-		shellInputTopic := client.Topic(strings.TrimPrefix(topicShellInput, gcpTopicPrefix))
-		shellOutputTopic := client.Topic(strings.TrimPrefix(topicShellOutput, gcpTopicPrefix))
+		shellInputTopicID := strings.TrimPrefix(topicShellInput, gcpTopicPrefix)
+		shellOutputTopicID := strings.TrimPrefix(topicShellOutput, gcpTopicPrefix)
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
-		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopic))
+		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopicID))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
-		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopic))
+		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopicID))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 
 		// Start a goroutine to publish noop messages on an interval.
