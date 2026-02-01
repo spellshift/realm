@@ -115,6 +115,8 @@ jobs:
       run: |
         cd ./implants/ &&
         cargo fmt --check &&
+        cargo llvm-cov nextest --lcov --output-path lcov.info &&
+        cd ./lib/eldritch/stdlib/tests &&
         cargo llvm-cov nextest --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF
       if: always()
@@ -136,7 +138,7 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./implants/lcov.info
+        files: ./implants/lcov.info,./implants/lib/eldritch/stdlib/tests/lcov.info
         flags: implants
         name: implants-coverage-${{ matrix.os }}
     - name: 📤 Upload CTRF Results
