@@ -13,7 +13,7 @@ pub fn ssh_key(
     let cred = eldritch::Credential {
         principal: username,
         secret: key,
-        kind: 2, // KIND_SSH_KEY
+        kind: eldritch::credential::Kind::SshKey as i32,
     };
     let req = c2::ReportCredentialRequest {
         context: Some(task_context),
